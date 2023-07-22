@@ -7,6 +7,6 @@ A little project for vectorized nd arrays in native mojo
 ## Current
 * DTypePointer-based data storage
 * Basic guard rails for getting and setting
-* add, mult, truediv, floordiv, and pow for both arrays and single values(but not both commutative yet for all)
+* add, subtract, mult, truediv, floordiv, and pow for both arrays of the same size, slices of arrays, and single values(but not commutatively yet for all)
 * Arrange and meshgrid basic implementations
 * Getting and setting from slices(1d only so far, setting is a bit ruff)

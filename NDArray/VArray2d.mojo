@@ -11,6 +11,7 @@ from TargetInfo import simdwidthof
 from Error import Error
 from SIMD import SIMD
 from Range import range
+from IO import print
 #st:StringLiteral)raises->(Bool,Error):
 fn check_dims(rows:Int,cols:Int,x:Int,y:Int)raises->(Bool,Error):
 
@@ -338,22 +339,61 @@ struct Array[dtype:DType,opt_nelts:Int]:
         #     raise err
         return self.data.simd_load[1](x)
     @always_inline
+    fn __getitem__(self, span:slice) raises -> Array[dtype,opt_nelts]:
+        let new_size:Int = span.__len__()
+        let new_Arr: Array[dtype,opt_nelts] = Array[dtype,opt_nelts](new_size,1)
+        for i in range(new_size):
+            new_Arr[i]=self[span[i]]
+        return new_Arr
+    
+    @always_inline
     fn load[nelts:Int](self, y: Int, x: Int) raises -> SIMD[dtype, nelts]:
 
         return self.data.simd_load[nelts](y * self.cols + x)
+    
     @always_inline
     fn __setitem__(self, y: Int, x: Int, val: SIMD[dtype,1]) raises:
         let safe: Bool = x>(self.rows-1) or y>(self.cols-1)
         if safe:
             raise Error("Index Outside of assigned array set item")
         return self.data.simd_store[1](y * self.cols + x, val)
+    
     @always_inline
     fn __setitem__(self,  x: Int, val: SIMD[dtype,1]) raises:
         if self.cols>1:
             raise Error("Sub arrays not implemented for 2d Arrays")
         if x>(self.rows-1):
-            raise Error("Index Outside of assigned array set item")
+            raise Error("Index Outside of assigned array set item 1d single")
         return self.data.simd_store[1]( x, val)
+    
+    @always_inline
+    fn __setitem__(inout self,  span: slice, val: Array[dtype,opt_nelts]) raises:
+        let new_size:Int = span.__len__()
+        if val.size < new_size:
+            raise Error("Set item slice array: val is not large enough to fill the array")
+        let new_Arr: Array[dtype,opt_nelts] = self
+        for i in range(new_size): 
+            new_Arr[span[i]] = val[i]
+        self=new_Arr
+        
+    @always_inline    
+    fn __setitem__(inout self,  span: slice, val: SIMD[dtype,1]) raises:
+        let new_size:Int = span.__len__()
+        for i in range(new_size): 
+            self.data.simd_store[1](i,val)
+    
+    @always_inline
+    fn transpose(self) raises ->Array[dtype,opt_nelts]:
+        let result_array: Array[dtype,opt_nelts] = Array[dtype,opt_nelts](self.cols,self.rows)
+        for i in range(self.cols):
+            for j in range(self.rows):
+                result_array[j,i]=self[i,j]
+        return result_array
+    
+    @always_inline
+    fn shape(self) raises:
+        print("cols: ",self.cols," rows: ",self.rows)
+            
 
 fn varrange[dtype:DType,opt_nelts:Int](start:SIMD[dtype,1],end:SIMD[dtype,1],step:SIMD[dtype,1])raises->Array[dtype,opt_nelts]:
     """Creates an endpoint inclusive range between start and end with in steps of step

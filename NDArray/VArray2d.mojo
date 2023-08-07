@@ -2,7 +2,7 @@ from Benchmark import Benchmark
 from DType import DType
 from Intrinsics import strided_load
 from List import VariadicList
-from Math import div_ceil, min, sqrt
+from Math import mul,sub,add,div,clamp,abs,floor,ceil,ceildiv,trunc,sqrt,rsqrt,exp2,ldexp,exp,frexp,log,log2,copysign,erf,tanh,isclose,all_true,any_true,none_true,reduce_bit_count,iota,is_power_of_2,is_odd,is_even,fma,reciprocal,identity,greater,greater_equal,less,less_equal,equal,not_equal,select,max,min,pow,div_ceil,align_down,align_up,acos,asin,atan,atan2,cos,sin,tan,acosh,asinh,atanh,cosh,sinh,expm1,log10,log1p,logb,cbrt,hypot,erfc,lgamma,tgamma,nearbyint,rint,round,remainder,nextafter,j0,j1,y0,y1,scalb,gcd,lcm,factorial,nan,isnan
 from Memory import memset_zero
 from Object import object, Attr
 from Pointer import DTypePointer
@@ -508,12 +508,20 @@ struct Array[dtype:DType,opt_nelts:Int]:
             print_no_newline("]")
             put_new_line()
             
+    def to_numpy(self) -> PythonObject:
+        let np = Python.import_module("numpy")
+        let numpy_array = np.zeros((self.rows, self.cols), np.float32)
+        for col in range(self.cols):
+            for row in range(self.rows):
+                numpy_array.itemset((row, col), self[col, row])
+        return numpy_array 
+    
+alias dtype = DType.float32
+alias opt_nelts = simdwidthof[dtype]()
+alias f32array = Array[dtype, opt_nelts]
+            
+fn arrange[dtype:DType,opt_nelts:Int](start:SIMD[dtype,1],end:SIMD[dtype,1],step:SIMD[dtype,1])raises->Array[dtype,opt_nelts]:
 
-fn varrange[dtype:DType,opt_nelts:Int](start:SIMD[dtype,1],end:SIMD[dtype,1],step:SIMD[dtype,1])raises->Array[dtype,opt_nelts]:
-    """Creates an endpoint inclusive range between start and end with in steps of step
-        Stores to a DType pointer
-        Partially replicates the np.arrange function
-    """
     if start>=end:
         raise Error("End must be greater than start")
     let diff: SIMD[dtype,1] = end-start
@@ -524,48 +532,422 @@ fn varrange[dtype:DType,opt_nelts:Int](start:SIMD[dtype,1],end:SIMD[dtype,1],ste
     for i in range(int_number_of_steps):
         arr[i]=start+step*i
     return arr
-alias Float64 =SIMD[DType.float64, 1]
-def benchmark_varrange[dtype:DType,opt_nelts:Int]()-> (Float64,Int):
-    var err_count:Int=0
-    @parameter
-    fn test_fn():
-        try:
-            _=varrange[dtype,opt_nelts](0,5000,0.25)
-        except:
-            pass
-            err_count+=1
-    let secs = Float64(Benchmark().run[test_fn]()) / 1_000_000_000
-    
-    return secs, err_count
-def vsqrt[dtype:DType,opt_nelts:Int](arr:Array[dtype,opt_nelts])->Array[dtype,opt_nelts]:
-    let res_arr:Array[dtype,opt_nelts]=Array[dtype,opt_nelts](arr.rows,arr.cols)
-    for i in range(0, arr.size, opt_nelts):
-        let simd_data_sqrt =sqrt[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
-        res_arr.data.simd_store[opt_nelts](i,simd_data_sqrt )
-    for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
-        let simd_data_sqrt = sqrt[dtype,1]( arr.data.simd_load[1](i))
-        res_arr.data.simd_store[1](i, simd_data_sqrt)
+
+fn abs(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = abs[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = abs[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
     return res_arr
 
-def vsqrt2[dtype:DType,opt_nelts:Int](arr:Array[dtype,opt_nelts])->Array[dtype,opt_nelts]:
-    for i in range(0, arr.size, opt_nelts):
-        let simd_data_sqrt =sqrt[dtype,opt_nelts]( arr.data.simd_load[opt_nelts](i))
-        arr.data.simd_store[opt_nelts](i,simd_data_sqrt )
-    for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
-        let simd_data_sqrt = sqrt[dtype,1]( arr.data.simd_load[1](i))
-        arr.data.simd_store[1](i, simd_data_sqrt)
-    return arr
+fn floor(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = floor[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
 
-def benchmark_vsqrt[dtype:DType,opt_nelts:Int]()-> (Float64,Int):
-    var err_count:Int=0
-    var dat = Array[dtype,opt_nelts](200,100)
-    dat+=100000
-    @parameter
-    fn test_fn():
-        try:
-            _=vsqrt[dtype,opt_nelts](dat)
-        except:
-            pass
-            err_count+=1
-    let secs = Float64(Benchmark().run[test_fn]()) / 1_000_000_000
-    return secs, err_count
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = floor[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn ceil(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = ceil[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = ceil[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+
+fn trunc(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = trunc[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = trunc[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn sqrt(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = sqrt[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = sqrt[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+fn rsqrt(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = rsqrt[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = rsqrt[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn exp2(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = exp2[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = exp2[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn exp(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = exp[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = exp[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+
+fn log(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = log[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = log[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn log2(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = log2[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = log2[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn erf(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = erf[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = erf[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn tanh(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = tanh[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = tanh[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn reciprocal(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = reciprocal[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = reciprocal[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn acos(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = acos[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = acos[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn asin(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = asin[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = asin[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn atan(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = atan[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = atan[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn cos(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = cos[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = cos[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn sin(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = sin[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = sin[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn tan(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = tan[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = tan[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn acosh(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = acosh[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = acosh[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn asinh(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = asinh[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = asinh[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+fn atanh(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = atanh[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = atanh[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn cosh(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = cosh[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = cosh[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn sinh(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = sinh[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = sinh[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn expm1(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = expm1[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = expm1[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+fn log10(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = log10[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = log10[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn log1p(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = log1p[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = log1p[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn logb(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = logb[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = logb[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn cbrt(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = cbrt[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = cbrt[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn erfc(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = erfc[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = erfc[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn lgamma(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = lgamma[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = lgamma[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn tgamma(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = tgamma[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = tgamma[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn nearbyint(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = nearbyint[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = nearbyint[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn rint(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = rint[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = rint[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr
+
+fn round(arr:f32array)->f32array:
+    let res_arr:f32array=f32array(arr.rows,arr.cols)
+    for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+        let simd_data = round[dtype,opt_nelts](arr.data.simd_load[opt_nelts](i))
+        res_arr.data.simd_store[opt_nelts](i,simd_data )
+
+    if arr.size%opt_nelts != 0 :
+        for i in range(opt_nelts*(arr.size//opt_nelts), arr.size):
+            let simd_data = round[dtype,1]( arr.data.simd_load[1](i))
+            res_arr.data.simd_store[1](i, simd_data)
+    return res_arr

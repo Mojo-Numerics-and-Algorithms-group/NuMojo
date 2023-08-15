@@ -11,7 +11,7 @@ A little project for vectorized N-Dimensional Arrays in native mojo
 * DTypePointer-based data storage 2d arrays
 * Basic guard rails for getting and setting
 * add, subtract, mult, truediv, floordiv, and pow for both arrays of the same size, slices of arrays, and single values(but not commutatively yet for all)
-* Arrange, transpose, shape, and meshgrid,to_numpy, and print basic implementations
+* Arrange, transpose, shape, to_numpy, and print basic implementations
 * All single SIMD input operations from Standard Math: trig(except atan2) and hyperbolic trig, etc.
 * Getting and setting from slices.
 ## Setup

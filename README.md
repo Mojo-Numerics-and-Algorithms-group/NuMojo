@@ -15,4 +15,5 @@ A little project for vectorized N-Dimensional Arrays in native mojo
 * All single SIMD input operations from Standard Math: trig(except atan2) and hyperbolic trig, etc.
 * Getting and setting from slices.
 ## Setup
-* Mojo module creation is not working as of 7 August 2023 so for now you have to copy the full contents of VArray2D into a notebook.
+* Copy the text from all of the files in NDArray into files with the same names as the sources into a folder named NDArray
+* see [Introduction](https://github.com/MadAlex1997/Mojo-Arrays/blob/main/Introduction.ipynb) for basics on how to use NDArray in its current state.

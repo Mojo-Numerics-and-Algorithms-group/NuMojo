@@ -124,18 +124,16 @@ struct BoolArray:
     
     @always_inline
     fn __getitem__(self, y: Int, x: Int) raises -> SIMD[dt_bool,1]:
-        # let safe: Bool
-        # let err: Error
-        let safe: Bool = x>(self.rows-1) or y>(self.cols-1)
-        # if safe:
-            # raise Error("Index Outside of assigned array get item")
-        # return (safe,err)#,"get item")
-        # if not safe:
-        #     raise err
+        if x>(self.rows-1) or y>(self.cols-1):
+            raise Error("Index Outside of assigned array get item")
         return self.data.simd_load[1](y * self.cols + x)
     
     @always_inline
     fn __getitem__(self, xspan:slice, y:Int) raises -> BoolArray:
+        if y > self.cols - 1:
+            raise Error("y excedes allocated columns")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_cols:Int = xspan.__len__()
         let new_Arr: BoolArray = BoolArray(new_cols,1)
         for i in range(new_cols):
@@ -144,6 +142,8 @@ struct BoolArray:
     
     @always_inline
     fn __getitem__(self, x:Int, yspan:slice) raises -> BoolArray:
+        if x > self.rows - 1:
+            raise Error("x excedes allocated columns")
         let new_rows:Int = yspan.__len__()
         let new_Arr: BoolArray = BoolArray(new_rows,1)
         for i in range(new_rows):
@@ -152,6 +152,10 @@ struct BoolArray:
     
     @always_inline
     fn __getitem__(self, xspan:slice, yspan:slice) raises -> BoolArray:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.cols:
+            raise Error("yspan slice points outside of assigned memory")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_cols:Int = xspan.__len__()
         let new_rows:Int = yspan.__len__()
         let new_Arr: BoolArray = BoolArray(new_rows,new_cols)
@@ -162,20 +166,14 @@ struct BoolArray:
     
     @always_inline
     fn __getitem__(self, x:Int) raises -> SIMD[dt_bool,1]:
-        # let safe: Bool
-        # let err: Error
-        # if self.cols>1:
-        #     raise Error("Sub arrays not implemented for 2d BoolArrays")
-        # let safe: Bool = x>(self.rows-1)
-        # if safe:
-        #     raise Error("Index Outside of assigned array get item")
-        # return (safe,err)#,"get item")
-        # if not safe:
-        #     raise err
+        if x>(self.size-1):
+            raise Error("Index Outside of assigned array get item")
         return self.data.simd_load[1](x)
     
     @always_inline
     fn __getitem__(self, span:slice) raises -> BoolArray:
+        if span[0]+span.__len__()*(span[1]-span[0]) > self.size:
+            raise Error("span slice points outside of assigned memory")
         let new_size:Int = span.__len__()
         let new_Arr: BoolArray = BoolArray(new_size,1)
         for i in range(new_size):
@@ -184,17 +182,14 @@ struct BoolArray:
     
     @always_inline
     fn __setitem__(self, y: Int, x: Int, val: SIMD[dt_bool,1]) raises:
-        # let safe: Bool = x>(self.rows-1) or y>(self.cols-1)
-        # if safe:
-        #     raise Error("Index Outside of assigned array set item")
+        if x>(self.rows-1) or y>(self.cols-1):
+            raise Error("Index Outside of assigned array set item")
         return self.data.simd_store[1](y * self.cols + x, val)
     
     @always_inline
     fn __setitem__(self,  x: Int, val: SIMD[dt_bool,1]) raises:
-        # if self.cols>1:
-        #     raise Error("Sub arrays not implemented for 2d BoolArrays")
-        # if x>(self.rows-1):
-        #     raise Error("Index Outside of assigned array set item 1d single")
+        if x>(self.size-1):
+            raise Error("Index Outside of assigned array set item 1d single")
         return self.data.simd_store[1]( x, val)
     
     @always_inline
@@ -210,36 +205,52 @@ struct BoolArray:
     
     @always_inline
     fn __setitem__(inout self, y: Int, xspan: slice, val: SIMD[dt_bool,1]) raises:
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_size:Int = xspan.__len__()
         for i in range(new_size): 
             self[y,xspan[i]] = val
     
     @always_inline
     fn __setitem__(inout self, y: Int,  xspan: slice, val: BoolArray) raises:
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
+        # if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > val.rows:
+        #     raise Error("xspan slice points outside of assigned memory of val")
         let new_size:Int = xspan.__len__()
-        # if val.size < new_size:
-        #     raise Error("Set item slice array: val is not large enough to fill the array")
+        if val.size < new_size:
+            raise Error("Set item slice array: val is not large enough to fill the array")
         for i in range(new_size): 
             self[y, xspan[i]] = val[i]
     
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  x: Int, val: SIMD[dt_bool,1]) raises:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.rows:
+            raise Error("yspan slice points outside of assigned memory")
         let new_size:Int = yspan.__len__()
         for i in range(new_size): 
             self[yspan[i], x] = val
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  x: Int, val: BoolArray) raises:
+        # if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > val.rows:
+        #     raise Error("yspan slice points outside of assigned memory of val")
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.rows:
+            raise Error("yspan slice points outside of assigned memory")
         let new_size:Int = yspan.__len__()
-        # if val.size < new_size:
-        #     raise Error("Set item slice array: val is not large enough to fill the array")
+        if val.size != new_size:
+            raise Error("Set item slice array: val is not large enough to fill the array")
         for i in range(new_size): 
             self[yspan[i], x] = val[i]
     
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  xspan: slice, val: SIMD[dt_bool,1]) raises:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.cols:
+            raise Error("yspan slice points outside of assigned memory")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_cols:Int = yspan.__len__()
         let new_rows:Int = xspan.__len__()
         for i in range(new_cols): 
@@ -248,6 +259,14 @@ struct BoolArray:
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  xspan: slice, val: BoolArray) raises:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.cols:
+            raise Error("yspan slice points outside of assigned memory")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
+        # if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > val.cols:
+        #     raise Error("yspan slice points outside of assigned memory of val")
+        # if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > val.rows:
+        #     raise Error("xspan slice points outside of assigned memory of val")
         let new_cols:Int = yspan.__len__()
         let new_rows:Int = xspan.__len__()
         # if val.size < new_size:
@@ -258,6 +277,8 @@ struct BoolArray:
     
     @always_inline    
     fn __setitem__(inout self,  span: slice, val: SIMD[dt_bool,1]) raises:
+        if span[0]+span.__len__()*(span[1]-span[0]) > self.size:
+            raise Error("span slice points outside of assigned memory")
         let new_size:Int = span.__len__()
         for i in range(new_size): 
             self.data.simd_store[1](i,val)

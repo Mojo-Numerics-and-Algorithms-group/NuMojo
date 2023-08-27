@@ -1,13 +1,8 @@
 from math import mul,sub,add,div,clamp,abs,floor,ceil,ceildiv,trunc,sqrt,rsqrt,exp2,ldexp,exp,frexp,log,log2,copysign,erf,tanh,isclose,all_true,any_true,none_true,reduce_bit_count,iota,is_power_of_2,is_odd,is_even,fma,reciprocal,identity,greater,greater_equal,less,less_equal,equal,not_equal,select,max,min,pow,div_ceil,align_down,align_up,acos,asin,atan,atan2,cos,sin,tan,acosh,asinh,atanh,cosh,sinh,expm1,log10,log1p,logb,cbrt,hypot,erfc,lgamma,tgamma,nearbyint,rint,round,remainder,nextafter,j0,j1,y0,y1,scalb,gcd,lcm,factorial,nan,isnan
 from memory.unsafe import DTypePointer
 from sys.info import simdwidthof
-# from Error import Error
-# from simd import SIMD
-# from range import range
-# from io import print, put_new_line, print_no_newline
 from python import Python
 from python.object import PythonObject
-# from Bool import Bool
 from .BoolArray2D import BoolArray
     
 struct Array[dtype:DType,opt_nelts:Int]:
@@ -23,11 +18,6 @@ struct Array[dtype:DType,opt_nelts:Int]:
         self.size = self.rows*self.cols
         self.zero() 
         
-                
-    
-    # fn is_safe(self,x:Int, y:Int, st: StringLiteral) raises -> None:
-    #     if x>(self.rows-1) or y>(cols-1):
-    #         raise Error(st)
         
     fn __copyinit__(inout self, other: Self):
         self.rows = other.rows
@@ -210,7 +200,6 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __ipow__(inout self, rhs: Int)raises:
-        
         for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
             let simd_data = self.data.simd_load[opt_nelts](i)
             self.data.simd_store[opt_nelts](i, simd_data ** rhs)   
@@ -233,7 +222,6 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __itruediv__(inout self, rhs: SIMD[dtype,1])raises:
-        
         for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
             let simd_data = self.data.simd_load[opt_nelts](i)
             self.data.simd_store[opt_nelts](i, simd_data / rhs)   
@@ -334,8 +322,7 @@ struct Array[dtype:DType,opt_nelts:Int]:
     @always_inline
     fn __getitem__(self, y: Int, x: Int) raises -> SIMD[dtype,1]:
         
-        let safe: Bool = x>(self.rows-1) or y>(self.cols-1)
-        if safe:
+        if x>(self.rows-1) or y>(self.cols-1):
             raise Error("Index Outside of assigned array get item")
         return self.data.simd_load[1](y * self.cols + x)
     
@@ -343,6 +330,8 @@ struct Array[dtype:DType,opt_nelts:Int]:
     fn __getitem__(self, y:Int, xspan:slice) raises ->Array[dtype,opt_nelts]:
         if y > self.cols - 1:
             raise Error("y excedes allocated columns")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_cols:Int = xspan.__len__()
         let new_Arr: Array[dtype,opt_nelts] = Array[dtype,opt_nelts](new_cols,1)
         for i in range(new_cols):
@@ -351,6 +340,10 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __getitem__(self, yspan:slice, x:Int) raises -> Array[dtype,opt_nelts]:
+        if x > self.rows - 1:
+            raise Error("x excedes allocated columns")
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.cols:
+            raise Error("yspan slice points outside of assigned memory")
         let new_rows:Int = yspan.__len__()
         let new_Arr: Array[dtype,opt_nelts] = Array[dtype,opt_nelts](new_rows,1)
         for i in range(new_rows):
@@ -359,6 +352,10 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __getitem__(self, yspan:slice, xspan:slice) raises -> Array[dtype,opt_nelts]:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.cols:
+            raise Error("yspan slice points outside of assigned memory")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_cols:Int = xspan.__len__()
         let new_rows:Int = yspan.__len__()
         let new_Arr: Array[dtype,opt_nelts] = Array[dtype,opt_nelts](new_rows,new_cols)
@@ -369,13 +366,14 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __getitem__(self, x:Int) raises -> SIMD[dtype,1]:
-        let safe: Bool = x>(self.rows-1)
-        if safe:
+        if x>(self.size-1):
             raise Error("Index Outside of assigned array get item")
         return self.data.simd_load[1](x)
     
     @always_inline
     fn __getitem__(self, span:slice) raises -> Array[dtype,opt_nelts]:
+        if span[0]+span.__len__()*(span[1]-span[0]) > self.size:
+            raise Error("span slice points outside of assigned memory")
         let new_size:Int = span.__len__()
         let new_Arr: Array[dtype,opt_nelts] = Array[dtype,opt_nelts](new_size,1)
         for i in range(new_size):
@@ -407,21 +405,22 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __setitem__(self, y: Int, x: Int, val: SIMD[dtype,1]) raises:
-        let safe: Bool = x>(self.rows-1) or y>(self.cols-1)
-        if safe:
+        if x>(self.rows-1) or y>(self.cols-1):
             raise Error("Index Outside of assigned array set item")
         return self.data.simd_store[1](y * self.cols + x, val)
     
     @always_inline
     fn __setitem__(self,  x: Int, val: SIMD[dtype,1]) raises:
-        # if self.cols>1:
-        #     raise Error("Sub arrays not implemented for 2d Arrays")
         if x>(self.size-1):
             raise Error("Index Outside of assigned array set item 1d single")
         return self.data.simd_store[1]( x, val)
     
     @always_inline
     fn __setitem__(inout self,  span: slice, val: Array[dtype,opt_nelts]) raises:
+        if span[0]+span.__len__()*(span[1]-span[0]) > self.size:
+            raise Error("span slice points outside of assigned memory")
+        if span[0]+span.__len__()*(span[1]-span[0]) > val.size:
+            raise Error("span slice points outside of assigned memory for val")
         let new_size:Int = span.__len__()
         if val.size != new_size:
             raise Error("Set item slice array: val is not large enough to fill the array")
@@ -433,12 +432,18 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __setitem__(inout self, y: Int, xspan: slice, val: SIMD[dtype,1]) raises:
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_size:Int = xspan.__len__()
         for i in range(new_size): 
             self[y,xspan[i]] = val
     
     @always_inline
     fn __setitem__(inout self, y: Int,  xspan: slice, val: Array[dtype,opt_nelts]) raises:
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
+        # if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > val.rows:
+        #     raise Error("xspan slice points outside of assigned memory of val")
         let new_size:Int = xspan.__len__()
         # if val.size < new_size:
         #     raise Error("Set item slice array: val is not large enough to fill the array")
@@ -448,21 +453,31 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  x: Int, val: SIMD[dtype,1]) raises:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.rows:
+            raise Error("yspan slice points outside of assigned memory")
         let new_size:Int = yspan.__len__()
         for i in range(new_size): 
             self[yspan[i], x] = val
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  x: Int, val: Array[dtype,opt_nelts]) raises:
+        # if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > val.rows:
+        #     raise Error("yspan slice points outside of assigned memory of val")
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.rows:
+            raise Error("yspan slice points outside of assigned memory")
         let new_size:Int = yspan.__len__()
-        # if val.size < new_size:
-        #     raise Error("Set item slice array: val is not large enough to fill the array")
+        if val.size != new_size:
+            raise Error("Set item slice array: val is not large enough to fill the array")
         for i in range(new_size): 
             self[yspan[i], x] = val[i]
     
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  xspan: slice, val: SIMD[dtype,1]) raises:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.cols:
+            raise Error("yspan slice points outside of assigned memory")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
         let new_cols:Int = yspan.__len__()
         let new_rows:Int = xspan.__len__()
         for i in range(new_cols): 
@@ -471,6 +486,14 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline
     fn __setitem__(inout self, yspan: slice,  xspan: slice, val: Array[dtype,opt_nelts]) raises:
+        if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > self.cols:
+            raise Error("yspan slice points outside of assigned memory")
+        if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > self.rows:
+            raise Error("xspan slice points outside of assigned memory")
+        # if yspan[0]+yspan.__len__()*(yspan[1]-yspan[0]) > val.cols:
+        #     raise Error("yspan slice points outside of assigned memory of val")
+        # if xspan[0]+xspan.__len__()*(xspan[1]-xspan[0]) > val.rows:
+        #     raise Error("xspan slice points outside of assigned memory of val")
         let new_cols:Int = yspan.__len__()
         let new_rows:Int = xspan.__len__()
         # if val.size < new_size:
@@ -481,6 +504,8 @@ struct Array[dtype:DType,opt_nelts:Int]:
     
     @always_inline    
     fn __setitem__(inout self,  span: slice, val: SIMD[dtype,1]) raises:
+        if span[0]+span.__len__()*(span[1]-span[0]) > self.size:
+            raise Error("span slice points outside of assigned memory")
         let new_size:Int = span.__len__()
         for i in range(new_size): 
             self.data.simd_store[1](i,val)
@@ -496,7 +521,7 @@ struct Array[dtype:DType,opt_nelts:Int]:
         return result_array
     
     @always_inline
-    fn shape(self) raises:
+    fn get_shape(self) raises:
         print("cols: ",self.cols," rows: ",self.rows)
     
     @always_inline

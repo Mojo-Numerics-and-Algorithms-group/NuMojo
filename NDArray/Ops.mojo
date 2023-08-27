@@ -10,6 +10,7 @@ from python.object import PythonObject
 # from Bool import Bool
 from .Array2D import Array
 
+#Main struct of 2D array allows for creation and operations on numerical types
 @register_passable("trivial")
 struct ndarray[dtype:DType,opt_nelts: Int]:
     var create: Create[dtype,opt_nelts]# = Create[dtype,opt_nelts]
@@ -18,7 +19,8 @@ struct ndarray[dtype:DType,opt_nelts: Int]:
         # self.math = Math[dtype,opt_nelts]
         # self.create 
         return self
-    
+
+#Creation methods    
 @register_passable("trivial")
 struct Create[dtype:DType,opt_nelts: Int]:
         fn arrange(self,start:SIMD[dtype,1],end:SIMD[dtype,1],step:SIMD[dtype,1])raises->Array[dtype,opt_nelts]:
@@ -49,6 +51,8 @@ struct Create[dtype:DType,opt_nelts: Int]:
         var arr: Array[dtype,opt_nelts] = Array[dtype,opt_nelts](rows,cols)
         arr.fill(1)
         return arr
+
+#Mathematics covering trig and other single input ops        
 @register_passable("trivial")
 struct Math[dtype:DType,opt_nelts:Int]:
     fn abs(self,arr:Array[dtype,opt_nelts])->Array[dtype,opt_nelts]:
@@ -470,3 +474,4 @@ struct Math[dtype:DType,opt_nelts:Int]:
                 res_arr.data.simd_store[1](i, simd_data)
         return res_arr
 
+#TODO implement Logical struct and integrate into NDArray

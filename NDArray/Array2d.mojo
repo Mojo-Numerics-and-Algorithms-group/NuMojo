@@ -1,10 +1,12 @@
+#TODO add rmethods for math and getting and setting behavior for boolean array inputs
 from math import mul,sub,add,div,clamp,abs,floor,ceil,ceildiv,trunc,sqrt,rsqrt,exp2,ldexp,exp,frexp,log,log2,copysign,erf,tanh,isclose,all_true,any_true,none_true,reduce_bit_count,iota,is_power_of_2,is_odd,is_even,fma,reciprocal,identity,greater,greater_equal,less,less_equal,equal,not_equal,select,max,min,pow,div_ceil,align_down,align_up,acos,asin,atan,atan2,cos,sin,tan,acosh,asinh,atanh,cosh,sinh,expm1,log10,log1p,logb,cbrt,hypot,erfc,lgamma,tgamma,nearbyint,rint,round,remainder,nextafter,j0,j1,y0,y1,scalb,gcd,lcm,factorial,nan,isnan
 from memory.unsafe import DTypePointer
 from sys.info import simdwidthof
 from python import Python
 from python.object import PythonObject
 from .BoolArray2D import BoolArray
-    
+
+#Primary Array struct, valid for numeric types other than Boolean
 struct Array[dtype:DType,opt_nelts:Int]:
     var data: DTypePointer[dtype]
     var rows: Int

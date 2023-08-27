@@ -1,3 +1,6 @@
+#TODO implement more operations methods for booleans
+
+
 from math import mul,sub,add,div,clamp,abs,floor,ceil,ceildiv,trunc,sqrt,rsqrt,exp2,ldexp,exp,frexp,log,log2,copysign,erf,tanh,isclose,all_true,any_true,none_true,reduce_bit_count,iota,is_power_of_2,is_odd,is_even,fma,reciprocal,identity,greater,greater_equal,less,less_equal,equal,not_equal,select,max,min,pow,div_ceil,align_down,align_up,acos,asin,atan,atan2,cos,sin,tan,acosh,asinh,atanh,cosh,sinh,expm1,log10,log1p,logb,cbrt,hypot,erfc,lgamma,tgamma,nearbyint,rint,round,remainder,nextafter,j0,j1,y0,y1,scalb,gcd,lcm,factorial,nan,isnan
 from memory.unsafe import DTypePointer
 from sys.info import simdwidthof
@@ -12,6 +15,7 @@ from python.object import PythonObject
 alias bool_nelts  = simdwidthof[DType.bool]()
 alias dt_bool = DType.bool
 
+# Boolean Array struct, for use as an output on logical operations and for masking/setting values
 struct BoolArray:
     var data: DTypePointer[dt_bool]
     var rows: Int

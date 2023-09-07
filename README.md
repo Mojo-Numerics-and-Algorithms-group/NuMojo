@@ -1,4 +1,4 @@
-# Mojo-Arrays
+# Mojo-Arrays- Not yet updated to SDK
 ## Description
 A little project for vectorized N-Dimensional Arrays in native mojo
 ## Goals

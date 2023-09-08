@@ -1,8 +1,6 @@
 # Mojo-Arrays
 ## Description
 A little project for vectorized N-Dimensional Arrays in native mojo
-
-For the SDK use ndarray, and refer to demo.mojo for examples.
 ## Goals
 * Vectorized, robustly statically typed, nd arrays with all of the standard matrix operations
 * Eventually to be made compatible with mojo implementations or ABI of LAPACK and BLAS for linear algebra operations.
@@ -17,3 +15,6 @@ For the SDK use ndarray, and refer to demo.mojo for examples.
 * All single SIMD input operations from Standard Math: trig(except atan2) and hyperbolic trig, etc.
 * Getting and setting from slices.
 
+## Setup
+* git clone https://github.com/MadAlex1997/Mojo-Arrays
+* run demo.mojo for examples

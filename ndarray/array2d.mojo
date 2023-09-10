@@ -356,6 +356,7 @@ struct Array[dtype:DType,opt_nelts:Int]:
         for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
             let simd_data_self = self.data.simd_load[opt_nelts](i)
             let simd_data_rhs = rhs.data.simd_load[opt_nelts](i)
+            self.data.simd_store[opt_nelts](i, func[dtype,opt_nelts](simd_data_self, simd_data_rhs))
             
         
         # let rt =Runtime()

@@ -7,6 +7,7 @@ from sys.info import simdwidthof
 # from io import print, put_new_line, print_no_newline
 from python import Python
 from python.object import PythonObject
+from math.limit import inf, neginf
 # from Bool import Bool
 # from runtime.llcl import num_cores, Runtime
 # from algorithm.functional import parallelize
@@ -652,6 +653,57 @@ struct Array[dtype:DType,opt_nelts:Int]:
     @always_inline
     fn round(self,arr:Array[dtype,opt_nelts])->Array[dtype,opt_nelts]:
         return self.math_func[round](arr)
+    
+    # Reduce functions
+    @always_inline
+    fn sum(self, arr:Array[dtype,opt_nelts])raises->SIMD[dtype,1]:
+        var total:SIMD[dtype,1] = 0
+        for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+            let simd_data = arr.data.simd_load[opt_nelts](i)
+            total += simd_data.reduce_add()
+        for i in range(opt_nelts*(arr.size//opt_nelts),arr.size):
+            total += arr[i]
+        return total
+    
+    @always_inline
+    fn prod(self, arr:Array[dtype,opt_nelts])raises->SIMD[dtype,1]:
+        var total:SIMD[dtype,1] = 0
+        for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+            let simd_data = arr.data.simd_load[opt_nelts](i)
+            total *= simd_data.reduce_mul()
+        for i in range(opt_nelts*(arr.size//opt_nelts),arr.size):
+            total *= arr[i]
+        return total
+
+    @always_inline
+    fn avg(self, arr:Array[dtype,opt_nelts])raises->SIMD[dtype,1]:
+        return self.sum(arr)/arr.size
+    
+    @always_inline
+    fn max(self, arr:Array[dtype,opt_nelts])raises->SIMD[dtype,1]:
+        var max: SIMD[dtype,1] = 0
+        for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+            let simd_data = arr.data.simd_load[opt_nelts](i)
+            let p_max = simd_data.reduce_max()
+            if i==0 or p_max>max:
+                max=p_max
+        for i in range(opt_nelts*(arr.size//opt_nelts),arr.size):
+            if arr[i]>max:
+                max = arr[i]
+        return max
+    
+    @always_inline
+    fn min(self, arr:Array[dtype,opt_nelts])raises->SIMD[dtype,1]:
+        var min: SIMD[dtype,1] = 0
+        for i in range(0, opt_nelts*(arr.size//opt_nelts), opt_nelts):
+            let simd_data = arr.data.simd_load[opt_nelts](i)
+            let p_min = simd_data.reduce_max()
+            if i==0 or p_min<min:
+                min=p_min
+        for i in range(opt_nelts*(arr.size//opt_nelts),arr.size):
+            if arr[i]<min:
+                min = arr[i]
+        return min
 
     # Array Creation
     fn arrange(self,start:SIMD[dtype,1],end:SIMD[dtype,1],step:SIMD[dtype,1])raises->Array[dtype,opt_nelts]:

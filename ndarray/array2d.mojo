@@ -704,6 +704,17 @@ struct Array[dtype:DType,opt_nelts:Int]:
             if arr[i]<min:
                 min = arr[i]
         return min
+    
+    @always_inline
+    fn `var`(self, arr:Array[dtype,opt_nelts])raises->SIMD[dtype,1]:
+        let n:SIMD[dtype,1]=arr.size
+        return self.sum((arr-self.avg(arr))**2)/n
+    
+    @always_inline
+    fn std(self, arr:Array[dtype,opt_nelts])raises->SIMD[dtype,1]:
+        let n:SIMD[dtype,1]=arr.size
+        return sqrt[dtype,1](self.sum((arr-self.avg(arr))**2)/n)
+
 
     # Array Creation
     fn arrange(self,start:SIMD[dtype,1],end:SIMD[dtype,1],step:SIMD[dtype,1])raises->Array[dtype,opt_nelts]:

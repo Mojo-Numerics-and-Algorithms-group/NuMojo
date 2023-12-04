@@ -46,7 +46,7 @@ struct Array[dtype:DType,opt_nelts:Int]:
         self.data = DTypePointer[dtype].alloc(self.rows * self.cols)
         self.size = other.rows * other.cols
         
-         for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
+        for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
             let other_data = other.data.simd_load[opt_nelts](i)
             self.data.simd_store[opt_nelts](i,other_data)
         if self.size%opt_nelts != 0 :    
@@ -767,5 +767,3 @@ struct Array[dtype:DType,opt_nelts:Int]:
             for row in range(self.rows):
                 numpy_array.itemset((row, col), self[col, row])
         return numpy_array
-
-    

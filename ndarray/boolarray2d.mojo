@@ -35,7 +35,7 @@ struct BoolArray:
         self.cols = other.cols
         self.data = DTypePointer[dt_bool].alloc(self.rows * self.cols)
         self.size = other.rows * other.cols
-         for i in range(0, bool_nelts*(self.size//bool_nelts), bool_nelts):
+        for i in range(0, bool_nelts*(self.size//bool_nelts), bool_nelts):
             let other_data = other.data.simd_load[bool_nelts](i)
             self.data.simd_store[bool_nelts](i,other_data)
         if self.size%bool_nelts != 0 :    
@@ -355,7 +355,7 @@ struct Array[dtype:DType,opt_nelts:Int]:
         self.cols = other.cols
         self.data = DTypePointer[dtype].alloc(self.rows * self.cols)
         self.size = other.rows * other.cols
-         for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
+        for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
             let other_data = other.data.simd_load[opt_nelts](i)
             self.data.simd_store[opt_nelts](i,other_data)
         if self.size%opt_nelts != 0 :    

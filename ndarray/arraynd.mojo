@@ -9,7 +9,7 @@ from python import Python
 from python.object import PythonObject
 from math.limit import inf, neginf
 from tensor.tensor import Tensor, TensorShape
-from utils.list import VariadicList
+# from utils.list import VariadicList
 from utils.static_tuple import StaticTuple
 # from Bool import Bool
 # from runtime.llcl import num_cores, Runtime
@@ -25,7 +25,7 @@ struct Array[dtype:DType,opt_nelts:Int]:
     fn __init__(inout self, *dims:Int):
         self.tshape = TensorShape(dims)
         self.data = Tensor[dtype](self.tshape)
-        self.dim_list = VariadicList[Int](dims)
+        self.dim_list = dims
         self.size = self.tshape.num_elements()
         
         self.zero() 
@@ -52,7 +52,7 @@ struct Array[dtype:DType,opt_nelts:Int]:
         self.dim_list = other.dim_list
         self.size = self.tshape.num_elements()
         
-         for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
+        for i in range(0, opt_nelts*(self.size//opt_nelts), opt_nelts):
             let other_data = other.data.simd_load[opt_nelts](i)
             self.data.simd_store[opt_nelts](i,other_data)
         if self.size%opt_nelts != 0 :    

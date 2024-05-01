@@ -1,0 +1,9 @@
+
+trait Algebriac:
+    fn add(self,rhs:Algebriac,lhs:Algebriac):
+        ...
+    fn sub(self,rhs:Algebriac,lhs:Algebriac):
+        ...
+    fn mult(self,rhs:Algebriac,lhs:Algebriac):
+        ...
+    

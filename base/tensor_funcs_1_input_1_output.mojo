@@ -143,8 +143,8 @@ fn y1[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
 fn ulp[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _math_func[dtype,math.ulp](tensor)
 
-# To test uncomment main build and and run
-# fn main():
+# To test copy this file somewhere else uncomment main build and and run
+# def main():
 #     var tens:Tensor[DType.float32] = Tensor[DType.float32](100,100)
 #     for i in range(10_000):
 #         tens[i]= SIMD[DType.float32,1](3.141592/4)

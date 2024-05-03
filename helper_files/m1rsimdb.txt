@@ -1,0 +1,12 @@
+is_power_of_2
+is_odd
+is_even
+greater
+greater_equal
+less
+less_equal
+equal
+not_equal
+isnan
+isinf
+isfinite

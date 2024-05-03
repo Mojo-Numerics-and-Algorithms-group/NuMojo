@@ -4,7 +4,7 @@ import benchmark
 from benchmark.compiler import keep
 """
 TODO
-Tell Modular something is wrong with simd bools
+Tell Modular something is wrong with simd bools store method
 """
 alias sbool = SIMD[DType.bool,1]
 fn all_true(tensor:Tensor[DType.bool])->Bool:

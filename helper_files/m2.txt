@@ -9,4 +9,3 @@ hypot
 nextafter
 scalb
 remainder
-pow

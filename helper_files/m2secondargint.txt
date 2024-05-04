@@ -2,3 +2,4 @@ rotate_bits_left
 rotate_bits_right
 rotate_left
 rotate_right
+pow

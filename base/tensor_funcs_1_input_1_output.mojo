@@ -44,6 +44,9 @@ fn round_half_up[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
 fn rsqrt[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _math_func[dtype,math.rsqrt](tensor)
 
+fn sqrt[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    return _math_func[dtype,math.sqrt](tensor)
+
 fn exp2[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _math_func[dtype,math.exp2](tensor)
 

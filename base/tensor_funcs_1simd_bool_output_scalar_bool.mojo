@@ -5,6 +5,7 @@ from benchmark.compiler import keep
 """
 TODO
 Tell Modular something is wrong with simd bools store method
+-Done waiting on respose from issue: https://github.com/modularml/mojo/issues/2492
 """
 alias sbool = SIMD[DType.bool,1]
 fn all_true(tensor:Tensor[DType.bool])->Bool:

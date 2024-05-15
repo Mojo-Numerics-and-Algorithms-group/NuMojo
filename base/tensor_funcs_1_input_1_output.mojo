@@ -17,104 +17,11 @@ fn _math_func[dtype:DType, func: fn[type:DType, simd_w:Int](SIMD[type, simd_w]) 
                 result_tensor.store[width=1](i, simd_data)
     return result_tensor
 
-fn abs[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.abs](tensor)
-
-fn floor[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.floor](tensor)
-
-fn ceil[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.ceil](tensor)
-
-fn trunc[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.trunc](tensor)
-
-fn round[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.round](tensor)
-
-fn roundeven[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.roundeven](tensor)
-
-fn round_half_down[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.round_half_down](tensor)
-
-fn round_half_up[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.round_half_up](tensor)
-
-fn rsqrt[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.rsqrt](tensor)
-
-fn sqrt[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.sqrt](tensor)
-
-fn exp2[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.exp2](tensor)
-
-fn exp[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.exp](tensor)
-
-fn log[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.log](tensor)
-
-fn log2[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.log2](tensor)
-
 fn erf[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _math_func[dtype,math.erf](tensor)
 
-fn tanh[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.tanh](tensor)
-
-fn reciprocal[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.reciprocal](tensor)
-
 fn identity[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _math_func[dtype,math.identity](tensor)
-
-fn acos[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.acos](tensor)
-
-fn asin[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.asin](tensor)
-
-fn atan[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.atan](tensor)
-
-fn cos[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.cos](tensor)
-
-fn sin[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.sin](tensor)
-
-fn tan[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.tan](tensor)
-
-fn acosh[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.acosh](tensor)
-
-fn asinh[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.asinh](tensor)
-
-fn atanh[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.atanh](tensor)
-
-fn cosh[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.cosh](tensor)
-
-fn sinh[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.sinh](tensor)
-
-fn expm1[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.expm1](tensor)
-
-fn log10[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.log10](tensor)
-
-fn log1p[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.log1p](tensor)
-
-fn cbrt[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
-    return _math_func[dtype,math.cbrt](tensor)
 
 fn erfc[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _math_func[dtype,math.erfc](tensor)

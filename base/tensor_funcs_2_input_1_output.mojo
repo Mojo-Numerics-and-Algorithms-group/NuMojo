@@ -23,29 +23,8 @@ fn _math_func[dtype:DType, func: fn[type:DType, simd_w:Int](SIMD[type, simd_w],S
                 result_tensor.store[width=1](i, func[dtype, 1](simd_data1,simd_data2))
     return result_tensor
 
-fn mod[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
-    return _math_func[dtype,math.mod](tensor1, tensor2)
-
-fn mul[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
-    return _math_func[dtype,math.mul](tensor1, tensor2)
-
-fn sub[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
-    return _math_func[dtype,math.sub](tensor1, tensor2)
-
-fn add[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
-    return _math_func[dtype,math.add](tensor1, tensor2)
-
-fn div[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
-    return _math_func[dtype,math.div](tensor1, tensor2)
-
 fn copysign[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
     return _math_func[dtype,math.copysign](tensor1, tensor2)
-
-fn atan2[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
-    return _math_func[dtype,math.atan2](tensor1, tensor2)
-
-fn hypot[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
-    return _math_func[dtype,math.hypot](tensor1, tensor2)
 
 fn nextafter[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
     return _math_func[dtype,math.nextafter](tensor1, tensor2)

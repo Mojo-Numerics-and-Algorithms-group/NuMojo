@@ -2,6 +2,8 @@ from .tensor_funcs_1_input_1_output import *
 from .tensor_funcs_1simd_bool_output_scalar_bool import *
 from .tensor_funcs_2_input_1_output import *
 from .tensor_funcs_restrict import *
+from .arithmatic import *
+from .trig import *
 """
 Vectorized Tensor versions of functions from Mojo's standard math library
 Most of this should get upstreamed when they opensource math and tensor

@@ -1,6 +1,9 @@
 import math
 import ._math_funcs as _mf
-
+from tensor import Tensor
+"""
+implements arithmetic functions
+"""
 # ===------------------------------------------------------------------------===#
 # Addition/Subtraction
 # ===------------------------------------------------------------------------===#
@@ -15,6 +18,9 @@ fn add[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[d
 # Multiplication/Division
 # ===------------------------------------------------------------------------===#
 
+fn copysign[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
+    return _mf._math_func_2_tensor_in_one_tensor_out[dtype,math.copysign](tensor1, tensor2)
+
 fn mod[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
     return _mf._math_func_2_tensor_in_one_tensor_out[dtype,math.mod](tensor1, tensor2)
 
@@ -24,6 +30,8 @@ fn mul[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[d
 fn div[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
     return _mf._math_func_2_tensor_in_one_tensor_out[dtype,math.div](tensor1, tensor2)
 
+fn remainder[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
+    return _mf._math_func_2_tensor_in_one_tensor_out[dtype,math.remainder](tensor1, tensor2)
 
 fn reciprocal[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.reciprocal](tensor)
@@ -33,6 +41,9 @@ fn reciprocal[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
 # ===------------------------------------------------------------------------===#
 fn cbrt[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.cbrt](tensor)
+
+fn pow[dtype:DType](tensor1:Tensor[dtype],intval:Int)->Tensor[dtype]:
+    return _mf._math_func_simd_int[dtype,math.pow](tensor1, intval)
 
 fn rsqrt[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.rsqrt](tensor)
@@ -48,6 +59,9 @@ fn exp[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
 
 fn expm1[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.expm1](tensor)
+
+fn scalb[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
+    return _mf._math_func_2_tensor_in_one_tensor_out[dtype,math.scalb](tensor1, tensor2)
 # ===------------------------------------------------------------------------===#
 # Logarithms
 # ===------------------------------------------------------------------------===#
@@ -91,3 +105,6 @@ fn round_half_down[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
 
 fn round_half_up[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.round_half_up](tensor)
+
+fn nextafter[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
+    return _mf._math_func_2_tensor_in_one_tensor_out[dtype,math.nextafter](tensor1, tensor2)

@@ -354,7 +354,7 @@ fn log1p[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
 
 fn abs[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     """
-    Elementwise absolute value of plus tensor.
+    Elementwise absolute value of tensor.
         
     Parameters:
         dtype: The element type.
@@ -368,25 +368,125 @@ fn abs[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.abs](tensor)
 
 fn floor[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    """
+    Elementwise round down to nearest whole number of tensor.
+        
+    Parameters:
+        dtype: The element type.
+    
+    Args:
+        tensor: A tensor.
+    
+    Returns:
+        A tensor equal to floor(tensor).
+    """
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.floor](tensor)
 
 fn ceil[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    """
+    Elementwise round up to nearest whole number of tensor.
+        
+    Parameters:
+        dtype: The element type.
+    
+    Args:
+        tensor: A tensor.
+    
+    Returns:
+        A tensor equal to ceil(tensor).
+    """
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.ceil](tensor)
 
 fn trunc[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    """
+    Elementwise remove decimal value from float whole number of tensor.
+        
+    Parameters:
+        dtype: The element type.
+    
+    Args:
+        tensor: A tensor.
+    
+    Returns:
+        A tensor equal to trunc(tensor).
+    """
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.trunc](tensor)
 
 fn round[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    """
+    Elementwise  tensor.
+        
+    Parameters:
+        dtype: The element type.
+    
+    Args:
+        tensor: A tensor.
+    
+    Returns:
+        A tensor equal to trunc(tensor).
+    """
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.round](tensor)
 
 fn roundeven[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    """
+    Performs elementwise banker's rounding on the elements of a tensor.
+
+    Parameters:
+        dtype: The dtype of the input and output Tensor.
+
+    Args:
+        tensor: Tensor to perform rounding on.
+
+    Returns:
+    The elementwise banker's rounding of tensor.
+
+    This rounding goes to the nearest integer with ties toward the nearest even integer.
+    """
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.roundeven](tensor)
 
 fn round_half_down[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    """
+    Rounds ties towards the smaller integer.
+
+    Parameters:
+        dtype: The dtype of the input and output Tensor.
+
+    Args:
+        tensor: Tensor to perform rounding on.
+
+    Returns:
+    The elementwise rounding of x evaluating ties towards the smaller integer.
+    """
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.round_half_down](tensor)
 
 fn round_half_up[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
+    """
+    Rounds ties towards the larger integer.
+
+    Parameters:
+        dtype: The dtype of the input and output Tensor.
+    
+    Args:
+        tensor: Tensor to perform rounding on.
+
+    Returns:
+    The elementwise rounding of x evaluating ties towards the larger integer.
+    """
     return _mf._math_func_1_tensor_in_one_tensor_out[dtype,math.round_half_up](tensor)
 
 fn nextafter[dtype:DType](tensor1:Tensor[dtype],tensor2:Tensor[dtype])raises->Tensor[dtype]:
+    """
+    Computes the nextafter of the inputs.
+
+    Parameters:
+        dtype: The dtype of the input and output Tensor. Constraints: must be a floating-point type.
+
+
+    Args:
+        tensor1: The first input argument.
+        tensor2: The second input argument.
+
+    Returns:
+    The nextafter of the inputs.
+    """
     return _mf._math_func_2_tensor_in_one_tensor_out[dtype,math.nextafter](tensor1, tensor2)

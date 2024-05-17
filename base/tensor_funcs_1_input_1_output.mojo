@@ -2,7 +2,7 @@ import math
 from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
-
+#TODO move remaining functions into numojo dir
 fn _math_func[dtype:DType, func: fn[type:DType, simd_w:Int](SIMD[type, simd_w]) -> SIMD[type, simd_w]](tensor: Tensor[dtype])->Tensor[dtype]:
     var result_tensor: Tensor[dtype]=Tensor[dtype](tensor.shape())
     alias opt_nelts = simdwidthof[dtype]()

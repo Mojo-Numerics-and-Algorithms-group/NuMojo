@@ -1,6 +1,10 @@
 import math
 import ._math_funcs as _mf
 from tensor import Tensor
+
+"""
+implements trigonometry functions
+"""
 # ===------------------------------------------------------------------------===#
 # Inverse Trig
 # ===------------------------------------------------------------------------===#

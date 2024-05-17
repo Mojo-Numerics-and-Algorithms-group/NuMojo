@@ -3,7 +3,7 @@ from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
 from testing import assert_raises
-"""TODO Figure out why pass manager hates these functions"""
+# TODO Figure out why pass manager hates these functions
 fn _math_func_shift[shift:Int, dtype:DType, func: fn[shift:Int ,type:DType,  width:Int](SIMD[type, width]) -> SIMD[type, width]](tensor: Tensor[dtype])->Tensor[dtype]:
     var result_tensor: Tensor[dtype]=Tensor[dtype](tensor.shape())
     alias opt_nelts = simdwidthof[dtype]()

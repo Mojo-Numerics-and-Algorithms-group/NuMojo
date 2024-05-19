@@ -1,3 +1,0 @@
-max
-min
-reduce_bit_count

@@ -23,7 +23,7 @@ Clone the repository and build
 # Usage
 For now
 ```Mojo
-import base as numojo
+import numojo
 from Tensor import Tensor
 def main():
     var tens = Tensor[DType.float32](10,10)
@@ -31,7 +31,7 @@ def main():
     print(numojo.sin[DType.float32](tens))
 ```
 ## Available functions include:
-abs, floor, ceil, trunc, round, roundeven, round_half_down, round_half_up, rsqrt, exp2, exp, log, log2, erf, tanh, reciprocal, identity, acos, asin, atan, cos, sin, tan, acosh, asinh, atanh, cosh, sinh, expm1, log10, log1p, cbrt, erfc, lgamma, tgamma, nearbyint, rint, j0, j1, y0, y1, ulp, all_true, any_true, none_true, pow, mod, mul, sub, add, div, copysign, atan2, hypot, nextafter, scalb, remainder, clamp
+abs, floor, ceil, trunc, round, roundeven, round_half_down, round_half_up, rsqrt, exp2, exp, log, log2, tanh, reciprocal, acos, asin, atan, cos, sin, tan, acosh, asinh, atanh, cosh, sinh, expm1, log10, log1p, cbrt, pow, mod, mul, sub, add, div, copysign, atan2, hypot, nextafter, scalb, remainder
 # Warnings
 
 This library is still very much a work in progress and may change at any time. Also, the standard tensor has many rough edges.

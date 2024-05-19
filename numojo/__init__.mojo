@@ -1,4 +1,4 @@
-from .arithmatic import *
+from .arithmetic import *
 from .trig import *
 from .cumulative_reduce import *
 

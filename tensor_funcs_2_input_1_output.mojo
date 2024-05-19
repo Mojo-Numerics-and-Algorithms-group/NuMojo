@@ -3,8 +3,8 @@ from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
 from testing import assert_raises
-# TODO Figure out why pass manager hates these functions
-fn _math_func_shift[shift:Int, dtype:DType, func: fn[shift:Int ,type:DType,  width:Int](SIMD[type, width]) -> SIMD[type, width]](tensor: Tensor[dtype])->Tensor[dtype]:
+
+fn _math_func_shift[shift:Int, dtype:DType, func: fn[shift:Int ,type:DType,  simd_w:Int](SIMD[type, simd_w]) -> SIMD[type, simd_w]](tensor: Tensor[dtype])->Tensor[dtype]:
     var result_tensor: Tensor[dtype]=Tensor[dtype](tensor.shape())
     alias opt_nelts = simdwidthof[dtype]()
     for i in range(0, opt_nelts*(tensor.num_elements()//opt_nelts), opt_nelts):
@@ -30,3 +30,6 @@ fn rotate_left[shift:Int, dtype:DType](tensor1:Tensor[dtype])->Tensor[dtype]:
 
 fn rotate_right[shift:Int, dtype:DType](tensor1:Tensor[dtype])->Tensor[dtype]:
     return _math_func_shift[shift, dtype,math.rotate_right](tensor1)
+
+
+# fn main():

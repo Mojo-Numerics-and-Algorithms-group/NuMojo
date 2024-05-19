@@ -1,6 +1,0 @@
-greater
-greater_equal
-less
-less_equal
-equal
-not_equal

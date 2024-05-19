@@ -1,6 +1,0 @@
-is_power_of_2
-is_odd
-is_even
-isnan
-isinf
-isfinite

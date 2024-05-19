@@ -3,7 +3,7 @@ from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
 from testing import assert_raises
-
+#TODO move remaining functions into numojo dir
 fn _math_func[dtype:DType, func: fn[type:DType, simd_w:Int](SIMD[type, simd_w],SIMD[type, simd_w],SIMD[type, simd_w]) -> SIMD[type, simd_w]](tensor1: Tensor[dtype], tensor2: Tensor[dtype], tensor3: Tensor[dtype])raises->Tensor[dtype]:
     if not ((tensor1.shape() == tensor2.shape()) and (tensor1.shape() == tensor3.shape())):
         with assert_raises():

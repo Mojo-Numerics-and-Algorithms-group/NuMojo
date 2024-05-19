@@ -2,11 +2,12 @@ import math
 from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
+#TODO
 """
-TODO
 Tell Modular something is wrong with simd bools store method
 -Done waiting on respose from issue: https://github.com/modularml/mojo/issues/2492
 """
+#TODO move remaining functions into numojo dir
 alias sbool = SIMD[DType.bool,1]
 fn all_true(tensor:Tensor[DType.bool])->Bool:
     """

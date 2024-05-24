@@ -245,26 +245,26 @@ fn cbrt[dtype: DType,
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.cbrt](tensor)
 
 
-fn pow[dtype: DType,
-    backend: _mf.Backend = _mf.Vectorized](tensor1: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-    """
-    Elementwise tensor to the power of intval.
+# fn pow[dtype: DType,
+#     backend: _mf.Backend = _mf.Vectorized](tensor1: Tensor[dtype], intval: Int) -> Tensor[dtype]:
+#     """
+#     Elementwise tensor to the power of intval.
 
-    Constraints:
-        Both tensors must have the same shapes.
+#     Constraints:
+#         Both tensors must have the same shapes.
 
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+#     Parameters:
+#         dtype: The element type.
+#         backend: Sets utility function origin, defualts to `Vectorized`.
 
-    Args:
-        tensor1: A tensor.
-        intval: An integer.
+#     Args:
+#         tensor1: A tensor.
+#         intval: An integer.
 
-    Returns:
-        A tensor equal to tensor**intval.
-    """
-    return backend()._math_func_simd_int[dtype, math.pow](tensor1, intval)
+#     Returns:
+#         A tensor equal to tensor**intval.
+#     """
+#     return backend()._math_func_simd_int[dtype, math.pow](tensor1, intval)
 
 
 fn rsqrt[dtype: DType,

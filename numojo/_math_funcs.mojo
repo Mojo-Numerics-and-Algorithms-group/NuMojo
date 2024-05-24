@@ -275,7 +275,7 @@ struct VectorizedVerbose(Backend):
         return result_tensor
 
 
-struct _Vectorized(Backend):
+struct Vectorized(Backend):
     """
     Vectorized Backend Struct.
 
@@ -430,12 +430,12 @@ struct _Vectorized(Backend):
         return result_tensor
 
 
-struct Vectorized(Backend):#Parallelized(Backend):
+struct VectorizedParallelized(Backend):
     """
-    Vectorized Backend Struct.
+    Vectorized and parrallelized Backend Struct.
 
-    Defualt Numojo computation backend takes advantage of SIMD.
-    Uses defualt simdwidth.
+    Currently an order of magnitude slower than Vectorized for most functions.
+    No idea why, Not Reccomened for use at this Time.
     """
     
     fn __init__(inout self:Self):

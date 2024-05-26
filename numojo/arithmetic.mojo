@@ -171,6 +171,53 @@ fn div[
         tensor1, tensor2
     )
 
+fn fma[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
+](tensor1: Tensor[dtype], tensor2: Tensor[dtype],tensor3: Tensor[dtype]) raises -> Tensor[dtype]:
+    """
+        Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
+
+        Constraints:
+            Both tensors must have the same shape.
+
+        Parameters:
+            dtype: The element type.
+            backend: Sets utility function origin, defualts to `Vectorized`.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: A tensor.
+            tensor3: A tensor.
+
+        Returns:
+            A a new tensor that is tensor with the function func applied.
+        """
+    return backend()._math_func_fma(tensor1, tensor2, tensor3)
+
+fn fma[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
+](tensor1: Tensor[dtype], tensor2: Tensor[dtype], simd: SIMD[dtype,1]) raises -> Tensor[dtype]:
+    """
+        Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
+
+        Constraints:
+            Both tensors must have the same shape
+
+        Parameters:
+            dtype: The element type.
+            backend: Sets utility function origin, defualts to `Vectorized`.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: A tensor.
+            simd: A SIMD[dtype,1] value to be added.
+
+        Returns:
+            A a new tensor that is tensor with the function func applied.
+        """
+    return backend()._math_func_fma(tensor1, tensor2, simd)
 
 fn remainder[
     dtype: DType,

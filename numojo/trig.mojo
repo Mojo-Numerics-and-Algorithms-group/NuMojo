@@ -1,6 +1,7 @@
 import math
 import . _math_funcs as _mf
 from tensor import Tensor
+from .arithmetic import sqrt, fma
 
 """
 implements trigonometry functions
@@ -170,7 +171,33 @@ fn hypot[
         tensor1, tensor2
     )
 
+fn hypot_fma[
+    dtype: DType,
+    backend:_mf.Backend = _mf.Vectorized
+](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+    """
+    Apply hypot also known as hypotenuse which finds the longest section of a right triangle
+    given the other two sides.
 
+    Constraints:
+        Both tensors must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized.
+
+    Args:
+        tensor1: A tensor.
+        tensor2: A tensor.
+
+    Returns:
+        The elementwise hypotenuse of `tensor1` and`tensor2`.
+    """
+    
+    
+    var tensor2_squared =fma[dtype,backend=backend](tensor2,tensor2,SIMD[dtype,1](0))
+    return sqrt[dtype,backend=backend](fma[dtype,backend=backend](tensor1,tensor1,tensor2_squared))
+    
 # ===------------------------------------------------------------------------===#
 # Inverse Hyperbolic Trig
 # ===------------------------------------------------------------------------===#

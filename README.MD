@@ -1,3 +1,4 @@
+[Discord](https://discord.gg/NcnSH5n26F)
 # Purpose 
 NuMojo is a library for numerical computing in Mojo similar to numpy in Python
 

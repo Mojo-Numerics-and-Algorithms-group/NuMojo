@@ -4,7 +4,7 @@ Tensor Traits will eventaully go here once we have our own version of tensor
 from tensor import Tensor
 
 # trait TensorLike:
-  
+
 #     fn __add__(self:Self, rhs:TensorLike)->Self:
 #         ...
 #     fn __add__(self:Self, rhs:Self)->Self:
@@ -15,4 +15,3 @@ from tensor import Tensor
 #     fn store[*, width: Int = 1](inout self: Self, index: Int, val: SIMD[type, width]):
 #         ...
 #     fn shape
-

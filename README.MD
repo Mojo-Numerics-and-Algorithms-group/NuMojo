@@ -15,7 +15,7 @@ NuMojo intends to try and get the most out of the capabilities of Mojo including
 NuMojo intends to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 
 # What NuMojo is not
-NuMojo is not a machine learning library, it will never include backpropagation in the base library.
+NuMojo is not a machine learning library, it will never include back-propagation in the base library.
 
 # How to install
 Clone the repository and build

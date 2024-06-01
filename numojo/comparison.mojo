@@ -11,8 +11,7 @@ implements comparison functions
 # Simple Elementwise Comparisons
 # ===------------------------------------------------------------------------===#
 fn greater[
-    dtype: DType,
-    backend:_mf.Backend = _mf.Vectorized
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[DType.bool]:
     """
     Performs elementwise check of whether values in x are greater than values in y.
@@ -36,9 +35,7 @@ fn greater[
 
 
 fn greater_equal[
-    dtype: DType,
-    backend:_mf.Backend = _mf.Vectorized
-    
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[DType.bool]:
     """
     Performs elementwise check of whether values in x are greater than or equal to values in y.
@@ -62,8 +59,7 @@ fn greater_equal[
 
 
 fn less[
-    dtype: DType,
-    backend:_mf.Backend = _mf.Vectorized
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[DType.bool]:
     """
     Performs elementwise check of whether values in x are to values in y.
@@ -81,12 +77,13 @@ fn less[
 
     An element of the result Tensor will be True if the corresponding element in x is or equal to the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.less](tensor1, tensor2)
+    return backend()._math_func_compare_2_tensors[dtype, math.less](
+        tensor1, tensor2
+    )
 
 
 fn less_equal[
-    dtype: DType,
-    backend:_mf.Backend = _mf.Vectorized
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[DType.bool]:
     """
     Performs elementwise check of whether values in x are less than or equal to values in y.
@@ -110,8 +107,7 @@ fn less_equal[
 
 
 fn equal[
-    dtype: DType,
-    backend:_mf.Backend = _mf.Vectorized
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[DType.bool]:
     """
     Performs elementwise check of whether values in x are equal to values in y.
@@ -129,12 +125,13 @@ fn equal[
 
     An element of the result Tensor will be True if the corresponding element in x is equal to the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.equal](tensor1, tensor2)
+    return backend()._math_func_compare_2_tensors[dtype, math.equal](
+        tensor1, tensor2
+    )
 
 
 fn not_equal[
-    dtype: DType,
-    backend:_mf.Backend = _mf.Vectorized
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[DType.bool]:
     """
     Performs elementwise check of whether values in x are not equal to values in y.

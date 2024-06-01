@@ -11,7 +11,9 @@ implements arithmetic functions
 
 
 fn add[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Perform addition on two tensors.
@@ -21,6 +23,7 @@ fn add[
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor1: A tensor.
@@ -29,13 +32,14 @@ fn add[
     Returns:
         The elementwise sum of `tensor1` and`tensor2`.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.add](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.add](
         tensor1, tensor2
     )
 
 
 fn sub[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Perform subtraction on two tensors.
@@ -45,6 +49,7 @@ fn sub[
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor1: A tensor.
@@ -53,7 +58,7 @@ fn sub[
     Returns:
         The elementwise difference of `tensor1` and`tensor2`.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.sub](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.sub](
         tensor1, tensor2
     )
 
@@ -64,7 +69,8 @@ fn sub[
 
 
 fn copysign[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Copy the sign of the first tensor and apply it to the second tensor.
@@ -74,6 +80,7 @@ fn copysign[
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor1: A tensor.
@@ -82,13 +89,14 @@ fn copysign[
     Returns:
         The second tensor multipied by the sign of the first tensor.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.copysign](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.copysign](
         tensor1, tensor2
     )
 
 
 fn mod[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Elementwise modulo of tensor1 and tensor2.
@@ -98,6 +106,7 @@ fn mod[
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor1: A tensor.
@@ -106,13 +115,14 @@ fn mod[
     Returns:
         A tensor equal to tensor1%tensor2.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.mod](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.mod](
         tensor1, tensor2
     )
 
 
 fn mul[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Elementwise product of tensor1 and tensor2.
@@ -122,6 +132,7 @@ fn mul[
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor1: A tensor.
@@ -130,13 +141,14 @@ fn mul[
     Returns:
         A tensor equal to tensor1*tensor2.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.mul](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.mul](
         tensor1, tensor2
     )
 
 
 fn div[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Elementwise quotent of tensor1 and tensor2.
@@ -146,6 +158,7 @@ fn div[
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor1: A tensor.
@@ -154,13 +167,61 @@ fn div[
     Returns:
         A tensor equal to tensor1/tensor2.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.div](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.div](
         tensor1, tensor2
     )
 
+fn fma[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
+](tensor1: Tensor[dtype], tensor2: Tensor[dtype],tensor3: Tensor[dtype]) raises -> Tensor[dtype]:
+    """
+        Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
+
+        Constraints:
+            Both tensors must have the same shape.
+
+        Parameters:
+            dtype: The element type.
+            backend: Sets utility function origin, defualts to `Vectorized`.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: A tensor.
+            tensor3: A tensor.
+
+        Returns:
+            A a new tensor that is tensor with the function func applied.
+        """
+    return backend()._math_func_fma(tensor1, tensor2, tensor3)
+
+fn fma[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
+](tensor1: Tensor[dtype], tensor2: Tensor[dtype], simd: SIMD[dtype,1]) raises -> Tensor[dtype]:
+    """
+        Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
+
+        Constraints:
+            Both tensors must have the same shape
+
+        Parameters:
+            dtype: The element type.
+            backend: Sets utility function origin, defualts to `Vectorized`.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: A tensor.
+            simd: A SIMD[dtype,1] value to be added.
+
+        Returns:
+            A a new tensor that is tensor with the function func applied.
+        """
+    return backend()._math_func_fma(tensor1, tensor2, simd)
 
 fn remainder[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Elementwise remainders of tensor.
@@ -170,6 +231,7 @@ fn remainder[
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor1: A tensor.
@@ -178,12 +240,13 @@ fn remainder[
     Returns:
         A tensor equal to tensor1//tensor2.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.remainder](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.remainder](
         tensor1, tensor2
     )
 
 
-fn reciprocal[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn reciprocal[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise reciprocals of tensor1 and tensor2.
 
@@ -192,6 +255,7 @@ fn reciprocal[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -199,7 +263,7 @@ fn reciprocal[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to 1/tensor.
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.reciprocal](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.reciprocal](
         tensor
     )
 
@@ -207,7 +271,8 @@ fn reciprocal[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
 # ===------------------------------------------------------------------------===#
 # Exponents/Roots
 # ===------------------------------------------------------------------------===#
-fn cbrt[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn cbrt[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise cuberoot of tensor.
 
@@ -216,6 +281,7 @@ fn cbrt[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -223,35 +289,39 @@ fn cbrt[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to tensor**(1/3).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.cbrt](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.cbrt](tensor)
 
 
-fn pow[dtype: DType](tensor1: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-    """
-    Elementwise tensor to the power of intval.
+# fn pow[dtype: DType,
+#     backend: _mf.Backend = _mf.Vectorized](tensor1: Tensor[dtype], intval: Int) -> Tensor[dtype]:
+#     """
+#     Elementwise tensor to the power of intval.
 
-    Constraints:
-        Both tensors must have the same shapes.
+#     Constraints:
+#         Both tensors must have the same shapes.
 
-    Parameters:
-        dtype: The element type.
+#     Parameters:
+#         dtype: The element type.
+#         backend: Sets utility function origin, defualts to `Vectorized`.
 
-    Args:
-        tensor1: A tensor.
-        intval: An integer.
+#     Args:
+#         tensor1: A tensor.
+#         intval: An integer.
 
-    Returns:
-        A tensor equal to tensor**intval.
-    """
-    return _mf._math_func_simd_int[dtype, math.pow](tensor1, intval)
+#     Returns:
+#         A tensor equal to tensor**intval.
+#     """
+#     return backend()._math_func_simd_int[dtype, math.pow](tensor1, intval)
 
 
-fn rsqrt[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn rsqrt[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise reciprocal squareroot of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -259,15 +329,17 @@ fn rsqrt[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to 1/tensor**(1/2).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.rsqrt](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.rsqrt](tensor)
 
 
-fn sqrt[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn sqrt[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise squareroot of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -275,15 +347,17 @@ fn sqrt[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to tensor**(1/2).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.sqrt](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.sqrt](tensor)
 
 
-fn exp2[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn exp2[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Calculate elementwise two to the power of tensor[i].
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -292,15 +366,17 @@ fn exp2[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
         A tensor with the shape of `tensor` with values equal to the
         2 to the power of the value in the original tensor at each position.
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.exp2](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.exp2](tensor)
 
 
-fn exp[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn exp[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Calculate elementwise euler's constant(e) to the power of tensor[i].
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -309,15 +385,17 @@ fn exp[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
         A tensor with the shape of `tensor` with values equal to the
         e to the power of the value in the original tensor at each position.
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.exp](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.exp](tensor)
 
 
-fn expm1[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn expm1[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Calculate elementwise euler's constant(e) to the power of tensor[i] minus1.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -326,13 +404,14 @@ fn expm1[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
         A tensor with the shape of `tensor` with values equal to the negative one plus
         e to the power of the value in the original tensor at each position.
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.expm1](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.expm1](tensor)
 
 
 fn scalb[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.scalb](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.scalb](
         tensor1, tensor2
     )
 
@@ -342,12 +421,14 @@ fn scalb[
 # ===------------------------------------------------------------------------===#
 
 
-fn log[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn log[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise natural logarithm of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -355,18 +436,20 @@ fn log[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to ln(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.log](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log](tensor)
 
 
 alias ln = log
 
 
-fn log2[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn log2[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise logarithm base two of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -374,15 +457,17 @@ fn log2[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to log_2(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.log2](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log2](tensor)
 
 
-fn log10[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn log10[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise logarithm base ten of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -390,15 +475,17 @@ fn log10[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to log_10(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.log10](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log10](tensor)
 
 
-fn log1p[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn log1p[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise natural logarithm of 1 plus tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -406,7 +493,7 @@ fn log1p[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to ln(tensor+1).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.log1p](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log1p](tensor)
 
 
 # ===------------------------------------------------------------------------===#
@@ -414,12 +501,14 @@ fn log1p[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn abs[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn abs[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise absolute value of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -427,15 +516,17 @@ fn abs[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to abs(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.abs](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.abs](tensor)
 
 
-fn floor[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn floor[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise round down to nearest whole number of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -443,15 +534,17 @@ fn floor[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to floor(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.floor](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.floor](tensor)
 
 
-fn ceil[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn ceil[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise round up to nearest whole number of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -459,15 +552,17 @@ fn ceil[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to ceil(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.ceil](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.ceil](tensor)
 
 
-fn trunc[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn trunc[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise remove decimal value from float whole number of tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -475,15 +570,17 @@ fn trunc[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to trunc(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.trunc](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.trunc](tensor)
 
 
-fn round[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn round[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Elementwise  tensor.
 
     Parameters:
         dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: A tensor.
@@ -491,15 +588,17 @@ fn round[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
         A tensor equal to trunc(tensor).
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.round](tensor)
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.round](tensor)
 
 
-fn roundeven[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn roundeven[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Performs elementwise banker's rounding on the elements of a tensor.
 
     Parameters:
         dtype: The dtype of the input and output Tensor.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: Tensor to perform rounding on.
@@ -509,17 +608,19 @@ fn roundeven[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
 
     This rounding goes to the nearest integer with ties toward the nearest even integer.
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.roundeven](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.roundeven](
         tensor
     )
 
 
-fn round_half_down[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn round_half_down[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Rounds ties towards the smaller integer.
 
     Parameters:
         dtype: The dtype of the input and output Tensor.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: Tensor to perform rounding on.
@@ -527,17 +628,19 @@ fn round_half_down[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
     The elementwise rounding of x evaluating ties towards the smaller integer.
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[
+    return backend()._math_func_1_tensor_in_one_tensor_out[
         dtype, math.round_half_down
     ](tensor)
 
 
-fn round_half_up[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
+fn round_half_up[dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
     Rounds ties towards the larger integer.
 
     Parameters:
         dtype: The dtype of the input and output Tensor.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
     Args:
         tensor: Tensor to perform rounding on.
@@ -545,19 +648,21 @@ fn round_half_up[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
     Returns:
     The elementwise rounding of x evaluating ties towards the larger integer.
     """
-    return _mf._math_func_1_tensor_in_one_tensor_out[dtype, math.round_half_up](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.round_half_up](
         tensor
     )
 
 
 fn nextafter[
-    dtype: DType
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized
 ](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
     """
     Computes the nextafter of the inputs.
 
     Parameters:
         dtype: The dtype of the input and output Tensor. Constraints: must be a floating-point type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
 
 
     Args:
@@ -567,6 +672,6 @@ fn nextafter[
     Returns:
     The nextafter of the inputs.
     """
-    return _mf._math_func_2_tensor_in_one_tensor_out[dtype, math.nextafter](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.nextafter](
         tensor1, tensor2
     )

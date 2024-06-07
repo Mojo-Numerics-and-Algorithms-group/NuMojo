@@ -31,7 +31,7 @@ fn add[
     Returns:
         The elementwise sum of `tensor1` and`tensor2`.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.add](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__add__](
         tensor1, tensor2
     )
 
@@ -56,7 +56,7 @@ fn sub[
     Returns:
         The elementwise difference of `tensor1` and`tensor2`.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.sub](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__sub__](
         tensor1, tensor2
     )
 
@@ -111,7 +111,7 @@ fn mod[
     Returns:
         A tensor equal to tensor1%tensor2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.mod](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__mod__](
         tensor1, tensor2
     )
 
@@ -136,7 +136,7 @@ fn mul[
     Returns:
         A tensor equal to tensor1*tensor2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.mul](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__mul__](
         tensor1, tensor2
     )
 
@@ -161,7 +161,7 @@ fn div[
     Returns:
         A tensor equal to tensor1/tensor2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.div](
+    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__truediv__](
         tensor1, tensor2
     )
 
@@ -243,28 +243,28 @@ fn remainder[
     ](tensor1, tensor2)
 
 
-fn reciprocal[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
-    """
-    Elementwise reciprocals of tensor1 and tensor2.
+# fn reciprocal[
+#     dtype: DType, backend: _mf.Backend = _mf.Vectorized
+# ](tensor: Tensor[dtype]) -> Tensor[dtype]:
+#     """
+#     Elementwise reciprocals of tensor1 and tensor2.
 
-    Constraints:
-        Both tensors must have the same shapes.
+#     Constraints:
+#         Both tensors must have the same shapes.
 
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+#     Parameters:
+#         dtype: The element type.
+#         backend: Sets utility function origin, defualts to `Vectorized`.
 
-    Args:
-        tensor: A tensor.
+#     Args:
+#         tensor: A tensor.
 
-    Returns:
-        A tensor equal to 1/tensor.
-    """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
-        dtype, math.reciprocal
-    ](tensor)
+#     Returns:
+#         A tensor equal to 1/tensor.
+#     """
+#     return backend()._math_func_1_tensor_in_one_tensor_out[
+#         dtype, math.reciprocal
+#     ](tensor)
 
 
 # ===------------------------------------------------------------------------===#
@@ -529,7 +529,7 @@ fn log1p[
 # ===------------------------------------------------------------------------===#
 
 
-fn abs[
+fn tabs[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -545,12 +545,12 @@ fn abs[
     Returns:
         A tensor equal to abs(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.abs](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__abs__](
         tensor
     )
 
 
-fn floor[
+fn tfloor[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -566,12 +566,12 @@ fn floor[
     Returns:
         A tensor equal to floor(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.floor](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__floor__](
         tensor
     )
 
 
-fn ceil[
+fn tceil[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -587,12 +587,12 @@ fn ceil[
     Returns:
         A tensor equal to ceil(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.ceil](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__ceil__](
         tensor
     )
 
 
-fn trunc[
+fn ttrunc[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -608,12 +608,12 @@ fn trunc[
     Returns:
         A tensor equal to trunc(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.trunc](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__trunc__](
         tensor
     )
 
 
-fn round[
+fn tround[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -629,7 +629,7 @@ fn round[
     Returns:
         A tensor equal to trunc(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.round](
+    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__round__](
         tensor
     )
 
@@ -653,50 +653,50 @@ fn roundeven[
     This rounding goes to the nearest integer with ties toward the nearest even integer.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[
-        dtype, math.roundeven
+        dtype, SIMD.roundeven
     ](tensor)
 
 
-fn round_half_down[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
-    """
-    Rounds ties towards the smaller integer.
+# fn round_half_down[
+#     dtype: DType, backend: _mf.Backend = _mf.Vectorized
+# ](tensor: Tensor[dtype]) -> Tensor[dtype]:
+#     """
+#     Rounds ties towards the smaller integer.
 
-    Parameters:
-        dtype: The dtype of the input and output Tensor.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+#     Parameters:
+#         dtype: The dtype of the input and output Tensor.
+#         backend: Sets utility function origin, defualts to `Vectorized`.
 
-    Args:
-        tensor: Tensor to perform rounding on.
+#     Args:
+#         tensor: Tensor to perform rounding on.
 
-    Returns:
-    The elementwise rounding of x evaluating ties towards the smaller integer.
-    """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
-        dtype, math.round_half_down
-    ](tensor)
+#     Returns:
+#     The elementwise rounding of x evaluating ties towards the smaller integer.
+#     """
+#     return backend()._math_func_1_tensor_in_one_tensor_out[
+#         dtype, SIMD.__round_half_down
+#     ](tensor)
 
 
-fn round_half_up[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
-    """
-    Rounds ties towards the larger integer.
+# fn round_half_up[
+#     dtype: DType, backend: _mf.Backend = _mf.Vectorized
+# ](tensor: Tensor[dtype]) -> Tensor[dtype]:
+#     """
+#     Rounds ties towards the larger integer.
 
-    Parameters:
-        dtype: The dtype of the input and output Tensor.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+#     Parameters:
+#         dtype: The dtype of the input and output Tensor.
+#         backend: Sets utility function origin, defualts to `Vectorized`.
 
-    Args:
-        tensor: Tensor to perform rounding on.
+#     Args:
+#         tensor: Tensor to perform rounding on.
 
-    Returns:
-    The elementwise rounding of x evaluating ties towards the larger integer.
-    """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
-        dtype, math.round_half_up
-    ](tensor)
+#     Returns:
+#     The elementwise rounding of x evaluating ties towards the larger integer.
+#     """
+#     return backend()._math_func_1_tensor_in_one_tensor_out[
+#         dtype, math.round_half_up
+#     ](tensor)
 
 
 fn nextafter[

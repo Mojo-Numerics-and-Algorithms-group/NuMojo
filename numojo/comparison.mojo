@@ -29,7 +29,7 @@ fn greater[
 
     An element of the result Tensor will be True if the corresponding element in x is greater than the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.greater](
+    return backend()._math_func_compare_2_tensors[dtype, SIMD.__gt__](
         tensor1, tensor2
     )
 
@@ -53,7 +53,7 @@ fn greater_equal[
 
     An element of the result Tensor will be True if the corresponding element in x is greater than or equal to the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.greater_equal](
+    return backend()._math_func_compare_2_tensors[dtype, SIMD.__ge__](
         tensor1, tensor2
     )
 
@@ -77,7 +77,7 @@ fn less[
 
     An element of the result Tensor will be True if the corresponding element in x is or equal to the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.less](
+    return backend()._math_func_compare_2_tensors[dtype, SIMD.__lt__](
         tensor1, tensor2
     )
 
@@ -101,7 +101,7 @@ fn less_equal[
 
     An element of the result Tensor will be True if the corresponding element in x is less than or equal to the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.less_equal](
+    return backend()._math_func_compare_2_tensors[dtype, SIMD.__le__](
         tensor1, tensor2
     )
 
@@ -125,7 +125,7 @@ fn equal[
 
     An element of the result Tensor will be True if the corresponding element in x is equal to the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.equal](
+    return backend()._math_func_compare_2_tensors[dtype, SIMD.__eq__](
         tensor1, tensor2
     )
 
@@ -149,6 +149,6 @@ fn not_equal[
 
     An element of the result Tensor will be True if the corresponding element in x is not equal to the corresponding element in y, and False otherwise.
     """
-    return backend()._math_func_compare_2_tensors[dtype, math.not_equal](
+    return backend()._math_func_compare_2_tensors[dtype, SIMD.__ne__](
         tensor1, tensor2
     )

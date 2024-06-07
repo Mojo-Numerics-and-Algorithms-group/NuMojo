@@ -529,7 +529,7 @@ fn log1p[
 # ===------------------------------------------------------------------------===#
 
 
-fn abs[
+fn tabs[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -550,7 +550,7 @@ fn abs[
     )
 
 
-fn floor[
+fn tfloor[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -571,7 +571,7 @@ fn floor[
     )
 
 
-fn ceil[
+fn tceil[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -592,7 +592,7 @@ fn ceil[
     )
 
 
-fn trunc[
+fn ttrunc[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """
@@ -613,7 +613,7 @@ fn trunc[
     )
 
 
-fn round[
+fn tround[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](tensor: Tensor[dtype]) -> Tensor[dtype]:
     """

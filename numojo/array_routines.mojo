@@ -1,6 +1,8 @@
-from algorithm import vectorize, parallelize
+from algorithm import parallelize
 
 from tensor import Tensor, TensorShape
+
+from builtin.math import pow
 
 ################### ARANGE ####################
 fn arange[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], step: Scalar[dtype]) -> Tensor[dtype]:
@@ -18,14 +20,10 @@ fn arange[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], step: Scalar[d
     Returns:
         Tensor[dtype] - Tensor of datatype T with elements ranging from "start" to "stop" incremented with "step".
     """
-    var result: Tensor[dtype] = Tensor[dtype]()
-    # var num: Int = (stop - start) / step
-    # for i in range(num):
-    #     result[i] = start + step * i
-    var i:Int = 0
-    while result[i] <= stop:
-        result[i] = start + step * i
-        i+=1
+    var num: Int = ((stop - start) / step).__int__()
+    var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+    for idx in range(num):
+        result[idx] = start + step * idx
     return result
 
 # I think defaulting parallelization to False is better
@@ -121,7 +119,7 @@ fn _linspace_parallel[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], nu
     return result
 
 #################### LOGSPACE ################
-fn logspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True, base:Scalar[dtype]=10, parallel: Bool = False) -> Tensor[dtype]:
+fn logspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True, base:Scalar[dtype]=10.0, parallel: Bool = False) -> Tensor[dtype]:
     """
     Generate a logrithmic spaced tensor of `num` elements between `start` and `stop`. Wrapped function for _logspace_serial, _logspace_parallel funtions.
 
@@ -140,9 +138,9 @@ fn logspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, en
     - A tensor of `dtype` with `num` logaritmic spaced elements between `start` and `stop`.
     """
     if parallel:
-        return _logspace_parallel[dtype](start, stop, num, endpoint, base)
+        return _logspace_parallel[dtype](start, stop, num, base, endpoint)
     else:
-        return _logspace_serial[dtype](start, stop, num, endpoint, base)
+        return _logspace_serial[dtype](start, stop, num, base, endpoint)
 
 fn _logspace_serial[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, base:Scalar[dtype], endpoint: Bool = True) -> Tensor[dtype]:
     """
@@ -159,7 +157,7 @@ fn _logspace_serial[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num:
         endpoint: Whether to include the `stop` value in the tensor. Defaults to True.
 
     Returns:
-    - A tensor of `dtype` with `num` linearly spaced elements between `start` and `stop`.
+    - A tensor of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """ 
     var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
 

@@ -26,7 +26,9 @@ fn main() raises:
 
     ## ND arrays
     # * COLUMN MAJOR INDEXING
-    var arr:array[DType.float64] = array[DType.float64](VariadicList[Int](2, 3, 3), random=True)
+    var arr = array[DType.int8](VariadicList[Int](5, 10), random=True)
+    print(arr)
+
     print("2x3x3 ARRAY")
     print(arr[0,0,0], arr[0,1,0], arr[0,2,0], "\n",
         arr[1,0,0], arr[1,1,0], arr[1,2,0])

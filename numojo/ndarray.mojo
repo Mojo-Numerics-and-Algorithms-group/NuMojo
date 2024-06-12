@@ -59,7 +59,7 @@ struct dataInfo[dtype: DType=DType.float32]():
             self.num_elements *= self.dims[i]
 
 # * COLUMN MAJOR INDEXING
-struct array[dtype: DType = DType.float32]():
+struct array[dtype: DType = DType.float32](Stringable):
     var _arr: DTypePointer[dtype]
     var _data_info: dataInfo[dtype]
     alias simd_width: Int = simdwidthof[dtype]()
@@ -259,7 +259,7 @@ struct array[dtype: DType = DType.float32]():
     fn __neg__(self) -> Self:
         return self * -1.0
 
-    fn __str__(inout self) -> String:
+    fn __str__(self) -> String:
         return self._array_to_string(0, self._data_info.first_index)
 
     fn _array_to_string(self, dimension:Int, offset:Int) -> String :
@@ -269,21 +269,20 @@ struct array[dtype: DType = DType.float32]():
         #     return "[" + ", ".join(self._array_to_string(dimension + 1, offset + i * self._data_info.weights[dimension]) for i in range(self._data_info.dims[dimension])) + "]"
 
         if dimension == len(self._data_info.dims) - 1:
-            var result:String = "["
+            var result: String = str("[\t")
             for i in range(self._data_info.dims[dimension]):
                 if i > 0:
-                    result = result + ", "
+                    result = result + "\t"
                 result = result + self._arr[offset + i * self._data_info.weights[dimension]].__str__()
                 # result = result + "0"
             result = result + "]"
             return result
         else:
-            var result = "["
+            var result: String = str("[")
             for i in range(self._data_info.dims[dimension]):
-                if i > 0:
-                    result = result + ", "
-                # result = result + self._array_to_string(dimension + 1, offset + i * self._data_info.weights[dimension])
-                result = result + "1"
+                result = result + self._array_to_string(dimension + 1, offset + i * self._data_info.weights[dimension])
+                if i < (self._data_info.dims[dimension]-1):
+                    result += "\n"
             result = result + "]"
             return result
 

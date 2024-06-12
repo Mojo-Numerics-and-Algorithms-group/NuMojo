@@ -50,8 +50,7 @@ struct Vectorized(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -94,8 +93,7 @@ struct Vectorized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -171,8 +169,7 @@ struct Vectorized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -196,8 +193,7 @@ struct Vectorized(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -299,8 +295,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -344,8 +339,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -425,8 +419,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -452,8 +445,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -559,8 +551,7 @@ struct Parallelized(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
@@ -625,8 +616,7 @@ struct Parallelized(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
@@ -737,8 +727,7 @@ struct Parallelized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
@@ -782,8 +771,7 @@ struct Parallelized(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -918,8 +906,7 @@ struct VectorizedParallelized(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
@@ -985,8 +972,7 @@ struct VectorizedParallelized(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
@@ -1099,8 +1085,7 @@ struct VectorizedParallelized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
@@ -1145,8 +1130,7 @@ struct VectorizedParallelized(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -1282,8 +1266,7 @@ struct Naive(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -1322,8 +1305,7 @@ struct Naive(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -1389,8 +1371,7 @@ struct Naive(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
 
         for i in range(tensor1.num_elements()):
@@ -1410,8 +1391,7 @@ struct Naive(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -1494,8 +1474,7 @@ struct VectorizedVerbose(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
@@ -1547,8 +1526,7 @@ struct VectorizedVerbose(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
@@ -1639,8 +1617,7 @@ struct VectorizedVerbose(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
@@ -1673,8 +1650,7 @@ struct VectorizedVerbose(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            with assert_raises():
-                raise "Shape Mismatch error shapes must match for this function"
+            raise Error("Shape Mismatch error shapes must match for this function")
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )

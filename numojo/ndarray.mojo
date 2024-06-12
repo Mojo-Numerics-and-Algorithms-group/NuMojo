@@ -275,7 +275,7 @@ struct array[dtype: DType = DType.float32](Stringable):
                     result = result + "\t"
                 result = result + self._arr[offset + i * self._data_info.weights[dimension]].__str__()
                 # result = result + "0"
-            result = result + "]"
+            result = result + "\t]"
             return result
         else:
             var result: String = str("[")

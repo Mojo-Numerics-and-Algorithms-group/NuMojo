@@ -161,9 +161,9 @@ fn div[
     Returns:
         A tensor equal to tensor1/tensor2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__truediv__](
-        tensor1, tensor2
-    )
+    return backend()._math_func_2_tensor_in_one_tensor_out[
+        dtype, SIMD.__truediv__
+    ](tensor1, tensor2)
 
 
 fn fma[
@@ -566,9 +566,9 @@ fn tfloor[
     Returns:
         A tensor equal to floor(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__floor__](
-        tensor
-    )
+    return backend()._math_func_1_tensor_in_one_tensor_out[
+        dtype, SIMD.__floor__
+    ](tensor)
 
 
 fn tceil[
@@ -587,9 +587,9 @@ fn tceil[
     Returns:
         A tensor equal to ceil(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__ceil__](
-        tensor
-    )
+    return backend()._math_func_1_tensor_in_one_tensor_out[
+        dtype, SIMD.__ceil__
+    ](tensor)
 
 
 fn ttrunc[
@@ -608,9 +608,9 @@ fn ttrunc[
     Returns:
         A tensor equal to trunc(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__trunc__](
-        tensor
-    )
+    return backend()._math_func_1_tensor_in_one_tensor_out[
+        dtype, SIMD.__trunc__
+    ](tensor)
 
 
 fn tround[
@@ -629,9 +629,9 @@ fn tround[
     Returns:
         A tensor equal to trunc(tensor).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__round__](
-        tensor
-    )
+    return backend()._math_func_1_tensor_in_one_tensor_out[
+        dtype, SIMD.__round__
+    ](tensor)
 
 
 fn roundeven[

@@ -4,7 +4,7 @@ Overall the goal is to make a powerful and broad featured library for numerical 
 
 With that in mind NuMojo as a project is in an early stage of development. If you notice a missing feature either build it and make a pull request or make a feature request.
 
-## TASKS
+### TASKS
 * Implement tensor version all SIMDable standard library math functions (mostly done waiting on std lib [issue 2492](https://github.com/modularml/mojo/issues/2492))
 * Build statistics functions
 * Build optimizers (newton raphson, bisection,etc)

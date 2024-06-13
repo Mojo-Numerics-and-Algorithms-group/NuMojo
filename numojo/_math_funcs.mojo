@@ -50,7 +50,9 @@ struct Vectorized(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -93,7 +95,9 @@ struct Vectorized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -169,7 +173,9 @@ struct Vectorized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -193,7 +199,9 @@ struct Vectorized(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -295,7 +303,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -339,7 +349,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -419,7 +431,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -445,7 +459,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -551,12 +567,13 @@ struct Parallelized(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
-
 
         @parameter
         fn par_closure(j: Int):
@@ -616,12 +633,13 @@ struct Parallelized(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
-
 
         @parameter
         fn par_closure(j: Int):
@@ -676,7 +694,6 @@ struct Parallelized(Backend):
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor.num_elements() // num_cores
 
-
         @parameter
         fn par_closure(j: Int):
             @parameter
@@ -727,12 +744,13 @@ struct Parallelized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
-
 
         @parameter
         fn par_closure(j: Int):
@@ -771,14 +789,15 @@ struct Parallelized(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
-
 
         @parameter
         fn par_closure(j: Int):
@@ -820,7 +839,6 @@ struct Parallelized(Backend):
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor.num_elements() // num_cores
-
 
         @parameter
         fn par_closure(j: Int):
@@ -865,6 +883,7 @@ struct Parallelized(Backend):
         vectorize[closure, opt_nelts](tensor.num_elements())
         return result_tensor
 
+
 struct VectorizedParallelized(Backend):
     """
     Vectorized and Parrallelized Backend Struct.
@@ -906,7 +925,9 @@ struct VectorizedParallelized(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
@@ -935,14 +956,17 @@ struct VectorizedParallelized(Backend):
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
+
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = tensor1.load[width=opt_nelts](i+remainder_offset)
-            var simd_data2 = tensor2.load[width=opt_nelts](i+remainder_offset)
-            var simd_data3 = tensor3.load[width=opt_nelts](i+remainder_offset)
+            var simd_data1 = tensor1.load[width=opt_nelts](i + remainder_offset)
+            var simd_data2 = tensor2.load[width=opt_nelts](i + remainder_offset)
+            var simd_data3 = tensor3.load[width=opt_nelts](i + remainder_offset)
             result_tensor.store[width=opt_nelts](
-                i+remainder_offset, SIMD.fma(simd_data1,simd_data2,simd_data3)
+                i + remainder_offset,
+                SIMD.fma(simd_data1, simd_data2, simd_data3),
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_tensor
 
@@ -972,7 +996,9 @@ struct VectorizedParallelized(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
@@ -999,13 +1025,15 @@ struct VectorizedParallelized(Backend):
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
+
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = tensor1.load[width=opt_nelts](i+remainder_offset)
-            var simd_data2 = tensor2.load[width=opt_nelts](i+remainder_offset)
+            var simd_data1 = tensor1.load[width=opt_nelts](i + remainder_offset)
+            var simd_data2 = tensor2.load[width=opt_nelts](i + remainder_offset)
             result_tensor.store[width=opt_nelts](
-                i+remainder_offset, SIMD.fma(simd_data1,simd_data2,simd)
+                i + remainder_offset, SIMD.fma(simd_data1, simd_data2, simd)
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_tensor
 
@@ -1049,12 +1077,14 @@ struct VectorizedParallelized(Backend):
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
+
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = tensor.load[width=opt_nelts](i+remainder_offset)
+            var simd_data = tensor.load[width=opt_nelts](i + remainder_offset)
             result_tensor.store[width=opt_nelts](
-                i+remainder_offset, func[dtype, opt_nelts](simd_data)
+                i + remainder_offset, func[dtype, opt_nelts](simd_data)
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_tensor
 
@@ -1085,7 +1115,9 @@ struct VectorizedParallelized(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
@@ -1111,13 +1143,16 @@ struct VectorizedParallelized(Backend):
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
+
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = tensor1.load[width=opt_nelts](i+remainder_offset)
-            var simd_data2 = tensor2.load[width=opt_nelts](i+remainder_offset)
+            var simd_data1 = tensor1.load[width=opt_nelts](i + remainder_offset)
+            var simd_data2 = tensor2.load[width=opt_nelts](i + remainder_offset)
             result_tensor.store[width=opt_nelts](
-                i+remainder_offset, func[dtype, opt_nelts](simd_data1, simd_data2)
+                i + remainder_offset,
+                func[dtype, opt_nelts](simd_data1, simd_data2),
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_tensor
 
@@ -1130,7 +1165,9 @@ struct VectorizedParallelized(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -1158,13 +1195,16 @@ struct VectorizedParallelized(Backend):
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
+
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = tensor1.load[width=opt_nelts](i+remainder_offset)
-            var simd_data2 = tensor2.load[width=opt_nelts](i+remainder_offset)
+            var simd_data1 = tensor1.load[width=opt_nelts](i + remainder_offset)
+            var simd_data2 = tensor2.load[width=opt_nelts](i + remainder_offset)
             result_tensor.store[width=opt_nelts](
-                i+remainder_offset, func[dtype, opt_nelts](simd_data1, simd_data2)
+                i + remainder_offset,
+                func[dtype, opt_nelts](simd_data1, simd_data2),
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_tensor
 
@@ -1197,12 +1237,14 @@ struct VectorizedParallelized(Backend):
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
+
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = tensor.load[width=opt_nelts](i+remainder_offset)
+            var simd_data = tensor.load[width=opt_nelts](i + remainder_offset)
             result_tensor.store[width=opt_nelts](
-                i+remainder_offset, func[dtype, opt_nelts](simd_data)
+                i + remainder_offset, func[dtype, opt_nelts](simd_data)
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_tensor
 
@@ -1225,6 +1267,7 @@ struct VectorizedParallelized(Backend):
 
         vectorize[closure, opt_nelts](tensor.num_elements())
         return result_tensor
+
 
 struct Naive(Backend):
     """
@@ -1266,7 +1309,9 @@ struct Naive(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -1305,7 +1350,9 @@ struct Naive(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
@@ -1371,7 +1418,9 @@ struct Naive(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
 
         for i in range(tensor1.num_elements()):
@@ -1391,7 +1440,9 @@ struct Naive(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )
@@ -1474,7 +1525,9 @@ struct VectorizedVerbose(Backend):
             tensor1.shape() != tensor2.shape()
             and tensor1.shape() != tensor3.shape()
         ):
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
@@ -1526,7 +1579,9 @@ struct VectorizedVerbose(Backend):
             A a new tensor that is tensor with the function func applied.
         """
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
@@ -1617,7 +1672,9 @@ struct VectorizedVerbose(Backend):
         """
 
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
@@ -1650,7 +1707,9 @@ struct VectorizedVerbose(Backend):
         self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
-            raise Error("Shape Mismatch error shapes must match for this function")
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor1.shape()
         )

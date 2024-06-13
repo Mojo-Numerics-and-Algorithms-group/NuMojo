@@ -191,10 +191,10 @@ fn pvariance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]()
     else:
         mean_value = mu
 
-    var sum = Scalar[dtype]()
+    var result = Scalar[dtype]()
     for i in range(tensor.num_elements()):
-        sum += (tensor[i] - mean_value) ** 2
-    return sum / tensor.num_elements()
+        result += (tensor[i] - mean_value) ** 2
+    return result / tensor.num_elements()
 
 fn variance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
@@ -215,10 +215,10 @@ fn variance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())
     else:
         mean_value = mu
 
-    var sum = Scalar[dtype]()
+    var result = Scalar[dtype]()
     for i in range(tensor.num_elements()):
-        sum += (tensor[i] - mean_value) ** 2
-    return sum / (tensor.num_elements() -1)
+        result += (tensor[i] - mean_value) ** 2
+    return result / (tensor.num_elements() -1)
 
 fn pstdev[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """

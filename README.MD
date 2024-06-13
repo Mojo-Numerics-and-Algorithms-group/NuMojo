@@ -1,15 +1,50 @@
-<br/>
-<p align="center">
-<!-- If we add a logo in future -->
-  <!-- <a href=""> 
-    <img src="" alt="Logo" width="200" height="200">
+<a name="readme-top"></a>
+<!-- add these later -->
+<!-- [![MIT License][license-shield]][] -->
+
+<div align="center">
+  <!-- If we add a logo in future -->
+  <!-- <a href="">
+    <img src="" alt="Logo" width="80" height="80">
   </a> -->
 
-  <h1 align="center">NuMojo</h1>
+  <h1 align="center" font-size>NuMojo</h1>
   <p align="center">
     NuMojo is a library for numerical computing in Mojo 🔥 similar to numpy in Python.
+    <br />
+    <!-- when we create docs -->
+    <!-- <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a> -->
+    <br />
+    <!-- <br /> -->
+    <!-- <a href="">View Demo</a>
+    ·
+    <a href="">Report Bug</a>
+    ·
+    <a href="">Request Feature</a> -->
   </p>
-</p>
+</div>
+
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#what-numojo-is-not">What Numojo is not</a></li>
+      </ul>
+    </li>
+    <a href="#goals-roadmap">Goals/Roadmap</a>
+      <ul>
+        <li><a href="#long-term-goals">Long term goals</a></li>
+      </ul>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#how-to-install">How to install</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#warnings">Warnings</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
 
 ## About the project
 NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy and Scikit.
@@ -24,7 +59,9 @@ NuMojo is not a machine learning library, it will never include back-propagation
 
 ## Goals / Roadmap
 
-For a detailed roadmap, please check [here](Roadmap.md)
+For a detailed roadmap, please refer to the [Roadmap.md](Roadmap.md) file.
+
+Our main goal is to implement a fast, comprehensive numerics library in Mojo. Following are some brief long term goals,
 
 ### Long term goals
 * Linear Algebra
@@ -55,9 +92,18 @@ Please find all the available functions [here](features.md)
 
 Clone the repository and build
 
+## Contributing
+Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make NuMojo better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+
 ## Warnings
 
 This library is still very much a work in progress and may change at any time. Also, the standard tensor has many rough edges.
+
+## License
+
+Distributed under the MIT License. See [License](LICENSE) for more information.
 
 ## Acknowledgements
 

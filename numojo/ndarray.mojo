@@ -21,24 +21,36 @@ fn _get_index(indices: List[Int], weights:List[Int]) -> Int:
     return idx
 
 # TODO: need to figure out why mojo crashes at the iterative calling step
-# fn _traverse_iterative[dtype:DType](inout orig:array[dtype], inout narr:array[dtype], dims:List[Int], weights:List[Int], offset_index:Int,  inout index:List[Int], depth:Int) raises:
+fn _traverse_iterative[
+    dtype: DType
+](
+    orig: Array[dtype],
+    inout narr: Array[dtype],
+    dims: List[Int],
+    weights: List[Int],
+    offset_index: Int,
+    inout index: List[Int],
+    depth: Int,
+):
 
-#     if depth == dims.__len__():
-#         var idx = offset_index + _get_index(index, weights)
-#         # narr.__setitem__(index, orig._arr.__getitem__(idx))
-#         var temp = orig._arr.load[width=1](idx)
-#         # narr._arr.store[width=1](idx, temp)
-#         var nidx = _get_index(index, List[Int](1,2)) 
-#         narr._arr[nidx] = temp
-#         return 
+    if depth == dims.__len__():
+        var idx = offset_index + _get_index(index, weights)
+        # narr.__setitem__(index, orig._arr.__getitem__(idx))
+        var temp = orig._arr.load[width=1](idx)
+        # narr._arr.store[width=1](idx, temp)
+        var nidx = _get_index(index, List[Int](1, 2))
+        narr._arr[nidx] = temp
+        return
+    
+    for i in range(dims[depth]):
+        index[depth] = i
+        var newdepth = depth + 1
+        _traverse_iterative(
+            orig, narr, dims, weights, offset_index, index, newdepth
+        )
 
-#     for i in range(dims[depth]):
-#         index[depth] = i
-#         var newdepth = depth + 1
-#         _traverse_iterative(orig, narr, dims, weights, offset_index, index, newdepth)
-
-#     print("depth: ", depth)
-#     print(index[0], index[1])
+    print("depth: ", depth)
+    print(index[0], index[1])
 
 
 @value

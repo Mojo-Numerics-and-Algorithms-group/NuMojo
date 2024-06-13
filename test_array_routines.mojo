@@ -22,3 +22,25 @@ fn main():
     print("linspace_parallel: ", linspace_parallel_tensor) # prints 10000 values from 1.0 to 1000.0
     print("logspace: ", logspace_tensor) # prints 10000 values from 10**-3 to 10**0
     print("logspace_parallel: ", logspace_parallel_tensor) # prints 10000 values from 10**-3 to 10**0
+
+    var arr = Tensor[DType.int8]().rand(TensorShape(2,2))
+    print(arr.__getitem__(0)*arr.__getitem__(1)*arr.__getitem__(2)*arr.__getitem__(3))
+    print("arr: ", arr)
+    var arr_sum = sum(arr)
+    print("arr_sum: ", arr_sum)
+    var arr_prod = prod(arr)
+    print("arr_prod: ", arr_prod)
+    var arr_mean = mean(arr)
+    print("arr_mean: ", arr_mean)
+    var arr_max = maxT(arr)
+    print("arr_max: ", arr_max)
+    var arr_min = minT(arr)
+    print("arr_min: ", arr_min)
+    var arr_variance = variance(arr)
+    print("arr_variance: ", arr_variance)
+    var arr_stdev = stdev(arr)
+    print("arr_stdev: ", arr_stdev)
+    var arr_pvariance = pvariance(arr)
+    print("arr_pvariance: ", arr_pvariance)
+    var arr_pstdev = pstdev(arr)
+    print("arr_pstdev: ", arr_pstdev)

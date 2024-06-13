@@ -5,47 +5,14 @@ from algorithm import vectorize
 
 """
 Basis of statistics module to be built later
-TODO
-Build functions for more generic use with axis parameter
-max
-min
-mean
-mode
-std
-var
+
+###### TODO: ######
+Right now, all stats functions have problems when the output datatype is different than input dataype, 
+such as when input tensors have integer, but it's mean is float. In such cases, function returns 0 currently. 
+
+1) Add support for type conversion
+2) Add support for axis parameter
 """
-
-fn std[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
-    """
-    Population standard deviation of a tensor.
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        tensor: A Tensor.
-    Returns:
-        The standard deviation of all of the member values of tensor as a SIMD Value of `dtype`.
-    """
-    var sumv = sum[dtype](tensor)
-    var n = tensor.num_elements()
-    return math.sqrt[dtype](sum[dtype]((tensor - (sumv / n)) ** 2) / n)
-
-
-fn variance[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
-    """
-    Population variance of a tensor.
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        tensor: A Tensor.
-    Returns:
-        The variance of all of the member values of tensor as a SIMD Value of `dtype`.
-    """
-    var sumv = sum[dtype](tensor)
-    var n = tensor.num_elements()
-    return sum[dtype]((tensor - (sumv / n)) ** 2) / n
-
 
 fn binary_sort[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
     var result:Tensor[dtype] = tensor
@@ -58,7 +25,7 @@ fn binary_sort[dtype:DType](tensor:Tensor[dtype])->Tensor[dtype]:
                 result[i] = temp
     return result
 
-fn sum[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
+fn sum[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
     """
     Cumulative Sum of a tensor.
     Parameters:
@@ -78,6 +45,7 @@ fn sum[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     vectorize[vectorize_sum, simd_width](tensor.num_elements())
     return result
 
+# TODO: prod operations has problems due to overflows and type conversions, so commented out for now
 fn prod[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     """
     Cumulative Product of a tensor.
@@ -89,16 +57,15 @@ fn prod[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     Returns:
         The cumulative product of the tensor as a SIMD Value of `dtype`.
     """
-    var result = Scalar[dtype]()
-    alias simd_width: Int = simdwidthof[dtype]()
-    @parameter
-    fn vectorize_mul[simd_width: Int](idx: Int) -> None:
-        var simd_data = tensor.load[width = simd_width](idx)
-        result *= simd_data.reduce_mul()
-    vectorize[vectorize_mul, simd_width](tensor.num_elements())
-    return result
+    # var result = Scalar[dtype](1.0)
+    # alias simd_width: Int = simdwidthof[dtype]()
+    # @parameter
+    # fn vectorize_mul[simd_width: Int](idx: Int) -> None:
+    #     result *= tensor.load[simd_width](idx).reduce_mul()
+    # vectorize[vectorize_mul, simd_width](tensor.num_elements())
+    # return result
 
-fn mean[T:DType](tensor:Tensor[T])->Scalar[T]:
+fn mean[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
     """
     Cumulative Arithmatic Mean of a tensor.
     Parameters:
@@ -109,9 +76,9 @@ fn mean[T:DType](tensor:Tensor[T])->Scalar[T]:
     Returns:
         The mean of all of the member values of tensor as a SIMD Value of `dtype`.
     """
-    return sum[T](tensor) / tensor.num_elements()
+    return sum[dtype](tensor) / tensor.num_elements()
 
-fn mode[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
+fn mode[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
     """
     Cumulative Mode of a tensor.
     Parameters:
@@ -142,7 +109,7 @@ fn mode[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     return mode_value
 
 # * IMPLEMENT median high and low
-fn median[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
+fn median[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
     """
     Median value of a tensor.
     Parameters:
@@ -160,7 +127,8 @@ fn median[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     else:
         return (sorted_tensor[n // 2 - 1] + sorted_tensor[n // 2]) / 2
 
-fn max[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
+# for max and min, I can later change to the latest reduce.max, reduce.min()
+fn maxT[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
     """
     Maximum value of a tensor.
     Parameters:
@@ -183,7 +151,7 @@ fn max[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     vectorize[vectorized, nelts](tensor.num_elements())
     return max_value[0]
 
-fn min[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
+fn minT[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
     """
     Minimum value of a tensor.
     Parameters:
@@ -205,7 +173,7 @@ fn min[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     vectorize[vectorized, nelts](tensor.num_elements())
     return min_value[0]
 
-fn pvariance[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
+fn pvariance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Population variance of a tensor.
     Parameters:
@@ -216,19 +184,19 @@ fn pvariance[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
     Returns:
         The variance of all of the member values of tensor as a SIMD Value of `dtype`.
     """
-    var mean_value:Scalar[T]
+    var mean_value:Scalar[dtype]
 
-    if mu == Scalar[T]():
-        mean_value = mean[T](tensor)
+    if mu == Scalar[dtype]():
+        mean_value = mean[dtype](tensor)
     else:
         mean_value = mu
 
-    var sum = Scalar[T]()
+    var sum = Scalar[dtype]()
     for i in range(tensor.num_elements()):
         sum += (tensor[i] - mean_value) ** 2
     return sum / tensor.num_elements()
 
-fn variance[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
+fn variance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Variance of a tensor.
     Parameters:
@@ -240,19 +208,19 @@ fn variance[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
     Returns:
         The variance of all of the member values of tensor as a SIMD Value of `dtype`.
     """
-    var mean_value:Scalar[T]
+    var mean_value:Scalar[dtype]
 
-    if mu == Scalar[T]():
-        mean_value = mean[T](tensor)
+    if mu == Scalar[dtype]():
+        mean_value = mean[dtype](tensor)
     else:
         mean_value = mu
 
-    var sum = Scalar[T]()
+    var sum = Scalar[dtype]()
     for i in range(tensor.num_elements()):
         sum += (tensor[i] - mean_value) ** 2
     return sum / (tensor.num_elements() -1)
 
-fn pstdev[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
+fn pstdev[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Population standard deviation of a tensor.
     Parameters:
@@ -266,7 +234,7 @@ fn pstdev[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
     """
     return math.sqrt(pvariance(tensor, mu))
 
-fn stdev[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
+fn stdev[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Standard deviation of a tensor.
     Parameters:

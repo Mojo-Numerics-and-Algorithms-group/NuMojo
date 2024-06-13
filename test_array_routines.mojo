@@ -23,8 +23,8 @@ fn main():
     print("logspace: ", logspace_tensor) # prints 10000 values from 10**-3 to 10**0
     print("logspace_parallel: ", logspace_parallel_tensor) # prints 10000 values from 10**-3 to 10**0
 
-    var arr = Tensor[DType.int8]().rand(TensorShape(2,2))
-    print(arr.__getitem__(0)*arr.__getitem__(1)*arr.__getitem__(2)*arr.__getitem__(3))
+    print()
+    var arr = Tensor[DType.float16]().rand(TensorShape(2,2))
     print("arr: ", arr)
     var arr_sum = sum(arr)
     print("arr_sum: ", arr_sum)

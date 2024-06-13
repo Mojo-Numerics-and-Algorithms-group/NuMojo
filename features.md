@@ -10,5 +10,5 @@ zeros, eye, identity, ones, fill
 ## Stats
 
 sum, prod, mean, mode, median, 
-max, min, pvariance, variance, pstdev, 
+maxT, minT, pvariance, variance, pstdev, 
 stdev

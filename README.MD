@@ -6,20 +6,19 @@
   </a> -->
 
   <h1 align="center">NuMojo</h1>
-
   <p align="center">
     NuMojo is a library for numerical computing in Mojo similar to numpy in Python.🔥
   </p>
 </p>
 
-## What NuMojo is
+## About the project
 NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy and Scikit.
 
 NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on tensor inputs.
 
 NuMojo intends to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 
-# What NuMojo is not
+## What NuMojo is not
 
 NuMojo is not a machine learning library, it will never include back-propagation in the base library.
 
@@ -35,7 +34,7 @@ NuMojo is not a machine learning library, it will never include back-propagation
 * Optimizers
 * Function approximators
 
-# Usage
+## Usage
 
 For now
 
@@ -50,11 +49,11 @@ def main():
 
 Please find all the available functions [here](features.md)
 
-# How to install
+## How to install
 
 Clone the repository and build
 
-# Warnings
+## Warnings
 
 This library is still very much a work in progress and may change at any time. Also, the standard tensor has many rough edges.
 

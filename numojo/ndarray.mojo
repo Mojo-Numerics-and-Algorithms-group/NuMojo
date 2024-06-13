@@ -72,6 +72,7 @@ struct array[dtype: DType = DType.float32](Stringable):
         for i in range(dims.__len__()):
             dim.append(dims[i])
             var temp: Int = 1
+            # columns major
             for j in range(i+1):
                 temp *= dims[j]
             weight.append(temp)
@@ -97,10 +98,14 @@ struct array[dtype: DType = DType.float32](Stringable):
         for i in range(dims.__len__()):
             dim.append(dims[i])
             var temp: Int = 1
-            for j in range(i):
+            # columns major
+            # for j in range(i):
+            #     temp *= dims[j]
+            # weight.append(temp)   
+            for j in range(i+1, dims.__len__()):
                 temp *= dims[j]
             weight.append(temp)
-            
+
         self._data_info = dataInfo[dtype](rank=dims.__len__(), dims=dim, weights=weight, first_index=0)
         self._arr =  DTypePointer[dtype].alloc(self._data_info.num_elements)
         memset_zero(self._arr, self._data_info.num_elements)
@@ -209,13 +214,27 @@ struct array[dtype: DType = DType.float32](Stringable):
             weights.append(self._data_info.weights[j] * slices[j].step)
             j+=1
         
+        # columns major
+        # var offset_index: Int = 0
+        # for i in range(slices.__len__()):
+        #     var temp: Int = 1
+        #     for j in range(i):
+        #         temp *= self._data_info.dims[j]
+        #     offset_index += (slices[i].start * temp)
+
+        # row major
         var offset_index: Int = 0
         for i in range(slices.__len__()):
             var temp: Int = 1
-            for j in range(i):
+            for j in range(i+1, slices.__len__()):
                 temp *= self._data_info.dims[j]
             offset_index += (slices[i].start * temp)
 
+        # print(nrank)
+        # print(dims[0], dims[1], dims[2])
+        # print(weights[0], weights[1], weights[2])
+        # print(offset_index)
+        
         var narr = self
         narr._data_info.rank = nrank
         narr._data_info.dims = dims
@@ -263,18 +282,12 @@ struct array[dtype: DType = DType.float32](Stringable):
         return self._array_to_string(0, self._data_info.first_index)
 
     fn _array_to_string(self, dimension:Int, offset:Int) -> String :
-        # if dimension == len(self._data_info.dims) - 1:
-        #     return "[" + ", ".join(str(self._arr[offset + i * self._data_info.weights[dimension]]) for i in range(self._data_info.dims[dimension])) + "]"
-        # else:
-        #     return "[" + ", ".join(self._array_to_string(dimension + 1, offset + i * self._data_info.weights[dimension]) for i in range(self._data_info.dims[dimension])) + "]"
-
         if dimension == len(self._data_info.dims) - 1:
             var result: String = str("[\t")
             for i in range(self._data_info.dims[dimension]):
                 if i > 0:
                     result = result + "\t"
                 result = result + self._arr[offset + i * self._data_info.weights[dimension]].__str__()
-                # result = result + "0"
             result = result + "\t]"
             return result
         else:
@@ -285,6 +298,28 @@ struct array[dtype: DType = DType.float32](Stringable):
                     result += "\n"
             result = result + "]"
             return result
+
+    # for columns major, haven't finished it yet
+    # fn __str__(self) -> String:
+    #     return self._array_to_string(0, self._data_info.first_index)
+
+    # fn _array_to_string(self, dimension:Int, offset:Int) -> String :
+    #     if dimension == 0:
+    #         var result: String = str("[\t")
+    #         for i in range(self._data_info.dims[dimension+1]):
+    #             if i > 0:
+    #                 result = result + "\t"
+    #             result = result + self._arr[offset + i * self._data_info.weights[dimension]].__str__()
+    #         result = result + "\t]"
+    #         return result
+    #     else:
+    #         var result: String = str("[")
+    #         for i in range(self._data_info.dims[dimension]):
+    #             result = result + self._array_to_string(dimension - 1, offset + i * self._data_info.weights[dimension])
+    #             if i < (self._data_info.dims[dimension]-1):
+    #                 result += "\n"
+    #         result = result + "]"
+    #         return result
 
     fn __eq__(self, other: Self) -> Bool:
         return self._arr == other._arr
@@ -303,10 +338,10 @@ struct array[dtype: DType = DType.float32](Stringable):
         alias simd_width = simdwidthof[dtype]()
         var new_vec = self
         @parameter
-        fn vectorized_arithmetic[simd_width:Int](index: Int) -> None:
+        fn elemwise_arithmetic[simd_width:Int](index: Int) -> None:
             new_vec._arr.store[width=simd_width](index, func[dtype, simd_width](self._arr.load[width=simd_width](index), other._arr.load[width=simd_width](index)))
 
-        vectorize[vectorized_arithmetic, simd_width](self._data_info.num_elements)
+        vectorize[elemwise_arithmetic, simd_width](self._data_info.num_elements)
         return new_vec
 
     fn __add__(inout self, other:Scalar[dtype]) -> Self:

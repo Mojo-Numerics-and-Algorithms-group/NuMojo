@@ -169,7 +169,7 @@ fn logspace[
     parallel: Bool = False,
 ) -> Tensor[dtype]:
     """
-    Generate a logrithmic spaced tensor of `num` elements between `start` and `stop`. Wrapped function for _logspace_serial, _logspace_parallel funtions.
+    Generate a logrithmic spaced tensor of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions.
 
     Parameters:
         dtype: DType - datatype of the Tensor.
@@ -183,7 +183,7 @@ fn logspace[
         parallel: Specifies whether to calculate the logarithmic spaced values using parallelization.
 
     Returns:
-    - A tensor of `dtype` with `num` logaritmic spaced elements between `start` and `stop`.
+    - A tensor of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
     if parallel:
         return _logspace_parallel[dtype](start, stop, num, base, endpoint)

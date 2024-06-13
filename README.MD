@@ -50,7 +50,7 @@ def main():
     print(numojo.sin[DType.float32](tens))
 ```
 
-Please find all the available functions [here](Features.md)
+Please find all the available functions [here](features.md)
 
 ## How to install
 

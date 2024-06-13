@@ -12,7 +12,6 @@ Now that Modular has decided to no longer support Tensor and to open source and 
 
 Which means that we will be trying to add many of the features from numpy.array that tensor currently lacks, while not sacrificing performance.
 
-
 ## Notional organization of functions and features
 * Most common functions at top level like in numpy (trig, basic stats, masking, querying, and mapping)
 * Other features should be organized either by type of math or intended utilization

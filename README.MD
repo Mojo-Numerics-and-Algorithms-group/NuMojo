@@ -24,6 +24,9 @@ NuMojo is not a machine learning library, it will never include back-propagation
 
 ## Goals / Roadmap
 
+For a detailed roadmap, please check [here](Roadmap.md)
+
+### Long term goals
 * Linear/Tensor Algebra
     * Native array types
     * Vectorized, Parallelized math operations
@@ -47,7 +50,7 @@ def main():
     print(numojo.sin[DType.float32](tens))
 ```
 
-Please find all the available functions [here](features.md)
+Please find all the available functions [here](Features.md)
 
 ## How to install
 

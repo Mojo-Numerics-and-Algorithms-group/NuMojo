@@ -95,9 +95,7 @@ Please find all the available functions [here](features.md)
 Clone the repository and build
 
 ## Contributing
-Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make NuMojo better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+Any contributions you make are **greatly appreciated**. For more details and guidelines on contributions, please check [here](CONTRIBUTING.md)
 
 ## Warnings
 

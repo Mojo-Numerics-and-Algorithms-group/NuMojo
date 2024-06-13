@@ -5,7 +5,10 @@ from tensor import Tensor, TensorShape
 from builtin.math import pow
 
 ################### ARANGE ####################
-fn arange[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], step: Scalar[dtype]) -> Tensor[dtype]:
+fn arange[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        step: Scalar[dtype]) -> Tensor[dtype]:
     """
     Function that computes a series of values starting from "start" to "stop" with given "step" size.
 
@@ -28,7 +31,12 @@ fn arange[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], step: Scalar[d
 
 # I think defaulting parallelization to False is better
 #################### LINEAR SPACE ############
-fn linspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True, parallel: Bool = False) -> Tensor[dtype]:
+fn linspace[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        num: Int, 
+        endpoint: Bool = True, 
+        parallel: Bool = False) -> Tensor[dtype]:
     """
     Function that computes a series of linearly spaced values starting from "start" to "stop" with given size. Wrapper function for _linspace_serial, _linspace_parallel.
 
@@ -51,7 +59,11 @@ fn linspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, en
     else:
         return _linspace_serial[dtype](start, stop, num, endpoint)
 
-fn _linspace_serial[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True) -> Tensor[dtype]:
+fn _linspace_serial[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        num: Int, 
+        endpoint: Bool = True) -> Tensor[dtype]:
     """
     Generate a linearly spaced tensor of `num` elements between `start` and `stop` using naive for loop.
 
@@ -81,7 +93,11 @@ fn _linspace_serial[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num:
 
     return result
 
-fn _linspace_parallel[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True) -> Tensor[dtype]:
+fn _linspace_parallel[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        num: Int, 
+        endpoint: Bool = True) -> Tensor[dtype]:
     """
     Generate a linearly spaced tensor of `num` elements between `start` and `stop` using parallelization.
 
@@ -119,7 +135,13 @@ fn _linspace_parallel[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], nu
     return result
 
 #################### LOGSPACE ################
-fn logspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True, base:Scalar[dtype]=10.0, parallel: Bool = False) -> Tensor[dtype]:
+fn logspace[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        num: Int, 
+        endpoint: Bool = True, 
+        base:Scalar[dtype]=10.0, 
+        parallel: Bool = False) -> Tensor[dtype]:
     """
     Generate a logrithmic spaced tensor of `num` elements between `start` and `stop`. Wrapped function for _logspace_serial, _logspace_parallel funtions.
 
@@ -142,7 +164,12 @@ fn logspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, en
     else:
         return _logspace_serial[dtype](start, stop, num, base, endpoint)
 
-fn _logspace_serial[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, base:Scalar[dtype], endpoint: Bool = True) -> Tensor[dtype]:
+fn _logspace_serial[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        num: Int, 
+        base:Scalar[dtype], 
+        endpoint: Bool = True) -> Tensor[dtype]:
     """
     Generate a logarithmic spaced tensor of `num` elements between `start` and `stop` using naive for loop.
 
@@ -171,7 +198,12 @@ fn _logspace_serial[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num:
             result[i] = base**(start + step * i)
     return result
 
-fn _logspace_parallel[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, base:Scalar[dtype], endpoint: Bool = True) -> Tensor[dtype]:
+fn _logspace_parallel[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        num: Int, 
+        base:Scalar[dtype], 
+        endpoint: Bool = True) -> Tensor[dtype]:
     """
     Generate a logarithmic spaced tensor of `num` elements between `start` and `stop` using parallelization.
 
@@ -207,7 +239,11 @@ fn _logspace_parallel[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], nu
     return result
 
 # ! Outputs wrong values for Integer type, works fine for float type. 
-fn geomspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True) -> Tensor[dtype]:
+fn geomspace[dtype:DType](
+        start: Scalar[dtype], 
+        stop: Scalar[dtype], 
+        num: Int, 
+        endpoint: Bool = True) -> Tensor[dtype]:
     """
     Generate a tensor of `num` elements between `start` and `stop` in a geometric series.
 
@@ -240,7 +276,8 @@ fn geomspace[dtype:DType](start: Scalar[dtype], stop: Scalar[dtype], num: Int, e
             result[i] = a * r**i 
         return result
     
-fn zeros[dtype:DType](*shape:Int) -> Tensor[dtype]:
+fn zeros[dtype:DType](
+        *shape:Int) -> Tensor[dtype]:
     """
     Generate a tensor of zeros with given shape.
 
@@ -256,7 +293,10 @@ fn zeros[dtype:DType](*shape:Int) -> Tensor[dtype]:
     var tens_shape:VariadicList[Int] = shape
     return Tensor[dtype](tens_shape)
 
-fn eye[dtype:DType](N:Int, M:Int, k:Int=0) -> Tensor[dtype]:
+fn eye[dtype:DType](
+        N:Int, 
+        M:Int, 
+        k:Int=0) -> Tensor[dtype]:
     """
     Generate an identity matrix of size N x M.
 
@@ -287,7 +327,8 @@ fn eye[dtype:DType](N:Int, M:Int, k:Int=0) -> Tensor[dtype]:
             continue
     return result
 
-fn identity[dtype:DType](n:Int) -> Tensor[dtype]:
+fn identity[dtype:DType](
+        n:Int) -> Tensor[dtype]:
     """
     Generate an identity matrix of size N x N.
 
@@ -302,7 +343,8 @@ fn identity[dtype:DType](n:Int) -> Tensor[dtype]:
     """
     return eye[dtype](n,n)
 
-fn ones[dtype:DType](*shape:Int) -> Tensor[dtype]:
+fn ones[dtype:DType](
+        *shape:Int) -> Tensor[dtype]:
     """
     Generate a tensor of ones with given shape.
 
@@ -318,7 +360,9 @@ fn ones[dtype:DType](*shape:Int) -> Tensor[dtype]:
     var tens_shape:VariadicList[Int] = shape
     return Tensor[dtype](tens_shape, Scalar[dtype](1))
 
-fn fill[dtype:DType, fill_value:Scalar[dtype]](*shape:Int) -> Tensor[dtype]:
+fn fill[dtype:DType,
+        fill_value:Scalar[dtype]
+        ](*shape:Int) -> Tensor[dtype]:
     """
     Generate a tensor of `fill_value` with given shape.
 
@@ -335,7 +379,9 @@ fn fill[dtype:DType, fill_value:Scalar[dtype]](*shape:Int) -> Tensor[dtype]:
     var tens_shape:VariadicList[Int] = shape
     return Tensor[dtype](tens_shape, fill_value)
 
-fn fill[dtype:DType](shape:VariadicList[Int], fill_value:Scalar[dtype]) -> Tensor[dtype]:
+fn fill[dtype:DType](
+        shape:VariadicList[Int], 
+        fill_value:Scalar[dtype]) -> Tensor[dtype]:
     """
     Generate a tensor of `fill_value` with given shape.
 

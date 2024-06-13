@@ -27,13 +27,12 @@ NuMojo is not a machine learning library, it will never include back-propagation
 For a detailed roadmap, please check [here](Roadmap.md)
 
 ### Long term goals
-* Linear/Tensor Algebra
+* Linear Algebra
     * Native array types
     * Vectorized, Parallelized math operations
     * Array manipulation - vstack, slicing, concat etc. 
 * Calculus
-    * Integration
-    * Derivates
+    * Integration & Derivatives etc
 * Optimizers
 * Function approximators
 

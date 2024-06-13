@@ -57,13 +57,13 @@ fn prod[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     Returns:
         The cumulative product of the tensor as a SIMD Value of `dtype`.
     """
-    # var result = Scalar[dtype](1.0)
-    # alias simd_width: Int = simdwidthof[dtype]()
-    # @parameter
-    # fn vectorize_mul[simd_width: Int](idx: Int) -> None:
-    #     result *= tensor.load[simd_width](idx).reduce_mul()
-    # vectorize[vectorize_mul, simd_width](tensor.num_elements())
-    # return result
+    var result = Scalar[dtype](1.0)
+    alias simd_width: Int = simdwidthof[dtype]()
+    @parameter
+    fn vectorize_mul[simd_width: Int](idx: Int) -> None:
+        result *= tensor.load[simd_width](idx).reduce_mul()
+    vectorize[vectorize_mul, simd_width](tensor.num_elements())
+    return result
 
 fn mean[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
     """

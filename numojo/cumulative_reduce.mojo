@@ -181,7 +181,7 @@ fn max[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     fn vectorized[simd_width: Int](idx: Int) -> None:
         max_value.store[width=simd_width](0, SIMD.max(max_value.load[width=simd_width](0), tensor.load[width=simd_width](idx)))
     vectorize[vectorized, nelts](tensor.num_elements())
-    return max_value[0]
+    return SIMD.max(max_value[0], max_value[1])
 
 fn min[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     """
@@ -203,7 +203,7 @@ fn min[dtype:DType](tensor:Tensor[dtype])->Scalar[dtype]:
     fn vectorized[simd_width: Int](idx: Int) -> None:
         min_value.store[width=simd_width](0, SIMD.min(min_value.load[width=simd_width](0), tensor.load[width=simd_width](idx)))
     vectorize[vectorized, nelts](tensor.num_elements())
-    return min_value[0]
+    return SIMD.min(min_value[0], min_value[1])
 
 fn pvariance[T:DType](tensor:Tensor[T], mu:Scalar[T]=Scalar[T]())->Scalar[T]:
     """

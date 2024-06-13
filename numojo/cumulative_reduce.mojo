@@ -147,7 +147,10 @@ fn maxT[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
 
     @parameter
     fn vectorized[simd_width: Int](idx: Int) -> None:
-        max_value.store[width=simd_width](0, SIMD.max(max_value.load[width=simd_width](0), tensor.load[width=simd_width](idx)))
+        max_value.store[width=simd_width](0, 
+            SIMD.max(max_value.load[width=simd_width](0), 
+            tensor.load[width=simd_width](idx)))
+
     vectorize[vectorized, nelts](tensor.num_elements())
     return max_value[0]
 
@@ -169,11 +172,16 @@ fn minT[dtype:DType](tensor:Tensor[dtype])->SIMD[dtype,1]:
 
     @parameter
     fn vectorized[simd_width: Int](idx: Int) -> None:
-        min_value.store[width=simd_width](0, SIMD.min(min_value.load[width=simd_width](0), tensor.load[width=simd_width](idx)))
+        min_value.store[width=simd_width](0,
+            SIMD.min(min_value.load[width=simd_width](0), 
+            tensor.load[width=simd_width](idx)))
+
     vectorize[vectorized, nelts](tensor.num_elements())
     return min_value[0]
 
-fn pvariance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
+fn pvariance[dtype:DType](
+        tensor:Tensor[dtype],
+        mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Population variance of a tensor.
     Parameters:
@@ -196,7 +204,9 @@ fn pvariance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]()
         result += (tensor[i] - mean_value) ** 2
     return result / tensor.num_elements()
 
-fn variance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
+fn variance[dtype:DType](
+        tensor:Tensor[dtype], 
+        mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Variance of a tensor.
     Parameters:
@@ -220,7 +230,9 @@ fn variance[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())
         result += (tensor[i] - mean_value) ** 2
     return result / (tensor.num_elements() -1)
 
-fn pstdev[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
+fn pstdev[dtype:DType](
+        tensor:Tensor[dtype], 
+        mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Population standard deviation of a tensor.
     Parameters:
@@ -234,7 +246,9 @@ fn pstdev[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->
     """
     return math.sqrt(pvariance(tensor, mu))
 
-fn stdev[dtype:DType](tensor:Tensor[dtype], mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
+fn stdev[dtype:DType](
+        tensor:Tensor[dtype], 
+        mu:Scalar[dtype]=Scalar[dtype]())->SIMD[dtype,1]:
     """
     Standard deviation of a tensor.
     Parameters:

@@ -11,7 +11,7 @@ fn main() raises:
     ## ND arrays
     
     # * ROW MAJOR INDEXING
-    var arr = array[DType.float16](VariadicList[Int](2, 3, 3), random=True)
+    var arr = Array[DType.float16](VariadicList[Int](2, 3, 3), random=True)
     print("2x3x3 array row major")
     print(arr)
     print()

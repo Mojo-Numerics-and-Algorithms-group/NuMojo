@@ -11,8 +11,8 @@ fn main() raises:
     ## ND arrays
 
     # traverse_iterative
-    var orig = Array[DType.float16](VariadicList[Int](3, 2), random=True)
-    var narr = Array[DType.float16](VariadicList[Int](3, 2), random=True)
+    var orig = Array[DType.float16](VariadicList[Int](2, 2), random=True)
+    var narr = Array[DType.float16](VariadicList[Int](2, 2), random=True)
     print(orig)
     print()
     print(narr)

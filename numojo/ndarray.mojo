@@ -21,24 +21,36 @@ fn _get_index(indices: List[Int], weights:List[Int]) -> Int:
     return idx
 
 # TODO: need to figure out why mojo crashes at the iterative calling step
-# fn _traverse_iterative[dtype:DType](inout orig:array[dtype], inout narr:array[dtype], dims:List[Int], weights:List[Int], offset_index:Int,  inout index:List[Int], depth:Int) raises:
+fn _traverse_iterative[
+    dtype: DType
+](
+    orig: Array[dtype],
+    inout narr: Array[dtype],
+    dims: List[Int],
+    weights: List[Int],
+    offset_index: Int,
+    inout index: List[Int],
+    depth: Int,
+):
 
-#     if depth == dims.__len__():
-#         var idx = offset_index + _get_index(index, weights)
-#         # narr.__setitem__(index, orig._arr.__getitem__(idx))
-#         var temp = orig._arr.load[width=1](idx)
-#         # narr._arr.store[width=1](idx, temp)
-#         var nidx = _get_index(index, List[Int](1,2)) 
-#         narr._arr[nidx] = temp
-#         return 
+    if depth == dims.__len__():
+        var idx = offset_index + _get_index(index, weights)
+        # narr.__setitem__(index, orig._arr.__getitem__(idx))
+        var temp = orig._arr.load[width=1](idx)
+        # narr._arr.store[width=1](idx, temp)
+        var nidx = _get_index(index, List[Int](1, 2))
+        narr._arr[nidx] = temp
+        return
+    
+    for i in range(dims[depth]):
+        index[depth] = i
+        var newdepth = depth + 1
+        _traverse_iterative(
+            orig, narr, dims, weights, offset_index, index, newdepth
+        )
 
-#     for i in range(dims[depth]):
-#         index[depth] = i
-#         var newdepth = depth + 1
-#         _traverse_iterative(orig, narr, dims, weights, offset_index, index, newdepth)
-
-#     print("depth: ", depth)
-#     print(index[0], index[1])
+    print("depth: ", depth)
+    print(index[0], index[1])
 
 
 @value
@@ -63,7 +75,7 @@ struct arrayDescriptor[dtype: DType=DType.float32]():
             self.num_elements *= self.dims[i]
 
 # * COLUMN MAJOR INDEXING
-struct array[dtype: DType = DType.float32](Stringable):
+struct Array[dtype: DType = DType.float32](Stringable):
     var _arr: DTypePointer[dtype]
     var _arrayInfo: arrayDescriptor[dtype]
     alias simd_width: Int = simdwidthof[dtype]()
@@ -156,7 +168,7 @@ struct array[dtype: DType = DType.float32](Stringable):
         self._arr = existing._arr
         existing._arr = DTypePointer[dtype]()
 
-    fn _adjust_slice_(inout self, inout span:Slice, dim:Int):
+    fn _adjust_slice_(self, inout span:Slice, dim:Int):
         if span.start < 0:
             span.start = dim + span.start
         if not span._has_end():
@@ -196,7 +208,7 @@ struct array[dtype: DType = DType.float32](Stringable):
         return self._arr[index]
 
     # same as above, but explicit VariadicList
-    fn __getitem__(inout self, indices: VariadicList[Int]) raises -> SIMD[dtype,1]:
+    fn __getitem__(self, indices: VariadicList[Int]) raises -> SIMD[dtype,1]:
 
         if indices.__len__() != self._arrayInfo.rank:
             raise Error("Error: Length of Indices do not match the shape")
@@ -209,7 +221,7 @@ struct array[dtype: DType = DType.float32](Stringable):
             + _get_index(indices, self._arrayInfo.weights)
         return self._arr[index]
 
-    fn __getitem__(inout self, owned *slices: Slice) raises -> Self:
+    fn __getitem__(self, owned *slices: Slice) raises -> Self:
         var n_slices:Int = slices.__len__()
         if n_slices > self._arrayInfo.rank or n_slices < self._arrayInfo.rank:
             print("Error: No of slices do not match shape")

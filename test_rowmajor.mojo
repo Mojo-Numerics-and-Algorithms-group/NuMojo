@@ -9,9 +9,19 @@ from numojo.ndarray import *
 
 fn main() raises:
     ## ND arrays
-    
+
+    # traverse_iterative
+    var orig = Array[DType.float16](VariadicList[Int](3, 2), random=True)
+    var narr = Array[DType.float16](VariadicList[Int](3, 2), random=True)
+    print(orig)
+    print()
+    print(narr)
+    var index = List[Int](0, 0)
+    numojo.ndarray._traverse_iterative[DType.float16](orig, narr, orig._arrayInfo.dims, orig._arrayInfo.weights, 0, index, 0)
+    print(narr)
+
     # * ROW MAJOR INDEXING
-    var arr = array[DType.float16](VariadicList[Int](2, 3, 3), random=True)
+    var arr = Array[DType.float16](VariadicList[Int](2, 3, 3), random=True)
     print("2x3x3 array row major")
     print(arr)
     print()

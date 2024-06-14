@@ -3,6 +3,10 @@
 # * Last updated: 2024-06-13
 ############################################################################################
 
+"""Implements basic object methods for working with N-dimensional arrays.
+
+"""
+
 from random import rand
 from testing import assert_raises
 

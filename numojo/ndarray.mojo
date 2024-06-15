@@ -12,7 +12,6 @@ from testing import assert_raises
 
 from builtin.math import pow
 
-
 fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
     var idx: Int = 0
     for i in range(weights.__len__()):
@@ -26,144 +25,185 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
         idx += indices[i] * weights[i]
     return idx
 
-
 # TODO: need to figure out why mojo crashes at the iterative calling step
+# fn _traverse_iterative[
+#     dtype: DType
+# ](
+#     orig: Array[dtype],
+#     inout narr: Array[dtype],
+#     dims: List[Int],
+#     weights: List[Int],
+#     offset_index: Int,
+#     inout index: List[Int],
+#     depth: Int,
+# ):
+#     if depth == dims.__len__():
+#         var idx = offset_index + _get_index(index, weights)
+#         var temp = orig._arr.load[width=1](idx)
+#         narr._arr[idx] = temp
+#         return
+
+#     for i in range(dims[depth]):
+#         index[depth] = i
+#         var newdepth = depth + 1
+#         _traverse_iterative(
+#             orig, narr, dims, weights, offset_index, index, newdepth
+#         )
+
 fn _traverse_iterative[
     dtype: DType
 ](
     orig: Array[dtype],
     inout narr: Array[dtype],
     dims: List[Int],
-    weights: List[Int],
+    coefficients: List[Int],
+    strides: List[Int],
     offset_index: Int,
     inout index: List[Int],
     depth: Int,
 ):
     if depth == dims.__len__():
-        var idx = offset_index + _get_index(index, weights)
+        var idx = offset_index + _get_index(index, coefficients)
+        var nidx = _get_index(index, strides)
         var temp = orig._arr.load[width=1](idx)
-        narr._arr[idx] = temp
+        # narr._arr.__setitem__(nidx, temp)
+        # narr._arr[nidx] = temp
+        narr.__setitem__(nidx, temp)
+        # narr.__setitem__(index, temp)
         return
 
     for i in range(dims[depth]):
         index[depth] = i
         var newdepth = depth + 1
         _traverse_iterative(
-            orig, narr, dims, weights, offset_index, index, newdepth
+            orig, narr, dims, coefficients, strides, offset_index, index, newdepth
         )
-
 
 @value
 struct arrayDescriptor[dtype: DType = DType.float32]():
-    var rank: Int  # No of dimensions
-    var dims: List[Int]  # size of each dimension
-    var weights: List[Int]  # coefficients
+    var dims: Int
+    var offset_index: Int
     var num_elements: Int
-    var first_index: Int
+    var shape: List[Int]  # size of each dimension
+    var strides: List[Int]  # strides
+    var coefficients: List[Int]  # coefficients
 
     fn __init__(
         inout self,
-        rank: Int,
-        dims: List[Int],
-        weights: List[Int],
-        first_index: Int,
+        dims: Int,
+        offset_index: Int,
+        num_elements: Int,
+        shape: List[Int],
+        strides: List[Int],
+        coefficients: List[Int] = List[Int](),
     ):
-        self.rank = rank
         self.dims = dims
-        self.weights = weights
-        self.num_elements = 1
-        self.first_index = first_index
-        for i in range(self.dims.__len__()):
-            self.num_elements *= self.dims[i]
-
+        self.offset_index = offset_index
+        self.num_elements = num_elements
+        self.shape = shape
+        self.strides = strides
+        self.coefficients = coefficients
 
 # * COLUMN MAJOR INDEXING
 struct Array[dtype: DType = DType.float32](Stringable):
     var _arr: DTypePointer[dtype]
-    var _arrayInfo: arrayDescriptor[dtype]
     alias simd_width: Int = simdwidthof[dtype]()
+    var info: arrayDescriptor[dtype]
 
     # default constructor
-    fn __init__(inout self, *dims: Int):
-        var weight: List[Int] = List[Int]()
-        var dim: List[Int] = List[Int]()
+    fn __init__(inout self, *shape: Int):
+        var dimension: Int = shape.__len__()
+        var first_index: Int = 0
+        var num_elements: Int = 1
+        var shapeInfo: List[Int] = List[Int]()
+        var strides: List[Int] = List[Int]()
 
-        for i in range(dims.__len__()):
-            dim.append(dims[i])
+        for i in range(dimension):
+            shapeInfo.append(shape[i])
+            num_elements *= shape[i]
             var temp: Int = 1
-            # columns major
-            for j in range(i + 1):
-                temp *= dims[j]
-            weight.append(temp)
+            for j in range(i + 1):  # temp
+                temp *= shape[j]
+            strides.append(temp)
 
-        self._arrayInfo = arrayDescriptor[dtype](
-            rank=dims.__len__(), dims=dim, weights=weight, first_index=0
+        self._arr = DTypePointer[dtype].alloc(num_elements)
+        memset_zero(self._arr, num_elements)
+        self.info = arrayDescriptor[dtype](
+            dimension, first_index, num_elements, shapeInfo, strides
         )
-        self._arr = DTypePointer[dtype].alloc(self._arrayInfo.num_elements)
-        memset_zero(self._arr, self._arrayInfo.num_elements)
 
     # constructor when rank, dims, weights, first_index(offset) are known
     fn __init__(
         inout self,
-        rank: Int,
-        dims: List[Int],
-        weights: List[Int],
-        first_index: Int,
+        dims: Int,
+        offset_index: Int,
+        num_elements: Int,
+        shape: List[Int],
+        strides: List[Int],
+        coefficients: List[Int] = List[Int](),
     ):
-        self._arrayInfo = arrayDescriptor[dtype](
-            rank=rank, dims=dims, weights=weights, first_index=first_index
+        self._arr = DTypePointer[dtype].alloc(num_elements)
+        memset_zero(self._arr, num_elements)
+        self.info = arrayDescriptor[dtype](
+            dims, offset_index, num_elements, shape, strides, coefficients
         )
-        self._arr = DTypePointer[dtype].alloc(self._arrayInfo.num_elements)
-        memset_zero(self._arr, self._arrayInfo.num_elements)
 
-    fn __init__(inout self, dims: VariadicList[Int], random: Bool = False):
-        var weight: List[Int] = List[Int]()
-        var dim: List[Int] = List[Int]()
-        for i in range(dims.__len__()):
-            dim.append(dims[i])
+    fn __init__(inout self, shape: VariadicList[Int], random: Bool = False):
+        var dimension: Int = shape.__len__()
+        var first_index: Int = 0
+        var num_elements: Int = 1
+        var shapeInfo: List[Int] = List[Int]()
+        var strides: List[Int] = List[Int]()
+
+        for i in range(dimension):
+            shapeInfo.append(shape[i])
+            num_elements *= shape[i]
             var temp: Int = 1
-            # columns major
-            # for j in range(i):
-            #     temp *= dims[j]
-            # weight.append(temp)
-            for j in range(i + 1, dims.__len__()):
-                temp *= dims[j]
-            weight.append(temp)
+            for j in range(i + 1, shape.__len__()):  # temp
+                temp *= shape[j]
+            strides.append(temp)
 
-        self._arrayInfo = arrayDescriptor[dtype](
-            rank=dims.__len__(), dims=dim, weights=weight, first_index=0
+        self._arr = DTypePointer[dtype].alloc(num_elements)
+        memset_zero(self._arr, num_elements)
+        self.info = arrayDescriptor[dtype](
+            dimension, first_index, num_elements, shapeInfo, strides
         )
-        self._arr = DTypePointer[dtype].alloc(self._arrayInfo.num_elements)
-        memset_zero(self._arr, self._arrayInfo.num_elements)
-        if random:
-            rand[dtype](self._arr, self._arrayInfo.num_elements)
 
-    fn __init__(inout self, dims: List[Int], random: Bool = False):
-        var weight: List[Int] = List[Int]()
-        for i in range(dims.__len__()):
+        if random:
+            rand[dtype](self._arr, num_elements)
+
+    fn __init__(inout self, shape: List[Int], random: Bool = False):
+        var dimension: Int = shape.__len__()
+        var first_index: Int = 0
+        var num_elements: Int = 1
+        var shapeInfo: List[Int] = List[Int]()
+        var strides: List[Int] = List[Int]()
+
+        for i in range(dimension):
+            shapeInfo.append(shape[i])
+            num_elements *= shape[i]
             var temp: Int = 1
-            for j in range(i):
-                temp *= dims[j]
-            weight.append(temp)
+            for j in range(i + 1):  # temp
+                temp *= shape[j]
+            strides.append(temp)
 
-        self._arrayInfo = arrayDescriptor[dtype](
-            rank=dims.__len__(), dims=dims, weights=weight, first_index=0
+        self._arr = DTypePointer[dtype].alloc(num_elements)
+        memset_zero(self._arr, num_elements)
+        self.info = arrayDescriptor[dtype](
+            dimension, first_index, num_elements, shapeInfo, strides
         )
-        self._arr = DTypePointer[dtype].alloc(self._arrayInfo.num_elements)
-        memset_zero(self._arr, self._arrayInfo.num_elements)
         if random:
-            rand[dtype](self._arr, self._arrayInfo.num_elements)
+            rand[dtype](self._arr, num_elements)
 
     fn __copyinit__(inout self, new: Self):
-        self._arrayInfo = new._arrayInfo
-        self._arr = DTypePointer[dtype].alloc(self._arrayInfo.num_elements)
-        for i in range(self._arrayInfo.num_elements):
+        self.info = new.info
+        self._arr = DTypePointer[dtype].alloc(new.info.num_elements)
+        for i in range(new.info.num_elements):
             self._arr[i] = new._arr[i]
 
     fn __moveinit__(inout self, owned existing: Self):
-        self._arrayInfo = existing._arrayInfo
+        self.info = existing.info
         self._arr = existing._arr
-        existing._arr = DTypePointer[dtype]()
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
         if span.start < 0:
@@ -181,101 +221,100 @@ struct Array[dtype: DType = DType.float32](Stringable):
     fn __setitem__(inout self, idx: Int, val: SIMD[dtype, 1]):
         self._arr.__setitem__(idx, val)
 
-    fn __setitem__(inout self, indices: List[Int], val: SIMD[dtype,1]):
-        var index: Int = _get_index(indices, self._arrayInfo.weights)
-        self._arr[index] = val
-    
-    fn __setitem__(inout self, indices: VariadicList[Int], val:SIMD[dtype,1]):
-        var index: Int = _get_index(indices, self._arrayInfo.weights)
-        self._arr[index] = val
+    fn __setitem__(
+        inout self,
+        indices: List[Int],
+        val: SIMD[dtype, 1],
+    ):
+        var index: Int = _get_index(indices, self.info.strides)
+        self._arr.__setitem__(index, val)
 
-    fn __getitem__(self, idx:Int) -> SIMD[dtype, 1]:
+    fn __getitem__(self, idx: Int) -> SIMD[dtype, 1]:
         return self._arr.__getitem__(idx)
 
-    fn __getitem__(self, *indices: Int) raises -> SIMD[dtype,1]:
-        if indices.__len__() != self._arrayInfo.rank:
+    fn __getitem__(self, *indices: Int) raises -> SIMD[dtype, 1]:
+        if indices.__len__() != self.info.dims:
             raise Error("Error: Length of Indices do not match the shape")
 
         for i in range(indices.__len__()):
-            if indices[i] >= self._arrayInfo.dims[i]:
+            if indices[i] >= self.info.shape[i]:
                 raise Error(
                     "Error: Elements of Indices exceed the shape values"
                 )
 
-        var index: Int = self._arrayInfo.first_index + _get_index(
-            indices, self._arrayInfo.weights
-        )
+        var index: Int = _get_index(indices, self.info.strides)
         return self._arr[index]
 
     # same as above, but explicit VariadicList
     fn __getitem__(self, indices: VariadicList[Int]) raises -> SIMD[dtype, 1]:
-        if indices.__len__() != self._arrayInfo.rank:
+        if indices.__len__() != self.info.dims:
             raise Error("Error: Length of Indices do not match the shape")
 
         for i in range(indices.__len__()):
-            if indices[i] >= self._arrayInfo.dims[i]:
+            if indices[i] >= self.info.shape[i]:
                 raise Error(
                     "Error: Elements of Indices exceed the shape values"
                 )
 
-        var index: Int = self._arrayInfo.first_index + _get_index(
-            indices, self._arrayInfo.weights
-        )
+        var index: Int = _get_index(indices, self.info.strides)
+        return self._arr[index]
+
+    fn __getitem__(
+        self, indices: List[Int], offset_index: Int, coefficients: List[Int]
+    ) -> SIMD[dtype, 1]:
+        var index: Int = offset_index + _get_index(indices, coefficients)
         return self._arr[index]
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         var n_slices: Int = slices.__len__()
-        if n_slices > self._arrayInfo.rank or n_slices < self._arrayInfo.rank:
+        if n_slices > self.info.dims or n_slices < self.info.dims:
             print("Error: No of slices do not match shape")
 
-        var nrank: Int = 0
+        var ndims: Int = 0
         var spec: List[Int] = List[Int]()
         for i in range(slices.__len__()):
-            self._adjust_slice_(slices[i], self._arrayInfo.dims[i])
+            self._adjust_slice_(slices[i], self.info.shape[i])
             spec.append(slices[i].unsafe_indices())
             if slices[i].unsafe_indices() != 1:
-                nrank += 1
+                ndims += 1
 
-        var dims: List[Int] = List[Int]()
-        var weights: List[Int] = List[Int]()
-
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+        
         var j: Int = 0
-        for _ in range(nrank):
+        for _ in range(ndims):
             while spec[j] == 1:
                 j += 1
-            if j >= self._arrayInfo.rank:
+            if j >= self.info.dims:
                 break
-            dims.append(slices[j].unsafe_indices())
-            weights.append(self._arrayInfo.weights[j] * slices[j].step)
+            nshape.append(slices[j].unsafe_indices())
+            nnum_elements *= slices[j].unsafe_indices()
+            ncoefficients.append(self.info.strides[j] * slices[j].step)
             j += 1
 
-        # columns major
-        # var offset_index: Int = 0
-        # for i in range(slices.__len__()):
-        #     var temp: Int = 1
-        #     for j in range(i):
-        #         temp *= self._arrayInfo.dims[j]
-        #     offset_index += (slices[i].start * temp)
+        for i in range(ndims):
+            var temp: Int = 1
+            for j in range(i + 1, ndims):  # temp
+                temp *= nshape[j]
+            nstrides.append(temp)
 
         # row major
-        var offset_index: Int = 0
+        var noffset_index: Int = 0
         for i in range(slices.__len__()):
             var temp: Int = 1
             for j in range(i + 1, slices.__len__()):
-                temp *= self._arrayInfo.dims[j]
-            offset_index += slices[i].start * temp
+                temp *= self.info.shape[j]
+            noffset_index += slices[i].start * temp
 
-        var narr = self
-        narr._arrayInfo.rank = nrank
-        narr._arrayInfo.dims = dims
-        narr._arrayInfo.weights = weights
-        narr._arrayInfo.first_index = offset_index
-
+        var narr = Self(ndims, noffset_index, nnum_elements, nshape, nstrides, ncoefficients)
         var index = List[Int]()
-        for _ in range(nrank):
+        for _ in range(ndims):
             index.append(0)
+        
         _traverse_iterative[dtype](
-            self, narr, dims, weights, offset_index, index, 0
+            self, narr, nshape, ncoefficients, nstrides, noffset_index, index, 0
         )
         return narr
 
@@ -300,14 +339,14 @@ struct Array[dtype: DType = DType.float32](Stringable):
 
     #     self._arr[index] = value
 
-    fn __del__(owned self):
-        self._arr.free()
+    # fn __del__(owned self):
+    #     self._arr.free()
 
     fn __len__(inout self) -> Int:
-        return self._arrayInfo.num_elements
+        return self.info.num_elements
 
     fn __int__(self) -> Int:
-        return self._arrayInfo.num_elements
+        return self.info.num_elements
 
     fn __pos__(self) -> Self:
         return self * 1.0
@@ -316,64 +355,25 @@ struct Array[dtype: DType = DType.float32](Stringable):
         return self * -1.0
 
     fn __str__(self) -> String:
-        return (
-            self._array_to_string(0, self._arrayInfo.first_index)
-            + "\n"
-            + "Shape: "
-            + self._arrayInfo.dims.__str__()
-            + "\t"
-            + "dtype: "
-            + dtype.__str__()
-            + "\n"
-        )
+        return self._array_to_string(0, 0)
 
-    fn _array_to_string(self, dimension: Int, offset: Int) -> String:
-        if dimension == len(self._arrayInfo.dims) - 1:
+    fn _array_to_string(self, dimension:Int, offset:Int) -> String :
+        if dimension == self.info.dims - 1:
             var result: String = str("[\t")
-            for i in range(self._arrayInfo.dims[dimension]):
+            for i in range(self.info.shape[dimension]):
                 if i > 0:
                     result = result + "\t"
-                result = (
-                    result
-                    + self._arr[
-                        offset + i * self._arrayInfo.weights[dimension]
-                    ].__str__()
-                )
+                result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
             result = result + "\t]"
             return result
         else:
             var result: String = str("[")
-            for i in range(self._arrayInfo.dims[dimension]):
-                result = result + self._array_to_string(
-                    dimension + 1,
-                    offset + i * self._arrayInfo.weights[dimension],
-                )
-                if i < (self._arrayInfo.dims[dimension] - 1):
+            for i in range(self.info.shape[dimension]):
+                result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                if i < (self.info.shape[dimension]-1):
                     result += "\n"
             result = result + "]"
             return result
-
-    # for columns major, haven't finished it yet
-    # fn __str__(self) -> String:
-    #     return self._array_to_string(0, self._arrayInfo.first_index)
-
-    # fn _array_to_string(self, dimension:Int, offset:Int) -> String :
-    #     if dimension == 0:
-    #         var result: String = str("[\t")
-    #         for i in range(self._arrayInfo.dims[dimension+1]):
-    #             if i > 0:
-    #                 result = result + "\t"
-    #             result = result + self._arr[offset + i * self._arrayInfo.weights[dimension]].__str__()
-    #         result = result + "\t]"
-    #         return result
-    #     else:
-    #         var result: String = str("[")
-    #         for i in range(self._arrayInfo.dims[dimension]):
-    #             result = result + self._array_to_string(dimension - 1, offset + i * self._arrayInfo.weights[dimension])
-    #             if i < (self._arrayInfo.dims[dimension]-1):
-    #                 result += "\n"
-    #         result = result + "]"
-    #         return result
 
     fn __eq__(self, other: Self) -> Bool:
         return self._arr == other._arr
@@ -397,7 +397,7 @@ struct Array[dtype: DType = DType.float32](Stringable):
                 ),
             )
 
-        vectorize[elemwise_vectorize, simd_width](self._arrayInfo.num_elements)
+        vectorize[elemwise_vectorize, simd_width](self.info.num_elements)
         return new_array
 
     fn _elementwise_array_arithmetic[
@@ -418,7 +418,7 @@ struct Array[dtype: DType = DType.float32](Stringable):
                 ),
             )
 
-        vectorize[elemwise_arithmetic, simd_width](self._arrayInfo.num_elements)
+        vectorize[elemwise_arithmetic, simd_width](self.info.num_elements)
         return new_vec
 
     fn __add__(inout self, other: Scalar[dtype]) -> Self:
@@ -465,19 +465,23 @@ struct Array[dtype: DType = DType.float32](Stringable):
         fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
             reduced[0] += self._arr.load[width=simd_width](idx).reduce_add()
 
-        vectorize[vectorize_reduce, simd_width](self._arrayInfo.num_elements)
+        vectorize[vectorize_reduce, simd_width](self.info.num_elements)
         return reduced
 
     fn __matmul__(self, other: Self) -> Scalar[dtype]:
-        return self._elementwise_array_arithmetic[SIMD.__mul__](other)._reduce_sum()
+        return self._elementwise_array_arithmetic[SIMD.__mul__](
+            other
+        )._reduce_sum()
 
     fn vdot(self, other: Self) raises -> Scalar[dtype]:
         """
         Inner product of two vectors.
         """
-        if self._arrayInfo.num_elements != other._arrayInfo.num_elements:
+        if self.info.num_elements != other.info.num_elements:
             raise Error("The lengths of two vectors do not match.")
-        return self._elementwise_array_arithmetic[SIMD.__mul__](other)._reduce_sum()
+        return self._elementwise_array_arithmetic[SIMD.__mul__](
+            other
+        )._reduce_sum()
 
     fn mdot(self, other: Self) raises -> Self:
         """
@@ -486,26 +490,26 @@ struct Array[dtype: DType = DType.float32](Stringable):
         Matrix B: N * L.
         """
 
-        print("A:", self._arrayInfo.dims[0], " x ", self._arrayInfo.dims[1])
-        print("B:", other._arrayInfo.dims[0], " x ", other._arrayInfo.dims[1])
-        print("AB:", self._arrayInfo.dims[0], " x ", other._arrayInfo.dims[1])
+        print("A:", self.info.shape[0], " x ", self.info.shape[1])
+        print("B:", other.info.shape[0], " x ", other.info.shape[1])
+        print("AB:", self.info.shape[0], " x ", other.info.shape[1])
 
-        if (self._arrayInfo.rank != 2) or (other._arrayInfo.rank != 2):
+        if (self.info.dims != 2) or (other.info.dims != 2):
             raise Error("The array should have only two dimensions (matrix).")
-        if self._arrayInfo.dims[1] != other._arrayInfo.dims[0]:
+        if self.info.shape[1] != other.info.shape[0]:
             raise Error("Second dimension of A does not match first dimension of B.")
-        
-        var new_dims = List[Int](self._arrayInfo.dims[0], other._arrayInfo.dims[1])
+
+        var new_dims = List[Int](self.info.shape[0], other.info.shape[1])
         var new_matrix = Self(new_dims)
-        for row in range(self._arrayInfo.dims[0]):
-            for col in range(other._arrayInfo.dims[1]):
+        for row in range(self.info.shape[0]):
+            for col in range(other.info.shape[1]):
                 new_matrix.__setitem__(
-                                        List[Int](row, col), 
+                                        List[Int](row, col),
                                         self[row:row+1, :].vdot(other[:, col:col+1])
                                         )
         return new_matrix
 
-    fn __pow__(self, p: Int)->Self:
+    fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)
 
     fn __ipow__(inout self, p: Int):
@@ -521,9 +525,7 @@ struct Array[dtype: DType = DType.float32](Stringable):
                 idx, pow(self._arr.load[width=simd_width](idx), p)
             )
 
-        vectorize[tensor_scalar_vectorize, simd_width](
-            self._arrayInfo.num_elements
-        )
+        vectorize[tensor_scalar_vectorize, simd_width](self.info.num_elements)
         return new_vec
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
@@ -531,7 +533,7 @@ struct Array[dtype: DType = DType.float32](Stringable):
         return self._elementwise_scalar_arithmetic[SIMD.__truediv__](s)
 
     fn __truediv__(self, other: Self) raises -> Self:
-        if self._arrayInfo.num_elements != other._arrayInfo.num_elements:
+        if self.info.num_elements != other.info.num_elements:
             raise Error("No of elements in both arrays do not match")
 
         return self._elementwise_array_arithmetic[SIMD.__truediv__](other)

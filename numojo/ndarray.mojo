@@ -33,12 +33,12 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
 #     inout narr: Array[dtype],
 #     ndim: List[Int],
 #     weights: List[Int],
-#     offset_index: Int,
+#     offset: Int,
 #     inout index: List[Int],
 #     depth: Int,
 # ):
 #     if depth == ndim.__len__():
-#         var idx = offset_index + _get_index(index, weights)
+#         var idx = offset + _get_index(index, weights)
 #         var temp = orig._arr.load[width=1](idx)
 #         narr._arr[idx] = temp
 #         return
@@ -47,7 +47,7 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
 #         index[depth] = i
 #         var newdepth = depth + 1
 #         _traverse_iterative(
-#             orig, narr, ndim, weights, offset_index, index, newdepth
+#             orig, narr, ndim, weights, offset, index, newdepth
 #         )
 
 fn _traverse_iterative[
@@ -58,12 +58,12 @@ fn _traverse_iterative[
     ndim: List[Int],
     coefficients: List[Int],
     strides: List[Int],
-    offset_index: Int,
+    offset: Int,
     inout index: List[Int],
     depth: Int,
 ):
     if depth == ndim.__len__():
-        var idx = offset_index + _get_index(index, coefficients)
+        var idx = offset + _get_index(index, coefficients)
         var nidx = _get_index(index, strides)
         var temp = orig._arr.load[width=1](idx)
         # narr._arr.__setitem__(nidx, temp)
@@ -76,7 +76,7 @@ fn _traverse_iterative[
         index[depth] = i
         var newdepth = depth + 1
         _traverse_iterative(
-            orig, narr, ndim, coefficients, strides, offset_index, index, newdepth
+            orig, narr, ndim, coefficients, strides, offset, index, newdepth
         )
 
 @value
@@ -113,7 +113,7 @@ struct NDArrayShape[dtype:DType = DType.int32](Stringable):
 struct arrayDescriptor[dtype: DType = DType.float32]():
 
     var ndim: Int  # Number of dimensions of the array
-    var offset_index: Int  # Offset of array data in buffer.
+    var offset: Int  # Offset of array data in buffer.
     var size: Int  # Number of elements in the array
     var shape: List[Int]  # size of each dimension
     var strides: List[Int]  # Tuple of bytes to step in each dimension 
@@ -123,14 +123,14 @@ struct arrayDescriptor[dtype: DType = DType.float32]():
     fn __init__(
         inout self,
         ndim: Int,
-        offset_index: Int,
+        offset: Int,
         size: Int,
         shape: List[Int],
         strides: List[Int],
         coefficients: List[Int] = List[Int](),
     ):
         self.ndim = ndim
-        self.offset_index = offset_index
+        self.offset = offset
         self.size = size
         self.shape = shape
         self.strides = strides
@@ -210,7 +210,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __init__(
         inout self,
         ndim: Int,
-        offset_index: Int,
+        offset: Int,
         size: Int,
         shape: List[Int],
         strides: List[Int],
@@ -219,7 +219,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            ndim, offset_index, size, shape, strides, coefficients
+            ndim, offset, size, shape, strides, coefficients
         )
 
     fn __init__(inout self, shape: VariadicList[Int], random: Bool = False):
@@ -358,7 +358,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return self._arr[index]
 
     fn __getitem__(
-        self, indices: List[Int], offset_index: Int, coefficients: List[Int]
+        self, indices: List[Int], offset: Int, coefficients: List[Int]
     ) -> SIMD[dtype, 1]:
         """
         Example:
@@ -366,7 +366,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             1st row and 3rd column of the array.
         """
 
-        var index: Int = offset_index + _get_index(indices, coefficients)
+        var index: Int = offset + _get_index(indices, coefficients)
         return self._arr[index]
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
@@ -410,20 +410,20 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             nstrides.append(temp)
 
         # row major
-        var noffset_index: Int = 0
+        var noffset: Int = 0
         for i in range(slices.__len__()):
             var temp: Int = 1
             for j in range(i + 1, slices.__len__()):
                 temp *= self.info.shape[j]
-            noffset_index += slices[i].start * temp
+            noffset += slices[i].start * temp
 
-        var narr = Self(ndims, noffset_index, nnum_elements, nshape, nstrides, ncoefficients)
+        var narr = Self(ndims, noffset, nnum_elements, nshape, nstrides, ncoefficients)
         var index = List[Int]()
         for _ in range(ndims):
             index.append(0)
         
         _traverse_iterative[dtype](
-            self, narr, nshape, ncoefficients, nstrides, noffset_index, index, 0
+            self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
         )
         return narr
 

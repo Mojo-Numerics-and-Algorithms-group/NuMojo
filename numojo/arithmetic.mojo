@@ -13,7 +13,7 @@ implements arithmetic functions
 fn add[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Perform addition on two tensors.
 
@@ -38,7 +38,7 @@ fn add[
 
 fn sub[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Perform subtraction on two tensors.
 
@@ -68,7 +68,7 @@ fn sub[
 
 fn copysign[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Copy the sign of the first tensor and apply it to the second tensor.
 
@@ -93,7 +93,7 @@ fn copysign[
 
 fn mod[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise modulo of tensor1 and tensor2.
 
@@ -118,7 +118,7 @@ fn mod[
 
 fn mul[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise product of tensor1 and tensor2.
 
@@ -143,7 +143,7 @@ fn mul[
 
 fn div[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise quotent of tensor1 and tensor2.
 
@@ -169,8 +169,8 @@ fn div[
 fn fma[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](
-    tensor1: Tensor[dtype], tensor2: Tensor[dtype], tensor3: Tensor[dtype]
-) raises -> Tensor[dtype]:
+    tensor1: NDArray[dtype], tensor2: NDArray[dtype], tensor3: NDArray[dtype]
+) raises -> NDArray[dtype]:
     """
     Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -195,8 +195,8 @@ fn fma[
 fn fma[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](
-    tensor1: Tensor[dtype], tensor2: Tensor[dtype], simd: SIMD[dtype, 1]
-) raises -> Tensor[dtype]:
+    tensor1: NDArray[dtype], tensor2: NDArray[dtype], simd: SIMD[dtype, 1]
+) raises -> NDArray[dtype]:
     """
     Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -220,7 +220,7 @@ fn fma[
 
 fn remainder[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise remainders of tensor.
 
@@ -245,7 +245,7 @@ fn remainder[
 
 # fn reciprocal[
 #     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-# ](tensor: Tensor[dtype]) -> Tensor[dtype]:
+# ](tensor: NDArray[dtype]) -> NDArray[dtype]:
 #     """
 #     Elementwise reciprocals of tensor1 and tensor2.
 
@@ -272,7 +272,7 @@ fn remainder[
 # ===------------------------------------------------------------------------===#
 fn cbrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise cuberoot of tensor.
 
@@ -295,7 +295,7 @@ fn cbrt[
 
 
 # fn pow[dtype: DType,
-#     backend: _mf.Backend = _mf.Vectorized](tensor1: Tensor[dtype], intval: Int) -> Tensor[dtype]:
+#     backend: _mf.Backend = _mf.Vectorized](tensor1: NDArray[dtype], intval: Int) -> NDArray[dtype]:
 #     """
 #     Elementwise tensor to the power of intval.
 
@@ -318,7 +318,7 @@ fn cbrt[
 
 fn rsqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise reciprocal squareroot of tensor.
 
@@ -339,7 +339,7 @@ fn rsqrt[
 
 fn sqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise squareroot of tensor.
 
@@ -360,7 +360,7 @@ fn sqrt[
 
 fn exp2[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Calculate elementwise two to the power of tensor[i].
 
@@ -382,7 +382,7 @@ fn exp2[
 
 fn exp[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Calculate elementwise euler's constant(e) to the power of tensor[i].
 
@@ -404,7 +404,7 @@ fn exp[
 
 fn expm1[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Calculate elementwise euler's constant(e) to the power of tensor[i] minus1.
 
@@ -426,7 +426,7 @@ fn expm1[
 
 fn scalb[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.scalb](
         tensor1, tensor2
     )
@@ -439,7 +439,7 @@ fn scalb[
 
 fn log[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise natural logarithm of tensor.
 
@@ -463,7 +463,7 @@ alias ln = log
 
 fn log2[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise logarithm base two of tensor.
 
@@ -484,7 +484,7 @@ fn log2[
 
 fn log10[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise logarithm base ten of tensor.
 
@@ -505,7 +505,7 @@ fn log10[
 
 fn log1p[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise natural logarithm of 1 plus tensor.
 
@@ -531,7 +531,7 @@ fn log1p[
 
 fn tabs[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise absolute value of tensor.
 
@@ -552,7 +552,7 @@ fn tabs[
 
 fn tfloor[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise round down to nearest whole number of tensor.
 
@@ -573,7 +573,7 @@ fn tfloor[
 
 fn tceil[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise round up to nearest whole number of tensor.
 
@@ -594,7 +594,7 @@ fn tceil[
 
 fn ttrunc[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise remove decimal value from float whole number of tensor.
 
@@ -615,7 +615,7 @@ fn ttrunc[
 
 fn tround[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Elementwise  tensor.
 
@@ -636,7 +636,7 @@ fn tround[
 
 fn roundeven[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Performs elementwise banker's rounding on the elements of a tensor.
 
@@ -659,7 +659,7 @@ fn roundeven[
 
 # fn round_half_down[
 #     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-# ](tensor: Tensor[dtype]) -> Tensor[dtype]:
+# ](tensor: NDArray[dtype]) -> NDArray[dtype]:
 #     """
 #     Rounds ties towards the smaller integer.
 
@@ -680,7 +680,7 @@ fn roundeven[
 
 # fn round_half_up[
 #     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-# ](tensor: Tensor[dtype]) -> Tensor[dtype]:
+# ](tensor: NDArray[dtype]) -> NDArray[dtype]:
 #     """
 #     Rounds ties towards the larger integer.
 
@@ -701,7 +701,7 @@ fn roundeven[
 
 fn nextafter[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Computes the nextafter of the inputs.
 

@@ -18,16 +18,16 @@ def main():
     var logspace_tensor = logspace[DType.float64](-3.0, 0.0, num, endpoint=True)
     var logspace_parallel_tensor = logspace[DType.float64](-3.0, 0.0, num, parallel=True)
     var geomspace_tensor = geomspace[DType.float64](1,1000,4)
-    var filled_tensor = fill[DType.float64](16,3,4,5)
-    print("arange: ", arange_tensor) # prints 10000 values from 1.0 to 1000.0
-    print("linspace: ", linspace_tensor) # prints 10000 values from 1.0 to 1000.0
-    print("linspace_parallel: ", linspace_parallel_tensor) # prints 10000 values from 1.0 to 1000.0
-    print("logspace: ", logspace_tensor) # prints 10000 values from 10**-3 to 10**0
-    print("logspace_parallel: ", logspace_parallel_tensor) # prints 10000 values from 10**-3 to 10**0
-    print("geomspace_parallel: ", geomspace_tensor)
-    print("Tensor full of 16: ", "\n", filled_tensor)
-    print()
-    var arr = fill[DType.float64](3,2,2)
+    var filled_tensor = fill[DType.float64](fill_value = 16, shape= VariadicList[Int](3,4,5))
+    # print("arange: ", arange_tensor) # prints 10000 values from 1.0 to 1000.0
+    # print("linspace: ", linspace_tensor) # prints 10000 values from 1.0 to 1000.0
+    # print("linspace_parallel: ", linspace_parallel_tensor) # prints 10000 values from 1.0 to 1000.0
+    # print("logspace: ", logspace_tensor) # prints 10000 values from 10**-3 to 10**0
+    # print("logspace_parallel: ", logspace_parallel_tensor) # prints 10000 values from 10**-3 to 10**0
+    # print("geomspace_parallel: ", geomspace_tensor)
+    # print("Tensor full of 16: ", "\n", filled_tensor)
+    # print()
+    var arr = fill[DType.float64](fill_value = 16.0, shape= VariadicList[Int](3,2,2))
     var arr_stats = arange[DType.float64](0,10)
     print("arr: ", arr)
     var arr_sum = sum(arr)

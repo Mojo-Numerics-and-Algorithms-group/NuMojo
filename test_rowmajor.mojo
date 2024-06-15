@@ -3,13 +3,13 @@ import benchmark
 from benchmark.compiler import keep
 from testing import assert_raises
 
-from numojo.ndarray import Array
+from numojo.ndarray import NDArray
 
 fn main() raises:
     ## ND arrays
-    var orig = Array[DType.float16](VariadicList[Int](2, 2), random=True)
+    var orig = NDArray[DType.float16](VariadicList[Int](2, 2), random=True)
     print(orig, "\n")
-    var narr = Array[DType.float16](VariadicList[Int](2, 2), random=True)
+    var narr = NDArray[DType.float16](VariadicList[Int](2, 2), random=True)
     print(narr, "\n")
     # var index = List[Int](0, 0)
     # numojo.ndarray._traverse_iterative[DType.float16](orig, narr, orig._arrayInfo.dims, orig._arrayInfo.weights, 0, index, 0)
@@ -18,7 +18,7 @@ fn main() raises:
     print(orig.vdot(narr), "\n")
 
     # # * ROW MAJOR INDEXING
-    var arr = Array[DType.float16](VariadicList[Int](2, 3, 3), random=True)
+    var arr = NDArray[DType.float16](VariadicList[Int](2, 3, 3), random=True)
     print("2x3x3 array row major")
     print(arr)
     print()

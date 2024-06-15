@@ -3,7 +3,7 @@ Defines computational backend traits
 """
 
 from tensor import Tensor
-
+from ..ndarray import NDArray
 
 trait Backend:
     """
@@ -17,10 +17,10 @@ trait Backend:
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
-        tensor3: Tensor[dtype],
-    ) raises -> Tensor[dtype]:
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
+        tensor3: NDArray[dtype],
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -44,10 +44,10 @@ trait Backend:
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
         simd: SIMD[dtype, 1],
-    ) raises -> Tensor[dtype]:
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -72,7 +72,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[dtype]:
+    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a tensor
 
@@ -94,8 +94,8 @@ trait Backend:
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
-    ) raises -> Tensor[dtype]:
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of two variable and one return to a tensor
 
@@ -122,7 +122,7 @@ trait Backend:
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> Tensor[DType.bool]:
         ...
 
@@ -131,7 +131,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
         ...
 
     fn _math_func_simd_int[
@@ -139,5 +139,5 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor1: Tensor[dtype], intval: Int) -> Tensor[dtype]:
+    ](self: Self, tensor1: NDArray[dtype], intval: Int) -> NDArray[dtype]:
         ...

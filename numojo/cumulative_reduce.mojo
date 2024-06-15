@@ -1,7 +1,7 @@
 import math
-from tensor import Tensor, TensorShape
 
 from algorithm import vectorize
+from .ndarray import NDArray, NDArrayShape
 
 """
 Basis of statistics module to be built later
@@ -19,8 +19,8 @@ such as when input tensors have integer, but it's mean is float. In such cases, 
 # ===------------------------------------------------------------------------===#
 
 
-fn binary_sort[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
-    var result: Tensor[dtype] = tensor
+fn binary_sort[dtype: DType](tensor: NDArray[dtype]) -> NDArray[dtype]:
+    var result: NDArray[dtype] = tensor
     var n = tensor.num_elements()
     for end in range(n, 1, -1):
         for i in range(1, end):
@@ -36,14 +36,14 @@ fn binary_sort[dtype: DType](tensor: Tensor[dtype]) -> Tensor[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn sum[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn sum[dtype: DType](tensor: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
     Cumulative Sum of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
     Returns:
         The cumulative sum of the tensor as a SIMD Value of `dtype`.
     """
@@ -59,14 +59,14 @@ fn sum[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
     return result
 
 
-fn prod[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn prod[dtype: DType](tensor: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
     Cumulative Product of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
     Returns:
         The cumulative product of the tensor as a SIMD Value of `dtype`.
     """
@@ -94,28 +94,28 @@ fn prod[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
 # ===------------------------------------------------------------------------===#
 
 
-fn mean[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn mean[dtype: DType](tensor: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
     Cumulative Arithmatic Mean of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
     Returns:
         The mean of all of the member values of tensor as a SIMD Value of `dtype`.
     """
     return sum[dtype](tensor) / tensor.num_elements()
 
 
-fn mode[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn mode[dtype: DType](tensor: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
     Cumulative Mode of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
     Returns:
         The mode of all of the member values of tensor as a SIMD Value of `dtype`.
     """
@@ -140,14 +140,14 @@ fn mode[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
 
 
 # * IMPLEMENT median high and low
-fn median[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn median[dtype: DType](tensor: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
     Median value of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
     Returns:
         The median of all of the member values of tensor as a SIMD Value of `dtype`.
     """
@@ -160,20 +160,20 @@ fn median[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
 
 
 # for max and min, I can later change to the latest reduce.max, reduce.min()
-fn maxT[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn maxT[dtype: DType](tensor: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
     Maximum value of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
     Returns:
         The maximum of all of the member values of tensor as a SIMD Value of `dtype`.
     """
     # TODO: Test this
     alias nelts = simdwidthof[dtype]()
-    var max_value = Tensor[dtype](TensorShape(nelts))
+    var max_value = NDArray[dtype](NDArrayShape(nelts))
     for i in range(nelts):
         max_value[i] = tensor[0]
 
@@ -191,20 +191,20 @@ fn maxT[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
     return SIMD.max(max_value[0], max_value[1])
 
 
-fn minT[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn minT[dtype: DType](tensor: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
     Minimum value of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
 
     Returns:
         The minimum of all of the member values of tensor as a SIMD Value of `dtype`.
     """
     alias nelts = simdwidthof[dtype]()
-    var min_value = Tensor[dtype](TensorShape(nelts))
+    var min_value = NDArray[dtype](NDArrayShape(nelts))
     for i in range(nelts):
         min_value[i] = tensor[0]
 
@@ -224,14 +224,14 @@ fn minT[dtype: DType](tensor: Tensor[dtype]) -> SIMD[dtype, 1]:
 
 fn pvariance[
     dtype: DType
-](tensor: Tensor[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+](tensor: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Population variance of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
         mu: The mean of the tensor, if provided.
     Returns:
         The variance of all of the member values of tensor as a SIMD Value of `dtype`.
@@ -251,7 +251,7 @@ fn pvariance[
 
 fn variance[
     dtype: DType
-](tensor: Tensor[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+](tensor: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Variance of a tensor.
 
@@ -259,7 +259,7 @@ fn variance[
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
         mu: The mean of the tensor, if provided.
         
     Returns:
@@ -280,7 +280,7 @@ fn variance[
 
 fn pstdev[
     dtype: DType
-](tensor: Tensor[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+](tensor: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Population standard deviation of a tensor.
 
@@ -288,7 +288,7 @@ fn pstdev[
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
         mu: The mean of the tensor, if provided.
 
     Returns:
@@ -299,14 +299,14 @@ fn pstdev[
 
 fn stdev[
     dtype: DType
-](tensor: Tensor[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+](tensor: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Standard deviation of a tensor.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        tensor: A NDArray.
         mu: The mean of the tensor, if provided.
     Returns:
         The standard deviation of all of the member values of tensor as a SIMD Value of `dtype`.

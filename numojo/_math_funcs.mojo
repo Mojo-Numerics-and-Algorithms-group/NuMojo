@@ -6,6 +6,8 @@ from testing import assert_raises
 from algorithm.functional import parallelize, vectorize, num_physical_cores
 from .traits.backend import Backend
 
+from .ndarray import NDArray
+
 
 struct Vectorized(Backend):
     """
@@ -24,10 +26,10 @@ struct Vectorized(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
-        tensor3: Tensor[dtype],
-    ) raises -> Tensor[dtype]:
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
+        tensor3: NDArray[dtype],
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -53,7 +55,7 @@ struct Vectorized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -72,10 +74,10 @@ struct Vectorized(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
         simd: SIMD[dtype, 1],
-    ) raises -> Tensor[dtype]:
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -98,7 +100,7 @@ struct Vectorized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -118,7 +120,7 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[dtype]:
+    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a tensor
 
@@ -132,7 +134,7 @@ struct Vectorized(Backend):
         Returns:
             A a new tensor that is tensor with the function func applied.
         """
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -152,8 +154,8 @@ struct Vectorized(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
-    ) raises -> Tensor[dtype]:
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of two variable and one return to a tensor
 
@@ -176,7 +178,8 @@ struct Vectorized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -187,7 +190,7 @@ struct Vectorized(Backend):
                 i, func[dtype, opt_nelts](simd_data1, simd_data2)
             )
 
-        vectorize[closure, opt_nelts](tensor1.num_elements())
+        vectorize[closure, opt_nelts](result_tensor.num_elements())
         return result_tensor
 
     fn _math_func_compare_2_tensors[
@@ -196,7 +199,7 @@ struct Vectorized(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
             raise Error(
@@ -223,7 +226,7 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor.shape()
         )
@@ -244,8 +247,8 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+    ](self: Self, tensor: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -277,10 +280,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
-        tensor3: Tensor[dtype],
-    ) raises -> Tensor[dtype]:
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
+        tensor3: NDArray[dtype],
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -306,7 +309,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -327,10 +330,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
         simd: SIMD[dtype, 1],
-    ) raises -> Tensor[dtype]:
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -352,7 +355,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -374,7 +377,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[dtype]:
+    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a tensor
 
@@ -388,7 +391,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Returns:
             A a new tensor that is tensor with the function func applied.
         """
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -410,8 +413,8 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
-    ) raises -> Tensor[dtype]:
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of two variable and one return to a tensor
 
@@ -434,7 +437,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -456,7 +459,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
             raise Error(
@@ -485,7 +488,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor.shape()
         )
@@ -508,8 +511,8 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+    ](self: Self, tensor: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -541,10 +544,10 @@ struct Parallelized(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
-        tensor3: Tensor[dtype],
-    ) raises -> Tensor[dtype]:
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
+        tensor3: NDArray[dtype],
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -570,7 +573,7 @@ struct Parallelized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
@@ -611,10 +614,10 @@ struct Parallelized(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
         simd: SIMD[dtype, 1],
-    ) raises -> Tensor[dtype]:
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -636,7 +639,7 @@ struct Parallelized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
@@ -675,7 +678,7 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[dtype]:
+    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a tensor
 
@@ -689,7 +692,7 @@ struct Parallelized(Backend):
         Returns:
             A a new tensor that is tensor with the function func applied.
         """
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor.num_elements() // num_cores
@@ -723,8 +726,8 @@ struct Parallelized(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
-    ) raises -> Tensor[dtype]:
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of two variable and one return to a tensor
 
@@ -747,7 +750,7 @@ struct Parallelized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
@@ -786,7 +789,7 @@ struct Parallelized(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
             raise Error(
@@ -832,7 +835,7 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor.shape()
         )
@@ -868,8 +871,8 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+    ](self: Self, tensor: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -899,10 +902,10 @@ struct VectorizedParallelized(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
-        tensor3: Tensor[dtype],
-    ) raises -> Tensor[dtype]:
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
+        tensor3: NDArray[dtype],
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -928,7 +931,7 @@ struct VectorizedParallelized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
@@ -974,10 +977,10 @@ struct VectorizedParallelized(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
         simd: SIMD[dtype, 1],
-    ) raises -> Tensor[dtype]:
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -999,7 +1002,7 @@ struct VectorizedParallelized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
@@ -1042,7 +1045,7 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[dtype]:
+    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a tensor
 
@@ -1056,7 +1059,7 @@ struct VectorizedParallelized(Backend):
         Returns:
             A a new tensor that is tensor with the function func applied.
         """
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor.num_elements() // num_cores
@@ -1094,8 +1097,8 @@ struct VectorizedParallelized(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
-    ) raises -> Tensor[dtype]:
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of two variable and one return to a tensor
 
@@ -1118,7 +1121,7 @@ struct VectorizedParallelized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = tensor1.num_elements() // num_cores
@@ -1162,7 +1165,7 @@ struct VectorizedParallelized(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
             raise Error(
@@ -1213,7 +1216,7 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor.shape()
         )
@@ -1253,8 +1256,8 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+    ](self: Self, tensor: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         @parameter
@@ -1283,10 +1286,10 @@ struct Naive(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
-        tensor3: Tensor[dtype],
-    ) raises -> Tensor[dtype]:
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
+        tensor3: NDArray[dtype],
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -1312,7 +1315,7 @@ struct Naive(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         for i in range(tensor1.num_elements()):
@@ -1328,10 +1331,10 @@ struct Naive(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
         simd: SIMD[dtype, 1],
-    ) raises -> Tensor[dtype]:
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -1353,7 +1356,7 @@ struct Naive(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
 
         for i in range(tensor1.num_elements()):
@@ -1370,7 +1373,7 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[dtype]:
+    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a tensor
 
@@ -1384,7 +1387,7 @@ struct Naive(Backend):
         Returns:
             A a new tensor that is tensor with the function func applied.
         """
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
 
         for i in range(tensor.num_elements()):
             var simd_data = func[dtype, 1](tensor.load[width=1](i))
@@ -1397,8 +1400,8 @@ struct Naive(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
-    ) raises -> Tensor[dtype]:
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of two variable and one return to a tensor
 
@@ -1421,7 +1424,7 @@ struct Naive(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
 
         for i in range(tensor1.num_elements()):
             var simd_data1 = tensor1.load[width=1](i)
@@ -1437,7 +1440,7 @@ struct Naive(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
             raise Error(
@@ -1460,7 +1463,7 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor.shape()
         )
@@ -1475,8 +1478,8 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+    ](self: Self, tensor: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
 
         for i in range(tensor.num_elements()):
             var simd_data1 = tensor.load[width=1](i)
@@ -1499,10 +1502,10 @@ struct VectorizedVerbose(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
-        tensor3: Tensor[dtype],
-    ) raises -> Tensor[dtype]:
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
+        tensor3: NDArray[dtype],
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
 
@@ -1528,7 +1531,7 @@ struct VectorizedVerbose(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
             0, opt_nelts * (tensor1.num_elements() // opt_nelts), opt_nelts
@@ -1557,10 +1560,10 @@ struct VectorizedVerbose(Backend):
         dtype: DType,
     ](
         self: Self,
-        tensor1: Tensor[dtype],
-        tensor2: Tensor[dtype],
+        tensor1: NDArray[dtype],
+        tensor2: NDArray[dtype],
         simd: SIMD[dtype, 1],
-    ) raises -> Tensor[dtype]:
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
 
@@ -1582,7 +1585,7 @@ struct VectorizedVerbose(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
             0, opt_nelts * (tensor1.num_elements() // opt_nelts), opt_nelts
@@ -1612,7 +1615,7 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[dtype]:
+    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a tensor
 
@@ -1626,7 +1629,7 @@ struct VectorizedVerbose(Backend):
         Returns:
             A a new tensor that is tensor with the function func applied.
         """
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
             0, opt_nelts * (tensor.num_elements() // opt_nelts), opt_nelts
@@ -1651,8 +1654,8 @@ struct VectorizedVerbose(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
-    ) raises -> Tensor[dtype]:
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of two variable and one return to a tensor
 
@@ -1675,7 +1678,7 @@ struct VectorizedVerbose(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
             0, opt_nelts * (tensor1.num_elements() // opt_nelts), opt_nelts
@@ -1704,7 +1707,7 @@ struct VectorizedVerbose(Backend):
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, tensor1: Tensor[dtype], tensor2: Tensor[dtype]
+        self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> Tensor[DType.bool]:
         if tensor1.shape() != tensor2.shape():
             raise Error(
@@ -1740,7 +1743,7 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: Tensor[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
         var result_tensor: Tensor[DType.bool] = Tensor[DType.bool](
             tensor.shape()
         )
@@ -1767,8 +1770,8 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor1: Tensor[dtype], intval: Int) -> Tensor[dtype]:
-        var result_tensor: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+    ](self: Self, tensor1: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+        var result_tensor: NDArray[dtype] = NDArray[dtype](tensor1.shape())
         alias opt_nelts = simdwidthof[dtype]()
         for i in range(
             0, opt_nelts * (tensor1.num_elements() // opt_nelts), opt_nelts

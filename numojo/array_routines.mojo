@@ -1,12 +1,11 @@
 from algorithm import parallelize
-
-from tensor import Tensor, TensorShape
-
 from builtin.math import pow
+
+from .ndarray import NDArray, NDArrayShape
 
 
 # ===------------------------------------------------------------------------===#
-# Arranged Value Tensor generation
+# Arranged Value NDArray generation
 # ===------------------------------------------------------------------------===#
 fn arange[
     dtype: DType
@@ -14,12 +13,12 @@ fn arange[
     start: Scalar[dtype],
     stop: Scalar[dtype],
     step: Scalar[dtype] = Scalar[dtype](1),
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Function that computes a series of values starting from "start" to "stop" with given "step" size.
 
     Parameter:
-        dtype: DType  - datatype of the Tensor
+        dtype: DType  - datatype of the NDArray
 
     Args:
         start: Scalar[dtype] - Start value.
@@ -27,17 +26,17 @@ fn arange[
         step: Scalar[dtype]  - Step size between each element defualt 1.
 
     Returns:
-        Tensor[dtype] - Tensor of datatype T with elements ranging from "start" to "stop" incremented with "step".
+        NDArray[dtype] - NDArray of datatype T with elements ranging from "start" to "stop" incremented with "step".
     """
     var num: Int = ((stop - start) / step).__int__()
-    var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
     for idx in range(num):
         result[idx] = start + step * idx
     return result
 
 
 # ===------------------------------------------------------------------------===#
-# Linear Spacing Tensor Generation
+# Linear Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
 
 
@@ -50,12 +49,12 @@ fn linspace[
     num: Int,
     endpoint: Bool = True,
     parallel: Bool = False,
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Function that computes a series of linearly spaced values starting from "start" to "stop" with given size. Wrapper function for _linspace_serial, _linspace_parallel.
 
     Parameter:
-        dtype: DType - datatype of the Tensor
+        dtype: DType - datatype of the NDArray
 
     Args:
         start: Scalar[dtype] - Start value.
@@ -65,7 +64,7 @@ fn linspace[
         parallel: Bool - Specifies whether the linspace should be calculated using parallelization, deafults to False.
 
     Returns:
-        Tensor[dtype] - Tensor of datatype T with elements ranging from "start" to "stop" with num elements.
+        NDArray[dtype] - NDArray of datatype T with elements ranging from "start" to "stop" with num elements.
 
     """
     if parallel:
@@ -78,12 +77,12 @@ fn _linspace_serial[
     dtype: DType
 ](
     start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Generate a linearly spaced tensor of `num` elements between `start` and `stop` using naive for loop.
 
     Parameters:
-        dtype: DType - datatype of the Tensor
+        dtype: DType - datatype of the NDArray
 
     Args:
         start: The starting value of the tensor.
@@ -94,7 +93,7 @@ fn _linspace_serial[
     Returns:
     - A tensor of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
 
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / (num - 1)
@@ -113,12 +112,12 @@ fn _linspace_parallel[
     dtype: DType
 ](
     start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Generate a linearly spaced tensor of `num` elements between `start` and `stop` using parallelization.
 
     Parameters:
-        dtype: DType - datatype of the Tensor
+        dtype: DType - datatype of the NDArray
 
     Args:
         start: The starting value of the tensor.
@@ -129,7 +128,7 @@ fn _linspace_parallel[
     Returns:
     - A tensor of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
     alias nelts = simdwidthof[dtype]()
 
     if endpoint:
@@ -156,7 +155,7 @@ fn _linspace_parallel[
 
 
 # ===------------------------------------------------------------------------===#
-# Logarithmic Spacing Tensor Generation
+# Logarithmic Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
 fn logspace[
     dtype: DType
@@ -167,12 +166,12 @@ fn logspace[
     endpoint: Bool = True,
     base: Scalar[dtype] = 10.0,
     parallel: Bool = False,
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Generate a logrithmic spaced tensor of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         start: The starting value of the tensor.
@@ -199,12 +198,12 @@ fn _logspace_serial[
     num: Int,
     base: Scalar[dtype],
     endpoint: Bool = True,
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Generate a logarithmic spaced tensor of `num` elements between `start` and `stop` using naive for loop.
 
     Parameters:
-        dtype: DType - datatype of the Tensor
+        dtype: DType - datatype of the NDArray
 
     Args:
         start: The starting value of the tensor.
@@ -216,7 +215,7 @@ fn _logspace_serial[
     Returns:
     - A tensor of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
 
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / (num - 1)
@@ -237,12 +236,12 @@ fn _logspace_parallel[
     num: Int,
     base: Scalar[dtype],
     endpoint: Bool = True,
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Generate a logarithmic spaced tensor of `num` elements between `start` and `stop` using parallelization.
 
     Parameters:
-        dtype: DType - datatype of the Tensor
+        dtype: DType - datatype of the NDArray
 
     Args:
         start: The starting value of the tensor.
@@ -254,7 +253,7 @@ fn _logspace_parallel[
     Returns:
     - A tensor of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
 
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / (num - 1)
@@ -282,12 +281,12 @@ fn geomspace[
     dtype: DType
 ](
     start: Scalar[dtype], stop: Scalar[dtype], num: Int, endpoint: Bool = True
-) raises -> Tensor[dtype]:
+) raises -> NDArray[dtype]:
     """
     Generate a tensor of `num` elements between `start` and `stop` in a geometric series.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         start: The starting value of the tensor.
@@ -307,7 +306,7 @@ fn geomspace[
     var a: Scalar[dtype] = start
 
     if endpoint:
-        var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
         # var r:Scalar[dtype] = math.pow(stop/start, 1/(num-1))
         var r: Scalar[dtype] = (stop / start) ** (1 / (num - 1))
         for i in range(num):
@@ -315,7 +314,7 @@ fn geomspace[
         return result
 
     else:
-        var result: Tensor[dtype] = Tensor[dtype](TensorShape(num))
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
         var r: Scalar[dtype] = (stop / start) ** (1 / (num - 1))
         for i in range(num):
             result[i] = a * r**i
@@ -323,16 +322,16 @@ fn geomspace[
 
 
 # ===------------------------------------------------------------------------===#
-# Commonly used Tensor Generation routines
+# Commonly used NDArray Generation routines
 # ===------------------------------------------------------------------------===#
 
 
-fn zeros[dtype: DType](*shape: Int) -> Tensor[dtype]:
+fn zeros[dtype: DType](*shape: Int) -> NDArray[dtype]:
     """
     Generate a tensor of zeros with given shape.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         shape: VariadicList[Int] - Shape of the tensor.
@@ -341,15 +340,15 @@ fn zeros[dtype: DType](*shape: Int) -> Tensor[dtype]:
     - A tensor of `dtype` with given `shape`.
     """
     var tens_shape: VariadicList[Int] = shape
-    return Tensor[dtype](tens_shape)
+    return NDArray[dtype](tens_shape)
 
 
-fn eye[dtype: DType](N: Int, M: Int) -> Tensor[dtype]:
+fn eye[dtype: DType](N: Int, M: Int) -> NDArray[dtype]:
     """
-    Return a 2-D Tensor with ones on the diagonal and zeros elsewhere.
+    Return a 2-D NDArray with ones on the diagonal and zeros elsewhere.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         N: Int - Number of rows in the matrix.
@@ -358,7 +357,7 @@ fn eye[dtype: DType](N: Int, M: Int) -> Tensor[dtype]:
     Returns:
     - A tensor of `dtype` with size N x M and ones on the diagonals.
     """
-    var result: Tensor[dtype] = Tensor[dtype](N, M)
+    var result: NDArray[dtype] = NDArray[dtype](N, M)
     var one = Scalar[dtype](1)
     # for i in range(N):
     #     for j in range(M):
@@ -375,12 +374,12 @@ fn eye[dtype: DType](N: Int, M: Int) -> Tensor[dtype]:
     return result
 
 
-fn identity[dtype: DType](n: Int) -> Tensor[dtype]:
+fn identity[dtype: DType](n: Int) -> NDArray[dtype]:
     """
     Generate an identity matrix of size N x N.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         n: Int - Size of the matrix.
@@ -391,12 +390,12 @@ fn identity[dtype: DType](n: Int) -> Tensor[dtype]:
     return eye[dtype](n, n)
 
 
-fn ones[dtype: DType](*shape: Int) -> Tensor[dtype]:
+fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:
     """
     Generate a tensor of ones with given shape filled with ones.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         shape: VariadicList[Int] - Shape of the tensor.
@@ -405,15 +404,15 @@ fn ones[dtype: DType](*shape: Int) -> Tensor[dtype]:
     - A tensor of `dtype` with given `shape`.
     """
     var tens_shape: VariadicList[Int] = shape
-    return Tensor[dtype](tens_shape, Scalar[dtype](1))
+    return NDArray[dtype](tens_shape, Scalar[dtype](1))
 
 
-fn fill[dtype: DType](fill_value: Scalar[dtype], *shape: Int) -> Tensor[dtype]:
+fn fill[dtype: DType](fill_value: Scalar[dtype], *shape: Int) -> NDArray[dtype]:
     """
     Generate a tensor of `fill_value` with given shape.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         fill_value: Scalar[dtype] - value to be splatted over the tensor.
@@ -422,18 +421,19 @@ fn fill[dtype: DType](fill_value: Scalar[dtype], *shape: Int) -> Tensor[dtype]:
     Returns:
     - A tensor of `dtype` with given `shape`.
     """
-    var tens_shape: VariadicList[Int] = shape
-    return Tensor[dtype](tens_shape, fill_value)
+    # var tens_shape: VariadicList[Int] = shape
+    var tens_shape: NDArrayShape = NDArrayShape(shape)
+    return NDArray[dtype](shape=tens_shape, value=fill_value)
 
 
 fn fill[
     dtype: DType
-](fill_value: Scalar[dtype], shape: VariadicList[Int]) -> Tensor[dtype]:
+](fill_value: Scalar[dtype], shape: VariadicList[Int]) -> NDArray[dtype]:
     """
     Generate a tensor of `fill_value` with given shape.
 
     Parameters:
-        dtype: DType - datatype of the Tensor.
+        dtype: DType - datatype of the NDArray.
 
     Args:
         fill_value: Scalar[dtype] - value to be splatted over the tensor.
@@ -442,4 +442,6 @@ fn fill[
     Returns:
     - A tensor of `dtype` with given `shape`.
     """
-    return Tensor[dtype](shape, fill_value)
+    var tens_shape: NDArrayShape = NDArrayShape(shape)
+    var tens_value: SIMD[dtype, 1] = SIMD[dtype, 1](fill_value).cast[dtype]()
+    return NDArray[dtype](shape=tens_shape, value=tens_value)

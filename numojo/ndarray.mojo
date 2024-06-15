@@ -31,23 +31,23 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
 # ](
 #     orig: Array[dtype],
 #     inout narr: Array[dtype],
-#     dims: List[Int],
+#     ndim: List[Int],
 #     weights: List[Int],
-#     offset_index: Int,
+#     offset: Int,
 #     inout index: List[Int],
 #     depth: Int,
 # ):
-#     if depth == dims.__len__():
-#         var idx = offset_index + _get_index(index, weights)
+#     if depth == ndim.__len__():
+#         var idx = offset + _get_index(index, weights)
 #         var temp = orig._arr.load[width=1](idx)
 #         narr._arr[idx] = temp
 #         return
 
-#     for i in range(dims[depth]):
+#     for i in range(ndim[depth]):
 #         index[depth] = i
 #         var newdepth = depth + 1
 #         _traverse_iterative(
-#             orig, narr, dims, weights, offset_index, index, newdepth
+#             orig, narr, ndim, weights, offset, index, newdepth
 #         )
 
 fn _traverse_iterative[
@@ -55,15 +55,15 @@ fn _traverse_iterative[
 ](  
     orig: NDArray[dtype],
     inout narr: NDArray[dtype],
-    dims: List[Int],
+    ndim: List[Int],
     coefficients: List[Int],
     strides: List[Int],
-    offset_index: Int,
+    offset: Int,
     inout index: List[Int],
     depth: Int,
 ):
-    if depth == dims.__len__():
-        var idx = offset_index + _get_index(index, coefficients)
+    if depth == ndim.__len__():
+        var idx = offset + _get_index(index, coefficients)
         var nidx = _get_index(index, strides)
         var temp = orig._arr.load[width=1](idx)
         # narr._arr.__setitem__(nidx, temp)
@@ -72,11 +72,11 @@ fn _traverse_iterative[
         # narr.__setitem__(index, temp)
         return
 
-    for i in range(dims[depth]):
+    for i in range(ndim[depth]):
         index[depth] = i
         var newdepth = depth + 1
         _traverse_iterative(
-            orig, narr, dims, coefficients, strides, offset_index, index, newdepth
+            orig, narr, ndim, coefficients, strides, offset, index, newdepth
         )
 
 @value
@@ -111,151 +111,209 @@ struct NDArrayShape[dtype:DType = DType.int32](Stringable):
 
 @value
 struct arrayDescriptor[dtype: DType = DType.float32]():
-    var dims: Int
-    var offset_index: Int
-    var num_elements: Int
+
+    var ndim: Int  # Number of dimensions of the array
+    var offset: Int  # Offset of array data in buffer.
+    var size: Int  # Number of elements in the array
     var shape: List[Int]  # size of each dimension
-    var strides: List[Int]  # strides
+    var strides: List[Int]  # Tuple of bytes to step in each dimension 
+                            # when traversing an array.
     var coefficients: List[Int]  # coefficients
 
     fn __init__(
         inout self,
-        dims: Int,
-        offset_index: Int,
-        num_elements: Int,
+        ndim: Int,
+        offset: Int,
+        size: Int,
         shape: List[Int],
         strides: List[Int],
         coefficients: List[Int] = List[Int](),
     ):
-        self.dims = dims
-        self.offset_index = offset_index
-        self.num_elements = num_elements
+        self.ndim = ndim
+        self.offset = offset
+        self.size = size
         self.shape = shape
         self.strides = strides
         self.coefficients = coefficients
 
 # * COLUMN MAJOR INDEXING
 struct NDArray[dtype: DType = DType.float32](Stringable):
-    var _arr: DTypePointer[dtype]
-    alias simd_width: Int = simdwidthof[dtype]()
-    var info: arrayDescriptor[dtype]
+    """The N-dimensional array (NDArray).
+
+    The array can be uniquely defined by three parameters:
+        1. The data buffer of all items.
+        2. The shape of the array.
+        3. Is the array row-major ('C') or column-major ('F')?
+            Currently, we only implement methods using row-major.
+    """
+
+    var _arr: DTypePointer[dtype]  # Data buffer of the items in the NDArray
+    alias simd_width: Int = simdwidthof[dtype]()  # Vector size of the data type
+    var info: arrayDescriptor[dtype]  # Infomation regarding the NDArray.
 
     # default constructor
     fn __init__(inout self, *shape: Int):
+        """
+        Example:
+            NDArray[DType.int8](3,2,4)
+            Returns an empty array with shape 3 x 2 x 4.
+        """
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         print(shape[0], shape[1])
         for i in range(dimension):
             shapeInfo.append(shape[i])
-            num_elements *= shape[i]
+            size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
     
     fn __init__(inout self, shape: NDArrayShape, random: Bool = False, value: SIMD[dtype, 1] = SIMD[dtype, 1](0)):
+
         var dimension: Int = shape.shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         for i in range(dimension):
             shapeInfo.append(shape.shape[i])
-            num_elements *= shape.shape[i]
+            size *= shape.shape[i]
             var temp: Int = 1
             for j in range(i + 1, dimension):  # temp
                 temp *= shape.shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
-        for i in range(num_elements):
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
+        for i in range(size):
             self._arr[i] = value
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
         if random:
-            rand[dtype](self._arr, num_elements)
+            rand[dtype](self._arr, size)
     
 
-    # constructor when rank, dims, weights, first_index(offset) are known
+    # constructor when rank, ndim, weights, first_index(offset) are known
     fn __init__(
         inout self,
-        dims: Int,
-        offset_index: Int,
-        num_elements: Int,
+        ndim: Int,
+        offset: Int,
+        size: Int,
         shape: List[Int],
         strides: List[Int],
         coefficients: List[Int] = List[Int](),
     ):
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dims, offset_index, num_elements, shape, strides, coefficients
+            ndim, offset, size, shape, strides, coefficients
         )
 
     fn __init__(inout self, shape: VariadicList[Int], random: Bool = False):
+        """
+        Example:
+            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
+            Returns an array with shape 3 x 2 x 4 and randomly values.
+        """
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         for i in range(dimension):
             shapeInfo.append(shape[i])
-            num_elements *= shape[i]
+            size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1, shape.__len__()):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
 
         if random:
-            rand[dtype](self._arr, num_elements)
+            rand[dtype](self._arr, size)
 
-    fn __init__(inout self, shape: List[Int], random: Bool = False):
+    fn __init__(inout self, data: List[SIMD[dtype, 1]], shape: List[Int]):
+        """
+        Example:
+            `NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))`
+            Returns an array with shape 3 x 2 with input values.
+        """
+
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         for i in range(dimension):
             shapeInfo.append(shape[i])
-            num_elements *= shape[i]
+            size *= shape[i]
+            var temp: Int = 1
+            for j in range(1, i + 1):  # temp
+                temp *= shape[-j]
+            strides.append(temp)
+            strides = strides[::-1]
+
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
+        for i in range(size):
+            self._arr[i] = data[i]
+        self.info = arrayDescriptor[dtype](
+            dimension, first_index, size, shapeInfo, strides
+        )
+
+    fn __init__(inout self, shape: List[Int], random: Bool = False):
+        """
+        Example:
+            NDArray[DType.float16](List[Int](3, 2, 4), random=True)
+            Returns an array with shape 3 x 2 x 4 and randomly values.
+        """
+
+        var dimension: Int = shape.__len__()
+        var first_index: Int = 0
+        var size: Int = 1
+        var shapeInfo: List[Int] = List[Int]()
+        var strides: List[Int] = List[Int]()
+
+        for i in range(dimension):
+            shapeInfo.append(shape[i])
+            size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
         if random:
-            rand[dtype](self._arr, num_elements)
+            rand[dtype](self._arr, size)
 
     fn __copyinit__(inout self, new: Self):
         self.info = new.info
-        self._arr = DTypePointer[dtype].alloc(new.info.num_elements)
-        for i in range(new.info.num_elements):
+        self._arr = DTypePointer[dtype].alloc(new.info.size)
+        for i in range(new.info.size):
             self._arr[i] = new._arr[i]
 
     fn __moveinit__(inout self, owned existing: Self):
@@ -287,10 +345,18 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self._arr.__setitem__(index, val)
 
     fn __getitem__(self, idx: Int) -> SIMD[dtype, 1]:
+        """
+        Example:
+            `arr[15]` returns the 15th item of the array's data buffer.
+        """
         return self._arr.__getitem__(idx)
 
     fn __getitem__(self, *indices: Int) raises -> SIMD[dtype, 1]:
-        if indices.__len__() != self.info.dims:
+        """
+        Example:
+            `arr[1,2]` returns the item of 1st row and 2nd column of the array.
+        """
+        if indices.__len__() != self.info.ndim:
             raise Error("Error: Length of Indices do not match the shape")
 
         for i in range(indices.__len__()):
@@ -304,7 +370,12 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
     # same as above, but explicit VariadicList
     fn __getitem__(self, indices: VariadicList[Int]) raises -> SIMD[dtype, 1]:
-        if indices.__len__() != self.info.dims:
+        """
+        Example:
+            `arr[VariadicList[Int](1,2)]` returns the item of 1st row and
+                2nd column of the array.
+        """
+        if indices.__len__() != self.info.ndim:
             raise Error("Error: Length of Indices do not match the shape")
 
         for i in range(indices.__len__()):
@@ -317,14 +388,25 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return self._arr[index]
 
     fn __getitem__(
-        self, indices: List[Int], offset_index: Int, coefficients: List[Int]
+        self, indices: List[Int], offset: Int, coefficients: List[Int]
     ) -> SIMD[dtype, 1]:
-        var index: Int = offset_index + _get_index(indices, coefficients)
+        """
+        Example:
+            `arr[List[Int](1,2), 1, List[Int](1,1)]` returns the item of
+            1st row and 3rd column of the array.
+        """
+
+        var index: Int = offset + _get_index(indices, coefficients)
         return self._arr[index]
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
+        """
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+
         var n_slices: Int = slices.__len__()
-        if n_slices > self.info.dims or n_slices < self.info.dims:
+        if n_slices > self.info.ndim or n_slices < self.info.ndim:
             print("Error: No of slices do not match shape")
 
         var ndims: Int = 0
@@ -344,7 +426,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         for _ in range(ndims):
             while spec[j] == 1:
                 j += 1
-            if j >= self.info.dims:
+            if j >= self.info.ndim:
                 break
             nshape.append(slices[j].unsafe_indices())
             nnum_elements *= slices[j].unsafe_indices()
@@ -358,20 +440,20 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             nstrides.append(temp)
 
         # row major
-        var noffset_index: Int = 0
+        var noffset: Int = 0
         for i in range(slices.__len__()):
             var temp: Int = 1
             for j in range(i + 1, slices.__len__()):
                 temp *= self.info.shape[j]
-            noffset_index += slices[i].start * temp
+            noffset += slices[i].start * temp
 
-        var narr = Self(ndims, noffset_index, nnum_elements, nshape, nstrides, ncoefficients)
+        var narr = Self(ndims, noffset, nnum_elements, nshape, nstrides, ncoefficients)
         var index = List[Int]()
         for _ in range(ndims):
             index.append(0)
         
         _traverse_iterative[dtype](
-            self, narr, nshape, ncoefficients, nstrides, noffset_index, index, 0
+            self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
         )
         return narr
 
@@ -421,14 +503,17 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     #     var index: Int = _get_index(indices, self.info.strides)
     #     self._arr.store[width=width](index, val)
 
+    fn size(self) -> Int:
+        return self.info.size
+
     fn num_elements(self) -> Int:
-        return self.info.num_elements
+        return self.info.size
 
     fn __len__(inout self) -> Int:
-        return self.info.num_elements
+        return self.info.size
 
     fn __int__(self) -> Int:
-        return self.info.num_elements
+        return self.info.size
 
     fn __pos__(self) -> Self:
         return self * 1.0
@@ -439,21 +524,48 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __str__(self) -> String:
         return self._array_to_string(0, 0)
 
-    fn _array_to_string(self, dimension:Int, offset:Int) -> String :
-        if dimension == self.info.dims - 1:
+    fn _array_to_string(self, dimension:Int, offset:Int) -> String:
+        if dimension == self.info.ndim - 1:
             var result: String = str("[\t")
-            for i in range(self.info.shape[dimension]):
-                if i > 0:
+            var number_of_items = self.info.shape[dimension]
+            if number_of_items <= 6:  # Print all items
+                for i in range(number_of_items):
+                    result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
                     result = result + "\t"
-                result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
-            result = result + "\t]"
+            else:  # Print first 3 and last 3 items
+                for i in range(3):
+                    result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
+                    result = result + "\t"
+                result = result + "...\t"
+                for i in range(number_of_items-3, number_of_items):
+                    result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
+                    result = result + "\t"
+            result = result + "]"
             return result
         else:
             var result: String = str("[")
-            for i in range(self.info.shape[dimension]):
-                result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
-                if i < (self.info.shape[dimension]-1):
-                    result += "\n"
+            var number_of_items = self.info.shape[dimension]
+            if number_of_items <= 6:  # Print all items
+                for i in range(number_of_items):
+                    if i == 0:
+                        result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                    if i > 0:
+                        result = result + str(" ") * (dimension+1) + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                    if i < (number_of_items-1):
+                        result = result + "\n"
+            else:  # Print first 3 and last 3 items
+                    for i in range(3):
+                        if i == 0:
+                            result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        if i > 0:
+                            result = result + str(" ") * (dimension+1) + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        if i < (number_of_items-1):
+                            result += "\n"
+                    result = result + "...\n"
+                    for i in range(number_of_items-3, number_of_items):
+                        result = result + str(" ") * (dimension+1) + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        if i < (number_of_items-1):
+                            result = result + "\n"
             result = result + "]"
             return result
 
@@ -479,7 +591,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 ),
             )
 
-        vectorize[elemwise_vectorize, simd_width](self.info.num_elements)
+        vectorize[elemwise_vectorize, simd_width](self.info.size)
         return new_array
 
     fn _elementwise_array_arithmetic[
@@ -500,7 +612,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 ),
             )
 
-        vectorize[elemwise_arithmetic, simd_width](self.info.num_elements)
+        vectorize[elemwise_arithmetic, simd_width](self.info.size)
         return new_vec
 
     fn __add__(inout self, other: Scalar[dtype]) -> Self:
@@ -547,7 +659,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
             reduced[0] += self._arr.load[width=simd_width](idx).reduce_add()
 
-        vectorize[vectorize_reduce, simd_width](self.info.num_elements)
+        vectorize[vectorize_reduce, simd_width](self.info.size)
         return reduced
 
     fn __matmul__(self, other: Self) -> Scalar[dtype]:
@@ -559,7 +671,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         """
         Inner product of two vectors.
         """
-        if self.info.num_elements != other.info.num_elements:
+        if self.info.size != other.info.size:
             raise Error("The lengths of two vectors do not match.")
         return self._elementwise_array_arithmetic[SIMD.__mul__](
             other
@@ -576,7 +688,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         print("B:", other.info.shape[0], " x ", other.info.shape[1])
         print("AB:", self.info.shape[0], " x ", other.info.shape[1])
 
-        if (self.info.dims != 2) or (other.info.dims != 2):
+        if (self.info.ndim != 2) or (other.info.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
         if self.info.shape[1] != other.info.shape[0]:
             raise Error("Second dimension of A does not match first dimension of B.")
@@ -607,7 +719,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 idx, pow(self._arr.load[width=simd_width](idx), p)
             )
 
-        vectorize[tensor_scalar_vectorize, simd_width](self.info.num_elements)
+        vectorize[tensor_scalar_vectorize, simd_width](self.info.size)
         return new_vec
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
@@ -615,7 +727,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return self._elementwise_scalar_arithmetic[SIMD.__truediv__](s)
 
     fn __truediv__(self, other: Self) raises -> Self:
-        if self.info.num_elements != other.info.num_elements:
+        if self.info.size != other.info.size:
             raise Error("No of elements in both arrays do not match")
 
         return self._elementwise_array_arithmetic[SIMD.__truediv__](other)

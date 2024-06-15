@@ -251,6 +251,36 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         if random:
             rand[dtype](self._arr, size)
 
+    fn __init__(inout self, data: List[SIMD[dtype, 1]], shape: List[Int]):
+        """
+        Example:
+            `NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))`
+            Returns an array with shape 3 x 2 with input values.
+        """
+
+        var dimension: Int = shape.__len__()
+        var first_index: Int = 0
+        var size: Int = 1
+        var shapeInfo: List[Int] = List[Int]()
+        var strides: List[Int] = List[Int]()
+
+        for i in range(dimension):
+            shapeInfo.append(shape[i])
+            size *= shape[i]
+            var temp: Int = 1
+            for j in range(1, i + 1):  # temp
+                temp *= shape[-j]
+            strides.append(temp)
+            strides = strides[::-1]
+
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
+        for i in range(size):
+            self._arr[i] = data[i]
+        self.info = arrayDescriptor[dtype](
+            dimension, first_index, size, shapeInfo, strides
+        )
+
     fn __init__(inout self, shape: List[Int], random: Bool = False):
         """
         Example:

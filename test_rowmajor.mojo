@@ -11,6 +11,9 @@ fn main() raises:
     ## ND arrays
     var t0 = time.now()
 
+    var new = NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))
+    print(new)
+
     var orig = NDArray[DType.float32](VariadicList[Int](100, 100), random=True)
     var narr = NDArray[DType.float32](VariadicList[Int](100, 100), random=True)
     # var index = List[Int](0, 0)
@@ -20,8 +23,8 @@ fn main() raises:
     print((time.now()-t0)/10e9, "seconds")
 
     # # * ROW MAJOR INDEXING
-    var arr = NDArray[DType.int64](VariadicList[Int](2, 2, 2), random=True)
-    print("2x2x2 array row major")
+    var arr = NDArray[DType.int64](VariadicList[Int](2, 2, 2, 2), random=True)
+    print("2x2x2x2 array row major")
     print(arr)
     print()
     # # slicing doesn't support single integer index for now, therefore [:,:,2] 

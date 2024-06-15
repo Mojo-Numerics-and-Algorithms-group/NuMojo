@@ -111,9 +111,9 @@ struct NDArrayShape[dtype:DType = DType.int32](Stringable):
 
 @value
 struct arrayDescriptor[dtype: DType = DType.float32]():
-    var ndim: Int
+    var ndim: Int  # Number of dimensions of the array
     var offset_index: Int
-    var num_elements: Int
+    var size: Int  # Number of elements in the array
     var shape: List[Int]  # size of each dimension
     var strides: List[Int]  # strides
     var coefficients: List[Int]  # coefficients
@@ -122,14 +122,14 @@ struct arrayDescriptor[dtype: DType = DType.float32]():
         inout self,
         ndim: Int,
         offset_index: Int,
-        num_elements: Int,
+        size: Int,
         shape: List[Int],
         strides: List[Int],
         coefficients: List[Int] = List[Int](),
     ):
         self.ndim = ndim
         self.offset_index = offset_index
-        self.num_elements = num_elements
+        self.size = size
         self.shape = shape
         self.strides = strides
         self.coefficients = coefficients
@@ -144,49 +144,49 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __init__(inout self, *shape: Int):
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         print(shape[0], shape[1])
         for i in range(dimension):
             shapeInfo.append(shape[i])
-            num_elements *= shape[i]
+            size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
     
     fn __init__(inout self, shape: NDArrayShape, random: Bool = False, value: SIMD[dtype, 1] = SIMD[dtype, 1](0)):
         var dimension: Int = shape.shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         for i in range(dimension):
             shapeInfo.append(shape.shape[i])
-            num_elements *= shape.shape[i]
+            size *= shape.shape[i]
             var temp: Int = 1
             for j in range(i + 1, dimension):  # temp
                 temp *= shape.shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
-        for i in range(num_elements):
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
+        for i in range(size):
             self._arr[i] = value
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
         if random:
-            rand[dtype](self._arr, num_elements)
+            rand[dtype](self._arr, size)
     
 
     # constructor when rank, ndim, weights, first_index(offset) are known
@@ -194,68 +194,68 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         inout self,
         ndim: Int,
         offset_index: Int,
-        num_elements: Int,
+        size: Int,
         shape: List[Int],
         strides: List[Int],
         coefficients: List[Int] = List[Int](),
     ):
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            ndim, offset_index, num_elements, shape, strides, coefficients
+            ndim, offset_index, size, shape, strides, coefficients
         )
 
     fn __init__(inout self, shape: VariadicList[Int], random: Bool = False):
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         for i in range(dimension):
             shapeInfo.append(shape[i])
-            num_elements *= shape[i]
+            size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1, shape.__len__()):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
 
         if random:
-            rand[dtype](self._arr, num_elements)
+            rand[dtype](self._arr, size)
 
     fn __init__(inout self, shape: List[Int], random: Bool = False):
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
-        var num_elements: Int = 1
+        var size: Int = 1
         var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         for i in range(dimension):
             shapeInfo.append(shape[i])
-            num_elements *= shape[i]
+            size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
-        self._arr = DTypePointer[dtype].alloc(num_elements)
-        memset_zero(self._arr, num_elements)
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, num_elements, shapeInfo, strides
+            dimension, first_index, size, shapeInfo, strides
         )
         if random:
-            rand[dtype](self._arr, num_elements)
+            rand[dtype](self._arr, size)
 
     fn __copyinit__(inout self, new: Self):
         self.info = new.info
-        self._arr = DTypePointer[dtype].alloc(new.info.num_elements)
-        for i in range(new.info.num_elements):
+        self._arr = DTypePointer[dtype].alloc(new.info.size)
+        for i in range(new.info.size):
             self._arr[i] = new._arr[i]
 
     fn __moveinit__(inout self, owned existing: Self):
@@ -421,14 +421,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     #     var index: Int = _get_index(indices, self.info.strides)
     #     self._arr.store[width=width](index, val)
 
-    fn num_elements(self) -> Int:
-        return self.info.num_elements
+    fn size(self) -> Int:
+        return self.info.size
 
     fn __len__(inout self) -> Int:
-        return self.info.num_elements
+        return self.info.size
 
     fn __int__(self) -> Int:
-        return self.info.num_elements
+        return self.info.size
 
     fn __pos__(self) -> Self:
         return self * 1.0
@@ -479,7 +479,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 ),
             )
 
-        vectorize[elemwise_vectorize, simd_width](self.info.num_elements)
+        vectorize[elemwise_vectorize, simd_width](self.info.size)
         return new_array
 
     fn _elementwise_array_arithmetic[
@@ -500,7 +500,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 ),
             )
 
-        vectorize[elemwise_arithmetic, simd_width](self.info.num_elements)
+        vectorize[elemwise_arithmetic, simd_width](self.info.size)
         return new_vec
 
     fn __add__(inout self, other: Scalar[dtype]) -> Self:
@@ -547,7 +547,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
             reduced[0] += self._arr.load[width=simd_width](idx).reduce_add()
 
-        vectorize[vectorize_reduce, simd_width](self.info.num_elements)
+        vectorize[vectorize_reduce, simd_width](self.info.size)
         return reduced
 
     fn __matmul__(self, other: Self) -> Scalar[dtype]:
@@ -559,7 +559,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         """
         Inner product of two vectors.
         """
-        if self.info.num_elements != other.info.num_elements:
+        if self.info.size != other.info.size:
             raise Error("The lengths of two vectors do not match.")
         return self._elementwise_array_arithmetic[SIMD.__mul__](
             other
@@ -607,7 +607,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 idx, pow(self._arr.load[width=simd_width](idx), p)
             )
 
-        vectorize[tensor_scalar_vectorize, simd_width](self.info.num_elements)
+        vectorize[tensor_scalar_vectorize, simd_width](self.info.size)
         return new_vec
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
@@ -615,7 +615,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return self._elementwise_scalar_arithmetic[SIMD.__truediv__](s)
 
     fn __truediv__(self, other: Self) raises -> Self:
-        if self.info.num_elements != other.info.num_elements:
+        if self.info.size != other.info.size:
             raise Error("No of elements in both arrays do not match")
 
         return self._elementwise_array_arithmetic[SIMD.__truediv__](other)

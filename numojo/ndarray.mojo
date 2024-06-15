@@ -270,7 +270,9 @@ struct Array[dtype: DType = DType.float32](Stringable):
         var index = List[Int]()
         for _ in range(nrank):
             index.append(0)
-        _traverse_iterative[dtype](self, narr, dims, weights, offset_index, index, 0)
+        _traverse_iterative[dtype](
+            self, narr, dims, weights, offset_index, index, 0
+        )
         return narr
 
     # I have to implement some kind of Index struct like the tensor Index() so that we don't have to write VariadicList everytime
@@ -310,7 +312,16 @@ struct Array[dtype: DType = DType.float32](Stringable):
         return self * -1.0
 
     fn __str__(self) -> String:
-        return self._array_to_string(0, self._arrayInfo.first_index) + "\n" + "Shape: " + self._arrayInfo.dims.__str__() + "\t" + "dtype: " + dtype.__str__() + "\n"
+        return (
+            self._array_to_string(0, self._arrayInfo.first_index)
+            + "\n"
+            + "Shape: "
+            + self._arrayInfo.dims.__str__()
+            + "\t"
+            + "dtype: "
+            + dtype.__str__()
+            + "\n"
+        )
 
     fn _array_to_string(self, dimension: Int, offset: Int) -> String:
         if dimension == len(self._arrayInfo.dims) - 1:

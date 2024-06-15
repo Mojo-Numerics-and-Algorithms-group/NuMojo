@@ -19,6 +19,7 @@ fn main() raises:
     var index = List[Int](0, 0)
     numojo.ndarray._traverse_iterative[DType.float16](orig, narr, orig._arrayInfo.dims, orig._arrayInfo.weights, 0, index, 0)
     print(narr)
+    print(orig.mdot(narr))
 
     # * ROW MAJOR INDEXING
     var arr = Array[DType.float16](VariadicList[Int](2, 3, 3), random=True)

@@ -3,6 +3,10 @@
 # * Last updated: 2024-06-13
 ############################################################################################
 
+"""Implements basic object methods for working with N-dimensional arrays.
+
+"""
+
 from random import rand
 from testing import assert_raises
 
@@ -177,18 +181,18 @@ struct Array[dtype: DType = DType.float32](Stringable):
     fn __setitem__(inout self, idx: Int, val: SIMD[dtype, 1]):
         self._arr.__setitem__(idx, val)
 
-    fn __setitem__(inout self, indices: List[Int], val: SIMD[dtype, 1]):
+    fn __setitem__(inout self, indices: List[Int], val: SIMD[dtype,1]):
+        var index: Int = _get_index(indices, self._arrayInfo.weights)
+        self._arr[index] = val
+    
+    fn __setitem__(inout self, indices: VariadicList[Int], val:SIMD[dtype,1]):
         var index: Int = _get_index(indices, self._arrayInfo.weights)
         self._arr[index] = val
 
-    fn __setitem__(inout self, indices: VariadicList[Int], val: SIMD[dtype, 1]):
-        var index: Int = _get_index(indices, self._arrayInfo.weights)
-        self._arr[index] = val
-
-    fn __getitem__(inout self, idx: Int) -> SIMD[dtype, 1]:
+    fn __getitem__(self, idx:Int) -> SIMD[dtype, 1]:
         return self._arr.__getitem__(idx)
 
-    fn __getitem__(inout self, *indices: Int) raises -> SIMD[dtype, 1]:
+    fn __getitem__(self, *indices: Int) raises -> SIMD[dtype,1]:
         if indices.__len__() != self._arrayInfo.rank:
             raise Error("Error: Length of Indices do not match the shape")
 
@@ -464,12 +468,44 @@ struct Array[dtype: DType = DType.float32](Stringable):
         vectorize[vectorize_reduce, simd_width](self._arrayInfo.num_elements)
         return reduced
 
-    fn __matmul__(inout self, other: Self) -> Scalar[dtype]:
-        return self._elementwise_array_arithmetic[SIMD.__mul__](
-            other
-        )._reduce_sum()
+    fn __matmul__(self, other: Self) -> Scalar[dtype]:
+        return self._elementwise_array_arithmetic[SIMD.__mul__](other)._reduce_sum()
 
-    fn __pow__(self, p: Int) -> Self:
+    fn vdot(self, other: Self) raises -> Scalar[dtype]:
+        """
+        Inner product of two vectors.
+        """
+        if self._arrayInfo.num_elements != other._arrayInfo.num_elements:
+            raise Error("The lengths of two vectors do not match.")
+        return self._elementwise_array_arithmetic[SIMD.__mul__](other)._reduce_sum()
+
+    fn mdot(self, other: Self) raises -> Self:
+        """
+        Dot product of two matrix.
+        Matrix A: M * N.
+        Matrix B: N * L.
+        """
+
+        print("A:", self._arrayInfo.dims[0], " x ", self._arrayInfo.dims[1])
+        print("B:", other._arrayInfo.dims[0], " x ", other._arrayInfo.dims[1])
+        print("AB:", self._arrayInfo.dims[0], " x ", other._arrayInfo.dims[1])
+
+        if (self._arrayInfo.rank != 2) or (other._arrayInfo.rank != 2):
+            raise Error("The array should have only two dimensions (matrix).")
+        if self._arrayInfo.dims[1] != other._arrayInfo.dims[0]:
+            raise Error("Second dimension of A does not match first dimension of B.")
+        
+        var new_dims = List[Int](self._arrayInfo.dims[0], other._arrayInfo.dims[1])
+        var new_matrix = Self(new_dims)
+        for row in range(self._arrayInfo.dims[0]):
+            for col in range(other._arrayInfo.dims[1]):
+                new_matrix.__setitem__(
+                                        List[Int](row, col), 
+                                        self[row:row+1, :].vdot(other[:, col:col+1])
+                                        )
+        return new_matrix
+
+    fn __pow__(self, p: Int)->Self:
         return self._elementwise_pow(p)
 
     fn __ipow__(inout self, p: Int):

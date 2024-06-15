@@ -491,21 +491,45 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __str__(self) -> String:
         return self._array_to_string(0, 0)
 
-    fn _array_to_string(self, dimension:Int, offset:Int) -> String :
+    fn _array_to_string(self, dimension:Int, offset:Int) -> String:
         if dimension == self.info.ndim - 1:
             var result: String = str("[\t")
-            for i in range(self.info.shape[dimension]):
-                if i > 0:
+            var number_of_items = self.info.shape[dimension]
+            if number_of_items <= 6:  # Print all items
+                for i in range(number_of_items):
+                    result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
                     result = result + "\t"
-                result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
-            result = result + "\t]"
+            else:  # Print first 3 and last 3 items
+                for i in range(3):
+                    result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
+                    result = result + "\t"
+                result = result + "...\t"
+                for i in range(number_of_items-3, number_of_items):
+                    result = result + self._arr[offset + i * self.info.strides[dimension]].__str__()
+                    result = result + "\t"
+            result = result + "]"
             return result
         else:
             var result: String = str("[")
-            for i in range(self.info.shape[dimension]):
-                result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
-                if i < (self.info.shape[dimension]-1):
-                    result += "\n"
+            var number_of_items = self.info.shape[dimension]
+            if number_of_items <= 6:  # Print all items
+                for i in range(number_of_items):
+                    if i == 0:
+                        result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                    if i > 0:
+                        result = result + str(" ") * (dimension+1) + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                    if i < (number_of_items-1):
+                        result = result + "\n"
+            else:  # Print first 3 and last 3 items
+                    for i in range(3):
+                        result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        if i < (number_of_items-1):
+                            result += "\n"
+                    result = result + "...\n"
+                    for i in range(number_of_items-3, number_of_items):
+                        result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        if i < (number_of_items-1):
+                            result = result + "\n"
             result = result + "]"
             return result
 

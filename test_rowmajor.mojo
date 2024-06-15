@@ -5,21 +5,23 @@ from testing import assert_raises
 
 from numojo.ndarray import NDArray
 
+import time
+
 fn main() raises:
     ## ND arrays
-    var orig = NDArray[DType.float16](VariadicList[Int](2, 2), random=True)
-    print(orig, "\n")
-    var narr = NDArray[DType.float16](VariadicList[Int](2, 2), random=True)
-    print(narr, "\n")
+    var t0 = time.now()
+
+    var orig = NDArray[DType.float32](VariadicList[Int](100, 100), random=True)
+    var narr = NDArray[DType.float32](VariadicList[Int](100, 100), random=True)
     # var index = List[Int](0, 0)
     # numojo.ndarray._traverse_iterative[DType.float16](orig, narr, orig._arrayInfo.dims, orig._arrayInfo.weights, 0, index, 0)
-    # print(narr)
-    print(orig.mdot(narr), "\n")
-    print(orig.vdot(narr), "\n")
+    var _temp = orig.mdot(narr)
+    print(_temp)
+    print((time.now()-t0)/10e9, "seconds")
 
     # # * ROW MAJOR INDEXING
-    var arr = NDArray[DType.float16](VariadicList[Int](2, 3, 3), random=True)
-    print("2x3x3 array row major")
+    var arr = NDArray[DType.int64](VariadicList[Int](2, 2, 2), random=True)
+    print("2x2x2 array row major")
     print(arr)
     print()
     # # slicing doesn't support single integer index for now, therefore [:,:,2] 

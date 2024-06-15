@@ -111,11 +111,13 @@ struct NDArrayShape[dtype:DType = DType.int32](Stringable):
 
 @value
 struct arrayDescriptor[dtype: DType = DType.float32]():
+
     var ndim: Int  # Number of dimensions of the array
-    var offset_index: Int
+    var offset_index: Int  # Offset of array data in buffer.
     var size: Int  # Number of elements in the array
     var shape: List[Int]  # size of each dimension
-    var strides: List[Int]  # strides
+    var strides: List[Int]  # Tuple of bytes to step in each dimension 
+                            # when traversing an array.
     var coefficients: List[Int]  # coefficients
 
     fn __init__(
@@ -136,12 +138,26 @@ struct arrayDescriptor[dtype: DType = DType.float32]():
 
 # * COLUMN MAJOR INDEXING
 struct NDArray[dtype: DType = DType.float32](Stringable):
-    var _arr: DTypePointer[dtype]
-    alias simd_width: Int = simdwidthof[dtype]()
-    var info: arrayDescriptor[dtype]
+    """The N-dimensional array (NDArray).
+
+    The array can be uniquely defined by three parameters:
+        1. The data buffer of all items.
+        2. The shape of the array.
+        3. Is the array row-major ('C') or column-major ('F')?
+            Currently, we only implement methods using row-major.
+    """
+
+    var _arr: DTypePointer[dtype]  # Data buffer of the items in the NDArray
+    alias simd_width: Int = simdwidthof[dtype]()  # Vector size of the data type
+    var info: arrayDescriptor[dtype]  # Infomation regarding the NDArray.
 
     # default constructor
     fn __init__(inout self, *shape: Int):
+        """
+        Example:
+            NDArray[DType.int8](3,2,4)
+            Returns an empty array with shape 3 x 2 x 4.
+        """
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
         var size: Int = 1
@@ -164,6 +180,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         )
     
     fn __init__(inout self, shape: NDArrayShape, random: Bool = False, value: SIMD[dtype, 1] = SIMD[dtype, 1](0)):
+
         var dimension: Int = shape.shape.__len__()
         var first_index: Int = 0
         var size: Int = 1
@@ -206,6 +223,11 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         )
 
     fn __init__(inout self, shape: VariadicList[Int], random: Bool = False):
+        """
+        Example:
+            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
+            Returns an array with shape 3 x 2 x 4 and randomly values.
+        """
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
         var size: Int = 1
@@ -230,6 +252,12 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             rand[dtype](self._arr, size)
 
     fn __init__(inout self, shape: List[Int], random: Bool = False):
+        """
+        Example:
+            NDArray[DType.float16](List[Int](3, 2, 4), random=True)
+            Returns an array with shape 3 x 2 x 4 and randomly values.
+        """
+
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
         var size: Int = 1
@@ -287,9 +315,17 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self._arr.__setitem__(index, val)
 
     fn __getitem__(self, idx: Int) -> SIMD[dtype, 1]:
+        """
+        Example:
+            `arr[15]` returns the 15th item of the array's data buffer.
+        """
         return self._arr.__getitem__(idx)
 
     fn __getitem__(self, *indices: Int) raises -> SIMD[dtype, 1]:
+        """
+        Example:
+            `arr[1,2]` returns the item of 1st row and 2nd column of the array.
+        """
         if indices.__len__() != self.info.ndim:
             raise Error("Error: Length of Indices do not match the shape")
 
@@ -304,6 +340,11 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
     # same as above, but explicit VariadicList
     fn __getitem__(self, indices: VariadicList[Int]) raises -> SIMD[dtype, 1]:
+        """
+        Example:
+            `arr[VariadicList[Int](1,2)]` returns the item of 1st row and
+                2nd column of the array.
+        """
         if indices.__len__() != self.info.ndim:
             raise Error("Error: Length of Indices do not match the shape")
 
@@ -319,10 +360,21 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __getitem__(
         self, indices: List[Int], offset_index: Int, coefficients: List[Int]
     ) -> SIMD[dtype, 1]:
+        """
+        Example:
+            `arr[List[Int](1,2), 1, List[Int](1,1)]` returns the item of
+            1st row and 3rd column of the array.
+        """
+
         var index: Int = offset_index + _get_index(indices, coefficients)
         return self._arr[index]
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
+        """
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+
         var n_slices: Int = slices.__len__()
         if n_slices > self.info.ndim or n_slices < self.info.ndim:
             print("Error: No of slices do not match shape")

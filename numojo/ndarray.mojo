@@ -522,12 +522,15 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
                     for i in range(3):
-                        result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        if i == 0:
+                            result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        if i > 0:
+                            result = result + str(" ") * (dimension+1) + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
                         if i < (number_of_items-1):
                             result += "\n"
                     result = result + "...\n"
                     for i in range(number_of_items-3, number_of_items):
-                        result = result + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
+                        result = result + str(" ") * (dimension+1) + self._array_to_string(dimension + 1, offset + i * self.info.strides[dimension])
                         if i < (number_of_items-1):
                             result = result + "\n"
             result = result + "]"

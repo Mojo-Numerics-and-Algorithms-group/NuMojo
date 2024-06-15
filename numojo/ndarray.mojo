@@ -31,23 +31,23 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
 # ](
 #     orig: Array[dtype],
 #     inout narr: Array[dtype],
-#     dims: List[Int],
+#     ndim: List[Int],
 #     weights: List[Int],
 #     offset_index: Int,
 #     inout index: List[Int],
 #     depth: Int,
 # ):
-#     if depth == dims.__len__():
+#     if depth == ndim.__len__():
 #         var idx = offset_index + _get_index(index, weights)
 #         var temp = orig._arr.load[width=1](idx)
 #         narr._arr[idx] = temp
 #         return
 
-#     for i in range(dims[depth]):
+#     for i in range(ndim[depth]):
 #         index[depth] = i
 #         var newdepth = depth + 1
 #         _traverse_iterative(
-#             orig, narr, dims, weights, offset_index, index, newdepth
+#             orig, narr, ndim, weights, offset_index, index, newdepth
 #         )
 
 fn _traverse_iterative[
@@ -55,14 +55,14 @@ fn _traverse_iterative[
 ](  
     orig: NDArray[dtype],
     inout narr: NDArray[dtype],
-    dims: List[Int],
+    ndim: List[Int],
     coefficients: List[Int],
     strides: List[Int],
     offset_index: Int,
     inout index: List[Int],
     depth: Int,
 ):
-    if depth == dims.__len__():
+    if depth == ndim.__len__():
         var idx = offset_index + _get_index(index, coefficients)
         var nidx = _get_index(index, strides)
         var temp = orig._arr.load[width=1](idx)
@@ -72,11 +72,11 @@ fn _traverse_iterative[
         # narr.__setitem__(index, temp)
         return
 
-    for i in range(dims[depth]):
+    for i in range(ndim[depth]):
         index[depth] = i
         var newdepth = depth + 1
         _traverse_iterative(
-            orig, narr, dims, coefficients, strides, offset_index, index, newdepth
+            orig, narr, ndim, coefficients, strides, offset_index, index, newdepth
         )
 
 @value
@@ -111,7 +111,7 @@ struct NDArrayShape[dtype:DType = DType.int32](Stringable):
 
 @value
 struct arrayDescriptor[dtype: DType = DType.float32]():
-    var dims: Int
+    var ndim: Int
     var offset_index: Int
     var num_elements: Int
     var shape: List[Int]  # size of each dimension
@@ -120,14 +120,14 @@ struct arrayDescriptor[dtype: DType = DType.float32]():
 
     fn __init__(
         inout self,
-        dims: Int,
+        ndim: Int,
         offset_index: Int,
         num_elements: Int,
         shape: List[Int],
         strides: List[Int],
         coefficients: List[Int] = List[Int](),
     ):
-        self.dims = dims
+        self.ndim = ndim
         self.offset_index = offset_index
         self.num_elements = num_elements
         self.shape = shape
@@ -189,10 +189,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             rand[dtype](self._arr, num_elements)
     
 
-    # constructor when rank, dims, weights, first_index(offset) are known
+    # constructor when rank, ndim, weights, first_index(offset) are known
     fn __init__(
         inout self,
-        dims: Int,
+        ndim: Int,
         offset_index: Int,
         num_elements: Int,
         shape: List[Int],
@@ -202,7 +202,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self._arr = DTypePointer[dtype].alloc(num_elements)
         memset_zero(self._arr, num_elements)
         self.info = arrayDescriptor[dtype](
-            dims, offset_index, num_elements, shape, strides, coefficients
+            ndim, offset_index, num_elements, shape, strides, coefficients
         )
 
     fn __init__(inout self, shape: VariadicList[Int], random: Bool = False):
@@ -290,7 +290,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return self._arr.__getitem__(idx)
 
     fn __getitem__(self, *indices: Int) raises -> SIMD[dtype, 1]:
-        if indices.__len__() != self.info.dims:
+        if indices.__len__() != self.info.ndim:
             raise Error("Error: Length of Indices do not match the shape")
 
         for i in range(indices.__len__()):
@@ -304,7 +304,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
     # same as above, but explicit VariadicList
     fn __getitem__(self, indices: VariadicList[Int]) raises -> SIMD[dtype, 1]:
-        if indices.__len__() != self.info.dims:
+        if indices.__len__() != self.info.ndim:
             raise Error("Error: Length of Indices do not match the shape")
 
         for i in range(indices.__len__()):
@@ -324,7 +324,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         var n_slices: Int = slices.__len__()
-        if n_slices > self.info.dims or n_slices < self.info.dims:
+        if n_slices > self.info.ndim or n_slices < self.info.ndim:
             print("Error: No of slices do not match shape")
 
         var ndims: Int = 0
@@ -344,7 +344,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         for _ in range(ndims):
             while spec[j] == 1:
                 j += 1
-            if j >= self.info.dims:
+            if j >= self.info.ndim:
                 break
             nshape.append(slices[j].unsafe_indices())
             nnum_elements *= slices[j].unsafe_indices()
@@ -440,7 +440,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return self._array_to_string(0, 0)
 
     fn _array_to_string(self, dimension:Int, offset:Int) -> String :
-        if dimension == self.info.dims - 1:
+        if dimension == self.info.ndim - 1:
             var result: String = str("[\t")
             for i in range(self.info.shape[dimension]):
                 if i > 0:
@@ -576,7 +576,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         print("B:", other.info.shape[0], " x ", other.info.shape[1])
         print("AB:", self.info.shape[0], " x ", other.info.shape[1])
 
-        if (self.info.dims != 2) or (other.info.dims != 2):
+        if (self.info.ndim != 2) or (other.info.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
         if self.info.shape[1] != other.info.shape[0]:
             raise Error("Second dimension of A does not match first dimension of B.")

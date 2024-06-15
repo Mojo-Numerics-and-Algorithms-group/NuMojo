@@ -506,6 +506,9 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn size(self) -> Int:
         return self.info.size
 
+    fn num_elements(self) -> Int:
+        return self.info.size
+
     fn __len__(inout self) -> Int:
         return self.info.size
 

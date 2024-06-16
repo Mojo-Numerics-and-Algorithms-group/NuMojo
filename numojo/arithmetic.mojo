@@ -739,3 +739,118 @@ fn nextafter[
     return backend()._math_func_2_tensor_in_one_tensor_out[
         dtype, math.nextafter
     ](array1, array2)
+
+
+# ===------------------------------------------------------------------------===#
+# Calculus
+# ===------------------------------------------------------------------------===#
+
+
+# naive loop implementation, optimize later
+fn trapz[
+    Idtype: DType, Fdtype: DType = DType.float32
+](y: Tensor[Idtype], x: Tensor[Idtype]) raises -> SIMD[Fdtype, 1]:
+    """
+    Compute the integral of y over x using the trapezoidal rule.
+
+    Parameters:
+        Idtype: Input data type.
+        Fdtype: Output data type, defaults to float32.
+
+    Args:
+        y: A tensor.
+        x: A tensor.
+
+    Constraints:
+        `x` and `y` must have the same shape.
+        `fdtype` must be a floating-point type if `idtype` is not a floating-point type.
+
+    Returns:
+        The integral of y over x using the trapezoidal rule.
+    """
+    if x.shape() != y.shape():
+        raise Error("x and y must have the same shape")
+
+    # move this check to compile time using constrained?
+    if is_inttype[Idtype]() and not is_floattype[Fdtype]():
+        raise Error(
+            "output dtype `Fdtype` must be a floating-point type if input dtype"
+            " `Idtype` is not a floating-point type"
+        )
+
+    var integral: Scalar[Fdtype] = 0.0
+    for i in range(x.num_elements() - 1):
+        var temp = (x[i + 1] - x[i]).cast[Fdtype]() * (y[i] + y[i + 1]).cast[
+            Fdtype
+        ]() / 2.0
+        integral += temp
+    return integral
+
+
+fn diff[
+    Idtype: DType, Fdtype: DType = Idtype
+](tensor: Tensor[Idtype], n: Int) raises -> Tensor[Fdtype]:
+    """
+    Compute the n-th order difference of the input tensor.
+
+    Parameters:
+        Idtype: Input data type.
+        Fdtype: Output data type, defaults to float32.
+
+    Args:
+        tensor: A tensor.
+        n: The order of the difference.
+
+    Returns:
+        The n-th order difference of the input tensor.
+    """
+
+    var t1: Tensor[Fdtype] = Tensor[Fdtype](TensorShape(tensor.num_elements()))
+    for i in range(tensor.num_elements()):
+        t1[i] = tensor[i].cast[Fdtype]()
+
+    for num in range(n):
+        var result: Tensor[Fdtype] = Tensor[Fdtype](
+            TensorShape(tensor.num_elements() - (num + 1))
+        )
+        for i in range(t1.num_elements() - 1):
+            result[i] = (t1.load[1](i + 1) - t1.load[1](i)).cast[Fdtype]()
+        t1 = result
+    return t1
+
+
+# Implement it for (2,) tensor and add axis parameters later
+fn cross[
+    Idtype: DType, Fdtype: DType = DType.float32
+](tensor1: Tensor[Idtype], tensor2: Tensor[Idtype]) raises -> Tensor[Fdtype]:
+    """
+    Compute the cross product of two tensors.
+
+    Parameters:
+        Idtype: Input data type.
+        Fdtype: Output data type, defaults to float32.
+
+    Args:
+        tensor1: A tensor.
+        tensor2: A tensor.
+
+    Constraints:
+        `tensor1` and `tensor2` must be of shape (3,).
+
+    Returns:
+        The cross product of two tensors.
+    """
+
+    if tensor1.shape() == tensor2.shape() == 3:
+        var tensor3: Tensor[Fdtype] = Tensor[Fdtype](TensorShape(3))
+        tensor3[0] = (tensor1[1] * tensor2[2] - tensor1[2] * tensor2[1]).cast[Fdtype]()
+        tensor3[1] = (tensor1[2] * tensor2[0] - tensor1[0] * tensor2[2]).cast[Fdtype]()
+        tensor3[2] = (tensor1[0] * tensor2[1] - tensor1[1] * tensor2[0]).cast[Fdtype]()
+        return tensor3
+    else:
+        raise Error(
+            "Cross product is not supported for tensors of shape "
+            + tensor1.shape().__str__()
+            + " and "
+            + tensor2.shape().__str__()
+        )

@@ -1,7 +1,7 @@
 from .arithmetic import *
 from .trig import *
 from .cumulative_reduce import *
-from .array_routines import *
+from .array_creation_routines import *
 from .ndarray import NDArray
 
 # from  .comparison import *

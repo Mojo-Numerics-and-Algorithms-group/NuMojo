@@ -1,9 +1,13 @@
-############################################################################################
-# * ROW MAJOR ND ARRAYS
-# * Last updated: 2024-06-16
-############################################################################################
+# ===----------------------------------------------------------------------=== #
+# Implements ROW MAJOR N-DIMENSIONAL ARRAYS
+# Last updated: 2024-06-16
+# ===----------------------------------------------------------------------=== #
 
-"""Implements N-dimensional arrays.
+"""
+# TODO
+1) Add NDArray, NDArrayShape constructor overload for List, VariadicList types etc to cover more cases
+2) Add __getitem__() overload for (Slice, Int)
+3) Add support for Column Major
 """
 
 from random import rand
@@ -156,51 +160,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
     fn __init__(
         inout self,
-        shape: NDArrayShape,
+        shape: VariadicList[Int],
         random: Bool = False,
         value: SIMD[dtype, 1] = SIMD[dtype, 1](0),
     ):
-        var dimension: Int = shape.__len__()
-        var first_index: Int = 0
-        var size: Int = 1
-        var shapeInfo: List[Int] = List[Int]()
-        var strides: List[Int] = List[Int]()
-
-        for i in range(dimension):
-            shapeInfo.append(shape.shape[i])
-            size *= shape.shape[i]
-            var temp: Int = 1
-            for j in range(i + 1, dimension):  # temp
-                temp *= shape.shape[j]
-            strides.append(temp)
-
-        self._arr = DTypePointer[dtype].alloc(size)
-        memset_zero(self._arr, size)
-        for i in range(size):
-            self._arr[i] = value
-        self.info = arrayDescriptor[dtype](
-            dimension, first_index, size, shapeInfo, strides
-        )
-        if random:
-            rand[dtype](self._arr, size)
-
-    # constructor when rank, ndim, weights, first_index(offset) are known
-    fn __init__(
-        inout self,
-        ndim: Int,
-        offset: Int,
-        size: Int,
-        shape: List[Int],
-        strides: List[Int],
-        coefficients: List[Int] = List[Int](),
-    ):
-        self._arr = DTypePointer[dtype].alloc(size)
-        memset_zero(self._arr, size)
-        self.info = arrayDescriptor[dtype](
-            ndim, offset, size, shape, strides, coefficients
-        )
-
-    fn __init__(inout self, shape: VariadicList[Int], random: Bool = False):
         """
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
@@ -228,6 +191,9 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         if random:
             rand[dtype](self._arr, size)
+        else:
+            for i in range(size):
+                self._arr[i] = value.cast[dtype]()
 
     fn __init__(inout self, data: List[SIMD[dtype, 1]], shape: List[Int]):
         """
@@ -287,6 +253,53 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         )
         if random:
             rand[dtype](self._arr, size)
+
+    fn __init__(
+        inout self,
+        shape: NDArrayShape,
+        random: Bool = False,
+        value: SIMD[dtype, 1] = SIMD[dtype, 1](0),
+    ):
+        var dimension: Int = shape.__len__()
+        var first_index: Int = 0
+        var size: Int = 1
+        var shapeInfo: List[Int] = List[Int]()
+        var strides: List[Int] = List[Int]()
+
+        for i in range(dimension):
+            shapeInfo.append(shape.shape[i])
+            size *= shape.shape[i]
+            var temp: Int = 1
+            for j in range(i + 1, dimension):  # temp
+                temp *= shape.shape[j]
+            strides.append(temp)
+
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
+        self.info = arrayDescriptor[dtype](
+            dimension, first_index, size, shapeInfo, strides
+        )
+        if random:
+            rand[dtype](self._arr, size)
+        else:
+            for i in range(size):
+                self._arr[i] = value
+
+    # constructor when rank, ndim, weights, first_index(offset) are known
+    fn __init__(
+        inout self,
+        ndim: Int,
+        offset: Int,
+        size: Int,
+        shape: List[Int],
+        strides: List[Int],
+        coefficients: List[Int] = List[Int](),
+    ):
+        self._arr = DTypePointer[dtype].alloc(size)
+        memset_zero(self._arr, size)
+        self.info = arrayDescriptor[dtype](
+            ndim, offset, size, shape, strides, coefficients
+        )
 
     fn __copyinit__(inout self, new: Self):
         self.info = new.info

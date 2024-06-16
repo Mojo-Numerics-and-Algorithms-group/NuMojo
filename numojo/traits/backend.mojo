@@ -1,9 +1,10 @@
-"""
-Defines computational backend traits
-"""
+# ===----------------------------------------------------------------------=== #
+# Defines computational backend traits
+# ===----------------------------------------------------------------------=== #
 
-from tensor import Tensor
+
 from ..ndarray import NDArray
+
 
 trait Backend:
     """
@@ -11,6 +12,9 @@ trait Backend:
     """
 
     fn __init__(inout self: Self):
+        """
+        Initialize the backend.
+        """
         pass
 
     fn _math_func_fma[
@@ -22,7 +26,7 @@ trait Backend:
         tensor3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a tensor
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
 
         Constraints:
             Both tensors must have the same shape
@@ -31,12 +35,12 @@ trait Backend:
             dtype: The element type.
 
         Args:
-            tensor1: A tensor
-            tensor2: A tensor
-            tensor3: A tensor
+            tensor1: A NDArray
+            tensor2: A NDArray
+            tensor3: A NDArray
 
         Returns:
-            A a new tensor that is tensor with the function func applied.
+            A a new NDArray that is NDArray with the function func applied.
         """
         pass
 
@@ -49,7 +53,7 @@ trait Backend:
         simd: SIMD[dtype, 1],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a tensor.
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
             Both tensors must have the same shape
@@ -58,12 +62,12 @@ trait Backend:
             dtype: The element type.
 
         Args:
-            tensor1: A tensor.
-            tensor2: A tensor.
+            tensor1: A NDArray.
+            tensor2: A NDArray.
             simd: A SIMD[dtype,1] value to be added
 
         Returns:
-            A a new tensor that is tensor with the function func applied.
+            A a new NDArray that is NDArray with the function func applied.
         """
         pass
 
@@ -72,19 +76,19 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor: NDArray[dtype]) -> NDArray[dtype]:
+    ](self: Self, array: NDArray[dtype]) -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a tensor
+        Apply a SIMD function of one variable and one return to a NDArray
 
         Parameters:
             dtype: The element type.
             func: the SIMD function to to apply.
 
         Args:
-            tensor: A tensor
+            array: A NDArray
 
         Returns:
-            A a new tensor that is tensor with the function func applied.
+            A a new NDArray that is NDArray with the function func applied.
         """
         ...
 
@@ -97,7 +101,7 @@ trait Backend:
         self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a tensor
+        Apply a SIMD function of two variable and one return to a NDArray
 
         Constraints:
             Both tensors must have the same shape
@@ -107,11 +111,11 @@ trait Backend:
             func: the SIMD function to to apply.
 
         Args:
-            tensor1: A tensor
-            tensor2: A tensor
+            tensor1: A NDArray
+            tensor2: A NDArray
 
         Returns:
-            A a new tensor that is tensor with the function func applied.
+            A a new NDArray that is NDArray with the function func applied.
         """
 
         ...
@@ -123,7 +127,7 @@ trait Backend:
         ) -> SIMD[DType.bool, simd_w],
     ](
         self: Self, tensor1: NDArray[dtype], tensor2: NDArray[dtype]
-    ) raises -> Tensor[DType.bool]:
+    ) raises -> NDArray[DType.bool]:
         ...
 
     fn _math_func_is[
@@ -131,7 +135,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, tensor: NDArray[dtype]) -> Tensor[DType.bool]:
+    ](self: Self, array: NDArray[dtype]) -> NDArray[DType.bool]:
         ...
 
     fn _math_func_simd_int[

@@ -1,11 +1,13 @@
-import math
-import . _math_funcs as _mf
-from tensor import Tensor
-from .arithmetic import sqrt, fma
-
 """
 implements trigonometry functions
 """
+
+import math
+import . _math_funcs as _mf
+from .arithmetic import sqrt, fma
+
+from .ndarray import NDArray
+
 # ===------------------------------------------------------------------------===#
 # Inverse Trig
 # ===------------------------------------------------------------------------===#
@@ -13,7 +15,7 @@ implements trigonometry functions
 
 fn acos[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply acos also known as inverse cosine .
 
@@ -34,7 +36,7 @@ fn acos[
 
 fn asin[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply asin also known as inverse sine .
 
@@ -55,7 +57,7 @@ fn asin[
 
 fn atan[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply atan also known as inverse tangent .
 
@@ -76,7 +78,7 @@ fn atan[
 
 fn atan2[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply atan2 also known as inverse tangent.
     [atan2 wikipedia](https://en.wikipedia.org/wiki/Atan2).
@@ -107,7 +109,7 @@ fn atan2[
 
 fn cos[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply cos also known as cosine.
 
@@ -128,7 +130,7 @@ fn cos[
 
 fn sin[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply sin also known as sine .
 
@@ -149,7 +151,7 @@ fn sin[
 
 fn tan[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply tan also known as tangent .
 
@@ -170,7 +172,7 @@ fn tan[
 
 fn hypot[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hypot also known as hypotenuse which finds the longest section of a right triangle
     given the other two sides.
@@ -196,7 +198,7 @@ fn hypot[
 
 fn hypot_fma[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hypot also known as hypotenuse which finds the longest section of a right triangle
     given the other two sides.
@@ -231,7 +233,7 @@ fn hypot_fma[
 
 fn acosh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply acosh also known as inverse hyperbolic cosine .
 
@@ -252,7 +254,7 @@ fn acosh[
 
 fn asinh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply asinh also known as inverse hyperbolic sine .
 
@@ -273,7 +275,7 @@ fn asinh[
 
 fn atanh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply atanh also known as inverse hyperbolic tangent .
 
@@ -299,7 +301,7 @@ fn atanh[
 
 fn cosh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply cosh also known as hyperbolic cosine .
 
@@ -320,7 +322,7 @@ fn cosh[
 
 fn sinh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply sin also known as hyperbolic sine .
 
@@ -341,7 +343,7 @@ fn sinh[
 
 fn tanh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: Tensor[dtype]) -> Tensor[dtype]:
+](tensor: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply tan also known as hyperbolic tangent .
 

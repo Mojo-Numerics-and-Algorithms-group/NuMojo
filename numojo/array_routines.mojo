@@ -307,7 +307,6 @@ fn geomspace[
 
     if endpoint:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        # var r:Scalar[dtype] = math.pow(stop/start, 1/(num-1))
         var r: Scalar[dtype] = (stop / start) ** (1 / (num - 1))
         for i in range(num):
             result[i] = a * r**i
@@ -343,6 +342,7 @@ fn zeros[dtype: DType](*shape: Int) -> NDArray[dtype]:
     return NDArray[dtype](tens_shape)
 
 
+
 fn eye[dtype: DType](N: Int, M: Int) -> NDArray[dtype]:
     """
     Return a 2-D NDArray with ones on the diagonal and zeros elsewhere.
@@ -359,13 +359,6 @@ fn eye[dtype: DType](N: Int, M: Int) -> NDArray[dtype]:
     """
     var result: NDArray[dtype] = NDArray[dtype](N, M)
     var one = Scalar[dtype](1)
-    # for i in range(N):
-    #     for j in range(M):
-    #         if i == j:
-    #             # result[i*M + j] = one
-    #             result[VariadicList[Int](i,j)] = one
-    #         else:
-    #             continue
     for idx in range(M * N):
         if (idx + 1 - M) // N == 0:
             result[idx] = one

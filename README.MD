@@ -10,7 +10,7 @@
 
   <h1 align="center" font-size>NuMojo</h1>
   <p align="center">
-    NuMojo is a library for numerical computing in Mojo 🔥 similar to numpy in Python.
+    NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python.
     <br />
     <!-- when we create docs -->
     <!-- <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a> -->

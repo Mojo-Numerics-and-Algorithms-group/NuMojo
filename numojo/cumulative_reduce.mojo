@@ -228,9 +228,7 @@ fn minT[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
 
 fn pvariance[
     dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[
-    dtype, 1
-]:
+](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Population variance of a array.
     Parameters:
@@ -257,9 +255,7 @@ fn pvariance[
 
 fn variance[
     dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[
-    dtype, 1
-]:
+](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Variance of a array.
 
@@ -288,9 +284,7 @@ fn variance[
 
 fn pstdev[
     dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[
-    dtype, 1
-]:
+](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Population standard deviation of a array.
 
@@ -309,9 +303,7 @@ fn pstdev[
 
 fn stdev[
     dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[
-    dtype, 1
-]:
+](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
     """
     Standard deviation of a array.
     Parameters:
@@ -327,32 +319,34 @@ fn stdev[
 
 
 # this roughly seems to be just an alias for min in numpy
-fn amin[dtype: DType](arr: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn amin[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
-    Minimum value of a tensor.
+    Minimum value of an array.
     Parameters:
         dtype: The element type.
 
     Args:
-        arr: A Tensor.
+        array: An array.
     Returns:
-        The minimum of all of the member values of tensor as a SIMD Value of `dtype`.
+        The minimum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return minT[dtype](arr)
+    return minT[dtype](array)
+
 
 # this roughly seems to be just an alias for max in numpy
-fn amax[dtype: DType](arr: Tensor[dtype]) -> SIMD[dtype, 1]:
+fn amax[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     """
-    Maximum value of a tensor.
+    Maximum value of a array.
     Parameters:
         dtype: The element type.
 
     Args:
-        arr: A Tensor.
+        array: A array.
     Returns:
-        The maximum of all of the member values of tensor as a SIMD Value of `dtype`.
+        The maximum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return maxT[dtype](arr)
+    return maxT[dtype](array)
+
 
 fn mimimum[
     dtype: DType
@@ -390,113 +384,113 @@ fn maximum[
 
 fn minimum[
     dtype: DType
-](tensor1: Tensor[dtype], tensor2: Tensor[dtype]) raises -> Tensor[dtype]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element wise minimum of two tensors.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor1: A Tensor.
-        tensor2: A Tensor.
+        array1: An array.
+        array2: An array.
     Returns:
-        The element wise minimum of the two tensors as a Tensor of `dtype`.
+        The element wise minimum of the two tensors as a array of `dtype`.
     """
-    var result: Tensor[dtype] = Tensor[dtype](tensor1.shape())
+    var result: NDArray[dtype] = NDArray[dtype](array1.shape())
     alias nelts = simdwidthof[dtype]()
-    if tensor1.shape() != tensor2.shape():
-        raise Error("Tensor shapes are not the same")
+    if array1.shape() != array2.shape():
+        raise Error("array shapes are not the same")
 
     @parameter
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
         result.store[width=simd_width](
             idx,
             SIMD.min(
-                tensor1.load[width=simd_width](idx),
-                tensor2.load[width=simd_width](idx),
+                array1.load[width=simd_width](idx),
+                array2.load[width=simd_width](idx),
             ),
         )
 
-    vectorize[vectorized_min, nelts](tensor1.num_elements())
+    vectorize[vectorized_min, nelts](array1.num_elements())
     return result
 
 
 fn maximum[
     T: DType
-](tensor1: Tensor[T], tensor2: Tensor[T]) raises -> Tensor[T]:
+](array1: NDArray[T], array2: NDArray[T]) raises -> NDArray[T]:
     """
     Element wise maximum of two tensors.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor1: A Tensor.
-        tensor2: A Tensor.
+        array1: A array.
+        array2: A array.
     Returns:
-        The element wise maximum of the two tensors as a Tensor of `dtype`.
+        The element wise maximum of the two tensors as a array of `dtype`.
     """
-    var result: Tensor[T] = Tensor[T](tensor1.shape())
+    var result: NDArray[T] = NDArray[T](array1.shape())
     alias nelts = simdwidthof[T]()
-    if tensor1.shape() != tensor2.shape():
-        raise Error("Tensor shapes are not the same")
+    if array1.shape() != array2.shape():
+        raise Error("array shapes are not the same")
 
     @parameter
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
         result.store[width=simd_width](
             idx,
             SIMD.max(
-                tensor1.load[width=simd_width](idx),
-                tensor2.load[width=simd_width](idx),
+                array1.load[width=simd_width](idx),
+                array2.load[width=simd_width](idx),
             ),
         )
 
-    vectorize[vectorized_max, nelts](tensor1.num_elements())
+    vectorize[vectorized_max, nelts](array1.num_elements())
     return result
 
 
 # * for loop version works fine for argmax and argmin, need to vectorize it
-fn argmax[dtype: DType](tensor: Tensor[dtype]) raises -> Int:
+fn argmax[dtype: DType](array: NDArray[dtype]) raises -> Int:
     """
-    Argmax of a tensor.
+    Argmax of a array.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        array: A array.
     Returns:
-        The index of the maximum value of the tensor.
+        The index of the maximum value of the array.
     """
-    if tensor.num_elements() == 0:
-        raise Error("Tensor is empty")
+    if array.num_elements() == 0:
+        raise Error("array is empty")
 
     var idx: Int = 0
-    var max_val: Scalar[dtype] = tensor[0]
-    for i in range(1, tensor.num_elements()):
-        if tensor[i] > max_val:
-            max_val = tensor[i]
+    var max_val: Scalar[dtype] = array[0]
+    for i in range(1, array.num_elements()):
+        if array[i] > max_val:
+            max_val = array[i]
             idx = i
     return idx
 
 
-fn argmin[dtype: DType](tensor: Tensor[dtype]) raises -> Int:
+fn argmin[dtype: DType](array: NDArray[dtype]) raises -> Int:
     """
-    Argmin of a tensor.
+    Argmin of a array.
     Parameters:
         dtype: The element type.
 
     Args:
-        tensor: A Tensor.
+        array: A array.
     Returns:
-        The index of the minimum value of the tensor.
+        The index of the minimum value of the array.
     """
-    if tensor.num_elements() == 0:
-        raise Error("Tensor is empty")
+    if array.num_elements() == 0:
+        raise Error("array is empty")
 
     var idx: Int = 0
-    var min_val: Scalar[dtype] = tensor[0]
+    var min_val: Scalar[dtype] = array[0]
 
-    for i in range(1, tensor.num_elements()):
-        if tensor[i] < min_val:
-            min_val = tensor[i]
+    for i in range(1, array.num_elements()):
+        if array[i] < min_val:
+            min_val = array[i]
             idx = i
     return idx

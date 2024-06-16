@@ -1,5 +1,8 @@
 """
-implements trigonometry functions
+# ===----------------------------------------------------------------------=== #
+# Implements Trigonometry functions
+# Last updated: 2024-06-16
+# ===----------------------------------------------------------------------=== #
 """
 
 import math
@@ -15,7 +18,7 @@ from .ndarray import NDArray
 
 fn acos[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply acos also known as inverse cosine .
 
@@ -24,19 +27,19 @@ fn acos[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor.
+        array: An Array.
 
     Returns:
-        The elementwise acos of `tensor` in radians.
+        The elementwise acos of `array` in radians.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.acos](
-        tensor
+        array
     )
 
 
 fn asin[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply asin also known as inverse sine .
 
@@ -45,19 +48,19 @@ fn asin[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor.
+        array: An Array.
 
     Returns:
-        The elementwise asin of `tensor` in radians.
+        The elementwise asin of `array` in radians.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.asin](
-        tensor
+        array
     )
 
 
 fn atan[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply atan also known as inverse tangent .
 
@@ -66,13 +69,13 @@ fn atan[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor.
+        array: An Array.
 
     Returns:
-        The elementwise atan of `tensor` in radians.
+        The elementwise atan of `array` in radians.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.atan](
-        tensor
+        array
     )
 
 
@@ -91,8 +94,8 @@ fn atan2[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor1: A tensor.
-        tensor2: A tensor.
+        tensor1: An Array.
+        tensor2: An Array.
 
     Returns:
         The elementwise atan2 of `tensor1` and`tensor2` in radians.
@@ -109,7 +112,7 @@ fn atan2[
 
 fn cos[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply cos also known as cosine.
 
@@ -118,19 +121,19 @@ fn cos[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor assumed to be in radian.
+        array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise cos of `tensor`.
+        The elementwise cos of `array`.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.cos](
-        tensor
+        array
     )
 
 
 fn sin[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply sin also known as sine .
 
@@ -139,19 +142,19 @@ fn sin[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor assumed to be in radian.
+        array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise sin of `tensor`.
+        The elementwise sin of `array`.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.sin](
-        tensor
+        array
     )
 
 
 fn tan[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply tan also known as tangent .
 
@@ -160,13 +163,13 @@ fn tan[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor assumed to be in radian.
+        array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise tan of `tensor`.
+        The elementwise tan of `array`.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.tan](
-        tensor
+        array
     )
 
 
@@ -185,8 +188,8 @@ fn hypot[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor1: A tensor.
-        tensor2: A tensor.
+        tensor1: An Array.
+        tensor2: An Array.
 
     Returns:
         The elementwise hypotenuse of `tensor1` and`tensor2`.
@@ -211,8 +214,8 @@ fn hypot_fma[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor1: A tensor.
-        tensor2: A tensor.
+        tensor1: An Array.
+        tensor2: An Array.
 
     Returns:
         The elementwise hypotenuse of `tensor1` and`tensor2`.
@@ -233,7 +236,7 @@ fn hypot_fma[
 
 fn acosh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply acosh also known as inverse hyperbolic cosine .
 
@@ -242,19 +245,19 @@ fn acosh[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor.
+        array: An Array.
 
     Returns:
-        The elementwise acosh of `tensor` in radians.
+        The elementwise acosh of `array` in radians.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.acosh](
-        tensor
+        array
     )
 
 
 fn asinh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply asinh also known as inverse hyperbolic sine .
 
@@ -263,19 +266,19 @@ fn asinh[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor.
+        array: An Array.
 
     Returns:
-        The elementwise asinh of `tensor` in radians.
+        The elementwise asinh of `array` in radians.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.asinh](
-        tensor
+        array
     )
 
 
 fn atanh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply atanh also known as inverse hyperbolic tangent .
 
@@ -284,13 +287,13 @@ fn atanh[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor.
+        array: An Array.
 
     Returns:
-        The elementwise atanh of `tensor` in radians.
+        The elementwise atanh of `array` in radians.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.atanh](
-        tensor
+        array
     )
 
 
@@ -301,7 +304,7 @@ fn atanh[
 
 fn cosh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply cosh also known as hyperbolic cosine .
 
@@ -310,19 +313,19 @@ fn cosh[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor assumed to be in radian.
+        array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise cosh of `tensor`.
+        The elementwise cosh of `array`.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.cosh](
-        tensor
+        array
     )
 
 
 fn sinh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply sin also known as hyperbolic sine .
 
@@ -331,19 +334,19 @@ fn sinh[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor assumed to be in radian.
+        array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise sinh of `tensor`.
+        The elementwise sinh of `array`.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.sinh](
-        tensor
+        array
     )
 
 
 fn tanh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) -> NDArray[dtype]:
     """
     Apply tan also known as hyperbolic tangent .
 
@@ -352,11 +355,11 @@ fn tanh[
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor: A tensor assumed to be in radian.
+        array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise tanh of `tensor`.
+        The elementwise tanh of `array`.
     """
     return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.tanh](
-        tensor
+        array
     )

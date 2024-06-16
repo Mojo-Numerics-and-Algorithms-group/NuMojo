@@ -8,14 +8,13 @@
 import math
 import . _math_funcs as _mf
 
+
 # ===------------------------------------------------------------------------===#
 # Simple Elementwise Comparisons
 # ===------------------------------------------------------------------------===#
 fn greater[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
-    DType.bool
-]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Performs elementwise check of whether values in x are greater than values in y.
 
@@ -39,9 +38,7 @@ fn greater[
 
 fn greater_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
-    DType.bool
-]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Performs elementwise check of whether values in x are greater than or equal to values in y.
 
@@ -65,9 +62,7 @@ fn greater_equal[
 
 fn less[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
-    DType.bool
-]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Performs elementwise check of whether values in x are to values in y.
 
@@ -91,9 +86,7 @@ fn less[
 
 fn less_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
-    DType.bool
-]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Performs elementwise check of whether values in x are less than or equal to values in y.
 
@@ -117,9 +110,7 @@ fn less_equal[
 
 fn equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
-    DType.bool
-]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Performs elementwise check of whether values in x are equal to values in y.
 
@@ -143,9 +134,7 @@ fn equal[
 
 fn not_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
-    DType.bool
-]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Performs elementwise check of whether values in x are not equal to values in y.
 

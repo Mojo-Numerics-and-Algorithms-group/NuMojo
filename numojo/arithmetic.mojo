@@ -748,18 +748,18 @@ fn nextafter[
 
 # naive loop implementation, optimize later
 fn trapz[
-    Idtype: DType, Fdtype: DType = DType.float32
-](y: Tensor[Idtype], x: Tensor[Idtype]) raises -> SIMD[Fdtype, 1]:
+    Indtype: DType, Outdtype: DType = DType.float32
+](y: NDArray[Indtype], x: NDArray[Indtype]) raises -> SIMD[Outdtype, 1]:
     """
     Compute the integral of y over x using the trapezoidal rule.
 
     Parameters:
-        Idtype: Input data type.
-        Fdtype: Output data type, defaults to float32.
+        Indtype: Input data type.
+        Outdtype: Output data type, defaults to float32.
 
     Args:
-        y: A tensor.
-        x: A tensor.
+        y: An array.
+        x: An array.
 
     Constraints:
         `x` and `y` must have the same shape.
@@ -772,85 +772,97 @@ fn trapz[
         raise Error("x and y must have the same shape")
 
     # move this check to compile time using constrained?
-    if is_inttype[Idtype]() and not is_floattype[Fdtype]():
+    if is_inttype[Indtype]() and not is_floattype[Outdtype]():
         raise Error(
             "output dtype `Fdtype` must be a floating-point type if input dtype"
             " `Idtype` is not a floating-point type"
         )
 
-    var integral: Scalar[Fdtype] = 0.0
+    var integral: SIMD[Outdtype] = 0.0
     for i in range(x.num_elements() - 1):
-        var temp = (x[i + 1] - x[i]).cast[Fdtype]() * (y[i] + y[i + 1]).cast[
-            Fdtype
+        var temp = (x[i + 1] - x[i]).cast[Outdtype]() * (y[i] + y[i + 1]).cast[
+            Outdtype
         ]() / 2.0
         integral += temp
     return integral
 
 
 fn diff[
-    Idtype: DType, Fdtype: DType = Idtype
-](tensor: Tensor[Idtype], n: Int) raises -> Tensor[Fdtype]:
+    Indtype: DType, Outdtype: DType = Indtype
+](array: NDArray[Indtype], n: Int) raises -> NDArray[Outdtype]:
     """
-    Compute the n-th order difference of the input tensor.
+    Compute the n-th order difference of the input array.
 
     Parameters:
-        Idtype: Input data type.
-        Fdtype: Output data type, defaults to float32.
+        Indtype: Input data type.
+        Outdtype: Output data type, defaults to float32.
 
     Args:
-        tensor: A tensor.
+        array: A array.
         n: The order of the difference.
 
     Returns:
-        The n-th order difference of the input tensor.
+        The n-th order difference of the input array.
     """
 
-    var t1: Tensor[Fdtype] = Tensor[Fdtype](TensorShape(tensor.num_elements()))
-    for i in range(tensor.num_elements()):
-        t1[i] = tensor[i].cast[Fdtype]()
+    var array1: NDArray[Outdtype] = NDArray[Outdtype](
+        NDArrayShape(array.num_elements())
+    )
+    for i in range(array.num_elements()):
+        array1[i] = array[i].cast[Outdtype]()
 
     for num in range(n):
-        var result: Tensor[Fdtype] = Tensor[Fdtype](
-            TensorShape(tensor.num_elements() - (num + 1))
+        var result: NDArray[Outdtype] = NDArray[Outdtype](
+            NDArrayShape(array.num_elements() - (num + 1))
         )
-        for i in range(t1.num_elements() - 1):
-            result[i] = (t1.load[1](i + 1) - t1.load[1](i)).cast[Fdtype]()
-        t1 = result
-    return t1
+        for i in range(array1.num_elements() - 1):
+            result[i] = (array1.load[1](i + 1) - array1.load[1](i)).cast[
+                Outdtype
+            ]()
+        array1 = result
+    return array1
 
 
-# Implement it for (2,) tensor and add axis parameters later
+# Implement it for (2,) array and add axis parameters later
 fn cross[
-    Idtype: DType, Fdtype: DType = DType.float32
-](tensor1: Tensor[Idtype], tensor2: Tensor[Idtype]) raises -> Tensor[Fdtype]:
+    Indtype: DType, Outdtype: DType = DType.float32
+](array1: NDArray[Indtype], array2: NDArray[Indtype]) raises -> NDArray[
+    Outdtype
+]:
     """
     Compute the cross product of two tensors.
 
-    Parameters:
-        Idtype: Input data type.
-        Fdtype: Output data type, defaults to float32.
+    Parameters
+        Indtype: Input data type.
+        Outdtype: Output data type, defaults to float32.
 
     Args:
-        tensor1: A tensor.
-        tensor2: A tensor.
+        array1: A array.
+        array2: A array.
 
     Constraints:
-        `tensor1` and `tensor2` must be of shape (3,).
+        `array1` and `array2` must be of shape (3,).
 
     Returns:
         The cross product of two tensors.
     """
 
-    if tensor1.shape() == tensor2.shape() == 3:
-        var tensor3: Tensor[Fdtype] = Tensor[Fdtype](TensorShape(3))
-        tensor3[0] = (tensor1[1] * tensor2[2] - tensor1[2] * tensor2[1]).cast[Fdtype]()
-        tensor3[1] = (tensor1[2] * tensor2[0] - tensor1[0] * tensor2[2]).cast[Fdtype]()
-        tensor3[2] = (tensor1[0] * tensor2[1] - tensor1[1] * tensor2[0]).cast[Fdtype]()
-        return tensor3
+    if array1.shape() == array2.shape() == 3:
+        var array3: NDArray[Outdtype] = NDArray[Outdtype](NDArrayShape(3))
+        array3[0] = (array1[1] * array2[2] - array1[2] * array2[1]).cast[
+            Outdtype
+        ]()
+        array3[1] = (array1[2] * array2[0] - array1[0] * array2[2]).cast[
+            Outdtype
+        ]()
+        array3[2] = (array1[0] * array2[1] - array1[1] * array2[0]).cast[
+            Outdtype
+        ]()
+        return array3
     else:
         raise Error(
             "Cross product is not supported for tensors of shape "
-            + tensor1.shape().__str__()
+            + array1.shape().__str__()
             + " and "
-            + tensor2.shape().__str__()
+            + array2.shape().__str__()
         )

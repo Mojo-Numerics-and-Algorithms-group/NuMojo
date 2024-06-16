@@ -1,27 +1,40 @@
-from tensor import Tensor
+"""
+# ===----------------------------------------------------------------------=== #
+# Interpolate Module - Implements interpolation functions
+# Last updated: 2024-06-14
+# ===----------------------------------------------------------------------=== #
+"""
+
+from .ndarray import NDArray, NDArrayShape
+
+"""
+# TODO:
+1) Cross check all the functions with numpy
+2) Add support for axis argument
+"""
 
 
 fn interp1d[
     dtype: DType = DType.float64
 ](
-    xi: Tensor[dtype],
-    x: Tensor[dtype],
-    y: Tensor[dtype],
+    xi: NDArray[dtype],
+    x: NDArray[dtype],
+    y: NDArray[dtype],
     method: String = "linear",
     fill_value: String = "interpolate",
-) -> Tensor[dtype]:
+) -> NDArray[dtype]:
     """
     Interpolate the values of y at the points xi.
     Parameters:
         dtype: The element type.
     Args:
-        xi: A Tensor.
-        x: A Tensor.
-        y: A Tensor.
+        xi: An Array.
+        x: An Array.
+        y: An Array.
         method: The interpolation method.
         fill_value: The fill value.
     Returns:
-        The interpolated values of y at the points xi as a Tensor of `dtype`.
+        The interpolated values of y at the points xi as An Array of `dtype`.
     """
     # linear
     if method == "linear" and fill_value == "extrapolate":
@@ -43,24 +56,24 @@ fn interp1d[
 
     else:
         print("Invalid interpolation method: " + method)
-        return Tensor[dtype]()
+        return NDArray[dtype]()
 
 
 fn _interp1d_linear_interpolate[
     dtype: DType
-](xi: Tensor[dtype], x: Tensor[dtype], y: Tensor[dtype]) -> Tensor[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
     """
     Linear interpolation of the (x, y) values at the points xi.
     Parameters:
         dtype: The element type.
     Args:
-        xi: A Tensor.
-        x: A Tensor.
-        y: A Tensor.
+        xi: An Array.
+        x: An Array.
+        y: An Array.
     Returns:
-        The linearly interpolated values of y at the points xi as a Tensor of `dtype`.
+        The linearly interpolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = Tensor[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
         if xi[i] <= x[0]:
             result[i] = y[0]
@@ -81,19 +94,19 @@ fn _interp1d_linear_interpolate[
 
 fn _interp1d_linear_extrapolate[
     dtype: DType
-](xi: Tensor[dtype], x: Tensor[dtype], y: Tensor[dtype]) -> Tensor[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
     """
     Linear extrapolation of the (x, y) values at the points xi.
     Parameters:
         dtype: The element type.
     Args:
-        xi: A Tensor.
-        x: A Tensor.
-        y: A Tensor.
+        xi: An Array.
+        x: An Array.
+        y: An Array.
     Returns:
-        The linearly extrapolated values of y at the points xi as a Tensor of `dtype`.
+        The linearly extrapolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = Tensor[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
         if xi[i] <= x[0]:
             var slope = (y[1] - y[0]) / (x[1] - x[0])
@@ -120,19 +133,19 @@ fn _interp1d_linear_extrapolate[
 
 fn _interp1d_quadratic_interpolate[
     dtype: DType
-](xi: Tensor[dtype], x: Tensor[dtype], y: Tensor[dtype]) -> Tensor[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
     """
     Quadratic interpolation of the (x, y) values at the points xi.
     Parameters:
         dtype: The element type.
     Args:
-        xi: A Tensor.
-        x: A Tensor.
-        y: A Tensor.
+        xi: An Array.
+        x: An Array.
+        y: An Array.
     Returns:
-        The quadratically interpolated values of y at the points xi as a Tensor of `dtype`.
+        The quadratically interpolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = Tensor[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
         if xi[i] <= x[0]:
             result[i] = y[0]
@@ -158,19 +171,19 @@ fn _interp1d_quadratic_interpolate[
 
 fn _interp1d_quadratic_extrapolate[
     dtype: DType
-](xi: Tensor[dtype], x: Tensor[dtype], y: Tensor[dtype]) -> Tensor[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
     """
     Quadratic extrapolation of the (x, y) values at the points xi.
     Parameters:
         dtype: The element type.
     Args:
-        xi: A Tensor.
-        x: A Tensor.
-        y: A Tensor.
+        xi: An Array.
+        x: An Array.
+        y: An Array.
     Returns:
-        The quadratically extrapolated values of y at the points xi as a Tensor of `dtype`.
+        The quadratically extrapolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = Tensor[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
         if xi[i] <= x[0]:
             var slope = (y[1] - y[0]) / (x[1] - x[0])
@@ -204,19 +217,19 @@ fn _interp1d_quadratic_extrapolate[
 
 fn _interp1d_cubic_interpolate[
     dtype: DType
-](xi: Tensor[dtype], x: Tensor[dtype], y: Tensor[dtype]) -> Tensor[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
     """
     Cubic interpolation of the (x, y) values at the points xi.
     Parameters:
         dtype: The element type.
     Args:
-        xi: A Tensor.
-        x: A Tensor.
-        y: A Tensor.
+        xi: An Array.
+        x: An Array.
+        y: An Array.
     Returns:
-        The cubically interpolated values of y at the points xi as a Tensor of `dtype`.
+        The cubically interpolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = Tensor[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
         if xi[i] <= x[0]:
             result[i] = y[0]
@@ -254,19 +267,19 @@ fn _interp1d_cubic_interpolate[
 
 fn _interp1d_cubic_extrapolate[
     dtype: DType
-](xi: Tensor[dtype], x: Tensor[dtype], y: Tensor[dtype]) -> Tensor[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
     """
     Cubic extrapolation of the (x, y) values at the points xi.
     Parameters:
         dtype: The element type.
     Args:
-        xi: A Tensor.
-        x: A Tensor.
-        y: A Tensor.
+        xi: An Array.
+        x: An Array.
+        y: An Array.
     Returns:
-        The cubically extrapolated values of y at the points xi as a Tensor of `dtype`.
+        The cubically extrapolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = Tensor[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
         if xi[i] <= x[0]:
             var t = (xi[i] - x[0]) / (x[1] - x[0])

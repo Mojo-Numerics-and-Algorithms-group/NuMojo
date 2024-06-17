@@ -514,3 +514,19 @@ fn full[
     var tens_shape: NDArrayShape = NDArrayShape(shape)
     var tens_value: SIMD[dtype, 1] = SIMD[dtype, 1](fill_value).cast[dtype]()
     return NDArray[dtype](shape=tens_shape, value=tens_value)
+
+
+fn diagflat():
+    pass
+
+
+fn tri():
+    pass
+
+
+fn tril():
+    pass
+
+
+fn triu():
+    pass

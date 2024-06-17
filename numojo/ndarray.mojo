@@ -105,7 +105,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     # ===-------------------------------------------------------------------===#
 
     fn __str__(self) -> String:
-        return self.shape.__str__()
+        return "Shape: "+ self.shape.__str__()
 
     fn __len__(self) -> Int:
         return self.shape.__len__()
@@ -855,12 +855,38 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         pass
     
 
-
-
-
-    fn reshape(inout self):
+    # Technically it only changes the ArrayDescriptor and not the fundamental data
+    fn reshape(inout self, *Shape:Int) raises:
         """
-        Iterate through both using their respective strides - can be parallelized.
+        Reshapes the NDArray to given Shape.
+        
+        Args:
+            Shape: Variadic list of shape.
         """
-        pass
+        var num_elements_new: Int = 1
+        var ndim_new: Int = 0
+        for i in Shape:
+            num_elements_new *= i
+            ndim_new += 1
+
+        if self.info.size != num_elements_new:
+            raise Error("Cannot reshape: Number of elements do not match.")
+
+        self.info.ndim = ndim_new
+        var shape_new: List[Int] = List[Int]()
+        var strides_new: List[Int] = List[Int]()
+
+        for i in range(ndim_new):
+            shape_new.append(Shape[i])
+            var temp: Int = 1
+            for j in range(i + 1, ndim_new):  # temp
+                temp *= Shape[j]
+            strides_new.append(temp)
+        
+        self.info.shape = shape_new
+        self.info.strides = strides_new
+        # self.shape.shape = shape_new # current ndarray doesn't have NDArray shape field
+
+
+
     

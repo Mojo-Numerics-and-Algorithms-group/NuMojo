@@ -7,7 +7,7 @@
 
 import math
 import . _math_funcs as _mf
-from .ndarray import NDArray, NDArrayShape
+from .ndarray import NDArray, NDArrayShape, _get_index
 
 """
 TODO:
@@ -930,7 +930,7 @@ fn matmul[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     alias nelts = simdwidthof[dtype]()
-    var C: NDArray[dtype] = NDArray[dtype](1024,512)
+    var C: NDArray[dtype] = NDArray[dtype](5,5,random=False)
 
     # @parameter
     # fn calc_row(m: Int):
@@ -942,18 +942,44 @@ fn matmul[
     # parallelize[calc_row](1024, 1024)
 
     # var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
-    for m in range(C.info.shape[0]):
-            for k in range(A.info.shape[1]):
-                @parameter
-                fn dot[nelts: Int](n: Int):
-                    C.store(m, n, val=C.load[nelts](m, n) + A.load(m, k) * B.load[nelts](k, n))
-                vectorize[dot, nelts](C.info.shape[1])
+    for m in range(5):
+        for k in range(5):
+            @parameter
+            fn dot[nelts: Int](n: Int):
+                C.store(m,n,
+                    val=C.load[nelts](m,n)
+                    + A.load(m,k) 
+                    * B.load[nelts](k,n))
+            vectorize[dot, nelts](5)
+
     return C
 
-fn matmul_naive[dtype: DType](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
-    var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
-    for m in range(C.info.shape[0]):
-        for k in range(A.info.shape[1]):
-            for n in range(C.info.shape[1]):
-                C.store[1](m, n, val=C.load[1](m,n) + A.load[1](m,k) * B.load[1](k,n))
+fn matmul_naive[dtype: DType](inout A: NDArray[dtype], inout B: NDArray[dtype]) raises -> NDArray[dtype]:
+
+    var C: NDArray[dtype] = NDArray[dtype](5,5,random=False)
+
+    for m in range(10):
+        print(m)
+        for k in range(10):
+            for n in range(10):
+                C.store(_get_index(m,n,weights=C.info.strides), 
+                val=C.load[1](m,n) 
+                + A.load[1](m,k)  
+                * B.load[1](k,n))
+
+    print("lol")
+    # for m in range(C.info.shape[0]):
+    #     for k in range(A.info.shape[1]):
+    #         print(k)
+    #         for n in range(C.info.shape[1]):
+    #             C.store(_get_index(m,n,weights=C.info.strides), 
+    #             val=C.load[1](_get_index(m,n,weights=C.info.strides)) 
+    #             + A.load[1](_get_index(m,k,weights=A.info.strides))  
+    #             * B.load[1](_get_index(k,n,weights=B.info.strides)))
+
+    # for m in range(C.info.shape[0]):
+    # for k in range(A.info.shape[1]):
+    #     for n in range(C.info.shape[1]):
+    #         C.__setitem__(List[Int](m,n), val=C.__getitem__(m,n) + A.__getitem__(m,k) * B.__getitem__(k,n))
+
     return C

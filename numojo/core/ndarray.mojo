@@ -23,6 +23,11 @@ fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
         idx += indices[i] * weights[i]
     return idx
 
+fn _get_index(*indices: Int, weights: List[Int]) -> Int:
+    var idx: Int = 0
+    for i in range(weights.__len__()):
+        idx += indices[i] * weights[i]
+    return idx
 
 fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
     var idx: Int = 0
@@ -144,8 +149,24 @@ struct arrayDescriptor[dtype: DType = DType.float32]():
         offset: Int,
         size: Int,
         shape: List[Int],
+        strides: List[Int]
+        # coefficients: List[Int] = List[Int](),
+    ):
+        self.ndim = ndim
+        self.offset = offset
+        self.size = size
+        self.shape = shape
+        self.strides = strides
+        self.coefficients = strides
+
+    fn __init__(
+        inout self,
+        ndim: Int,
+        offset: Int,
+        size: Int,
+        shape: List[Int],
         strides: List[Int],
-        coefficients: List[Int] = List[Int](),
+        coefficients: List[Int],
     ):
         self.ndim = ndim
         self.offset = offset
@@ -230,7 +251,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             shapeInfo.append(shape[i])
             size *= shape[i]
             var temp: Int = 1
-            for j in range(i + 1, shape.__len__()):  # temp
+            for j in range(i + 1, dimension):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
@@ -263,10 +284,13 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             shapeInfo.append(shape[i])
             size *= shape[i]
             var temp: Int = 1
-            for j in range(1, i + 1):  # temp
-                temp *= shape[-j]
+            # for j in range(1, i + 1):  # temp
+                # temp *= shape[-j]
+            for j in range(i + 1, dimension):  # temp
+                temp *= shape[j]
             strides.append(temp)
-            strides = strides[::-1]
+            # strides.append(temp)
+            # strides = strides[::-1]
 
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
@@ -293,7 +317,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             shapeInfo.append(shape[i])
             size *= shape[i]
             var temp: Int = 1
-            for j in range(i + 1):  # temp
+            for j in range(i + 1, dimension):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
@@ -362,8 +386,8 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.info = existing.info
         self._arr = existing._arr
 
-    # fn __del__(owned self):
-    #     self._arr.free()
+    fn __del__(owned self):
+        self._arr.free()
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
@@ -384,6 +408,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
     fn __setitem__(inout self, idx: Int, val: SIMD[dtype, 1]):
         self._arr.__setitem__(idx, val)
+
+    fn __setitem__(inout self, *idx: Int, val: SIMD[dtype, 1]):
+        var index: Int = _get_index(idx, self.info.strides)
+        self._arr.__setitem__(index, val)
 
     fn __setitem__(
         inout self,
@@ -820,24 +848,24 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn load[width: Int](self, idx: Int) -> SIMD[dtype, width]:
         return self._arr.load[width=width](idx)
 
-    # fn load[width:Int = 1](self, *indices:Int) -> SIMD[dtype, width]:
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     return self._arr.load[width=width](index)
+    fn load[width:Int = 1](self, *indices:Int) -> SIMD[dtype, width]:
+        var index: Int = _get_index(indices, self.info.strides)
+        return self._arr.load[width=width](index)
 
-    # fn load[width:Int = 1](self, indices:VariadicList[Int]) -> SIMD[dtype, 1]:
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     return self._arr.load[width=width](index)
+    fn load[width:Int = 1](self, indices:VariadicList[Int]) -> SIMD[dtype, 1]:
+        var index: Int = _get_index(indices, self.info.strides)
+        return self._arr.load[width=width](index)
 
     fn store[width: Int](inout self, idx: Int, val: SIMD[dtype, width]):
         self._arr.store[width=width](idx, val)
 
-    # fn store[width:Int = 1](self, indices:VariadicList[Int], val:SIMD[dtype, width]):
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     self._arr.store[width=width](index, val)
+    fn store[width:Int = 1](self, indices:VariadicList[Int], val:SIMD[dtype, width]):
+        var index: Int = _get_index(indices, self.info.strides)
+        self._arr.store[width=width](index, val)
 
-    # fn store[width:Int = 1](self, *indices:Int, val:SIMD[dtype, width]):
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     self._arr.store[width=width](index, val)
+    fn store[width:Int = 1](self, *indices:Int, val:SIMD[dtype, width]):
+        var index: Int = _get_index(indices, self.info.strides)
+        self._arr.store[width=width](index, val)
 
     # argpartition, byteswap, choose
 

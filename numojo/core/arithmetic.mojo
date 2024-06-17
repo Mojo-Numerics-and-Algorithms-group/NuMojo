@@ -872,3 +872,88 @@ fn cross[
             + " and "
             + array2.shape().__str__()
         )
+
+
+
+# fn matmul[
+#     dtype: DType
+# ](array1: NDArray[dtype], array2: NDArray[dtype]) -> NDArray[dtype]:
+
+#     var result = NDArray[dtype](array1.shape(), 0.0)
+#     alias opt_nelts = simdwidthof[dtype]()
+
+#     @parameter
+#     fn calc_row(m: Int):
+#         for k in range(self.info.shape[1]):
+#             @parameter
+#             fn dot[nelts : Int](n : Int):
+#                 result.store[nelts](m, n, val=result.load[nelts](m,n) 
+#                     + self.load[nelts](m,k) * other.load[nelts](k,n))
+#             vectorize[dot, opt_nelts](other.info.shape[1])
+#     parallelize[calc_row](self.info.shape[0], self.info.shape[0])
+#     return result
+
+
+from algorithm import Static2DTileUnitFunc as Tile2DFunc
+
+# Perform 2D tiling on the iteration space defined by end_x and end_y.
+fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int) raises:
+    # Note: this assumes that ends are multiples of the tiles.
+    for y in range(0, end_y, tile_y):
+        for x in range(0, end_x, tile_x):
+            tiled_fn[tile_x, tile_y](x, y)
+            
+# fn matmul[dtype: DType](C: NDArray[dtype], A: NDArray[dtype], B: NDArray[dtype]) raises:
+#     alias nelts = simdwidthof[dtype]()
+#     @parameter
+#     fn calc_row(m: Int):
+#         @parameter
+#         fn calc_tile[tile_x: Int, tile_y: Int](x: Int, y: Int):
+#             for k in range(y, y + tile_y):
+#                 @parameter
+#                 fn dot[nelts: Int](n: Int):
+#                     try:
+#                         C.store(m, n + x, val=C.load[nelts](m, n + x) + A[m, k] * B.load[nelts](k, n + x))
+#                     except:
+#                         print("lol")
+#                 # Vectorize by nelts and unroll by tile_x/nelts
+#                 # Here unroll factor is 4
+#                 alias unroll_factor = tile_x // nelts
+#                 vectorize[dot, nelts, size=tile_x, unroll_factor=unroll_factor]()
+
+#         alias tile_size = 4
+#         tile[calc_tile, nelts * tile_size, tile_size](A.info.shape[1], C.info.shape[1])
+
+#     parallelize[calc_row](C.info.shape[1], C.info.shape[0])
+
+fn matmul[
+    dtype: DType
+](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    alias nelts = simdwidthof[dtype]()
+    var C: NDArray[dtype] = NDArray[dtype](1024,512)
+
+    # @parameter
+    # fn calc_row(m: Int):
+    #     for k in range(2048):
+    #         @parameter
+    #         fn dot[nelts : Int](n : Int):
+    #             C.store[nelts](m,n, val= C.load[nelts](m,n) + A.load(m,k) * B.load[nelts](k,n))
+    #         vectorize[dot, nelts](512)
+    # parallelize[calc_row](1024, 1024)
+
+    # var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
+    for m in range(C.info.shape[0]):
+            for k in range(A.info.shape[1]):
+                @parameter
+                fn dot[nelts: Int](n: Int):
+                    C.store(m, n, val=C.load[nelts](m, n) + A.load(m, k) * B.load[nelts](k, n))
+                vectorize[dot, nelts](C.info.shape[1])
+    return C
+
+fn matmul_naive[dtype: DType](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
+    for m in range(C.info.shape[0]):
+        for k in range(A.info.shape[1]):
+            for n in range(C.info.shape[1]):
+                C.store[1](m, n, val=C.load[1](m,n) + A.load[1](m,k) * B.load[1](k,n))
+    return C

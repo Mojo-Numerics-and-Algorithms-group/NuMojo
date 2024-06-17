@@ -14,7 +14,6 @@
 
 from random import rand
 from builtin.math import pow
-from collections.set import Set
 
 
 fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
@@ -105,7 +104,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     # ===-------------------------------------------------------------------===#
 
     fn __str__(self) -> String:
-        return "Shape: "+ self.shape.__str__()
+        return "Shape: " + self.shape.__str__()
 
     fn __len__(self) -> Int:
         return self.shape.__len__()
@@ -440,7 +439,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         var index: Int = offset + _get_index(indices, coefficients)
         return self._arr[index]
-
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
@@ -850,16 +848,15 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
     fn argsort(self):
         pass
-    
+
     fn astype(self):
         pass
-    
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
-    fn reshape(inout self, *Shape:Int) raises:
+    fn reshape(inout self, *Shape: Int) raises:
         """
         Reshapes the NDArray to given Shape.
-        
+
         Args:
             Shape: Variadic list of shape.
         """
@@ -882,11 +879,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             for j in range(i + 1, ndim_new):  # temp
                 temp *= Shape[j]
             strides_new.append(temp)
-        
+
         self.info.shape = shape_new
         self.info.strides = strides_new
         # self.shape.shape = shape_new # current ndarray doesn't have NDArray shape field
-
-
-
-    

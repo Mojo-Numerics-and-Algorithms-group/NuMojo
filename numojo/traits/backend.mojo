@@ -3,7 +3,7 @@
 # ===----------------------------------------------------------------------=== #
 
 
-from ..ndarray import NDArray
+from ..core.ndarray import NDArray
 
 
 trait Backend:

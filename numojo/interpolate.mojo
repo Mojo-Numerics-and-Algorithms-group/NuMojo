@@ -5,7 +5,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 
-from .ndarray import NDArray, NDArrayShape
+from .core.ndarray import NDArray, NDArrayShape
 
 """
 # TODO:

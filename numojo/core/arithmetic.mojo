@@ -7,6 +7,12 @@
 
 import math
 import . _math_funcs as _mf
+from .ndarray import NDArray, NDArrayShape
+
+"""
+TODO:
+1) change dtype -> in_dtype and out_dtype
+"""
 
 # ===------------------------------------------------------------------------===#
 # Addition/Subtraction

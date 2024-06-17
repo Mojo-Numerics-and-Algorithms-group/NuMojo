@@ -7,15 +7,14 @@
 
 import math
 from algorithm import vectorize
-from .ndarray import NDArray, NDArrayShape
+from ..core.ndarray import NDArray, NDArrayShape
+from ..utility_funcs import is_inttype, is_floattype
 
 """
-# TODO:
-Right now, all stats functions have problems when the output datatype is different than input dataype, 
-such as when input tensors have integer, but it's mean is float. In such cases, function returns 0 currently. 
-
-1) Add support for type conversion
-2) Add support for axis parameter
+TODO: 
+1) Add support for axis parameter.  
+2) Currently, constrained is crashing mojo, so commented it out and added raise Error. Check later.
+3) Relax constrained[] to let user get whatever output they want, but make a warning instead.
 """
 
 # ===------------------------------------------------------------------------===#
@@ -23,8 +22,23 @@ such as when input tensors have integer, but it's mean is float. In such cases, 
 # ===------------------------------------------------------------------------===#
 
 
-fn binary_sort[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> NDArray[out_dtype]:
-    var result: NDArray[out_dtype]
+fn binary_sort[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> NDArray[out_dtype]:
+    """
+    Binary sorting of NDArray.
+
+    Parameters:
+        in_dtype: The input element type.
+        out_dtype: The output element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The sorted NDArray of type `out_dtype`.
+    """
+    var result: NDArray[out_dtype] = NDArray[out_dtype](array.shape())
     for i in range(array.info.size):
         result[i] = array[i].cast[out_dtype]()
 
@@ -43,11 +57,15 @@ fn binary_sort[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray
 # ===------------------------------------------------------------------------===#
 
 
-fn sum[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn sum[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Cumulative Sum of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
@@ -66,12 +84,15 @@ fn sum[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtyp
     return result
 
 
-fn prod[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn prod[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Cumulative Product of a array.
-    Parameters:
-        dtype: The element type.
 
+    Parameters:
+        in_dtype: The input element type.
+        out_dtype: The output element type.
     Args:
         array: A NDArray.
     Returns:
@@ -88,38 +109,55 @@ fn prod[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dty
 
     vectorize[vectorize_sum, opt_nelts](array.num_elements())
     return result
+
+
 # ===------------------------------------------------------------------------===#
 
 # Statistics Cumulative Operations
 # ===------------------------------------------------------------------------===#
 
 
-fn mean[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn mean[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Cumulative Arithmatic Mean of a array.
-    Parameters:
-        dtype: The element type.
 
+    Parameters:
+        in_dtype: The input element type.
+        out_dtype: The output element type.
     Args:
         array: A NDArray.
     Returns:
         The mean of all of the member values of array as a SIMD Value of `dtype`.
     """
+    # constrained[is_inttype[in_dtype]() and is_inttype[out_dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
+        raise Error(
+            "Input and output cannot be `Int` datatype as it may lead to"
+            " precision errors"
+        )
     return sum[in_dtype, out_dtype](array) / (array.num_elements())
 
 
-fn mode[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn mode[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Cumulative Mode of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_tensor: NDArray[out_dtype] = binary_sort[in_dtype, out_dtype](array)
+    var sorted_tensor: NDArray[out_dtype] = binary_sort[in_dtype, out_dtype](
+        array
+    )
     var max_count = 0
     var mode_value = sorted_tensor[0]
     var current_count = 1
@@ -140,11 +178,15 @@ fn mode[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dty
 
 
 # * IMPLEMENT median high and low
-fn median[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn median[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Median value of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
@@ -160,11 +202,15 @@ fn median[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_d
 
 
 # for max and min, I can later change to the latest reduce.max, reduce.min()
-fn maxT[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn maxT[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Maximum value of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
@@ -198,11 +244,15 @@ fn maxT[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dty
     return result.cast[out_dtype]()
 
 
-fn minT[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn minT[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Minimum value of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
@@ -231,17 +281,21 @@ fn minT[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dty
     for i in range(min_value.__len__()):
         if min_value[i] < result:
             result = min_value[i]
-    
+
     return result.cast[out_dtype]()
 
 
 fn pvariance[
     in_dtype: DType, out_dtype: DType = DType.float64
-    ](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
+](
+    array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None
+) raises -> SIMD[out_dtype, 1]:
     """
     Population variance of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type..
 
     Args:
         array: A NDArray.
@@ -249,6 +303,13 @@ fn pvariance[
     Returns:
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
+    # constrained[is_inttype[in_dtype]() and is_inttype[out_dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
+        raise Error(
+            "Input and output cannot be `Int` datatype as it may lead to"
+            " precision errors"
+        )
+
     var mean_value: Scalar[out_dtype]
     if not mu:
         mean_value = mean[in_dtype, out_dtype](array)
@@ -264,13 +325,16 @@ fn pvariance[
 
 
 fn variance[
-   in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
+    in_dtype: DType, out_dtype: DType = DType.float64
+](
+    array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None
+) raises -> SIMD[out_dtype, 1]:
     """
     Variance of a array.
 
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
@@ -279,6 +343,12 @@ fn variance[
     Returns:
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
+    # constrained[is_inttype[in_dtype]() and is_inttype[out_dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
+        raise Error(
+            "Input and output cannot be `Int` datatype as it may lead to"
+            " precision errors"
+        )
     var mean_value: Scalar[out_dtype]
 
     if not mu:
@@ -294,13 +364,16 @@ fn variance[
 
 
 fn pstdev[
-   in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
+    in_dtype: DType, out_dtype: DType = DType.float64
+](
+    array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None
+) raises -> SIMD[out_dtype, 1]:
     """
     Population standard deviation of a array.
 
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
@@ -309,16 +382,26 @@ fn pstdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
+    # constrained[is_inttype[in_dtype]() and is_inttype[out_dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
+        raise Error(
+            "Input and output cannot be `Int` datatype as it may lead to"
+            " precision errors"
+        )
     return math.sqrt(pvariance[in_dtype, out_dtype](array, mu))
 
 
 fn stdev[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
+](
+    array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None
+) raises -> SIMD[out_dtype, 1]:
     """
     Standard deviation of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A NDArray.
@@ -326,15 +409,25 @@ fn stdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
+    # constrained[is_inttype[in_dtype]() and is_inttype[out_dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
+        raise Error(
+            "Input and output cannot be `Int` datatype as it may lead to"
+            " precision errors"
+        )
     return math.sqrt(variance[in_dtype, out_dtype](array, mu))
 
 
 # this roughly seems to be just an alias for min in numpy
-fn amin[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn amin[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Minimum value of an array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: An array.
@@ -345,11 +438,15 @@ fn amin[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dty
 
 
 # this roughly seems to be just an alias for max in numpy
-fn amax[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+fn amax[
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Maximum value of a array.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array: A array.
@@ -360,12 +457,14 @@ fn amax[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dty
 
 
 fn mimimum[
-in_dtype: DType, out_dtype: DType = DType.float64
+    in_dtype: DType, out_dtype: DType = DType.float64
 ](s1: SIMD[in_dtype, 1], s2: SIMD[in_dtype, 1]) -> SIMD[out_dtype, 1]:
     """
     Minimum value of two SIMD values.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         s1: A SIMD Value.
@@ -377,12 +476,14 @@ in_dtype: DType, out_dtype: DType = DType.float64
 
 
 fn maximum[
-in_dtype: DType, out_dtype: DType = DType.float64
+    in_dtype: DType, out_dtype: DType = DType.float64
 ](s1: SIMD[in_dtype, 1], s2: SIMD[in_dtype, 1]) -> SIMD[out_dtype, 1]:
     """
     Maximum value of two SIMD values.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         s1: A SIMD Value.
@@ -395,11 +496,15 @@ in_dtype: DType, out_dtype: DType = DType.float64
 
 fn minimum[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array1: NDArray[in_dtype], array2: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
+](array1: NDArray[in_dtype], array2: NDArray[in_dtype]) raises -> NDArray[
+    out_dtype
+]:
     """
     Element wise minimum of two tensors.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array1: An array.
@@ -428,12 +533,16 @@ fn minimum[
 
 
 fn maximum[
-in_dtype: DType, out_dtype: DType = DType.float64
-](array1: NDArray[in_dtype], array2: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array1: NDArray[in_dtype], array2: NDArray[in_dtype]) raises -> NDArray[
+    out_dtype
+]:
     """
     Element wise maximum of two tensors.
+
     Parameters:
-        dtype: The element type.
+        in_dtype: The input element type.
+        out_dtype: The output element type.
 
     Args:
         array1: A array.
@@ -465,6 +574,7 @@ in_dtype: DType, out_dtype: DType = DType.float64
 fn argmax[dtype: DType](array: NDArray[dtype]) raises -> Int:
     """
     Argmax of a array.
+
     Parameters:
         dtype: The element type.
 

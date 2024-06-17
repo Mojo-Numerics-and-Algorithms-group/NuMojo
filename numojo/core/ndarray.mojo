@@ -252,6 +252,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1, dimension):  # temp
+            for j in range(i + 1, dimension):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
@@ -284,13 +285,9 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             shapeInfo.append(shape[i])
             size *= shape[i]
             var temp: Int = 1
-            # for j in range(1, i + 1):  # temp
-                # temp *= shape[-j]
             for j in range(i + 1, dimension):  # temp
                 temp *= shape[j]
             strides.append(temp)
-            # strides.append(temp)
-            # strides = strides[::-1]
 
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
@@ -317,6 +314,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             shapeInfo.append(shape[i])
             size *= shape[i]
             var temp: Int = 1
+            for j in range(i + 1, dimension):  # temp
             for j in range(i + 1, dimension):  # temp
                 temp *= shape[j]
             strides.append(temp)
@@ -803,9 +801,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         """
         if self.info.size != other.info.size:
             raise Error("The lengths of two vectors do not match.")
-        return self._elementwise_array_arithmetic[SIMD.__mul__](
-            other
-        )._reduce_sum()
+        var sum = Scalar[dtype](0)
+        for i in range(self.info.size):
+            sum = sum + self[i] * other[i]
+        return sum
 
     fn mdot(self, other: Self) raises -> Self:
         """
@@ -813,10 +812,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         Matrix A: M * N.
         Matrix B: N * L.
         """
-
-        print("A:", self.info.shape[0], " x ", self.info.shape[1])
-        print("B:", other.info.shape[0], " x ", other.info.shape[1])
-        print("AB:", self.info.shape[0], " x ", other.info.shape[1])
 
         if (self.info.ndim != 2) or (other.info.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
@@ -833,6 +828,56 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                     List[Int](row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
+        return new_matrix
+
+    fn row(self, id: Int) raises -> Self:
+        """Get the ith row of the matrix.
+        """
+
+        if self.info.ndim > 2:
+            raise Error("Only support 2-D array (matrix).")
+
+        # If bug fixed, then 
+        # Tensor[dtype](shape=width, self._arr.offset(something))
+        
+        var width = self.info.shape[1]
+        var buffer = Self(width)
+        for i in range(width):
+            buffer[i] = self._arr[i + id*width]
+        return buffer
+
+    fn col(self, id: Int) raises -> Self:
+        """Get the ith column of the matrix.
+        """
+
+        if self.info.ndim > 2:
+            raise Error("Only support 2-D array (matrix).")
+
+        var width = self.info.shape[1]
+        var height = self.info.shape[0]
+        var buffer = Self(height)
+        for i in range(height):
+            buffer[i] = self._arr[id + i*width]
+        return buffer
+
+    fn rdot(self, other: Self) raises -> Self:
+        """
+        Dot product of two matrix.
+        Matrix A: M * N.
+        Matrix B: N * L.
+        """
+
+        if (self.info.ndim != 2) or (other.info.ndim != 2):
+            raise Error("The array should have only two dimensions (matrix).")
+        if self.info.shape[1] != other.info.shape[0]:
+            raise Error("Second dimension of A does not match first dimension of B.")
+
+        var new_dims = List[Int](self.info.shape[0], other.info.shape[1])
+        var new_matrix = Self(new_dims)
+        print("Strides:", new_matrix.info.strides[0], new_matrix.info.strides[1])
+        for row in range(new_dims[0]):
+            for col in range(new_dims[1]):
+                new_matrix[col + row * new_dims[1]] = self.row(row).vdot(other.col(col))
         return new_matrix
 
     fn size(self) -> Int:

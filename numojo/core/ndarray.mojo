@@ -14,6 +14,7 @@
 
 from random import rand
 from builtin.math import pow
+from algorithm import parallelize, vectorize
 
 
 fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
@@ -28,6 +29,11 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
     for i in range(weights.__len__()):
         idx += indices[i] * weights[i]
     return idx
+    # @parameter
+    # fn vectorized_index[simd_width:Int](idx:Int):
+    #     idx = idx + SIMD.__mul__(indices.load[simd_width](idx), weights.data.load[simd_width](idx))
+
+    # return idx
 
 
 fn _traverse_iterative[
@@ -175,7 +181,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     # ===-------------------------------------------------------------------===#
 
     # default constructor
-    fn __init__(inout self, *shape: Int):
+    fn __init__(inout self, *shape: Int, random:Bool=False):
         """
         Example:
             NDArray[DType.int8](3,2,4)
@@ -200,6 +206,8 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.info = arrayDescriptor[dtype](
             dimension, first_index, size, shapeInfo, strides
         )
+        if random:
+            rand[dtype](self._arr, size)
 
     fn __init__(
         inout self,
@@ -397,14 +405,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         Example:
             `arr[1,2]` returns the item of 1st row and 2nd column of the array.
         """
-        if indices.__len__() != self.info.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
+        # if indices.__len__() != self.info.ndim:
+        #     raise Error("Error: Length of Indices do not match the shape")
 
-        for i in range(indices.__len__()):
-            if indices[i] >= self.info.shape[i]:
-                raise Error(
-                    "Error: Elements of Indices exceed the shape values"
-                )
+        # for i in range(indices.__len__()):
+        #     if indices[i] >= self.info.shape[i]:
+        #         raise Error(
+        #             "Error: Elements of Indices exceed the shape values"
+        #         )
 
         var index: Int = _get_index(indices, self.info.strides)
         return self._arr[index]
@@ -416,14 +424,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             `arr[VariadicList[Int](1,2)]` returns the item of 1st row and
                 2nd column of the array.
         """
-        if indices.__len__() != self.info.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
+        # if indices.__len__() != self.info.ndim:
+        #     raise Error("Error: Length of Indices do not match the shape")
 
-        for i in range(indices.__len__()):
-            if indices[i] >= self.info.shape[i]:
-                raise Error(
-                    "Error: Elements of Indices exceed the shape values"
-                )
+        # for i in range(indices.__len__()):
+        #     if indices[i] >= self.info.shape[i]:
+        #         raise Error(
+        #             "Error: Elements of Indices exceed the shape values"
+        #         )
 
         var index: Int = _get_index(indices, self.info.strides)
         return self._arr[index]
@@ -621,11 +629,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         vectorize[vectorize_reduce, simd_width](self.info.size)
         return reduced
-
-    fn __matmul__(self, other: Self) -> SIMD[dtype, 1]:
-        return self._elementwise_array_arithmetic[SIMD.__mul__](
-            other
-        )._reduce_sum()
 
     fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)
@@ -832,6 +835,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     #     var index: Int = _get_index(indices, self.info.strides)
     #     self._arr.store[width=width](index, val)
 
+    # fn store[width:Int = 1](self, *indices:Int, val:SIMD[dtype, width]):
+    #     var index: Int = _get_index(indices, self.info.strides)
+    #     self._arr.store[width=width](index, val)
+
     # argpartition, byteswap, choose
 
     fn all(self):
@@ -883,3 +890,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.info.shape = shape_new
         self.info.strides = strides_new
         # self.shape.shape = shape_new # current ndarray doesn't have NDArray shape field
+
+    fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
+        return self._arr

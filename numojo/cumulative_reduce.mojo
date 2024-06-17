@@ -23,13 +23,16 @@ such as when input tensors have integer, but it's mean is float. In such cases, 
 # ===------------------------------------------------------------------------===#
 
 
-fn binary_sort[dtype: DType](array: NDArray[dtype]) -> NDArray[dtype]:
-    var result: NDArray[dtype] = array
+fn binary_sort[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> NDArray[out_dtype]:
+    var result: NDArray[out_dtype]
+    for i in range(array.info.size):
+        result[i] = array[i].cast[out_dtype]()
+
     var n = array.num_elements()
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:
-                var temp = result[i - 1]
+                var temp: Scalar[out_dtype] = result[i - 1]
                 result[i - 1] = result[i]
                 result[i] = temp
     return result
@@ -40,7 +43,7 @@ fn binary_sort[dtype: DType](array: NDArray[dtype]) -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn sum[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn sum[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Cumulative Sum of a array.
     Parameters:
@@ -51,19 +54,19 @@ fn sum[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     Returns:
         The cumulative sum of the array as a SIMD Value of `dtype`.
     """
-    var result = Scalar[dtype]()
-    alias simd_width: Int = simdwidthof[dtype]()
+    var result = Scalar[out_dtype]()
+    alias opt_nelts: Int = simdwidthof[in_dtype]()
 
     @parameter
     fn vectorize_sum[simd_width: Int](idx: Int) -> None:
         var simd_data = array.load[width=simd_width](idx)
-        result += simd_data.reduce_add()
+        result += (simd_data.reduce_add()).cast[out_dtype]()
 
-    vectorize[vectorize_sum, simd_width](array.num_elements())
+    vectorize[vectorize_sum, opt_nelts](array.num_elements())
     return result
 
 
-fn prod[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn prod[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Cumulative Product of a array.
     Parameters:
@@ -75,30 +78,23 @@ fn prod[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
         The cumulative product of the array as a SIMD Value of `dtype`.
     """
 
-    var result: SIMD[dtype, 1] = SIMD[dtype, 1](1)
-    alias opt_nelts = simdwidthof[dtype]()
-    for i in range(
-        0, opt_nelts * (array.num_elements() // opt_nelts), opt_nelts
-    ):
-        var simd_data = array.load[width=opt_nelts](i)
-        result *= simd_data.reduce_mul()
+    var result: SIMD[out_dtype, 1] = SIMD[out_dtype, 1](1)
+    alias opt_nelts = simdwidthof[in_dtype]()
 
-    if array.num_elements() % opt_nelts != 0:
-        for i in range(
-            opt_nelts * (array.num_elements() // opt_nelts),
-            array.num_elements(),
-        ):
-            var simd_data = array.load[width=1](i)
-            result *= simd_data.reduce_mul()
+    @parameter
+    fn vectorize_sum[simd_width: Int](idx: Int) -> None:
+        var simd_data = array.load[width=simd_width](idx)
+        result *= (simd_data.reduce_mul()).cast[out_dtype]()
+
+    vectorize[vectorize_sum, opt_nelts](array.num_elements())
     return result
-
-
 # ===------------------------------------------------------------------------===#
+
 # Statistics Cumulative Operations
 # ===------------------------------------------------------------------------===#
 
 
-fn mean[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn mean[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Cumulative Arithmatic Mean of a array.
     Parameters:
@@ -109,10 +105,10 @@ fn mean[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     Returns:
         The mean of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return sum[dtype](array) / array.num_elements()
+    return sum[in_dtype, out_dtype](array) / (array.num_elements())
 
 
-fn mode[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn mode[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Cumulative Mode of a array.
     Parameters:
@@ -123,7 +119,7 @@ fn mode[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_tensor = binary_sort[dtype](array)
+    var sorted_tensor: NDArray[out_dtype] = binary_sort[in_dtype, out_dtype](array)
     var max_count = 0
     var mode_value = sorted_tensor[0]
     var current_count = 1
@@ -144,7 +140,7 @@ fn mode[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
 
 
 # * IMPLEMENT median high and low
-fn median[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn median[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Median value of a array.
     Parameters:
@@ -155,7 +151,7 @@ fn median[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     Returns:
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_tensor = binary_sort[dtype](array)
+    var sorted_tensor = binary_sort[in_dtype, out_dtype](array)
     var n = array.num_elements()
     if n % 2 == 1:
         return sorted_tensor[n // 2]
@@ -164,7 +160,7 @@ fn median[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
 
 
 # for max and min, I can later change to the latest reduce.max, reduce.min()
-fn maxT[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn maxT[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Maximum value of a array.
     Parameters:
@@ -176,13 +172,14 @@ fn maxT[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
         The maximum of all of the member values of array as a SIMD Value of `dtype`.
     """
     # TODO: Test this
-    alias nelts = simdwidthof[dtype]()
-    var max_value = NDArray[dtype](NDArrayShape(nelts))
-    for i in range(nelts):
+    alias opt_nelts = simdwidthof[in_dtype]()
+    var max_value = NDArray[in_dtype](NDArrayShape(opt_nelts))
+    for i in range(opt_nelts):
         max_value[i] = array[0]
+    # var max_value: SIMD[in_dtype, opt_nelts] = SIMD[in_dtype, opt_nelts](array[0])
 
     @parameter
-    fn vectorized[simd_width: Int](idx: Int) -> None:
+    fn vectorized_max[simd_width: Int](idx: Int) -> None:
         max_value.store[width=simd_width](
             0,
             SIMD.max(
@@ -191,11 +188,17 @@ fn maxT[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
             ),
         )
 
-    vectorize[vectorized, nelts](array.num_elements())
-    return SIMD.max(max_value[0], max_value[1])
+    vectorize[vectorized_max, opt_nelts](array.num_elements())
+
+    var result: Scalar[in_dtype] = Scalar[out_dtype](max_value[0])
+    for i in range(max_value.__len__()):
+        if max_value[i] > result:
+            result = max_value[i]
+
+    return result.cast[out_dtype]()
 
 
-fn minT[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn minT[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Minimum value of a array.
     Parameters:
@@ -207,13 +210,13 @@ fn minT[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     Returns:
         The minimum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    alias nelts = simdwidthof[dtype]()
-    var min_value = NDArray[dtype](NDArrayShape(nelts))
-    for i in range(nelts):
+    alias opt_nelts = simdwidthof[in_dtype]()
+    var min_value = NDArray[in_dtype](NDArrayShape(opt_nelts))
+    for i in range(opt_nelts):
         min_value[i] = array[0]
 
     @parameter
-    fn vectorized[simd_width: Int](idx: Int) -> None:
+    fn vectorized_min[simd_width: Int](idx: Int) -> None:
         min_value.store[width=simd_width](
             0,
             SIMD.min(
@@ -222,13 +225,19 @@ fn minT[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
             ),
         )
 
-    vectorize[vectorized, nelts](array.num_elements())
-    return SIMD.min(min_value[0], min_value[1])
+    vectorize[vectorized_min, opt_nelts](array.num_elements())
+
+    var result: Scalar[in_dtype] = Scalar[out_dtype](min_value[0])
+    for i in range(min_value.__len__()):
+        if min_value[i] < result:
+            result = min_value[i]
+    
+    return result.cast[out_dtype]()
 
 
 fn pvariance[
-    dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+    in_dtype: DType, out_dtype: DType = DType.float64
+    ](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
     """
     Population variance of a array.
     Parameters:
@@ -240,22 +249,23 @@ fn pvariance[
     Returns:
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var mean_value: Scalar[dtype]
-
-    if mu == Scalar[dtype]():
-        mean_value = mean[dtype](array)
+    var mean_value: Scalar[out_dtype]
+    if not mu:
+        mean_value = mean[in_dtype, out_dtype](array)
     else:
-        mean_value = mu
+        mean_value = mu.value()[].cast[out_dtype]()
 
-    var result = Scalar[dtype]()
+    var result = Scalar[out_dtype]()
+
     for i in range(array.num_elements()):
-        result += (array[i] - mean_value) ** 2
-    return result / array.num_elements()
+        result += (array[i].cast[out_dtype]() - mean_value) ** 2
+
+    return result / (array.num_elements())
 
 
 fn variance[
-    dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+   in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
     """
     Variance of a array.
 
@@ -269,22 +279,23 @@ fn variance[
     Returns:
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var mean_value: Scalar[dtype]
+    var mean_value: Scalar[out_dtype]
 
-    if mu == Scalar[dtype]():
-        mean_value = mean[dtype](array)
+    if not mu:
+        mean_value = mean[in_dtype, out_dtype](array)
     else:
-        mean_value = mu
+        mean_value = mu.value()[].cast[out_dtype]()
 
-    var result = Scalar[dtype]()
+    var result = Scalar[out_dtype]()
     for i in range(array.num_elements()):
-        result += (array[i] - mean_value) ** 2
+        result += (array[i].cast[out_dtype]() - mean_value) ** 2
+
     return result / (array.num_elements() - 1)
 
 
 fn pstdev[
-    dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+   in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
     """
     Population standard deviation of a array.
 
@@ -298,12 +309,12 @@ fn pstdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return math.sqrt(pvariance(array, mu))
+    return math.sqrt(pvariance[in_dtype, out_dtype](array, mu))
 
 
 fn stdev[
-    dtype: DType
-](array: NDArray[dtype], mu: Scalar[dtype] = Scalar[dtype]()) -> SIMD[dtype, 1]:
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]]) -> SIMD[out_dtype, 1]:
     """
     Standard deviation of a array.
     Parameters:
@@ -315,11 +326,11 @@ fn stdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return math.sqrt(variance(array, mu))
+    return math.sqrt(variance[in_dtype, out_dtype](array, mu))
 
 
 # this roughly seems to be just an alias for min in numpy
-fn amin[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn amin[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Minimum value of an array.
     Parameters:
@@ -330,11 +341,11 @@ fn amin[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     Returns:
         The minimum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return minT[dtype](array)
+    return minT[in_dtype, out_dtype](array)
 
 
 # this roughly seems to be just an alias for max in numpy
-fn amax[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
+fn amax[in_dtype: DType, out_dtype: DType = DType.float64](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
     Maximum value of a array.
     Parameters:
@@ -345,12 +356,12 @@ fn amax[dtype: DType](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     Returns:
         The maximum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return maxT[dtype](array)
+    return maxT[in_dtype, out_dtype](array)
 
 
 fn mimimum[
-    dtype: DType
-](s1: SIMD[dtype, 1], s2: SIMD[dtype, 1]) -> SIMD[dtype, 1]:
+in_dtype: DType, out_dtype: DType = DType.float64
+](s1: SIMD[in_dtype, 1], s2: SIMD[in_dtype, 1]) -> SIMD[out_dtype, 1]:
     """
     Minimum value of two SIMD values.
     Parameters:
@@ -362,12 +373,12 @@ fn mimimum[
     Returns:
         The minimum of the two SIMD Values as a SIMD Value of `dtype`.
     """
-    return SIMD.min(s1, s2)
+    return SIMD.min(s1, s2).cast[out_dtype]()
 
 
 fn maximum[
-    dtype: DType
-](s1: SIMD[dtype, 1], s2: SIMD[dtype, 1]) -> SIMD[dtype, 1]:
+in_dtype: DType, out_dtype: DType = DType.float64
+](s1: SIMD[in_dtype, 1], s2: SIMD[in_dtype, 1]) -> SIMD[out_dtype, 1]:
     """
     Maximum value of two SIMD values.
     Parameters:
@@ -379,12 +390,12 @@ fn maximum[
     Returns:
         The maximum of the two SIMD Values as a SIMD Value of `dtype`.
     """
-    return SIMD.max(s1, s2)
+    return SIMD.max(s1, s2).cast[out_dtype]()
 
 
 fn minimum[
-    dtype: DType
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+    in_dtype: DType, out_dtype: DType = DType.float64
+](array1: NDArray[in_dtype], array2: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
     """
     Element wise minimum of two tensors.
     Parameters:
@@ -396,8 +407,9 @@ fn minimum[
     Returns:
         The element wise minimum of the two tensors as a array of `dtype`.
     """
-    var result: NDArray[dtype] = NDArray[dtype](array1.shape())
-    alias nelts = simdwidthof[dtype]()
+    var result: NDArray[out_dtype] = NDArray[out_dtype](array1.shape())
+
+    alias nelts = simdwidthof[in_dtype]()
     if array1.shape() != array2.shape():
         raise Error("array shapes are not the same")
 
@@ -408,7 +420,7 @@ fn minimum[
             SIMD.min(
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
-            ),
+            ).cast[out_dtype](),
         )
 
     vectorize[vectorized_min, nelts](array1.num_elements())
@@ -416,8 +428,8 @@ fn minimum[
 
 
 fn maximum[
-    T: DType
-](array1: NDArray[T], array2: NDArray[T]) raises -> NDArray[T]:
+in_dtype: DType, out_dtype: DType = DType.float64
+](array1: NDArray[in_dtype], array2: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
     """
     Element wise maximum of two tensors.
     Parameters:
@@ -429,8 +441,9 @@ fn maximum[
     Returns:
         The element wise maximum of the two tensors as a array of `dtype`.
     """
-    var result: NDArray[T] = NDArray[T](array1.shape())
-    alias nelts = simdwidthof[T]()
+
+    var result: NDArray[out_dtype] = NDArray[out_dtype](array1.shape())
+    alias nelts = simdwidthof[in_dtype]()
     if array1.shape() != array2.shape():
         raise Error("array shapes are not the same")
 
@@ -441,7 +454,7 @@ fn maximum[
             SIMD.max(
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
-            ),
+            ).cast[out_dtype](),
         )
 
     vectorize[vectorized_max, nelts](array1.num_elements())

@@ -930,8 +930,9 @@ fn matmul[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     alias nelts = simdwidthof[dtype]()
-    var C: NDArray[dtype] = NDArray[dtype](1024,512)
 
+    var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
+    print(C.info.shape[0], "x", C.info.shape[1])
     # @parameter
     # fn calc_row(m: Int):
     #     for k in range(2048):

@@ -786,10 +786,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         Matrix B: N * L.
         """
 
-        print("A:", self.info.shape[0], " x ", self.info.shape[1])
-        print("B:", other.info.shape[0], " x ", other.info.shape[1])
-        print("AB:", self.info.shape[0], " x ", other.info.shape[1])
-
         if (self.info.ndim != 2) or (other.info.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
         if self.info.shape[1] != other.info.shape[0]:
@@ -820,24 +816,24 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn load[width: Int](self, idx: Int) -> SIMD[dtype, width]:
         return self._arr.load[width=width](idx)
 
-    # fn load[width:Int = 1](self, *indices:Int) -> SIMD[dtype, width]:
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     return self._arr.load[width=width](index)
+    fn load[width:Int = 1](self, *indices:Int) -> SIMD[dtype, width]:
+        var index: Int = _get_index(indices, self.info.strides)
+        return self._arr.load[width=width](index)
 
-    # fn load[width:Int = 1](self, indices:VariadicList[Int]) -> SIMD[dtype, 1]:
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     return self._arr.load[width=width](index)
+    fn load[width:Int = 1](self, indices:VariadicList[Int]) -> SIMD[dtype, 1]:
+        var index: Int = _get_index(indices, self.info.strides)
+        return self._arr.load[width=width](index)
 
     fn store[width: Int](inout self, idx: Int, val: SIMD[dtype, width]):
         self._arr.store[width=width](idx, val)
 
-    # fn store[width:Int = 1](self, indices:VariadicList[Int], val:SIMD[dtype, width]):
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     self._arr.store[width=width](index, val)
+    fn store[width:Int = 1](self, indices:VariadicList[Int], val:SIMD[dtype, width]):
+        var index: Int = _get_index(indices, self.info.strides)
+        self._arr.store[width=width](index, val)
 
-    # fn store[width:Int = 1](self, *indices:Int, val:SIMD[dtype, width]):
-    #     var index: Int = _get_index(indices, self.info.strides)
-    #     self._arr.store[width=width](index, val)
+    fn store[width:Int = 1](self, *indices:Int, val:SIMD[dtype, width]):
+        var index: Int = _get_index(indices, self.info.strides)
+        self._arr.store[width=width](index, val)
 
     # argpartition, byteswap, choose
 

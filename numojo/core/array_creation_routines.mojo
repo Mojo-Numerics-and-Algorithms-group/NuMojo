@@ -16,7 +16,7 @@ from algorithm import parallelize
 from builtin.math import pow
 
 from .ndarray import NDArray, NDArrayShape
-from ..utility_funcs import is_inttype, is_floattype
+from .utility_funcs import is_inttype, is_floattype
 
 
 # ===------------------------------------------------------------------------===#

@@ -9,7 +9,7 @@ import math
 import . _math_funcs as _mf
 from .arithmetic import sqrt, fma
 
-from .ndarray import NDArray
+from ..core.ndarray import NDArray
 
 # TODO: add in_dtype, out_dtype in backends and pass it here.
 # ===------------------------------------------------------------------------===#

@@ -7,7 +7,7 @@
 
 import math
 import . _math_funcs as _mf
-from .ndarray import NDArray
+from ..core.ndarray import NDArray
 
 
 # ===------------------------------------------------------------------------===#

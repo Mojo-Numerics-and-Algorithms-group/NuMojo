@@ -9,7 +9,7 @@ from testing import assert_raises
 from algorithm.functional import parallelize, vectorize, num_physical_cores
 
 from ..traits.backend import Backend
-from .ndarray import NDArray, NDArrayShape
+from ..core.ndarray import NDArray, NDArrayShape
 
 
 struct Vectorized(Backend):

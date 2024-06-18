@@ -7,7 +7,9 @@
 
 import math
 import . _math_funcs as _mf
-from .ndarray import NDArray, NDArrayShape, _get_index
+from .ndarray import NDArray, NDArrayShape
+from algorithm import parallelize
+from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
 """
 TODO:
@@ -894,37 +896,36 @@ fn cross[
 #     return result
 
 
-from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
 # Perform 2D tiling on the iteration space defined by end_x and end_y.
-fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int) raises:
+fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int):
     # Note: this assumes that ends are multiples of the tiles.
     for y in range(0, end_y, tile_y):
         for x in range(0, end_x, tile_x):
             tiled_fn[tile_x, tile_y](x, y)
             
-# fn matmul[dtype: DType](C: NDArray[dtype], A: NDArray[dtype], B: NDArray[dtype]) raises:
-#     alias nelts = simdwidthof[dtype]()
-#     @parameter
-#     fn calc_row(m: Int):
-#         @parameter
-#         fn calc_tile[tile_x: Int, tile_y: Int](x: Int, y: Int):
-#             for k in range(y, y + tile_y):
-#                 @parameter
-#                 fn dot[nelts: Int](n: Int):
-#                     try:
-#                         C.store(m, n + x, val=C.load[nelts](m, n + x) + A[m, k] * B.load[nelts](k, n + x))
-#                     except:
-#                         print("lol")
-#                 # Vectorize by nelts and unroll by tile_x/nelts
-#                 # Here unroll factor is 4
-#                 alias unroll_factor = tile_x // nelts
-#                 vectorize[dot, nelts, size=tile_x, unroll_factor=unroll_factor]()
+# https://docs.modular.com/mojo/notebooks/Matmul
+fn matmul_tiled_unrolled_parallelized[dtype: DType](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    alias nelts = simdwidthof[dtype]()
+    var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
+    print(C.info.shape[0], "x", C.info.shape[1])
 
-#         alias tile_size = 4
-#         tile[calc_tile, nelts * tile_size, tile_size](A.info.shape[1], C.info.shape[1])
-
-#     parallelize[calc_row](C.info.shape[1], C.info.shape[0])
+    @parameter
+    fn calculate_A_rows(m: Int):
+        @parameter
+        fn calc_tile[tile_x: Int, tile_y: Int](x: Int, y: Int):
+            for k in range(y, y + tile_y):
+                @parameter
+                fn dot[nelts: Int](n: Int):
+                    C.store(m, n+x, val=C.load[nelts](m, n+x) + A.load(m, k) * B.load[nelts](k, n+x))
+                
+                alias unroll_factor = tile_x // nelts
+                vectorize[dot, nelts, size=tile_x, unroll_factor=unroll_factor]()
+                        
+        alias tile_size = 4
+        tile[calc_tile, nelts * tile_size, tile_size](A.info.shape[1], C.info.shape[1])
+    parallelize[calculate_A_rows](C.info.shape[0], C.info.shape[0])
+    return C
 
 fn matmul[
     dtype: DType
@@ -953,8 +954,24 @@ fn matmul[
 
     return C
 
-fn matmul_naive[dtype: DType](inout A: NDArray[dtype], inout B: NDArray[dtype]) raises -> NDArray[dtype]:
 
+fn matmul_parallelized[dtype: DType](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    alias nelts = simdwidthof[dtype]()
+
+    var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
+    print(C.info.shape[0], "x", C.info.shape[1])
+
+    @parameter
+    fn calculate_A_rows(m: Int):
+        for k in range(A.info.shape[1]):
+            @parameter
+            fn dot[nelts: Int](n: Int):
+                C.store(m, n, val=C.load[nelts](m, n) + A.load(m, k) * B.load[nelts](k, n))
+            vectorize[dot, nelts](C.info.shape[1])
+    parallelize[calculate_A_rows](C.info.shape[0], C.info.shape[0])
+    return C
+
+fn matmul_naive[dtype: DType](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
 
     for m in range(C.info.shape[0]):

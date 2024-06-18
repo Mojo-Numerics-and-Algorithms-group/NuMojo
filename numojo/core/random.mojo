@@ -7,7 +7,7 @@
 
 import random
 from .ndarray import NDArray
-from .ndarray import arrayDescriptor
+from .ndarray import ArrayDescriptor
 
 fn rand[dtype: DType](*shape: Int) -> NDArray[dtype]:
     """
@@ -32,7 +32,7 @@ fn rand[dtype: DType](*shape: Int) -> NDArray[dtype]:
     var arr = NDArray[dtype]()
     arr._arr = DTypePointer[dtype].alloc(size)
     memset_zero(arr._arr, size)
-    arr.info = arrayDescriptor[dtype](
+    arr.info = ArrayDescriptor[dtype](
         dimension, first_index, size, shapeInfo, strides
     )
     random.rand[dtype](arr._arr, size)

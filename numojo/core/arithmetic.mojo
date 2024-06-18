@@ -756,14 +756,14 @@ fn nextafter[
 
 # naive loop implementation, optimize later
 fn trapz[
-    Indtype: DType, Outdtype: DType = DType.float32
-](y: NDArray[Indtype], x: NDArray[Indtype]) raises -> SIMD[Outdtype, 1]:
+    in_dtype: DType, out_dtype: DType = DType.float32
+](y: NDArray[in_dtype], x: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Compute the integral of y over x using the trapezoidal rule.
 
     Parameters:
-        Indtype: Input data type.
-        Outdtype: Output data type, defaults to float32.
+        in_dtype: Input data type.
+        out_dtype: Output data type, defaults to float32.
 
     Args:
         y: An array.
@@ -780,30 +780,30 @@ fn trapz[
         raise Error("x and y must have the same shape")
 
     # move this check to compile time using constrained?
-    if is_inttype[Indtype]() and not is_floattype[Outdtype]():
+    if is_inttype[in_dtype]() and not is_floattype[out_dtype]():
         raise Error(
             "output dtype `Fdtype` must be a floating-point type if input dtype"
             " `Idtype` is not a floating-point type"
         )
 
-    var integral: SIMD[Outdtype] = 0.0
+    var integral: SIMD[out_dtype] = 0.0
     for i in range(x.num_elements() - 1):
-        var temp = (x[i + 1] - x[i]).cast[Outdtype]() * (y[i] + y[i + 1]).cast[
-            Outdtype
+        var temp = (x[i + 1] - x[i]).cast[out_dtype]() * (y[i] + y[i + 1]).cast[
+            out_dtype
         ]() / 2.0
         integral += temp
     return integral
 
 
 fn diff[
-    Indtype: DType, Outdtype: DType = Indtype
-](array: NDArray[Indtype], n: Int) raises -> NDArray[Outdtype]:
+    in_dtype: DType, out_dtype: DType = in_dtype
+](array: NDArray[in_dtype], n: Int) raises -> NDArray[out_dtype]:
     """
     Compute the n-th order difference of the input array.
 
     Parameters:
-        Indtype: Input data type.
-        Outdtype: Output data type, defaults to float32.
+        in_dtype: Input data type.
+        out_dtype: Output data type, defaults to float32.
 
     Args:
         array: A array.
@@ -813,19 +813,19 @@ fn diff[
         The n-th order difference of the input array.
     """
 
-    var array1: NDArray[Outdtype] = NDArray[Outdtype](
+    var array1: NDArray[out_dtype] = NDArray[out_dtype](
         NDArrayShape(array.num_elements())
     )
     for i in range(array.num_elements()):
-        array1[i] = array[i].cast[Outdtype]()
+        array1[i] = array[i].cast[out_dtype]()
 
     for num in range(n):
-        var result: NDArray[Outdtype] = NDArray[Outdtype](
+        var result: NDArray[out_dtype] = NDArray[out_dtype](
             NDArrayShape(array.num_elements() - (num + 1))
         )
         for i in range(array1.num_elements() - 1):
             result[i] = (array1.load[1](i + 1) - array1.load[1](i)).cast[
-                Outdtype
+                out_dtype
             ]()
         array1 = result
     return array1
@@ -833,16 +833,16 @@ fn diff[
 
 # Implement it for (2,) array and add axis parameters later
 fn cross[
-    Indtype: DType, Outdtype: DType = DType.float32
-](array1: NDArray[Indtype], array2: NDArray[Indtype]) raises -> NDArray[
-    Outdtype
+    in_dtype: DType, out_dtype: DType = DType.float32
+](array1: NDArray[in_dtype], array2: NDArray[in_dtype]) raises -> NDArray[
+    out_dtype
 ]:
     """
     Compute the cross product of two tensors.
 
     Parameters
-        Indtype: Input data type.
-        Outdtype: Output data type, defaults to float32.
+        in_dtype: Input data type.
+        out_dtype: Output data type, defaults to float32.
 
     Args:
         array1: A array.
@@ -856,15 +856,15 @@ fn cross[
     """
 
     if array1.shape() == array2.shape() == 3:
-        var array3: NDArray[Outdtype] = NDArray[Outdtype](NDArrayShape(3))
+        var array3: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(3))
         array3[0] = (array1[1] * array2[2] - array1[2] * array2[1]).cast[
-            Outdtype
+            out_dtype
         ]()
         array3[1] = (array1[2] * array2[0] - array1[0] * array2[2]).cast[
-            Outdtype
+            out_dtype
         ]()
         array3[2] = (array1[0] * array2[1] - array1[1] * array2[0]).cast[
-            Outdtype
+            out_dtype
         ]()
         return array3
     else:
@@ -933,23 +933,25 @@ fn matmul[
     alias nelts = simdwidthof[dtype]()
 
     var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
-    print(C.info.shape[0], "x", C.info.shape[1])
-    # @parameter
-    # fn calc_row(m: Int):
-    #     for k in range(2048):
-    #         @parameter
-    #         fn dot[nelts : Int](n : Int):
-    #             C.store[nelts](m,n, val= C.load[nelts](m,n) + A.load(m,k) * B.load[nelts](k,n))
-    #         vectorize[dot, nelts](512)
-    # parallelize[calc_row](1024, 1024)
+    # print(C.info.shape[0], "x", C.info.shape[1])
+    @parameter
+    fn calc_row(m: Int):
+        for k in range(A.info.shape[1]):
+            @parameter
+            fn dot[nelts : Int](n : Int):
+                C.store[nelts](m,n, val= C.load[nelts](m,n) + A.load(m,k) * B.load[nelts](k,n))
+            vectorize[dot, nelts](B.info.shape[1])
+    parallelize[calc_row]()
 
     # var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
-    for m in range(C.info.shape[0]):
-            for k in range(A.info.shape[1]):
-                @parameter
-                fn dot[nelts: Int](n: Int):
-                    C.store(m, n, val=C.load[nelts](m, n) + A.load(m, k) * B.load[nelts](k, n))
-                vectorize[dot, nelts](C.info.shape[1])
+    # for m in range(C.info.shape[0]):
+    #     for k in range(A.info.shape[1]):
+    #         @parameter
+    #         fn dot[nelts: Int](n: Int):
+    #             C.store(m,n,
+    #                 val=C.load[nelts](m,n) + A.load(m,k) * B.load[nelts](k,n))
+    #         vectorize[dot, nelts](C.info.shape[1])
+
     return C
 
 
@@ -971,8 +973,16 @@ fn matmul_parallelized[dtype: DType](A: NDArray[dtype], B: NDArray[dtype]) raise
 
 fn matmul_naive[dtype: DType](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
+
     for m in range(C.info.shape[0]):
         for k in range(A.info.shape[1]):
             for n in range(C.info.shape[1]):
-                C.store[1](m, n, val=C.load[1](m,n) + A.load[1](m,k) * B.load[1](k,n))
+                C.store(m,n, 
+                val=C.load(m,n) + A.load(m,k) * B.load(k,n))
+
+    # for m in range(C.info.shape[0]):
+    # for k in range(A.info.shape[1]):
+    #     for n in range(C.info.shape[1]):
+    #         C.__setitem__(List[Int](m,n), val=C.__getitem__(m,n) + A.__getitem__(m,k) * B.__getitem__(k,n))
+
     return C

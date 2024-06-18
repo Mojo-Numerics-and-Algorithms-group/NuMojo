@@ -6,6 +6,7 @@ A Mathematics and Algorithm Library for Mojo.
 
 from .core import *
 from .statistics import *
+from .core.datatypes import *
 
 # from  .comparison import *
 # from .tensor_func_bit_ops import * #Doesn't work yet due to type issues

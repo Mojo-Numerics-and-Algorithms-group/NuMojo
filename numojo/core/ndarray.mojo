@@ -252,7 +252,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             size *= shape[i]
             var temp: Int = 1
             for j in range(i + 1, dimension):  # temp
-            for j in range(i + 1, dimension):  # temp
                 temp *= shape[j]
             strides.append(temp)
 
@@ -314,7 +313,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             shapeInfo.append(shape[i])
             size *= shape[i]
             var temp: Int = 1
-            for j in range(i + 1, dimension):  # temp
             for j in range(i + 1, dimension):  # temp
                 temp *= shape[j]
             strides.append(temp)

@@ -1,15 +1,21 @@
 """
 # ===----------------------------------------------------------------------=== #
 # Implements ROW MAJOR N-DIMENSIONAL ARRAYS
-# Last updated: 2024-06-16
+# Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 """
 
 """
 # TODO
 1) Add NDArray, NDArrayShape constructor overload for List, VariadicList types etc to cover more cases
-2) Add __getitem__() overload for (Slice, Int)
-3) Add support for Column Major
+2) Remove the redundant shape from fields and combine it with NDArrayShape to make it easy to do self.shape() == other.shape()
+3) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
+4) Vectorize row(), col() to retrieve rows and columns for 2D arrays
+5) Add __getitem__() overload for (Slice, Int)
+6) Add support for Column Major
+7) Add vectorization for _get_index
+8) Write more explanatory Error("") statements
+9) Vectorize the for loops inside getitem or move these checks to compile time to try and remove the overhead from constantly checking
 """
 
 from random import rand
@@ -24,16 +30,18 @@ fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
     return idx
 
 
+fn _get_index(*indices: Int, weights: List[Int]) -> Int:
+    var idx: Int = 0
+    for i in range(weights.__len__()):
+        idx += indices[i] * weights[i]
+    return idx
+
+
 fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
     var idx: Int = 0
     for i in range(weights.__len__()):
         idx += indices[i] * weights[i]
     return idx
-    # @parameter
-    # fn vectorized_index[simd_width:Int](idx:Int):
-    #     idx = idx + SIMD.__mul__(indices.load[simd_width](idx), weights.data.load[simd_width](idx))
-
-    # return idx
 
 
 fn _traverse_iterative[
@@ -47,7 +55,7 @@ fn _traverse_iterative[
     offset: Int,
     inout index: List[Int],
     depth: Int,
-):
+) raises:
     if depth == ndim.__len__():
         var idx = offset + _get_index(index, coefficients)
         var nidx = _get_index(index, strides)
@@ -145,7 +153,22 @@ struct arrayDescriptor[dtype: DType = DType.float32]():
         size: Int,
         shape: List[Int],
         strides: List[Int],
-        coefficients: List[Int] = List[Int](),
+    ):
+        self.ndim = ndim
+        self.offset = offset
+        self.size = size
+        self.shape = shape
+        self.strides = strides
+        self.coefficients = strides
+
+    fn __init__(
+        inout self,
+        ndim: Int,
+        offset: Int,
+        size: Int,
+        shape: List[Int],
+        strides: List[Int],
+        coefficients: List[Int],
     ):
         self.ndim = ndim
         self.offset = offset
@@ -181,7 +204,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     # ===-------------------------------------------------------------------===#
 
     # default constructor
-    fn __init__(inout self, *shape: Int, random:Bool=False):
+    fn __init__(inout self, *shape: Int, random: Bool = False):
         """
         Example:
             NDArray[DType.int8](3,2,4)
@@ -308,16 +331,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         inout self,
         shape: NDArrayShape,
         random: Bool = False,
-        value: SIMD[dtype, 1] = SIMD[dtype, 1](0),
+        value: SIMD[dtype, 1] = SIMD[dtype, 1](0),  # make it Optional[]
     ):
         var dimension: Int = shape.__len__()
         var first_index: Int = 0
         var size: Int = 1
-        var shapeInfo: List[Int] = List[Int]()
         var strides: List[Int] = List[Int]()
 
         for i in range(dimension):
-            shapeInfo.append(shape.shape[i])
             size *= shape.shape[i]
             var temp: Int = 1
             for j in range(i + 1, dimension):  # temp
@@ -327,11 +348,11 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
         self.info = arrayDescriptor[dtype](
-            dimension, first_index, size, shapeInfo, strides
+            dimension, first_index, size, shape.shape, strides
         )
         if random:
             rand[dtype](self._arr, size)
-        else:
+        elif value:
             for i in range(size):
                 self._arr[i] = value
 
@@ -361,57 +382,56 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.info = existing.info
         self._arr = existing._arr
 
-    # fn __del__(owned self):
-    #     self._arr.free()
+    fn __del__(owned self):
+        self._arr.free()
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
     # ===-------------------------------------------------------------------===#
 
-    fn _adjust_slice_(self, inout span: Slice, dim: Int):
-        if span.start < 0:
-            span.start = dim + span.start
-        if not span._has_end():
-            span.end = dim
-        elif span.end < 0:
-            span.end = dim + span.end
-        if span.end > dim:
-            span.end = dim
-        if span.end < span.start:
-            span.start = 0
-            span.end = 0
+    fn __setitem__(inout self, index: Int, value: SIMD[dtype, 1]) raises:
+        if index >= self.info.size:
+            raise Error("Invalid index: index out of bound")
+        self._arr.__setitem__(index, value)
 
-    fn __setitem__(inout self, idx: Int, val: SIMD[dtype, 1]):
-        self._arr.__setitem__(idx, val)
+    fn __setitem__(inout self, *index: Int, value: SIMD[dtype, 1]) raises:
+        var idx: Int = _get_index(index, self.info.strides)
+        if idx >= self.info.size:
+            raise Error("Invalid index: index out of bound")
+        self._arr.__setitem__(idx, value)
 
     fn __setitem__(
         inout self,
         indices: List[Int],
         val: SIMD[dtype, 1],
-    ):
-        var index: Int = _get_index(indices, self.info.strides)
-        self._arr.__setitem__(index, val)
+    ) raises:
+        var idx: Int = _get_index(indices, self.info.strides)
+        if idx >= self.info.size:
+            raise Error("Invalid index: index out of bound")
+        self._arr.__setitem__(idx, val)
 
-    fn __getitem__(self, idx: Int) -> SIMD[dtype, 1]:
+    fn __getitem__(self, index: Int) raises -> SIMD[dtype, 1]:
         """
         Example:
             `arr[15]` returns the 15th item of the array's data buffer.
         """
-        return self._arr.__getitem__(idx)
+        if index >= self.info.size:
+            raise Error("Invalid index: index out of bound")
+        return self._arr.__getitem__(index)
 
     fn __getitem__(self, *indices: Int) raises -> SIMD[dtype, 1]:
         """
         Example:
             `arr[1,2]` returns the item of 1st row and 2nd column of the array.
         """
-        # if indices.__len__() != self.info.ndim:
-        #     raise Error("Error: Length of Indices do not match the shape")
+        if indices.__len__() != self.info.ndim:
+            raise Error("Error: Length of Indices do not match the shape")
 
-        # for i in range(indices.__len__()):
-        #     if indices[i] >= self.info.shape[i]:
-        #         raise Error(
-        #             "Error: Elements of Indices exceed the shape values"
-        #         )
+        for i in range(indices.__len__()):
+            if indices[i] >= self.info.shape[i]:
+                raise Error(
+                    "Error: Elements of Indices exceed the shape values"
+                )
 
         var index: Int = _get_index(indices, self.info.strides)
         return self._arr[index]
@@ -423,14 +443,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             `arr[VariadicList[Int](1,2)]` returns the item of 1st row and
                 2nd column of the array.
         """
-        # if indices.__len__() != self.info.ndim:
-        #     raise Error("Error: Length of Indices do not match the shape")
+        if indices.__len__() != self.info.ndim:
+            raise Error("Error: Length of Indices do not match the shape")
 
-        # for i in range(indices.__len__()):
-        #     if indices[i] >= self.info.shape[i]:
-        #         raise Error(
-        #             "Error: Elements of Indices exceed the shape values"
-        #         )
+        for i in range(indices.__len__()):
+            if indices[i] >= self.info.shape[i]:
+                raise Error(
+                    "Error: Elements of Indices exceed the shape values"
+                )
 
         var index: Int = _get_index(indices, self.info.strides)
         return self._arr[index]
@@ -445,7 +465,20 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         """
 
         var index: Int = offset + _get_index(indices, coefficients)
-        return self._arr[index]
+        return self._arr.__getitem__(index)
+
+    fn _adjust_slice_(self, inout span: Slice, dim: Int):
+        if span.start < 0:
+            span.start = dim + span.start
+        if not span._has_end():
+            span.end = dim
+        elif span.end < 0:
+            span.end = dim + span.end
+        if span.end > dim:
+            span.end = dim
+        if span.end < span.start:
+            span.start = 0
+            span.end = 0
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
@@ -471,7 +504,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         var nnum_elements: Int = 1
 
         var j: Int = 0
-        for _ in range(ndims):
+        for i in range(ndims):
             while spec[j] == 1:
                 j += 1
             if j >= self.info.ndim:
@@ -480,8 +513,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             nnum_elements *= slices[j].unsafe_indices()
             ncoefficients.append(self.info.strides[j] * slices[j].step)
             j += 1
-
-        for i in range(ndims):
+            # combined the two for loops, this calculates the strides for new array
             var temp: Int = 1
             for j in range(i + 1, ndims):  # temp
                 temp *= nshape[j]
@@ -498,35 +530,16 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         var narr = Self(
             ndims, noffset, nnum_elements, nshape, nstrides, ncoefficients
         )
+
+        # Starting index to traverse the new array
         var index = List[Int]()
         for _ in range(ndims):
             index.append(0)
-
         _traverse_iterative[dtype](
             self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
         )
+
         return narr
-
-    # I have to implement some kind of Index struct like the tensor Index() so that we don't have to write VariadicList everytime
-    # fn __setitem__(inout self, indices:VariadicList[Int], value:SIMD[dtype, 1]) raises:
-
-    #     if indices.__len__() != self._shape.__len__():
-    #         with assert_raises():
-    #             raise "Error: Indices do not match the shape"
-
-    #     for i in range(indices.__len__()):
-    #         if indices[i] >= self._shape[i]:
-    #             with assert_raises():
-    #                 raise "Error: Indices do not match the shape"
-
-    #     var index: Int = 0
-    #     for i in range(indices.__len__()):
-    #         var temp: Int = 1
-    #         for j in range(i+1, self._shape.__len__()):
-    #             temp *= self._shape[j]
-    #         index += (indices[i] * temp)
-
-    #     self._arr[index] = value
 
     fn __int__(self) -> Int:
         return self.info.size
@@ -618,7 +631,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __imul__(inout self, s: SIMD[dtype, 1]):
         self = self * s
 
-    fn _reduce_sum(self) -> SIMD[dtype, 1]:
+    fn reduce_sum(self) -> SIMD[dtype, 1]:
         var reduced = SIMD[dtype, 1](0.0)
         alias simd_width: Int = simdwidthof[dtype]()
 
@@ -629,8 +642,53 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         vectorize[vectorize_reduce, simd_width](self.info.size)
         return reduced
 
+    fn reduce_mul(self) -> SIMD[dtype, 1]:
+        var reduced = SIMD[dtype, 1](0.0)
+        alias simd_width: Int = simdwidthof[dtype]()
+
+        @parameter
+        fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
+            reduced *= self._arr.load[width=simd_width](idx).reduce_mul()
+
+        vectorize[vectorize_reduce, simd_width](self.info.size)
+        return reduced
+
+    fn __abs__(self) -> Self:
+        var result = Self(self.info.shape)
+        alias nelts = simdwidthof[dtype]()
+
+        @parameter
+        fn vectorized_abs[simd_width: Int](idx: Int) -> None:
+            result._arr.store[width=simd_width](
+                idx, abs(self._arr.load[width=simd_width](idx))
+            )
+
+        vectorize[vectorized_abs, nelts](self.info.size)
+        return result
+
+    # all elements raised to some integer power
     fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)
+
+    # all elements raised to some corresponding array element power
+    fn __pow__(self, p: Self) raises -> Self:
+        if (
+            self.info.size != p.info.size
+        ):  # This lets us do the operation as long as they have same no of elements
+            raise Error("Both arrays must have same number of elements")
+
+        var result = Self(self.info.shape)
+        alias nelts = simdwidthof[dtype]()
+
+        @parameter
+        fn vectorized_pow[simd_width: Int](idx: Int) -> None:
+            result._arr.store[width=simd_width](
+                idx,
+                self._arr.load[width=simd_width](idx)
+                ** p.load[width=simd_width](idx),
+            )
+
+        return result
 
     fn __ipow__(inout self, p: Int):
         self = self.__pow__(p)
@@ -774,6 +832,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         """
         if self.info.size != other.info.size:
             raise Error("The lengths of two vectors do not match.")
+
         var sum = Scalar[dtype](0)
         for i in range(self.info.size):
             sum = sum + self[i] * other[i]
@@ -788,6 +847,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         if (self.info.ndim != 2) or (other.info.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
+
         if self.info.shape[1] != other.info.shape[0]:
             raise Error(
                 "Second dimension of A does not match first dimension of B."
@@ -804,24 +864,22 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return new_matrix
 
     fn row(self, id: Int) raises -> Self:
-        """Get the ith row of the matrix.
-        """
+        """Get the ith row of the matrix."""
 
         if self.info.ndim > 2:
             raise Error("Only support 2-D array (matrix).")
 
-        # If bug fixed, then 
+        # If bug fixed, then
         # Tensor[dtype](shape=width, self._arr.offset(something))
-        
+
         var width = self.info.shape[1]
         var buffer = Self(width)
         for i in range(width):
-            buffer[i] = self._arr[i + id*width]
+            buffer[i] = self._arr[i + id * width]
         return buffer
 
     fn col(self, id: Int) raises -> Self:
-        """Get the ith column of the matrix.
-        """
+        """Get the ith column of the matrix."""
 
         if self.info.ndim > 2:
             raise Error("Only support 2-D array (matrix).")
@@ -830,9 +888,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         var height = self.info.shape[0]
         var buffer = Self(height)
         for i in range(height):
-            buffer[i] = self._arr[id + i*width]
+            buffer[i] = self._arr[id + i * width]
         return buffer
 
+    # * same as mdot
     fn rdot(self, other: Self) raises -> Self:
         """
         Dot product of two matrix.
@@ -843,14 +902,17 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         if (self.info.ndim != 2) or (other.info.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
         if self.info.shape[1] != other.info.shape[0]:
-            raise Error("Second dimension of A does not match first dimension of B.")
+            raise Error(
+                "Second dimension of A does not match first dimension of B."
+            )
 
         var new_dims = List[Int](self.info.shape[0], other.info.shape[1])
         var new_matrix = Self(new_dims)
-        print("Strides:", new_matrix.info.strides[0], new_matrix.info.strides[1])
         for row in range(new_dims[0]):
             for col in range(new_dims[1]):
-                new_matrix[col + row * new_dims[1]] = self.row(row).vdot(other.col(col))
+                new_matrix[col + row * new_dims[1]] = self.row(row).vdot(
+                    other.col(col)
+                )
         return new_matrix
 
     fn size(self) -> Int:
@@ -859,33 +921,66 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn num_elements(self) -> Int:
         return self.info.size
 
+    # TODO: move this initialization to the Fields and constructor
     fn shape(self) -> NDArrayShape:
         var shapeNDArray: NDArrayShape = NDArrayShape(self.info.shape)
         return shapeNDArray
 
     fn load[width: Int](self, idx: Int) -> SIMD[dtype, width]:
+        """
+        Loads a SIMD element of size `width` at the given index `idx`.
+        """
         return self._arr.load[width=width](idx)
 
-    fn load[width:Int = 1](self, *indices:Int) -> SIMD[dtype, width]:
+    # TODO: we should add checks to make sure user don't load out of bound indices, but that will overhead, figure out later
+    fn load[width: Int = 1](self, *indices: Int) -> SIMD[dtype, width]:
+        """
+        Loads a SIMD element of size `width` at given variadic indices argument.
+        """
         var index: Int = _get_index(indices, self.info.strides)
         return self._arr.load[width=width](index)
 
-    fn load[width:Int = 1](self, indices:VariadicList[Int]) -> SIMD[dtype, 1]:
-        var index: Int = _get_index(indices, self.info.strides)
-        return self._arr.load[width=width](index)
+    fn load[width: Int = 1](self, indices: VariadicList[Int]) -> SIMD[dtype, 1]:
+        """
+        Loads a SIMD element of size `width` at given VariadicList of indices.
+        """
+        var idx: Int = _get_index(indices, self.info.strides)
+        return self._arr.load[width=width](idx)
+
+    fn load[width: Int = 1](self, indices: List[Int]) -> SIMD[dtype, 1]:
+        """
+        Loads a SIMD element of size `width` at given List of indices.
+        """
+        var idx: Int = _get_index(indices, self.info.strides)
+        return self._arr.load[width=width](idx)
 
     fn store[width: Int](inout self, idx: Int, val: SIMD[dtype, width]):
+        """
+        Stores the SIMD element of size `width` at index `idx`.
+        """
         self._arr.store[width=width](idx, val)
 
-    fn store[width:Int = 1](self, indices:VariadicList[Int], val:SIMD[dtype, width]):
-        var index: Int = _get_index(indices, self.info.strides)
-        self._arr.store[width=width](index, val)
+    fn store[
+        width: Int = 1
+    ](inout self, indices: VariadicList[Int], val: SIMD[dtype, width]):
+        """
+        Stores the SIMD element of size `width` at the given Variadic list of indices.
+        """
+        var idx: Int = _get_index(indices, self.info.strides)
+        self._arr.store[width=width](idx, val)
 
-    fn store[width:Int = 1](self, *indices:Int, val:SIMD[dtype, width]):
-        var index: Int = _get_index(indices, self.info.strides)
-        self._arr.store[width=width](index, val)
+    fn store[
+        width: Int = 1
+    ](inout self, *indices: Int, val: SIMD[dtype, width]):
+        """
+        Stores the SIMD element of size `width` at the given variadic indices argument.
+        """
+        var idx: Int = _get_index(indices, self.info.strides)
+        self._arr.store[width=width](idx, val)
 
-    # argpartition, byteswap, choose
+    # not urgent: argpartition, byteswap, choose, conj, dump, getfield
+    # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
+    # tobyets, tofile, view
 
     fn all(self):
         pass
@@ -903,6 +998,81 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         pass
 
     fn astype(self):
+        pass
+
+    fn clip(self):
+        pass
+
+    fn compress(self):
+        pass
+
+    fn copy(self):
+        pass
+
+    fn cumprod(self):
+        pass
+
+    fn cumsum(self):
+        pass
+
+    fn diagonal(self):
+        pass
+
+    fn fill(self):
+        pass
+
+    fn flatten(self):
+        pass
+
+    fn item(self):
+        pass
+
+    fn max(self):
+        pass
+
+    fn min(self):
+        pass
+
+    fn mean(self):
+        pass
+
+    fn nonzero(self):
+        pass
+
+    fn prod(self):
+        pass
+
+    fn ravel(self):
+        pass
+
+    fn resize(self):
+        pass
+
+    fn round(self):
+        pass
+
+    fn sort(self):
+        pass
+
+    fn sum(self):
+        pass
+
+    fn stdev(self):
+        pass
+
+    fn tolist(self):
+        pass
+
+    fn tostring(self):
+        pass
+
+    fn trace(self):
+        pass
+
+    fn transpose(self):
+        pass
+
+    fn variance(self):
         pass
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data

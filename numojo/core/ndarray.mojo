@@ -22,106 +22,209 @@ from random import rand
 from builtin.math import pow
 from algorithm import parallelize, vectorize
 
-
-fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
-    var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _get_index(*indices: Int, weights: List[Int]) -> Int:
-    var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
-    var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _traverse_iterative[
-    dtype: DType
-](
-    orig: NDArray[dtype],
-    inout narr: NDArray[dtype],
-    ndim: List[Int],
-    coefficients: List[Int],
-    strides: List[Int],
-    offset: Int,
-    inout index: List[Int],
-    depth: Int,
-) raises:
-    if depth == ndim.__len__():
-        var idx = offset + _get_index(index, coefficients)
-        var nidx = _get_index(index, strides)
-        var temp = orig._arr.load[width=1](idx)
-        narr.__setitem__(nidx, temp)
-        return
-
-    for i in range(ndim[depth]):
-        index[depth] = i
-        var newdepth = depth + 1
-        _traverse_iterative(
-            orig, narr, ndim, coefficients, strides, offset, index, newdepth
-        )
-
-
+from ..ndarray_utils import *
 # ===----------------------------------------------------------------------===#
 # NDArrayShape
 # ===----------------------------------------------------------------------===#
 
+# alias NDIM = 10
 
-@value
-struct NDArrayShape[dtype: DType = DType.int32](Stringable):
+@register_passable("trivial")
+struct NDArrayShape[NDIM: Int](Stringable):
     """Implements the NDArrayShape."""
 
     # Fields
-    var shape: List[Int]
+    var _ndim: Int
+    var _shape: StaticIntTuple[NDIM]
+    var _strides: StaticIntTuple[NDIM]
 
-    # ===-------------------------------------------------------------------===#
-    # Life cycle methods
-    # ===-------------------------------------------------------------------===#
-    fn __init__(inout self, shape: List[Int]):
-        self.shape = shape
+    @always_inline("nodebug")
+    fn __init__(inout self, *shape: Int):
+        self._ndim = len(shape)
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(len(shape), NDIM)):
+            self._shape[i] = shape[i]
 
-    fn __init__(inout self, num: Int):
-        self.shape = List[Int](num)
-
+    @always_inline("nodebug")
     fn __init__(inout self, shape: VariadicList[Int]):
-        self.shape = List[Int]()
-        for i in range(shape.__len__()):
-            self.shape.append(shape[i])
+        self._ndim = len(shape)
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(len(shape), NDIM)):
+            self._shape[i] = shape[i]
 
-    # ===-------------------------------------------------------------------===#
-    # Operator dunders
-    # ===-------------------------------------------------------------------===#
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: List[Int]):
+        self._ndim = len(shape)
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(len(shape), NDIM)):
+            self._shape[i] = shape[i]
 
+    @always_inline("nodebug")
+    fn __init__[num: Int](inout self, shape: StaticIntTuple[num]):
+        self._ndim = num
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(num, NDIM)):
+            self._shape[i] = shape[i]
+
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: StaticIntTuple[NDIM]):
+        self._ndim = len(shape)
+        self._shape = shape
+
+    @always_inline("nodebug")
+    fn __init__(inout self, owned shape: NDArrayShape):
+        self._ndim = shape._ndim
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(self._ndim, NDIM)):
+            self._shape[i] = shape[i]
+
+    @always_inline("nodebug")
+    fn __getitem__(self, index: Int) -> Int:
+        return self._shape[index if index >= 0 else self._ndim + index]
+
+    @always_inline("nodebug")
+    fn __setitem__(inout self, index: Int, value: Int):
+        self._shape[index if index >= 0 else self._ndim + index] = value
+
+    @always_inline("nodebug")
+    fn ndim(self) -> Int:
+        return self._ndim
+
+    @always_inline("nodebug")
+    fn num_elements(self) -> Int:
+        var result = 1
+        for i in range(self._ndim):
+            result *= self._shape[i]
+        return result
+
+    @always_inline("nodebug")
+    fn _std_shape(self) -> Self:
+        var s = List[Int](capacity=self._ndim)
+        for i in range(self._ndim):
+            s.append(self[i])
+        return NDArrayShape[NDIM](s)
+
+    @always_inline("nodebug")
+    fn __str__(self: Self) -> String:
+        return "Shape: " + self._shape.__str__()
+
+    @always_inline("nodebug")
     fn __eq__(self, other: Self) -> Bool:
-        if self.shape.__len__() != other.shape.__len__():
+        if self._ndim != other._ndim:
             return False
-
-        for i in range(self.shape.__len__()):
-            if self.shape[i] != other.shape[i]:
+        for i in range(self._ndim):
+            if self[i] != other[i]:
                 return False
         return True
 
-    fn __ne__(self, other: Self) -> Bool:
+    @always_inline("nodebug")
+    fn __ne__(self, other: Self]) -> Bool:
         return not self.__eq__(other)
 
-    # ===-------------------------------------------------------------------===#
-    # Trait implementations
-    # ===-------------------------------------------------------------------===#
+    @always_inline("nodebug")
+    fn __contains__(self, value: Int) -> Bool:
+        for i in range(self._ndim):
+            if self[i] == value:
+                return True
+        return False
 
-    fn __str__(self) -> String:
-        return "Shape: " + self.shape.__str__()
+@register_passable("trivial")
+struct NDArrayView[NDIM: Int](Stringable):
+    """Implements the NDArrayView."""
 
-    fn __len__(self) -> Int:
-        return self.shape.__len__()
+    # Fields
+    var _offset: Int
+    var _coefficients: StaticIntTuple[NDIM]
+
+    @always_inline("nodebug")
+    fn __init__(inout self, *shape: Int):
+        self._ndim = len(shape)
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(len(shape), NDIM)):
+            self._shape[i] = shape[i]
+
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: VariadicList[Int]):
+        self._ndim = len(shape)
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(len(shape), NDIM)):
+            self._shape[i] = shape[i]
+
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: List[Int]):
+        self._ndim = len(shape)
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(len(shape), NDIM)):
+            self._shape[i] = shape[i]
+
+    @always_inline("nodebug")
+    fn __init__[num: Int](inout self, shape: StaticIntTuple[num]):
+        self._ndim = num
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(num, NDIM)):
+            self._shape[i] = shape[i]
+
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: StaticIntTuple[NDIM]):
+        self._ndim = len(shape)
+        self._shape = shape
+
+    @always_inline("nodebug")
+    fn __init__(inout self, owned shape: NDArrayShape):
+        self._ndim = shape._ndim
+        self._shape = StaticIntTuple[NDIM]()
+        for i in range(min(self._ndim, NDIM)):
+            self._shape[i] = shape[i]
+
+    @always_inline("nodebug")
+    fn __getitem__(self, index: Int) -> Int:
+        return self._shape[index if index >= 0 else self._ndim + index]
+
+    @always_inline("nodebug")
+    fn __setitem__(inout self, index: Int, value: Int):
+        self._shape[index if index >= 0 else self._ndim + index] = value
+
+    @always_inline("nodebug")
+    fn ndim(self) -> Int:
+        return self._ndim
+
+    @always_inline("nodebug")
+    fn num_elements(self) -> Int:
+        var result = 1
+        for i in range(self._ndim):
+            result *= self._shape[i]
+        return result
+
+    @always_inline("nodebug")
+    fn _std_shape(self) -> Self:
+        var s = List[Int](capacity=self._ndim)
+        for i in range(self._ndim):
+            s.append(self[i])
+        return NDArrayShape[NDIM](s)
+
+    @always_inline("nodebug")
+    fn __str__(self: Self) -> String:
+        return "Shape: " + self._shape.__str__()
+
+    @always_inline("nodebug")
+    fn __eq__(self, other: Self) -> Bool:
+        if self._ndim != other._ndim:
+            return False
+        for i in range(self._ndim):
+            if self[i] != other[i]:
+                return False
+        return True
+
+    @always_inline("nodebug")
+    fn __ne__(self, other: Self]) -> Bool:
+        return not self.__eq__(other)
+
+    @always_inline("nodebug")
+    fn __contains__(self, value: Int) -> Bool:
+        for i in range(self._ndim):
+            if self[i] == value:
+                return True
+        return False
 
 
 # ===----------------------------------------------------------------------===#

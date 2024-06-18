@@ -7,7 +7,7 @@
 
 import math
 import . _math_funcs as _mf
-from .ndarray import NDArray, NDArrayShape
+from ..core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 

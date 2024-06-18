@@ -6,9 +6,9 @@
 """
 
 import math
-import ..core. _math_funcs as _mf
-from ..core.ndarray import NDArray, NDArrayShape
-from algorithm import parallelize
+import .. _math_funcs as _mf
+from ...core.ndarray import NDArray, NDArrayShape
+from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
 # fn matmul[

@@ -7,8 +7,8 @@
 
 import math
 from algorithm import vectorize
-from ..core.ndarray import NDArray, NDArrayShape
-from ..utility_funcs import is_inttype, is_floattype
+from ...core.ndarray import NDArray, NDArrayShape
+from ...core.utility_funcs import is_inttype, is_floattype
 
 """
 TODO: 

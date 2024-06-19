@@ -2,22 +2,31 @@ from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
 from testing import assert_raises
+from random import rand
 
-from numojo import *
+# from numojo import *
 
 import time
 
-fn main() raises:
-    var x = identity[DType.float32](5)
-    print(x)
-    print(x.info.ndim, x.info.offset, x.info.shape[0], x.info.shape[1],
-    x.info.strides[0], x.info.strides[1])
+struct Vector[type: DType]():
+    var data: DTypePointer[type]
+    var shape: List[Int]
 
-    var y = x[0:4,0:4]
-    print(y)
-    print(y.info.ndim, y.info.offset, y.info.shape[0], y.info.shape[1],
-    y.info.strides[0], y.info.strides[1])
-    print(y[0,0])
+    fn __init__(inout self, data: DTypePointer[type], shape: List[Int]):
+        self.data = data
+        self.shape = shape
+        
+fn main() raises:
+
+    var data: DTypePointer[DType.float32] = DTypePointer[DType.float32].alloc(10)
+    rand[DType.float32](data, 10)
+    var shape: List[Int] = List[Int](10)
+    var v1: Vector[DType.float32] = Vector[DType.float32] (data, shape)
+    var v2: Vector[DType.float32] = Vector[DType.float32] (data, shape)
+
+    # print(y.info.ndim, y.info.offset, y.info.shape[0], y.info.shape[1],
+    # y.info.strides[0], y.info.strides[1])
+    # print(y[0,0])
     # ## ND arrays
     # var t0 = time.now()
 
@@ -32,9 +41,9 @@ fn main() raises:
     # print(_temp)
     # print((time.now()-t0)/10e9, "seconds")
 
-    # # # * ROW MAJOR INDEXING
-    # var arr = NDArray[DType.int64](VariadicList[Int](2, 2, 2, 2), random=True)
-    # print("2x2x2x2 array row major")
+    # # # # * ROW MAJOR INDEXING
+    # var arr = NDArray[f16](VariadicList[Int](2, 3, 3), random=True)
+    # print("2x3x3 array row major")
     # print(arr)
     # print()
     # # # slicing doesn't support single integer index for now, therefore [:,:,2] 

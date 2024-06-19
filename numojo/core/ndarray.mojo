@@ -125,13 +125,13 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
 
 
 # ===----------------------------------------------------------------------===#
-# arrayDescriptor
+# ArrayDescriptor
 # ===----------------------------------------------------------------------===#
 
 
 @value
-struct arrayDescriptor[dtype: DType = DType.float32]():
-    """Implements the arrayDescriptor (dope vector) that stores the metadata of an NDArray.
+struct ArrayDescriptor[dtype: DType = DType.float32]():
+    """Implements the ArrayDescriptor (dope vector) that stores the metadata of an NDArray.
     """
 
     # Fields
@@ -197,7 +197,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     # Fields
     var _arr: DTypePointer[dtype]  # Data buffer of the items in the NDArray
     alias simd_width: Int = simdwidthof[dtype]()  # Vector size of the data type
-    var info: arrayDescriptor[dtype]  # Infomation regarding the NDArray.
+    var info: ArrayDescriptor[dtype]  # Infomation regarding the NDArray.
 
     # ===-------------------------------------------------------------------===#
     # Life cycle methods
@@ -226,7 +226,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
-        self.info = arrayDescriptor[dtype](
+        self.info = ArrayDescriptor[dtype](
             dimension, first_index, size, shapeInfo, strides
         )
         if random:
@@ -259,7 +259,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
-        self.info = arrayDescriptor[dtype](
+        self.info = ArrayDescriptor[dtype](
             dimension, first_index, size, shapeInfo, strides
         )
 
@@ -294,7 +294,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         memset_zero(self._arr, size)
         for i in range(size):
             self._arr[i] = data[i]
-        self.info = arrayDescriptor[dtype](
+        self.info = ArrayDescriptor[dtype](
             dimension, first_index, size, shapeInfo, strides
         )
 
@@ -321,7 +321,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
-        self.info = arrayDescriptor[dtype](
+        self.info = ArrayDescriptor[dtype](
             dimension, first_index, size, shapeInfo, strides
         )
         if random:
@@ -347,7 +347,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
-        self.info = arrayDescriptor[dtype](
+        self.info = ArrayDescriptor[dtype](
             dimension, first_index, size, shape.shape, strides
         )
         if random:
@@ -368,7 +368,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     ):
         self._arr = DTypePointer[dtype].alloc(size)
         memset_zero(self._arr, size)
-        self.info = arrayDescriptor[dtype](
+        self.info = ArrayDescriptor[dtype](
             ndim, offset, size, shape, strides, coefficients
         )
 

@@ -616,8 +616,8 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 slice_list.append(slices[i]._get_ptr[Slice]()[0])
             elif slices[i].isa[Int]():
                 var int: Int = slices[i]._get_ptr[Int]()[0]
-                slice_list.append(Slice(int-1,int))
-                print(int,"=",Slice(int-1,int))
+                slice_list.append(Slice(int,int+1))
+                # print(int,"=",Slice(int,int+1))
         var narr: Self = self[slice_list]
         return narr
 

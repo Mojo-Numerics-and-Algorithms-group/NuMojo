@@ -6,8 +6,8 @@
 """
 
 import math
-import . _math_funcs as _mf
-from .ndarray import NDArray
+import ._math_funcs as _mf
+from ..core.ndarray import NDArray
 
 
 # ===------------------------------------------------------------------------===#

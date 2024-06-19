@@ -1,18 +1,18 @@
 """
 # ===----------------------------------------------------------------------=== #
 # Datatypes Module - Implements datatypes aliases, conversions
-# Last updated: 2024-06-17
+# Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 """
 
 
-alias int8 = DType.int8
-alias int16 = DType.int16
-alias int32 = DType.int32
-alias int64 = DType.int64
-alias flt64 = DType.float64
-alias flt32 = DType.float32
-alias flt16 = DType.float16
+alias i8 = DType.int8
+alias i16 = DType.int16
+alias i32 = DType.int32
+alias i64 = DType.int64
+alias f64 = DType.float64
+alias f32 = DType.float32
+alias f16 = DType.float16
 
 
 fn cvtdtype[

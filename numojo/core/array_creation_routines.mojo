@@ -16,7 +16,7 @@ from algorithm import parallelize
 from builtin.math import pow
 
 from .ndarray import NDArray, NDArrayShape
-from ..utility_funcs import is_inttype, is_floattype
+from .utility_funcs import is_inttype, is_floattype
 
 
 # ===------------------------------------------------------------------------===#
@@ -113,7 +113,7 @@ fn _linspace_serial[
     stop: SIMD[dtype, 1],
     num: Int,
     endpoint: Bool = True,
-) -> NDArray[dtype]:
+) raises -> NDArray[dtype]:
     """
     Generate a linearly spaced NDArray of `num` elements between `start` and `stop` using naive for loop.
 
@@ -148,7 +148,7 @@ fn _linspace_parallel[
     dtype: DType
 ](
     start: SIMD[dtype, 1], stop: SIMD[dtype, 1], num: Int, endpoint: Bool = True
-) -> NDArray[dtype]:
+) raises -> NDArray[dtype]:
     """
     Generate a linearly spaced NDArray of `num` elements between `start` and `stop` using parallelization.
 
@@ -172,16 +172,23 @@ fn _linspace_parallel[
 
         @parameter
         fn parallelized_linspace(idx: Int) -> None:
-            result[idx] = start + step * idx
+            try:
+                result[idx] = start + step * idx
+            except:
+                print("Error in parallelized_linspace")
 
         parallelize[parallelized_linspace](num)
 
     else:
         var step: SIMD[dtype, 1] = (stop - start) / num
 
+        # remove these try blocks later
         @parameter
         fn parallelized_linspace1(idx: Int) -> None:
-            result[idx] = start + step * idx
+            try:
+                result[idx] = start + step * idx
+            except:
+                print("Error in parallelized_linspace1")
 
         parallelize[parallelized_linspace1](num)
 
@@ -250,7 +257,7 @@ fn _logspace_serial[
     num: Int,
     base: Scalar[dtype],
     endpoint: Bool = True,
-) -> NDArray[dtype]:
+) raises -> NDArray[dtype]:
     """
     Generate a logarithmic spaced NDArray of `num` elements between `start` and `stop` using naive for loop.
 
@@ -288,7 +295,7 @@ fn _logspace_parallel[
     num: Int,
     base: Scalar[dtype],
     endpoint: Bool = True,
-) -> NDArray[dtype]:
+) raises -> NDArray[dtype]:
     """
     Generate a logarithmic spaced NDArray of `num` elements between `start` and `stop` using parallelization.
 
@@ -312,7 +319,10 @@ fn _logspace_parallel[
 
         @parameter
         fn parallelized_logspace(idx: Int) -> None:
-            result[idx] = base ** (start + step * idx)
+            try:
+                result[idx] = base ** (start + step * idx)
+            except:
+                print("Error in parallelized_logspace")
 
         parallelize[parallelized_logspace](num)
 
@@ -321,7 +331,10 @@ fn _logspace_parallel[
 
         @parameter
         fn parallelized_logspace1(idx: Int) -> None:
-            result[idx] = base ** (start + step * idx)
+            try:
+                result[idx] = base ** (start + step * idx)
+            except:
+                print("Error in parallelized_logspace")
 
         parallelize[parallelized_logspace1](num)
 
@@ -419,7 +432,7 @@ fn zeros[dtype: DType](*shape: Int) -> NDArray[dtype]:
     return NDArray[dtype](tens_shape)
 
 
-fn eye[dtype: DType](N: Int, M: Int) -> NDArray[dtype]:
+fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
     """
     Return a 2-D NDArray with ones on the diagonal and zeros elsewhere.
 
@@ -443,7 +456,7 @@ fn eye[dtype: DType](N: Int, M: Int) -> NDArray[dtype]:
     return result
 
 
-fn identity[dtype: DType](n: Int) -> NDArray[dtype]:
+fn identity[dtype: DType](n: Int) raises -> NDArray[dtype]:
     """
     Generate an identity matrix of size N x N.
 
@@ -456,7 +469,11 @@ fn identity[dtype: DType](n: Int) -> NDArray[dtype]:
     Returns:
     - A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    return eye[dtype](n, n)
+    var result: NDArray[dtype] = NDArray[dtype](n,n)
+    var one = Scalar[dtype](1)
+    for i in range(n):
+       result.store[1](i,i,val=one)
+    return result
 
 
 fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:

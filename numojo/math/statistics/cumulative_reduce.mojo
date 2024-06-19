@@ -7,8 +7,8 @@
 
 import math
 from algorithm import vectorize
-from ..core.ndarray import NDArray, NDArrayShape
-from ..utility_funcs import is_inttype, is_floattype
+from ...core.ndarray import NDArray, NDArrayShape
+from ...core.utility_funcs import is_inttype, is_floattype
 
 """
 TODO: 
@@ -24,7 +24,7 @@ TODO:
 
 fn binary_sort[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) -> NDArray[out_dtype]:
+](array: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
     """
     Binary sorting of NDArray.
 
@@ -142,7 +142,7 @@ fn mean[
 
 fn mode[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Cumulative Mode of a array.
 
@@ -180,7 +180,7 @@ fn mode[
 # * IMPLEMENT median high and low
 fn median[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Median value of a array.
 
@@ -204,7 +204,7 @@ fn median[
 # for max and min, I can later change to the latest reduce.max, reduce.min()
 fn maxT[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Maximum value of a array.
 
@@ -246,7 +246,7 @@ fn maxT[
 
 fn minT[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Minimum value of a array.
 
@@ -421,7 +421,7 @@ fn stdev[
 # this roughly seems to be just an alias for min in numpy
 fn amin[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Minimum value of an array.
 
@@ -440,7 +440,7 @@ fn amin[
 # this roughly seems to be just an alias for max in numpy
 fn amax[
     in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
+](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
     Maximum value of a array.
 

@@ -514,8 +514,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             ncoefficients.append(self.info.strides[j] * slices[j].step)
             j += 1
             # combined the two for loops, this calculates the strides for new array
+
+        for k in range(ndims):
             var temp: Int = 1
-            for j in range(i + 1, ndims):  # temp
+            for j in range(k + 1, ndims):  # temp
                 temp *= nshape[j]
             nstrides.append(temp)
 
@@ -575,8 +577,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             ncoefficients.append(self.info.strides[j] * slices[j].step)
             j += 1
             # combined the two for loops, this calculates the strides for new array
+
+        for k in range(ndims):
             var temp: Int = 1
-            for j in range(i + 1, ndims):  # temp
+            for j in range(k + 1, ndims):  # temp
                 temp *= nshape[j]
             nstrides.append(temp)
 

@@ -514,8 +514,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             ncoefficients.append(self.info.strides[j] * slices[j].step)
             j += 1
             # combined the two for loops, this calculates the strides for new array
+
+        for k in range(ndims):
             var temp: Int = 1
-            for j in range(i + 1, ndims):  # temp
+            for j in range(k + 1, ndims):  # temp
                 temp *= nshape[j]
             nstrides.append(temp)
 
@@ -539,6 +541,84 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
         )
 
+        return narr
+    
+    fn __getitem__(self, owned slices: List[Slice]) raises -> Self:
+        """
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+
+        var n_slices: Int = slices.__len__()
+        if n_slices > self.info.ndim or n_slices < self.info.ndim:
+            print("Error: No of slices do not match shape")
+
+        var ndims: Int = 0
+        var spec: List[Int] = List[Int]()
+        for i in range(slices.__len__()):
+            self._adjust_slice_(slices[i], self.info.shape[i])
+            spec.append(slices[i].unsafe_indices())
+            if slices[i].unsafe_indices() != 1:
+                ndims += 1
+
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+
+        var j: Int = 0
+        for i in range(ndims):
+            while spec[j] == 1:
+                j += 1
+            if j >= self.info.ndim:
+                break
+            nshape.append(slices[j].unsafe_indices())
+            nnum_elements *= slices[j].unsafe_indices()
+            ncoefficients.append(self.info.strides[j] * slices[j].step)
+            j += 1
+
+        for k in range(ndims):
+            var temp: Int = 1
+            for j in range(k + 1, ndims):  # temp
+                temp *= nshape[j]
+            nstrides.append(temp)
+
+        # row major
+        var noffset: Int = 0
+        for i in range(slices.__len__()):
+            var temp: Int = 1
+            for j in range(i + 1, slices.__len__()):
+                temp *= self.info.shape[j]
+            noffset += slices[i].start * temp
+
+        var narr = Self(
+            ndims, noffset, nnum_elements, nshape, nstrides, ncoefficients
+        )
+
+        # Starting index to traverse the new array
+        var index = List[Int]()
+        for _ in range(ndims):
+            index.append(0)
+        _traverse_iterative[dtype](
+            self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
+        )
+
+        return narr
+
+    fn __getitem__(self, owned *slices: Variant[Slice,Int]) raises -> Self:
+        """
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+        var slice_list: List[Slice] = List[Slice]()
+        for i in range(len(slices)):
+            if slices[i].isa[Slice]():
+                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+            elif slices[i].isa[Int]():
+                var int: Int = slices[i]._get_ptr[Int]()[0]
+                slice_list.append(Slice(int,int+1))
+                # print(int,"=",Slice(int,int+1))
+        var narr: Self = self[slice_list]
         return narr
 
     fn __int__(self) -> Int:

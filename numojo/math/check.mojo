@@ -6,8 +6,8 @@
 """
 
 import math
-import . _math_funcs as _mf
-from .ndarray import NDArray
+import ._math_funcs as _mf
+from ..core.ndarray import NDArray
 
 # fn is_power_of_2[
 #     dtype: DType, backend: _mf.Backend = _mf.Vectorized

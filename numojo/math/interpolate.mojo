@@ -5,7 +5,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 
-from .core.ndarray import NDArray, NDArrayShape
+from ..core.ndarray import NDArray, NDArrayShape
 
 """
 # TODO:
@@ -22,7 +22,7 @@ fn interp1d[
     y: NDArray[dtype],
     method: String = "linear",
     fill_value: String = "interpolate",
-) -> NDArray[dtype]:
+) raises -> NDArray[dtype]:
     """
     Interpolate the values of y at the points xi.
     Parameters:
@@ -61,7 +61,7 @@ fn interp1d[
 
 fn _interp1d_linear_interpolate[
     dtype: DType
-](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Linear interpolation of the (x, y) values at the points xi.
     Parameters:
@@ -94,7 +94,7 @@ fn _interp1d_linear_interpolate[
 
 fn _interp1d_linear_extrapolate[
     dtype: DType
-](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Linear extrapolation of the (x, y) values at the points xi.
     Parameters:
@@ -133,7 +133,7 @@ fn _interp1d_linear_extrapolate[
 
 fn _interp1d_quadratic_interpolate[
     dtype: DType
-](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Quadratic interpolation of the (x, y) values at the points xi.
     Parameters:
@@ -171,7 +171,7 @@ fn _interp1d_quadratic_interpolate[
 
 fn _interp1d_quadratic_extrapolate[
     dtype: DType
-](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Quadratic extrapolation of the (x, y) values at the points xi.
     Parameters:
@@ -217,7 +217,7 @@ fn _interp1d_quadratic_extrapolate[
 
 fn _interp1d_cubic_interpolate[
     dtype: DType
-](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Cubic interpolation of the (x, y) values at the points xi.
     Parameters:
@@ -267,7 +267,7 @@ fn _interp1d_cubic_interpolate[
 
 fn _interp1d_cubic_extrapolate[
     dtype: DType
-](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) -> NDArray[dtype]:
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Cubic extrapolation of the (x, y) values at the points xi.
     Parameters:

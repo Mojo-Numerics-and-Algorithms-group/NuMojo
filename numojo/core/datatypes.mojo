@@ -6,13 +6,13 @@
 """
 
 
-alias it8 = DType.int8
-alias it16 = DType.int16
-alias it32 = DType.int32
-alias it64 = DType.int64
-alias flt64 = DType.float64
-alias flt32 = DType.float32
-alias flt16 = DType.float16
+alias i8 = DType.int8
+alias i16 = DType.int16
+alias i32 = DType.int32
+alias i64 = DType.int64
+alias f64 = DType.float64
+alias f32 = DType.float32
+alias f16 = DType.float16
 
 
 fn cvtdtype[

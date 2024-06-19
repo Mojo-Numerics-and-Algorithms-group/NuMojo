@@ -107,4 +107,4 @@ Distributed under the MIT License. See [License](LICENSE) for more information.
 
 ## Acknowledgements
 
-* Built in native [Mojo](https://github.com/modularml/mojo) created by [Modular](https://github.com/modularml)
+* Built in native [Mojo](https://github.com/modularml/mojo) which was created by [Modular](https://github.com/modularml)

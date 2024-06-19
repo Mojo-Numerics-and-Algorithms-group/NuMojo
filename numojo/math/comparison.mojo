@@ -6,7 +6,7 @@
 """
 
 import math
-import . _math_funcs as _mf
+import ._math_funcs as _mf
 from ..core.ndarray import NDArray
 
 

@@ -4,8 +4,9 @@
 # ===----------------------------------------------------------------------=== #
 
 import math
-import ..core. _math_funcs as _mf
-from ..core.ndarray import NDArray, NDArrayShape
+import .._math_funcs as _mf
+from ...core.ndarray import NDArray, NDArrayShape
+from ...core.utility_funcs import is_inttype, is_floattype
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 

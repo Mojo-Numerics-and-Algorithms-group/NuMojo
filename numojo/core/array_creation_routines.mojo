@@ -469,7 +469,11 @@ fn identity[dtype: DType](n: Int) raises -> NDArray[dtype]:
     Returns:
     - A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    return eye[dtype](n, n)
+    var result: NDArray[dtype] = NDArray[dtype](n,n)
+    var one = Scalar[dtype](1)
+    for i in range(n):
+       result.store[1](i,i,val=one)
+    return result
 
 
 fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:

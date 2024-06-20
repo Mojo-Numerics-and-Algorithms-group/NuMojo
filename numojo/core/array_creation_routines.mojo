@@ -53,7 +53,7 @@ fn arange[
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
     for idx in range(num):
-        result[idx] = (start.cast[out_dtype]() + step.cast[out_dtype]() * idx)
+        result[idx] = start.cast[out_dtype]() + step.cast[out_dtype]() * idx
 
     return result
 

@@ -799,14 +799,15 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return new_vec
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
-    fn __truediv__(self, s: SIMD[dtype, 1]) -> Self:
-        return self._elementwise_scalar_arithmetic[SIMD.__truediv__](s)
+    fn __truediv__(self, other: SIMD[dtype, 1]) -> Self:
+        return _af._math_func_one_array_one_SIMD_in_one_array_out[dtype, SIMD.__truediv__](self,other)
 
     fn __truediv__(self, other: Self) raises -> Self:
         if self.info.size != other.info.size:
             raise Error("No of elements in both arrays do not match")
 
-        return self._elementwise_array_arithmetic[SIMD.__truediv__](other)
+        return _af._math_func_2_array_in_one_array_out[dtype,SIMD.__truediv__](self, other)
+
 
     fn __itruediv__(inout self, s: SIMD[dtype, 1]):
         self = self.__truediv__(s)

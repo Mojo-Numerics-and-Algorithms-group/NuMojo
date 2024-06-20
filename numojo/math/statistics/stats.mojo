@@ -24,3 +24,7 @@ fn sum(array:NDArray, axis:Int)raises->NDArray[array.dtype]:
         result += arr_slice
     
     return result
+
+
+fn mean(array:NDArray, axis:Int)raises->NDArray[array.dtype]:
+    return sum(array, axis)/Scalar[array.dtype](array.shape().shape[axis])

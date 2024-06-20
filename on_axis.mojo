@@ -72,7 +72,9 @@ def main():
     x.reshape(4,5,3)
     # print(ones)
     
-    print(sum_on_axis(x,1))
+    print(sum_on_axis(x,0))
+    print()
+    print(on_axis(x,1))
     x+=0
     # print(on_axis(ones,0))
     # print(x._arr.simd_strided_load[8](101))

@@ -22,6 +22,7 @@ from random import rand
 from builtin.math import pow
 from algorithm import parallelize, vectorize
 
+import ._array_funcs as _af
 
 fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
     var idx: Int = 0
@@ -551,7 +552,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         var n_slices: Int = slices.__len__()
         if n_slices > self.info.ndim or n_slices < self.info.ndim:
-            print("Error: No of slices do not match shape")
+            raise Error("Error: No of slices do not match shape")
 
         var ndims: Int = 0
         var spec: List[Int] = List[Int]()
@@ -610,6 +611,9 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         Example:
             `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
         """
+        var n_slices: Int = slices.__len__()
+        if n_slices > self.info.ndim:
+            raise Error("Error: No of slices greater than rank of array")
         var slice_list: List[Slice] = List[Slice]()
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
@@ -618,6 +622,11 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 var int: Int = slices[i]._get_ptr[Int]()[0]
                 slice_list.append(Slice(int,int+1))
                 # print(int,"=",Slice(int,int+1))
+        if n_slices < self.info.ndim:
+            for i in range(n_slices,self.info.ndim):
+                print(i)
+                var size_at_dim: Int = self.info.shape[i]
+                slice_list.append(Slice(0,size_at_dim-1))
         var narr: Self = self[slice_list]
         return narr
 
@@ -676,22 +685,25 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         return new_vec
 
     fn __add__(inout self, other: SIMD[dtype, 1]) -> Self:
-        return self._elementwise_scalar_arithmetic[SIMD.__add__](other)
+        return _af._math_func_one_array_one_SIMD_in_one_array_out[dtype,SIMD.__add__](self,other)
 
-    fn __add__(inout self, other: Self) -> Self:
-        return self._elementwise_array_arithmetic[SIMD.__add__](other)
+    fn __add__(inout self, other: Self) raises -> Self:
+        return _af._math_func_2_array_in_one_array_out[dtype,SIMD.__add__](self,other)
 
-    fn __radd__(inout self, s: SIMD[dtype, 1]) -> Self:
-        return self + s
+    fn __radd__(inout self, rhs: SIMD[dtype, 1]) -> Self:
+        return _af._math_func_one_array_one_SIMD_in_one_array_out[dtype,SIMD.__add__](self,rhs)
 
-    fn __iadd__(inout self, s: SIMD[dtype, 1]):
-        self = self + s
+    fn __iadd__(inout self, other: SIMD[dtype, 1]):
+        self = _af._math_func_one_array_one_SIMD_in_one_array_out[dtype,SIMD.__add__](self,other)
+
+    fn __iadd__(inout self, other: Self)raises:
+        self = _af._math_func_2_array_in_one_array_out[dtype,SIMD.__add__](self,other)
 
     fn __sub__(self, other: SIMD[dtype, 1]) -> Self:
-        return self._elementwise_scalar_arithmetic[SIMD.__sub__](other)
+        return _af._math_func_one_array_one_SIMD_in_one_array_out[dtype,SIMD.__sub__](self,other)
 
-    fn __sub__(self, other: Self) -> Self:
-        return self._elementwise_array_arithmetic[SIMD.__sub__](other)
+    fn __sub__(self, other: Self)raises -> Self:
+        return _af._math_func_2_array_in_one_array_out[dtype,SIMD.__sub__](self,other)
 
     fn __rsub__(self, s: SIMD[dtype, 1]) -> Self:
         return -(self - s)
@@ -699,11 +711,11 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __isub__(inout self, s: SIMD[dtype, 1]):
         self = self - s
 
-    fn __mul__(self, s: SIMD[dtype, 1]) -> Self:
-        return self._elementwise_scalar_arithmetic[SIMD.__mul__](s)
+    fn __mul__(self, other: SIMD[dtype, 1]) -> Self:
+        return _af._math_func_one_array_one_SIMD_in_one_array_out[dtype,SIMD.__mul__](self,other)
 
-    fn __mul__(self, other: Self) -> Self:
-        return self._elementwise_array_arithmetic[SIMD.__mul__](other)
+    fn __mul__(self, other: Self)raises -> Self:
+        return _af._math_func_2_array_in_one_array_out[dtype,SIMD.__mul__](self,other)
 
     fn __rmul__(self, s: SIMD[dtype, 1]) -> Self:
         return self * s

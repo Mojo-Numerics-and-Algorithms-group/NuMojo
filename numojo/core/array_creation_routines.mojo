@@ -490,7 +490,10 @@ fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:
     - A NDArray of `dtype` with given `shape`.
     """
     var tens_shape: VariadicList[Int] = shape
-    return NDArray[dtype](tens_shape, Scalar[dtype](1))
+    var res = NDArray[dtype](tens_shape)
+    for i in range(res.num_elements()):
+        res.store(i,SIMD[dtype,1](1))
+    return res
 
 
 fn full[dtype: DType](fill_value: Scalar[dtype], *shape: Int) -> NDArray[dtype]:

@@ -14,6 +14,7 @@ alias ALLOWED = 10
 
 # TODO: Remove __getitem__ to prevent creating view of views, or create a parameter that keeps tracks of all views created from a single parent NDArray.
 
+
 # * ROW MAJOR INDEXING
 struct NDArrayView[dtype: DType = DType.float32](Stringable):
     """The N-dimensional array (NDArray).
@@ -249,7 +250,7 @@ struct NDArrayView[dtype: DType = DType.float32](Stringable):
             nnum_elements,
             nshape,
             nstrides,
-            ncoefficients
+            ncoefficients,
         )
 
         # var narr = Self(
@@ -329,7 +330,7 @@ struct NDArrayView[dtype: DType = DType.float32](Stringable):
             nnum_elements,
             nshape,
             nstrides,
-            ncoefficients
+            ncoefficients,
         )
 
         # var narr = Self(
@@ -482,7 +483,7 @@ struct NDArrayView[dtype: DType = DType.float32](Stringable):
         vectorize[vectorize_reduce, simd_width](self.ndshape._size)
         return reduced
 
-    # mayve I should return a resulting abs array of the view or abs view of the view. this is getting out of hands. 
+    # mayve I should return a resulting abs array of the view or abs view of the view. this is getting out of hands.
     fn __abs__(self):
         alias nelts = simdwidthof[dtype]()
 

@@ -8,6 +8,7 @@
 import random
 from .ndarray import NDArray
 
+
 fn rand[dtype: DType](*shape: Int) -> NDArray[dtype]:
     """
     Example:

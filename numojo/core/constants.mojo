@@ -1,13 +1,13 @@
 """
 # ===----------------------------------------------------------------------=== #
-# Implements constants
+# Implements Constants
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
 """
 
 
 @value
-struct constants(AnyType):
+struct Constants(AnyType):
     var c: Int
     var pi: Float64
     var e: Float64

@@ -23,7 +23,7 @@ from random import rand
 from builtin.math import pow
 from algorithm import parallelize, vectorize
 
-from .ndarray_utils import _get_index, _traverse_iterative
+from .ndarray_utils import _get_index, _traverse_iterative, to_numpy
 from .ndarrayview import NDArrayView
 
 # ===----------------------------------------------------------------------===#
@@ -514,24 +514,37 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn __setitem__(inout self, index: Int, value: SIMD[dtype, 1]) raises:
+    fn __setitem__(inout self, index: Int, val: SIMD[dtype, 1]) raises:
         if index >= self.ndshape._size:
             raise Error("Invalid index: index out of bound")
-        self.data[index] = value
+        # self.data[index] = val
+        self.data[index] = val
 
     # lsp shows unused variable because of the if condition, be careful with this
+    # this setter is not working -> Shows expression must be mutable in assignment
     @always_inline("nodebug")
-    fn __setitem__(inout self, *index: Int, value: SIMD[dtype, 1]) raises:
-        var idx: Int = _get_index(index, self.coefficients._stride)
+    fn __setitem__(inout self, *index: Int, val: SIMD[dtype, 1]) raises:
+        var idx: Int = _get_index(index, self.stride._stride)
         if idx >= self.ndshape._size:
             raise Error("Invalid index: index out of bound")
 
-        self.data[idx] = value
+        self.data[idx] = val
 
-    @always_inline("nodebug")
+    # @always_inline("nodebug")
     fn __setitem__(
         inout self,
         indices: List[Int],
+        val: SIMD[dtype, 1],
+    ) raises:
+        var idx: Int = _get_index(indices, self.coefficients._stride)
+        if idx >= self.ndshape._size:
+            raise Error("Invalid index: index out of bound")
+
+        self.data[idx] = val
+
+    fn __setitem__(
+        inout self,
+        indices: VariadicList[Int],
         val: SIMD[dtype, 1],
     ) raises:
         var idx: Int = _get_index(indices, self.coefficients._stride)
@@ -555,7 +568,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         Example:
             `arr[1,2]` returns the item of 1st row and 2nd column of the array.
         """
-        if indices.__len__() != self.ndshape._size:
+        if indices.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")
 
         for i in range(indices.__len__()):
@@ -992,7 +1005,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                     result = (
                         result
                         + self.data.load[width=1](
-                            offset + i * self.coefficients._stride[dimension]
+                            offset + i * self.stride._stride[dimension]
                         ).__str__()
                     )
                     result = result + "\t"
@@ -1001,7 +1014,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                     result = (
                         result
                         + self.data[
-                            offset + i * self.coefficients._stride[dimension]
+                            offset + i * self.stride._stride[dimension]
                         ].__str__()
                     )
                     result = result + "\t"
@@ -1010,7 +1023,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                     result = (
                         result
                         + self.data[
-                            offset + i * self.coefficients._stride[dimension]
+                            offset + i * self.stride._stride[dimension]
                         ].__str__()
                     )
                     result = result + "\t"
@@ -1024,7 +1037,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
-                            offset + i * self.coefficients._stride[dimension],
+                            offset + i * self.stride._stride[dimension],
                         )
                     if i > 0:
                         result = (
@@ -1032,8 +1045,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                             + str(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
-                                offset
-                                + i * self.coefficients._stride[dimension],
+                                offset + i * self.stride._stride[dimension],
                             )
                         )
                     if i < (number_of_items - 1):
@@ -1043,7 +1055,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
-                            offset + i * self.coefficients._stride[dimension],
+                            offset + i * self.stride._stride[dimension],
                         )
                     if i > 0:
                         result = (
@@ -1051,8 +1063,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                             + str(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
-                                offset
-                                + i * self.coefficients._stride[dimension],
+                                offset + i * self.stride._stride[dimension],
                             )
                         )
                     if i < (number_of_items - 1):
@@ -1064,7 +1075,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                         + str(" ") * (dimension + 1)
                         + self._array_to_string(
                             dimension + 1,
-                            offset + i * self.coefficients._stride[dimension],
+                            offset + i * self.stride._stride[dimension],
                         )
                     )
                     if i < (number_of_items - 1):
@@ -1105,7 +1116,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         var new_matrix = Self(self.ndshape._shape[0], other.ndshape._shape[1])
         for row in range(self.ndshape._shape[0]):
-            for col in range(other.info._shape[1]):
+            for col in range(other.ndshape._shape[1]):
                 new_matrix.__setitem__(
                     List[Int](row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
@@ -1316,7 +1327,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         if self.ndshape._size != num_elements_new:
             raise Error("Cannot reshape: Number of elements do not match.")
 
-        self.ndim = ndim_new
         var shape_new: StaticIntTuple[ALLOWED] = StaticIntTuple[ALLOWED]()
         var strides_new: StaticIntTuple[ALLOWED] = StaticIntTuple[ALLOWED]()
 
@@ -1327,8 +1337,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 temp *= Shape[j]
             strides_new[i] = temp
 
-        self.ndshape._shape = shape_new
-        self.stride._stride = strides_new
+        self.ndim = ndim_new
+        var shape: NDArrayShape = NDArrayShape(shape_new, num_elements_new)
+        var stride: NDArrayStrides = NDArrayStrides(strides_new, 0)
+        self.ndshape = shape
+        self.stride = stride
+
+        print(self.ndshape, self.ndshape._size)
+        print(self.stride, self.stride._offset)
 
     fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
         return self.data

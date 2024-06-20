@@ -1105,7 +1105,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         var new_matrix = Self(self.ndshape._shape[0], other.ndshape._shape[1])
         for row in range(self.ndshape._shape[0]):
-            for col in range(other.info._shape[1]):
+            for col in range(other.ndshape._shape[0]):
                 new_matrix.__setitem__(
                     List[Int](row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
@@ -1333,5 +1333,5 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
         return self.data
 
-    fn to_numpy(self) -> PythonObject:
-        return to_numpy(self)
+    # fn to_numpy(self) -> PythonObject:
+    #     return self.to_numpy(self)

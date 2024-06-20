@@ -108,7 +108,9 @@ fn to_numpy(array: NDArray) -> PythonObject:
                 numpyarray.__array_interface__["data"][0].to_float16()
             )
             var pointer_d = DTypePointer[array.dtype](address=pointer)
-            memcpy(pointer_d, array.data(), array.num_elements())
+            memcpy(pointer_d, array.data, array.num_elements())
+        else:
+            raise Error("Only f16 numpy at this time")
         # elif array.datatype == DType.float32:
         #     numpyarray = np.empty(np_arr_dim, dtype=np.float32)
         #     var pointer = int(numpyarray.__array_interface__["data"][0].to_float32())

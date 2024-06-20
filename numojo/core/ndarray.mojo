@@ -1349,5 +1349,5 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
         return self.data
 
-    fn to_numpy(self) -> PythonObject:
-        return to_numpy(self)
+    # fn to_numpy(self) -> PythonObject:
+    #     return self.to_numpy(self)

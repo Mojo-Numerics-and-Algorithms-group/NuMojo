@@ -6,6 +6,6 @@ def main():
     var y =  numojo.identity[numojo.i32](10)
     print(slice(0,1)[0])
     x.reshape(10,10,10)
-    print(x[Slice(0,2),Slice(0,2),1])
+    print(x[Slice(0,2),1])
     print()
     print(y[Slice(0,5),1])

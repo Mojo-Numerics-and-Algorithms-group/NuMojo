@@ -8,7 +8,8 @@
 from python import Python
 from .ndarray import NDArray
 
-fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
+
+fn _get_index(indices: VariadicList[Int], weights: StaticIntTuple) -> Int:
     var idx: Int = 0
     for i in range(weights.__len__()):
         idx += indices[i] * weights[i]
@@ -29,9 +30,20 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
     return idx
 
 
-fn _get_index(indices: List[Int], weights: StaticIntTuple) -> Int:
+fn _get_index[
+    MAX: Int
+](indices: List[Int], weights: StaticIntTuple[MAX]) -> Int:
     var idx: Int = 0
     for i in range(weights.__len__()):
+        idx += indices[i] * weights[i]
+    return idx
+
+
+fn indexing[
+    MAX: Int
+](indices: StaticIntTuple[MAX], weights: StaticIntTuple[MAX]) -> Int:
+    var idx: Int = 0
+    for i in range(ALLOWED):
         idx += indices[i] * weights[i]
     return idx
 
@@ -41,26 +53,40 @@ fn _traverse_iterative[
 ](
     orig: NDArray[dtype],
     inout narr: NDArray[dtype],
-    ndim: List[Int],
-    coefficients: List[Int],
-    strides: List[Int],
+    shape_length: Int,
+    nshape: StaticIntTuple[ALLOWED],
+    coefficients: StaticIntTuple[ALLOWED],
+    strides: StaticIntTuple[ALLOWED],
     offset: Int,
-    inout index: List[Int],
+    inout index: StaticIntTuple[ALLOWED],
     depth: Int,
 ) raises:
-    if depth == ndim.__len__():
-        var idx = offset + _get_index(index, coefficients)
-        var nidx = _get_index(index, strides)
-        var temp = orig.data.load[width=1](idx)
-        narr.__setitem__(nidx, temp)
+    if depth == shape_length:
+        var idx = offset + indexing[ALLOWED](
+            indices=index, weights=coefficients
+        )
+        var nidx = indexing[ALLOWED](indices=index, weights=strides)
+        # var temp = orig.data.load[width=1](idx)
+        narr[nidx] = orig[
+            idx
+        ]  # TODO: replace with load_unsafe later for reduced checks overhead
         return
 
-    for i in range(ndim[depth]):
+    for i in range(nshape[depth]):
         index[depth] = i
         var newdepth = depth + 1
         _traverse_iterative(
-            orig, narr, ndim, coefficients, strides, offset, index, newdepth
+            orig,
+            narr,
+            shape_length,
+            nshape,
+            coefficients,
+            strides,
+            offset,
+            index,
+            newdepth,
         )
+
 
 fn to_numpy(array: NDArray) -> PythonObject:
     try:

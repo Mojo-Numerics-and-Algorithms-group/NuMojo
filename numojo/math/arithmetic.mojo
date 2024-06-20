@@ -6,7 +6,7 @@
 """
 
 import math
-import ._math_funcs as _mf
+import . _math_funcs as _mf
 from ..core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
@@ -747,4 +747,3 @@ fn nextafter[
     return backend()._math_func_2_tensor_in_one_tensor_out[
         dtype, math.nextafter
     ](array1, array2)
-

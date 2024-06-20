@@ -39,7 +39,7 @@ fn binary_sort[
         The sorted NDArray of type `out_dtype`.
     """
     var result: NDArray[out_dtype] = NDArray[out_dtype](array.shape())
-    for i in range(array.info.size):
+    for i in range(array.ndshape._size):
         result[i] = array[i].cast[out_dtype]()
 
     var n = array.num_elements()

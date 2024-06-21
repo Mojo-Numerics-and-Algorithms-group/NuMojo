@@ -5,7 +5,7 @@ A Mathematics and Algorithm Library for Mojo.
 """
 
 from .core import *
-from .statistics import *
+from .math.statistics import *
 from .core.datatypes import *
 
 # from  .comparison import *

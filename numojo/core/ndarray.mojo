@@ -23,6 +23,10 @@ from builtin.math import pow
 from algorithm import parallelize, vectorize
 
 import ._array_funcs as _af
+from ..math.statistics.stats import mean,prod,sum
+from ..math.statistics.cumulative_reduce import cumsum, cumprod, cummean
+from ..math.check import any, all
+from ..math.arithmetic import abs
 
 fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
     var idx: Int = 0
@@ -177,6 +181,22 @@ struct ArrayDescriptor[dtype: DType = DType.float32]():
         self.shape = shape
         self.strides = strides
         self.coefficients = coefficients
+    
+    fn __copyinit__(inout self, new: Self):
+        self.ndim = new.ndim
+        self.offset = new.offset
+        self.size = new.size
+        self.shape = new.shape
+        self.strides = new.strides
+        self.coefficients = new.coefficients
+
+    fn __moveinit__(inout self, owned new: Self):
+        self.ndim = new.ndim
+        self.offset = new.offset
+        self.size = new.size
+        self.shape = new.shape
+        self.strides = new.strides
+        self.coefficients = new.coefficients
 
 
 # ===----------------------------------------------------------------------===#
@@ -393,13 +413,13 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __setitem__(inout self, index: Int, value: SIMD[dtype, 1]) raises:
         if index >= self.info.size:
             raise Error("Invalid index: index out of bound")
-        self._arr.__setitem__(index, value)
+        self.store(index, value)
 
     fn __setitem__(inout self, *index: Int, value: SIMD[dtype, 1]) raises:
         var idx: Int = _get_index(index, self.info.strides)
         if idx >= self.info.size:
             raise Error("Invalid index: index out of bound")
-        self._arr.__setitem__(idx, value)
+        self.store(idx, value)
 
     fn __setitem__(
         inout self,
@@ -409,7 +429,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         var idx: Int = _get_index(indices, self.info.strides)
         if idx >= self.info.size:
             raise Error("Invalid index: index out of bound")
-        self._arr.__setitem__(idx, val)
+        self.store(idx, val)
 
     fn __getitem__(self, index: Int) raises -> SIMD[dtype, 1]:
         """
@@ -642,48 +662,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __eq__(self, other: Self) -> Bool:
         return self._arr == other._arr
 
-    fn _elementwise_scalar_arithmetic[
-        func: fn[dtype: DType, width: Int] (
-            SIMD[dtype, width], SIMD[dtype, width]
-        ) -> SIMD[dtype, width]
-    ](self, s: SIMD[dtype, 1]) -> Self:
-        alias simd_width: Int = simdwidthof[dtype]()
-        var new_array = self
-
-        @parameter
-        fn elemwise_vectorize[simd_width: Int](idx: Int) -> None:
-            new_array._arr.store[width=simd_width](
-                idx,
-                func[dtype, simd_width](
-                    SIMD[dtype, simd_width](s),
-                    self._arr.load[width=simd_width](idx),
-                ),
-            )
-
-        vectorize[elemwise_vectorize, simd_width](self.info.size)
-        return new_array
-
-    fn _elementwise_array_arithmetic[
-        func: fn[dtype: DType, width: Int] (
-            SIMD[dtype, width], SIMD[dtype, width]
-        ) -> SIMD[dtype, width]
-    ](self, other: Self) -> Self:
-        alias simd_width = simdwidthof[dtype]()
-        var new_vec = self
-
-        @parameter
-        fn elemwise_arithmetic[simd_width: Int](index: Int) -> None:
-            new_vec._arr.store[width=simd_width](
-                index,
-                func[dtype, simd_width](
-                    self._arr.load[width=simd_width](index),
-                    other._arr.load[width=simd_width](index),
-                ),
-            )
-
-        vectorize[elemwise_arithmetic, simd_width](self.info.size)
-        return new_vec
-
     fn __add__(inout self, other: SIMD[dtype, 1]) -> Self:
         return _af._math_func_one_array_one_SIMD_in_one_array_out[dtype,SIMD.__add__](self,other)
 
@@ -723,40 +701,46 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn __imul__(inout self, s: SIMD[dtype, 1]):
         self = self * s
 
-    fn reduce_sum(self) -> SIMD[dtype, 1]:
-        var reduced = SIMD[dtype, 1](0.0)
-        alias simd_width: Int = simdwidthof[dtype]()
+    fn __imul__(inout self, s: Self)raises:
+        self = self * s
 
-        @parameter
-        fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
-            reduced += self._arr.load[width=simd_width](idx).reduce_add()
+    # Same as cumsum consider removing
+    # fn reduce_sum(self) -> SIMD[dtype, 1]:
+    #     var reduced = SIMD[dtype, 1](0.0)
+    #     alias simd_width: Int = simdwidthof[dtype]()
 
-        vectorize[vectorize_reduce, simd_width](self.info.size)
-        return reduced
+    #     @parameter
+    #     fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
+    #         reduced += self._arr.load[width=simd_width](idx).reduce_add()
 
-    fn reduce_mul(self) -> SIMD[dtype, 1]:
-        var reduced = SIMD[dtype, 1](0.0)
-        alias simd_width: Int = simdwidthof[dtype]()
+    #     vectorize[vectorize_reduce, simd_width](self.info.size)
+    #     return reduced
+    
+    # Same as cumprod consider removing
+    # fn reduce_mul(self) -> SIMD[dtype, 1]:
+    #     var reduced = SIMD[dtype, 1](0.0)
+    #     alias simd_width: Int = simdwidthof[dtype]()
 
-        @parameter
-        fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
-            reduced *= self._arr.load[width=simd_width](idx).reduce_mul()
+    #     @parameter
+    #     fn vectorize_reduce[simd_width: Int](idx: Int) -> None:
+    #         reduced *= self._arr.load[width=simd_width](idx).reduce_mul()
 
-        vectorize[vectorize_reduce, simd_width](self.info.size)
-        return reduced
+    #     vectorize[vectorize_reduce, simd_width](self.info.size)
+    #     return reduced
 
     fn __abs__(self) -> Self:
-        var result = Self(self.info.shape)
-        alias nelts = simdwidthof[dtype]()
+        return abs(self)
+        # var result = Self(self.info.shape)
+        # alias nelts = simdwidthof[dtype]()
 
-        @parameter
-        fn vectorized_abs[simd_width: Int](idx: Int) -> None:
-            result._arr.store[width=simd_width](
-                idx, abs(self._arr.load[width=simd_width](idx))
-            )
+        # @parameter
+        # fn vectorized_abs[simd_width: Int](idx: Int) -> None:
+        #     result._arr.store[width=simd_width](
+        #         idx, abs(self._arr.load[width=simd_width](idx))
+        #     )
 
-        vectorize[vectorized_abs, nelts](self.info.size)
-        return result
+        # vectorize[vectorized_abs, nelts](self.info.size)
+        # return result
 
     # all elements raised to some integer power
     fn __pow__(self, p: Int) -> Self:
@@ -1076,7 +1060,9 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     # tobyets, tofile, view
 
     fn all(self):
+        # We might need to figure out how we want to handle truthyness before can do this
         pass
+            
 
     fn any(self):
         pass
@@ -1102,11 +1088,23 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn copy(self):
         pass
 
-    fn cumprod(self):
-        pass
+    fn cumprod(self)->Scalar[dtype]:
+        """
+        Cumulative product of a array.
+        
+        Returns:
+            The cumulative product of the array as a SIMD Value of `dtype`.
+        """
+        return cumprod[dtype](self)
 
-    fn cumsum(self):
-        pass
+    fn cumsum(self)->Scalar[dtype]:
+        """
+        Cumulative Sum of a array.
+        
+        Returns:
+            The cumulative sum of the array as a SIMD Value of `dtype`.
+        """
+        return cumsum[dtype](self)
 
     fn diagonal(self):
         pass
@@ -1126,14 +1124,41 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn min(self):
         pass
 
-    fn mean(self):
-        pass
+    fn mean(self:Self,axis: Int)raises->Self:
+        """
+        Mean of array elements over a given axis.
+        Args:
+            array: NDArray.
+            axis: The axis along which the mean is performed.
+        Returns:
+            An NDArray.
+
+        """
+        return mean(self,axis)
+
+    fn mean(self)raises->Scalar[dtype]:
+        """
+        Cumulative mean of a array.
+        
+        Returns:
+            The cumulative mean of the array as a SIMD Value of `dtype`.
+        """
+        return cummean[dtype](self)
 
     fn nonzero(self):
         pass
 
-    fn prod(self):
-        pass
+    fn prod(self:Self,axis: Int)raises->Self:
+        """
+        Product of array elements over a given axis.
+        Args:
+            array: NDArray.
+            axis: The axis along which the product is performed.
+        Returns:
+            An NDArray.
+        """
+
+        return prod(self,axis)
 
     fn ravel(self):
         pass
@@ -1147,8 +1172,15 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     fn sort(self):
         pass
 
-    fn sum(self):
-        pass
+    fn sum(self:Self,axis: Int)raises->Self:
+        """
+        Sum of array elements over a given axis.
+        Args:
+            axis: The axis along which the sum is performed.
+        Returns:
+            An NDArray.
+        """
+        return sum(self,axis)
 
     fn stdev(self):
         pass

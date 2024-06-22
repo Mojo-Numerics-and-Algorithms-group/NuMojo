@@ -82,3 +82,43 @@ fn isnan[
         NDArray[DType.bool] - A array of the same shape as `array` with True for NaN elements and False for others.
     """
     return backend()._math_func_is[dtype, math.isnan](array)
+
+fn any(array: NDArray[DType.bool]) -> Scalar[DType.bool]:
+    """
+    If any True.
+
+    Args:
+        array: A NDArray.
+    Returns:
+        A boolean scalar
+    """
+    var result = Scalar[DType.bool](False)
+    alias opt_nelts: Int = simdwidthof[DType.bool]()
+
+    @parameter
+    fn vectorize_sum[simd_width: Int](idx: Int) -> None:
+        var simd_data = array.load[width=simd_width](idx)
+        result &= (simd_data.reduce_or())
+
+    vectorize[vectorize_sum, opt_nelts](array.num_elements())
+    return result
+
+fn all(array: NDArray[DType.bool]) -> Scalar[DType.bool]:
+    """
+    If all True.
+
+    Args:
+        array: A NDArray.
+    Returns:
+        A boolean scalar
+    """
+    var result = Scalar[DType.bool](True)
+    alias opt_nelts: Int = simdwidthof[DType.bool]()
+
+    @parameter
+    fn vectorize_sum[simd_width: Int](idx: Int) -> None:
+        var simd_data = array.load[width=simd_width](idx)
+        result |= (simd_data.reduce_and())
+
+    vectorize[vectorize_sum, opt_nelts](array.num_elements())
+    return result

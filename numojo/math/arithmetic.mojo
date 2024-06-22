@@ -644,7 +644,7 @@ fn tround[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) -> NDArray[dtype]:
     """
-    Elementwise  NDArray.
+    Elementwise round NDArray to whole number.
 
     Parameters:
         dtype: The element type.

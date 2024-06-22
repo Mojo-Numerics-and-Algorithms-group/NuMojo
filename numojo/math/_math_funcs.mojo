@@ -1630,7 +1630,7 @@ struct VectorizedVerbose(Backend):
             array: A NDArray
 
         Returns:
-            A a new NDArray that is NDArray with the function func applied.
+            A new NDArray that is NDArray with the function func applied.
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
         alias opt_nelts = simdwidthof[dtype]()

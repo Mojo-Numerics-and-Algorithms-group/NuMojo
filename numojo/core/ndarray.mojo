@@ -24,159 +24,268 @@ from algorithm import parallelize, vectorize
 
 import ._array_funcs as _af
 
-fn _get_index(indices: VariadicList[Int], weights: List[Int]) -> Int:
-    var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _get_index(*indices: Int, weights: List[Int]) -> Int:
-    var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
-    var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _traverse_iterative[
-    dtype: DType
-](
-    orig: NDArray[dtype],
-    inout narr: NDArray[dtype],
-    ndim: List[Int],
-    coefficients: List[Int],
-    strides: List[Int],
-    offset: Int,
-    inout index: List[Int],
-    depth: Int,
-) raises:
-    if depth == ndim.__len__():
-        var idx = offset + _get_index(index, coefficients)
-        var nidx = _get_index(index, strides)
-        var temp = orig._arr.load[width=1](idx)
-        narr.__setitem__(nidx, temp)
-        return
-
-    for i in range(ndim[depth]):
-        index[depth] = i
-        var newdepth = depth + 1
-        _traverse_iterative(
-            orig, narr, ndim, coefficients, strides, offset, index, newdepth
-        )
-
-
-# ===----------------------------------------------------------------------===#
-# NDArrayShape
-# ===----------------------------------------------------------------------===#
-
-
-@value
-struct NDArrayShape[dtype: DType = DType.int32](Stringable):
+@register_passable("trivial")
+struct NDArrayShape[](Stringable):
     """Implements the NDArrayShape."""
 
     # Fields
-    var shape: List[Int]
+    var _size: Int
+    var _shape: StaticIntTuple[Int]
 
-    # ===-------------------------------------------------------------------===#
-    # Life cycle methods
-    # ===-------------------------------------------------------------------===#
-    fn __init__(inout self, shape: List[Int]):
-        self.shape = shape
+    @always_inline("nodebug")
+    fn __init__(inout self, *shape: Int):
+        self._shape = StaticIntTuple[ALLOWED]()
+        self._size = 1
+        for i in range(min(len(shape), ALLOWED)):
+            self._shape[i] = shape[i]
+            self._size *= shape[i]
 
-    fn __init__(inout self, num: Int):
-        self.shape = List[Int](num)
-
+    @always_inline("nodebug")
     fn __init__(inout self, shape: VariadicList[Int]):
-        self.shape = List[Int]()
-        for i in range(shape.__len__()):
-            self.shape.append(shape[i])
+        self._shape = StaticIntTuple[ALLOWED]()
+        self._size = 1
+        for i in range(min(len(shape), ALLOWED)):
+            self._shape[i] = shape[i]
+            self._size *= shape[i]
 
-    # ===-------------------------------------------------------------------===#
-    # Operator dunders
-    # ===-------------------------------------------------------------------===#
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: List[Int]):
+        self._shape = StaticIntTuple[ALLOWED]()
+        self._size = 1
+        for i in range(min(len(shape), ALLOWED)):
+            self._shape[i] = shape[i]
+            self._size *= shape[i]
 
+    @always_inline("nodebug")
+    fn __init__[length: Int](inout self, shape: StaticIntTuple[length]):
+        self._shape = StaticIntTuple[ALLOWED]()
+        self._size = 1
+        for i in range(min(length, ALLOWED)):
+            self._shape[i] = shape[i]
+            self._size *= shape[i]
+
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: StaticIntTuple[ALLOWED], size: Int):
+        self._shape = shape
+        self._size = size
+
+    @always_inline("nodebug")
+    fn __init__(inout self, owned shape: NDArrayShape):
+        self._shape = StaticIntTuple[ALLOWED]()
+        self._size = 1
+        for i in range(min(len(self._shape), ALLOWED)):
+            self._shape[i] = shape[i]
+            self._size *= shape[i]
+
+    @always_inline("nodebug")
+    fn __getitem__(self, index: Int) -> Int:
+        # takes care of negative indexing
+        if index >= 0:
+            return self._shape[index]
+        else:
+            return self._shape[len(self._shape) + index]
+
+    @always_inline("nodebug")
+    fn __setitem__(inout self, index: Int, value: Int):
+        # takes care of negative indexing
+        if index >= 0:
+            self._shape[index] = value
+        else:
+            self._shape[len(self._shape) + index] = value
+
+    @always_inline("nodebug")
+    fn size(self) -> Int:
+        return self._size
+
+    @always_inline("nodebug")
+    fn dim(self) -> Int:
+        return len(self._shape)
+
+    @always_inline("nodebug")
+    fn __str__(self: Self) -> String:
+        var result: String = "Shape: ["
+        for i in range(len(self._shape)):
+            if self._shape[i] == 0:
+                result = result[:-2]
+                break
+            result += self._shape[i].__str__() + ", "
+        return result + "]"
+        # return "Shape: " + self._shape.__str__()
+
+    @always_inline("nodebug")
     fn __eq__(self, other: Self) -> Bool:
-        if self.shape.__len__() != other.shape.__len__():
-            return False
-
-        for i in range(self.shape.__len__()):
-            if self.shape[i] != other.shape[i]:
+        for i in range(len(self._shape)):
+            if self[i] != other[i]:
                 return False
         return True
 
+    @always_inline("nodebug")
     fn __ne__(self, other: Self) -> Bool:
         return not self.__eq__(other)
 
-    # ===-------------------------------------------------------------------===#
-    # Trait implementations
-    # ===-------------------------------------------------------------------===#
+    @always_inline("nodebug")
+    fn __contains__(self, value: Int) -> Bool:
+        for i in range(len(self._shape)):
+            if self[i] == value:
+                return True
+        return False
 
-    fn __str__(self) -> String:
-        return "Shape: " + self.shape.__str__()
+    # FIGURE OUT HOW TO LOAD SIMD VECTORS OUT OF THIS
+    @always_inline("nodebug")
+    fn load_unsafe(self, idx: Int) -> Int:
+        return self._shape[idx]
 
-    fn __len__(self) -> Int:
-        return self.shape.__len__()
-
-
-# ===----------------------------------------------------------------------===#
-# ArrayDescriptor
-# ===----------------------------------------------------------------------===#
+    @always_inline("nodebug")
+    fn store_unsafe(inout self, idx: Int, value: Int):
+        self._shape[idx] = value
 
 
-@value
-struct ArrayDescriptor[dtype: DType = DType.float32]():
-    """Implements the ArrayDescriptor (dope vector) that stores the metadata of an NDArray.
-    """
+@register_passable("trivial")
+struct NDArrayStrides(Stringable):
+    """Implements the NDArrayStrides."""
 
     # Fields
-    var ndim: Int  # Number of dimensions of the array
-    var offset: Int  # Offset of array data in buffer.
-    var size: Int  # Number of elements in the array
-    var shape: List[Int]  # size of each dimension
-    var strides: List[Int]  # Tuple of bytes to step in each dimension
-    # when traversing an array.
-    var coefficients: List[Int]  # coefficients
+    var _offset: Int
+    var _stride: StaticIntTuple[ALLOWED]
 
-    # ===-------------------------------------------------------------------===#
-    # Life cycle methods
-    # ===-------------------------------------------------------------------===#
-    fn __init__(
-        inout self,
-        ndim: Int,
-        offset: Int,
-        size: Int,
-        shape: List[Int],
-        strides: List[Int],
-    ):
-        self.ndim = ndim
-        self.offset = offset
-        self.size = size
-        self.shape = shape
-        self.strides = strides
-        self.coefficients = strides
+    @always_inline("nodebug")
+    fn __init__(inout self, *shape: Int, ndim: Int, offset: Int = 0):
+        self._offset = offset
+        self._stride = StaticIntTuple[ALLOWED]()
+        for i in range(min(ndim, ALLOWED)):
+            var temp: Int = 1
+            for j in range(i + 1, ndim):  # temp
+                temp *= shape[j]
+            self._stride[i] = temp
 
+    @always_inline("nodebug")
     fn __init__(
-        inout self,
-        ndim: Int,
-        offset: Int,
-        size: Int,
-        shape: List[Int],
-        strides: List[Int],
-        coefficients: List[Int],
+        inout self, shape: VariadicList[Int], ndim: Int, offset: Int = 0
     ):
-        self.ndim = ndim
-        self.offset = offset
-        self.size = size
-        self.shape = shape
-        self.strides = strides
-        self.coefficients = coefficients
+        self._offset = offset
+        self._stride = StaticIntTuple[ALLOWED]()
+        for i in range(min(ndim, ALLOWED)):
+            var temp: Int = 1
+            for j in range(i + 1, ndim):  # temp
+                temp *= shape[j]
+            self._stride[i] = temp
+
+    @always_inline("nodebug")
+    fn __init__(inout self, shape: List[Int], ndim: Int, offset: Int = 0):
+        self._offset = offset
+        self._stride = StaticIntTuple[ALLOWED]()
+        for i in range(min(ndim, ALLOWED)):
+            var temp: Int = 1
+            for j in range(i + 1, ndim):  # temp
+                temp *= shape[j]
+            self._stride[i] = temp
+
+    @always_inline("nodebug")
+    fn __init__[
+        length: Int
+    ](inout self, shape: StaticIntTuple[length], ndim: Int, offset: Int = 0):
+        self._offset = offset
+        self._stride = StaticIntTuple[ALLOWED]()
+        for i in range(min(ndim, ALLOWED)):
+            var temp: Int = 1
+            for j in range(i + 1, ndim):  # temp
+                temp *= shape[j]
+            self._stride[i] = temp
+
+    @always_inline("nodebug")
+    fn __init__(inout self, stride: StaticIntTuple[ALLOWED], offset: Int = 0):
+        self._offset = offset
+        self._stride = stride
+
+    @always_inline("nodebug")
+    fn __init__(
+        inout self, owned shape: NDArrayShape, ndim: Int, offset: Int = 0
+    ):
+        self._offset = offset
+        self._stride = StaticIntTuple[ALLOWED]()
+
+        if (
+            ndim == 1
+        ):  # TODO: make sure this is present in all __init__() to account for 1D arrays.
+            self._stride[0] = 1
+        else:
+            for i in range(min(ndim, ALLOWED)):
+                var temp: Int = 1
+                for j in range(
+                    i + 1, ndim
+                ):  # make sure i don't need to add min() here
+                    temp *= shape[j]
+                self._stride[i] = temp
+
+    fn __init__(inout self, owned stride: NDArrayStrides, offset: Int = 0):
+        self._offset = offset
+        self._stride = stride._stride
+
+    @always_inline("nodebug")
+    fn __getitem__(self, index: Int) -> Int:
+        # takes care of negative indexing
+        if index >= 0:
+            return self._stride[index]
+        else:
+            return self._stride[len(self._stride) + index]
+
+    @always_inline("nodebug")
+    fn __setitem__(inout self, index: Int, value: Int):
+        # takes care of negative indexing
+        if index >= 0:
+            self._stride[index] = value
+        else:
+            self._stride[len(self._stride) + index] = value
+
+    @always_inline("nodebug")
+    fn size(self) -> Int:
+        var result = 1
+        for i in range(len(self._stride)):
+            result *= self._stride[i]
+        return result
+
+    @always_inline("nodebug")
+    fn dim(self) -> Int:
+        return len(self._stride)
+
+    @always_inline("nodebug")
+    fn __str__(self: Self) -> String:
+        var result: String = "Stride: ["
+        for i in range(len(self._stride)):
+            if self._stride[i] == 0:
+                result = result[:-2]
+                break
+            result += self._stride[i].__str__() + ", "
+        return result + "]"
+        # return "Stride: " + self._stride.__str__()
+
+    @always_inline("nodebug")
+    fn __eq__(self, other: Self) -> Bool:
+        for i in range(len(self._stride)):
+            if self[i] != other[i]:
+                return False
+        return True
+
+    @always_inline("nodebug")
+    fn __ne__(self, other: Self) -> Bool:
+        return not self.__eq__(other)
+
+    @always_inline("nodebug")
+    fn __contains__(self, value: Int) -> Bool:
+        for i in range(len(self._stride)):
+            if self[i] == value:
+                return True
+        return False
+
+    # FIGURE OUT HOW TO LOAD SIMD VECTORS OUT OF THIS
+    @always_inline("nodebug")
+    fn load_unsafe(self, idx: Int) -> Int:
+        return self._stride[idx]
+
+    @always_inline("nodebug")
+    fn store_unsafe(inout self, idx: Int, value: Int):
+        self._stride[idx] = value
+
 
 
 # ===----------------------------------------------------------------------===#

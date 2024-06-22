@@ -57,7 +57,7 @@ fn binary_sort[
 # ===------------------------------------------------------------------------===#
 
 
-fn sum[
+fn cumsum[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
@@ -84,7 +84,7 @@ fn sum[
     return result
 
 
-fn prod[
+fn cumprod[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """
@@ -117,7 +117,7 @@ fn prod[
 # ===------------------------------------------------------------------------===#
 
 
-fn mean[
+fn cummean[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """
@@ -137,7 +137,7 @@ fn mean[
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
-    return sum[in_dtype, out_dtype](array) / (array.num_elements())
+    return cumsum[in_dtype, out_dtype](array) / (array.num_elements())
 
 
 fn mode[
@@ -285,7 +285,7 @@ fn minT[
     return result.cast[out_dtype]()
 
 
-fn pvariance[
+fn cumpvariance[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](
     array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None
@@ -312,7 +312,7 @@ fn pvariance[
 
     var mean_value: Scalar[out_dtype]
     if not mu:
-        mean_value = mean[in_dtype, out_dtype](array)
+        mean_value = cummean[in_dtype, out_dtype](array)
     else:
         mean_value = mu.value()[].cast[out_dtype]()
 
@@ -324,7 +324,7 @@ fn pvariance[
     return result / (array.num_elements())
 
 
-fn variance[
+fn cumvariance[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](
     array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None
@@ -352,7 +352,7 @@ fn variance[
     var mean_value: Scalar[out_dtype]
 
     if not mu:
-        mean_value = mean[in_dtype, out_dtype](array)
+        mean_value = cummean[in_dtype, out_dtype](array)
     else:
         mean_value = mu.value()[].cast[out_dtype]()
 
@@ -363,7 +363,7 @@ fn variance[
     return result / (array.num_elements() - 1)
 
 
-fn pstdev[
+fn cumpstdev[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](
     array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None
@@ -388,7 +388,7 @@ fn pstdev[
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
-    return math.sqrt(pvariance[in_dtype, out_dtype](array, mu))
+    return math.sqrt(cumpvariance[in_dtype, out_dtype](array, mu))
 
 
 fn stdev[
@@ -415,7 +415,7 @@ fn stdev[
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
-    return math.sqrt(variance[in_dtype, out_dtype](array, mu))
+    return math.sqrt(cumvariance[in_dtype, out_dtype](array, mu))
 
 
 # this roughly seems to be just an alias for min in numpy

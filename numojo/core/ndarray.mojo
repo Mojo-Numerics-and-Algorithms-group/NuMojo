@@ -23,19 +23,24 @@ from builtin.math import pow
 from algorithm import parallelize, vectorize
 
 import ._array_funcs as _af
+from ..math.statistics.stats import mean,prod,sum
+from ..math.statistics.cumulative_reduce import cumsum, cumprod, cummean
+from ..math.check import any, all
+from ..math.arithmetic import abs
+
 
 @register_passable("trivial")
-struct NDArrayShape[](Stringable):
+struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     """Implements the NDArrayShape."""
 
     # Fields
     var _size: Int
-    var _shape: StaticIntTuple[Int]
+    var _shape: DTypePointer[dtype]
 
     @always_inline("nodebug")
     fn __init__(inout self, *shape: Int):
-        self._shape = StaticIntTuple[ALLOWED]()
         self._size = 1
+        self._shape.malloc(len(shape))
         for i in range(min(len(shape), ALLOWED)):
             self._shape[i] = shape[i]
             self._size *= shape[i]

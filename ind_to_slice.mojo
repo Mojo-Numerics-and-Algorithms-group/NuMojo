@@ -1,6 +1,8 @@
-from numojo.core.ndarray import NDArray
-import numojo
-from numojo.math.linalg import matmul_naive, matmul_tiled_unrolled_parallelized, matmul_parallelized
+# from numojo.core.ndarray import NDArray
+from numojo import NDArray
+from numojo.core.array_creation_routines import arange
+from numojo.core.datatypes import *
+# from numojo.math.linalg import matmul_naive, matmul_tiled_unrolled_parallelized, matmul_parallelized
 def main():
     var x = numojo.arange[numojo.f32](0,1000)
     var y =  numojo.identity[numojo.i32](10)

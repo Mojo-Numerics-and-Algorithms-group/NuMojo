@@ -30,7 +30,8 @@
     <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
-        <li><a href="#what-numojo-is-not">What Numojo is not</a></li>
+        <li><a href="#what-numojo-is"> What NuMojo is </a></li>
+        <li><a href="#what-numojo-is-not">What NuMojo is not</a></li>
       </ul>
     </li>
     <a href="#goals-roadmap">Goals/Roadmap</a>
@@ -47,6 +48,7 @@
 </details>
 
 ## About the project
+### What NuMojo is
 NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy and Scikit.
 
 NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on tensor inputs.
@@ -54,8 +56,7 @@ NuMojo intends to try and get the most out of the capabilities of Mojo including
 
 NuMojo intends to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 
-## What NuMojo is not
-## What NuMojo is not
+### What NuMojo is not
 
 NuMojo is not a machine learning library, it will never include back-propagation in the base library.
 

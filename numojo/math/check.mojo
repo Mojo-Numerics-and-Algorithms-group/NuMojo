@@ -83,6 +83,7 @@ fn isnan[
     """
     return backend()._math_func_is[dtype, math.isnan](array)
 
+
 fn any(array: NDArray[DType.bool]) -> Scalar[DType.bool]:
     """
     If any True.
@@ -98,10 +99,11 @@ fn any(array: NDArray[DType.bool]) -> Scalar[DType.bool]:
     @parameter
     fn vectorize_sum[simd_width: Int](idx: Int) -> None:
         var simd_data = array.load[width=simd_width](idx)
-        result &= (simd_data.reduce_or())
+        result &= simd_data.reduce_or()
 
     vectorize[vectorize_sum, opt_nelts](array.num_elements())
     return result
+
 
 fn all(array: NDArray[DType.bool]) -> Scalar[DType.bool]:
     """
@@ -118,7 +120,7 @@ fn all(array: NDArray[DType.bool]) -> Scalar[DType.bool]:
     @parameter
     fn vectorize_sum[simd_width: Int](idx: Int) -> None:
         var simd_data = array.load[width=simd_width](idx)
-        result |= (simd_data.reduce_and())
+        result |= simd_data.reduce_and()
 
     vectorize[vectorize_sum, opt_nelts](array.num_elements())
     return result

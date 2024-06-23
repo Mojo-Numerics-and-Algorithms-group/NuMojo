@@ -51,7 +51,9 @@ fn arange[
         )
 
     var num: Int = ((stop - start) / step).__int__()
-    var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
+    var result: NDArray[out_dtype] = NDArray[out_dtype](
+        NDArrayShape(num, size=num)
+    )
     for idx in range(num):
         result[idx] = start.cast[out_dtype]() + step.cast[out_dtype]() * idx
 
@@ -493,7 +495,7 @@ fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:
     var tens_shape: VariadicList[Int] = shape
     var res = NDArray[dtype](tens_shape)
     for i in range(res.num_elements()):
-        res.store(i,SIMD[dtype,1](1))
+        res.store(i, SIMD[dtype, 1](1))
     return res
 
 

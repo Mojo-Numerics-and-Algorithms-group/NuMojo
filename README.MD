@@ -104,7 +104,7 @@ This library is still very much a work in progress and may change at any time. A
 
 ## License
 
-Distributed under the MIT License. See [License](LICENSE) for more information.
+Distributed under the Apache 2.0 License with LLVM Exceptions. See [LICENSE](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE) and the LLVM [License](https://llvm.org/LICENSE.txt) for more information.
 
 ## Acknowledgements
 

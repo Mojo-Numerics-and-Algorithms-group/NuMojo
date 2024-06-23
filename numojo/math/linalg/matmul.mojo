@@ -100,9 +100,9 @@ fn matmul[
                     + A.load(m, k) * B.load[nelts](k, n),
                 )
 
-            vectorize[dot, nelts](B.ndshape._shape[1])
+            vectorize[dot, nelts](B.ndshape[1])
 
-    parallelize[calc_row](C.ndshape._shape[0])
+    parallelize[calc_row](C.ndshape[0])
 
     # var C: NDArray[dtype] = NDArray[dtype](A.info.shape[0], B.info.shape[1])
     # for m in range(C.info.shape[0]):
@@ -161,7 +161,6 @@ fn matmul_naive[
     return C
 
 
-
 @always_inline
 fn calculate_block[
     M: Int, N: Int, K: Int, BLOCK_M: Int, BLOCK_N: Int, nelts: Int, dtype: DType
@@ -177,7 +176,6 @@ fn calculate_block[
     memset_zero[dtype](acc, BLOCK_M * BLOCK_N)
 
     for k in range(K):
-
         # @unroll
         for m in range(BLOCK_M):
 
@@ -186,8 +184,13 @@ fn calculate_block[
                 try:
                     acc.store[width=nelts](
                         m * BLOCK_N + n,
-                        SIMD[dtype, nelts].splat(t1[(bm + m) * K + k]).fma(t2.load[width=nelts](k * N + (bn + n)),
-                            acc.load[width=nelts](m * BLOCK_N + n),),)
+                        SIMD[dtype, nelts]
+                        .splat(t1[(bm + m) * K + k])
+                        .fma(
+                            t2.load[width=nelts](k * N + (bn + n)),
+                            acc.load[width=nelts](m * BLOCK_N + n),
+                        ),
+                    )
                 except e:
                     print("Error", e)
 
@@ -207,7 +210,7 @@ fn calculate_block[
 @always_inline
 fn dot[
     t10: Int, t11: Int, t21: Int, dtype: DType
-](res: NDArray[dtype], t1: NDArray[dtype], t2: NDArray[dtype]) raises :
+](res: NDArray[dtype], t1: NDArray[dtype], t2: NDArray[dtype]) raises:
     alias M = t10  # t1[0]
     alias K = t11  # t1[1], t2[0]
     alias N = t21
@@ -228,7 +231,9 @@ fn dot[
         for n_outer in range(0, N // BLOCK_N):
             var bn = n_outer * BLOCK_N
             try:
-                calculate_block[M, N, K, BLOCK_M, BLOCK_N, nelts](res, t1, t2, bm, bn)
+                calculate_block[M, N, K, BLOCK_M, BLOCK_N, nelts](
+                    res, t1, t2, bm, bn
+                )
             except e:
                 print("Error", e)
 
@@ -262,6 +267,6 @@ fn dot[
         if BLOCK_N_REMAINDER > 0:
             var bn = N - BLOCK_N_REMAINDER
 
-            calculate_block[M, N, K, BLOCK_M_REMAINDER, BLOCK_N_REMAINDER, nelts](
-                res, t1, t2, bm, bn
-            )
+            calculate_block[
+                M, N, K, BLOCK_M_REMAINDER, BLOCK_N_REMAINDER, nelts
+            ](res, t1, t2, bm, bn)

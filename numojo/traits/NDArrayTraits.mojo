@@ -1,4 +1,5 @@
 from ..core.ndarray import NDArray
+
 # Blocked by lack of trait paramaterization
 
 # trait Arraylike:
@@ -72,7 +73,7 @@ from ..core.ndarray import NDArray
 #         """
 
 #         ...
-    
+
 #     fn _math_func_one_array_one_SIMD_in_one_array_out[
 #         dtype: DType,
 #         func: fn[type: DType, simd_w: Int] (

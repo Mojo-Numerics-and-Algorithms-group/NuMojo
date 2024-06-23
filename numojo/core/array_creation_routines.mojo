@@ -23,37 +23,40 @@ from .utility_funcs import is_inttype, is_floattype
 # Arranged Value NDArray generation
 # ===------------------------------------------------------------------------===#
 fn arange[
-    Indtype: DType, Outdtype: DType = DType.float64
+    in_dtype: DType, out_dtype: DType = DType.float64
 ](
-    start: SIMD[Indtype, 1],
-    stop: SIMD[Indtype, 1],
-    step: SIMD[Indtype, 1] = SIMD[Indtype, 1](1),
-) raises -> NDArray[Outdtype]:
+    start: SIMD[in_dtype, 1],
+    stop: SIMD[in_dtype, 1],
+    step: SIMD[in_dtype, 1] = SIMD[in_dtype, 1](1),
+) raises -> NDArray[out_dtype]:
     """
     Function that computes a series of values starting from "start" to "stop" with given "step" size.
 
     Parameters:
-        Indtype: DType  - datatype of the input values.
-        Outdtype: DType  - datatype of the output NDArray.
+        in_dtype: DType  - datatype of the input values.
+        out_dtype: DType  - datatype of the output NDArray.
 
     Args:
-        start: SIMD[Indtype, 1] - Start value.
-        stop: SIMD[Indtype, 1]  - End value.
-        step: SIMD[Indtype, 1]  - Step size between each element defualt 1.
+        start: SIMD[in_dtype, 1] - Start value.
+        stop: SIMD[in_dtype, 1]  - End value.
+        step: SIMD[in_dtype, 1]  - Step size between each element defualt 1.
 
     Returns:
         NDArray[dtype] - NDArray of datatype T with elements ranging from "start" to "stop" incremented with "step".
     """
-    if is_inttype[Indtype]() and is_inttype[Outdtype]():
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
 
     var num: Int = ((stop - start) / step).__int__()
-    var result: NDArray[Outdtype] = NDArray[Outdtype](NDArrayShape(num))
+    var result: NDArray[out_dtype] = NDArray[out_dtype](
+        NDArrayShape(num, size=num)
+    )
     for idx in range(num):
-        result[idx] = (start + step * idx).cast[Outdtype]()
+        result[idx] = start.cast[out_dtype]() + step.cast[out_dtype]() * idx
+
     return result
 
 
@@ -64,24 +67,24 @@ fn arange[
 
 # I think defaulting parallelization to False is better
 fn linspace[
-    Indtype: DType, Outdtype: DType = DType.float64
+    in_dtype: DType, out_dtype: DType = DType.float64
 ](
-    start: SIMD[Indtype, 1],
-    stop: SIMD[Indtype, 1],
+    start: SIMD[in_dtype, 1],
+    stop: SIMD[in_dtype, 1],
     num: Int = 50,
     endpoint: Bool = True,
     parallel: Bool = False,
-) raises -> NDArray[Outdtype]:
+) raises -> NDArray[out_dtype]:
     """
     Function that computes a series of linearly spaced values starting from "start" to "stop" with given size. Wrapper function for _linspace_serial, _linspace_parallel.
 
     Parameters:
-        Indtype: DType - datatype of the input values.
-        Outdtype: DType - datatype of the output NDArray.
+        in_dtype: DType - datatype of the input values.
+        out_dtype: DType - datatype of the output NDArray.
 
     Args:
-        start: SIMD[Indtype, 1] - Start value.
-        stop: SIMD[Indtype, 1]  - End value.
+        start: SIMD[in_dtype, 1] - Start value.
+        stop: SIMD[in_dtype, 1]  - End value.
         num: Int  - No of linearly spaced elements.
         endpoint: Bool - Specifies whether to include endpoint in the final NDArray, defaults to True.
         parallel: Bool - Specifies whether the linspace should be calculated using parallelization, deafults to False.
@@ -90,19 +93,19 @@ fn linspace[
         NDArray[dtype] - NDArray of datatype T with elements ranging from "start" to "stop" with num elements.
 
     """
-    if is_inttype[Indtype]() and is_inttype[Outdtype]():
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
 
     if parallel:
-        return _linspace_parallel[Outdtype](
-            start.cast[Outdtype](), stop.cast[Outdtype](), num, endpoint
+        return _linspace_parallel[out_dtype](
+            start.cast[out_dtype](), stop.cast[out_dtype](), num, endpoint
         )
     else:
-        return _linspace_serial[Outdtype](
-            start.cast[Outdtype](), stop.cast[Outdtype](), num, endpoint
+        return _linspace_serial[out_dtype](
+            start.cast[out_dtype](), stop.cast[out_dtype](), num, endpoint
         )
 
 
@@ -199,52 +202,52 @@ fn _linspace_parallel[
 # Logarithmic Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
 fn logspace[
-    Indtype: DType, Outdtype: DType = DType.float64
+    in_dtype: DType, out_dtype: DType = DType.float64
 ](
-    start: SIMD[Indtype, 1],
-    stop: SIMD[Indtype, 1],
+    start: SIMD[in_dtype, 1],
+    stop: SIMD[in_dtype, 1],
     num: Int,
     endpoint: Bool = True,
-    base: SIMD[Indtype, 1] = 10.0,
+    base: SIMD[in_dtype, 1] = 10.0,
     parallel: Bool = False,
-) raises -> NDArray[Outdtype]:
+) raises -> NDArray[out_dtype]:
     """
     Generate a logrithmic spaced NDArray of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions.
 
     Parameters:
-        Indtype: DType - datatype of the input values.
-        Outdtype: DType - datatype of the output NDArray.
+        in_dtype: DType - datatype of the input values.
+        out_dtype: DType - datatype of the output NDArray.
 
     Args:
         start: SIMD[dtype, 1] - The starting value of the NDArray.
         stop: SIMD[dtype, 1] - The ending value of the NDArray.
         num: Int - The number of elements in the NDArray.
         endpoint: Bool - Whether to include the `stop` value in the NDArray. Defaults to True.
-        base: SIMD[Indtype, 1] - Base value of the logarithm, defaults to 10.
+        base: SIMD[in_dtype, 1] - Base value of the logarithm, defaults to 10.
         parallel: Bool - Specifies whether to calculate the logarithmic spaced values using parallelization.
 
     Returns:
     - A NDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    if is_inttype[Indtype]() and is_inttype[Outdtype]():
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
     if parallel:
-        return _logspace_parallel[Outdtype](
-            start.cast[Outdtype](),
-            stop.cast[Outdtype](),
+        return _logspace_parallel[out_dtype](
+            start.cast[out_dtype](),
+            stop.cast[out_dtype](),
             num,
-            base.cast[Outdtype](),
+            base.cast[out_dtype](),
             endpoint,
         )
     else:
-        return _logspace_serial[Outdtype](
-            start.cast[Outdtype](),
-            stop.cast[Outdtype](),
+        return _logspace_serial[out_dtype](
+            start.cast[out_dtype](),
+            stop.cast[out_dtype](),
             num,
-            base.cast[Outdtype](),
+            base.cast[out_dtype](),
             endpoint,
         )
 
@@ -343,51 +346,51 @@ fn _logspace_parallel[
 
 # ! Outputs wrong values for Integer type, works fine for float type.
 fn geomspace[
-    Indtype: DType, Outdtype: DType = DType.float64
+    in_dtype: DType, out_dtype: DType = DType.float64
 ](
-    start: SIMD[Indtype, 1],
-    stop: SIMD[Indtype, 1],
+    start: SIMD[in_dtype, 1],
+    stop: SIMD[in_dtype, 1],
     num: Int,
     endpoint: Bool = True,
-) raises -> NDArray[Outdtype]:
+) raises -> NDArray[out_dtype]:
     """
     Generate a NDArray of `num` elements between `start` and `stop` in a geometric series.
 
     Parameters:
-        Indtype: DType - datatype of the input values.
-        Outdtype: DType - datatype of the output NDArray.
+        in_dtype: DType - datatype of the input values.
+        out_dtype: DType - datatype of the output NDArray.
 
     Args:
-        start: SIMD[Indtype, 1] - The starting value of the NDArray.
-        stop: SIMD[Indtype, 1] - The ending value of the NDArray.
+        start: SIMD[in_dtype, 1] - The starting value of the NDArray.
+        stop: SIMD[in_dtype, 1] - The ending value of the NDArray.
         num: Int - The number of elements in the NDArray.
         endpoint: Bool - Whether to include the `stop` value in the NDArray. Defaults to True.
 
     Constraints:
-        `Outdtype` must be a float type
+        `out_dtype` must be a float type
 
     Returns:
     - A NDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.
     """
 
-    if is_inttype[Indtype]() and is_inttype[Outdtype]():
+    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
 
-    var a: Scalar[Outdtype] = start.cast[Outdtype]()
+    var a: Scalar[out_dtype] = start.cast[out_dtype]()
 
     if endpoint:
-        var result: NDArray[Outdtype] = NDArray[Outdtype](NDArrayShape(num))
-        var r: Scalar[Outdtype] = (stop / start) ** (1 / (num - 1))
+        var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
+        var r: Scalar[out_dtype] = (stop / start) ** (1 / (num - 1))
         for i in range(num):
             result[i] = a * r**i
         return result
 
     else:
-        var result: NDArray[Outdtype] = NDArray[Outdtype](NDArrayShape(num))
-        var r: Scalar[Outdtype] = (stop / start) ** (1 / (num - 1))
+        var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
+        var r: Scalar[out_dtype] = (stop / start) ** (1 / (num - 1))
         for i in range(num):
             result[i] = a * r**i
         return result
@@ -469,10 +472,10 @@ fn identity[dtype: DType](n: Int) raises -> NDArray[dtype]:
     Returns:
     - A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](n,n)
+    var result: NDArray[dtype] = NDArray[dtype](n, n)
     var one = Scalar[dtype](1)
     for i in range(n):
-       result.store[1](i,i,val=one)
+        result.store[1](i, i, val=one)
     return result
 
 
@@ -492,7 +495,7 @@ fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:
     var tens_shape: VariadicList[Int] = shape
     var res = NDArray[dtype](tens_shape)
     for i in range(res.num_elements()):
-        res.store(i,SIMD[dtype,1](1))
+        res.store(i, SIMD[dtype, 1](1))
     return res
 
 

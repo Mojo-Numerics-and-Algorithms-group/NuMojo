@@ -8,10 +8,32 @@
 from python import Python
 from .ndarray import NDArray
 
+# TODO: there's some problem with using narr[idx] in traverse function, Make sure to correct this before v0.1
 
-fn _get_index(indices: VariadicList[Int], weights: StaticIntTuple) -> Int:
+fn _get_index(indices: List[Int], weights: NDArrayShape) -> Int:
     var idx: Int = 0
-    for i in range(weights.__len__()):
+    for i in range(weights._len):
+        idx += indices[i] * weights[i]
+    return idx
+
+
+fn _get_index(indices: List[Int], weights: NDArrayStrides) -> Int:
+    var idx: Int = 0
+    for i in range(weights._len):
+        idx += indices[i] * weights[i]
+    return idx
+
+
+fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) -> Int:
+    var idx: Int = 0
+    for i in range(weights._len):
+        idx += indices[i] * weights[i]
+    return idx
+
+
+fn _get_index(indices: VariadicList[Int], weights: NDArrayStrides) -> Int:
+    var idx: Int = 0
+    for i in range(weights._len):
         idx += indices[i] * weights[i]
     return idx
 
@@ -30,61 +52,30 @@ fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
     return idx
 
 
-fn _get_index[
-    MAX: Int
-](indices: List[Int], weights: StaticIntTuple[MAX]) -> Int:
-    var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn indexing[
-    MAX: Int
-](indices: StaticIntTuple[MAX], weights: StaticIntTuple[MAX]) -> Int:
-    var idx: Int = 0
-    for i in range(ALLOWED):
-        idx += indices[i] * weights[i]
-    return idx
-
-
 fn _traverse_iterative[
     dtype: DType
 ](
     orig: NDArray[dtype],
     inout narr: NDArray[dtype],
-    shape_length: Int,
-    nshape: StaticIntTuple[ALLOWED],
-    coefficients: StaticIntTuple[ALLOWED],
-    strides: StaticIntTuple[ALLOWED],
+    ndim: List[Int],
+    coefficients: List[Int],
+    strides: List[Int],
     offset: Int,
-    inout index: StaticIntTuple[ALLOWED],
+    inout index: List[Int],
     depth: Int,
 ) raises:
-    if depth == shape_length:
-        var idx = offset + indexing[ALLOWED](
-            indices=index, weights=coefficients
-        )
-        var nidx = indexing[ALLOWED](indices=index, weights=strides)
-        # var temp = orig.data.load[width=1](idx)
-        narr[nidx] = orig[
-            idx
-        ]  # TODO: replace with load_unsafe later for reduced checks overhead
+    if depth == ndim.__len__():
+        var idx = offset + _get_index(index, coefficients)
+        var nidx = _get_index(index, strides)
+        var temp = orig.data.load[width=1](idx)  # TODO: replace with load_unsafe later for reduced checks overhead
+        narr.__setitem__(nidx, temp)
         return
 
-    for i in range(nshape[depth]):
+    for i in range(ndim[depth]):
         index[depth] = i
         var newdepth = depth + 1
         _traverse_iterative(
-            orig,
-            narr,
-            shape_length,
-            nshape,
-            coefficients,
-            strides,
-            offset,
-            index,
-            newdepth,
+            orig, narr, ndim, coefficients, strides, offset, index, newdepth
         )
 
 

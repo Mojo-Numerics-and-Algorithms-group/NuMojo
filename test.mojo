@@ -61,6 +61,9 @@ def main():
     # print("dtype: ", arr6.dtype) 
 
 
+    # var x = numojo.linspace[numojo.f32](0.0, 60.0, 60)
+    # var x = numojo.ones[numojo.f32](3, 2)
+    # var x = numojo.logspace[numojo.f32](-3, 0, 60)
     var x = numojo.arange[numojo.f32](0.0, 60.0, step=1)
     print(x)
     x.reshape(4,5,3)

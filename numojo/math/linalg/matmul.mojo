@@ -43,9 +43,7 @@ fn matmul_tiled_unrolled_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     alias nelts = simdwidthof[dtype]() * 4
-    var C: NDArray[dtype] = NDArray[dtype](
-        A.ndshape[0], B.ndshape[1]
-    )
+    var C: NDArray[dtype] = NDArray[dtype](A.ndshape[0], B.ndshape[1])
     # print(C.info.shape[0], "x", C.info.shape[1])
 
     @parameter
@@ -82,9 +80,7 @@ fn matmul[
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     alias nelts = simdwidthof[dtype]()
 
-    var C: NDArray[dtype] = NDArray[dtype](
-        A.ndshape[0], B.ndshape[1]
-    )
+    var C: NDArray[dtype] = NDArray[dtype](A.ndshape[0], B.ndshape[1])
 
     # print(C.info.shape[0], "x", C.info.shape[1])
     @parameter

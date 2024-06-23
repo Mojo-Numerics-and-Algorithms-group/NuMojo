@@ -10,6 +10,7 @@ from .ndarray import NDArray
 
 # TODO: there's some problem with using narr[idx] in traverse function, Make sure to correct this before v0.1
 
+
 fn _get_index(indices: List[Int], weights: NDArrayShape) -> Int:
     var idx: Int = 0
     for i in range(weights._len):
@@ -67,7 +68,9 @@ fn _traverse_iterative[
     if depth == ndim.__len__():
         var idx = offset + _get_index(index, coefficients)
         var nidx = _get_index(index, strides)
-        var temp = orig.data.load[width=1](idx)  # TODO: replace with load_unsafe later for reduced checks overhead
+        var temp = orig.data.load[width=1](
+            idx
+        )  # TODO: replace with load_unsafe later for reduced checks overhead
         narr.__setitem__(nidx, temp)
         return
 

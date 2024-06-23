@@ -44,14 +44,14 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __init__(inout self, *shape: Int):
         """
         Initializes the NDArrayShape with variable shape dimensions.
-        
+
         Args:
             shape: Variable number of integers representing the shape dimensions.
         """
         self._size = 1
         self._len = len(shape)
         self._shape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self._shape, len(shape)) 
+        memset_zero(self._shape, len(shape))
         for i in range(len(shape)):
             self._shape[i] = shape[i]
             self._size *= shape[i]
@@ -60,7 +60,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __init__(inout self, *shape: Int, size: Int):
         """
         Initializes the NDArrayShape with variable shape dimensions and a specified size.
-        
+
         Args:
             shape: Variable number of integers representing the shape dimensions.
             size: The total number of elements in the array.
@@ -76,7 +76,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __init__(inout self, shape: List[Int]):
         """
         Initializes the NDArrayShape with a list of shape dimensions.
-        
+
         Args:
             shape: A list of integers representing the shape dimensions.
         """
@@ -92,7 +92,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __init__(inout self, shape: VariadicList[Int]):
         """
         Initializes the NDArrayShape with a list of shape dimensions.
-        
+
         Args:
             shape: A list of integers representing the shape dimensions.
         """
@@ -108,12 +108,14 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __init__(inout self, shape: List[Int], size: Int):
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
-        
+
         Args:
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self._size = size # maybe I should add a check here to make sure it matches
+        self._size = (
+            size  # maybe I should add a check here to make sure it matches
+        )
         self._len = len(shape)
         self._shape = DTypePointer[dtype].alloc(len(shape))
         memset_zero(self._shape, len(shape))
@@ -124,12 +126,14 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __init__(inout self, shape: VariadicList[Int], size: Int):
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
-        
+
         Args:
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self._size = size # maybe I should add a check here to make sure it matches
+        self._size = (
+            size  # maybe I should add a check here to make sure it matches
+        )
         self._len = len(shape)
         self._shape = DTypePointer[dtype].alloc(len(shape))
         memset_zero(self._shape, len(shape))
@@ -140,7 +144,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __init__(inout self, shape: NDArrayShape):
         """
         Initializes the NDArrayShape with another NDArrayShape.
-        
+
         Args:
             shape: Another NDArrayShape to initialize from.
         """
@@ -150,6 +154,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         memset_zero(self._shape, shape._len)
         for i in range(shape._len):
             self._shape[i] = shape[i]
+
     fn __copy__(inout self, other: Self):
         self._size = other._size
         self._len = other._len
@@ -267,16 +272,18 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable):
             self._stride[i] = temp
 
     @always_inline("nodebug")
-    fn __init__(inout self, stride: List[Int], ndim: Int, offset: Int = 0): 
+    fn __init__(inout self, stride: List[Int], ndim: Int, offset: Int = 0):
         self._offset = offset
         self._len = ndim
         self._stride = DTypePointer[dtype].alloc(self._len)
         memset_zero(self._stride, self._len)
         for i in range(self._len):
             self._stride[i] = stride[i]
-    
+
     @always_inline("nodebug")
-    fn __init__(inout self, stride: VariadicList[Int], ndim: Int, offset: Int = 0): 
+    fn __init__(
+        inout self, stride: VariadicList[Int], ndim: Int, offset: Int = 0
+    ):
         self._offset = offset
         self._len = ndim
         self._stride = DTypePointer[dtype].alloc(self._len)
@@ -425,9 +432,13 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             Returns an zero array with shape 3 x 2 x 4.
         """
         self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)  # for some reason lsp shows error for using self.shape name, so keep it as ndshape for now
+        self.ndshape = NDArrayShape(
+            shape
+        )  # for some reason lsp shows error for using self.shape name, so keep it as ndshape for now
         self.stride = NDArrayStrides(shape, offset=0)
-        self.coefficients = NDArrayStrides(shape, offset=0)  # I gotta make it empty, but let's just keep it like for tnow
+        self.coefficients = NDArrayStrides(
+            shape, offset=0
+        )  # I gotta make it empty, but let's just keep it like for tnow
         self.datatype = dtype
         self.order = 0
         self.data = DTypePointer[dtype].alloc(self.ndshape._size)
@@ -550,9 +561,13 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         coefficients: List[Int],
     ):
         self.ndim = ndim
-        self.ndshape = NDArrayShape(shape)  # for some reason lsp shows error for using self.shape name, so keep it as ndshape for now
+        self.ndshape = NDArrayShape(
+            shape
+        )  # for some reason lsp shows error for using self.shape name, so keep it as ndshape for now
         self.stride = NDArrayStrides(strides, offset=0, ndim=ndim)
-        self.coefficients = NDArrayStrides(coefficients, offset=offset, ndim=ndim)  # I gotta make it empty, but let's just keep it like for tnow
+        self.coefficients = NDArrayStrides(
+            coefficients, offset=offset, ndim=ndim
+        )  # I gotta make it empty, but let's just keep it like for tnow
         self.datatype = dtype
         self.order = 0
         self.data = DTypePointer[dtype].alloc(size)
@@ -771,7 +786,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         )
 
         return narr
-    
+
     fn __getitem__(self, owned slices: List[Slice]) raises -> Self:
         """
         Example:
@@ -834,7 +849,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         return narr
 
-    fn __getitem__(self, owned *slices: Variant[Slice,Int]) raises -> Self:
+    fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
         """
         Example:
             `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
@@ -848,13 +863,13 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 slice_list.append(slices[i]._get_ptr[Slice]()[0])
             elif slices[i].isa[Int]():
                 var int: Int = slices[i]._get_ptr[Int]()[0]
-                slice_list.append(Slice(int,int+1))
+                slice_list.append(Slice(int, int + 1))
                 # print(int,"=",Slice(int,int+1))
         if n_slices < self.ndim:
-            for i in range(n_slices,self.ndim):
+            for i in range(n_slices, self.ndim):
                 print(i)
                 var size_at_dim: Int = self.ndshape[i]
-                slice_list.append(Slice(0,size_at_dim-1))
+                slice_list.append(Slice(0, size_at_dim - 1))
         var narr: Self = self[slice_list]
         return narr
 

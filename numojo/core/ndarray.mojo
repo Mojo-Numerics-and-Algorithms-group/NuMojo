@@ -248,16 +248,25 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable):
             self._stride[i] = temp
 
     @always_inline("nodebug")
-    fn __init__(inout self, shape: List[Int], offset: Int = 0):
+    fn __init__(inout self, shape: List[Int], offset: Int = 0, order: String = "C"):
         self._offset = offset
         self._len = shape.__len__()
         self._stride = DTypePointer[dtype].alloc(self._len)
         memset_zero(self._stride, self._len)
-        for i in range(self._len):
-            var temp: Int = 1
-            for j in range(i + 1, self._len):  # temp
-                temp *= shape[j]
-            self._stride[i] = temp
+        if order == "F":
+            self._stride[0] = 1
+            for i in range(0, self._len-1):
+                self._stride[i+1] = self._stride[i] * shape[i]
+        else:
+            if order != "C":
+                print('Order indentifier not correct. Set to "C" (row-major).')
+            for i in range(self._len):
+                var temp: Int = 1
+                for j in range(
+                    i + 1, self._len
+                ):  # make sure i don't need to add min() here
+                    temp = temp * shape[j]
+                self._stride[i] = temp
 
     @always_inline("nodebug")
     fn __init__(inout self, shape: VariadicList[Int], offset: Int = 0):
@@ -293,7 +302,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, owned shape: NDArrayShape, ndim: Int, offset: Int = 0
+        inout self, owned shape: NDArrayShape, ndim: Int, offset: Int = 0, order: String ="C",
     ):
         self._offset = offset
         self._len = ndim
@@ -304,13 +313,20 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable):
         ):  # TODO: make sure this is present in all __init__() to account for 1D arrays.
             self._stride[0] = 1
         else:
-            for i in range(ndim):
-                var temp: Int = 1
-                for j in range(
-                    i + 1, ndim
-                ):  # make sure i don't need to add min() here
-                    temp = temp * shape[j]
-                self._stride[i] = temp
+            if order == "F":
+                self._stride[0] = 1
+                for i in range(0, ndim-1):
+                    self._stride[i+1] = self._stride[i] * shape[i]
+            else:
+                if order != "C":
+                    print('Order indentifier not correct. Set to "C" (row-major).')
+                for i in range(ndim):
+                    var temp: Int = 1
+                    for j in range(
+                        i + 1, ndim
+                    ):  # make sure i don't need to add min() here
+                        temp = temp * shape[j]
+                    self._stride[i] = temp
 
     fn __init__(inout self, owned stride: NDArrayStrides):
         self._offset = stride._offset
@@ -415,7 +431,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     var stride: NDArrayStrides  # contains offset, strides
     var coefficients: NDArrayStrides  # contains offset, coefficients
     var datatype: DType  # The datatype of memory
-    var order: Int  # Defines 0 for row major, 1 for column major
+    var order: String  # Defines "C" for row major, "F" for column major
 
     alias simd_width: Int = simdwidthof[dtype]()  # Vector size of the data type
 
@@ -440,7 +456,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             shape, offset=0
         )  # I gotta make it empty, but let's just keep it like for tnow
         self.datatype = dtype
-        self.order = 0
+        self.order = "C"
         self.data = DTypePointer[dtype].alloc(self.ndshape._size)
         memset_zero(self.data, self.ndshape._size)
 
@@ -470,7 +486,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.data = DTypePointer[dtype].alloc(self.ndshape._size)
         memset_zero(self.data, self.ndshape._size)
         self.datatype = dtype
-        self.order = 0
+        self.order = "C"
 
         if random:
             rand[dtype](self.data, self.ndshape._size)
@@ -480,7 +496,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 self.data[i] = val.cast[dtype]()
 
     @always_inline("nodebug")
-    fn __init__(inout self, shape: List[Int], random: Bool = False):
+    fn __init__(inout self, shape: List[Int], random: Bool = False, order: String = "C"):
         """
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
@@ -490,14 +506,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.ndshape = NDArrayShape(
             shape
         )  # for some reason lsp shows error for using self.shape name, so keep it as ndshape for now
-        self.stride = NDArrayStrides(shape, offset=0)
+        self.stride = NDArrayStrides(shape, offset=0, order=order)
         self.coefficients = NDArrayStrides(
-            shape, offset=0
+            shape, offset=0, order=order
         )  # I gotta make it empty, but let's just keep it like for tnow
         self.data = DTypePointer[dtype].alloc(self.ndshape._size)
         memset_zero(self.data, self.ndshape._size)
         self.datatype = dtype
-        self.order = 0
+        self.order = order
 
         if random:
             rand[dtype](self.data, self.ndshape._size)
@@ -522,12 +538,12 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.data = DTypePointer[dtype].alloc(self.ndshape._size)
         memset_zero(self.data, self.ndshape._size)
         self.datatype = dtype
-        self.order = 0
+        self.order = "C"
 
         if random:
             rand[dtype](self.data, self.ndshape._size)
 
-    fn __init__(inout self, data: List[SIMD[dtype, 1]], shape: List[Int]):
+    fn __init__(inout self, data: List[SIMD[dtype, 1]], shape: List[Int], order: String = "C"):
         """
         Example:
             `NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))`
@@ -538,14 +554,14 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.ndshape = NDArrayShape(
             shape
         )  # for some reason lsp shows error for using self.shape name, so keep it as ndshape for now
-        self.stride = NDArrayStrides(shape, offset=0)
+        self.stride = NDArrayStrides(shape, offset=0, order="C")
         self.coefficients = NDArrayStrides(
-            shape, offset=0
+            shape, offset=0, order="C"
         )  # I gotta make it empty, but let's just keep it like for tnow
         self.data = DTypePointer[dtype].alloc(self.ndshape._size)
         memset_zero(self.data, self.ndshape._size)
         self.datatype = dtype
-        self.order = 0
+        self.order = order
 
         for i in range(self.ndshape._size):
             self.data[i] = data[i]
@@ -569,7 +585,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             coefficients, offset=offset, ndim=ndim
         )  # I gotta make it empty, but let's just keep it like for tnow
         self.datatype = dtype
-        self.order = 0
+        self.order = "C"
         self.data = DTypePointer[dtype].alloc(size)
         memset_zero(self.data, size)
 
@@ -592,7 +608,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             coefficients, offset=offset, ndim=ndim
         )  # I gotta make it empty, but let's just keep it like for tnow
         self.datatype = dtype
-        self.order = 0
+        self.order = "C"
         self.data = data + self.stride._offset
 
     @always_inline("nodebug")

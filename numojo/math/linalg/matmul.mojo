@@ -108,7 +108,7 @@ fn matmul_parallelized[
     alias nelts = simdwidthof[dtype]()
 
     var C: NDArray[dtype] = NDArray[dtype](A.ndshape[0], B.ndshape[1])
-    print(C.ndshape[0], "x", C.ndshape[1])
+    # print(C.ndshape[0], "x", C.ndshape[1])
 
     @parameter
     fn calculate_A_rows(m: Int):

@@ -932,64 +932,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                slice_list.append(Slice(0, self.ndshape[i] - 1))
+                slice_list.append(Slice(0, self.ndshape[i]))
 
         var narr: Self = self[slice_list]
         return narr
-
-        # var ndims: Int = 0
-        # var spec: List[Int] = List[Int]()
-        # for i in range(slices.__len__()):
-        #     self._adjust_slice_(slices[i], self.ndshape[i])
-        #     spec.append(slices[i].unsafe_indices())
-        #     if slices[i].unsafe_indices() != 1:
-        #         ndims += 1
-
-        # var nshape: List[Int] = List[Int]()
-        # var ncoefficients: List[Int] = List[Int]()
-        # var nstrides: List[Int] = List[Int]()
-        # var nnum_elements: Int = 1
-
-        # var j: Int = 0
-        # for i in range(ndims):
-        #     while spec[j] == 1:
-        #         j += 1
-        #     if j >= self.ndim:
-        #         break
-        #     nshape.append(slices[j].unsafe_indices())
-        #     nnum_elements *= slices[j].unsafe_indices()
-        #     ncoefficients.append(self.stride[j] * slices[j].step)
-        #     j += 1
-        #     # combined the two for loops, this calculates the strides for new array
-
-        # for k in range(ndims):
-        #     var temp: Int = 1
-        #     for j in range(k + 1, ndims):  # temp
-        #         temp *= nshape[j]
-        #     nstrides.append(temp)
-
-        # # row major
-        # var noffset: Int = 0
-        # for i in range(slices.__len__()):
-        #     var temp: Int = 1
-        #     for j in range(i + 1, slices.__len__()):
-        #         temp *= self.ndshape[j]
-        #     noffset += slices[i].start * temp
-
-        # var narr = Self(
-        #     ndims, noffset, nnum_elements, nshape, nstrides, ncoefficients, order=self.order
-        # )
-
-        # # Starting index to traverse the new array
-        # var index = List[Int]()
-        # for _ in range(ndims):
-        #     index.append(0)
-
-        # _traverse_iterative[dtype](
-        #     self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
-        # )
-
-        # return narr
 
     fn __getitem__(self, owned slices: List[Slice]) raises -> Self:
         """
@@ -1027,6 +973,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         var noffset: Int = 0
         if self.order == "C":
+            noffset = 0
             if ndims == 1:
                 nstrides.append(1)
             for i in range(ndims):
@@ -1034,22 +981,18 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
                 for j in range(i + 1, ndims):  # temp
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)  
-
             for i in range(slices.__len__()):
-                var temp_offset: Int = 1
-                for k in range(i + 1, ndims):
-                    temp_offset *= self.ndshape[k]
-                noffset += slices[i].start * temp_offset
-        else:
+                noffset += slices[i].start * self.stride[i]
+            print("noffset", noffset)
+
+        elif self.order == "F":
+            noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
-
             for i in range(slices.__len__()):
-                var temp_offset: Int = 1
-                for j in range(0, slices.__len__()-1):
-                    temp_offset *= self.ndshape[j]
-                noffset += slices[i].start * temp_offset
+                noffset += slices[i].start * self.stride[i]
+            print("noffset", noffset)
 
         
         var narr = Self(

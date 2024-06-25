@@ -99,7 +99,7 @@ fn cumprod[
         The cumulative product of the array as a SIMD Value of `dtype`.
     """
 
-    var result: SIMD[out_dtype, 1] = SIMD[out_dtype, 1](1)
+    var result: SIMD[out_dtype, 1] = SIMD[out_dtype, 1](1.0)
     alias opt_nelts = simdwidthof[in_dtype]()
 
     @parameter
@@ -391,7 +391,7 @@ fn cumpstdev[
     return math.sqrt(cumpvariance[in_dtype, out_dtype](array, mu))
 
 
-fn stdev[
+fn cumstdev[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](
     array: NDArray[in_dtype], mu: Optional[Scalar[in_dtype]] = None

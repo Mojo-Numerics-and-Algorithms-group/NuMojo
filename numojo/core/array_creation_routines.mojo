@@ -499,7 +499,9 @@ fn ones[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     return res
 
 
-fn full[dtype: DType](*shape: Int, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+fn full[
+    dtype: DType
+](*shape: Int, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Generate a NDArray of `fill_value` with given shape.
 

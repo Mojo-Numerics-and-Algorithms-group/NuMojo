@@ -7,6 +7,7 @@
 # from numojo.core.NDArray import NDArray
 from ...core.ndarray import NDArray
 
+
 fn sum(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
     """
     Sum of array elements over a given axis.

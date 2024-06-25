@@ -88,7 +88,7 @@ fn _math_func_one_array_one_SIMD_in_one_array_out[
     func: fn[type: DType, simd_w: Int] (
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) -> SIMD[type, simd_w],
-](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises-> NDArray[dtype]:
+](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[dtype]:
     """
     Apply a SIMD function of two variable and one return to a NDArray
 

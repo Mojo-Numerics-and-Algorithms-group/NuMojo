@@ -10,6 +10,7 @@ from .ndarray import NDArray, NDArrayShape, NDArrayStride
 
 # TODO: there's some problem with using narr[idx] in traverse function, Make sure to correct this before v0.1
 
+
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     var idx: Int = 0
     for i in range(weights._len):

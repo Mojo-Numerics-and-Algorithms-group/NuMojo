@@ -143,5 +143,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    ](self: Self, tensor1: NDArray[dtype], intval: Int) raises -> NDArray[
+        dtype
+    ]:
         ...

@@ -4,7 +4,8 @@
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 """
-from numojo import NDArray
+# from numojo.core.NDArray import NDArray
+from ...core.ndarray import NDArray
 
 
 fn sum(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
@@ -34,11 +35,11 @@ fn sum(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
         else:
             slices.append(Slice(0, 0))
     print(result_shape.__str__())
-    var result: numojo.NDArray[array.dtype] = NDArray[array.dtype](
+    var result: NDArray[array.dtype] = NDArray[array.dtype](
         NDArrayShape(result_shape)
     )
 
-    result += 0
+    # result += 0
 
     for i in range(axis_size):
         slices[axis] = Slice(i, i + 1)
@@ -74,10 +75,10 @@ fn prod(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
         else:
             slices.append(Slice(0, 0))
 
-    var result: numojo.NDArray[array.dtype] = NDArray[array.dtype](
+    var result: NDArray[array.dtype] = NDArray[array.dtype](
         NDArrayShape(result_shape)
     )
-    result += 1
+    # result += 1
 
     for i in range(axis_size):
         slices[axis] = Slice(i, i + 1)

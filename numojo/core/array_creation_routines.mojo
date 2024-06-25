@@ -383,14 +383,18 @@ fn geomspace[
 
     if endpoint:
         var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
-        var r: Scalar[out_dtype] = (stop / start) ** (1 / (num - 1))
+        var r: Scalar[out_dtype] = (
+            stop.cast[out_dtype]() / start.cast[out_dtype]()
+        ) ** (1 / (num - 1)).cast[out_dtype]()
         for i in range(num):
             result[i] = a * r**i
         return result
 
     else:
         var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
-        var r: Scalar[out_dtype] = (stop / start) ** (1 / (num - 1))
+        var r: Scalar[out_dtype] = (
+            stop.cast[out_dtype]() / start.cast[out_dtype]()
+        ) ** (1 / (num)).cast[out_dtype]()
         for i in range(num):
             result[i] = a * r**i
         return result
@@ -401,7 +405,8 @@ fn geomspace[
 # ===------------------------------------------------------------------------===#
 
 
-fn empty[dtype: DType](*shape: Int) -> NDArray[dtype]:
+# empty basically has to be either random or zero, can't return a purely empty matrix I think.
+fn empty[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a NDArray of given shape with arbitrary values.
 
@@ -414,11 +419,10 @@ fn empty[dtype: DType](*shape: Int) -> NDArray[dtype]:
     Returns:
     - A NDArray of `dtype` with given `shape`.
     """
-    var tens_shape: NDArrayShape = NDArrayShape(shape)
-    return NDArray[dtype](shape=tens_shape, random=True)
+    return NDArray[dtype](shape, fill=0)
 
 
-fn zeros[dtype: DType](*shape: Int) -> NDArray[dtype]:
+fn zeros[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a NDArray of zeros with given shape.
 
@@ -431,8 +435,7 @@ fn zeros[dtype: DType](*shape: Int) -> NDArray[dtype]:
     Returns:
     - A NDArray of `dtype` with given `shape`.
     """
-    var tens_shape: VariadicList[Int] = shape
-    return NDArray[dtype](tens_shape)
+    return NDArray[dtype](shape, random=False)
 
 
 fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
@@ -449,13 +452,10 @@ fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
     Returns:
     - A NDArray of `dtype` with size N x M and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](N, M)
+    var result: NDArray[dtype] = NDArray[dtype](N, M, random=False)
     var one = Scalar[dtype](1)
-    for idx in range(M * N):
-        if (idx + 1 - M) // N == 0:
-            result[idx] = one
-        else:
-            continue
+    for i in range(min(N, M)):
+        result.store[1](i, i, val=one)
     return result
 
 
@@ -472,14 +472,14 @@ fn identity[dtype: DType](n: Int) raises -> NDArray[dtype]:
     Returns:
     - A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](n, n)
+    var result: NDArray[dtype] = NDArray[dtype](n, n, random=False)
     var one = Scalar[dtype](1)
     for i in range(n):
         result.store[1](i, i, val=one)
     return result
 
 
-fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:
+fn ones[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a NDArray of ones with given shape filled with ones.
 
@@ -499,7 +499,9 @@ fn ones[dtype: DType](*shape: Int) -> NDArray[dtype]:
     return res
 
 
-fn full[dtype: DType](fill_value: Scalar[dtype], *shape: Int) -> NDArray[dtype]:
+fn full[
+    dtype: DType
+](*shape: Int, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Generate a NDArray of `fill_value` with given shape.
 
@@ -507,20 +509,18 @@ fn full[dtype: DType](fill_value: Scalar[dtype], *shape: Int) -> NDArray[dtype]:
         dtype: DType - datatype of the NDArray.
 
     Args:
-        fill_value: Scalar[dtype] - value to be splatted over the NDArray.
         shape: VariadicList[Int] - Shape of the NDArray.
+        fill_value: Scalar[dtype] - value to be splatted over the NDArray.
 
     Returns:
     - A NDArray of `dtype` with given `shape`.
     """
-    # var tens_shape: VariadicList[Int] = shape
-    var tens_shape: NDArrayShape = NDArrayShape(shape)
-    return NDArray[dtype](shape=tens_shape, value=fill_value)
+    return NDArray[dtype](shape, fill=fill_value)
 
 
 fn full[
     dtype: DType
-](fill_value: Scalar[dtype], shape: VariadicList[Int]) -> NDArray[dtype]:
+](shape: VariadicList[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Generate a NDArray of `fill_value` with given shape.
 
@@ -528,15 +528,14 @@ fn full[
         dtype: DType - datatype of the NDArray.
 
     Args:
-        fill_value: Scalar[dtype] - value to be splatted over the NDArray.
         shape: VariadicList[Int] - Shape of the NDArray.
+        fill_value: Scalar[dtype] - value to be splatted over the NDArray.
 
     Returns:
     - A NDArray of `dtype` with given `shape`.
     """
-    var tens_shape: NDArrayShape = NDArrayShape(shape)
     var tens_value: SIMD[dtype, 1] = SIMD[dtype, 1](fill_value).cast[dtype]()
-    return NDArray[dtype](shape=tens_shape, value=tens_value)
+    return NDArray[dtype](shape, fill=tens_value)
 
 
 fn diagflat():

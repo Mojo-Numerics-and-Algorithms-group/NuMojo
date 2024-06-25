@@ -283,7 +283,7 @@ fn remainder[
 # ===------------------------------------------------------------------------===#
 fn cbrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise cuberoot of NDArray.
 
@@ -329,7 +329,7 @@ fn cbrt[
 
 fn rsqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise reciprocal squareroot of NDArray.
 
@@ -350,7 +350,7 @@ fn rsqrt[
 
 fn sqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise squareroot of NDArray.
 
@@ -371,7 +371,7 @@ fn sqrt[
 
 fn exp2[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Calculate elementwise two to the power of NDArray[i].
 
@@ -393,7 +393,7 @@ fn exp2[
 
 fn exp[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Calculate elementwise euler's constant(e) to the power of NDArray[i].
 
@@ -415,7 +415,7 @@ fn exp[
 
 fn expm1[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Calculate elementwise euler's constant(e) to the power of NDArray[i] minus1.
 
@@ -466,7 +466,7 @@ fn scalb[
 
 fn log[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise natural logarithm of NDArray.
 
@@ -490,7 +490,7 @@ alias ln = log
 
 fn log2[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise logarithm base two of NDArray.
 
@@ -511,7 +511,7 @@ fn log2[
 
 fn log10[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise logarithm base ten of NDArray.
 
@@ -532,7 +532,7 @@ fn log10[
 
 fn log1p[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise natural logarithm of 1 plus NDArray.
 
@@ -558,7 +558,7 @@ fn log1p[
 
 fn tabs[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise absolute value of NDArray.
 
@@ -579,7 +579,7 @@ fn tabs[
 
 fn tfloor[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise round down to nearest whole number of NDArray.
 
@@ -600,7 +600,7 @@ fn tfloor[
 
 fn tceil[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise round up to nearest whole number of NDArray.
 
@@ -621,7 +621,7 @@ fn tceil[
 
 fn ttrunc[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise remove decimal value from float whole number of NDArray.
 
@@ -642,7 +642,7 @@ fn ttrunc[
 
 fn tround[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Elementwise round NDArray to whole number.
 
@@ -663,7 +663,7 @@ fn tround[
 
 fn roundeven[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Performs elementwise banker's rounding on the elements of a NDArray.
 

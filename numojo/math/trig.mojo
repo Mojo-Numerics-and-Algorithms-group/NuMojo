@@ -19,7 +19,7 @@ from ..core.ndarray import NDArray
 
 fn acos[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply acos also known as inverse cosine .
 
@@ -40,7 +40,7 @@ fn acos[
 
 fn asin[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply asin also known as inverse sine .
 
@@ -61,7 +61,7 @@ fn asin[
 
 fn atan[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply atan also known as inverse tangent .
 
@@ -113,7 +113,7 @@ fn atan2[
 
 fn cos[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply cos also known as cosine.
 
@@ -134,7 +134,7 @@ fn cos[
 
 fn sin[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply sin also known as sine .
 
@@ -155,7 +155,7 @@ fn sin[
 
 fn tan[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply tan also known as tangent .
 
@@ -237,7 +237,7 @@ fn hypot_fma[
 
 fn acosh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply acosh also known as inverse hyperbolic cosine .
 
@@ -258,7 +258,7 @@ fn acosh[
 
 fn asinh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply asinh also known as inverse hyperbolic sine .
 
@@ -279,7 +279,7 @@ fn asinh[
 
 fn atanh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply atanh also known as inverse hyperbolic tangent .
 
@@ -305,7 +305,7 @@ fn atanh[
 
 fn cosh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply cosh also known as hyperbolic cosine .
 
@@ -326,7 +326,7 @@ fn cosh[
 
 fn sinh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply sin also known as hyperbolic sine .
 
@@ -347,7 +347,7 @@ fn sinh[
 
 fn tanh[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply tan also known as hyperbolic tangent .
 

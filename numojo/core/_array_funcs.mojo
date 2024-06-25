@@ -1,5 +1,6 @@
 # from ..traits.NDArrayTraits import NDArrayBackend
 from algorithm.functional import parallelize, vectorize, num_physical_cores
+from .ndarray import NDArray
 
 """
 Implementing backend for array keeping it simple for now
@@ -11,7 +12,7 @@ fn _math_func_1_array_in_one_array_out[
     func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
         type, simd_w
     ],
-](array: NDArray[dtype]) -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply a SIMD function of one variable and one return to a NDArray
 
@@ -87,7 +88,7 @@ fn _math_func_one_array_one_SIMD_in_one_array_out[
     func: fn[type: DType, simd_w: Int] (
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) -> SIMD[type, simd_w],
-](array: NDArray[dtype], scalar: SIMD[dtype, 1]) -> NDArray[dtype]:
+](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[dtype]:
     """
     Apply a SIMD function of two variable and one return to a NDArray
 

@@ -5,3 +5,9 @@ from .comparison import *
 import .linalg
 import .statistics
 import .calculus
+from ._math_funcs import (
+    Vectorized,
+    VectorizedParallelized,
+    VectorizedUnroll,
+    VectorizedVerbose,
+)

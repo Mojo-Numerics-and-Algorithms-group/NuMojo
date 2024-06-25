@@ -6,47 +6,47 @@
 """
 
 from python import Python
-from .ndarray import NDArray
+from .ndarray import NDArray, NDArrayShape, NDArrayStride
 
 # TODO: there's some problem with using narr[idx] in traverse function, Make sure to correct this before v0.1
 
 
-fn _get_index(indices: List[Int], weights: NDArrayShape) -> Int:
+fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     var idx: Int = 0
     for i in range(weights._len):
         idx += indices[i] * weights[i]
     return idx
 
 
-fn _get_index(indices: List[Int], weights: NDArrayStrides) -> Int:
+fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) raises -> Int:
     var idx: Int = 0
     for i in range(weights._len):
         idx += indices[i] * weights[i]
     return idx
 
 
-fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) -> Int:
+fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
     var idx: Int = 0
     for i in range(weights._len):
         idx += indices[i] * weights[i]
     return idx
 
 
-fn _get_index(indices: VariadicList[Int], weights: NDArrayStrides) -> Int:
+fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
     var idx: Int = 0
     for i in range(weights._len):
         idx += indices[i] * weights[i]
     return idx
 
 
-fn _get_index(*indices: Int, weights: List[Int]) -> Int:
+fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
     var idx: Int = 0
     for i in range(weights.__len__()):
         idx += indices[i] * weights[i]
     return idx
 
 
-fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
+fn _get_index(indices: VariadicList[Int], weights: VariadicList[Int]) -> Int:
     var idx: Int = 0
     for i in range(weights.__len__()):
         idx += indices[i] * weights[i]

@@ -29,7 +29,7 @@ from ..core.ndarray import NDArray
 
 fn isinf[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[DType.bool]:
+](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is infinite.
 
@@ -48,7 +48,7 @@ fn isinf[
 
 fn isfinite[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[DType.bool]:
+](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is finite.
 
@@ -67,7 +67,7 @@ fn isfinite[
 
 fn isnan[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) -> NDArray[DType.bool]:
+](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is NaN.
 

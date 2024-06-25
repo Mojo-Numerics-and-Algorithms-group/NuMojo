@@ -9,7 +9,7 @@ import random
 from .ndarray import NDArray
 
 
-fn rand[dtype: DType](*shape: Int) -> NDArray[dtype]:
+fn rand[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     """
     Example:
         numojo.core.random.rand[numojo.i8](3,2,4)

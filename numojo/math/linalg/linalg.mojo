@@ -35,7 +35,7 @@ fn cross[
         The cross product of two tensors.
     """
 
-    if array1.shape() == array2.shape() == 3:
+    if array1.ndshape._len == array2.ndshape._len == 3:
         var array3: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(3))
         array3[0] = (array1[1] * array2[2] - array1[2] * array2[1]).cast[
             out_dtype

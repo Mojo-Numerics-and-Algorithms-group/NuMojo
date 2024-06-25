@@ -76,7 +76,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) -> NDArray[dtype]:
+    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray
 
@@ -135,7 +135,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) -> NDArray[DType.bool]:
+    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ...
 
     fn _math_func_simd_int[
@@ -143,5 +143,5 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, tensor1: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+    ](self: Self, tensor1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         ...

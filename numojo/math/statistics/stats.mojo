@@ -8,7 +8,7 @@
 from ...core.ndarray import NDArray
 
 
-fn sum(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
+fn sum(array: NDArray, axis: Int=-1) raises -> NDArray[array.dtype]:
     """
     Sum of array elements over a given axis.
     Args:
@@ -48,6 +48,19 @@ fn sum(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
 
     return result
 
+fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
+    """
+    Sum of all items in the array.
+    Args:
+        array: NDArray.
+    Returns:
+        Scalar.
+    """
+
+    var result = Scalar[array.dtype](0)
+    for i in range(array.ndshape._size):
+            result[0] += array.data[i]
+    return result
 
 fn prod(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
     """

@@ -78,9 +78,11 @@ fn prod(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
     var result: NDArray[array.dtype] = NDArray[array.dtype](
         NDArrayShape(result_shape)
     )
-    # result += 1
 
-    for i in range(axis_size):
+    slices[axis] = Slice(0, 1)
+    result = array[slices]
+
+    for i in range(1, axis_size):
         slices[axis] = Slice(i, i + 1)
         var arr_slice = array[slices]
         result = result * arr_slice

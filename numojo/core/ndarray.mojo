@@ -19,6 +19,8 @@
 
 from random import rand
 from builtin.math import pow
+from builtin.bool import all as allb
+from builtin.bool import any as anyb
 from algorithm import parallelize, vectorize
 
 import . _array_funcs as _af
@@ -33,6 +35,7 @@ from ..math.statistics.cumulative_reduce import (
 from ..math.check import any, all
 from ..math.arithmetic import abs
 from .ndarray_utils import _get_index, _traverse_iterative, to_numpy
+from .utility_funcs import is_inttype
 
 
 @register_passable("trivial")
@@ -797,9 +800,9 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         self.order = existing.order
         self.data = existing.data
 
-    # @always_inline("nodebug")
-    # fn __del__(owned self):
-    #     self.data.free()
+    @always_inline("nodebug")
+    fn __del__(owned self):
+        self.data.free()
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
@@ -1007,6 +1010,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         var index = List[Int]()
         for _ in range(ndims):
             index.append(0)
+
         _traverse_iterative[dtype](
             self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
         )
@@ -1411,25 +1415,67 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
     # # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
     # # tobyets, tofile, view
+    # TODO: Implement axis parameter for all
 
-    fn all(self):
+    fn all(self) raises -> Bool:
+        # make this a compile time check
+        if not (self.dtype == DType.bool or is_inttype(dtype)):
+            raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
+        alias nelts: Int = simdwidthof[dtype]()
+        var result: Bool = True
+        @parameter
+        fn vectorized_all[simd_width: Int](idx: Int) -> None:
+            result = result and allb(self.data.load[width=simd_width](idx) ) 
+        vectorize[vectorized_all, nelts](self.ndshape._size)
+        return result 
+
+    fn any(self) raises -> Bool:
+        # make this a compile time check
+        if not (self.dtype == DType.bool or is_inttype(dtype)):
+            raise Error("Array elements must be Boolean or Integer.")
+        alias nelts: Int = simdwidthof[dtype]()
+        var result: Bool = False 
+        @parameter
+        fn vectorized_any[simd_width: Int](idx: Int) -> None:
+            result = result or anyb(self.data.load[width=simd_width](idx) ) 
+        vectorize[vectorized_any, nelts](self.ndshape._size)
+        return result
+
+    fn argmax(self) -> Int:
+        var result: Int = 0
+        var max_val: SIMD[dtype, 1] = self.load[width=1](0)
+        for i in range(1, self.ndshape._size):
+            var temp: SIMD[dtype, 1] = self.load[width=1](i) 
+            if  temp > max_val:
+                max_val = temp 
+                result = i
+        return result
+
+    fn argmin(self) -> Int:
+        var result: Int = 0
+        var min_val: SIMD[dtype, 1] = self.load[width=1](0)
+        for i in range(1, self.ndshape._size):
+            var temp: SIMD[dtype, 1] = self.load[width=1](i) 
+            if  temp < min_val:
+                min_val = temp 
+                result = i
+        return result
+
+    fn argsort(self):
         pass
 
-    # fn any(self):
-    #     pass
+    fn astype[type: DType](inout self) raises -> NDArray[type]:
+        # I wonder if we can do this operation inplace instead of allocating memory.
+        alias nelts = simdwidthof[dtype]()
+        var narr: NDArray[type] = NDArray[type](self.ndshape, random=False, order=self.order)
+        narr.datatype = type
+        @parameter
+        fn vectorized_astype[width: Int](idx: Int) -> None:
+            narr.store[width](idx, self.load[width](idx).cast[type]())
 
-    # fn argmax(self):
-    #     pass
-
-    # fn argmin(self):
-    #     pass
-
-    # fn argsort(self):
-    #     pass
-
-    # fn astype(self):
-    #     pass
+        vectorize[vectorized_astype, nelts](self.ndshape._size)    
+        return narr
 
     # fn clip(self):
     #     pass
@@ -1471,10 +1517,15 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         vectorize[vectorized_fill, simd_width](self.ndshape._size)
         return self
 
-    fn flatten(inout self) raises -> Self:
-        var res: NDArray[dtype] = NDArray[dtype](self.ndshape._size)
-        alias simd_width: Int = simdwidthof[dtype]()
+    fn flatten(inout self, inplace: Bool = False) raises -> Self:
+        # inplace has some problems right now
+        # if inplace:
+        #     self.ndshape = NDArrayShape(self.ndshape._size, size=self.ndshape._size)
+        #     self.stride = NDArrayStride(shape = self.ndshape, offset=0)
+        #     return self
 
+        var res: NDArray[dtype] = NDArray[dtype](self.ndshape._size, random=False)
+        alias simd_width: Int = simdwidthof[dtype]()
         @parameter
         fn vectorized_flatten[simd_width: Int](index: Int) -> None:
             res.data.store[width=simd_width](
@@ -1490,7 +1541,8 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         else:
             return self.data.load[width=1](_get_index(indices, self.stride))
 
-    fn max(self, axis: Int = 0) raises -> Self:
+    #TODO: not finished yet
+    fn max(self, axis: Int = 0) raises -> Self: 
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
         for i in range(ndim):

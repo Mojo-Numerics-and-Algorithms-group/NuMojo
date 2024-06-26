@@ -70,8 +70,11 @@ fn _traverse_iterative[
         var nidx = _get_index(index, strides)
         var temp = orig.data.load[width=1](
             idx
-        )  # TODO: replace with load_unsafe later for reduced checks overhead
-        narr.__setitem__(nidx, temp)
+        )
+        if nidx >= narr.ndshape._size:
+            raise Error("Invalid index: index out of bound")
+        else:
+            narr.data.store[width=1](nidx, temp)
         return
 
     for i in range(ndim[depth]):

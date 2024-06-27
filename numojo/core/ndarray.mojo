@@ -477,16 +477,16 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
 
     @always_inline("nodebug")
     fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        if index >= self._len:
-            raise Error("Index out of bound")
+        # if index >= self._len:
+        #     raise Error("Index out of bound")
         return self._stride.load[width=width](index)
 
     @always_inline("nodebug")
     fn store[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[dtype, width]) raises:
-        if index >= self._len:
-            raise Error("Index out of bound")
+        # if index >= self._len:
+        #     raise Error("Index out of bound")
         self._stride.store[width=width](index, val)
 
     @always_inline("nodebug")
@@ -954,11 +954,16 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
 
         var ndims: Int = 0
         var spec: List[Int] = List[Int]()
+        var count: Int = 0
         for i in range(slices.__len__()):
             self._adjust_slice_(slices[i], self.ndshape[i])
             spec.append(slices[i].unsafe_indices())
             if slices[i].unsafe_indices() != 1:
                 ndims += 1
+            else:
+                count += 1
+        if count == slices.__len__():
+            ndims = 1
 
         var nshape: List[Int] = List[Int]()
         var ncoefficients: List[Int] = List[Int]()
@@ -966,8 +971,10 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         var nnum_elements: Int = 1
 
         var j: Int = 0
+        count = 0
         for _ in range(ndims):
             while spec[j] == 1:
+                count+=1
                 j += 1
             if j >= self.ndim:
                 break
@@ -975,6 +982,11 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             nnum_elements *= slices[j].unsafe_indices()
             ncoefficients.append(self.stride[j] * slices[j].step)
             j += 1
+
+        if count == slices.__len__():
+            nshape.append(1)
+            nnum_elements = 1
+            ncoefficients.append(1)
 
         var noffset: Int = 0
         if self.order == "C":
@@ -1541,7 +1553,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
         else:
             return self.data.load[width=1](_get_index(indices, self.stride))
 
-    #TODO: not finished yet
+    #TODO:  not finished yet
     fn max(self, axis: Int = 0) raises -> Self: 
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()

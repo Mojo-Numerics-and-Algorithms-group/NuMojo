@@ -100,6 +100,19 @@ fn prod(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
 
     return result
 
+fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
+    """
+    Product of all items in the array.
+    Args:
+        array: NDArray.
+    Returns:
+        Scalar.
+    """
+
+    var result = Scalar[array.dtype](1)
+    for i in range(array.ndshape._size):
+            result[0] *= array.data[i]
+    return result
 
 fn mean(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
     """

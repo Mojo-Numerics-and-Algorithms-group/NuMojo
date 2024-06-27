@@ -125,3 +125,15 @@ fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
     """
     return sum(array, axis) / Scalar[array.dtype](array.ndshape[axis])
+
+fn meanall(array: NDArray) raises -> Float64:
+    """
+    Mean of all items in the array.
+    Args:
+        array: NDArray.
+    Returns:
+        Float64.
+
+    """
+
+    return sumall(array).cast[DType.float64]() / Int32(array.ndshape._size).cast[DType.float64]()

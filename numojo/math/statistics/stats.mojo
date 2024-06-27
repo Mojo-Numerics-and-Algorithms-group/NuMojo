@@ -8,7 +8,7 @@
 from ...core.ndarray import NDArray
 
 
-fn sum(array: NDArray, axis: Int=-1) raises -> NDArray[array.dtype]:
+fn sum(array: NDArray, axis: Int=0) raises -> NDArray[array.dtype]:
     """
     Sum of array elements over a given axis.
     Args:
@@ -38,8 +38,6 @@ fn sum(array: NDArray, axis: Int=-1) raises -> NDArray[array.dtype]:
     var result: NDArray[array.dtype] = NDArray[array.dtype](
         NDArrayShape(result_shape)
     )
-
-    # result += 0
 
     for i in range(axis_size):
         slices[axis] = Slice(i, i + 1)

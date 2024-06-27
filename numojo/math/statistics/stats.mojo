@@ -8,7 +8,7 @@
 from ...core.ndarray import NDArray
 
 
-fn sum(array: NDArray, axis: Int=0) raises -> NDArray[array.dtype]:
+fn sum(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     """
     Sum of array elements over a given axis.
     Args:
@@ -60,7 +60,7 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
             result[0] += array.data[i]
     return result
 
-fn prod(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
+fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     """
     Product of array elements over a given axis.
     Args:
@@ -114,7 +114,7 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
             result[0] *= array.data[i]
     return result
 
-fn mean(array: NDArray, axis: Int) raises -> NDArray[array.dtype]:
+fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     """
     Mean of array elements over a given axis.
     Args:

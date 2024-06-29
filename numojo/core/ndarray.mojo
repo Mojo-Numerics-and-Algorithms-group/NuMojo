@@ -500,12 +500,61 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
         self._stride.store[width=width](index, val)
 
 
+@value
+struct _NDArrayIter[
+    dtype: DType,
+    forward: Bool = True,
+]:
+    """Iterator for NDArray.
+
+    Parameters:
+        dtype: The data type of the item.
+        forward: The iteration direction. `False` is backwards.
+
+    Notes:
+        Need to add lifetimes after the new release.
+    """
+
+    var index: Int
+    var ptr: DTypePointer[dtype]
+    var length: Int
+
+    fn __init__(
+        inout self, 
+        unsafe_pointer: DTypePointer[dtype], 
+        length: Int,
+    ):
+        self.index = 0 if forward else length
+        self.ptr = unsafe_pointer
+        self.length = length
+        
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __next__(inout self) -> SIMD[dtype, 1]:
+        @parameter
+        if forward:
+            var current_index = self.index
+            self.index += 1
+            return self.ptr.load[width=1](current_index)
+        else:
+            var current_index = self.index
+            self.index -= 1
+            return self.ptr.load[width=1](current_index)
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index
+
 # ===----------------------------------------------------------------------===#
 # NDArray
 # ===----------------------------------------------------------------------===#
 
 
-struct NDArray[dtype: DType = DType.float32](Stringable):
+struct NDArray[dtype: DType = DType.float32](Stringable, Sized):
     """The N-dimensional array (NDArray).
 
     The array can be uniquely defined by the following:
@@ -1207,8 +1256,36 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             print("Cannot convert array to string", e)
             return ""
 
-    fn __len__(inout self) -> Int:
+    fn __len__(self) -> Int:
         return self.ndshape._size
+
+    fn __iter__(self) -> _NDArrayIter[dtype]:
+        """Iterate over elements of the NDArray, returning copied value.
+
+        Returns:
+            An iterator of NDArray elements.
+
+        Notes:
+            Need to add lifetimes after the new release.
+        """
+
+        return _NDArrayIter[dtype](
+            unsafe_pointer=self.data,
+            length=len(self),
+        )
+
+    fn __reversed__(self) -> _NDArrayIter[dtype, forward=False]:
+        """Iterate backwards over elements of the NDArray, returning 
+        copied value.
+
+        Returns:
+            A reversed iterator of NDArray elements.
+        """
+
+        return _NDArrayIter[dtype, forward=False](
+            unsafe_pointer=self.data,
+            length=len(self),
+        )
 
     fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
         if dimension == self.ndim - 1:

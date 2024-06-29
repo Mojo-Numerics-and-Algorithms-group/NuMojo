@@ -505,7 +505,7 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
 # ===----------------------------------------------------------------------===#
 
 
-struct NDArray[dtype: DType = DType.float32](Stringable):
+struct NDArray[dtype: DType = DType.float32](Stringable, Sized):
     """The N-dimensional array (NDArray).
 
     The array can be uniquely defined by the following:
@@ -1207,7 +1207,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable):
             print("Cannot convert array to string", e)
             return ""
 
-    fn __len__(inout self) -> Int:
+    fn __len__(self) -> Int:
         return self.ndshape._size
 
     fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:

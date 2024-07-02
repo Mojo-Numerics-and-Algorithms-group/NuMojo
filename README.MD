@@ -48,7 +48,9 @@
 </details>
 
 ## About the project
+
 ### What NuMojo is
+
 NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy and Scikit.
 
 NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on tensor inputs.
@@ -64,29 +66,34 @@ NuMojo is not a machine learning library, it will never include back-propagation
 
 For a detailed roadmap, please refer to the [Roadmap.md](Roadmap.md) file.
 
-Our main goal is to implement a fast, comprehensive numerics library in Mojo. Following are some brief long term goals,
+Our main goal is to implement a fast, comprehensive numerics library in Mojo. Following are some brief long-term goals,
 
 ### Long term goals
+
 * Linear Algebra
-    * Native array types
-    * Vectorized, Parallelized math operations
-    * Array manipulation - vstack, slicing, concat etc. 
+  * Native n-dimensional array types
+  * Vectorized, Parallelized math operations
+  * Array manipulation - vstack, slicing, concat etc.
 * Calculus
-    * Integration & Derivatives etc
+  * Integration & Derivatives etc
 * Optimizers
 * Function approximators
+* Sorting
 
 ## Usage
 
-For now
+An example goes as follows.
 
 ```mojo
-import numojo
-from tensor import Tensor
-def main():
-    var tens = Tensor[DType.float32](10,10)
-    tens=tens+numojo.pi/2
-    print(numojo.sin[DType.float32](tens))
+import numojo as nm
+
+fn main() raises:
+    # Generate two 1000x1000 matrices with random float64 values
+    var A = nm.NDArray[nm.f64](shape=List[Int](1000,1000), random=True)
+    var B = nm.NDArray[nm.f64](shape=List[Int](1000,1000), random=True)
+
+    # Print AB
+    print(nm.linalg.matmul_parallelized(A, B))
 ```
 
 Please find all the available functions [here](features.md)
@@ -96,6 +103,7 @@ Please find all the available functions [here](features.md)
 Clone the repository and build
 
 ## Contributing
+
 Any contributions you make are **greatly appreciated**. For more details and guidelines on contributions, please check [here](CONTRIBUTING.md)
 
 ## Warnings

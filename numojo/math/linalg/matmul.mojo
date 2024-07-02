@@ -42,7 +42,7 @@ fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int):
 fn matmul_tiled_unrolled_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
-    alias nelts = simdwidthof[dtype]()
+    alias nelts = max(simdwidthof[dtype](), 16)
     var C: NDArray[dtype] = NDArray[dtype](
         A.ndshape.load_int(0), B.ndshape.load_int(1)
     )
@@ -79,7 +79,7 @@ fn matmul_tiled_unrolled_parallelized[
 fn matmul_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
-    alias nelts = simdwidthof[dtype]()
+    alias nelts = max(simdwidthof[dtype](), 16)
     var C: NDArray[dtype] = NDArray[dtype](
         A.ndshape.load_int(0), B.ndshape.load_int(1)
     )

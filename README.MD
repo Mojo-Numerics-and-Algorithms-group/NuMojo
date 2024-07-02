@@ -3,17 +3,17 @@
 <!-- [![MIT License][license-shield]][] -->
 
 <div align="center">
-  <!-- If we add a logo in future -->
-  <!-- <a href="">
-    <img src="" alt="Logo" width="80" height="80">
-  </a> -->
+  <a href="">
+    <img src="./assets/numojo_logo.png" alt="Logo" width="350" height="350">
+  </a>
 
-  <h1 align="center" font-size>NuMojo</h1>
+  <h1 align="center" style="font-size: 3em; color: white; font-family: 'Avenir'; text-shadow: 1px 1px orange;">NuMojo</h1>
+
   <p align="center">
     NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python.
     <br />
     <!-- when we create docs -->
-    <!-- <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a> -->
+    <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>Explore the docs» </strong></a>
     <br />
     <!-- <br /> -->
     <!-- <a href="">View Demo</a>
@@ -90,7 +90,7 @@ import numojo as nm
 fn main() raises:
     # Generate two 1000x1000 matrices with random float64 values
     var A = nm.NDArray[nm.f64](shape=List[Int](1000,1000), random=True)
-    var B = nm.NDArray[nm.f64](shape=List[Int](1000,1000), random=True)
+    var B = nm.NDArray[nm.f64](1000,1000, random=True)
 
     # Print AB
     print(nm.linalg.matmul_parallelized(A, B))

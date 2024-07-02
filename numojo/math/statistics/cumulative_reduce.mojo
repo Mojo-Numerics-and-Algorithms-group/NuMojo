@@ -9,6 +9,7 @@ import math
 from algorithm import vectorize
 from ...core.ndarray import NDArray, NDArrayShape
 from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.sort import binary_sort
 
 """
 TODO: 
@@ -17,45 +18,10 @@ TODO:
 3) Relax constrained[] to let user get whatever output they want, but make a warning instead.
 """
 
-# ===------------------------------------------------------------------------===#
-# Sort
-# ===------------------------------------------------------------------------===#
-
-
-fn binary_sort[
-    in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
-    """
-    Binary sorting of NDArray.
-
-    Parameters:
-        in_dtype: The input element type.
-        out_dtype: The output element type.
-
-    Args:
-        array: A NDArray.
-
-    Returns:
-        The sorted NDArray of type `out_dtype`.
-    """
-    var result: NDArray[out_dtype] = NDArray[out_dtype](array.shape())
-    for i in range(array.ndshape._size):
-        result[i] = array[i].cast[out_dtype]()
-
-    var n = array.num_elements()
-    for end in range(n, 1, -1):
-        for i in range(1, end):
-            if result[i - 1] > result[i]:
-                var temp: Scalar[out_dtype] = result[i - 1]
-                result[i - 1] = result[i]
-                result[i] = temp
-    return result
-
 
 # ===------------------------------------------------------------------------===#
 # Reduce Cumulative Operations
 # ===------------------------------------------------------------------------===#
-
 
 fn cumsum[
     in_dtype: DType, out_dtype: DType = DType.float64

@@ -459,7 +459,7 @@ fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
     return result
 
 
-fn identity[dtype: DType](n: Int) raises -> NDArray[dtype]:
+fn identity[dtype: DType](N: Int) raises -> NDArray[dtype]:
     """
     Generate an identity matrix of size N x N.
 
@@ -467,14 +467,14 @@ fn identity[dtype: DType](n: Int) raises -> NDArray[dtype]:
         dtype: DType - datatype of the NDArray.
 
     Args:
-        n: Int - Size of the matrix.
+        N: Int - Size of the matrix.
 
     Returns:
     - A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](n, n, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](N, N, random=False)
     var one = Scalar[dtype](1)
-    for i in range(n):
+    for i in range(N):
         result.store[1](i, i, val=one)
     return result
 

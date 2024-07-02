@@ -554,7 +554,7 @@ struct _NDArrayIter[
 # ===----------------------------------------------------------------------===#
 
 
-struct NDArray[dtype: DType = DType.float32](Stringable, Sized):
+struct NDArray[dtype: DType = DType.float32](Stringable, CollectionElement, Sized):
     """The N-dimensional array (NDArray).
 
     The array can be uniquely defined by the following:

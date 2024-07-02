@@ -505,7 +505,7 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
 # ===----------------------------------------------------------------------===#
 
 
-struct NDArray[dtype: DType = DType.float32](Stringable):
+struct NDArray[dtype: DType = DType.float32](Stringable, CollectionElement):
     """The N-dimensional array (NDArray).
 
     The array can be uniquely defined by the following:

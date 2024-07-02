@@ -2,9 +2,9 @@ from .arithmetic import *
 from .check import *
 from .trig import *
 from .comparison import *
-import .linalg
-import .statistics
-import .calculus
+from .linalg import *
+from .statistics import *
+from .calculus import *
 from ._math_funcs import (
     Vectorized,
     VectorizedParallelized,

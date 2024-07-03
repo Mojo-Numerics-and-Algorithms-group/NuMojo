@@ -1009,6 +1009,8 @@ struct NDArray[dtype: DType = DType.float32](
         var count: Int = 0
         for i in range(slices.__len__()):
             self._adjust_slice_(slices[i], self.ndshape[i])
+            if slices[i].start >= self.ndshape[i] or slices[i].end > self.ndshape[i]:
+                raise Error("Error: Slice value exceeds the array shape")
             spec.append(slices[i].unsafe_indices())
             if slices[i].unsafe_indices() != 1:
                 ndims += 1

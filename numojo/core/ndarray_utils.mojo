@@ -68,9 +68,7 @@ fn _traverse_iterative[
     if depth == ndim.__len__():
         var idx = offset + _get_index(index, coefficients)
         var nidx = _get_index(index, strides)
-        var temp = orig.data.load[width=1](
-            idx
-        )
+        var temp = orig.data.load[width=1](idx)
         if nidx >= narr.ndshape._size:
             raise Error("Invalid index: index out of bound")
         else:

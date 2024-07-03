@@ -13,6 +13,7 @@ from ..core.ndarray import NDArray, NDArrayShape
 
 # TODO Add string method to give name
 
+
 struct Vectorized(Backend):
     """
     Vectorized Backend Struct.
@@ -61,6 +62,7 @@ struct Vectorized(Backend):
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape())
         alias opt_nelts = simdwidthof[dtype]()
+
         # var op_count:Int =0
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -1277,7 +1279,10 @@ struct VectorizedParallelized(Backend):
         vectorize[closure, opt_nelts](array.num_elements())
         return result_array
 
-struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backend):
+
+struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
+    Backend
+):
     """
     Vectorized and Parrallelized Backend Struct with manual setting of number of workers.
 
@@ -1328,6 +1333,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
         var comps_per_core: Int = array1.num_elements() // num_cores
         var comps_remainder: Int = array1.num_elements() % num_cores
         var remainder_offset: Int = num_cores * comps_per_core
+
         # var op_count:Int=0
         @parameter
         fn par_closure(j: Int):
@@ -1350,7 +1356,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
 
             vectorize[closure, opt_nelts](comps_per_core)
 
-        parallelize[par_closure](num_cores,num_cores)
+        parallelize[par_closure](num_cores, num_cores)
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
@@ -1362,6 +1368,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
                 SIMD.fma(simd_data1, simd_data2, simd_data3),
             )
             # op_count+=1
+
         # print(op_count)
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
@@ -1397,7 +1404,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape())
         alias opt_nelts = 1
-        #var num_cores: Int = num_physical_cores()
+        # var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array1.num_elements() // num_cores
         var comps_remainder: Int = array1.num_elements() % num_cores
         var remainder_offset: Int = num_cores * comps_per_core
@@ -1420,7 +1427,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
 
             vectorize[closure, opt_nelts](comps_per_core)
 
-        parallelize[par_closure](num_cores,num_cores)
+        parallelize[par_closure](num_cores, num_cores)
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
@@ -1454,7 +1461,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
         alias opt_nelts = simdwidthof[dtype]()
-        #var num_cores: Int = num_physical_cores()
+        # var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array.num_elements() // num_cores
         var comps_remainder: Int = array.num_elements() % num_cores
         var remainder_offset: Int = num_cores * comps_per_core
@@ -1472,7 +1479,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
 
             vectorize[closure, opt_nelts](comps_per_core)
 
-        parallelize[par_closure](num_cores,num_cores)
+        parallelize[par_closure](num_cores, num_cores)
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
@@ -1516,7 +1523,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape())
         alias opt_nelts = simdwidthof[dtype]()
-        #var num_cores: Int = num_physical_cores()
+        # var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array1.num_elements() // num_cores
         var comps_remainder: Int = array1.num_elements() % num_cores
         var remainder_offset: Int = num_cores * comps_per_core
@@ -1538,7 +1545,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
 
             vectorize[closure, opt_nelts](comps_per_core)
 
-        parallelize[par_closure](num_cores,num_cores)
+        parallelize[par_closure](num_cores, num_cores)
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
@@ -1568,7 +1575,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
             array1.shape()
         )
         alias opt_nelts = simdwidthof[dtype]()
-        #var num_cores: Int = num_physical_cores()
+        # var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array1.num_elements() // num_cores
         var comps_remainder: Int = array1.num_elements() % num_cores
         var remainder_offset: Int = num_cores * comps_per_core
@@ -1590,7 +1597,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
 
             vectorize[closure, opt_nelts](comps_per_core)
 
-        parallelize[par_closure](num_cores,num_cores)
+        parallelize[par_closure](num_cores, num_cores)
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
@@ -1614,7 +1621,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
             array.shape()
         )
         alias opt_nelts = simdwidthof[dtype]()
-        #var num_cores: Int = num_physical_cores()
+        # var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array.num_elements() // num_cores
         var comps_remainder: Int = array.num_elements() % num_cores
         var remainder_offset: Int = num_cores * comps_per_core
@@ -1632,7 +1639,7 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
 
             vectorize[closure, opt_nelts](comps_per_core)
 
-        parallelize[par_closure](num_cores,num_cores)
+        parallelize[par_closure](num_cores, num_cores)
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
@@ -1663,8 +1670,6 @@ struct VectorizedParallelizedNWorkers[num_cores:Int=num_physical_cores()](Backen
 
         vectorize[closure, opt_nelts](array.num_elements())
         return result_array
-
-
 
 
 struct Naive(Backend):

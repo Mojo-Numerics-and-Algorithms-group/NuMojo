@@ -1,4 +1,3 @@
-from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
 from testing import assert_raises
@@ -84,7 +83,7 @@ fn main() raises:
     print(sliced3)
     print()
 
-    var sliced4 = arr[0:1, 0:2, 0:1]
-    print("1x2x1 ARRAY - arr[0:1, 0:1, 0:1]")
+    var sliced4 = arr[1:2, 0:3, 1:2]
+    print("1x2x1 ARRAY - arr[1:2, 0:3, 1:2]")
     print(sliced4)
     print()

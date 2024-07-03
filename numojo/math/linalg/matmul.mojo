@@ -11,24 +11,6 @@ from ...core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
-# fn matmul[
-#     dtype: DType
-# ](array1: NDArray[dtype], array2: NDArray[dtype]) -> NDArray[dtype]:
-
-#     var result = NDArray[dtype](array1.shape(), 0.0)
-#     alias opt_nelts = simdwidthof[dtype]()
-
-#     @parameter
-#     fn calc_row(m: Int):
-#         for k in range(self.info.shape[1]):
-#             @parameter
-#             fn dot[nelts : Int](n : Int):
-#                 result.store[nelts](m, n, val=result.load[nelts](m,n)
-#                     + self.load[nelts](m,k) * other.load[nelts](k,n))
-#             vectorize[dot, opt_nelts](other.info.shape[1])
-#     parallelize[calc_row](self.info.shape[0], self.info.shape[0])
-#     return result
-
 
 # Perform 2D tiling on the iteration space defined by end_x and end_y.
 fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int):
@@ -79,11 +61,11 @@ fn matmul_tiled_unrolled_parallelized[
 fn matmul_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Reference: https://docs.modular.com/mojo/notebooks/Matmul.
+    """Conduct `matmul` using `vectorize` and `parallelize`.
 
-    Compared to `matmul_parallelized`, this function increase the size of
-    the SIMD vector from the default width to 16. The purpose is to
+    Reference: https://docs.modular.com/mojo/notebooks/Matmul
+    Compared to the reference, this function increases the size of 
+    the SIMD vector from the default width to 16. The purpose is to 
     increase the performance via SIMD.
     The function reduces the execution time by ~50 percent compared to
     matmul_parallelized and matmul_tiled_unrolled_parallelized for large

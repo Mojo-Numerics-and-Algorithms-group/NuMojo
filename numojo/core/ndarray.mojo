@@ -36,6 +36,7 @@ from ..math.check import any, all
 from ..math.arithmetic import abs
 from .ndarray_utils import _get_index, _traverse_iterative, to_numpy
 from .utility_funcs import is_inttype
+from ..math.linalg.matmul import matmul_parallelized
 
 
 @register_passable("trivial")
@@ -1165,6 +1166,11 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __mul__(self, other: Self) raises -> Self:
         return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__mul__](
+            self, other
+        )
+
+    fn __matmul__(self, other: Self) raises -> Self:
+        return matmul_parallelized(
             self, other
         )
 

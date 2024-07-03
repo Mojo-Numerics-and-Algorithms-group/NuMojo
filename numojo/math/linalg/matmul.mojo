@@ -80,7 +80,7 @@ fn matmul_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Reference: https://docs.modular.com/mojo/notebooks/Matmul
+    Reference: https://docs.modular.com/mojo/notebooks/Matmul.
 
     Compared to `matmul_parallelized`, this function increase the size of 
     the SIMD vector from the default width to 16. The purpose is to 

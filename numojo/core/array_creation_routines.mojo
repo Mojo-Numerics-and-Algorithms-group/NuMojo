@@ -44,10 +44,11 @@ fn arange[
     Returns:
         NDArray[dtype] - NDArray of datatype T with elements ranging from "start" to "stop" incremented with "step".
     """
-    if is_inttype[in_dtype]() and is_inttype[out_dtype]():
+    if is_floattype[in_dtype]() and is_inttype[out_dtype]():
         raise Error(
-            "Input and output cannot be `Int` datatype as it may lead to"
-            " precision errors"
+            """
+            If in_dtype is a float then out_dtype must also be a float
+            """
         )
 
     var num: Int = ((stop - start) / step).__int__()

@@ -23,6 +23,7 @@ TODO:
 # Reduce Cumulative Operations
 # ===------------------------------------------------------------------------===#
 
+
 fn cumsum[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:

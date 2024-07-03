@@ -10,5 +10,5 @@ from ._math_funcs import (
     VectorizedParallelized,
     VectorizedUnroll,
     VectorizedVerbose,
-    VectorizedParallelizedNWorkers
+    VectorizedParallelizedNWorkers,
 )

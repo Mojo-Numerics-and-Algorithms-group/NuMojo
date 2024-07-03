@@ -64,8 +64,8 @@ fn matmul_parallelized[
     """Conduct `matmul` using `vectorize` and `parallelize`.
 
     Reference: https://docs.modular.com/mojo/notebooks/Matmul
-    Compared to the reference, this function increases the size of 
-    the SIMD vector from the default width to 16. The purpose is to 
+    Compared to the reference, this function increases the size of
+    the SIMD vector from the default width to 16. The purpose is to
     increase the performance via SIMD.
     The function reduces the execution time by ~50 percent compared to
     matmul_parallelized and matmul_tiled_unrolled_parallelized for large
@@ -111,114 +111,3 @@ fn matmul_naive[
                 C.store(m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n))
 
     return C
-
-
-@always_inline
-fn calculate_block[
-    M: Int, N: Int, K: Int, BLOCK_M: Int, BLOCK_N: Int, nelts: Int, dtype: DType
-](
-    res: NDArray[dtype],
-    t1: NDArray[dtype],
-    t2: NDArray[dtype],
-    bm: Int,
-    bn: Int,
-) raises:
-    # Compute tile
-    var acc = stack_allocation[BLOCK_M * BLOCK_N, dtype]()
-    memset_zero[dtype](acc, BLOCK_M * BLOCK_N)
-
-    for k in range(K):
-        # @unroll
-        for m in range(BLOCK_M):
-
-            @parameter
-            fn inner_n[nelts: Int](n: Int):
-                try:
-                    acc.store[width=nelts](
-                        m * BLOCK_N + n,
-                        SIMD[dtype, nelts]
-                        .splat(t1[(bm + m) * K + k])
-                        .fma(
-                            t2.load[width=nelts](k * N + (bn + n)),
-                            acc.load[width=nelts](m * BLOCK_N + n),
-                        ),
-                    )
-                except e:
-                    print("Error", e)
-
-            vectorize[inner_n, nelts](BLOCK_N)
-
-    # Store tile
-    for m in range(BLOCK_M):
-
-        @parameter
-        fn vec_store[nelts: Int](n: Int):
-            var temp = acc.load[width=nelts](m * BLOCK_N + n)
-            res.data.store[width=nelts]((bm + m) * N + (bn + n), val=temp)
-
-        vectorize[vec_store, nelts](BLOCK_N)
-
-
-@always_inline
-fn dot[
-    t10: Int, t11: Int, t21: Int, dtype: DType
-](res: NDArray[dtype], t1: NDArray[dtype], t2: NDArray[dtype]) raises:
-    alias M = t10  # t1[0]
-    alias K = t11  # t1[1], t2[0]
-    alias N = t21
-
-    # simdwidthof[dtype]() = 8 for float32
-    alias nelts = simdwidthof[dtype]()
-    alias BLOCK_N = 8 * 2
-    alias BLOCK_M = 6
-    alias THREADS = 6  # num_logical_cores()
-
-    alias BLOCK_N_REMAINDER = N % BLOCK_N
-    alias BLOCK_M_REMAINDER = M % BLOCK_M
-
-    @parameter
-    fn bm_par(m_outer: Int):
-        var bm = m_outer * BLOCK_M
-
-        for n_outer in range(0, N // BLOCK_N):
-            var bn = n_outer * BLOCK_N
-            try:
-                calculate_block[M, N, K, BLOCK_M, BLOCK_N, nelts](
-                    res, t1, t2, bm, bn
-                )
-            except e:
-                print("Error", e)
-
-        # Handle the remainder of N
-        @parameter
-        if BLOCK_N_REMAINDER > 0:
-            var bn = N - BLOCK_N_REMAINDER
-            try:
-                calculate_block[M, N, K, BLOCK_M, BLOCK_N_REMAINDER, nelts](
-                    res, t1, t2, bm, bn
-                )
-            except e:
-                print("Error", e)
-
-    parallelize[bm_par](M // BLOCK_M, M // BLOCK_M)
-
-    # Handle the remainder of M
-    @parameter
-    if BLOCK_M_REMAINDER > 0:
-        var bm = M - BLOCK_M_REMAINDER
-
-        for n_outer in range(0, N // BLOCK_N):
-            var bn = n_outer * BLOCK_N
-
-            calculate_block[M, N, K, BLOCK_M_REMAINDER, BLOCK_N, nelts](
-                res, t1, t2, bm, bn
-            )
-
-        # Handle corner remainder
-        @parameter
-        if BLOCK_N_REMAINDER > 0:
-            var bn = N - BLOCK_N_REMAINDER
-
-            calculate_block[
-                M, N, K, BLOCK_M_REMAINDER, BLOCK_N_REMAINDER, nelts
-            ](res, t1, t2, bm, bn)

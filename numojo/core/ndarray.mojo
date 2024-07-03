@@ -929,7 +929,7 @@ struct NDArray[dtype: DType = DType.float32](
         for i in range(index.__len__()):
             if index[i] >= self.ndshape[i]:
                 raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
+        var idx: Int = _get_index(index, self.stride)
         return self.data.load[width=1](idx)
 
     fn __getitem__(self, index: List[Int]) raises -> SIMD[dtype, 1]:

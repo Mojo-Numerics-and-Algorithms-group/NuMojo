@@ -64,8 +64,8 @@ fn matmul_parallelized[
     """Conduct `matmul` using `vectorize` and `parallelize`.
 
     Reference: https://docs.modular.com/mojo/notebooks/Matmul
-    Compared to the reference, this function increases the size of 
-    the SIMD vector from the default width to 16. The purpose is to 
+    Compared to the reference, this function increases the size of
+    the SIMD vector from the default width to 16. The purpose is to
     increase the performance via SIMD.
     The function reduces the execution time by ~50 percent compared to
     matmul_parallelized and matmul_tiled_unrolled_parallelized for large

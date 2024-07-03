@@ -1040,8 +1040,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable, CollectionElement, Size
         var noffset: Int = 0
         if self.order == "C":
             noffset = 0
-            if ndims == 1:
-                nstrides.append(1)
             for i in range(ndims):
                 var temp_stride: Int = 1
                 for j in range(i + 1, ndims):  # temp

@@ -99,7 +99,6 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
 
         # Implement a dictionary for this later
         var numpyarray: PythonObject
-
         var np_dtype = np.float64
         if dtype == DType.float16:
             np_dtype = np.float16
@@ -118,26 +117,6 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         var pointer = numpyarray.__array_interface__["data"][0]
         var pointer_d = DTypePointer[array.dtype](address=pointer)
         memcpy(pointer_d, array.data, array.num_elements())
-
-        # elif array.datatype == DType.float32:
-        #     numpyarray = np.empty(np_arr_dim, dtype=np.float32)
-        #     var pointer = int(numpyarray.__array_interface__["data"][0].to_float32())
-        # elif array.datatype == DType.float64:
-        #     numpyarray = np.empty(np_arr_dim, dtype=np.float64)
-        #     var pointer = int(numpyarray.__array_interface__["data"][0].to_float64())
-        # elif array.datatype == DType.int8:
-        #     numpyarray = np.empty(np_arr_dim, dtype=np.int8)
-        #     var pointer = int(numpyarray.__array_interface__["data"][0].to_int8())
-        # elif array.datatype == DType.int16:
-        #     numpyarray = np.empty(np_arr_dim, dtype=np.int16)
-        #     var pointer = int(numpyarray.__array_interface__["data"][0].to_int16())
-        # elif array.datatype == DType.int32:
-        #     numpyarray = np.empty(np_arr_dim, dtype=np.int32)
-        #     var pointer = int(numpyarray.__array_interface__["data"][0].to_int32())
-        # elif array.datatype == DType.int64:
-        #     numpyarray = np.empty(np_arr_dim, dtype=np.int64)
-        #     var pointer = int(numpyarray.__array_interface__["data"][0].to_int64())
-
         _ = array
 
         return numpyarray^

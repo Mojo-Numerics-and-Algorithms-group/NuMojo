@@ -82,6 +82,16 @@ fn _traverse_iterative[
             orig, narr, ndim, coefficients, strides, offset, index, newdepth
         )
 
+fn bool_to_numeric[dtype:DType](array: NDArray[DType.bool])raises->NDArray[dtype]:
+    # Can't use simd becuase of bit packing error
+    var res: NDArray[dtype] = NDArray[dtype](array.shape())
+    for i in range(array.size()):
+        var t = array[i]
+        if t:
+            res[i] = 1
+        else:
+            res[i] = 0
+    return res
 
 fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     try:

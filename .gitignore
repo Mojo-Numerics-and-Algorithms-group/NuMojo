@@ -1,0 +1,4 @@
+# Build directory
+/build
+/dist
+/local

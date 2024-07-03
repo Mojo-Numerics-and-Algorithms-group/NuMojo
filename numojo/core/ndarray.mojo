@@ -34,7 +34,7 @@ from ..math.statistics.cumulative_reduce import (
 )
 from ..math.check import any, all
 from ..math.arithmetic import abs
-from .ndarray_utils import _get_index, _traverse_iterative, to_numpy
+from .ndarray_utils import _get_index, _traverse_iterative, to_numpy, bool_to_numeric
 from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
 
@@ -1612,7 +1612,7 @@ struct NDArray[dtype: DType = DType.float32](Stringable, CollectionElement, Size
         vectorize[vectorized_fill, simd_width](self.ndshape._size)
         return self
 
-    fn flatten(inout self, inplace: Bool = False) raises -> Self:
+    fn flatten(inout self, inplace: Bool = False) raises -> Optional[Self]:
         # inplace has some problems right now
         # if inplace:
         #     self.ndshape = NDArrayShape(self.ndshape._size, size=self.ndshape._size)
@@ -1628,7 +1628,11 @@ struct NDArray[dtype: DType = DType.float32](Stringable, CollectionElement, Size
             )
 
         vectorize[vectorized_flatten, simd_width](self.ndshape._size)
-        return res
+        if inplace:
+            self = res
+            return None
+        else:
+            return res
 
     fn item(self, *indices: Int) raises -> SIMD[dtype, 1]:  # I should add
         if indices.__len__() == 1:
@@ -1636,7 +1640,6 @@ struct NDArray[dtype: DType = DType.float32](Stringable, CollectionElement, Size
         else:
             return self.data.load[width=1](_get_index(indices, self.stride))
 
-    #TODO:  not finished yet
     fn max(self, axis: Int = 0) raises -> Self: 
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
@@ -1655,16 +1658,49 @@ struct NDArray[dtype: DType = DType.float32](Stringable, CollectionElement, Size
                 slices.append(Slice(0, 0))
         print(result_shape.__str__())
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
-
-        for i in range(axis_size):
+        slices[axis] = Slice(0, 1)
+        result = self[slices]
+        for i in range(1,axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
-            result += maxT(arr_slice)
+            var mask1 = greater(arr_slice,result)
+            var mask2 = less(arr_slice,result)
+            # Wherever result is less than the new slice it is set to zero
+            # Wherever arr_slice is greater than the old result it is added to fill those zeros
+            result = add(result * bool_to_numeric[dtype](mask2),arr_slice * bool_to_numeric[dtype](mask1))
 
         return result
 
-    fn min(self, axis: Int = 0):
-        pass
+    fn min(self, axis: Int = 0)raises-> Self:
+        var ndim: Int = self.ndim
+        var shape: List[Int] = List[Int]()
+        for i in range(ndim):
+            shape.append(self.ndshape[i])
+        if axis > ndim - 1:
+            raise Error("axis cannot be greater than the rank of the array")
+        var result_shape: List[Int] = List[Int]()
+        var axis_size: Int = shape[axis]
+        var slices: List[Slice] = List[Slice]()
+        for i in range(ndim):
+            if i != axis:
+                result_shape.append(shape[i])
+                slices.append(Slice(0, shape[i]))
+            else:
+                slices.append(Slice(0, 0))
+        
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
+        slices[axis] = Slice(0, 1)
+        result = self[slices]
+        for i in range(1,axis_size):
+            slices[axis] = Slice(i, i + 1)
+            var arr_slice = self[slices]
+            var mask1 = less(arr_slice,result)
+            var mask2 = greater(arr_slice,result)
+            # Wherever result is greater than the new slice it is set to zero
+            # Wherever arr_slice is less than the old result it is added to fill those zeros
+            result = add(result * bool_to_numeric[dtype](mask2),arr_slice * bool_to_numeric[dtype](mask1))
+
+        return result
 
     fn mean(self: Self, axis: Int) raises -> Self:
         """

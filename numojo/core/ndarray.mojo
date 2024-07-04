@@ -516,9 +516,6 @@ struct _NDArrayIter[
         lifetime: The lifetime of the underlying NDArray data.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
-
-    Notes:
-        Need to add lifetimes after the new release.
     """
 
     var index: Int

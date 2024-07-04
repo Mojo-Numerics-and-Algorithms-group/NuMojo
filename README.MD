@@ -135,7 +135,7 @@ Any contributions you make are **greatly appreciated**. For more details and gui
 
 ## Warnings
 
-This library is still very much a work in progress and may change at any time. Also, the standard tensor has many rough edges.
+This library is still very much a work in progress and may change at any time.
 
 ## License
 

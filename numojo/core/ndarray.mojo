@@ -1259,7 +1259,6 @@ struct NDArray[dtype: DType = DType.float32](
                 + self.ndshape.__str__()
                 + "  DType: "
                 + self.dtype.__str__()
-                + "\n"
             )
         except e:
             print("Cannot convert array to string", e)

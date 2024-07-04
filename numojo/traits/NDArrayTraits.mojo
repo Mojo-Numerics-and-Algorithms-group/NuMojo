@@ -25,7 +25,7 @@ from ..core.ndarray import NDArray
 #         """
 #         ...
 
-#     fn _math_func_1_array_in_one_array_out[
+#     fn math_func_1_array_in_one_array_out[
 #         dtype: DType,
 #         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
 #             type, simd_w
@@ -46,7 +46,7 @@ from ..core.ndarray import NDArray
 #         """
 #         ...
 
-#     fn _math_func_2_array_in_one_array_out[
+#     fn math_func_2_array_in_one_array_out[
 #         dtype: DType,
 #         func: fn[type: DType, simd_w: Int] (
 #             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -74,7 +74,7 @@ from ..core.ndarray import NDArray
 
 #         ...
 
-#     fn _math_func_one_array_one_SIMD_in_one_array_out[
+#     fn math_func_one_array_one_SIMD_in_one_array_out[
 #         dtype: DType,
 #         func: fn[type: DType, simd_w: Int] (
 #             SIMD[type, simd_w], SIMD[type, simd_w]

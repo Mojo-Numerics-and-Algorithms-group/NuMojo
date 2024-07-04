@@ -1,9 +1,11 @@
 """
+Cumulative reduction statistics functions for NDArrays
+"""
 # ===----------------------------------------------------------------------=== #
 # Statistics Module - Implements cumulative reduce functions
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
 from algorithm import vectorize

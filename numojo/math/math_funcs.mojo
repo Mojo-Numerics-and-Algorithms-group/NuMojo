@@ -1,9 +1,11 @@
 """
+Implements backend functions for mathematics
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements generic reusable functions for math
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 from testing import assert_raises
 from algorithm.functional import parallelize, vectorize, num_physical_cores
@@ -27,7 +29,7 @@ struct Vectorized(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -78,7 +80,7 @@ struct Vectorized(Backend):
         # print(op_count)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -123,7 +125,7 @@ struct Vectorized(Backend):
         vectorize[closure, opt_nelts](array1.num_elements())
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -156,7 +158,7 @@ struct Vectorized(Backend):
 
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -201,7 +203,7 @@ struct Vectorized(Backend):
         vectorize[closure, opt_nelts](result_array.num_elements())
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -229,7 +231,7 @@ struct Vectorized(Backend):
         vectorize[closure, opt_nelts](array1.num_elements())
         return result_array
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -250,7 +252,7 @@ struct Vectorized(Backend):
         vectorize[closure, opt_nelts](array.num_elements())
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -284,7 +286,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -334,7 +336,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -380,7 +382,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -415,7 +417,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -461,7 +463,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -491,7 +493,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -514,7 +516,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -548,7 +550,7 @@ struct Parallelized(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -618,7 +620,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -681,7 +683,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -728,7 +730,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -791,7 +793,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -838,7 +840,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -874,7 +876,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -906,7 +908,7 @@ struct VectorizedParallelized(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -981,7 +983,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1048,7 +1050,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -1099,7 +1101,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1167,7 +1169,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1219,7 +1221,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -1259,7 +1261,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -1293,7 +1295,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1373,7 +1375,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1440,7 +1442,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -1491,7 +1493,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1559,7 +1561,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1611,7 +1613,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -1651,7 +1653,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -1682,7 +1684,7 @@ struct Naive(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1727,7 +1729,7 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1768,7 +1770,7 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -1794,7 +1796,7 @@ struct Naive(Backend):
             result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1834,7 +1836,7 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1858,7 +1860,7 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -1873,7 +1875,7 @@ struct Naive(Backend):
             result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -1898,7 +1900,7 @@ struct VectorizedVerbose(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1956,7 +1958,7 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -2010,7 +2012,7 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -2048,7 +2050,7 @@ struct VectorizedVerbose(Backend):
                 result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -2101,7 +2103,7 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -2138,7 +2140,7 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -2165,7 +2167,7 @@ struct VectorizedVerbose(Backend):
                 result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w

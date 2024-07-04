@@ -1,12 +1,14 @@
 """
+Implements comparison math currently not using backend due to bool bitpacking issue
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements comparison functions
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
-import . _math_funcs as _mf
+import . math_funcs as _mf
 from ..core.ndarray import NDArray
 
 
@@ -32,7 +34,7 @@ fn greater[
 
     An element of the result NDArray will be True if the corresponding element in x is greater than the corresponding element in y, and False otherwise.
     """
-    # return backend()._math_func_compare_2_tensors[dtype, SIMD.__gt__](
+    # return backend().math_func_compare_2_tensors[dtype, SIMD.__gt__](
     #     array1, array2
     # )
     if array1.shape() != array2.shape():
@@ -64,7 +66,7 @@ fn greater_equal[
 
     An element of the result NDArray will be True if the corresponding element in x is greater than or equal to the corresponding element in y, and False otherwise.
     """
-    # return backend()._math_func_compare_2_tensors[dtype, SIMD.__ge__](
+    # return backend().math_func_compare_2_tensors[dtype, SIMD.__ge__](
     #     array1, array2
     # )
     if array1.shape() != array2.shape():
@@ -95,7 +97,7 @@ fn less[
 
     An element of the result NDArray will be True if the corresponding element in x is or equal to the corresponding element in y, and False otherwise.
     """
-    # return backend()._math_func_compare_2_tensors[dtype, SIMD.__lt__](
+    # return backend().math_func_compare_2_tensors[dtype, SIMD.__lt__](
     #     array1, array2
     # )
     if array1.shape() != array2.shape():
@@ -126,7 +128,7 @@ fn less_equal[
 
     An element of the result NDArray will be True if the corresponding element in x is less than or equal to the corresponding element in y, and False otherwise.
     """
-    # return backend()._math_func_compare_2_tensors[dtype, SIMD.__le__](
+    # return backend().math_func_compare_2_tensors[dtype, SIMD.__le__](
     #     array1, array2
     # )
     if array1.shape() != array2.shape():
@@ -158,7 +160,7 @@ fn equal[
 
     An element of the result NDArray will be True if the corresponding element in x is equal to the corresponding element in y, and False otherwise.
     """
-    # return backend()._math_func_compare_2_tensors[dtype, SIMD.__eq__](
+    # return backend().math_func_compare_2_tensors[dtype, SIMD.__eq__](
     #     array1, array2
     # )
     if array1.shape() != array2.shape():
@@ -189,7 +191,7 @@ fn not_equal[
 
     An element of the result NDArray will be True if the corresponding element in x is not equal to the corresponding element in y, and False otherwise.
     """
-    # return backend()._math_func_compare_2_tensors[dtype, SIMD.__ne__](
+    # return backend().math_func_compare_2_tensors[dtype, SIMD.__ne__](
     #     array1, array2
     # )
     if array1.shape() != array2.shape():

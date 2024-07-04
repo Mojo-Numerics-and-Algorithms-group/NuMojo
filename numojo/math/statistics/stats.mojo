@@ -1,9 +1,11 @@
 """
+Statistics functions for NDArray
+"""
 # ===----------------------------------------------------------------------=== #
 # implements array stats function and supporting functions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
-"""
+
 # from numojo.core.NDArray import NDArray
 from ...core.ndarray import NDArray
 from .. import mul

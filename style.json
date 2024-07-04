@@ -1,0 +1,218 @@
+{
+  "decl": {
+    "aliases": [
+      {
+        "deprecated": "",
+        "description": "",
+        "kind": "alias",
+        "name": "Example",
+        "summary": "Aliases can be explained with docstrings and should if they exist in the global scope.",
+        "value": "Int"
+      }
+    ],
+    "description": "",
+    "functions": [
+      {
+        "kind": "function",
+        "name": "func",
+        "overloads": [
+          {
+            "args": [
+              {
+                "convention": "borrowed",
+                "description": "Each arguament should be listed and described.",
+                "kind": "argument",
+                "name": "arg1",
+                "passingKind": "pos_or_kw",
+                "type": "param"
+              }
+            ],
+            "async": false,
+            "constraints": "If the functions use compile time constraints they should be listed here.",
+            "deprecated": "",
+            "description": "",
+            "isDef": false,
+            "isStatic": false,
+            "kind": "function",
+            "name": "func",
+            "parameters": [
+              {
+                "description": "Each parameter should be listed and described.",
+                "kind": "parameter",
+                "name": "param",
+                "passingKind": "pos_or_kw",
+                "type": "Copyable"
+              }
+            ],
+            "raises": false,
+            "raisesDoc": "",
+            "returnType": "$0",
+            "returnsDoc": "Describe what is returned.",
+            "signature": "func[param: Copyable](arg1: param) -> $0",
+            "summary": "Description of the function."
+          }
+        ]
+      },
+      {
+        "kind": "function",
+        "name": "func1",
+        "overloads": [
+          {
+            "args": [
+              {
+                "convention": "borrowed",
+                "description": "Each arguament should be listed and described.",
+                "kind": "argument",
+                "name": "arg1",
+                "passingKind": "pos_or_kw",
+                "type": "param"
+              }
+            ],
+            "async": false,
+            "constraints": "",
+            "deprecated": "",
+            "description": "",
+            "isDef": false,
+            "isStatic": false,
+            "kind": "function",
+            "name": "func1",
+            "parameters": [
+              {
+                "description": "Each parameter should be listed and described.",
+                "kind": "parameter",
+                "name": "param",
+                "passingKind": "pos_or_kw",
+                "type": "Copyable"
+              }
+            ],
+            "raises": true,
+            "raisesDoc": "A description of the errors raised by the function.",
+            "returnType": "$0",
+            "returnsDoc": "Describe what is returned.",
+            "signature": "func1[param: Copyable](arg1: param) -> $0",
+            "summary": "Description of the function."
+          }
+        ]
+      }
+    ],
+    "kind": "module",
+    "name": "style",
+    "structs": [
+      {
+        "aliases": [],
+        "constraints": "Limitations placed on the struct.",
+        "deprecated": "",
+        "description": "",
+        "fields": [
+          {
+            "description": "",
+            "kind": "field",
+            "name": "field",
+            "summary": "Field Descriptions go below each field.",
+            "type": "SIMD[int64, 1]"
+          }
+        ],
+        "functions": [
+          {
+            "kind": "function",
+            "name": "func",
+            "overloads": [
+              {
+                "args": [
+                  {
+                    "convention": "borrowed",
+                    "description": "",
+                    "kind": "argument",
+                    "name": "self",
+                    "passingKind": "pos_or_kw",
+                    "type": "Self"
+                  }
+                ],
+                "async": false,
+                "constraints": "",
+                "deprecated": "",
+                "description": "",
+                "isDef": false,
+                "isStatic": false,
+                "kind": "function",
+                "name": "func",
+                "parameters": [],
+                "raises": false,
+                "raisesDoc": "",
+                "returnType": null,
+                "returnsDoc": "",
+                "signature": "func(self: Self)",
+                "summary": "Function docstring like previosly shown."
+              }
+            ]
+          }
+        ],
+        "kind": "struct",
+        "name": "AStruct",
+        "parameters": [
+          {
+            "description": "An example parameter.",
+            "kind": "parameter",
+            "name": "param",
+            "passingKind": "pos_or_kw",
+            "type": "AnyType"
+          }
+        ],
+        "parentTraits": [
+          "AnyType"
+        ],
+        "summary": "Struct docstring describing basically what a struct does."
+      }
+    ],
+    "summary": "Document docstring decribing what it does, if it is in an init file it will be the docstring for the module",
+    "traits": [
+      {
+        "deprecated": "",
+        "description": "",
+        "fields": [],
+        "functions": [
+          {
+            "kind": "function",
+            "name": "func",
+            "overloads": [
+              {
+                "args": [
+                  {
+                    "convention": "borrowed",
+                    "description": "",
+                    "kind": "argument",
+                    "name": "self",
+                    "passingKind": "pos_or_kw",
+                    "type": "T"
+                  }
+                ],
+                "async": false,
+                "constraints": "",
+                "deprecated": "",
+                "description": "",
+                "isDef": false,
+                "isStatic": false,
+                "kind": "function",
+                "name": "func",
+                "parameters": [],
+                "raises": false,
+                "raisesDoc": "",
+                "returnType": null,
+                "returnsDoc": "",
+                "signature": "func(self: T)",
+                "summary": "Function docstring like previosly shown."
+              }
+            ]
+          }
+        ],
+        "kind": "trait",
+        "name": "ATrait",
+        "parentTraits": [
+          "AnyType"
+        ],
+        "summary": "Describe the trait."
+      }
+    ]
+  },
+  "version": "24.4.0"
+}

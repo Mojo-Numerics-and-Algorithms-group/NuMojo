@@ -6,7 +6,7 @@ Document docstring decribing what it does, if it is in an init file it will be t
 # Subsection header, used to divide code in a file by functional parts (ingored by doc generation)
 # ===----------------------------------------------------------------------=== #
 
-alias example = Int
+alias Example = Int
 """Aliases can be explained with docstrings and should if they exist in the global scope."""
 
 fn func[param:Copyable](arg1:param)->param:
@@ -67,3 +67,11 @@ struct AStruct[param:AnyType](AnyType):
         return None
 
 trait ATrait:
+    """
+    Describe the trait.
+    """
+    fn func(self)->None:
+        """
+        Function docstring like previosly shown.
+        """
+        pass

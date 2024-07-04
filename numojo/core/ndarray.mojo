@@ -17,6 +17,7 @@
 10) Add List[Int] and Variadic[Int] Shape args for __init__ to make it more flexible
 """
 
+from builtin.type_aliases import AnyLifetime
 from random import rand
 from builtin.math import pow
 from builtin.bool import all as allb
@@ -503,17 +504,18 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
 
 @value
 struct _NDArrayIter[
+    is_mutable: Bool, //,
+    lifetime: AnyLifetime[is_mutable].type,
     dtype: DType,
     forward: Bool = True,
 ]:
     """Iterator for NDArray.
 
     Parameters:
+        is_mutable: Wether the iterator is mutable.
+        lifetime: The lifetime of the underlying NDArray data.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
-
-    Notes:
-        Need to add lifetimes after the new release.
     """
 
     var index: Int
@@ -1267,7 +1269,7 @@ struct NDArray[dtype: DType = DType.float32](
     fn __len__(self) -> Int:
         return self.ndshape._size
 
-    fn __iter__(self) -> _NDArrayIter[dtype]:
+    fn __iter__(self) -> _NDArrayIter[__lifetime_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -1277,12 +1279,12 @@ struct NDArray[dtype: DType = DType.float32](
             Need to add lifetimes after the new release.
         """
 
-        return _NDArrayIter[dtype](
+        return _NDArrayIter[__lifetime_of(self), dtype](
             unsafe_pointer=self.data,
             length=len(self),
         )
 
-    fn __reversed__(self) -> _NDArrayIter[dtype, forward=False]:
+    fn __reversed__(self) -> _NDArrayIter[__lifetime_of(self), dtype, forward=False]:
         """Iterate backwards over elements of the NDArray, returning
         copied value.
 
@@ -1290,7 +1292,7 @@ struct NDArray[dtype: DType = DType.float32](
             A reversed iterator of NDArray elements.
         """
 
-        return _NDArrayIter[dtype, forward=False](
+        return _NDArrayIter[__lifetime_of(self), dtype, forward=False](
             unsafe_pointer=self.data,
             length=len(self),
         )

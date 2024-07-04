@@ -199,7 +199,7 @@ fn argsort_inplace[
     dtype: DType
 ](
     inout ndarray: NDArray[dtype],
-    inout idx_array: NDArray[DType.int32],
+    inout idx_array: NDArray[DType.index],
     left: Int,
     right: Int,
 ) raises:
@@ -227,7 +227,7 @@ fn argsort_inplace[
 
 fn argsort[
     dtype: DType
-](ndarray: NDArray[dtype],) raises -> NDArray[DType.int32]:
+](ndarray: NDArray[dtype],) raises -> NDArray[DType.index]:
     """
     Argsort of the NDArray using quick sort algorithm.
 
@@ -244,7 +244,7 @@ fn argsort[
     var array: NDArray[dtype] = ndarray
     var length = array.size()
 
-    var idx_array = NDArray[DType.int32](length)
+    var idx_array = NDArray[DType.index](length)
     for i in range(length):
         idx_array[i] = i
 

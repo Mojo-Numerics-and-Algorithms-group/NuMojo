@@ -559,7 +559,7 @@ struct _NDArrayIter[
 
 
 struct NDArray[dtype: DType = DType.float32](
-    Stringable, CollectionElement, Sized
+    Stringable, Representable, CollectionElement, Sized
 ):
     """The N-dimensional array (NDArray).
 

@@ -1276,6 +1276,37 @@ struct NDArray[dtype: DType = DType.float32](
             print("Cannot convert array to string", e)
             return ""
 
+    fn __repr__(self) -> String:
+        """Compute the "official" string representation of NDArray.
+        An example is:
+        ```mojo
+        fn main() raises:
+            var A = NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
+            print(repr(A))
+        ```
+        It prints what can be used to construct the array itself:
+        ```console
+        NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
+        ```
+        """
+        try:
+            var result: String = str("NDArray[DType.") + str(self.dtype) + str("](List[Scalar[DType.") + str(self.dtype) + str("]](")
+            if self.size() > 6:
+                for i in range(6):
+                    result = result + str(self[i]) + str(",")
+                result = result + " ... "
+            else:
+                for i in self:
+                    result = result + str(i) + str(",")
+            result = result + str("), shape=List[Int](")
+            for i in range(self.ndshape._len):
+                result = result + str(self.ndshape._shape[i]) + ","
+            result = result + str("))")
+            return result
+        except e:
+            print("Cannot convert array to string", e)
+            return ""
+
     fn __len__(self) -> Int:
         return self.ndshape._size
 

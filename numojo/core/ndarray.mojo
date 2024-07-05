@@ -1573,12 +1573,19 @@ struct NDArray[dtype: DType = DType.float32](
             self.ndshape, random=False, order=self.order
         )
         narr.datatype = type
-
         @parameter
-        fn vectorized_astype[width: Int](idx: Int) -> None:
-            narr.store[width](idx, self.load[width](idx).cast[type]())
+        if type == DType.bool:
+            @parameter
+            fn vectorized_astype[width: Int](idx: Int) -> None:
+                (narr.unsafe_ptr()+idx).simd_strided_store[width](self.load[width](idx).cast[type](),1)
+            vectorize[vectorized_astype, nelts](self.ndshape._size)
+        else:
+            @parameter
+            fn vectorized_astypenb[width: Int](idx: Int) -> None:
+                narr.store[width](idx, self.load[width](idx).cast[type]())
+            vectorize[vectorized_astypenb, nelts](self.ndshape._size)
 
-        vectorize[vectorized_astype, nelts](self.ndshape._size)
+        
         return narr
 
     # fn clip(self):

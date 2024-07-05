@@ -9,7 +9,7 @@ All files must begin with a triple quoted docstring describing the functionality
 Document docstring decribing what it does, if it is in an init file it will be the docstring for the module.
 """
 ```
-All aliases and file level varaibles must have a docstring that describes what they are placed below the declaration.
+All aliases and file level varaible definitions must have a docstring that describes what they are placed below the declaration.
 ```python
 alias Example = Int
 """Aliases can be explained with docstrings and should if they exist in the global scope."""
@@ -59,3 +59,44 @@ Constraints:
 ```
 
 ## Structs
+Structs should be CamelCase and describe what they do in as few words as possible, such that in addition to the docstring no further info is required.
+
+The first line of a struct docstring should summarize what the struct does. It is not necessary to reiterate the structs name in the docstring. The parameters, and constriants of a struct should be included in the struct docstring in a similiar way to functions.
+
+```rust
+struct AStruct[param:AnyType](AnyType):
+    """
+    Struct docstring describing basically what a struct does.
+
+    Constraints:
+        Limitations placed on the struct.
+
+    Parameters:
+        param: An example parameter.
+    """
+    ...
+```
+
+Fields and aliases should have a docstring below them descibing what they are. They should be no longer than a singe sentance and should start with a capitol letter and end with a period.
+
+```rust
+struct AStruct[param:AnyType](AnyType):
+    """
+    Struct docstring describing basically what a struct does.
+
+    Constraints:
+        Limitations placed on the struct.
+
+    Parameters:
+        param: An example parameter.
+    """
+    
+    var field: Int64
+    """Field Descriptions go below each field."""
+    ...
+```
+
+Struct methods should follow the same rules as functions.
+
+## Traits
+Traits follow the same rules as Structs but there are no feilds in traits.

@@ -1253,8 +1253,7 @@ struct NDArray[dtype: DType = DType.float32](
     fn __str__(self) -> String:
         try:
             return (
-                "\n"
-                + self._array_to_string(0, 0)
+                self._array_to_string(0, 0)
                 + "\n"
                 + self.ndshape.__str__()
                 + "  DType: "

@@ -1,12 +1,14 @@
 """
+Implements Trigonometry functions for arrays.
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements Trigonometry functions
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
-import . _math_funcs as _mf
+import . math_funcs as _mf
 from .arithmetic import sqrt, fma
 
 from ..core.ndarray import NDArray
@@ -33,7 +35,7 @@ fn acos[
     Returns:
         The elementwise acos of `array` in radians.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.acos](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.acos](
         array
     )
 
@@ -54,7 +56,7 @@ fn asin[
     Returns:
         The elementwise asin of `array` in radians.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.asin](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.asin](
         array
     )
 
@@ -75,7 +77,7 @@ fn atan[
     Returns:
         The elementwise atan of `array` in radians.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.atan](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.atan](
         array
     )
 
@@ -101,7 +103,7 @@ fn atan2[
     Returns:
         The elementwise atan2 of `tensor1` and`tensor2` in radians.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.atan2](
+    return backend().math_func_2_tensor_in_one_tensor_out[dtype, math.atan2](
         tensor1, tensor2
     )
 
@@ -127,7 +129,7 @@ fn cos[
     Returns:
         The elementwise cos of `array`.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.cos](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.cos](
         array
     )
 
@@ -148,7 +150,7 @@ fn sin[
     Returns:
         The elementwise sin of `array`.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.sin](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.sin](
         array
     )
 
@@ -169,7 +171,7 @@ fn tan[
     Returns:
         The elementwise tan of `array`.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.tan](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.tan](
         array
     )
 
@@ -195,7 +197,7 @@ fn hypot[
     Returns:
         The elementwise hypotenuse of `tensor1` and`tensor2`.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.hypot](
+    return backend().math_func_2_tensor_in_one_tensor_out[dtype, math.hypot](
         tensor1, tensor2
     )
 
@@ -251,7 +253,7 @@ fn acosh[
     Returns:
         The elementwise acosh of `array` in radians.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.acosh](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.acosh](
         array
     )
 
@@ -272,7 +274,7 @@ fn asinh[
     Returns:
         The elementwise asinh of `array` in radians.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.asinh](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.asinh](
         array
     )
 
@@ -293,7 +295,7 @@ fn atanh[
     Returns:
         The elementwise atanh of `array` in radians.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.atanh](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.atanh](
         array
     )
 
@@ -319,7 +321,7 @@ fn cosh[
     Returns:
         The elementwise cosh of `array`.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.cosh](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.cosh](
         array
     )
 
@@ -340,7 +342,7 @@ fn sinh[
     Returns:
         The elementwise sinh of `array`.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.sinh](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.sinh](
         array
     )
 
@@ -361,6 +363,6 @@ fn tanh[
     Returns:
         The elementwise tanh of `array`.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.tanh](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.tanh](
         array
     )

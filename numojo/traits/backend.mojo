@@ -17,7 +17,7 @@ trait Backend:
         """
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -41,10 +41,13 @@ trait Backend:
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
+
+        Raises:
+            If shapes are missmatched or there is a access error.
         """
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -71,7 +74,7 @@ trait Backend:
         """
         pass
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -92,7 +95,7 @@ trait Backend:
         """
         ...
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_tensor_in_one_tensor_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -120,7 +123,7 @@ trait Backend:
 
         ...
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_compare_2_tensors[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -130,7 +133,7 @@ trait Backend:
     ) raises -> NDArray[DType.bool]:
         ...
 
-    fn _math_func_is[
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -138,7 +141,7 @@ trait Backend:
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ...
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w

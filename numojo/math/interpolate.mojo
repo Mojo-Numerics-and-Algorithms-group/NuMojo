@@ -1,9 +1,11 @@
 """
+Interpolate Module - Implements interpolation functions
+"""
 # ===----------------------------------------------------------------------=== #
 # Interpolate Module - Implements interpolation functions
 # Last updated: 2024-06-14
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 from ..core.ndarray import NDArray, NDArrayShape
 

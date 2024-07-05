@@ -1,12 +1,14 @@
 """
+Implements array arithmetic
+"""
 # ===----------------------------------------------------------------------=== #
 # implements arithmetic functions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
-import . _math_funcs as _mf
+import . math_funcs as _mf
 from ..core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
@@ -42,7 +44,7 @@ fn add[
     Returns:
         The elementwise sum of `array1` and`array2`.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__add__](
+    return backend().math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__add__](
         array1, array2
     )
 
@@ -67,7 +69,7 @@ fn sub[
     Returns:
         The elementwise difference of `array1` and`array2`.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__sub__](
+    return backend().math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__sub__](
         array1, array2
     )
 
@@ -133,7 +135,7 @@ fn copysign[
     Returns:
         The second NDArray multipied by the sign of the first NDArray.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[
+    return backend().math_func_2_tensor_in_one_tensor_out[
         dtype, math.copysign
     ](array1, array2)
 
@@ -158,7 +160,7 @@ fn mod[
     Returns:
         A NDArray equal to array1%array2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__mod__](
+    return backend().math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__mod__](
         array1, array2
     )
 
@@ -183,7 +185,7 @@ fn mul[
     Returns:
         A NDArray equal to array1*array2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__mul__](
+    return backend().math_func_2_tensor_in_one_tensor_out[dtype, SIMD.__mul__](
         array1, array2
     )
 
@@ -208,7 +210,7 @@ fn div[
     Returns:
         A NDArray equal to array1/array2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[
+    return backend().math_func_2_tensor_in_one_tensor_out[
         dtype, SIMD.__truediv__
     ](array1, array2)
 
@@ -236,7 +238,7 @@ fn fma[
     Returns:
         A a new NDArray that is NDArray with the function func applied.
     """
-    return backend()._math_func_fma(array1, array2, array3)
+    return backend().math_func_fma(array1, array2, array3)
 
 
 fn fma[
@@ -262,7 +264,7 @@ fn fma[
     Returns:
         A a new NDArray that is NDArray with the function func applied.
     """
-    return backend()._math_func_fma(array1, array2, simd)
+    return backend().math_func_fma(array1, array2, simd)
 
 
 fn remainder[
@@ -285,7 +287,7 @@ fn remainder[
     Returns:
         A NDArray equal to array1//array2.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[
+    return backend().math_func_2_tensor_in_one_tensor_out[
         dtype, math.remainder
     ](array1, array2)
 
@@ -309,7 +311,7 @@ fn remainder[
 #     Returns:
 #         A NDArray equal to 1/NDArray.
 #     """
-#     return backend()._math_func_1_tensor_in_one_tensor_out[
+#     return backend().math_func_1_tensor_in_one_tensor_out[
 #         dtype, math.reciprocal
 #     ](NDArray)
 
@@ -336,7 +338,7 @@ fn cbrt[
     Returns:
         A NDArray equal to NDArray**(1/3).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.cbrt](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.cbrt](
         array
     )
 
@@ -360,7 +362,7 @@ fn cbrt[
 #     Returns:
 #         A NDArray equal to NDArray**intval.
 #     """
-#     return backend()._math_func_simd_int[dtype, math.pow](array1, intval)
+#     return backend().math_func_simd_int[dtype, math.pow](array1, intval)
 
 
 fn rsqrt[
@@ -379,7 +381,7 @@ fn rsqrt[
     Returns:
         A NDArray equal to 1/NDArray**(1/2).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.rsqrt](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.rsqrt](
         array
     )
 
@@ -400,7 +402,7 @@ fn sqrt[
     Returns:
         A NDArray equal to NDArray**(1/2).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.sqrt](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.sqrt](
         array
     )
 
@@ -422,7 +424,7 @@ fn exp2[
         A NDArray with the shape of `NDArray` with values equal to the
         2 to the power of the value in the original NDArray at each position.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.exp2](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.exp2](
         array
     )
 
@@ -444,7 +446,7 @@ fn exp[
         A NDArray with the shape of `NDArray` with values equal to the
         e to the power of the value in the original NDArray at each position.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.exp](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.exp](
         array
     )
 
@@ -466,7 +468,7 @@ fn expm1[
         A NDArray with the shape of `NDArray` with values equal to the negative one plus
         e to the power of the value in the original NDArray at each position.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.expm1](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.expm1](
         array
     )
 
@@ -490,7 +492,7 @@ fn scalb[
         A NDArray with the shape of `NDArray` with values equal to the negative one plus
         e to the power of the value in the original NDArray at each position.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[dtype, math.scalb](
+    return backend().math_func_2_tensor_in_one_tensor_out[dtype, math.scalb](
         array1, array2
     )
 
@@ -516,7 +518,7 @@ fn log[
     Returns:
         A NDArray equal to ln(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.log](
         array
     )
 
@@ -540,7 +542,7 @@ fn log2[
     Returns:
         A NDArray equal to log_2(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log2](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.log2](
         array
     )
 
@@ -561,7 +563,7 @@ fn log10[
     Returns:
         A NDArray equal to log_10(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log10](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.log10](
         array
     )
 
@@ -582,7 +584,7 @@ fn log1p[
     Returns:
         A NDArray equal to ln(NDArray+1).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, math.log1p](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.log1p](
         array
     )
 
@@ -608,7 +610,7 @@ fn tabs[
     Returns:
         A NDArray equal to abs(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__abs__](
+    return backend().math_func_1_tensor_in_one_tensor_out[dtype, SIMD.__abs__](
         array
     )
 
@@ -629,7 +631,7 @@ fn tfloor[
     Returns:
         A NDArray equal to floor(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
+    return backend().math_func_1_tensor_in_one_tensor_out[
         dtype, SIMD.__floor__
     ](array)
 
@@ -650,7 +652,7 @@ fn tceil[
     Returns:
         A NDArray equal to ceil(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
+    return backend().math_func_1_tensor_in_one_tensor_out[
         dtype, SIMD.__ceil__
     ](array)
 
@@ -671,7 +673,7 @@ fn ttrunc[
     Returns:
         A NDArray equal to trunc(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
+    return backend().math_func_1_tensor_in_one_tensor_out[
         dtype, SIMD.__trunc__
     ](array)
 
@@ -692,7 +694,7 @@ fn tround[
     Returns:
         A NDArray equal to trunc(NDArray).
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
+    return backend().math_func_1_tensor_in_one_tensor_out[
         dtype, SIMD.__round__
     ](array)
 
@@ -715,7 +717,7 @@ fn roundeven[
 
     This rounding goes to the nearest integer with ties toward the nearest even integer.
     """
-    return backend()._math_func_1_tensor_in_one_tensor_out[
+    return backend().math_func_1_tensor_in_one_tensor_out[
         dtype, SIMD.roundeven
     ](array)
 
@@ -736,7 +738,7 @@ fn roundeven[
 #     Returns:
 #     The elementwise rounding of x evaluating ties towards the smaller integer.
 #     """
-#     return backend()._math_func_1_tensor_in_one_tensor_out[
+#     return backend().math_func_1_tensor_in_one_tensor_out[
 #         dtype, SIMD.__round_half_down
 #     ](NDArray)
 
@@ -757,7 +759,7 @@ fn roundeven[
 #     Returns:
 #     The elementwise rounding of x evaluating ties towards the larger integer.
 #     """
-#     return backend()._math_func_1_tensor_in_one_tensor_out[
+#     return backend().math_func_1_tensor_in_one_tensor_out[
 #         dtype, math.round_half_up
 #     ](NDArray)
 
@@ -780,6 +782,6 @@ fn nextafter[
     Returns:
     The nextafter of the inputs.
     """
-    return backend()._math_func_2_tensor_in_one_tensor_out[
+    return backend().math_func_2_tensor_in_one_tensor_out[
         dtype, math.nextafter
     ](array1, array2)

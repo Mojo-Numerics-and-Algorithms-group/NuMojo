@@ -1132,37 +1132,37 @@ struct NDArray[dtype: DType = DType.float32](
             return True
 
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
         ](self, other)
 
     fn __add__(inout self, other: Self) raises -> Self:
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
             self, other
         )
 
     fn __radd__(inout self, rhs: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
         ](self, rhs)
 
     fn __iadd__(inout self, other: SIMD[dtype, 1]) raises:
-        self = _af._math_func_one_array_one_SIMD_in_one_array_out[
+        self = _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
         ](self, other)
 
     fn __iadd__(inout self, other: Self) raises:
-        self = _af._math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
+        self = _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
             self, other
         )
 
     fn __sub__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__sub__
         ](self, other)
 
     fn __sub__(self, other: Self) raises -> Self:
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
             self, other
         )
 
@@ -1173,12 +1173,12 @@ struct NDArray[dtype: DType = DType.float32](
         self = self - s
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__mul__
         ](self, other)
 
     fn __mul__(self, other: Self) raises -> Self:
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__mul__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__mul__](
             self, other
         )
 
@@ -1238,7 +1238,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__truediv__
         ](self, other)
 
@@ -1246,7 +1246,7 @@ struct NDArray[dtype: DType = DType.float32](
         if self.ndshape._size != other.ndshape._size:
             raise Error("No of elements in both arrays do not match")
 
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__truediv__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__truediv__](
             self, other
         )
 
@@ -1616,12 +1616,19 @@ struct NDArray[dtype: DType = DType.float32](
             self.ndshape, random=False, order=self.order
         )
         narr.datatype = type
-
         @parameter
-        fn vectorized_astype[width: Int](idx: Int) -> None:
-            narr.store[width](idx, self.load[width](idx).cast[type]())
+        if type == DType.bool:
+            @parameter
+            fn vectorized_astype[width: Int](idx: Int) -> None:
+                (narr.unsafe_ptr()+idx).simd_strided_store[width](self.load[width](idx).cast[type](),1)
+            vectorize[vectorized_astype, nelts](self.ndshape._size)
+        else:
+            @parameter
+            fn vectorized_astypenb[width: Int](idx: Int) -> None:
+                narr.store[width](idx, self.load[width](idx).cast[type]())
+            vectorize[vectorized_astypenb, nelts](self.ndshape._size)
 
-        vectorize[vectorized_astype, nelts](self.ndshape._size)
+        
         return narr
 
     # fn clip(self):

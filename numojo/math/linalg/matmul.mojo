@@ -1,12 +1,14 @@
 """
+Matrix multiplication functions for NDArrays
+"""
 # ===----------------------------------------------------------------------=== #
 # implements matmul functions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
-import .. _math_funcs as _mf
+import .. math_funcs as _mf
 from ...core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc

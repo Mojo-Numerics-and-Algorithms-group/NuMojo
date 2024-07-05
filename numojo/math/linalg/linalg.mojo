@@ -1,12 +1,14 @@
 """
+Linear Algebra misc. functions
+"""
 # ===----------------------------------------------------------------------=== #
 # implements basic Linear Algebra functions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
-import .. _math_funcs as _mf
+import .. math_funcs as _mf
 from ...core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc

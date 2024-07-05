@@ -1117,8 +1117,19 @@ struct NDArray[dtype: DType = DType.float32](
     fn __neg__(self) raises -> Self:
         return self * -1.0
 
-    fn __eq__(self, other: Self) -> Bool:
-        return self.data == other.data
+    fn __eq__(self, other: Self) raises -> Bool:
+        """Check whether two ndarrays are equal.
+        The ndarrays are equal if:
+        (1) The shapes of the ndarrays are the same.
+        (2) The items of the ndarrays are equal.
+        """
+        if self.shape() != other.shape():
+            return False
+        for i in range(self.size()):
+            if self[i] != other[i]:
+                return False
+        else:
+            return True
 
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
         return _af._math_func_one_array_one_SIMD_in_one_array_out[
@@ -1255,8 +1266,7 @@ struct NDArray[dtype: DType = DType.float32](
     fn __str__(self) -> String:
         try:
             return (
-                "\n"
-                + self._array_to_string(0, 0)
+                self._array_to_string(0, 0)
                 + "\n"
                 + self.ndshape.__str__()
                 + "  DType: "

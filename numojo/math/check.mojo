@@ -46,7 +46,7 @@ fn isinf[
         NDArray[DType.bool] - A array of the same shape as `array` with True for infinite elements and False for others.
     """
     # return backend().math_func_is[dtype, math.isinf](array)
-    
+
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape())
     for i in range(result_array.size()):
         result_array[i] = math.isinf(array[i])
@@ -99,7 +99,7 @@ fn isnan[
     return result_array
 
 
-fn any(array: NDArray[DType.bool])raises -> Scalar[DType.bool]:
+fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     """
     If any True.
 
@@ -123,7 +123,7 @@ fn any(array: NDArray[DType.bool])raises -> Scalar[DType.bool]:
     return result
 
 
-fn all(array: NDArray[DType.bool])raises -> Scalar[DType.bool]:
+fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     """
     If all True.
 

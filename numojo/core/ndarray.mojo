@@ -35,7 +35,12 @@ from ..math.statistics.cumulative_reduce import (
 )
 from ..math.check import any, all
 from ..math.arithmetic import abs
-from .ndarray_utils import _get_index, _traverse_iterative, to_numpy, bool_to_numeric
+from .ndarray_utils import (
+    _get_index,
+    _traverse_iterative,
+    to_numpy,
+    bool_to_numeric,
+)
 from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
 
@@ -1012,7 +1017,10 @@ struct NDArray[dtype: DType = DType.float32](
         var count: Int = 0
         for i in range(slices.__len__()):
             self._adjust_slice_(slices[i], self.ndshape[i])
-            if slices[i].start >= self.ndshape[i] or slices[i].end > self.ndshape[i]:
+            if (
+                slices[i].start >= self.ndshape[i]
+                or slices[i].end > self.ndshape[i]
+            ):
                 raise Error("Error: Slice value exceeds the array shape")
             spec.append(slices[i].unsafe_indices())
             if slices[i].unsafe_indices() != 1:
@@ -1183,9 +1191,7 @@ struct NDArray[dtype: DType = DType.float32](
         )
 
     fn __matmul__(self, other: Self) raises -> Self:
-        return matmul_parallelized(
-            self, other
-        )
+        return matmul_parallelized(self, other)
 
     fn __rmul__(self, s: SIMD[dtype, 1]) raises -> Self:
         return self * s
@@ -1228,12 +1234,12 @@ struct NDArray[dtype: DType = DType.float32](
         var new_vec = self
 
         @parameter
-        fn tensor_scalar_vectorize[simd_width: Int](index: Int) -> None:
+        fn array_scalar_vectorize[simd_width: Int](index: Int) -> None:
             new_vec.data.store[width=simd_width](
                 index, pow(self.data.load[width=simd_width](index), p)
             )
 
-        vectorize[tensor_scalar_vectorize, simd_width](self.ndshape._size)
+        vectorize[array_scalar_vectorize, simd_width](self.ndshape._size)
         return new_vec
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
@@ -1290,7 +1296,9 @@ struct NDArray[dtype: DType = DType.float32](
         ```
         """
         try:
-            var result: String = str("NDArray[DType.") + str(self.dtype) + str("](List[Scalar[DType.") + str(self.dtype) + str("]](")
+            var result: String = str("NDArray[DType.") + str(self.dtype) + str(
+                "](List[Scalar[DType."
+            ) + str(self.dtype) + str("]](")
             if self.size() > 6:
                 for i in range(6):
                     result = result + str(self[i]) + str(",")
@@ -1325,7 +1333,9 @@ struct NDArray[dtype: DType = DType.float32](
             length=len(self),
         )
 
-    fn __reversed__(self) -> _NDArrayIter[__lifetime_of(self), dtype, forward=False]:
+    fn __reversed__(
+        self,
+    ) -> _NDArrayIter[__lifetime_of(self), dtype, forward=False]:
         """Iterate backwards over elements of the NDArray, returning
         copied value.
 
@@ -1616,19 +1626,25 @@ struct NDArray[dtype: DType = DType.float32](
             self.ndshape, random=False, order=self.order
         )
         narr.datatype = type
+
         @parameter
         if type == DType.bool:
+
             @parameter
             fn vectorized_astype[width: Int](idx: Int) -> None:
-                (narr.unsafe_ptr()+idx).simd_strided_store[width](self.load[width](idx).cast[type](),1)
+                (narr.unsafe_ptr() + idx).simd_strided_store[width](
+                    self.load[width](idx).cast[type](), 1
+                )
+
             vectorize[vectorized_astype, nelts](self.ndshape._size)
         else:
+
             @parameter
             fn vectorized_astypenb[width: Int](idx: Int) -> None:
                 narr.store[width](idx, self.load[width](idx).cast[type]())
+
             vectorize[vectorized_astypenb, nelts](self.ndshape._size)
 
-        
         return narr
 
     # fn clip(self):
@@ -1702,7 +1718,7 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return self.data.load[width=1](_get_index(indices, self.stride))
 
-    fn max(self, axis: Int = 0) raises -> Self: 
+    fn max(self, axis: Int = 0) raises -> Self:
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
         for i in range(ndim):
@@ -1722,18 +1738,21 @@ struct NDArray[dtype: DType = DType.float32](
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
         slices[axis] = Slice(0, 1)
         result = self[slices]
-        for i in range(1,axis_size):
+        for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
-            var mask1 = greater(arr_slice,result)
-            var mask2 = less(arr_slice,result)
+            var mask1 = greater(arr_slice, result)
+            var mask2 = less(arr_slice, result)
             # Wherever result is less than the new slice it is set to zero
             # Wherever arr_slice is greater than the old result it is added to fill those zeros
-            result = add(result * bool_to_numeric[dtype](mask2),arr_slice * bool_to_numeric[dtype](mask1))
+            result = add(
+                result * bool_to_numeric[dtype](mask2),
+                arr_slice * bool_to_numeric[dtype](mask1),
+            )
 
         return result
 
-    fn min(self, axis: Int = 0)raises-> Self:
+    fn min(self, axis: Int = 0) raises -> Self:
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
         for i in range(ndim):
@@ -1749,18 +1768,21 @@ struct NDArray[dtype: DType = DType.float32](
                 slices.append(Slice(0, shape[i]))
             else:
                 slices.append(Slice(0, 0))
-        
+
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
         slices[axis] = Slice(0, 1)
         result = self[slices]
-        for i in range(1,axis_size):
+        for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
-            var mask1 = less(arr_slice,result)
-            var mask2 = greater(arr_slice,result)
+            var mask1 = less(arr_slice, result)
+            var mask2 = greater(arr_slice, result)
             # Wherever result is greater than the new slice it is set to zero
             # Wherever arr_slice is less than the old result it is added to fill those zeros
-            result = add(result * bool_to_numeric[dtype](mask2),arr_slice * bool_to_numeric[dtype](mask1))
+            result = add(
+                result * bool_to_numeric[dtype](mask2),
+                arr_slice * bool_to_numeric[dtype](mask1),
+            )
 
         return result
 

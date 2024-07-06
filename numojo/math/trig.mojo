@@ -35,9 +35,7 @@ fn acos[
     Returns:
         The elementwise acos of `array` in radians.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.acos](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.acos](array)
 
 
 fn asin[
@@ -56,9 +54,7 @@ fn asin[
     Returns:
         The elementwise asin of `array` in radians.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.asin](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.asin](array)
 
 
 fn atan[
@@ -77,34 +73,32 @@ fn atan[
     Returns:
         The elementwise atan of `array` in radians.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.atan](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.atan](array)
 
 
 fn atan2[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply atan2 also known as inverse tangent.
     [atan2 wikipedia](https://en.wikipedia.org/wiki/Atan2).
 
     Constraints:
-        Both tensors must have the same shapes.
+        Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor1: An Array.
-        tensor2: An Array.
+        array1: An Array.
+        array2: An Array.
 
     Returns:
-        The elementwise atan2 of `tensor1` and`tensor2` in radians.
+        The elementwise atan2 of `array1` and`array2` in radians.
     """
-    return backend().math_func_2_tensor_in_one_tensor_out[dtype, math.atan2](
-        tensor1, tensor2
+    return backend().math_func_2_array_in_one_array_out[dtype, math.atan2](
+        array1, array2
     )
 
 
@@ -129,9 +123,7 @@ fn cos[
     Returns:
         The elementwise cos of `array`.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.cos](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.cos](array)
 
 
 fn sin[
@@ -150,9 +142,7 @@ fn sin[
     Returns:
         The elementwise sin of `array`.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.sin](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.sin](array)
 
 
 fn tan[
@@ -171,64 +161,62 @@ fn tan[
     Returns:
         The elementwise tan of `array`.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.tan](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.tan](array)
 
 
 fn hypot[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hypot also known as hypotenuse which finds the longest section of a right triangle
     given the other two sides.
 
     Constraints:
-        Both tensors must have the same shapes.
+        Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor1: An Array.
-        tensor2: An Array.
+        array1: An Array.
+        array2: An Array.
 
     Returns:
-        The elementwise hypotenuse of `tensor1` and`tensor2`.
+        The elementwise hypotenuse of `array1` and`array2`.
     """
-    return backend().math_func_2_tensor_in_one_tensor_out[dtype, math.hypot](
-        tensor1, tensor2
+    return backend().math_func_2_array_in_one_array_out[dtype, math.hypot](
+        array1, array2
     )
 
 
 fn hypot_fma[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](tensor1: NDArray[dtype], tensor2: NDArray[dtype]) raises -> NDArray[dtype]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hypot also known as hypotenuse which finds the longest section of a right triangle
     given the other two sides.
 
     Constraints:
-        Both tensors must have the same shapes.
+        Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
         backend: Sets utility function origin, defualts to `Vectorized.
 
     Args:
-        tensor1: An Array.
-        tensor2: An Array.
+        array1: An Array.
+        array2: An Array.
 
     Returns:
-        The elementwise hypotenuse of `tensor1` and`tensor2`.
+        The elementwise hypotenuse of `array1` and`array2`.
     """
 
-    var tensor2_squared = fma[dtype, backend=backend](
-        tensor2, tensor2, SIMD[dtype, 1](0)
+    var array2_squared = fma[dtype, backend=backend](
+        array2, array2, SIMD[dtype, 1](0)
     )
     return sqrt[dtype, backend=backend](
-        fma[dtype, backend=backend](tensor1, tensor1, tensor2_squared)
+        fma[dtype, backend=backend](array1, array1, array2_squared)
     )
 
 
@@ -253,7 +241,7 @@ fn acosh[
     Returns:
         The elementwise acosh of `array` in radians.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.acosh](
+    return backend().math_func_1_array_in_one_array_out[dtype, math.acosh](
         array
     )
 
@@ -274,7 +262,7 @@ fn asinh[
     Returns:
         The elementwise asinh of `array` in radians.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.asinh](
+    return backend().math_func_1_array_in_one_array_out[dtype, math.asinh](
         array
     )
 
@@ -295,7 +283,7 @@ fn atanh[
     Returns:
         The elementwise atanh of `array` in radians.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.atanh](
+    return backend().math_func_1_array_in_one_array_out[dtype, math.atanh](
         array
     )
 
@@ -321,9 +309,7 @@ fn cosh[
     Returns:
         The elementwise cosh of `array`.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.cosh](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.cosh](array)
 
 
 fn sinh[
@@ -342,9 +328,7 @@ fn sinh[
     Returns:
         The elementwise sinh of `array`.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.sinh](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.sinh](array)
 
 
 fn tanh[
@@ -363,6 +347,4 @@ fn tanh[
     Returns:
         The elementwise tanh of `array`.
     """
-    return backend().math_func_1_tensor_in_one_tensor_out[dtype, math.tanh](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, math.tanh](array)

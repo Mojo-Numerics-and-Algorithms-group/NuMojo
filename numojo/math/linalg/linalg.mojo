@@ -20,7 +20,7 @@ fn cross[
     out_dtype
 ]:
     """
-    Compute the cross product of two tensors.
+    Compute the cross product of two arrays.
 
     Parameters
         in_dtype: Input data type.
@@ -34,7 +34,7 @@ fn cross[
         `array1` and `array2` must be of shape (3,).
 
     Returns:
-        The cross product of two tensors.
+        The cross product of two arrays.
     """
 
     if array1.ndshape._len == array2.ndshape._len == 3:
@@ -51,7 +51,7 @@ fn cross[
         return array3
     else:
         raise Error(
-            "Cross product is not supported for tensors of shape "
+            "Cross product is not supported for arrays of shape "
             + array1.shape().__str__()
             + " and "
             + array2.shape().__str__()

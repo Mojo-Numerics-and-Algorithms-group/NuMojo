@@ -38,18 +38,18 @@ struct Vectorized(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -89,18 +89,18 @@ struct Vectorized(Backend):
         simd: SIMD[dtype, 1],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            simd: A SIMD[dtype,1] value to be added
+            array1: A NDArray.
+            array2: A NDArray.
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -125,21 +125,21 @@ struct Vectorized(Backend):
         vectorize[closure, opt_nelts](array1.num_elements())
         return result_array
 
-    fn math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -158,7 +158,7 @@ struct Vectorized(Backend):
 
         return result_array
 
-    fn math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -167,18 +167,18 @@ struct Vectorized(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -203,7 +203,7 @@ struct Vectorized(Backend):
         vectorize[closure, opt_nelts](result_array.num_elements())
         return result_array
 
-    fn math_func_compare_2_tensors[
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -229,7 +229,8 @@ struct Vectorized(Backend):
             # )
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
-                i, func[dtype, simdwidth](simd_data1, simd_data2)
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
         vectorize[closure, opt_nelts](array1.num_elements())
@@ -276,9 +277,13 @@ struct Vectorized(Backend):
         vectorize[closure, opt_nelts](array.num_elements())
         return result_array
 
+
 # This provides a way to bypass bitpacking issues with Bool
-fn bool_simd_store[width:Int](ptr:DTypePointer[DType.bool],start:Int, val:SIMD[DType.bool,width]):
-    (ptr+start).simd_strided_store[width=width,T=Int](val,1)
+fn bool_simd_store[
+    width: Int
+](ptr: DTypePointer[DType.bool], start: Int, val: SIMD[DType.bool, width]):
+    (ptr + start).simd_strided_store[width=width, T=Int](val, 1)
+
 
 struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     """
@@ -302,18 +307,18 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -355,7 +360,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
@@ -363,7 +368,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -389,21 +394,21 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -424,7 +429,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         return result_array
 
-    fn math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -433,18 +438,18 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -470,7 +475,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn math_func_compare_2_tensors[
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -496,8 +501,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             # )
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
-                i, func[dtype, simdwidth](simd_data1, simd_data2)
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
+
         vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
             array1.num_elements()
         )
@@ -569,18 +576,18 @@ struct Parallelized(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -642,7 +649,7 @@ struct Parallelized(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
@@ -650,7 +657,7 @@ struct Parallelized(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -693,21 +700,21 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -740,7 +747,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -749,18 +756,18 @@ struct Parallelized(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -803,7 +810,7 @@ struct Parallelized(Backend):
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_compare_2_tensors[
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -837,9 +844,11 @@ struct Parallelized(Backend):
                 #     func[dtype, simdwidth](simd_data1, simd_data2),
                 # )
                 bool_simd_store[simdwidth](
-                result_array.unsafe_ptr(),
-                i, func[dtype, simdwidth](simd_data1, simd_data2)
-            )
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
@@ -930,18 +939,18 @@ struct VectorizedParallelized(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1008,7 +1017,7 @@ struct VectorizedParallelized(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
@@ -1016,7 +1025,7 @@ struct VectorizedParallelized(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1063,21 +1072,21 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1114,7 +1123,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1123,18 +1132,18 @@ struct VectorizedParallelized(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1182,7 +1191,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_compare_2_tensors[
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1218,9 +1227,11 @@ struct VectorizedParallelized(Backend):
                 #     func[dtype, simdwidth](simd_data1, simd_data2),
                 # )
                 bool_simd_store[simdwidth](
-                result_array.unsafe_ptr(),
-                i, func[dtype, simdwidth](simd_data1, simd_data2)
-            )
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure]()
@@ -1235,8 +1246,10 @@ struct VectorizedParallelized(Backend):
             # )
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
-                i, func[dtype, simdwidth](simd_data1, simd_data2)
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
@@ -1323,18 +1336,18 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1406,7 +1419,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
@@ -1414,7 +1427,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1461,21 +1474,21 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1512,7 +1525,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1521,18 +1534,18 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1580,7 +1593,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn math_func_compare_2_tensors[
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1616,9 +1629,11 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
                 #     func[dtype, simdwidth](simd_data1, simd_data2),
                 # )
                 bool_simd_store[simdwidth](
-                result_array.unsafe_ptr(),
-                i, func[dtype, simdwidth](simd_data1, simd_data2)
-            )
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
             vectorize[closure, opt_nelts](comps_per_core)
 
         parallelize[par_closure](num_cores, num_cores)
@@ -1633,8 +1648,10 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
             # )
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
-                i, func[dtype, simdwidth](simd_data1, simd_data2)
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
+
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
@@ -1718,18 +1735,18 @@ struct Naive(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1766,7 +1783,7 @@ struct Naive(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
@@ -1774,7 +1791,7 @@ struct Naive(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1795,21 +1812,21 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1821,7 +1838,7 @@ struct Naive(Backend):
             result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1830,18 +1847,18 @@ struct Naive(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1861,7 +1878,7 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn math_func_compare_2_tensors[
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1885,7 +1902,8 @@ struct Naive(Backend):
             # )
             bool_simd_store[1](
                 result_array.unsafe_ptr(),
-                i, func[dtype, 1](simd_data1, simd_data2)
+                i,
+                func[dtype, 1](simd_data1, simd_data2),
             )
         return result_array
 
@@ -1938,18 +1956,18 @@ struct VectorizedVerbose(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1999,7 +2017,7 @@ struct VectorizedVerbose(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
@@ -2007,7 +2025,7 @@ struct VectorizedVerbose(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -2041,21 +2059,21 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A new NDArray that is NDArray with the function func applied.
@@ -2079,7 +2097,7 @@ struct VectorizedVerbose(Backend):
                 result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -2088,18 +2106,18 @@ struct VectorizedVerbose(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -2132,7 +2150,7 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn math_func_compare_2_tensors[
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -2158,7 +2176,8 @@ struct VectorizedVerbose(Backend):
             # )
             bool_simd_store[opt_nelts](
                 result_array.unsafe_ptr(),
-                i, func[dtype, opt_nelts](simd_data1, simd_data2)
+                i,
+                func[dtype, opt_nelts](simd_data1, simd_data2),
             )
         if array1.num_elements() % opt_nelts != 0:
             for i in range(
@@ -2171,9 +2190,10 @@ struct VectorizedVerbose(Backend):
                 #     i, func[dtype, 1](simd_data1, simd_data2)
                 # )
                 bool_simd_store[1](
-                result_array.unsafe_ptr(),
-                i, func[dtype, 1](simd_data1, simd_data2)
-            )
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, 1](simd_data1, simd_data2),
+                )
         return result_array
 
     fn math_func_is[

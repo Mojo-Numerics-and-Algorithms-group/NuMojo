@@ -17,6 +17,7 @@
 10) Add List[Int] and Variadic[Int] Shape args for __init__ to make it more flexible
 """
 
+from builtin.type_aliases import AnyLifetime
 from random import rand
 from builtin.math import pow
 from builtin.bool import all as allb
@@ -34,7 +35,12 @@ from ..math.statistics.cumulative_reduce import (
 )
 from ..math.check import any, all
 from ..math.arithmetic import abs
-from .ndarray_utils import _get_index, _traverse_iterative, to_numpy, bool_to_numeric
+from .ndarray_utils import (
+    _get_index,
+    _traverse_iterative,
+    to_numpy,
+    bool_to_numeric,
+)
 from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
 
@@ -503,17 +509,18 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
 
 @value
 struct _NDArrayIter[
+    is_mutable: Bool, //,
+    lifetime: AnyLifetime[is_mutable].type,
     dtype: DType,
     forward: Bool = True,
 ]:
     """Iterator for NDArray.
 
     Parameters:
+        is_mutable: Wether the iterator is mutable.
+        lifetime: The lifetime of the underlying NDArray data.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
-
-    Notes:
-        Need to add lifetimes after the new release.
     """
 
     var index: Int
@@ -557,7 +564,7 @@ struct _NDArrayIter[
 
 
 struct NDArray[dtype: DType = DType.float32](
-    Stringable, CollectionElement, Sized
+    Stringable, Representable, CollectionElement, Sized
 ):
     """The N-dimensional array (NDArray).
 
@@ -1010,7 +1017,10 @@ struct NDArray[dtype: DType = DType.float32](
         var count: Int = 0
         for i in range(slices.__len__()):
             self._adjust_slice_(slices[i], self.ndshape[i])
-            if slices[i].start >= self.ndshape[i] or slices[i].end > self.ndshape[i]:
+            if (
+                slices[i].start >= self.ndshape[i]
+                or slices[i].end > self.ndshape[i]
+            ):
                 raise Error("Error: Slice value exceeds the array shape")
             spec.append(slices[i].unsafe_indices())
             if slices[i].unsafe_indices() != 1:
@@ -1115,41 +1125,52 @@ struct NDArray[dtype: DType = DType.float32](
     fn __neg__(self) raises -> Self:
         return self * -1.0
 
-    fn __eq__(self, other: Self) -> Bool:
-        return self.data == other.data
+    fn __eq__(self, other: Self) raises -> Bool:
+        """Check whether two ndarrays are equal.
+        The ndarrays are equal if:
+        (1) The shapes of the ndarrays are the same.
+        (2) The items of the ndarrays are equal.
+        """
+        if self.shape() != other.shape():
+            return False
+        for i in range(self.size()):
+            if self[i] != other[i]:
+                return False
+        else:
+            return True
 
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
         ](self, other)
 
     fn __add__(inout self, other: Self) raises -> Self:
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
             self, other
         )
 
     fn __radd__(inout self, rhs: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
         ](self, rhs)
 
     fn __iadd__(inout self, other: SIMD[dtype, 1]) raises:
-        self = _af._math_func_one_array_one_SIMD_in_one_array_out[
+        self = _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
         ](self, other)
 
     fn __iadd__(inout self, other: Self) raises:
-        self = _af._math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
+        self = _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
             self, other
         )
 
     fn __sub__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__sub__
         ](self, other)
 
     fn __sub__(self, other: Self) raises -> Self:
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
             self, other
         )
 
@@ -1160,19 +1181,17 @@ struct NDArray[dtype: DType = DType.float32](
         self = self - s
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__mul__
         ](self, other)
 
     fn __mul__(self, other: Self) raises -> Self:
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__mul__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__mul__](
             self, other
         )
 
     fn __matmul__(self, other: Self) raises -> Self:
-        return matmul_parallelized(
-            self, other
-        )
+        return matmul_parallelized(self, other)
 
     fn __rmul__(self, s: SIMD[dtype, 1]) raises -> Self:
         return self * s
@@ -1215,17 +1234,17 @@ struct NDArray[dtype: DType = DType.float32](
         var new_vec = self
 
         @parameter
-        fn tensor_scalar_vectorize[simd_width: Int](index: Int) -> None:
+        fn array_scalar_vectorize[simd_width: Int](index: Int) -> None:
             new_vec.data.store[width=simd_width](
                 index, pow(self.data.load[width=simd_width](index), p)
             )
 
-        vectorize[tensor_scalar_vectorize, simd_width](self.ndshape._size)
+        vectorize[array_scalar_vectorize, simd_width](self.ndshape._size)
         return new_vec
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af._math_func_one_array_one_SIMD_in_one_array_out[
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__truediv__
         ](self, other)
 
@@ -1233,7 +1252,7 @@ struct NDArray[dtype: DType = DType.float32](
         if self.ndshape._size != other.ndshape._size:
             raise Error("No of elements in both arrays do not match")
 
-        return _af._math_func_2_array_in_one_array_out[dtype, SIMD.__truediv__](
+        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__truediv__](
             self, other
         )
 
@@ -1253,8 +1272,7 @@ struct NDArray[dtype: DType = DType.float32](
     fn __str__(self) -> String:
         try:
             return (
-                "\n"
-                + self._array_to_string(0, 0)
+                self._array_to_string(0, 0)
                 + "\n"
                 + self.ndshape.__str__()
                 + "  DType: "
@@ -1264,10 +1282,43 @@ struct NDArray[dtype: DType = DType.float32](
             print("Cannot convert array to string", e)
             return ""
 
+    fn __repr__(self) -> String:
+        """Compute the "official" string representation of NDArray.
+        An example is:
+        ```mojo
+        fn main() raises:
+            var A = NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
+            print(repr(A))
+        ```
+        It prints what can be used to construct the array itself:
+        ```console
+        NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
+        ```
+        """
+        try:
+            var result: String = str("NDArray[DType.") + str(self.dtype) + str(
+                "](List[Scalar[DType."
+            ) + str(self.dtype) + str("]](")
+            if self.size() > 6:
+                for i in range(6):
+                    result = result + str(self[i]) + str(",")
+                result = result + " ... "
+            else:
+                for i in self:
+                    result = result + str(i) + str(",")
+            result = result + str("), shape=List[Int](")
+            for i in range(self.ndshape._len):
+                result = result + str(self.ndshape._shape[i]) + ","
+            result = result + str("))")
+            return result
+        except e:
+            print("Cannot convert array to string", e)
+            return ""
+
     fn __len__(self) -> Int:
         return self.ndshape._size
 
-    fn __iter__(self) -> _NDArrayIter[dtype]:
+    fn __iter__(self) -> _NDArrayIter[__lifetime_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -1277,12 +1328,14 @@ struct NDArray[dtype: DType = DType.float32](
             Need to add lifetimes after the new release.
         """
 
-        return _NDArrayIter[dtype](
+        return _NDArrayIter[__lifetime_of(self), dtype](
             unsafe_pointer=self.data,
             length=len(self),
         )
 
-    fn __reversed__(self) -> _NDArrayIter[dtype, forward=False]:
+    fn __reversed__(
+        self,
+    ) -> _NDArrayIter[__lifetime_of(self), dtype, forward=False]:
         """Iterate backwards over elements of the NDArray, returning
         copied value.
 
@@ -1290,7 +1343,7 @@ struct NDArray[dtype: DType = DType.float32](
             A reversed iterator of NDArray elements.
         """
 
-        return _NDArrayIter[dtype, forward=False](
+        return _NDArrayIter[__lifetime_of(self), dtype, forward=False](
             unsafe_pointer=self.data,
             length=len(self),
         )
@@ -1575,10 +1628,23 @@ struct NDArray[dtype: DType = DType.float32](
         narr.datatype = type
 
         @parameter
-        fn vectorized_astype[width: Int](idx: Int) -> None:
-            narr.store[width](idx, self.load[width](idx).cast[type]())
+        if type == DType.bool:
 
-        vectorize[vectorized_astype, nelts](self.ndshape._size)
+            @parameter
+            fn vectorized_astype[width: Int](idx: Int) -> None:
+                (narr.unsafe_ptr() + idx).simd_strided_store[width](
+                    self.load[width](idx).cast[type](), 1
+                )
+
+            vectorize[vectorized_astype, nelts](self.ndshape._size)
+        else:
+
+            @parameter
+            fn vectorized_astypenb[width: Int](idx: Int) -> None:
+                narr.store[width](idx, self.load[width](idx).cast[type]())
+
+            vectorize[vectorized_astypenb, nelts](self.ndshape._size)
+
         return narr
 
     # fn clip(self):
@@ -1652,7 +1718,7 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return self.data.load[width=1](_get_index(indices, self.stride))
 
-    fn max(self, axis: Int = 0) raises -> Self: 
+    fn max(self, axis: Int = 0) raises -> Self:
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
         for i in range(ndim):
@@ -1672,18 +1738,21 @@ struct NDArray[dtype: DType = DType.float32](
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
         slices[axis] = Slice(0, 1)
         result = self[slices]
-        for i in range(1,axis_size):
+        for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
-            var mask1 = greater(arr_slice,result)
-            var mask2 = less(arr_slice,result)
+            var mask1 = greater(arr_slice, result)
+            var mask2 = less(arr_slice, result)
             # Wherever result is less than the new slice it is set to zero
             # Wherever arr_slice is greater than the old result it is added to fill those zeros
-            result = add(result * bool_to_numeric[dtype](mask2),arr_slice * bool_to_numeric[dtype](mask1))
+            result = add(
+                result * bool_to_numeric[dtype](mask2),
+                arr_slice * bool_to_numeric[dtype](mask1),
+            )
 
         return result
 
-    fn min(self, axis: Int = 0)raises-> Self:
+    fn min(self, axis: Int = 0) raises -> Self:
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
         for i in range(ndim):
@@ -1699,18 +1768,21 @@ struct NDArray[dtype: DType = DType.float32](
                 slices.append(Slice(0, shape[i]))
             else:
                 slices.append(Slice(0, 0))
-        
+
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
         slices[axis] = Slice(0, 1)
         result = self[slices]
-        for i in range(1,axis_size):
+        for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
-            var mask1 = less(arr_slice,result)
-            var mask2 = greater(arr_slice,result)
+            var mask1 = less(arr_slice, result)
+            var mask2 = greater(arr_slice, result)
             # Wherever result is greater than the new slice it is set to zero
             # Wherever arr_slice is less than the old result it is added to fill those zeros
-            result = add(result * bool_to_numeric[dtype](mask2),arr_slice * bool_to_numeric[dtype](mask1))
+            result = add(
+                result * bool_to_numeric[dtype](mask2),
+                arr_slice * bool_to_numeric[dtype](mask1),
+            )
 
         return result
 

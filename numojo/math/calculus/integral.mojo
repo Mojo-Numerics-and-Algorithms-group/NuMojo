@@ -4,7 +4,7 @@
 # ===----------------------------------------------------------------------=== #
 
 import math
-import .. _math_funcs as _mf
+import .. math_funcs as _mf
 from ...core.ndarray import NDArray, NDArrayShape
 from ...core.utility_funcs import is_inttype, is_floattype
 from algorithm import parallelize

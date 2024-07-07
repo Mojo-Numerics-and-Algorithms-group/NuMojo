@@ -6,16 +6,16 @@ With that in mind NuMojo as a project is in an early stage of development. If yo
 
 ## TASKS
 
-* Implement tensor version all SIMDable standard library math functions (mostly done waiting on std lib [issue 2492](https://github.com/modularml/mojo/issues/2492))
+* Implement array version all SIMDable standard library math functions (mostly done waiting on std lib [issue 2492](https://github.com/modularml/mojo/issues/2492))
 * Build statistics functions
 * Build optimizers (newton raphson, bisection,etc)
 * Build function approximators
 
 ## N-dimensional Arrays
 
-Now that Modular has decided to no longer support Tensor and to open source and deprecate it NuMojo intends to take Tensor and Make it our own Once they do.
+Now that Modular has decided to no longer support array and to open source and deprecate it NuMojo intends to take array and Make it our own Once they do.
 
-Which means that we will be trying to add many of the features from numpy.array that tensor currently lacks, while not sacrificing performance.
+Which means that we will be trying to add many of the features from numpy.array that array currently lacks, while not sacrificing performance.
 
 ## Notional organization of functions and features
 

@@ -10,6 +10,8 @@ Please follow the Mojo standard library style guide for all contributions. Consi
 - Write concise, well-documented code.
 - Adhere to formatting conventions for indentation, spacing, and line breaks.
 
+Additionally refer to `style guide.md` for docstring and nameing conventions.
+
 ## Pull Requests
 
 When submitting pull requests:

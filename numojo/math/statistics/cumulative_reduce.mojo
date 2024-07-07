@@ -1,9 +1,11 @@
 """
+Cumulative reduction statistics functions for NDArrays
+"""
 # ===----------------------------------------------------------------------=== #
 # Statistics Module - Implements cumulative reduce functions
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
 from algorithm import vectorize
@@ -122,24 +124,24 @@ fn mode[
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_tensor: NDArray[out_dtype] = binary_sort[in_dtype, out_dtype](
+    var sorted_array: NDArray[out_dtype] = binary_sort[in_dtype, out_dtype](
         array
     )
     var max_count = 0
-    var mode_value = sorted_tensor[0]
+    var mode_value = sorted_array[0]
     var current_count = 1
 
     for i in range(1, array.num_elements()):
-        if sorted_tensor[i] == sorted_tensor[i - 1]:
+        if sorted_array[i] == sorted_array[i - 1]:
             current_count += 1
         else:
             if current_count > max_count:
                 max_count = current_count
-                mode_value = sorted_tensor[i - 1]
+                mode_value = sorted_array[i - 1]
             current_count = 1
 
     if current_count > max_count:
-        mode_value = sorted_tensor[array.num_elements() - 1]
+        mode_value = sorted_array[array.num_elements() - 1]
 
     return mode_value
 
@@ -160,12 +162,12 @@ fn median[
     Returns:
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_tensor = binary_sort[in_dtype, out_dtype](array)
+    var sorted_array = binary_sort[in_dtype, out_dtype](array)
     var n = array.num_elements()
     if n % 2 == 1:
-        return sorted_tensor[n // 2]
+        return sorted_array[n // 2]
     else:
-        return (sorted_tensor[n // 2 - 1] + sorted_tensor[n // 2]) / 2
+        return (sorted_array[n // 2 - 1] + sorted_array[n // 2]) / 2
 
 
 # for max and min, I can later change to the latest reduce.max, reduce.min()
@@ -467,7 +469,7 @@ fn minimum[
     out_dtype
 ]:
     """
-    Element wise minimum of two tensors.
+    Element wise minimum of two arrays.
 
     Parameters:
         in_dtype: The input element type.
@@ -477,7 +479,7 @@ fn minimum[
         array1: An array.
         array2: An array.
     Returns:
-        The element wise minimum of the two tensors as a array of `dtype`.
+        The element wise minimum of the two arrays as a array of `dtype`.
     """
     var result: NDArray[out_dtype] = NDArray[out_dtype](array1.shape())
 
@@ -505,7 +507,7 @@ fn maximum[
     out_dtype
 ]:
     """
-    Element wise maximum of two tensors.
+    Element wise maximum of two arrays.
 
     Parameters:
         in_dtype: The input element type.
@@ -515,7 +517,7 @@ fn maximum[
         array1: A array.
         array2: A array.
     Returns:
-        The element wise maximum of the two tensors as a array of `dtype`.
+        The element wise maximum of the two arrays as a array of `dtype`.
     """
 
     var result: NDArray[out_dtype] = NDArray[out_dtype](array1.shape())

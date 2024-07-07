@@ -1116,6 +1116,47 @@ struct NDArray[dtype: DType = DType.float32](
         var narr: Self = self[slice_list]
         return narr
 
+
+    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
+        """Get items of array from indices.
+
+        To-do:
+        Currently it supports 1d array.
+        In future, expand it to high dimensional arrays.
+        
+        Example:
+        ```mojo
+        var A = numojo.core.NDArray[numojo.i16](6, random=True)
+        var idx = numojo.core.sort.argsort(A)
+        print(A)
+        print(idx)
+        print(A[idx])
+        ```
+        ```console
+        [       -32768  -24148  16752   -2709   2148    -18418  ]
+        Shape: [6]  DType: int16
+        [       0       1       5       3       4       2       ]
+        Shape: [6]  DType: index
+        [       -32768  -24148  -18418  -2709   2148    16752   ]
+        Shape: [6]  DType: int16
+        ```
+
+        Args:
+            indices: NDArray with Dtype.index.
+
+        Returns:
+            NDArray with items from the indices.
+        """
+
+        var length = indices.size()
+        var result = NDArray[dtype](length)
+
+        for i in range(length):
+            result[i] = self[int(indices[i])]
+
+        return result
+
+
     fn __int__(self) -> Int:
         return self.ndshape._size
 

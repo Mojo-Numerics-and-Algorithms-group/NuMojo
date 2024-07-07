@@ -1,4 +1,20 @@
-import numojo
+# import numojo as nj
+import time
+from benchmark.compiler import keep
+from python import Python
+
+# import numojo as nm
+from numojo import *
+# alias backend = nm.VectorizedParallelizedNWorkers[8]
+# def main():
+#     var array = nm.NDArray[nm.f64](10,10, order="F")
+#     for i in range(array.size()):
+#         array[i]=i
+#     var res = array.sum(axis=1)
+#     # for i in range(10):
+#     #     for j in range(10):
+#     #         print(array[i,j])
+#     print(res)
 
 def main():
 
@@ -23,7 +39,7 @@ def main():
     # print("offset: ", arr2.stride._offset)
     # print("dtype: ", arr2.dtype)
  
-    # var arr3 = numojo.NDArray[numojo.f32](VariadicList[Int](3, 4, 5), val = 10.0)
+    # var arr3 = numojo.NDArray[numojo.f32](VariadicList[Int](3, 4, 5), fill = 10.0)
     # print(arr3)
     # print("ndim: ", arr3.ndim)
     # print("shape: ", arr3.ndshape)
@@ -60,22 +76,146 @@ def main():
     # print("offset: ", arr6.stride._offset)
     # print("dtype: ", arr6.dtype) 
 
-
     # var x = numojo.linspace[numojo.f32](0.0, 60.0, 60)
     # var x = numojo.ones[numojo.f32](3, 2)
     # var x = numojo.logspace[numojo.f32](-3, 0, 60)
-    var x = numojo.arange[numojo.f32](0.0, 60.0, step=1)
+    var x = arange[f32](0.0, 24.0, step=1)
+    x.reshape(2, 3, 4, order="C")
+    print(x[0,0,0], x[0,0,1], x[1,1,1], x[1,2,3])
     print(x)
-    x.reshape(4,5,3)
-    print(x)
+    var slicedx = x[0:1, :, 1:2]
+    print(slicedx)
     print()
-    var summed = numojo.stats.sum(x,0)
-    print(summed)
-    print(numojo.stats.mean(x,0))
 
-    # var arr = numojo.NDArray[numojo.f32](2,3,3, random=True)
+    # var y = numojo.arange[numojo.f32](0.0, 24.0, step=1)
+    # y.reshape(2,3,4, order="F")
+    # print(y[0,0,0], y[0,0,1], y[1,1,1], y[1,2,3])
+    # print(y)
+    # print(y.order)
+    # var slicedy = y[:, :, 1:2]
+    # print(slicedy)
+    # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
+    # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2), 
+    # order="F")
+    # print(x)
+    # print(x.stride)
+    # var y = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2), 
+    # order="C")
+    # print(y)
+    # print(y.stride)
+    # print()
+    # var summed = numojo.stats.sum(x,0)
+    # print(summed)
+    # print(numojo.stats.mean(x,0))
+    # print(numojo.stats.cumprod(x))
+
+    # var maxval = x.max(axis=0)
+    # print(maxval)
+
+    # var arr = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0), 
+    # shape=List[Int](3,3), order="C") 
+    # var raw = List[Int32]()
+    # for _ in range(16):
+    #     raw.append(random.randn_float64()*10)
+    # var arr1 = numojo.NDArray[numojo.i32](data=raw, shape=List[Int](4,4), order="C") 
+    # var arr = numojo.NDArray[DType.int8](3,3,3, random=True, order="C")
+    # var arr1 = numojo.NDArray[DType.bool](data=List[SIMD[DType.bool, 1]](False, False, False, True), 
+    # shape=List[Int](2,2)) 
+    # print(arr1)
+    # print(arr1[0,1])
+    # print(arr1[0:1, :])
+    # print(arr1[1:2, 3:4])
+
+    # var array = nj.NDArray[nj.f64](10,10)
+    # for i in range(array.size()):
+    #     array[i] = i
+    # # for i in range(10):
+    #     # for j in range(10):
+    #         # print(array[i, j]) 
+    # var res = array.sum(axis=0)
+    # print(res)
+
+    # var arr2 = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1.0, 2.0, 4.0, 7.0, 11.0, 16.0),
+    # shape=List[Int](6))
+    # var np = Python.import_module("numpy")
+    # var np_arr = numojo.to_numpy(arr2)
+    # print(np_arr)
+    # var result = numojo.math.calculus.differentiation.gradient[numojo.f32](arr2, spacing=1.0)
+    # print(result)
+    # print(arr1.any())
+    # print(arr1.all())
+    # print(arr1.argmax())
+    # print(arr1.argmin())
+    # print(arr1.astype[numojo.i16]())
+    # print(arr1.flatten(inplace=True))
+    # print(r.ndshape, r.stride, r.ndshape._size)
+    # var t0 = time.now()
+    # var res = numojo.math.linalg.matmul_tiled_unrolled_parallelized[numojo.f32](arr, arr1)
+    # print((time.now()-t0)/1e9)
+    # var res = numojo.math.linalg.matmul_tiled_unrolled_parallelized[numojo.f32](arr, arr1)
+    # print(res)
     # print(arr)
-    # var sliced = arr[0:1,:,:]
+    # print("2x3x1")
+    # var sliced = arr[:, :, 1:2]
     # print(sliced)
-    # var sliced1 = arr[:,1:2,:]
+
+    # print("1x3x4")
+    # var sliced1 = arr[::2, :]
     # print(sliced1)
+
+    # print("1x3x1")
+    # var sliced2 = arr[1:2, :, 2:3]
+    # print(sliced2)
+
+    # var result = numojo.NDArray(3, 3)
+    # numojo.math.linalg.dot[t10=3, t11=3, t21=3, dtype=numojo.f32](result, arr, arr1)
+    # print(result)
+
+# fn main() raises:
+#     var size:VariadicList[Int] = VariadicList[Int](16,128,256,512,1024)
+#     alias size1: StaticIntTuple[5] = StaticIntTuple[5](16,128,256,512,1024)
+#     var times:List[Float64] = List[Float64]()
+#     alias type:DType = DType.float64
+#     measure_time[type, size1](size, times)
+
+# fn measure_time[dtype:DType, size1: StaticIntTuple[5]](size:VariadicList[Int], inout times:List[Float64]) raises:
+
+#     for i in range(size.__len__()):
+#         var arr1 = numojo.NDArray[dtype](size[i], size[i], random=True)
+#         var arr2 = numojo.NDArray[dtype](size[i], size[i], random=True)
+#         var arr_mul = numojo.NDArray[dtype](size[i], size[i])
+
+#         var t0 = time.now()
+#         @parameter
+#         for i in range(50):
+#             numojo.math.linalg.dot[t10=size1[i], t11=size1[i], t21=size1[i], dtype=dtype](arr_mul, arr1, arr2)
+#             # var arr_mul = numojo.math.linalg.matmul_parallelized[dtype](arr1, arr2)
+#             # var arr_mul = numojo.math.linalg.matmul_tiled_unrolled_parallelized[dtype](arr1, arr2)
+#             keep(arr_mul.unsafe_ptr())
+#         times.append(((time.now()-t0)/1e9)/50)
+
+#     for i in range(size.__len__()):
+#         print(times[i])
+
+# fn main() raises:
+#     alias type:DType = DType.float16
+#     measure_time[type]()
+
+# fn measure_time[dtype:DType]() raises:
+#     var size:VariadicList[Int] = VariadicList[Int](16,128,256,512,1024)
+#     alias size1: StaticIntTuple[5] = StaticIntTuple[5](16,128,256,512,1024) 
+
+#     var n = 4
+#     alias m = 4
+#     var arr1 = numojo.NDArray[dtype](size[n], size[n], random=True)
+#     var arr2 = numojo.NDArray[dtype](size[n], size[n], random=True)
+#     var arr_mul = numojo.NDArray[dtype](size[n], size[n])
+
+#     var t0 = time.now()
+
+#     for _ in range(50):
+#         numojo.math.linalg.dot[t10=size1[m], t11=size1[m], t21=size1[m], dtype=dtype](arr_mul, arr1, arr2)
+#         # var arr_mul = numojo.math.linalg.matmul_parallelized[dtype](arr1, arr2)
+#         # var arr_mul = numojo.math.linalg.matmul_tiled_unrolled_parallelized[dtype](arr1, arr2)
+#         keep(arr_mul.unsafe_ptr())
+#     print(((time.now()-t0)/1e9)/50)

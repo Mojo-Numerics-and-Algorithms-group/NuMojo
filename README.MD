@@ -100,7 +100,34 @@ Please find all the available functions [here](features.md)
 
 ## How to install
 
-Clone the repository and build
+There are two approach to install and use the Numojo package.
+
+### Build package
+
+This approach invovles building a standalone package file `mojopkg`.
+
+1. Clone the repository.
+1. Build the package using `mojo pacakge numojo`
+1. Move the numojo.mojopkg into the directory containing the your code.
+
+### Inlcude NuMojo's path for compiler and LSP
+
+This approach does not require buiding a package file. Instead, when you compile your code, you can include the path of NuMojo reporsitory with the following command:
+
+```console
+mojo run -I "../NuMojo" example.mojo
+```
+
+This is more flexible as you are able to edit the NuMojo source files when testing your code.
+
+In order to allow VSCode LSP to resolve the imported `numojo` package, you can:
+
+1. Go to preference page of VSCode.
+1. Got to `Mojo › Lsp: Include Dirs`
+1. Click `add item` and write the path where the Numojo repository is located, e.g. `/Users/Name/Programs/NuMojo`.
+1. Restart the Mojo LSP server.
+
+Now VSCode can show function hints for the Numojo pakcage!
 
 ## Contributing
 
@@ -108,7 +135,7 @@ Any contributions you make are **greatly appreciated**. For more details and gui
 
 ## Warnings
 
-This library is still very much a work in progress and may change at any time. Also, the standard tensor has many rough edges.
+This library is still very much a work in progress and may change at any time.
 
 ## License
 

@@ -27,6 +27,7 @@ fn is_inttype(dtype: DType) -> Bool:
         return True
     return False
 
+
 fn is_floattype[dtype: DType]() -> Bool:
     if (
         dtype == DType.float16

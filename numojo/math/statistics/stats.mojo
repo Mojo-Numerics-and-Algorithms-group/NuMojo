@@ -34,17 +34,16 @@ fn sum(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
             slices.append(Slice(0, shape[i]))
         else:
             slices.append(Slice(0, 0))
-    print(result_shape.__str__())
     var result: NDArray[array.dtype] = NDArray[array.dtype](
         NDArrayShape(result_shape)
     )
-
     for i in range(axis_size):
         slices[axis] = Slice(i, i + 1)
         var arr_slice = array[slices]
         result += arr_slice
 
     return result
+
 
 fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
     """
@@ -57,8 +56,9 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
 
     var result = Scalar[array.dtype](0)
     for i in range(array.ndshape._size):
-            result[0] += array.data[i]
+        result[0] += array.data[i]
     return result
+
 
 fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     """
@@ -100,6 +100,7 @@ fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
     return result
 
+
 fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
     """
     Product of all items in the array.
@@ -111,8 +112,9 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
 
     var result = Scalar[array.dtype](1)
     for i in range(array.ndshape._size):
-            result[0] *= array.data[i]
+        result[0] *= array.data[i]
     return result
+
 
 fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     """
@@ -125,6 +127,7 @@ fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
     """
     return sum(array, axis) / Scalar[array.dtype](array.ndshape[axis])
+
 
 fn meanall(array: NDArray) raises -> Float64:
     """

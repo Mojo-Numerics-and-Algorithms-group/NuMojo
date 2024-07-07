@@ -1,10 +1,10 @@
-from tensor import Tensor
 import benchmark
 from benchmark.compiler import keep
 from testing import assert_raises
 from random import rand
 
 from numojo import *
+import numojo as nj
 
 import time
 
@@ -51,7 +51,7 @@ fn main() raises:
     # print((time.now()-t0)/10e9, "seconds")
 
     # # # * ROW MAJOR INDEXING
-    var arr = NDArray[f16](VariadicList[Int](2, 3, 3), random=True)
+    var arr = nj.NDArray[nj.f16](VariadicList[Int](2, 3, 3), random=True, order="F")
     print("2x3x3 array row major")
     print(arr)
     print()
@@ -70,7 +70,7 @@ fn main() raises:
     var sliced1 = arr[:, ::2, 0:1]
     print("2x2 ARRAY - arr[:, ::2, 0:1]")
     print(sliced1)
-    arr[0] = 10.0
+    # arr[0] = 10.0
     print()
 
     var sliced2 = arr[:,:,::2]
@@ -81,4 +81,9 @@ fn main() raises:
     var sliced3 = arr[:, ::2, ::2]
     print("2x2x2 ARRAY - arr[:, ::2, ::2]")
     print(sliced3)
+    print()
+
+    var sliced4 = arr[1:2, 0:3, 1:2]
+    print("1x2x1 ARRAY - arr[1:2, 0:3, 1:2]")
+    print(sliced4)
     print()

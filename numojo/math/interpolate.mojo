@@ -27,14 +27,17 @@ fn interp1d[
 ) raises -> NDArray[dtype]:
     """
     Interpolate the values of y at the points xi.
+
     Parameters:
         dtype: The element type.
+
     Args:
         xi: An Array.
         x: An Array.
         y: An Array.
         method: The interpolation method.
         fill_value: The fill value.
+
     Returns:
         The interpolated values of y at the points xi as An Array of `dtype`.
     """

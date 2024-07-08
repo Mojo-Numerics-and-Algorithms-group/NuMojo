@@ -915,10 +915,10 @@ struct NDArray[dtype: DType = DType.float32](
         var idx: Int = _get_index(index, self.coefficient)
         self.data.store[width=1](idx, val)
 
-    fn __getitem__(self, index: Int) raises -> SIMD[dtype, 1]:
+    fn get_scalar(self, index: Int) raises -> SIMD[dtype, 1]:
         """
         Example:
-            `arr[15]` returns the 15th item of the array's data buffer.
+            `arr.get_scalar(15)` returns the 15th item of the array's data buffer.
         """
         if index >= self.ndshape._size:
             raise Error("Invalid index: index out of bound")
@@ -927,10 +927,25 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return self.data.load[width=1](index + self.ndshape._size)
 
-    fn __getitem__(self, *index: Int) raises -> SIMD[dtype, 1]:
+    fn __getitem__(self, idx: Int) raises -> Self:
         """
         Example:
-            `arr[1,2]` returns the item of 1st row and 2nd column of the array.
+            `arr[1]` returns the secong row of the array.
+        """
+        
+        var slice_list = List[Slice]()
+        slice_list.append(Slice(idx, idx + 1))
+
+        if self.ndim > 1:
+            for i in range(1, self.ndim):
+                var size_at_dim: Int = self.ndshape[i]
+                slice_list.append(Slice(0, size_at_dim))
+        var narr: Self = self.__getitem__(slice_list)
+
+        return narr
+
+    fn at(self, *index: Int) raises -> SIMD[dtype, 1]:
+        """Return the sclar at the coordinates.
         """
         if index.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")
@@ -1092,6 +1107,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         return narr
 
+
     fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
         """
         Example:
@@ -1110,10 +1126,9 @@ struct NDArray[dtype: DType = DType.float32](
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                print(i)
                 var size_at_dim: Int = self.ndshape[i]
-                slice_list.append(Slice(0, size_at_dim - 1))
-        var narr: Self = self[slice_list]
+                slice_list.append(Slice(0, size_at_dim))
+        var narr: Self = self.__getitem__(slice_list)
         return narr
 
 
@@ -1152,7 +1167,7 @@ struct NDArray[dtype: DType = DType.float32](
         var result = NDArray[dtype](length)
 
         for i in range(length):
-            result[i] = self[int(indices[i])]
+            result.__setitem__(i, self.get_scalar(int(indices[i])))
 
         return result
 
@@ -1175,7 +1190,7 @@ struct NDArray[dtype: DType = DType.float32](
         if self.shape() != other.shape():
             return False
         for i in range(self.size()):
-            if self[i] != other[i]:
+            if self.get_scalar(i) != other.get_scalar(i):
                 return False
         else:
             return True
@@ -1489,7 +1504,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         var sum = Scalar[dtype](0)
         for i in range(self.ndshape._size):
-            sum = sum + self[i] * other[i]
+            sum = sum + self.get_scalar(i) * other.get_scalar(i)
         return sum
 
     fn mdot(self, other: Self) raises -> Self:
@@ -1525,7 +1540,7 @@ struct NDArray[dtype: DType = DType.float32](
         var width = self.ndshape[1]
         var buffer = Self(width)
         for i in range(width):
-            buffer[i] = self.data.load[width=1](i + id * width)
+            buffer.__setitem__(i, self.data.load[width=1](i + id * width))
         return buffer
 
     fn col(self, id: Int) raises -> Self:
@@ -1538,7 +1553,7 @@ struct NDArray[dtype: DType = DType.float32](
         var height = self.ndshape[0]
         var buffer = Self(height)
         for i in range(height):
-            buffer[i] = self.data.load[width=1](id + i * width)
+            buffer.__setitem__(i, self.data.load[width=1](id + i * width))
         return buffer
 
     # # * same as mdot
@@ -1559,9 +1574,9 @@ struct NDArray[dtype: DType = DType.float32](
         var new_matrix = Self(self.ndshape[0], other.ndshape[1])
         for row in range(self.ndshape[0]):
             for col in range(other.ndshape[1]):
-                new_matrix[col + row * other.ndshape[1]] = self.row(row).vdot(
+                new_matrix.__setitem__(col + row * other.ndshape[1], self.row(row).vdot(
                     other.col(col)
-                )
+                ))
         return new_matrix
 
     fn size(self) -> Int:

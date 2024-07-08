@@ -1127,7 +1127,7 @@ struct NDArray[dtype: DType = DType.float32](
         Example:
         ```mojo
         var A = numojo.core.NDArray[numojo.i16](6, random=True)
-        var idx = numojo.core.sort.argsort(A)
+        var idx = A.argsort()
         print(A)
         print(idx)
         print(A[idx])
@@ -1657,8 +1657,17 @@ struct NDArray[dtype: DType = DType.float32](
                 result = i
         return result
 
-    fn argsort(self):
-        pass
+    fn argsort (self) raises -> NDArray[DType.index]:
+        """
+        Sort the NDArray and return the sorted indices.
+
+        See `numojo.core.sort.argsort()`.
+
+        Returns:
+            The indices of the sorted NDArray.
+        """
+
+        return numojo.core.sort.argsort(self)
 
     fn astype[type: DType](inout self) raises -> NDArray[type]:
         # I wonder if we can do this operation inplace instead of allocating memory.

@@ -14,7 +14,7 @@ fn test[dtype: DType](length: Int) raises:
     # Initialize an ND arrays of type
     var t0 = time.now()
     var A = NDArray[dtype](length, random=True)
-    var idx = nm.core.sort.argsort(A)
+    var idx = A.argsort()
     print("Array:", A)
     print("Sorted indices:", idx)
     print("Sorted array", A[idx])

@@ -940,13 +940,25 @@ struct NDArray[dtype: DType = DType.float32](
             for i in range(1, self.ndim):
                 var size_at_dim: Int = self.ndshape[i]
                 slice_list.append(Slice(0, size_at_dim))
+        
         var narr: Self = self.__getitem__(slice_list)
+
+        if self.ndim == 1:
+            narr.ndim = 0
+            narr.ndshape._shape[0] = 0
+            narr.ndshape._size = 0
 
         return narr
 
     fn at(self, *index: Int) raises -> SIMD[dtype, 1]:
         """Return the sclar at the coordinates.
         """
+
+        # For 0-d array, take out the first item in buffer
+        if self.ndim == 0:
+            return self.data.load[width=1](0)
+
+        # For ndarray, take out the value at the certain coordinates
         if index.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")
         for i in range(index.__len__()):
@@ -1117,10 +1129,14 @@ struct NDArray[dtype: DType = DType.float32](
         if n_slices > self.ndim:
             raise Error("Error: No of slices greater than rank of array")
         var slice_list: List[Slice] = List[Slice]()
+
+        var count_int = 0  # Count the number of Int in the argument
+
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
                 slice_list.append(slices[i]._get_ptr[Slice]()[0])
             elif slices[i].isa[Int]():
+                count_int += 1
                 var int: Int = slices[i]._get_ptr[Int]()[0]
                 slice_list.append(Slice(int, int + 1))
 
@@ -1128,7 +1144,14 @@ struct NDArray[dtype: DType = DType.float32](
             for i in range(n_slices, self.ndim):
                 var size_at_dim: Int = self.ndshape[i]
                 slice_list.append(Slice(0, size_at_dim))
+
         var narr: Self = self.__getitem__(slice_list)
+        
+        if count_int == self.ndim:
+            narr.ndim = 0
+            narr.ndshape._shape[0] = 0
+            narr.ndshape._size = 0
+
         return narr
 
 
@@ -1330,6 +1353,7 @@ struct NDArray[dtype: DType = DType.float32](
             return (
                 self._array_to_string(0, 0)
                 + "\n"
+                + str(self.ndim) + "-D array  "
                 + self.ndshape.__str__()
                 + "  DType: "
                 + self.dtype.__str__()
@@ -1405,6 +1429,8 @@ struct NDArray[dtype: DType = DType.float32](
         )
 
     fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
+        if self.ndim == 0:
+            return str(self.at(0))
         if dimension == self.ndim - 1:
             var result: String = str("[\t")
             var number_of_items = self.ndshape[dimension]

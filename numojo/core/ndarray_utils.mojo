@@ -89,11 +89,11 @@ fn bool_to_numeric[
     # Can't use simd becuase of bit packing error
     var res: NDArray[dtype] = NDArray[dtype](array.shape())
     for i in range(array.size()):
-        var t = array[i]
+        var t = array.at(i)
         if t:
-            res[i] = 1
+            res.__setitem__(i, 1)
         else:
-            res[i] = 0
+            res.__setitem__(i, 0)
     return res
 
 

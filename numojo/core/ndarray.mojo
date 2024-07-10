@@ -1197,7 +1197,42 @@ struct NDArray[dtype: DType = DType.float32](
 
     #     return result
 
+    fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
+        """Get items of array from mask.
 
+        Example:
+            ```
+            var A = numojo.core.NDArray[numojo.i16](6, random=True)
+            var mask = A > 0
+            print(A)
+            print(mask)
+            print(A[mask])
+            ```
+        ```console
+        [       -32768  -24148  16752   -2709   2148    -18418  ]
+        Shape: [6]  DType: int16
+        [       false   false   true    false   true    false   ]
+        Shape: [6]  DType: bool
+        [       16752   2148    ]
+        Shape: [2]  DType: int16
+        ```
+
+        Args:
+            mask: NDArray with Dtype.bool.
+
+        Returns:
+            NDArray with items from the mask.
+        """
+        var true: List[Int] = List[Int]()
+        for i in range(mask.ndshape._size):
+            if mask.data.load[width=1](i):
+                true.append(i)
+
+        var result = Self(true.__len__(), random = False)
+        for i in range(true.__len__()):
+            result.data.store[width=1](i, self.get_scalar(true[i]))
+
+        return result
 
     fn __int__(self) -> Int:
         return self.ndshape._size

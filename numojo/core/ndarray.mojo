@@ -229,7 +229,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
             if self[i] != other[i]:
                 return False
         return True
-
+        
     @always_inline("nodebug")
     fn __ne__(self, other: Self) raises -> Bool:
         return not self.__eq__(other)
@@ -927,6 +927,9 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return self.data.load[width=1](index + self.ndshape._size)
 
+    # fn __getitem__(self, idx: Int) raises -> SIMD[dtype, 1]:
+        # return self.data.load[width=1](idx)
+
     fn __getitem__(self, idx: Int) raises -> Self:
         """
         Example:
@@ -1155,44 +1158,44 @@ struct NDArray[dtype: DType = DType.float32](
         return narr
 
 
-    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
-        """Get items of array from indices.
+    # fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
+    #     """Get items of array from indices.
 
-        To-do:
-        Currently it supports 1d array.
-        In future, expand it to high dimensional arrays.
+    #     To-do:
+    #     Currently it supports 1d array.
+    #     In future, expand it to high dimensional arrays.
         
-        Example:
-        ```mojo
-        var A = numojo.core.NDArray[numojo.i16](6, random=True)
-        var idx = A.argsort()
-        print(A)
-        print(idx)
-        print(A[idx])
-        ```
-        ```console
-        [       -32768  -24148  16752   -2709   2148    -18418  ]
-        Shape: [6]  DType: int16
-        [       0       1       5       3       4       2       ]
-        Shape: [6]  DType: index
-        [       -32768  -24148  -18418  -2709   2148    16752   ]
-        Shape: [6]  DType: int16
-        ```
+    #     Example:
+    #     ```mojo
+    #     var A = numojo.core.NDArray[numojo.i16](6, random=True)
+    #     var idx = A.argsort()
+    #     print(A)
+    #     print(idx)
+    #     print(A[idx])
+    #     ```
+    #     ```console
+    #     [       -32768  -24148  16752   -2709   2148    -18418  ]
+    #     Shape: [6]  DType: int16
+    #     [       0       1       5       3       4       2       ]
+    #     Shape: [6]  DType: index
+    #     [       -32768  -24148  -18418  -2709   2148    16752   ]
+    #     Shape: [6]  DType: int16
+    #     ```
 
-        Args:
-            indices: NDArray with Dtype.index.
+    #     Args:
+    #         indices: NDArray with Dtype.index.
 
-        Returns:
-            NDArray with items from the indices.
-        """
+    #     Returns:
+    #         NDArray with items from the indices.
+    #     """
 
-        var length = indices.size()
-        var result = NDArray[dtype](length)
+    #     var length = indices.size()
+    #     var result = NDArray[dtype](length)
 
-        for i in range(length):
-            result.__setitem__(i, self.get_scalar(int(indices[i])))
+    #     for i in range(length):
+    #         result.__setitem__(i, self.get_scalar(int(indices[i])))
 
-        return result
+    #     return result
 
 
     fn __int__(self) -> Int:
@@ -1217,6 +1220,14 @@ struct NDArray[dtype: DType = DType.float32](
                 return False
         else:
             return True
+
+    @always_inline("nodebug")
+    fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) == other
+            result.data.store[width=1](i, temp)
+        return result
 
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
         return _af.math_func_one_array_one_SIMD_in_one_array_out[
@@ -1344,6 +1355,11 @@ struct NDArray[dtype: DType = DType.float32](
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
         return self.__truediv__(s)
 
+    fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
+            dtype, SIMD.__mod__
+        ](self, other)
+
     # ===-------------------------------------------------------------------===#
     # Trait implementations
     # ===-------------------------------------------------------------------===#
@@ -1381,7 +1397,7 @@ struct NDArray[dtype: DType = DType.float32](
             ) + str(self.dtype) + str("]](")
             if self.size() > 6:
                 for i in range(6):
-                    result = result + str(self[i]) + str(",")
+                    result = result + str(self.load[width=1](i)) + str(",")
                 result = result + " ... "
             else:
                 for i in self:

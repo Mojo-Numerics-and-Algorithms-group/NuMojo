@@ -915,10 +915,10 @@ struct NDArray[dtype: DType = DType.float32](
         var idx: Int = _get_index(index, self.coefficient)
         self.data.store[width=1](idx, val)
 
-    fn __getitem__(self, index: Int) raises -> SIMD[dtype, 1]:
+    fn get_scalar(self, index: Int) raises -> SIMD[dtype, 1]:
         """
         Example:
-            `arr[15]` returns the 15th item of the array's data buffer.
+            `arr.get_scalar(15)` returns the 15th item of the array's data buffer.
         """
         if index >= self.ndshape._size:
             raise Error("Invalid index: index out of bound")
@@ -927,11 +927,38 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return self.data.load[width=1](index + self.ndshape._size)
 
-    fn __getitem__(self, *index: Int) raises -> SIMD[dtype, 1]:
+    fn __getitem__(self, idx: Int) raises -> Self:
         """
         Example:
-            `arr[1,2]` returns the item of 1st row and 2nd column of the array.
+            `arr[1]` returns the secong row of the array.
         """
+        
+        var slice_list = List[Slice]()
+        slice_list.append(Slice(idx, idx + 1))
+
+        if self.ndim > 1:
+            for i in range(1, self.ndim):
+                var size_at_dim: Int = self.ndshape[i]
+                slice_list.append(Slice(0, size_at_dim))
+        
+        var narr: Self = self.__getitem__(slice_list)
+
+        if self.ndim == 1:
+            narr.ndim = 0
+            narr.ndshape._shape[0] = 0
+            narr.ndshape._size = 0
+
+        return narr
+
+    fn at(self, *index: Int) raises -> SIMD[dtype, 1]:
+        """Return the sclar at the coordinates.
+        """
+
+        # For 0-d array, take out the first item in buffer
+        if self.ndim == 0:
+            return self.data.load[width=1](0)
+
+        # For ndarray, take out the value at the certain coordinates
         if index.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")
         for i in range(index.__len__()):
@@ -1092,6 +1119,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         return narr
 
+
     fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
         """
         Example:
@@ -1101,20 +1129,71 @@ struct NDArray[dtype: DType = DType.float32](
         if n_slices > self.ndim:
             raise Error("Error: No of slices greater than rank of array")
         var slice_list: List[Slice] = List[Slice]()
+
+        var count_int = 0  # Count the number of Int in the argument
+
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
                 slice_list.append(slices[i]._get_ptr[Slice]()[0])
             elif slices[i].isa[Int]():
+                count_int += 1
                 var int: Int = slices[i]._get_ptr[Int]()[0]
                 slice_list.append(Slice(int, int + 1))
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                print(i)
                 var size_at_dim: Int = self.ndshape[i]
-                slice_list.append(Slice(0, size_at_dim - 1))
-        var narr: Self = self[slice_list]
+                slice_list.append(Slice(0, size_at_dim))
+
+        var narr: Self = self.__getitem__(slice_list)
+        
+        if count_int == self.ndim:
+            narr.ndim = 0
+            narr.ndshape._shape[0] = 0
+            narr.ndshape._size = 0
+
         return narr
+
+
+    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
+        """Get items of array from indices.
+
+        To-do:
+        Currently it supports 1d array.
+        In future, expand it to high dimensional arrays.
+        
+        Example:
+        ```mojo
+        var A = numojo.core.NDArray[numojo.i16](6, random=True)
+        var idx = A.argsort()
+        print(A)
+        print(idx)
+        print(A[idx])
+        ```
+        ```console
+        [       -32768  -24148  16752   -2709   2148    -18418  ]
+        Shape: [6]  DType: int16
+        [       0       1       5       3       4       2       ]
+        Shape: [6]  DType: index
+        [       -32768  -24148  -18418  -2709   2148    16752   ]
+        Shape: [6]  DType: int16
+        ```
+
+        Args:
+            indices: NDArray with Dtype.index.
+
+        Returns:
+            NDArray with items from the indices.
+        """
+
+        var length = indices.size()
+        var result = NDArray[dtype](length)
+
+        for i in range(length):
+            result.__setitem__(i, self.get_scalar(int(indices[i])))
+
+        return result
+
 
     fn __int__(self) -> Int:
         return self.ndshape._size
@@ -1134,7 +1213,7 @@ struct NDArray[dtype: DType = DType.float32](
         if self.shape() != other.shape():
             return False
         for i in range(self.size()):
-            if self[i] != other[i]:
+            if self.get_scalar(i) != other.get_scalar(i):
                 return False
         else:
             return True
@@ -1274,6 +1353,7 @@ struct NDArray[dtype: DType = DType.float32](
             return (
                 self._array_to_string(0, 0)
                 + "\n"
+                + str(self.ndim) + "-D array  "
                 + self.ndshape.__str__()
                 + "  DType: "
                 + self.dtype.__str__()
@@ -1349,6 +1429,8 @@ struct NDArray[dtype: DType = DType.float32](
         )
 
     fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
+        if self.ndim == 0:
+            return str(self.at(0))
         if dimension == self.ndim - 1:
             var result: String = str("[\t")
             var number_of_items = self.ndshape[dimension]
@@ -1448,7 +1530,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         var sum = Scalar[dtype](0)
         for i in range(self.ndshape._size):
-            sum = sum + self[i] * other[i]
+            sum = sum + self.get_scalar(i) * other.get_scalar(i)
         return sum
 
     fn mdot(self, other: Self) raises -> Self:
@@ -1484,7 +1566,7 @@ struct NDArray[dtype: DType = DType.float32](
         var width = self.ndshape[1]
         var buffer = Self(width)
         for i in range(width):
-            buffer[i] = self.data.load[width=1](i + id * width)
+            buffer.__setitem__(i, self.data.load[width=1](i + id * width))
         return buffer
 
     fn col(self, id: Int) raises -> Self:
@@ -1497,7 +1579,7 @@ struct NDArray[dtype: DType = DType.float32](
         var height = self.ndshape[0]
         var buffer = Self(height)
         for i in range(height):
-            buffer[i] = self.data.load[width=1](id + i * width)
+            buffer.__setitem__(i, self.data.load[width=1](id + i * width))
         return buffer
 
     # # * same as mdot
@@ -1518,9 +1600,9 @@ struct NDArray[dtype: DType = DType.float32](
         var new_matrix = Self(self.ndshape[0], other.ndshape[1])
         for row in range(self.ndshape[0]):
             for col in range(other.ndshape[1]):
-                new_matrix[col + row * other.ndshape[1]] = self.row(row).vdot(
+                new_matrix.__setitem__(col + row * other.ndshape[1], self.row(row).vdot(
                     other.col(col)
-                )
+                ))
         return new_matrix
 
     fn size(self) -> Int:
@@ -1616,8 +1698,17 @@ struct NDArray[dtype: DType = DType.float32](
                 result = i
         return result
 
-    fn argsort(self):
-        pass
+    fn argsort (self) raises -> NDArray[DType.index]:
+        """
+        Sort the NDArray and return the sorted indices.
+
+        See `numojo.core.sort.argsort()`.
+
+        Returns:
+            The indices of the sorted NDArray.
+        """
+
+        return numojo.core.sort.argsort(self)
 
     fn astype[type: DType](inout self) raises -> NDArray[type]:
         # I wonder if we can do this operation inplace instead of allocating memory.

@@ -1289,7 +1289,7 @@ struct NDArray[dtype: DType = DType.float32](
         Returns:
             An ndarray with a smaller or equal dimension of the original one.
         """
-        
+
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error("Error: No of slices greater than rank of array")

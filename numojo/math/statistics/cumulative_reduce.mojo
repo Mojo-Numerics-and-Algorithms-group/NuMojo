@@ -29,17 +29,23 @@ TODO:
 fn cumsum[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
-    """
-    Cumulative Sum of a array.
+    """Sum of all items of an array.
+
+    To-do:
+    1. The function currently returns a single number. In future, the function
+    returns an array of the same shape as the input one.
+    2. In future, allow users to specify the axis along which the statistics are 
+    calculated.
 
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
 
     Args:
-        array: A NDArray.
+        array: An NDArray.
+
     Returns:
-        The cumulative sum of the array as a SIMD Value of `dtype`.
+        The sum of all items in the array as a SIMD Value of `dtype`.
     """
     var result = Scalar[out_dtype]()
     alias opt_nelts: Int = simdwidthof[in_dtype]()
@@ -56,16 +62,23 @@ fn cumsum[
 fn cumprod[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
-    """
-    Cumulative Product of a array.
+    """Product of all items in an array.
+
+    To-do:
+    1. The function currently returns a single number. In future, the function
+    returns an array of the same shape as the input one.
+    2. In future, allow users to specify the axis along which the statistics are 
+    calculated.
 
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
+
     Args:
-        array: A NDArray.
+        array: An NDArray.
+
     Returns:
-        The cumulative product of the array as a SIMD Value of `dtype`.
+        The product of all items in the array as a SIMD Value of `dtype`.
     """
 
     var result: SIMD[out_dtype, 1] = SIMD[out_dtype, 1](1.0)
@@ -89,14 +102,21 @@ fn cumprod[
 fn cummean[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
-    """
-    Cumulative Arithmatic Mean of a array.
+    """Arithmatic mean of all items of an array.
+
+    To-do:
+    1. The function currently returns a single number. In future, the function
+    returns an array of the same shape as the input one.
+    2. In future, allow users to specify the axis along which the statistics are 
+    calculated.
 
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
+    
     Args:
-        array: A NDArray.
+        array: An NDArray.
+
     Returns:
         The mean of all of the member values of array as a SIMD Value of `dtype`.
     """
@@ -112,15 +132,19 @@ fn cummean[
 fn mode[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
-    """
-    Cumulative Mode of a array.
+    """Mode of all items of an array.
+
+    To-do:
+    In future, allow users to specify the axis along which the statistics are 
+    calculated.
 
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
 
     Args:
-        array: A NDArray.
+        array: An NDArray.
+
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
@@ -128,7 +152,7 @@ fn mode[
         array
     )
     var max_count = 0
-    var mode_value = sorted_array[0]
+    var mode_value = sorted_array.at(0)
     var current_count = 1
 
     for i in range(1, array.num_elements()):
@@ -137,11 +161,11 @@ fn mode[
         else:
             if current_count > max_count:
                 max_count = current_count
-                mode_value = sorted_array[i - 1]
+                mode_value = sorted_array.at(i - 1)
             current_count = 1
 
     if current_count > max_count:
-        mode_value = sorted_array[array.num_elements() - 1]
+        mode_value = sorted_array.at(array.num_elements() - 1)
 
     return mode_value
 
@@ -150,24 +174,28 @@ fn mode[
 fn median[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
-    """
-    Median value of a array.
+    """Median value of all items of an array.
+
+    To-do:
+    In future, allow users to specify the axis along which the statistics are 
+    calculated.
 
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
 
     Args:
-        array: A NDArray.
+        array: An NDArray.
+
     Returns:
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
     var sorted_array = binary_sort[in_dtype, out_dtype](array)
     var n = array.num_elements()
     if n % 2 == 1:
-        return sorted_array[n // 2]
+        return sorted_array.at(n // 2)
     else:
-        return (sorted_array[n // 2 - 1] + sorted_array[n // 2]) / 2
+        return (sorted_array.at(n // 2 - 1) + sorted_array.at(n // 2)) / 2
 
 
 # for max and min, I can later change to the latest reduce.max, reduce.min()

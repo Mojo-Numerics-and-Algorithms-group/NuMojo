@@ -1198,6 +1198,7 @@ struct NDArray[dtype: DType = DType.float32](
     #     return result
 
 
+
     fn __int__(self) -> Int:
         return self.ndshape._size
 

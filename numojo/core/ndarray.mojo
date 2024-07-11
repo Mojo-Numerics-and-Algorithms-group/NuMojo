@@ -1124,10 +1124,175 @@ struct NDArray[dtype: DType = DType.float32](
 
 
     fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
+        """Get items by a series of either slices or integers.
+
+        A decrease of dimensions may or may not happen when `__getitem__` is 
+        called on an ndarray. An ndarray of X-D array can become Y-D array after 
+        `__getitem__` where `Y <= X`.
+        
+        Whether the dimension decerases or not depends on: 
+        1. What types of arguments are passed into `__getitem__`.
+        2. The number of arguments that are passed in `__getitem__`.
+
+        PRINCIPAL: The number of dimensions to be decreased is determined by
+        the number of `Int` passed in `__getitem__`.
+
+        For example, `A` is a 10x10x10 ndarray (3-D). Then,
+
+        - `A[1, 2, 3]` leads to a 0-D array (scalar), since there are 3 integers.
+        - `A[1, 2]` leads to a 1-D array (vector), since there are 2 integers, 
+        so the dimension decreases by 2.
+        - `A[1]` leads to a 2-D array (matrix), since there is 1 integer, so the 
+        dimension decreases by 1.
+
+        The number of dimensions will not decrease when Slice is passed in 
+        `__getitem__` or no argument is passed in for a certain dimension 
+        (it is an implicit slide and a slide of all items will be used).
+
+        Take the same example `A` with 10x10x10 in shape. Then,
+
+        - `A[1:4, 2:5, 3:6]`, leads to a 3-D array (no decrease in dimension), 
+        since there are 3 slices.
+        - `A[2:8]`, leads to a 3-D array (no decrease in dimension), since there 
+        are 1 explicit slice and 2 implicit slices.
+
+        When there is a mixture of int and slices passed into `__getitem__`, 
+        the number of integers will be the number of dimensions to be decreased. 
+        Example,
+
+        - `A[1:4, 2, 2]`, leads to a 1-D array (vector), since there are 2 
+        integers, so the dimension decreases by 2.
+
+        Note that, even though a slice contains one row, it does not reduce the 
+        dimensions. Example,
+
+        - `A[1:2, 2:3, 3:4]`, leads to a 3-D array (no decrease in dimension),
+        since there are 3 slices.
+        
+        Note that, when the number of integers equals to the number of 
+        dimensions, the final outcome is an 0-D array instead of a number.
+        The user has to upack the 0-D array with the method`A.at(0)` to get the
+        corresponding number.
+        This behavior is different from numpy where the latter returns a number.
+
+        More examples for 1-D, 2-D, and 3-D arrays.
+
+        ```console
+        A is a matrix
+        [[      -128    -95     65      -11     ]
+        [      8       -72     -116    45      ]
+        [      45      111     -30     4       ]
+        [      84      -120    -115    7       ]]
+        2-D array  Shape: [4, 4]  DType: int8
+
+        A[0]
+        [       -128    -95     65      -11     ]
+        1-D array  Shape: [4]  DType: int8
+
+        A[0, 1]
+        -95
+        0-D array  Shape: [0]  DType: int8
+
+        A[Slice(1,3)]
+        [[      8       -72     -116    45      ]
+        [      45      111     -30     4       ]]
+        2-D array  Shape: [2, 4]  DType: int8
+
+        A[1, Slice(2,4)]
+        [       -116    45      ]
+        1-D array  Shape: [2]  DType: int8
+
+        A[Slice(1,3), Slice(1,3)]
+        [[      -72     -116    ]
+        [      111     -30     ]]
+        2-D array  Shape: [2, 2]  DType: int8
+
+        A.at(0,1) as Scalar
+        -95
+
+        ==============================
+        A is a vector
+        [       43      -127    -30     -111    ]
+        1-D array  Shape: [4]  DType: int8
+
+        A[0]
+        43
+        0-D array  Shape: [0]  DType: int8
+
+        A[Slice(1,3)]
+        [       -127    -30     ]
+        1-D array  Shape: [2]  DType: int8
+
+        A.at(0) as Scalar
+        43
+
+        ==============================
+        A is a 3darray
+        [[[     -22     47      22      110     ]
+        [     88      6       -105    39      ]
+        [     -22     51      105     67      ]
+        [     -61     -116    60      -44     ]]
+        [[     33      65      125     -35     ]
+        [     -65     123     57      64      ]
+        [     38      -110    33      98      ]
+        [     -59     -17     68      -6      ]]
+        [[     -68     -58     -37     -86     ]
+        [     -4      101     104     -113    ]
+        [     103     1       4       -47     ]
+        [     124     -2      -60     -105    ]]
+        [[     114     -110    0       -30     ]
+        [     -58     105     7       -10     ]
+        [     112     -116    66      69      ]
+        [     83      -96     -124    48      ]]]
+        3-D array  Shape: [4, 4, 4]  DType: int8
+
+        A[0]
+        [[      -22     47      22      110     ]
+        [      88      6       -105    39      ]
+        [      -22     51      105     67      ]
+        [      -61     -116    60      -44     ]]
+        2-D array  Shape: [4, 4]  DType: int8
+
+        A[0, 1]
+        [       88      6       -105    39      ]
+        1-D array  Shape: [4]  DType: int8
+
+        A[0, 1, 2]
+        -105
+        0-D array  Shape: [0]  DType: int8
+
+        A[Slice(1,3)]
+        [[[     33      65      125     -35     ]
+        [     -65     123     57      64      ]
+        [     38      -110    33      98      ]
+        [     -59     -17     68      -6      ]]
+        [[     -68     -58     -37     -86     ]
+        [     -4      101     104     -113    ]
+        [     103     1       4       -47     ]
+        [     124     -2      -60     -105    ]]]
+        3-D array  Shape: [2, 4, 4]  DType: int8
+
+        A[1, Slice(2,4)]
+        [[      38      -110    33      98      ]
+        [      -59     -17     68      -6      ]]
+        2-D array  Shape: [2, 4]  DType: int8
+
+        A[Slice(1,3), Slice(1,3), 2]
+        [[      57      33      ]
+        [      104     4       ]]
+        2-D array  Shape: [2, 2]  DType: int8
+
+        A.at(0,1,2) as Scalar
+        -105
+        ```
+
+        Args:
+            slices: A series of either Slice or Int.
+
+        Returns:
+            An ndarray with a smaller or equal dimension of the original one.
         """
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
-        """
+
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error("Error: No of slices greater than rank of array")

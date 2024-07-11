@@ -928,7 +928,7 @@ struct NDArray[dtype: DType = DType.float32](
             return self.data.load[width=1](index + self.ndshape._size)
 
     # fn __getitem__(self, idx: Int) raises -> SIMD[dtype, 1]:
-        # return self.data.load[width=1](idx)
+    #     return self.data.load[width=1](idx)
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
@@ -1158,44 +1158,44 @@ struct NDArray[dtype: DType = DType.float32](
         return narr
 
 
-    # fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
-    #     """Get items of array from indices.
+    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
+        """Get items of array from indices.
 
-    #     To-do:
-    #     Currently it supports 1d array.
-    #     In future, expand it to high dimensional arrays.
+        To-do:
+        Currently it supports 1d array.
+        In future, expand it to high dimensional arrays.
         
-    #     Example:
-    #     ```mojo
-    #     var A = numojo.core.NDArray[numojo.i16](6, random=True)
-    #     var idx = A.argsort()
-    #     print(A)
-    #     print(idx)
-    #     print(A[idx])
-    #     ```
-    #     ```console
-    #     [       -32768  -24148  16752   -2709   2148    -18418  ]
-    #     Shape: [6]  DType: int16
-    #     [       0       1       5       3       4       2       ]
-    #     Shape: [6]  DType: index
-    #     [       -32768  -24148  -18418  -2709   2148    16752   ]
-    #     Shape: [6]  DType: int16
-    #     ```
+        Example:
+        ```mojo
+        var A = numojo.core.NDArray[numojo.i16](6, random=True)
+        var idx = A.argsort()
+        print(A)
+        print(idx)
+        print(A[idx])
+        ```
+        ```console
+        [       -32768  -24148  16752   -2709   2148    -18418  ]
+        Shape: [6]  DType: int16
+        [       0       1       5       3       4       2       ]
+        Shape: [6]  DType: index
+        [       -32768  -24148  -18418  -2709   2148    16752   ]
+        Shape: [6]  DType: int16
+        ```
 
-    #     Args:
-    #         indices: NDArray with Dtype.index.
+        Args:
+            indices: NDArray with Dtype.index.
 
-    #     Returns:
-    #         NDArray with items from the indices.
-    #     """
+        Returns:
+            NDArray with items from the indices.
+        """
 
-    #     var length = indices.size()
-    #     var result = NDArray[dtype](length)
+        var length = indices.size()
+        var result = NDArray[dtype](length)
 
-    #     for i in range(length):
-    #         result.__setitem__(i, self.get_scalar(int(indices[i])))
+        for i in range(length):
+            result.__setitem__(i, self.get_scalar(int(indices[i])))
 
-    #     return result
+        return result
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """Get items of array from mask.
@@ -1208,14 +1208,6 @@ struct NDArray[dtype: DType = DType.float32](
             print(mask)
             print(A[mask])
             ```
-        ```console
-        [       -32768  -24148  16752   -2709   2148    -18418  ]
-        Shape: [6]  DType: int16
-        [       false   false   true    false   true    false   ]
-        Shape: [6]  DType: bool
-        [       16752   2148    ]
-        Shape: [2]  DType: int16
-        ```
 
         Args:
             mask: NDArray with Dtype.bool.
@@ -1233,6 +1225,20 @@ struct NDArray[dtype: DType = DType.float32](
             result.data.store[width=1](i, self.get_scalar(true[i]))
 
         return result
+    
+    fn __setitem__(inout self, mask: NDArray[DType.bool], value: Self) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+
+        """ 
+        if mask.ndshape != self.ndshape: # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
+
+        for i in range(mask.ndshape._size):
+            if mask.data.load[width=1](i):
+                self.data.store[width=1](i, value.data.load[width=1](i))
+
+
 
     fn __int__(self) -> Int:
         return self.ndshape._size

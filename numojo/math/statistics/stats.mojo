@@ -12,14 +12,14 @@ from .. import mul
 
 
 fn sum(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
-    """
-    Sum of array elements over a given axis.
+    """Sum of array elements over a given axis.
+
     Args:
         array: NDArray.
         axis: The axis along which the sum is performed.
+    
     Returns:
         An NDArray.
-
     """
 
     var ndim: Int = array.ndim
@@ -49,10 +49,22 @@ fn sum(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
 
 fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
-    """
-    Sum of all items in the array.
+    """Sum of all items in the array.
+
+    Example:
+    ```console
+    > print(A)
+    [[      0.1315377950668335      0.458650141954422       0.21895918250083923     ]
+    [      0.67886471748352051     0.93469291925430298     0.51941639184951782     ]
+    [      0.034572109580039978    0.52970021963119507     0.007698186207562685    ]]
+    2-D array  Shape: [3, 3]  DType: float32
+    > print(nm.math.stats.sumall(A))
+    3.5140917301177979
+    ```
+
     Args:
         array: NDArray.
+    
     Returns:
         Scalar.
     """
@@ -64,14 +76,14 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
 
 
 fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
-    """
-    Product of array elements over a given axis.
+    """Product of array elements over a given axis.
+
     Args:
         array: NDArray.
         axis: The axis along which the product is performed.
+    
     Returns:
         An NDArray.
-
     """
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
@@ -105,10 +117,23 @@ fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
 
 fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
-    """
-    Product of all items in the array.
+    """Product of all items in the array.
+    
+    Example:
+    ```console
+    > print(A)
+    [[      0.1315377950668335      0.458650141954422       0.21895918250083923     ]
+    [      0.67886471748352051     0.93469291925430298     0.51941639184951782     ]
+    [      0.034572109580039978    0.52970021963119507     0.007698186207562685    ]]
+    2-D array  Shape: [3, 3]  DType: float32
+
+    > print(nm.math.stats.prodall(A))
+    6.1377261317829834e-07
+    ```
+
     Args:
         array: NDArray.
+    
     Returns:
         Scalar.
     """
@@ -133,13 +158,25 @@ fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
 
 fn meanall(array: NDArray) raises -> Float64:
-    """
-    Mean of all items in the array.
+    """Mean of all items in the array.
+
+    Example:
+    ```console
+    > print(A)
+    [[      0.1315377950668335      0.458650141954422       0.21895918250083923     ]
+    [      0.67886471748352051     0.93469291925430298     0.51941639184951782     ]
+    [      0.034572109580039978    0.52970021963119507     0.007698186207562685    ]]
+    2-D array  Shape: [3, 3]  DType: float32
+
+    > print(nm.math.stats.meanall(A))
+    0.39045463667975533
+    ```
+    
     Args:
         array: NDArray.
+    
     Returns:
         Float64.
-
     """
 
     return (

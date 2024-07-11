@@ -89,15 +89,44 @@ fn bool_to_numeric[
     # Can't use simd becuase of bit packing error
     var res: NDArray[dtype] = NDArray[dtype](array.shape())
     for i in range(array.size()):
-        var t = array[i]
+        var t = array.at(i)
         if t:
-            res[i] = 1
+            res.__setitem__(i, 1)
         else:
-            res[i] = 0
+            res.__setitem__(i, 0)
     return res
 
 
 fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
+    """Transform the Numojo NDArray to a Numpy NDArray.
+
+    Example:
+    ```console
+    > var A = NDArray(3, 3, random=True)
+    > print(A)
+    [[      0.1315377950668335      0.458650141954422       0.21895918250083923     ]
+     [      0.67886471748352051     0.93469291925430298     0.51941639184951782     ]
+     [      0.034572109580039978    0.52970021963119507     0.007698186207562685    ]]
+    2-D array  Shape: [3, 3]  DType: float32
+    > var B = A.to_numpy()
+    > print(B)
+    [[0.1315 0.4587 0.219 ]
+     [0.6789 0.9347 0.5194]
+     [0.0346 0.5297 0.0077]]
+    > print(B.dtype)
+    float32
+    ```
+
+    Parameters:
+        dtype: The dtype of the original array.
+    
+    Args:
+        array: The original Numojo NDArray.
+
+    Returns:
+        A Numpy NDArray with the same data type.
+    """
+    
     try:
         var np = Python.import_module("numpy")
 

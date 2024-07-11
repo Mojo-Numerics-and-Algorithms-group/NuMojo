@@ -39,15 +39,13 @@ fn cross[
 
     if array1.ndshape._len == array2.ndshape._len == 3:
         var array3: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(3))
-        array3[0] = (array1[1] * array2[2] - array1[2] * array2[1]).cast[
+        array3.store(0,(array1.get_scalar(1) * array2.get_scalar(2) - array1.get_scalar(2) * array2.get_scalar(1)).cast[out_dtype]())
+        array3.store(1,(array1.get_scalar(2) * array2.get_scalar(0) - array1.get_scalar(0) * array2.get_scalar(2)).cast[
             out_dtype
-        ]()
-        array3[1] = (array1[2] * array2[0] - array1[0] * array2[2]).cast[
+        ]())
+        array3.store(2,(array1.get_scalar(0) * array2.get_scalar(1) - array1.get_scalar(1) * array2.get_scalar(0)).cast[
             out_dtype
-        ]()
-        array3[2] = (array1[0] * array2[1] - array1[1] * array2[0]).cast[
-            out_dtype
-        ]()
+        ]())
         return array3
     else:
         raise Error(

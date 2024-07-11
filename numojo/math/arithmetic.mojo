@@ -96,16 +96,14 @@ fn diff[
         NDArrayShape(array.num_elements())
     )
     for i in range(array.num_elements()):
-        array1[i] = array[i].cast[out_dtype]()
+        array1.store(i,array.get_scalar(i).cast[out_dtype]())
 
     for num in range(n):
         var result: NDArray[out_dtype] = NDArray[out_dtype](
             NDArrayShape(array.num_elements() - (num + 1))
         )
         for i in range(array1.num_elements() - 1):
-            result[i] = (array1.load[1](i + 1) - array1.load[1](i)).cast[
-                out_dtype
-            ]()
+            result.store(i, (array1.load[1](i + 1) - array1.load[1](i)).cast[out_dtype]())
         array1 = result
     return array1
 

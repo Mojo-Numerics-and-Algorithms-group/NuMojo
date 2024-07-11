@@ -233,11 +233,10 @@ fn maxT[
 
     vectorize[vectorized_max, opt_nelts](array.num_elements())
 
-    var result: Scalar[in_dtype] = Scalar[out_dtype](max_value[0])
+    var result: Scalar[in_dtype] = Scalar[out_dtype](max_value.get_scalar(0))
     for i in range(max_value.__len__()):
-        if max_value[i] > result:
-            result = max_value[i]
-
+        if max_value.get_scalar(i) > result:
+            result = max_value.get_scalar(i)
     return result.cast[out_dtype]()
 
 
@@ -274,10 +273,10 @@ fn minT[
 
     vectorize[vectorized_min, opt_nelts](array.num_elements())
 
-    var result: Scalar[in_dtype] = Scalar[out_dtype](min_value[0])
+    var result: Scalar[in_dtype] = Scalar[out_dtype](min_value.get_scalar(0))
     for i in range(min_value.__len__()):
-        if min_value[i] < result:
-            result = min_value[i]
+        if min_value.get_scalar(i) < result:
+            result = min_value.get_scalar(i)
 
     return result.cast[out_dtype]()
 
@@ -316,7 +315,7 @@ fn cumpvariance[
     var result = Scalar[out_dtype]()
 
     for i in range(array.num_elements()):
-        result += (array[i].cast[out_dtype]() - mean_value) ** 2
+        result += (array.get_scalar(i).cast[out_dtype]() - mean_value) ** 2
 
     return result / (array.num_elements())
 
@@ -355,7 +354,7 @@ fn cumvariance[
 
     var result = Scalar[out_dtype]()
     for i in range(array.num_elements()):
-        result += (array[i].cast[out_dtype]() - mean_value) ** 2
+        result += (array.get_scalar(i).cast[out_dtype]() - mean_value) ** 2
 
     return result / (array.num_elements() - 1)
 
@@ -584,10 +583,10 @@ fn argmax[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var max_val: Scalar[dtype] = array[0]
+    var max_val: Scalar[dtype] = array.get_scalar(0)
     for i in range(1, array.num_elements()):
-        if array[i] > max_val:
-            max_val = array[i]
+        if array.get_scalar(i) > max_val:
+            max_val = array.get_scalar(i)
             idx = i
     return idx
 
@@ -607,10 +606,10 @@ fn argmin[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var min_val: Scalar[dtype] = array[0]
+    var min_val: Scalar[dtype] = array.get_scalar(0)
 
     for i in range(1, array.num_elements()):
-        if array[i] < min_val:
-            min_val = array[i]
+        if array.get_scalar(i) < min_val:
+            min_val = array.get_scalar(i)
             idx = i
     return idx

@@ -65,15 +65,35 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 fn _partition(
     inout ndarray: NDArray, left: Int, right: Int, pivot_index: Int
 ) raises -> Int:
-    var pivot_value = ndarray[pivot_index]
-    ndarray[pivot_index], ndarray[right] = ndarray[right], ndarray[pivot_index]
+    """Do partition for the data buffer of ndarray.
+
+    Args:
+        ndarray: An NDArray.
+        left: Left index of the partition.
+        right: Right index of the partition.
+        pivot_index: Input pivot index
+
+    Returns:
+        New pivot index.
+    """
+
+    var pivot_value = ndarray.get_scalar(pivot_index)
+    var _value_at_pivot = ndarray.get_scalar(pivot_index)
+    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_pivot)
+
     var store_index = left
 
     for i in range(left, right):
-        if ndarray[i] < pivot_value:
-            ndarray[store_index], ndarray[i] = ndarray[i], ndarray[store_index]
+        if ndarray.get_scalar(i) < pivot_value:
+            var _value_at_store = ndarray.get_scalar(store_index)
+            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
+            ndarray.__setitem__(i, _value_at_store)
             store_index = store_index + 1
-    ndarray[right], ndarray[store_index] = ndarray[store_index], ndarray[right]
+
+    var _value_at_store = ndarray.get_scalar(store_index)
+    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_store)
 
     return store_index
 
@@ -190,28 +210,50 @@ fn _argsort_partition(
     right: Int,
     pivot_index: Int,
 ) raises -> Int:
-    var pivot_value = ndarray[pivot_index]
-    ndarray[pivot_index], ndarray[right] = ndarray[right], ndarray[pivot_index]
-    idx_array[pivot_index], idx_array[right] = (
-        idx_array[right],
-        idx_array[pivot_index],
-    )
+    """Do partition for the indices of the data buffer of ndarray.
+
+    Args:
+        ndarray: An NDArray.
+        idx_array: An NDArray.
+        left: Left index of the partition.
+        right: Right index of the partition.
+        pivot_index: Input pivot index
+
+    Returns:
+        New pivot index.
+    """
+
+    var pivot_value = ndarray.get_scalar(pivot_index)
+    
+    var _value_at_pivot = ndarray.get_scalar(pivot_index)
+    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_pivot)
+    
+    var _value_at_pivot_index = idx_array.get_scalar(pivot_index)
+    idx_array.__setitem__(pivot_index, idx_array.get_scalar(right))
+    idx_array.__setitem__(right, _value_at_pivot_index)
+
     var store_index = left
 
     for i in range(left, right):
-        if ndarray[i] < pivot_value:
-            ndarray[store_index], ndarray[i] = ndarray[i], ndarray[store_index]
-            idx_array[store_index], idx_array[i] = (
-                idx_array[i],
-                idx_array[store_index],
-            )
+        if ndarray.get_scalar(i) < pivot_value:
+            var _value_at_store = ndarray.get_scalar(store_index)
+            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
+            ndarray.__setitem__(i, _value_at_store)
+            
+            var _value_at_store_index = idx_array.get_scalar(store_index)
+            idx_array.__setitem__(store_index, idx_array.get_scalar(i))
+            idx_array.__setitem__(i, _value_at_store_index)
+
             store_index = store_index + 1
 
-    ndarray[right], ndarray[store_index] = ndarray[store_index], ndarray[right]
-    idx_array[right], idx_array[store_index] = (
-        idx_array[store_index],
-        idx_array[right],
-    )
+    var _value_at_store = ndarray.get_scalar(store_index)
+    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_store)
+
+    var _value_at_store_index = idx_array.get_scalar(store_index)
+    idx_array.__setitem__(store_index, idx_array.get_scalar(right))
+    idx_array.__setitem__(right, _value_at_store_index)
 
     return store_index
 
@@ -274,7 +316,7 @@ fn argsort[
 
     var idx_array = NDArray[DType.index](length)
     for i in range(length):
-        idx_array[i] = i
+        idx_array.__setitem__(i, i)
 
     argsort_inplace(array, idx_array, 0, length - 1)
 

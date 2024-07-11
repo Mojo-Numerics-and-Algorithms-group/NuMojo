@@ -33,6 +33,7 @@ from ..math.statistics.cumulative_reduce import (
     maxT,
     minT,
 )
+import .sort as sort
 from ..math.check import any, all
 from ..math.arithmetic import abs
 from .ndarray_utils import (
@@ -1332,7 +1333,8 @@ struct NDArray[dtype: DType = DType.float32](
         
         Example:
         ```mojo
-        var A = numojo.core.NDArray[numojo.i16](6, random=True)
+        import numojo
+        var A = numojo.NDArray[numojo.i16](6, random=True)
         var idx = A.argsort()
         print(A)
         print(idx)
@@ -1973,6 +1975,14 @@ struct NDArray[dtype: DType = DType.float32](
     # # tobyets, tofile, view
     # TODO: Implement axis parameter for all
 
+    fn __bool__(self)raises->Bool:
+        if self.dtype == DType.bool:
+            if self.all():
+                return True
+            else:
+                return False
+        raise Error("core:ndarray:NDArray:__bool__: Bool is currently only implemented for DType.bool")
+
     fn all(self) raises -> Bool:
         # make this a compile time check
         if not (self.dtype == DType.bool or is_inttype(dtype)):
@@ -2032,7 +2042,7 @@ struct NDArray[dtype: DType = DType.float32](
             The indices of the sorted NDArray.
         """
 
-        return numojo.core.sort.argsort(self)
+        return sort.argsort(self)
 
     fn astype[type: DType](inout self) raises -> NDArray[type]:
         # I wonder if we can do this operation inplace instead of allocating memory.
@@ -2247,7 +2257,7 @@ struct NDArray[dtype: DType = DType.float32](
     #     pass
 
     fn sort(self) raises -> Self:
-        return numojo.core.sort.quick_sort(self)
+        return sort.quick_sort(self)
 
     fn sum(self: Self, axis: Int) raises -> Self:
         """

@@ -45,7 +45,7 @@ fn trapz[
 
     var integral: SIMD[out_dtype] = 0.0
     for i in range(x.num_elements() - 1):
-        var temp = (x[i + 1] - x[i]).cast[out_dtype]() * (y[i] + y[i + 1]).cast[
+        var temp = (x.get_scalar(i + 1) - x.get_scalar(i)).cast[out_dtype]() * (y.get_scalar(i) + y.get_scalar(i + 1)).cast[
             out_dtype
         ]() / 2.0
         integral += temp

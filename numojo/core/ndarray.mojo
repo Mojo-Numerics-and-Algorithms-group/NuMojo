@@ -1238,7 +1238,16 @@ struct NDArray[dtype: DType = DType.float32](
             if mask.data.load[width=1](i):
                 self.data.store[width=1](i, value.data.load[width=1](i))
 
+    fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+        """ 
+        if mask.ndshape != self.ndshape: # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
 
+        for i in range(mask.ndshape._size):
+            if mask.data.load[width=1](i):
+                self.data.store[width=1](i, value)
 
     fn __int__(self) -> Int:
         return self.ndshape._size

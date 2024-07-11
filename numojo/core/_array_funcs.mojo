@@ -14,17 +14,17 @@ fn math_func_1_array_in_one_array_out[
     ],
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply a SIMD function of one variable and one return to a NDArray
+    Apply a SIMD compatible function to a NDArray and returns a new NDArray.
 
     Parameters:
-        dtype: The element type.
-        func: the SIMD function to to apply.
+        dtype: The NDArray element type.
+        func: The SIMD compatible function to act on the NDArray.
 
     Args:
-        array: A NDArray
+        array: A NDArray.
 
     Returns:
-        A a new NDArray that is NDArray with the function func applied.
+        A new NDArray that is the result of applying the function to the NDArray.
     """
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
     alias opt_nelts = simdwidthof[dtype]()
@@ -48,21 +48,21 @@ fn math_func_2_array_in_one_array_out[
     ) -> SIMD[type, simd_w],
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply a SIMD function of two variable and one return to a NDArray
+    Apply a SIMD compatible function to two NDArrays and returns a new NDArray.
 
-    Constraints:
-        Both arrays must have the same shape
+    Raises:
+        Error if the two arrays do not have the same shape.
 
     Parameters:
-        dtype: The element type.
-        func: the SIMD function to to apply.
+        dtype: The NDArray element type.
+        func: The SIMD compatible function to act on the NDArrays.
 
     Args:
-        array1: A NDArray
-        array2: A NDArray
+        array1: A NDArray.
+        array2: A NDArray.
 
     Returns:
-        A a new NDArray that is NDArray with the function func applied.
+        A new NDArray that is the result of applying the function to the input NDArrays.
     """
 
     if array1.shape() != array2.shape():
@@ -90,21 +90,18 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
     ) -> SIMD[type, simd_w],
 ](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[dtype]:
     """
-    Apply a SIMD function of two variable and one return to a NDArray
-
-    Constraints:
-        Both arrays must have the same shape
+    Apply a SIMD compatible function to a NDArray and a SIMD value and returns a new NDArray.
 
     Parameters:
-        dtype: The element type.
-        func: the SIMD function to to apply.
+        dtype: The NDArray element type.
+        func: The SIMD compatible function to act on the NDArray and SIMD value.
 
     Args:
-        array: A NDArray
-        scalar: scalar value
+        array: A NDArray.
+        scalar: A scalar value.
 
     Returns:
-        A a new NDArray that is NDArray with the function func applied.
+        A new NDArray that is the result of applying the function to the input NDArray and SIMD value.
     """
 
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape())

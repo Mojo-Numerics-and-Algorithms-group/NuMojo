@@ -229,7 +229,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
             if self[i] != other[i]:
                 return False
         return True
-
+        
     @always_inline("nodebug")
     fn __ne__(self, other: Self) raises -> Bool:
         return not self.__eq__(other)
@@ -927,6 +927,9 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return self.data.load[width=1](index + self.ndshape._size)
 
+    # fn __getitem__(self, idx: Int) raises -> SIMD[dtype, 1]:
+    #     return self.data.load[width=1](idx)
+
     fn __getitem__(self, idx: Int) raises -> Self:
         """
         Example:
@@ -1359,6 +1362,59 @@ struct NDArray[dtype: DType = DType.float32](
 
         return result
 
+    fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
+        """Get items of array from mask.
+
+        Example:
+            ```
+            var A = numojo.core.NDArray[numojo.i16](6, random=True)
+            var mask = A > 0
+            print(A)
+            print(mask)
+            print(A[mask])
+            ```
+
+        Args:
+            mask: NDArray with Dtype.bool.
+
+        Returns:
+            NDArray with items from the mask.
+        """
+        var true: List[Int] = List[Int]()
+        for i in range(mask.ndshape._size):
+            if mask.data.load[width=1](i):
+                true.append(i)
+
+        var result = Self(true.__len__(), random = False)
+        for i in range(true.__len__()):
+            result.data.store[width=1](i, self.get_scalar(true[i]))
+
+        return result
+    
+    fn __setitem__(inout self, mask: NDArray[DType.bool], value: Self) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+
+        """ 
+        if mask.ndshape != self.ndshape: # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
+
+        for i in range(mask.ndshape._size):
+            if mask.data.load[width=1](i):
+                self.data.store[width=1](i, value.data.load[width=1](i))
+
+    # compiler doesn't accept this
+    # fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
+    #     """
+    #     Set the value of the array at the indices where the mask is true.
+    #     """ 
+    #     if mask.ndshape != self.ndshape: # this behavious could be removed potentially
+    #         raise Error("Mask and array must have the same shape")
+
+    #     for i in range(mask.ndshape._size):
+    #         if mask.data.load[width=1](i):
+    #             print(value)
+    #             self.data.store[width=1](i, value)
 
     fn __int__(self) -> Int:
         return self.ndshape._size
@@ -1383,6 +1439,104 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return True
 
+    @always_inline("nodebug")
+    fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) == other
+            result.data.store[width=1](i, temp)
+        return result
+    
+    @always_inline("nodebug")
+    fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) != other
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __ne__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        if self.ndshape != other.ndshape:
+            raise Error("Both arrays must have the same shape")
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) != other.data.load[width=1](i)
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) < other
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __lt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        if self.ndshape != other.ndshape:
+            raise Error("Both arrays must have the same shape")
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) < other.data.load[width=1](i)
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) <= other
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __le__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        if self.ndshape != other.ndshape:
+            raise Error("Both arrays must have the same shape")
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) <= other.data.load[width=1](i)
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) > other
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __gt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        if self.ndshape != other.ndshape:
+            raise Error("Both arrays must have the same shape")
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) > other.data.load[width=1](i)
+            result.data.store[width=1](i, temp)
+        return result
+    
+    @always_inline("nodebug")
+    fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) >= other
+            result.data.store[width=1](i, temp)
+        return result
+
+    @always_inline("nodebug")
+    fn __ge__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        if self.ndshape != other.ndshape:
+            raise Error("Both arrays must have the same shape")
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) >= other.data.load[width=1](i)
+            result.data.store[width=1](i, temp)
+        return result
+ 
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
         return _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
@@ -1509,6 +1663,11 @@ struct NDArray[dtype: DType = DType.float32](
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
         return self.__truediv__(s)
 
+    fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+        return _af.math_func_one_array_one_SIMD_in_one_array_out[
+            dtype, SIMD.__mod__
+        ](self, other)
+
     # ===-------------------------------------------------------------------===#
     # Trait implementations
     # ===-------------------------------------------------------------------===#
@@ -1546,7 +1705,7 @@ struct NDArray[dtype: DType = DType.float32](
             ) + str(self.dtype) + str("]](")
             if self.size() > 6:
                 for i in range(6):
-                    result = result + str(self[i]) + str(",")
+                    result = result + str(self.load[width=1](i)) + str(",")
                 result = result + " ... "
             else:
                 for i in self:

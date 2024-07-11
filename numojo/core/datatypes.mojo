@@ -6,7 +6,7 @@
 """
 
 # Rust-like data type alias
-
+"""alias for `DType.int8`"""
 alias i8 = DType.int8
 """Data type alias for DType.int8"""
 alias i16 = DType.int16
@@ -40,7 +40,7 @@ fn cvtdtype[
     Parameters:
         in_dtype: The input datatype.
         out_dtype: The output dataytpe.
-        width: The SIMD width of input value.
+        width: The width of the SIMD vector.
 
     Args:
         value: The SIMD value to be converted.
@@ -64,7 +64,7 @@ fn cvtdtype[
     Parameters:
         in_dtype: The input datatype.
         out_dtype: The output dataytpe.
-        width: The SIMD width of input value.
+        width: The width of the SIMD vector.
         value: The SIMD value to be converted.
 
     Returns:

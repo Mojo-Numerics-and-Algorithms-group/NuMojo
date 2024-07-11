@@ -28,6 +28,13 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     Worst-case complexity: O(n^2) comparisons, O(n^2) swaps.
     Worst-case space complexity: O(n).
 
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.bubble_sort(arr)
+        print(sorted_arr)
+        ```
+
     Parameters:
         dtype: The input element type.
 
@@ -104,6 +111,13 @@ fn quick_sort[
     Worst-case space complexity: O(n).
     Unstable.
 
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.quick_sort(arr)
+        print(sorted_arr)
+        ```
+
     Parameters:
         dtype: The input element type.
 
@@ -132,6 +146,13 @@ fn binary_sort[
 ](array: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
     """
     Binary sorting of NDArray.
+
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.binary_sort(arr)
+        print(sorted_arr)
+        ```
 
     Parameters:
         in_dtype: The input element type.
@@ -230,6 +251,13 @@ fn argsort[
 ](ndarray: NDArray[dtype],) raises -> NDArray[DType.index]:
     """
     Argsort of the NDArray using quick sort algorithm.
+
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.argsort(arr)
+        print(sorted_arr)
+        ```
 
     Parameters:
         dtype: The input element type.

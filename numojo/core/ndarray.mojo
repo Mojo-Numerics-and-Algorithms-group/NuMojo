@@ -1358,7 +1358,7 @@ struct NDArray[dtype: DType = DType.float32](
         var result = NDArray[dtype](length)
 
         for i in range(length):
-            result.__setitem__(i, self.get_scalar(int(indices[i])))
+            result.__setitem__(i, self.get_scalar(int(indices.at(i))))
 
         return result
 

@@ -950,7 +950,6 @@ struct NDArray[dtype: DType = DType.float32](
         if self.ndim == 1:
             narr.ndim = 0
             narr.ndshape._shape[0] = 0
-            narr.ndshape._size = 0
 
         return narr
 
@@ -1319,7 +1318,6 @@ struct NDArray[dtype: DType = DType.float32](
         if count_int == self.ndim:
             narr.ndim = 0
             narr.ndshape._shape[0] = 0
-            narr.ndshape._size = 0
 
         return narr
 
@@ -1360,7 +1358,7 @@ struct NDArray[dtype: DType = DType.float32](
         var result = NDArray[dtype](length)
 
         for i in range(length):
-            result.__setitem__(i, self.get_scalar(int(indices[i])))
+            result.__setitem__(i, self.get_scalar(int(indices.at(i))))
 
         return result
 
@@ -1418,8 +1416,35 @@ struct NDArray[dtype: DType = DType.float32](
     #             print(value)
     #             self.data.store[width=1](i, value)
 
-    fn __int__(self) -> Int:
-        return self.ndshape._size
+
+    fn __int__(self) raises -> Int:
+        """Get Int representation of the array.
+
+        Similar to Numpy, only 0-D arrays or length-1 arrays can be converted to 
+        scalars.
+
+        Example:
+        ```console
+        > var A = NDArray[dtype](6, random=True)
+        > print(int(A))
+
+        Unhandled exception caught during execution: Only 0-D arrays or length-1 arrays can be converted to scalars
+        mojo: error: execution exited with a non-zero result: 1
+
+        > var B = NDArray[dtype](1, 1, random=True)
+        > print(int(B))
+        14
+        ```
+
+        Returns:
+            Int representation of the array
+
+        """
+        if (self.size() == 1) or (self.ndim == 0):
+            return int(self.get_scalar(0))
+        else:
+            raise("Only 0-D arrays or length-1 arrays can be converted to scalars")
+
 
     fn __pos__(self) raises -> Self:
         return self * 1.0

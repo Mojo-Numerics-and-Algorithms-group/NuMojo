@@ -5,6 +5,7 @@
 
 import math
 import .. math_funcs as _mf
+import ...core as core
 from ...core.ndarray import NDArray, NDArrayShape
 from ...core.utility_funcs import is_inttype, is_floattype
 
@@ -45,28 +46,28 @@ fn gradient[
     #     space = numojo.arange[in_dtype, out_dtype](1, x.num_elements(), step=int)
 
     var result: NDArray[out_dtype] = NDArray[out_dtype](x.shape(), random=False)
-    var space: NDArray[out_dtype] = numojo.arange[in_dtype, out_dtype](
+    var space: NDArray[out_dtype] = core.arange[in_dtype, out_dtype](
         1, x.num_elements() + 1, step=spacing.cast[in_dtype]()
     )
-    var hu: Scalar[out_dtype] = space[1]
-    var hd: Scalar[out_dtype] = space[0]
-    result[0] = (x[1].cast[out_dtype]() - x[0].cast[out_dtype]()) / (hu - hd)
+    var hu: Scalar[out_dtype] = space.get_scalar(1)
+    var hd: Scalar[out_dtype] = space.get_scalar(0)
+    result.store(0, (x.get_scalar(1).cast[out_dtype]() - x.get_scalar(0).cast[out_dtype]()) / (hu - hd))
 
-    hu = space[x.num_elements() - 1]
-    hd = space[x.num_elements() - 2]
-    result[x.num_elements() - 1] = (
-        x[x.num_elements() - 1].cast[out_dtype]()
-        - x[x.num_elements() - 2].cast[out_dtype]()
-    ) / (hu - hd)
+    hu = space.get_scalar(x.num_elements() - 1)
+    hd = space.get_scalar(x.num_elements() - 2)
+    result.store(x.num_elements() - 1, (
+        x.get_scalar(x.num_elements() - 1).cast[out_dtype]()
+        - x.get_scalar(x.num_elements() - 2).cast[out_dtype]()
+    ) / (hu - hd))
 
     for i in range(1, x.num_elements() - 1):
-        var hu: Scalar[out_dtype] = space[i + 1] - space[i]
-        var hd: Scalar[out_dtype] = space[i] - space[i - 1]
+        var hu: Scalar[out_dtype] = space.get_scalar(i + 1) - space.get_scalar(i)
+        var hd: Scalar[out_dtype] = space.get_scalar(i) - space.get_scalar(i - 1)
         var fi: Scalar[out_dtype] = (
-            hd**2 * x[i + 1].cast[out_dtype]()
-            + (hu**2 - hd**2) * x[i].cast[out_dtype]()
-            - hu**2 * x[i - 1].cast[out_dtype]()
+            hd**2 * x.get_scalar(i + 1).cast[out_dtype]()
+            + (hu**2 - hd**2) * x.get_scalar(i).cast[out_dtype]()
+            - hu**2 * x.get_scalar(i - 1).cast[out_dtype]()
         ) / (hu * hd * (hu + hd))
-        result[i] = fi
+        result.store(i, fi)
 
     return result

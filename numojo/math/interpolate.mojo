@@ -1,143 +1,141 @@
-# """
+"""
+# ===----------------------------------------------------------------------=== #
 # Interpolate Module - Implements interpolation functions
-# """
-# # ===----------------------------------------------------------------------=== #
-# # Interpolate Module - Implements interpolation functions
-# # Last updated: 2024-06-14
-# # ===----------------------------------------------------------------------=== #
+# Last updated: 2024-06-14
+# ===----------------------------------------------------------------------=== #
+"""
+
+from ..core.ndarray import NDArray, NDArrayShape
+
+"""
+# TODO:
+1) Cross check all the functions with numpy
+2) Add support for axis argument
+"""
 
 
-# from ..core.ndarray import NDArray, NDArrayShape
+fn interp1d[
+    dtype: DType = DType.float64
+](
+    xi: NDArray[dtype],
+    x: NDArray[dtype],
+    y: NDArray[dtype],
+    type: String = "linear",
+    fill_method: String = "interpolate",
+) raises -> NDArray[dtype]:
+    """
+    Interpolate the values of y at the points xi.
 
-# """
-# # TODO:
-# 1) Cross check all the functions with numpy
-# 2) Add support for axis argument
-# """
+    Parameters:
+        dtype: The element type.
 
+    Args:
+        xi: An Array.
+        x: An Array.
+        y: An Array.
+        type: The interpolation method.
+        fill_method: The fill value.
 
-# fn interp1d[
-#     dtype: DType = DType.float64
-# ](
-#     xi: NDArray[dtype],
-#     x: NDArray[dtype],
-#     y: NDArray[dtype],
-#     method: String = "linear",
-#     fill_value: String = "interpolate",
-# ) raises -> NDArray[dtype]:
-#     """
-#     Interpolate the values of y at the points xi.
+    Returns:
+        The interpolated values of y at the points xi as An Array of `dtype`.
+    """
+    # linear
+    if type == "linear" and fill_method == "extrapolate":
+        return _interp1d_linear_extrapolate(xi, x, y)
+    elif type == "linear" and fill_method == "interpolate":
+        return _interp1d_linear_interpolate(xi, x, y)
 
-#     Parameters:
-#         dtype: The element type.
+    # quadratic
+    # elif method == "quadratic" and fill_value == "extrapolate":
+        # return _interp1d_quadratic_extrapolate(xi, x, y)
+    # elif method == "quadratic" and fill_value == "interpolate":
+        # return _interp1d_quadratic_interpolate(xi, x, y)
 
-#     Args:
-#         xi: An Array.
-#         x: An Array.
-#         y: An Array.
-#         method: The interpolation method.
-#         fill_value: The fill value.
+    # cubic
+    # elif method == "cubic" and fill_value == "extrapolate":
+        # return _interp1d_cubic_extrapolate(xi, x, y)
+    # elif method == "cubic" and fill_value == "interpolate":
+        # return _interp1d_cubic_interpolate(xi, x, y)
 
-#     Returns:
-#         The interpolated values of y at the points xi as An Array of `dtype`.
-#     """
-#     # linear
-#     if method == "linear" and fill_value == "extrapolate":
-#         return _interp1d_linear_extrapolate(xi, x, y)
-#     elif method == "linear" and fill_value == "interpolate":
-#         return _interp1d_linear_interpolate(xi, x, y)
-
-#     # quadratic
-#     elif method == "quadratic" and fill_value == "extrapolate":
-#         return _interp1d_quadratic_extrapolate(xi, x, y)
-#     elif method == "quadratic" and fill_value == "interpolate":
-#         return _interp1d_quadratic_interpolate(xi, x, y)
-
-#     # cubic
-#     elif method == "cubic" and fill_value == "extrapolate":
-#         return _interp1d_cubic_extrapolate(xi, x, y)
-#     elif method == "cubic" and fill_value == "interpolate":
-#         return _interp1d_cubic_interpolate(xi, x, y)
-
-#     else:
-#         print("Invalid interpolation method: " + method)
-#         return NDArray[dtype]()
+    else:
+        print("Invalid interpolation method: " + type)
+        return NDArray[dtype]()
 
 
-# fn _interp1d_linear_interpolate[
-#     dtype: DType
-# ](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[
-#     dtype
-# ]:
-#     """
-#     Linear interpolation of the (x, y) values at the points xi.
-#     Parameters:
-#         dtype: The element type.
-#     Args:
-#         xi: An Array.
-#         x: An Array.
-#         y: An Array.
-#     Returns:
-#         The linearly interpolated values of y at the points xi as An Array of `dtype`.
-#     """
-#     var result = NDArray[dtype](xi.shape())
-#     for i in range(xi.num_elements()):
-#         if xi[i] <= x[0]:
-#             result[i] = y[0]
-#         elif xi[i] >= x[x.num_elements() - 1]:
-#             result[i] = y[y.num_elements() - 1]
-#         else:
-#             var j = 0
-#             while xi[i] > x[j]:
-#                 j += 1
-#             var x0 = x[j - 1]
-#             var x1 = x[j]
-#             var y0 = y[j - 1]
-#             var y1 = y[j]
-#             var t = (xi[i] - x0) / (x1 - x0)
-#             result[i] = y0 + t * (y1 - y0)
-#     return result
+fn _interp1d_linear_interpolate[
+    dtype: DType
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[
+    dtype
+]:
+    """
+    Linear interpolation of the (x, y) values at the points xi.
+    Parameters:
+        dtype: The element type.
+    Args:
+        xi: An Array.
+        x: An Array.
+        y: An Array.
+    Returns:
+        The linearly interpolated values of y at the points xi as An Array of `dtype`.
+    """
+    var result = NDArray[dtype](xi.shape())
+    for i in range(xi.num_elements()):
+        if xi.data[i] <= x.data[0]:
+            result.data.store[width = 1](i, y.data[0])
+        elif xi.data[i] >= x.data[x.num_elements() - 1]:
+            result.data.store[width = 1](i, y.data[y.num_elements() - 1])
+        else:
+            var j = 0
+            while xi.data[i] > x.data[j]:
+                j += 1
+            var x0 = x.data[j - 1]
+            var x1 = x.data[j]
+            var y0 = y.data[j - 1]
+            var y1 = y.data[j]
+            var t = (xi.data[i] - x0) / (x1 - x0)
+            result.data.store[width = 1](i, y0 + t * (y1 - y0))
+    return result
 
 
-# fn _interp1d_linear_extrapolate[
-#     dtype: DType
-# ](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[
-#     dtype
-# ]:
-#     """
-#     Linear extrapolation of the (x, y) values at the points xi.
-#     Parameters:
-#         dtype: The element type.
-#     Args:
-#         xi: An Array.
-#         x: An Array.
-#         y: An Array.
-#     Returns:
-#         The linearly extrapolated values of y at the points xi as An Array of `dtype`.
-#     """
-#     var result = NDArray[dtype](xi.shape())
-#     for i in range(xi.num_elements()):
-#         if xi[i] <= x[0]:
-#             var slope = (y[1] - y[0]) / (x[1] - x[0])
-#             result[i] = y[0] + slope * (xi[i] - x[0])
-#         elif xi[i] >= x[x.num_elements() - 1]:
-#             var slope = (y[y.num_elements() - 1] - y[y.num_elements() - 2]) / (
-#                 x[x.num_elements() - 1] - x[x.num_elements() - 2]
-#             )
-#             result[i] = y[y.num_elements() - 1] + slope * (
-#                 xi[i] - x[x.num_elements() - 1]
-#             )
-#         else:
-#             var j = 0
-#             while xi[i] > x[j]:
-#                 j += 1
-#             var x0 = x[j - 1]
-#             var x1 = x[j]
-#             var y0 = y[j - 1]
-#             var y1 = y[j]
-#             var t = (xi[i] - x0) / (x1 - x0)
-#             result[i] = y0 + t * (y1 - y0)
-#     return result
+fn _interp1d_linear_extrapolate[
+    dtype: DType
+](xi: NDArray[dtype], x: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[
+    dtype
+]:
+    """
+    Linear extrapolation of the (x, y) values at the points xi.
+    Parameters:
+        dtype: The element type.
+    Args:
+        xi: An Array.
+        x: An Array.
+        y: An Array.
+    Returns:
+        The linearly extrapolated values of y at the points xi as An Array of `dtype`.
+    """
+    var result = NDArray[dtype](xi.shape())
+    for i in range(xi.num_elements()):
+        if xi.data.load[width=1](i) <= x.data.load[width=1](0):
+            var slope = (y.data[1] - y.data[0]) / (x.data[1] - x.data[0])
+            result.data[i] = y.data[0] + slope * (xi.data[i] - x.data[0])
+        elif xi.data[i] >= x.data[x.num_elements() - 1]:
+            var slope = (y.data[y.num_elements() - 1] - y.data[y.num_elements() - 2]) / (
+                x.data[x.num_elements() - 1] - x.data[x.num_elements() - 2]
+            )
+            result.data[i] = y.data[y.num_elements() - 1] + slope * (
+                xi.data[i] - x.data[x.num_elements() - 1]
+            )
+        else:
+            var j = 0
+            while xi.data[i] > x.data[j]:
+                j += 1
+            var x0 = x.data[j - 1]
+            var x1 = x.data[j]
+            var y0 = y.data[j - 1]
+            var y1 = y.data[j]
+            var t = (xi.data[i] - x0) / (x1 - x0)
+            result.data[i] = y0 + t * (y1 - y0)
+    return result
 
 
 # fn _interp1d_quadratic_interpolate[

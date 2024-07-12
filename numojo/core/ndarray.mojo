@@ -1452,7 +1452,8 @@ struct NDArray[dtype: DType = DType.float32](
     fn __neg__(self) raises -> Self:
         return self * -1.0
 
-    fn __eq__(self, other: Self) raises -> Bool:
+    @always_inline("nodebug")
+    fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
         """Check whether two ndarrays are equal.
         The ndarrays are equal if:
         (1) The shapes of the ndarrays are the same.
@@ -1460,11 +1461,11 @@ struct NDArray[dtype: DType = DType.float32](
         """
         if self.shape() != other.shape():
             return False
-        for i in range(self.size()):
-            if self.get_scalar(i) != other.get_scalar(i):
-                return False
-        else:
-            return True
+        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
+        for i in range(self.num_elements()):
+            var temp = self.data.load[width=1](i) == other.data.load[width=1](i)
+            result.data.store[width=1](i, temp)
+        return result
 
     @always_inline("nodebug")
     fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:

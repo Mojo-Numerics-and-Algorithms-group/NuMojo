@@ -1570,6 +1570,9 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __abs__(self) -> Self:
         return abs(self)
+    
+    fn __invert__(self) raises -> Self:
+        return math.invert[dtype](self)
 
     fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)

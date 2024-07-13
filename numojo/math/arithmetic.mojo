@@ -847,3 +847,30 @@ fn nextafter[
     return backend().math_func_2_array_in_one_array_out[dtype, math.nextafter](
         array1, array2
     )
+
+# ===------------------------------------------------------------------------===#
+# Boolean Arithmetic
+# ===------------------------------------------------------------------------===#
+
+fn invert[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Elementwise invert of an array.
+
+    Constraints:
+        The array must be either a boolean or integral array.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        A NDArray equal to the bitwise inversion of array.
+    """
+    constrained[dtype.is_integral() or dtype.is_integral(),"Only Bools and integral types can be invertedd."]()
+
+    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](array)

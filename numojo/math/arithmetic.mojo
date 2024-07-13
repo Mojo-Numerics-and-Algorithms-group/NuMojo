@@ -48,6 +48,82 @@ fn add[
         array1, array2
     )
 
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
+    """
+    Perform addition on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        array: A NDArray.
+        scalar: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__add__](
+        array, scalar
+    )
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Perform addition on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        scalar: A NDArray.
+        array: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return add[dtype,backend=backend](array,scalar)
+
+
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+](owned *values:Variant[NDArray[dtype],Scalar[dtype]]) raises -> NDArray[dtype]:
+    """
+    Perform addition on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        values: A list of arrays or Scalars to be added.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
+    var scalar_part: Scalar[dtype] = 0
+    for val in values:
+        if val[].isa[NDArray[dtype]]():
+            array_list.append(val[].take[NDArray[dtype]]())
+        elif val[].isa[Scalar[dtype]]():
+            scalar_part+=val[].take[Scalar[dtype]]()
+    if len(array_list)==0:
+        raise Error("math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]): No arrays in arguaments")
+    var result_array:NDArray[dtype] = NDArray[dtype](array_list[0].shape())
+    for array in array_list:
+        result_array = add[dtype,backend=backend](result_array,array)
+    result_array = add[dtype,backend=backend](result_array,scalar_part)
+
+    return result_array
 
 fn sub[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized

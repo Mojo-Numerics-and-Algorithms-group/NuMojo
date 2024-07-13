@@ -1531,36 +1531,28 @@ struct NDArray[dtype: DType = DType.float32](
         )
 
     fn __sub__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__sub__
-        ](self, other)
+        return math.sub[dtype](self,other)
 
     fn __sub__(self, other: Self) raises -> Self:
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
-            self, other
-        )
+        return math.sub[dtype](self,other)
 
     fn __rsub__(self, s: SIMD[dtype, 1]) raises -> Self:
-        return -(self - s)
+        return math.sub[dtype](s,self)
 
     fn __isub__(inout self, s: SIMD[dtype, 1]) raises:
         self = self - s
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__mul__
-        ](self, other)
+        return math.sub[dtype](self,other)
 
     fn __mul__(self, other: Self) raises -> Self:
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__mul__](
-            self, other
-        )
+        return math.sub[dtype](self,other)
 
     fn __matmul__(self, other: Self) raises -> Self:
         return matmul_parallelized(self, other)
 
     fn __rmul__(self, s: SIMD[dtype, 1]) raises -> Self:
-        return self * s
+       return math.sub[dtype](self,s)
 
     fn __imul__(inout self, s: SIMD[dtype, 1]) raises:
         self = self * s
@@ -1613,17 +1605,10 @@ struct NDArray[dtype: DType = DType.float32](
 
     # ! truediv is multiplying instead of dividing right now lol, I don't know why.
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__truediv__
-        ](self, other)
+        return math.div[dtype](self,other)
 
     fn __truediv__(self, other: Self) raises -> Self:
-        if self.ndshape._size != other.ndshape._size:
-            raise Error("No of elements in both arrays do not match")
-
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__truediv__](
-            self, other
-        )
+        return math.div[dtype](self,other)
 
     fn __itruediv__(inout self, s: SIMD[dtype, 1]) raises:
         self = self.__truediv__(s)
@@ -1632,7 +1617,7 @@ struct NDArray[dtype: DType = DType.float32](
         self = self.__truediv__(other)
 
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
-        return self.__truediv__(s)
+        return math.sub[dtype](s,self)
 
     fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
         return _af.math_func_one_array_one_SIMD_in_one_array_out[

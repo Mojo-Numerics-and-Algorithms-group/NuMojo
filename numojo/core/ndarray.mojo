@@ -34,6 +34,8 @@ from ..math.statistics.cumulative_reduce import (
     minT,
 )
 import .sort as sort
+import ..math as math
+from ..traits import Backend
 from ..math.check import any, all
 from ..math.arithmetic import abs
 from .ndarray_utils import (
@@ -42,6 +44,7 @@ from .ndarray_utils import (
     to_numpy,
     bool_to_numeric,
 )
+from ..math.math_funcs import Vectorized
 from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
 
@@ -1447,138 +1450,76 @@ struct NDArray[dtype: DType = DType.float32](
 
 
     fn __pos__(self) raises -> Self:
-        return self * 1.0
+        if self.dtype.is_bool():
+            raise Error("ndarray:NDArrray:__pos__: pos does not except bool type arrays")
+        return self
 
     fn __neg__(self) raises -> Self:
         return self * -1.0
 
-    fn __eq__(self, other: Self) raises -> Bool:
-        """Check whether two ndarrays are equal.
-        The ndarrays are equal if:
-        (1) The shapes of the ndarrays are the same.
-        (2) The items of the ndarrays are equal.
-        """
-        if self.shape() != other.shape():
-            return False
-        for i in range(self.size()):
-            if self.get_scalar(i) != other.get_scalar(i):
-                return False
-        else:
-            return True
+    fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
+        return math.equal[dtype](self,other)
 
     @always_inline("nodebug")
     fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) == other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.equal[dtype](self,other_array)
     
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) != other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.not_equal[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __ne__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) != other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.not_equal[dtype](self,other)
 
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) < other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.less[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __lt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) < other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.less[dtype](self,other)
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) <= other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.less_equal[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __le__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) <= other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.less_equal[dtype](self,other)
 
     @always_inline("nodebug")
     fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) > other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.greater[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __gt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) > other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.greater[dtype](self,other)
     
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) >= other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.greater_equal[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __ge__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) >= other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+       return math.greater_equal[dtype](self,other)
  
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__add__
-        ](self, other)
+        return math.add[dtype](self,other)
 
     fn __add__(inout self, other: Self) raises -> Self:
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
-            self, other
-        )
+        return math.add[dtype](self,other)
 
     fn __radd__(inout self, rhs: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__add__
-        ](self, rhs)
+        return math.add[dtype](self,rhs)
 
+    # TODO make an inplace version of arithmetic functions for the i dunders
     fn __iadd__(inout self, other: SIMD[dtype, 1]) raises:
         self = _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__

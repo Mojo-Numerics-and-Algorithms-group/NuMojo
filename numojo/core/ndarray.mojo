@@ -1,9 +1,11 @@
 """
+Implements N-Dimensional Array
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements ROW MAJOR N-DIMENSIONAL ARRAYS
-# Last updated: 2024-06-18
+# Last updated: 2024-07-14
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 """
 # TODO
@@ -2032,7 +2034,9 @@ struct NDArray[dtype: DType = DType.float32](
         var narr: NDArray[type] = NDArray[type](
             self.ndshape, random=False, order=self.order
         )
-        narr.datatype = type
+        # narr.datatype = type
+
+        
 
         @parameter
         if type == DType.bool:
@@ -2045,12 +2049,19 @@ struct NDArray[dtype: DType = DType.float32](
 
             vectorize[vectorized_astype, nelts](self.ndshape._size)
         else:
-
             @parameter
-            fn vectorized_astypenb[width: Int](idx: Int) -> None:
-                narr.store[width](idx, self.load[width](idx).cast[type]())
+            if self.dtype == DType.bool:
+                @parameter
+                fn vectorized_astypenb_from_b[width: Int](idx: Int) -> None:
+                    narr.store[width](idx, (self.data + idx).simd_strided_load[width](1).cast[type]())
+                vectorize[vectorized_astypenb_from_b, nelts](self.ndshape._size)
+            else:
 
-            vectorize[vectorized_astypenb, nelts](self.ndshape._size)
+                @parameter
+                fn vectorized_astypenb[width: Int](idx: Int) -> None:
+                    narr.store[width](idx, self.load[width](idx).cast[type]())
+
+                vectorize[vectorized_astypenb, nelts](self.ndshape._size)
 
         return narr
 

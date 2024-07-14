@@ -1543,16 +1543,16 @@ struct NDArray[dtype: DType = DType.float32](
         self = self - s
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return math.sub[dtype](self,other)
+        return math.mul[dtype](self,other)
 
     fn __mul__(self, other: Self) raises -> Self:
-        return math.sub[dtype](self,other)
+        return math.mul[dtype](self,other)
 
     fn __matmul__(self, other: Self) raises -> Self:
         return matmul_parallelized(self, other)
 
     fn __rmul__(self, s: SIMD[dtype, 1]) raises -> Self:
-       return math.sub[dtype](self,s)
+       return math.mul[dtype](self,s)
 
     fn __imul__(inout self, s: SIMD[dtype, 1]) raises:
         self = self * s
@@ -1603,7 +1603,6 @@ struct NDArray[dtype: DType = DType.float32](
         vectorize[array_scalar_vectorize, simd_width](self.ndshape._size)
         return new_vec
 
-    # ! truediv is multiplying instead of dividing right now lol, I don't know why.
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
         return math.div[dtype](self,other)
 
@@ -1617,12 +1616,41 @@ struct NDArray[dtype: DType = DType.float32](
         self = self.__truediv__(other)
 
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
-        return math.sub[dtype](s,self)
+        return math.div[dtype](s,self)
+
+    fn __floordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
+        return math.floor_div[dtype](self,other)
+
+    fn __floordiv__(self, other: Self) raises -> Self:
+        return math.floor_div[dtype](self,other)
+
+    fn __ifloordiv__(inout self, s: SIMD[dtype, 1]) raises:
+        self = self.__floordiv__(s)
+
+    fn __ifloordiv__(inout self, other: Self) raises:
+        self = self.__floordiv__(other)
+
+    fn __rfloordiv__(self, s: SIMD[dtype, 1]) raises -> Self:
+        return math.floor_div[dtype](s,self)
 
     fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__mod__
-        ](self, other)
+        return math.mod[dtype](self,other)
+
+    fn __mod__(inout self, other: NDArray[dtype]) raises -> Self:
+        return math.mod[dtype](self,other)
+    
+    fn __imod__(inout self, other: SIMD[dtype, 1]) raises:
+        self =  math.mod[dtype](self,other)
+
+    fn __imod__(inout self, other: NDArray[dtype]) raises:
+        self =  math.mod[dtype](self, other)
+    
+    fn __rmod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+        return math.mod[dtype](other, self)
+
+    fn __rmod__(inout self, other: NDArray[dtype]) raises -> Self:
+        return math.mod[dtype](other, self)
+    
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations

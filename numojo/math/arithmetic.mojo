@@ -13,10 +13,6 @@ from ..core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
-"""
-TODO:
-1) change dtype -> in_dtype and out_dtype
-"""
 
 # ===------------------------------------------------------------------------===#
 # Addition/Subtraction
@@ -488,6 +484,72 @@ fn div[
         The elementwise quotient of `array1` and`array2`.
     """
     return div[dtype,backend=backend](array,scalar)
+
+fn floor_div[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Elementwise quotent of array1 and array2.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        A NDArray equal to array1/array2.
+    """
+    return backend().math_func_2_array_in_one_array_out[
+        dtype, SIMD.__floordiv__
+    ](array1, array2)
+
+fn floor_div[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
+    """
+    Perform true division on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        array: A NDArray.
+        scalar: A NDArray.
+
+    Returns:
+        The elementwise quotient of `array1` and`array2`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__floordiv__](
+        array, scalar
+    )
+
+fn floor_div[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Perform true division on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        scalar: A NDArray.
+        array: A NDArray.
+
+    Returns:
+        The elementwise quotient of `array1` and`array2`.
+    """
+    return floor_div[dtype,backend=backend](array,scalar)
 
 fn fma[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized

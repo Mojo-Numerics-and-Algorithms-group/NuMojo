@@ -1969,7 +1969,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn all(self) raises -> Bool:
         # make this a compile time check
-        if not (self.dtype == DType.bool or is_inttype(dtype)):
+        if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
         alias nelts: Int = simdwidthof[dtype]()
@@ -1977,21 +1977,21 @@ struct NDArray[dtype: DType = DType.float32](
 
         @parameter
         fn vectorized_all[simd_width: Int](idx: Int) -> None:
-            result = result and allb(self.data.load[width=simd_width](idx))
+            result = result and allb((self.data+idx).simd_strided_load[width=simd_width](1))
 
         vectorize[vectorized_all, nelts](self.ndshape._size)
         return result
 
     fn any(self) raises -> Bool:
         # make this a compile time check
-        if not (self.dtype == DType.bool or is_inttype(dtype)):
+        if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         alias nelts: Int = simdwidthof[dtype]()
         var result: Bool = False
 
         @parameter
         fn vectorized_any[simd_width: Int](idx: Int) -> None:
-            result = result or anyb(self.data.load[width=simd_width](idx))
+            result = result or anyb((self.data+idx).simd_strided_load[width=simd_width](1))
 
         vectorize[vectorized_any, nelts](self.ndshape._size)
         return result

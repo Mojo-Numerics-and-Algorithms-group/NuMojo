@@ -123,7 +123,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     return result
 
 
-fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
+fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     """
     If all True.
 

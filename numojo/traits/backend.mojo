@@ -123,6 +123,34 @@ trait Backend:
 
         ...
 
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Constraints:
+            Both arrays must have the same shape
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        ...
+
     fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (

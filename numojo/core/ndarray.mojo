@@ -1,9 +1,11 @@
 """
+Implements N-Dimensional Array
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements ROW MAJOR N-DIMENSIONAL ARRAYS
-# Last updated: 2024-06-18
+# Last updated: 2024-07-14
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 """
 # TODO
@@ -34,6 +36,8 @@ from ..math.statistics.cumulative_reduce import (
     minT,
 )
 import .sort as sort
+import ..math as math
+from ..traits import Backend
 from ..math.check import any, all
 from ..math.arithmetic import abs
 from .ndarray_utils import (
@@ -42,6 +46,7 @@ from .ndarray_utils import (
     to_numpy,
     bool_to_numeric,
 )
+from ..math.math_funcs import Vectorized
 from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
 
@@ -1447,139 +1452,76 @@ struct NDArray[dtype: DType = DType.float32](
 
 
     fn __pos__(self) raises -> Self:
-        return self * 1.0
+        if self.dtype.is_bool():
+            raise Error("ndarray:NDArrray:__pos__: pos does not except bool type arrays")
+        return self
 
     fn __neg__(self) raises -> Self:
         return self * -1.0
 
-    @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
-        """Check whether two ndarrays are equal.
-        The ndarrays are equal if:
-        (1) The shapes of the ndarrays are the same.
-        (2) The items of the ndarrays are equal.
-        """
-        if self.shape() != other.shape():
-            return False
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) == other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.equal[dtype](self,other)
 
     @always_inline("nodebug")
     fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) == other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.equal[dtype](self,other_array)
     
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) != other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.not_equal[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __ne__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) != other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.not_equal[dtype](self,other)
 
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) < other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.less[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __lt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) < other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.less[dtype](self,other)
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) <= other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.less_equal[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __le__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) <= other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.less_equal[dtype](self,other)
 
     @always_inline("nodebug")
     fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) > other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.greater[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __gt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) > other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+        return math.greater[dtype](self,other)
     
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) >= other
-            result.data.store[width=1](i, temp)
-        return result
+        var other_array:Self = NDArray[dtype](self.shape(),fill=other)
+        return math.greater_equal[dtype](self,other_array)
 
     @always_inline("nodebug")
     fn __ge__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
-        if self.ndshape != other.ndshape:
-            raise Error("Both arrays must have the same shape")
-        var result: NDArray[DType.bool] = NDArray[DType.bool](self.ndshape)
-        for i in range(self.num_elements()):
-            var temp = self.data.load[width=1](i) >= other.data.load[width=1](i)
-            result.data.store[width=1](i, temp)
-        return result
+       return math.greater_equal[dtype](self,other)
  
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__add__
-        ](self, other)
+        return math.add[dtype](self,other)
 
     fn __add__(inout self, other: Self) raises -> Self:
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
-            self, other
-        )
+        return math.add[dtype](self,other)
 
     fn __radd__(inout self, rhs: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__add__
-        ](self, rhs)
+        return math.add[dtype](self,rhs)
 
+    # TODO make an inplace version of arithmetic functions for the i dunders
     fn __iadd__(inout self, other: SIMD[dtype, 1]) raises:
         self = _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
@@ -1591,36 +1533,28 @@ struct NDArray[dtype: DType = DType.float32](
         )
 
     fn __sub__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__sub__
-        ](self, other)
+        return math.sub[dtype](self,other)
 
     fn __sub__(self, other: Self) raises -> Self:
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
-            self, other
-        )
+        return math.sub[dtype](self,other)
 
     fn __rsub__(self, s: SIMD[dtype, 1]) raises -> Self:
-        return -(self - s)
+        return math.sub[dtype](s,self)
 
     fn __isub__(inout self, s: SIMD[dtype, 1]) raises:
         self = self - s
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__mul__
-        ](self, other)
+        return math.mul[dtype](self,other)
 
     fn __mul__(self, other: Self) raises -> Self:
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__mul__](
-            self, other
-        )
+        return math.mul[dtype](self,other)
 
     fn __matmul__(self, other: Self) raises -> Self:
         return matmul_parallelized(self, other)
 
     fn __rmul__(self, s: SIMD[dtype, 1]) raises -> Self:
-        return self * s
+       return math.mul[dtype](self,s)
 
     fn __imul__(inout self, s: SIMD[dtype, 1]) raises:
         self = self * s
@@ -1630,6 +1564,9 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __abs__(self) -> Self:
         return abs(self)
+    
+    fn __invert__(self) raises -> Self:
+        return math.invert[dtype](self)
 
     fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)
@@ -1668,19 +1605,11 @@ struct NDArray[dtype: DType = DType.float32](
         vectorize[array_scalar_vectorize, simd_width](self.ndshape._size)
         return new_vec
 
-    # ! truediv is multiplying instead of dividing right now lol, I don't know why.
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__truediv__
-        ](self, other)
+        return math.div[dtype](self,other)
 
     fn __truediv__(self, other: Self) raises -> Self:
-        if self.ndshape._size != other.ndshape._size:
-            raise Error("No of elements in both arrays do not match")
-
-        return _af.math_func_2_array_in_one_array_out[dtype, SIMD.__truediv__](
-            self, other
-        )
+        return math.div[dtype](self,other)
 
     fn __itruediv__(inout self, s: SIMD[dtype, 1]) raises:
         self = self.__truediv__(s)
@@ -1689,12 +1618,41 @@ struct NDArray[dtype: DType = DType.float32](
         self = self.__truediv__(other)
 
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
-        return self.__truediv__(s)
+        return math.div[dtype](s,self)
+
+    fn __floordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
+        return math.floor_div[dtype](self,other)
+
+    fn __floordiv__(self, other: Self) raises -> Self:
+        return math.floor_div[dtype](self,other)
+
+    fn __ifloordiv__(inout self, s: SIMD[dtype, 1]) raises:
+        self = self.__floordiv__(s)
+
+    fn __ifloordiv__(inout self, other: Self) raises:
+        self = self.__floordiv__(other)
+
+    fn __rfloordiv__(self, s: SIMD[dtype, 1]) raises -> Self:
+        return math.floor_div[dtype](s,self)
 
     fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
-        return _af.math_func_one_array_one_SIMD_in_one_array_out[
-            dtype, SIMD.__mod__
-        ](self, other)
+        return math.mod[dtype](self,other)
+
+    fn __mod__(inout self, other: NDArray[dtype]) raises -> Self:
+        return math.mod[dtype](self,other)
+    
+    fn __imod__(inout self, other: SIMD[dtype, 1]) raises:
+        self =  math.mod[dtype](self,other)
+
+    fn __imod__(inout self, other: NDArray[dtype]) raises:
+        self =  math.mod[dtype](self, other)
+    
+    fn __rmod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+        return math.mod[dtype](other, self)
+
+    fn __rmod__(inout self, other: NDArray[dtype]) raises -> Self:
+        return math.mod[dtype](other, self)
+    
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations
@@ -2011,7 +1969,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn all(self) raises -> Bool:
         # make this a compile time check
-        if not (self.dtype == DType.bool or is_inttype(dtype)):
+        if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
         alias nelts: Int = simdwidthof[dtype]()
@@ -2019,21 +1977,21 @@ struct NDArray[dtype: DType = DType.float32](
 
         @parameter
         fn vectorized_all[simd_width: Int](idx: Int) -> None:
-            result = result and allb(self.data.load[width=simd_width](idx))
+            result = result and allb((self.data+idx).simd_strided_load[width=simd_width](1))
 
         vectorize[vectorized_all, nelts](self.ndshape._size)
         return result
 
     fn any(self) raises -> Bool:
         # make this a compile time check
-        if not (self.dtype == DType.bool or is_inttype(dtype)):
+        if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         alias nelts: Int = simdwidthof[dtype]()
         var result: Bool = False
 
         @parameter
         fn vectorized_any[simd_width: Int](idx: Int) -> None:
-            result = result or anyb(self.data.load[width=simd_width](idx))
+            result = result or anyb((self.data+idx).simd_strided_load[width=simd_width](1))
 
         vectorize[vectorized_any, nelts](self.ndshape._size)
         return result
@@ -2076,7 +2034,9 @@ struct NDArray[dtype: DType = DType.float32](
         var narr: NDArray[type] = NDArray[type](
             self.ndshape, random=False, order=self.order
         )
-        narr.datatype = type
+        # narr.datatype = type
+
+        
 
         @parameter
         if type == DType.bool:
@@ -2089,12 +2049,19 @@ struct NDArray[dtype: DType = DType.float32](
 
             vectorize[vectorized_astype, nelts](self.ndshape._size)
         else:
-
             @parameter
-            fn vectorized_astypenb[width: Int](idx: Int) -> None:
-                narr.store[width](idx, self.load[width](idx).cast[type]())
+            if self.dtype == DType.bool:
+                @parameter
+                fn vectorized_astypenb_from_b[width: Int](idx: Int) -> None:
+                    narr.store[width](idx, (self.data + idx).simd_strided_load[width](1).cast[type]())
+                vectorize[vectorized_astypenb_from_b, nelts](self.ndshape._size)
+            else:
 
-            vectorize[vectorized_astypenb, nelts](self.ndshape._size)
+                @parameter
+                fn vectorized_astypenb[width: Int](idx: Int) -> None:
+                    narr.store[width](idx, self.load[width](idx).cast[type]())
+
+                vectorize[vectorized_astypenb, nelts](self.ndshape._size)
 
         return narr
 

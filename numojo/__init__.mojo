@@ -1,7 +1,5 @@
 """
-# ===----------------------------------------------------------------------=== #
-A Mathematics and Algorithm Library for Mojo.
-# ===----------------------------------------------------------------------=== #
+An Array Mathematics library for Mojo.
 """
 
 from .core import *

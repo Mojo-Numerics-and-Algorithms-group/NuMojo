@@ -3,14 +3,17 @@
 import numojo as nm
 
 fn main() raises:
-    test[nm.i8](10)
-    test[nm.f64](20)
+    test[nm.i8](3, 3)
 
-fn test[dtype: DType](length: Int) raises:
-    var A = nm.NDArray[dtype](length, random=True)
+fn test[dtype: DType](*size: Int) raises:
+    var A = nm.NDArray[dtype](size, random=True, order="F")
     print(A)
     print("Iterate over the array:")
+    
     for i in A:
-        print(i, end="\t")
-    print()
+        print(i)  # Return rows
+    print(str("=") * 30)
+
+    for i in range(A.size()):
+        print(A.item(i))  # Return 0-d arrays
     print(str("=") * 30)

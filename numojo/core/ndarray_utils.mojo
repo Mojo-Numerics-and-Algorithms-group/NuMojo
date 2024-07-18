@@ -179,7 +179,7 @@ fn bool_to_numeric[
     # Can't use simd becuase of bit packing error
     var res: NDArray[dtype] = NDArray[dtype](array.shape())
     for i in range(array.size()):
-        var t: Bool = array.at(i)
+        var t: Bool = array.item(i)
         if t:
             res.data[i] = 1
         else:

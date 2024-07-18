@@ -33,8 +33,8 @@ fn test_matrix[dtype: DType](*shape: Int) raises:
     print("A[Slice(1,3), Slice(1,3)]")
     print(A[Slice(1,3), Slice(1,3)], end="\n\n")
     
-    print("A.at(0,1) as Scalar")
-    print(A.at(0, 1), end="\n\n")
+    print("A.item(0,1) as Scalar")
+    print(A.item(0, 1), end="\n\n")
 
 fn test_vector[dtype: DType](*shape: Int) raises:
     var A = NDArray[dtype](shape, random=True)
@@ -47,8 +47,8 @@ fn test_vector[dtype: DType](*shape: Int) raises:
     print("A[Slice(1,3)]")
     print(A[Slice(1,3)], end="\n\n")
     
-    print("A.at(0) as Scalar")
-    print(A.at(0), end="\n\n")
+    print("A.item(0) as Scalar")
+    print(A.item(0), end="\n\n")
 
 fn test_3darray[dtype: DType](*shape: Int) raises:
     var A = NDArray[dtype](shape, random=True)
@@ -73,5 +73,5 @@ fn test_3darray[dtype: DType](*shape: Int) raises:
     print("A[Slice(1,3), Slice(1,3), 2]")
     print(A[Slice(1,3), Slice(1,3), 2], end="\n\n")
     
-    print("A.at(0,1,2) as Scalar")
-    print(A.at(0, 1, 2), end="\n\n")
+    print("A.item(0,1,2) as Scalar")
+    print(A.item(0, 1, 2), end="\n\n")

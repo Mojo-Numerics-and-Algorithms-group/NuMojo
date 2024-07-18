@@ -958,22 +958,6 @@ struct NDArray[dtype: DType = DType.float32](
 
         return narr
 
-    fn at(self, *index: Int) raises -> SIMD[dtype, 1]:
-        """Return the sclar at the coordinates."""
-
-        # For 0-d array, take out the first item in buffer
-        if self.ndim == 0:
-            return self.data.load[width=1](0)
-
-        # For ndarray, take out the value at the certain coordinates
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.stride)
-        return self.data.load[width=1](idx)
-
     fn __getitem__(self, index: List[Int]) raises -> SIMD[dtype, 1]:
         """
         Example:
@@ -1174,7 +1158,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         Note that, when the number of integers equals to the number of
         dimensions, the final outcome is an 0-D array instead of a number.
-        The user has to upack the 0-D array with the method`A.at(0)` to get the
+        The user has to upack the 0-D array with the method`A.item(0)` to get the
         corresponding number.
         This behavior is different from numpy where the latter returns a number.
 
@@ -1210,7 +1194,7 @@ struct NDArray[dtype: DType = DType.float32](
         [      111     -30     ]]
         2-D array  Shape: [2, 2]  DType: int8
 
-        A.at(0,1) as Scalar
+        A.item(0,1) as Scalar
         -95
 
         ==============================
@@ -1226,7 +1210,7 @@ struct NDArray[dtype: DType = DType.float32](
         [       -127    -30     ]
         1-D array  Shape: [2]  DType: int8
 
-        A.at(0) as Scalar
+        A.item(0) as Scalar
         43
 
         ==============================
@@ -1285,7 +1269,7 @@ struct NDArray[dtype: DType = DType.float32](
         [      104     4       ]]
         2-D array  Shape: [2, 2]  DType: int8
 
-        A.at(0,1,2) as Scalar
+        A.item(0,1,2) as Scalar
         -105
         ```
 
@@ -1360,7 +1344,7 @@ struct NDArray[dtype: DType = DType.float32](
         var result = NDArray[dtype](length)
 
         for i in range(length):
-            result.__setitem__(i, self.get_scalar(int(indices.at(i))))
+            result.__setitem__(i, self.get_scalar(int(indices.item(i))))
 
         return result
 
@@ -1741,7 +1725,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
         if self.ndim == 0:
-            return str(self.at(0))
+            return str(self.item(0))
         if dimension == self.ndim - 1:
             var result: String = str("[\t")
             var number_of_items = self.ndshape[dimension]
@@ -2145,11 +2129,35 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return res
 
-    fn item(self, *indices: Int) raises -> SIMD[dtype, 1]:  # I should add
-        if indices.__len__() == 1:
-            return self.data.load[width=1](indices[0])
-        else:
-            return self.data.load[width=1](_get_index(indices, self.stride))
+    fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
+        """Return the scalar at the coordinates.
+
+        If one index is given, get the i-th item of the array (row major).
+
+        If more than one index is given, the length of the indices must match
+        the number of dimensions of the array.
+
+        Args:
+            index: The coordinates of the item.
+
+        Returns:
+            A scalar matching the dtype of the array.
+        """
+
+        # If one index is given
+        if index.__len__() == 1:
+            if index[0] < self.size():
+                return self.data.load[width=1](index[0])
+            else:
+                raise Error("Error: Elements of `index` exceed the array size")
+        
+        # If more than one index is given
+        if index.__len__() != self.ndim:
+            raise Error("Error: Length of Indices do not match the shape")
+        for i in range(index.__len__()):
+            if index[i] >= self.ndshape[i]:
+                raise Error("Error: Elements of `index` exceed the array shape")
+        return self.data.load[width=1](_get_index(index, self.stride))
 
     fn max(self, axis: Int = 0) raises -> Self:
         var ndim: Int = self.ndim

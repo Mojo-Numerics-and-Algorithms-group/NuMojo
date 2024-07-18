@@ -152,7 +152,7 @@ fn mode[
         array
     )
     var max_count = 0
-    var mode_value = sorted_array.at(0)
+    var mode_value = sorted_array.item(0)
     var current_count = 1
 
     for i in range(1, array.num_elements()):
@@ -161,11 +161,11 @@ fn mode[
         else:
             if current_count > max_count:
                 max_count = current_count
-                mode_value = sorted_array.at(i - 1)
+                mode_value = sorted_array.item(i - 1)
             current_count = 1
 
     if current_count > max_count:
-        mode_value = sorted_array.at(array.num_elements() - 1)
+        mode_value = sorted_array.item(array.num_elements() - 1)
 
     return mode_value
 
@@ -193,9 +193,9 @@ fn median[
     var sorted_array = binary_sort[in_dtype, out_dtype](array)
     var n = array.num_elements()
     if n % 2 == 1:
-        return sorted_array.at(n // 2)
+        return sorted_array.item(n // 2)
     else:
-        return (sorted_array.at(n // 2 - 1) + sorted_array.at(n // 2)) / 2
+        return (sorted_array.item(n // 2 - 1) + sorted_array.item(n // 2)) / 2
 
 
 # for max and min, I can later change to the latest reduce.max, reduce.min()

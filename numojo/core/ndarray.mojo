@@ -2132,10 +2132,52 @@ struct NDArray[dtype: DType = DType.float32](
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """Return the scalar at the coordinates.
 
-        If one index is given, get the i-th item of the array (row major).
+        If one index is given, get the i-th item of the array.
+        It first scans over the first row, even it is a colume-major array.
 
         If more than one index is given, the length of the indices must match
         the number of dimensions of the array.
+
+        Example:
+        ```console
+        > var A = nm.NDArray[dtype](3, 3, random=True, order="F")
+        > print(A)
+        [[      14      -4      -48     ]
+        [      97      112     -40     ]
+        [      -59     -94     66      ]]
+        2-D array  Shape: [3, 3]  DType: int8
+        
+        > for i in A:
+        >     print(i)  # Return rows
+        [       14      -4      -48     ]
+        1-D array  Shape: [3]  DType: int8
+        [       97      112     -40     ]
+        1-D array  Shape: [3]  DType: int8
+        [       -59     -94     66      ]
+        1-D array  Shape: [3]  DType: int8
+        
+        > for i in range(A.size()):
+        >    print(A.item(i))  # Return 0-d arrays
+        c stride Stride: [3, 1]
+        14
+        c stride Stride: [3, 1]
+        -4
+        c stride Stride: [3, 1]
+        -48
+        c stride Stride: [3, 1]
+        97
+        c stride Stride: [3, 1]
+        112
+        c stride Stride: [3, 1]
+        -40
+        c stride Stride: [3, 1]
+        -59
+        c stride Stride: [3, 1]
+        -94
+        c stride Stride: [3, 1]
+        66
+        ==============================
+        ```
 
         Args:
             index: The coordinates of the item.
@@ -2147,6 +2189,19 @@ struct NDArray[dtype: DType = DType.float32](
         # If one index is given
         if index.__len__() == 1:
             if index[0] < self.size():
+                if self.order == "F":  # column-major should be converted to row-major
+                    # The following code can be taken out as a function that
+                    # convert any index to coordinates according to the order
+                    var c_stride = NDArrayStride(shape=self.ndshape)
+                    print("c stride", c_stride)
+                    var c_coordinates = List[Int]()
+                    var idx: Int = index[0]
+                    for i in range(c_stride._len):
+                        var coordinate = idx // c_stride[i]
+                        idx = idx - c_stride[i] * coordinate
+                        c_coordinates.append(coordinate)
+                    return self.data.load[width=1](_get_index(c_coordinates, self.stride))
+
                 return self.data.load[width=1](index[0])
             else:
                 raise Error("Error: Elements of `index` exceed the array size")

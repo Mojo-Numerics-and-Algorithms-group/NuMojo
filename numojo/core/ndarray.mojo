@@ -928,12 +928,12 @@ struct NDArray[dtype: DType = DType.float32](
         > Array.get_scalar(15)
         ```
         returns the item of index 15 from the array's data buffer.
-        
-        Not that it is different from `item()` as `get_scalar` does not checked 
+
+        Not that it is different from `item()` as `get_scalar` does not checked
         against C-order or F-order.
         ```console
         > # A is a 3x3 matrix, F-order (column-major)
-        > A.get_scalar(3)  # Row 0, Col 1 
+        > A.get_scalar(3)  # Row 0, Col 1
         > A.item(3)  # Row 1, Col 0
         ```
         """
@@ -953,6 +953,10 @@ struct NDArray[dtype: DType = DType.float32](
         var slice_list = List[Slice]()
         slice_list.append(Slice(idx, idx + 1))
 
+        # 0-d array always return itself
+        if self.ndim == 0:
+            return self
+
         if self.ndim > 1:
             for i in range(1, self.ndim):
                 var size_at_dim: Int = self.ndshape[i]
@@ -963,37 +967,8 @@ struct NDArray[dtype: DType = DType.float32](
         if self.ndim == 1:
             narr.ndim = 0
             narr.ndshape._shape[0] = 0
-
+            
         return narr
-
-    fn __getitem__(self, index: List[Int]) raises -> SIMD[dtype, 1]:
-        """
-        Example:
-            `arr[1,2]` returns the item of 1st row and 2nd column of the array.
-        """
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
-        return self.data.load[width=1](idx)
-
-    fn __getitem__(self, index: VariadicList[Int]) raises -> SIMD[dtype, 1]:
-        """
-        Example:
-            `arr[VariadicList[Int](1,2)]` returns the item of 1st row and
-                2nd column of the array.
-        """
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
-        return self.data.load[width=1](idx)
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
         if span.start < 0:
@@ -1316,45 +1291,120 @@ struct NDArray[dtype: DType = DType.float32](
 
         return narr
 
-    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
-        """Get items of array from indices.
+    fn __getitem__(self, index: List[Int]) raises -> Self:
+        """Get items of array from a list of indices.
 
-        To-do:
-        Currently it supports 1d array.
-        In future, expand it to high dimensional arrays.
+        It always gets the first dimension.
 
         Example:
-        ```mojo
-        import numojo
-        var A = numojo.NDArray[numojo.i16](6, random=True)
-        var idx = A.argsort()
-        print(A)
-        print(idx)
-        print(A[idx])
-        ```
         ```console
-        [       -32768  -24148  16752   -2709   2148    -18418  ]
-        Shape: [6]  DType: int16
-        [       0       1       5       3       4       2       ]
-        Shape: [6]  DType: index
-        [       -32768  -24148  -18418  -2709   2148    16752   ]
-        Shape: [6]  DType: int16
+        > var A = nm.NDArray[nm.i8](3,random=True)
+        > print(A)
+        [       14      97      -59     ]
+        1-D array  Shape: [3]  DType: int8
+        >
+        > print(A[List[Int](2,1,0,1,2)])
+        [       -59     97      14      97      -59     ]
+        1-D array  Shape: [5]  DType: int8
+        >
+        > var B = nm.NDArray[nm.i8](3, 3,random=True)
+        > print(B)
+        [[      -4      112     -94     ]
+        [      -48     -40     66      ]
+        [      -2      -94     -18     ]]
+        2-D array  Shape: [3, 3]  DType: int8
+        >
+        > print(B[List[Int](2,1,0,1,2)])
+        [[      -2      -94     -18     ]
+        [      -48     -40     66      ]
+        [      -4      112     -94     ]
+        [      -48     -40     66      ]
+        [      -2      -94     -18     ]]
+        2-D array  Shape: [5, 3]  DType: int8
+        >
+        > var C = nm.NDArray[nm.i8](3, 3, 3,random=True)
+        > print(C)
+        [[[     -126    -88     -79     ]
+        [     14      78      99      ]
+        [     -32     3       -42     ]]
+        [[     56      -45     -71     ]
+        [     -13     18      -102    ]
+        [     4       83      26      ]]
+        [[     61      -73     86      ]
+        [     -125    -84     66      ]
+        [     32      21      53      ]]]
+        3-D array  Shape: [3, 3, 3]  DType: int8
+        >
+        > print(C[List[Int](2,1,0,1,2)])
+        [[[     61      -73     86      ]
+        [     -125    -84     66      ]
+        [     32      21      53      ]]
+        [[     56      -45     -71     ]
+        [     -13     18      -102    ]
+        [     4       83      26      ]]
+        [[     -126    -88     -79     ]
+        [     14      78      99      ]
+        [     -32     3       -42     ]]
+        [[     56      -45     -71     ]
+        [     -13     18      -102    ]
+        [     4       83      26      ]]
+        [[     61      -73     86      ]
+        [     -125    -84     66      ]
+        [     32      21      53      ]]]
+        3-D array  Shape: [5, 3, 3]  DType: int8
         ```
 
         Args:
-            indices: NDArray with Dtype.index.
+            index: List[Int].
 
         Returns:
-            NDArray with items from the indices.
+            NDArray with items from the list of indices.
         """
 
-        var length = indices.size()
-        var result = NDArray[dtype](length)
+        # Shape of the result should be
+        # Number of indice * shape from dim-1
+        # So just change the first number of the ndshape
+        var ndshape = self.ndshape
+        ndshape._shape.__setitem__(0, len(index))
+        ndshape._size = 1
+        for i in range(ndshape._len):
+            ndshape._size *= int(ndshape._shape[i])
+        var result = NDArray[dtype](ndshape)
+        var size_per_item = ndshape._size // len(index)
 
-        for i in range(length):
-            result.__setitem__(i, self.get_scalar(int(indices.item(i))))
+        # Fill in the values
+        for i in range(len(index)):
+            for j in range(size_per_item):
+                result.data.store[width=1](
+                    i * size_per_item + j, self[int(index[i])].item(j)
+                )
 
         return result
+
+    fn __getitem__(self, index: NDArray[DType.index]) raises -> Self:
+        """Get items of array from a list of indices.
+        Refer to `__getitem__(self, index: List[Int])`.
+
+        Example:
+        ```console
+        > var X = nm.NDArray[nm.i8](3,random=True)
+        > print(X)
+        [       32      21      53      ]
+        1-D array  Shape: [3]  DType: int8
+        > print(X.argsort())
+        [       1       0       2       ]
+        1-D array  Shape: [3]  DType: index
+        > print(X[X.argsort()])
+        [       21      32      53      ]
+        1-D array  Shape: [3]  DType: int8
+        ```
+        """
+
+        var new_index = List[Int]()
+        for i in index:
+            new_index.append(int(i.item(0)))
+
+        return self.__getitem__(new_index)
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """Get items of array from mask.
@@ -2162,7 +2212,7 @@ struct NDArray[dtype: DType = DType.float32](
         [      97      112     -40     ]
         [      -59     -94     66      ]]
         2-D array  Shape: [3, 3]  DType: int8
-        
+
         > for i in A:
         >     print(i)  # Return rows
         [       14      -4      -48     ]
@@ -2171,7 +2221,7 @@ struct NDArray[dtype: DType = DType.float32](
         1-D array  Shape: [3]  DType: int8
         [       -59     -94     66      ]
         1-D array  Shape: [3]  DType: int8
-        
+
         > for i in range(A.size()):
         >    print(A.item(i))  # Return 0-d arrays
         c stride Stride: [3, 1]
@@ -2205,7 +2255,9 @@ struct NDArray[dtype: DType = DType.float32](
         # If one index is given
         if index.__len__() == 1:
             if index[0] < self.size():
-                if self.order == "F":  # column-major should be converted to row-major
+                if (
+                    self.order == "F"
+                ):  # column-major should be converted to row-major
                     # The following code can be taken out as a function that
                     # convert any index to coordinates according to the order
                     var c_stride = NDArrayStride(shape=self.ndshape)
@@ -2216,12 +2268,14 @@ struct NDArray[dtype: DType = DType.float32](
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
-                    return self.data.load[width=1](_get_index(c_coordinates, self.stride))
+                    return self.data.load[width=1](
+                        _get_index(c_coordinates, self.stride)
+                    )
 
                 return self.data.load[width=1](index[0])
             else:
                 raise Error("Error: Elements of `index` exceed the array size")
-        
+
         # If more than one index is given
         if index.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")

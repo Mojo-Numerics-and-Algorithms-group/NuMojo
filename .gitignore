@@ -3,3 +3,6 @@
 /dist
 /local
 /.vscode
+
+# Compiled package
+numojo.mojopkg

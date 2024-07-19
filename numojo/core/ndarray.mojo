@@ -924,7 +924,18 @@ struct NDArray[dtype: DType = DType.float32](
     fn get_scalar(self, index: Int) raises -> SIMD[dtype, 1]:
         """
         Example:
-            `arr.get_scalar(15)` returns the 15th item of the array's data buffer.
+        ```console
+        > Array.get_scalar(15)
+        ```
+        returns the item of index 15 from the array's data buffer.
+        
+        Not that it is different from `item()` as `get_scalar` does not checked 
+        against C-order or F-order.
+        ```console
+        > # A is a 3x3 matrix, F-order (column-major)
+        > A.get_scalar(3)  # Row 0, Col 1 
+        > A.item(3)  # Row 1, Col 0
+        ```
         """
         if index >= self.ndshape._size:
             raise Error("Invalid index: index out of bound")
@@ -933,13 +944,10 @@ struct NDArray[dtype: DType = DType.float32](
         else:
             return self.data.load[width=1](index + self.ndshape._size)
 
-    # fn __getitem__(self, idx: Int) raises -> SIMD[dtype, 1]:
-    #     return self.data.load[width=1](idx)
-
     fn __getitem__(self, idx: Int) raises -> Self:
         """
         Example:
-            `arr[1]` returns the secong row of the array.
+            `arr[1]` returns the second row of the array.
         """
 
         var slice_list = List[Slice]()

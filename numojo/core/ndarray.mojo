@@ -1699,7 +1699,7 @@ struct NDArray[dtype: DType = DType.float32](
             return ""
 
     fn __len__(self) -> Int:
-        return self.ndshape._size
+        return int(self.ndshape._shape[0])
 
     fn __iter__(self) raises -> _NDArrayIter[__lifetime_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.

@@ -871,7 +871,7 @@ struct NDArray[dtype: DType = DType.float32](
         self.data.free()
 
     # ===-------------------------------------------------------------------===#
-    # Operator dunders
+    # Set and get dunders
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
@@ -1398,6 +1398,21 @@ struct NDArray[dtype: DType = DType.float32](
         for i in range(mask.ndshape._size):
             if mask.data.load[width=1](i):
                 self.data.store[width=1](i, value.data.load[width=1](i))
+
+    # ===-------------------------------------------------------------------===#
+    # Operator dunders
+    # ===-------------------------------------------------------------------===#
+
+    fn __bool__(self) raises -> Bool:
+        if self.dtype == DType.bool:
+            if self.all():
+                return True
+            else:
+                return False
+        raise Error(
+            "core:ndarray:NDArray:__bool__: Bool is currently only implemented"
+            " for DType.bool"
+        )
 
     # compiler doesn't accept this
     # fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
@@ -1953,16 +1968,9 @@ struct NDArray[dtype: DType = DType.float32](
     # # tobyets, tofile, view
     # TODO: Implement axis parameter for all
 
-    fn __bool__(self) raises -> Bool:
-        if self.dtype == DType.bool:
-            if self.all():
-                return True
-            else:
-                return False
-        raise Error(
-            "core:ndarray:NDArray:__bool__: Bool is currently only implemented"
-            " for DType.bool"
-        )
+    # ===-------------------------------------------------------------------===#
+    # Operations along an axis
+    # ===-------------------------------------------------------------------===#
 
     fn all(self) raises -> Bool:
         # make this a compile time check

@@ -12,3 +12,4 @@ from .math_funcs import (
     VectorizedVerbose,
     VectorizedParallelizedNWorkers,
 )
+from .interpolate import *

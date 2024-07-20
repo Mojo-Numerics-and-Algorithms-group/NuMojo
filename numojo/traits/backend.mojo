@@ -161,6 +161,16 @@ trait Backend:
     ) raises -> NDArray[DType.bool]:
         ...
 
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[DType.bool]:
+        ...
+
     fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[

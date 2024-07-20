@@ -1517,18 +1517,17 @@ struct NDArray[dtype: DType = DType.float32](
     fn __neg__(self) raises -> Self:
         return self * -1.0
 
+    @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
         return math.equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.equal[dtype](self, other_array)
+        return math.equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.not_equal[dtype](self, other_array)
+        return math.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ne__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -1536,8 +1535,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.less[dtype](self, other_array)
+        return math.less[dtype](self, other)
 
     @always_inline("nodebug")
     fn __lt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -1545,8 +1543,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.less_equal[dtype](self, other_array)
+        return math.less_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __le__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -1554,8 +1551,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.greater[dtype](self, other_array)
+        return math.greater[dtype](self, other)
 
     @always_inline("nodebug")
     fn __gt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -1563,8 +1559,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.greater_equal[dtype](self, other_array)
+        return math.greater_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ge__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -1743,25 +1738,25 @@ struct NDArray[dtype: DType = DType.float32](
         NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
         ```
         """
-        # try:
-        var result: String = str("NDArray[DType.") + str(self.dtype) + str(
-            "](List[Scalar[DType."
-        ) + str(self.dtype) + str("]](")
-        if self.size() > 6:
-            for i in range(6):
-                result = result + str(self.load[width=1](i)) + str(",")
-            result = result + " ... "
-        else:
-            for i in self:
-                result = result + str(i) + str(",")
-        result = result + str("), shape=List[Int](")
-        for i in range(self.ndshape._len):
-            result = result + str(self.ndshape._shape[i]) + ","
-        result = result + str("))")
-        return result
-        # except e:
-        #     print("Cannot convert array to string", e)
-        #     return ""
+        try:
+            var result: String = str("NDArray[DType.") + str(self.dtype) + str(
+                "](List[Scalar[DType."
+            ) + str(self.dtype) + str("]](")
+            if self.size() > 6:
+                for i in range(6):
+                    result = result + str(self.load[width=1](i)) + str(",")
+                result = result + " ... "
+            else:
+                for i in self:
+                    result = result + str(i) + str(",")
+            result = result + str("), shape=List[Int](")
+            for i in range(self.ndshape._len):
+                result = result + str(self.ndshape._shape[i]) + ","
+            result = result + str("))")
+            return result
+        except e:
+            print("Cannot convert array to string", e)
+            return ""
 
     fn __len__(self) -> Int:
         return int(self.ndshape._shape[0])

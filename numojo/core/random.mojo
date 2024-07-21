@@ -1,9 +1,11 @@
 """
+Random values array generation.
+"""
 # ===----------------------------------------------------------------------=== #
-# Implements RANDOM SAMPLING
+# Implements RANDOM 
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import random
 from .ndarray import NDArray

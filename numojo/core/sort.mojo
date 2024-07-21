@@ -1,9 +1,11 @@
 """
+Implements sort functions
+"""
 # ===----------------------------------------------------------------------=== #
 # Sort Module - Implements sort functions
 # Last updated: 2024-06-20
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
 from algorithm import vectorize

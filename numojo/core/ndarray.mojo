@@ -574,6 +574,9 @@ struct NDArray[dtype: DType = DType.float32](
 ):
     """The N-dimensional array (NDArray).
 
+    Parameters:
+        dtype: Type of item in NDArray.
+
     The array can be uniquely defined by the following:
         1. The data buffer of all items.
         2. The shape of the array.
@@ -583,15 +586,23 @@ struct NDArray[dtype: DType = DType.float32](
         6. The order of the array: Row vs Columns major
     """
 
-    var data: DTypePointer[dtype]  # Data buffer of the items in the NDArray
+    var data: DTypePointer[dtype]  
+    """Data buffer of the items in the NDArray."""
     var ndim: Int
-    var ndshape: NDArrayShape  # contains size, shape
-    var stride: NDArrayStride  # contains offset, strides
-    var coefficient: NDArrayStride  # contains offset, coefficient
-    var datatype: DType  # The datatype of memory
-    var order: String  # Defines 0 for row major, 1 for column major
+    """Number of Dimensions."""
+    var ndshape: NDArrayShape  
+    """Size and shape of NDArray."""
+    var stride: NDArrayStride   
+    """Contains offset, strides."""
+    var coefficient: NDArrayStride  
+    """Contains offset, coefficient."""
+    var datatype: DType   
+    """The datatype of memory."""
+    var order: String
+    "Memory layout of array C (C order row major) or F (Fortran order col major)."
 
-    alias simd_width: Int = simdwidthof[dtype]()  # Vector size of the data type
+    alias simd_width: Int = simdwidthof[dtype]()  # 
+    """Vector size of the data type."""
 
     # ===-------------------------------------------------------------------===#
     # Life cycle methods
@@ -603,6 +614,13 @@ struct NDArray[dtype: DType = DType.float32](
         inout self, *shape: Int, random: Bool = False, order: String = "C"
     ) raises:
         """
+        NDArray initialization for variadic shape.
+
+        Args:
+            shape: Variadic shape.
+            random: Set the values randomly.
+            order: Memory order C or F.
+
         Example:
             NDArray[DType.int8](3,2,4)
             Returns an zero array with shape 3 x 2 x 4.
@@ -628,6 +646,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization for list shape.
+
+        Args:
+            shape: List of shape.
+            random: Set the values randomly.
+            order: Memory order C or F.
+
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -651,6 +676,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization for variadic shape.
+
+        Args:
+            shape: Variadic List shape.
+            random: Set the values randomly.
+            order: Memory order C or F.
+
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -674,6 +706,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization for variadic shape with option to fill.
+
+        Args:
+            shape: Variadic shape.
+            fill: Set all the values to this.
+            order: Memory order C or F.
+        
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -697,6 +736,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization for variadic shape with option to fill.
+
+        Args:
+            shape: List of shape.
+            fill: Set all the values to this.
+            order: Memory order C or F.
+        
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -720,6 +766,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization for List of shape with option to fill.
+
+        Args:
+            shape: Variadic List of shape.
+            fill: Set all the values to this.
+            order: Memory order C or F.
+
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -743,6 +796,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization for NDArrayShape.
+
+        Args:
+            shape: Variadic shape.
+            random: Set all the values randomly.
+            order: Memory order C or F.
+        
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -766,6 +826,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization for NDArrayShape with option to fill.
+
+        Args:
+            shape: Variadic shape.
+            fill: Set all the the values to this.
+            order: Memory order C or F.
+
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -788,6 +855,13 @@ struct NDArray[dtype: DType = DType.float32](
         order: String = "C",
     ) raises:
         """
+        NDArray initialization from list of data.
+
+        Args:
+            data: List of data.
+            shape: List of shape.
+            order: Memory order C or F.
+
         Example:
             `NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))`
             Returns an array with shape 3 x 2 with input values.
@@ -804,6 +878,7 @@ struct NDArray[dtype: DType = DType.float32](
         for i in range(self.ndshape._size):
             self.data[i] = data[i]
 
+    # Why do  these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
     fn __init__(
         inout self,
@@ -815,6 +890,10 @@ struct NDArray[dtype: DType = DType.float32](
         coefficient: List[Int],
         order: String = "C",
     ) raises:
+
+        """
+        Extremely specific NDArray initializer.
+        """
         self.ndim = ndim
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(stride=strides, offset=0)
@@ -835,6 +914,10 @@ struct NDArray[dtype: DType = DType.float32](
         coefficient: List[Int],
         order: String = "C",
     ) raises:
+
+        """
+        Extremely specific NDArray initializer.
+        """
         self.ndim = ndim
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(strides, offset=0, order=order)

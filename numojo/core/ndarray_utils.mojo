@@ -1,9 +1,11 @@
 """
+Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 # Last updated: 2024-06-20
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 from python import Python
 from .ndarray import NDArray, NDArrayShape, NDArrayStride

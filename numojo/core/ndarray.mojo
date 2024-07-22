@@ -1757,7 +1757,7 @@ struct NDArray[dtype: DType = DType.float32](
     # TODO make an inplace version of arithmetic functions for the i dunders
     fn __iadd__(inout self, other: SIMD[dtype, 1]) raises:
         """
-        Enables `array = array + scalar`.
+        Enables `array += scalar`.
         """
         self = _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
@@ -1765,7 +1765,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __iadd__(inout self, other: Self) raises:
         """
-        Enables `array = array + array`.
+        Enables `array *= array`.
         """
         self = _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
             self, other
@@ -1791,15 +1791,18 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __isub__(inout self, s: SIMD[dtype, 1]) raises:
         """
-        Enables `array = array - scalar`.
+        Enables `array -= scalar`.
         """
         self = self - s
 
     fn __isub__(inout self, s: Self) raises:
         """
-        Enables `array = array - array`.
+        Enables `array -= array`.
         """
         self = self - s
+    
+    fn __matmul__(self, other: Self) raises -> Self:
+        return matmul_parallelized(self, other)
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1813,22 +1816,31 @@ struct NDArray[dtype: DType = DType.float32](
         """
         return math.mul[dtype](self, other)
 
-    fn __matmul__(self, other: Self) raises -> Self:
-        return matmul_parallelized(self, other)
-
     fn __rmul__(self, s: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar * array`.
+        """
         return math.mul[dtype](self, s)
 
     fn __imul__(inout self, s: SIMD[dtype, 1]) raises:
+        """
+        Enables `array *= scalar`.
+        """
         self = self * s
 
     fn __imul__(inout self, s: Self) raises:
+        """
+        Enables `array *= array`.
+        """
         self = self * s
 
     fn __abs__(self) -> Self:
         return abs(self)
 
     fn __invert__(self) raises -> Self:
+        """
+        Elementwise inverse (~ or not), only for bools and integral types.
+        """
         return math.invert[dtype](self)
 
     fn __pow__(self, p: Int) -> Self:
@@ -1881,12 +1893,21 @@ struct NDArray[dtype: DType = DType.float32](
         return math.div[dtype](self, other)
 
     fn __itruediv__(inout self, s: SIMD[dtype, 1]) raises:
+        """
+        Enables `array /= scalar`.
+        """
         self = self.__truediv__(s)
 
     fn __itruediv__(inout self, other: Self) raises:
+        """
+        Enables `array /= array`.
+        """
         self = self.__truediv__(other)
 
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar / array`.
+        """
         return math.div[dtype](s, self)
 
     fn __floordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
@@ -1902,12 +1923,21 @@ struct NDArray[dtype: DType = DType.float32](
         return math.floor_div[dtype](self, other)
 
     fn __ifloordiv__(inout self, s: SIMD[dtype, 1]) raises:
+        """
+        Enables `array //= scalar`.
+        """
         self = self.__floordiv__(s)
 
     fn __ifloordiv__(inout self, other: Self) raises:
+        """
+        Enables `array //= array`.
+        """
         self = self.__floordiv__(other)
 
     fn __rfloordiv__(self, s: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar // array`.
+        """
         return math.floor_div[dtype](s, self)
 
     fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
@@ -1923,22 +1953,32 @@ struct NDArray[dtype: DType = DType.float32](
         return math.mod[dtype](self, other)
 
     fn __imod__(inout self, other: SIMD[dtype, 1]) raises:
+        """
+        Enables `array %= scalar`.
+        """
         self = math.mod[dtype](self, other)
 
     fn __imod__(inout self, other: NDArray[dtype]) raises:
+        """
+        Enables `array %= array`.
+        """
         self = math.mod[dtype](self, other)
 
     fn __rmod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar % array`.
+        """
         return math.mod[dtype](other, self)
 
-    fn __rmod__(inout self, other: NDArray[dtype]) raises -> Self:
-        return math.mod[dtype](other, self)
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations
     # ===-------------------------------------------------------------------===#
 
     fn __str__(self) -> String:
+        """
+        Enables str(array)
+        """
         try:
             return (
                 self._array_to_string(0, 0)
@@ -1954,7 +1994,8 @@ struct NDArray[dtype: DType = DType.float32](
             return ""
 
     fn __repr__(self) -> String:
-        """Compute the "official" string representation of NDArray.
+        """
+        Compute the "official" string representation of NDArray.
         An example is:
         ```mojo
         fn main() raises:
@@ -1986,6 +2027,7 @@ struct NDArray[dtype: DType = DType.float32](
             print("Cannot convert array to string", e)
             return ""
 
+    # Should len be size or number of dimensions instead of the first dimension shape?
     fn __len__(self) -> Int:
         return int(self.ndshape._shape[0])
 
@@ -2198,13 +2240,24 @@ struct NDArray[dtype: DType = DType.float32](
         return new_matrix
 
     fn size(self) -> Int:
+        """
+        Function to retreive size.
+        """
         return self.ndshape._size
 
     fn num_elements(self) -> Int:
+        """
+        Function to retreive size (compatability).
+        """
         return self.ndshape._size
 
-    # # TODO: move this initialization to the Fields and constructor
+    # should this return the List[Int] shape and self.ndshape be used instead of making it a no input function call?
     fn shape(self) -> NDArrayShape:
+        """
+        Get the shape as an NDArray Shape.
+
+        To get a list of shape call this then list
+        """
         return self.ndshape
 
     fn load[width: Int = 1](self, index: Int) -> SIMD[dtype, width]:
@@ -2246,7 +2299,11 @@ struct NDArray[dtype: DType = DType.float32](
     # ===-------------------------------------------------------------------===#
 
     fn all(self) raises -> Bool:
+        """
+        If all true return true.
+        """
         # make this a compile time check
+        # Respnse to above compile time errors are way harder to read at the moment. 
         if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
@@ -2263,6 +2320,9 @@ struct NDArray[dtype: DType = DType.float32](
         return result
 
     fn any(self) raises -> Bool:
+        """
+        True if any true.
+        """
         # make this a compile time check
         if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
@@ -2279,6 +2339,9 @@ struct NDArray[dtype: DType = DType.float32](
         return result
 
     fn argmax(self) -> Int:
+        """
+        Get location in pointer of max value.
+        """
         var result: Int = 0
         var max_val: SIMD[dtype, 1] = self.load[width=1](0)
         for i in range(1, self.ndshape._size):
@@ -2289,6 +2352,9 @@ struct NDArray[dtype: DType = DType.float32](
         return result
 
     fn argmin(self) -> Int:
+        """
+        Get location in pointer of min value.
+        """
         var result: Int = 0
         var min_val: SIMD[dtype, 1] = self.load[width=1](0)
         for i in range(1, self.ndshape._size):
@@ -2311,6 +2377,9 @@ struct NDArray[dtype: DType = DType.float32](
         return sort.argsort(self)
 
     fn astype[type: DType](inout self) raises -> NDArray[type]:
+        """
+        Convert type of array.
+        """
         # I wonder if we can do this operation inplace instead of allocating memory.
         alias nelts = simdwidthof[dtype]()
         var narr: NDArray[type] = NDArray[type](
@@ -2384,6 +2453,9 @@ struct NDArray[dtype: DType = DType.float32](
         pass
 
     fn fill(inout self, val: Scalar[dtype]) -> Self:
+        """
+        Fill all items of array with value.
+        """
         alias simd_width: Int = simdwidthof[dtype]()
 
         @parameter
@@ -2394,6 +2466,9 @@ struct NDArray[dtype: DType = DType.float32](
         return self
 
     fn flatten(inout self, inplace: Bool = False) raises -> Optional[Self]:
+        """
+        Convert shape of array to one dimensional.
+        """
         # inplace has some problems right now
         # if inplace:
         #     self.ndshape = NDArrayShape(self.ndshape._size, size=self.ndshape._size)
@@ -2419,7 +2494,8 @@ struct NDArray[dtype: DType = DType.float32](
             return res
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
-        """Return the scalar at the coordinates.
+        """
+        Return the scalar at the coordinates.
 
         If one index is given, get the i-th item of the array.
         It first scans over the first row, even it is a colume-major array.
@@ -2508,6 +2584,9 @@ struct NDArray[dtype: DType = DType.float32](
         return self.data.load[width=1](_get_index(index, self.stride))
 
     fn max(self, axis: Int = 0) raises -> Self:
+        """
+        Max on axis.
+        """
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
         for i in range(ndim):
@@ -2542,6 +2621,9 @@ struct NDArray[dtype: DType = DType.float32](
         return result
 
     fn min(self, axis: Int = 0) raises -> Self:
+        """
+        Min on axis.
+        """
         var ndim: Int = self.ndim
         var shape: List[Int] = List[Int]()
         for i in range(ndim):
@@ -2620,7 +2702,11 @@ struct NDArray[dtype: DType = DType.float32](
     # fn round(self):
     #     pass
 
+    # for python compat this should be inplace
     fn sort(self) raises -> Self:
+        """
+        Sort the array using quickstort.
+        """
         return sort.quick_sort(self)
 
     fn sum(self: Self, axis: Int) raises -> Self:
@@ -2683,7 +2769,13 @@ struct NDArray[dtype: DType = DType.float32](
         self.order = order
 
     fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
+        """
+        Retreive pointer without taking ownership.
+        """
         return self.data
 
     fn to_numpy(self) raises -> PythonObject:
+        """
+        Convert to a numpy array.
+        """
         return to_numpy(self)

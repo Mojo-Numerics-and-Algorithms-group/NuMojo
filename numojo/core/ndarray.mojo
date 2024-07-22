@@ -930,6 +930,9 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __copyinit__(inout self, other: Self):
+        """
+        Copy other into self.
+        """
         self.ndim = other.ndim
         self.ndshape = other.ndshape
         self.stride = other.stride
@@ -941,6 +944,9 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __moveinit__(inout self, owned existing: Self):
+        """
+        Move other into self.
+        """
         self.ndim = existing.ndim
         self.ndshape = existing.ndshape
         self.stride = existing.stride
@@ -959,6 +965,9 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __setitem__(inout self, index: Int, val: SIMD[dtype, 1]) raises:
+        """
+        Set the value of a single index.
+        """
         if index >= self.ndshape._size:
             raise Error("Invalid index: index out of bound")
         if index >= 0:
@@ -968,6 +977,9 @@ struct NDArray[dtype: DType = DType.float32](
 
     @always_inline("nodebug")
     fn __setitem__(inout self, *index: Int, val: SIMD[dtype, 1]) raises:
+        """
+        Set the value at the index list.
+        """
         if index.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")
         for i in range(index.__len__()):
@@ -982,6 +994,9 @@ struct NDArray[dtype: DType = DType.float32](
         index: List[Int],
         val: SIMD[dtype, 1],
     ) raises:
+        """
+        Set the value at the index list.
+        """
         if index.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")
         for i in range(index.__len__()):
@@ -996,6 +1011,9 @@ struct NDArray[dtype: DType = DType.float32](
         index: VariadicList[Int],
         val: SIMD[dtype, 1],
     ) raises:
+        """
+        Set the value at the index corisponding to the varaidic list.
+        """
         if index.__len__() != self.ndim:
             raise Error("Error: Length of Indices do not match the shape")
         for i in range(index.__len__()):
@@ -1006,6 +1024,8 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn get_scalar(self, index: Int) raises -> SIMD[dtype, 1]:
         """
+        Linearly retreive a value from the underlying Pointer.
+
         Example:
         ```console
         > Array.get_scalar(15)
@@ -1029,6 +1049,8 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
+        Retreive a slice of the array corrisponding to the index at the first dimension.
+
         Example:
             `arr[1]` returns the second row of the array.
         """
@@ -1068,6 +1090,8 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
+        Retreive slices of an array from variadic slices.
+
         Example:
             `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
         """
@@ -1088,6 +1112,8 @@ struct NDArray[dtype: DType = DType.float32](
 
     fn __getitem__(self, owned slices: List[Slice]) raises -> Self:
         """
+        Retreive slices of an array from list of slices.
+
         Example:
             `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
         """
@@ -1177,7 +1203,8 @@ struct NDArray[dtype: DType = DType.float32](
         return narr
 
     fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
-        """Get items by a series of either slices or integers.
+        """
+        Get items by a series of either slices or integers.
 
         A decrease of dimensions may or may not happen when `__getitem__` is
         called on an ndarray. An ndarray of X-D array can become Y-D array after
@@ -1375,7 +1402,8 @@ struct NDArray[dtype: DType = DType.float32](
         return narr
 
     fn __getitem__(self, index: List[Int]) raises -> Self:
-        """Get items of array from a list of indices.
+        """
+        Get items of array from a list of indices.
 
         It always gets the first dimension.
 
@@ -1465,7 +1493,9 @@ struct NDArray[dtype: DType = DType.float32](
         return result
 
     fn __getitem__(self, index: NDArray[DType.index]) raises -> Self:
-        """Get items of array from a list of indices.
+        """
+        Get items of array from an array of indices.
+        
         Refer to `__getitem__(self, index: List[Int])`.
 
         Example:
@@ -1490,7 +1520,8 @@ struct NDArray[dtype: DType = DType.float32](
         return self.__getitem__(new_index)
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
-        """Get items of array from mask.
+        """
+        Get items of array corrisponding to a mask.
 
         Example:
             ```
@@ -1536,7 +1567,11 @@ struct NDArray[dtype: DType = DType.float32](
     # Operator dunders
     # ===-------------------------------------------------------------------===#
 
+    # We should make a version that checks nonzero/not_nan
     fn __bool__(self) raises -> Bool:
+        """
+        If all true return true.
+        """
         if self.dtype == DType.bool:
             if self.all():
                 return True

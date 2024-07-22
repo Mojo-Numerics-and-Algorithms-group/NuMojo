@@ -159,6 +159,24 @@ trait Backend:
     ](
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[DType.bool]:
+
+        """
+        Apply a SIMD comparison functions to two NDArrays.
+
+        Constraints:
+            Both arrays must have the same shape
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array1: A NDArray.
+            array2: A NDArray.
+
+        Returns:
+            Boolean array with results of elementwise comparison.
+        """
         ...
 
     fn math_func_is[

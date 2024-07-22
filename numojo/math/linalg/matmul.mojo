@@ -26,6 +26,9 @@ fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int):
 fn matmul_tiled_unrolled_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Matrix multiplication vectorized, tiled, unrolled, and parallelized.
+    """
     alias nelts = max(simdwidthof[dtype](), 16)
     var C: NDArray[dtype] = NDArray[dtype](
         A.ndshape.load_int(0), B.ndshape.load_int(1)
@@ -63,7 +66,11 @@ fn matmul_tiled_unrolled_parallelized[
 fn matmul_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
-    """Conduct `matmul` using `vectorize` and `parallelize`.
+    """
+    
+    Matrix multiplication Vectorized and parallelized.
+    
+    Conduct `matmul` using `vectorize` and `parallelize`.
 
     Reference: https://docs.modular.com/mojo/notebooks/Matmul
     Compared to the reference, this function increases the size of
@@ -104,6 +111,9 @@ fn matmul_parallelized[
 fn matmul_naive[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Matrix multiplication with three nested loops.
+    """
     var C: NDArray[dtype] = NDArray[dtype](
         A.ndshape.load_int(0), B.ndshape.load_int(1)
     )

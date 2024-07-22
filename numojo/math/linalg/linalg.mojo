@@ -37,7 +37,7 @@ fn cross[
         The cross product of two arrays.
     """
 
-    if array1.ndshape._len == array2.ndshape._len == 3:
+    if array1.ndshape.ndlen == array2.ndshape.ndlen == 3:
         var array3: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(3))
         array3.store(0,(array1.get_scalar(1) * array2.get_scalar(2) - array1.get_scalar(2) * array2.get_scalar(1)).cast[out_dtype]())
         array3.store(1,(array1.get_scalar(2) * array2.get_scalar(0) - array1.get_scalar(0) * array2.get_scalar(2)).cast[

@@ -1,9 +1,11 @@
 """
+Datatypes Module - Implements datatypes aliases, conversions
+"""
 # ===----------------------------------------------------------------------=== #
 # Datatypes Module - Implements datatypes aliases, conversions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 # Rust-like data type alias
 """alias for `DType.int8`"""

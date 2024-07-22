@@ -70,7 +70,7 @@ trait Backend:
             simd: A SIMD[dtype,1] value to be added.
 
         Returns:
-            A a new NDArray that is NDArray with the function func applied.
+            A new NDArray that is NDArray with the function func applied.
         """
         pass
 
@@ -91,7 +91,7 @@ trait Backend:
             array: A NDArray.
 
         Returns:
-            A a new NDArray that is NDArray with the function func applied.
+            A new NDArray that is NDArray with the function func applied.
         """
         ...
 
@@ -118,7 +118,7 @@ trait Backend:
             array2: A NDArray.
 
         Returns:
-            A a new NDArray that is NDArray with the function func applied.
+            A new NDArray that is NDArray with the function func applied.
         """
 
         ...
@@ -146,7 +146,7 @@ trait Backend:
             scalar: A Scalars.
 
         Returns:
-            A a new NDArray that is NDArray with the function func applied.
+            A new NDArray that is NDArray with the function func applied.
         """
 
         ...
@@ -159,6 +159,23 @@ trait Backend:
     ](
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[DType.bool]:
+        """
+        Apply a SIMD comparision function of two variable.
+
+        Constraints:
+            Both arrays must have the same shape.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD comparision function to to apply.
+
+        Args:
+            array1: A NDArray.
+            array2: A NDArray.
+
+        Returns:
+            A new Boolean NDArray that is NDArray with the function func applied.
+        """
         ...
 
     fn math_func_compare_array_and_scalar[
@@ -169,6 +186,23 @@ trait Backend:
     ](
         self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
     ) raises -> NDArray[DType.bool]:
+        """
+        Apply a SIMD comparision function of two variable.
+
+        Constraints:
+            Both arrays must have the same shape.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD comparision function to to apply.
+
+        Args:
+            array1: A NDArray.
+            scalar: A scalar.
+
+        Returns:
+            A new Boolean NDArray that is NDArray with the function func applied.
+        """
         ...
 
     fn math_func_is[

@@ -2725,6 +2725,42 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+        alias opt_nelts = simdwidthof[dtype]()
+        for i in range(
+            0, opt_nelts * (array1.num_elements() // opt_nelts), opt_nelts
+        ):
+            var simd_data1 = array1.load[width=opt_nelts](i)
+            var simd_data2 = SIMD[dtype, opt_nelts].splat(scalar)
+            bool_simd_store[opt_nelts](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, opt_nelts](simd_data1, simd_data2),
+            )
+        if array1.num_elements() % opt_nelts != 0:
+            for i in range(
+                opt_nelts * (array1.num_elements() // opt_nelts),
+                array1.num_elements(),
+            ):
+                var simd_data1 = array1.load[width=1](i)
+                var simd_data2 = SIMD[dtype, 1].splat(scalar)
+                bool_simd_store[1](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, 1](simd_data1, simd_data2),
+                )
+        return result_array
+
     fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[

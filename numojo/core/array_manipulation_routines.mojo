@@ -1,7 +1,7 @@
 """
 # ===----------------------------------------------------------------------=== #
 # ARRAY MANIPULATION ROUTINES
-# Last updated: 2024-06-16
+# Last updated: 2024-07-21
 # ===----------------------------------------------------------------------=== #
 """
 
@@ -9,7 +9,7 @@
 fn copyto():
     pass
 
-fn ndim[dtype](array: NDArray[dtype]) -> Int:
+fn ndim[dtype: DType](array: NDArray[dtype]) -> Int:
     """
     Returns the number of dimensions of the NDArray.
 
@@ -22,7 +22,7 @@ fn ndim[dtype](array: NDArray[dtype]) -> Int:
     return array.ndim
 
 
-fn shape[dtype](array: NDArray[dtype]) -> NDArrayShape:
+fn shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
     """
     Returns the shape of the NDArray.
 
@@ -34,94 +34,65 @@ fn shape[dtype](array: NDArray[dtype]) -> NDArrayShape:
     """
     return array.ndshape
 
-fn size[dtype](array: NDArray[dtype], axis: Int) -> Int:
+fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
     """
     Returns the size of the NDArray.
 
     Args:
         array: A NDArray.
+        axis: The axis to get the size of.
 
     Returns:
         The size of the NDArray.
     """
-    else:
-        return array.ndshape[axis]
+    return array.ndshape[axis]
 
-fn moveaxis[dtype: DType](inout array: NDArray[dtype], owned source: Int, owned destination: Int) raises:
-    """
-    Moves the axis from source to destination.
-
-    Raises:
-        Error: If the axis is out of bounds.
-
-    Args:
-        array: A NDArray.
-        source: The source axis.
-        destination: The destination axis.
-
-    Returns:
-        A NDArray with the axis moved from source to destination.
-    """
-    if source < 0:
-        source += array.ndim
-    if destination < 0:
-        destination += array.ndim
-    if source >= array.ndim or destination >= array.ndim:
-        raise Error("Axis out of bounds")
-
-    var new_shape = List[Int]()
-    for i in range(array.ndim):
-        if i == source:
-            new_shape.append(array.ndshape[destination])
-        elif i == destination:
-            new_shape.append(array.ndshape[source])
-        else:
-            new_shape.append(array.ndshape[i])
-        
-    array.ndshape = NDArrayShape(shape=new_shape)
-    array.stride = NDArrayStride(shape=new_shape, order=array.order)
-
-fn reshape[dtype: DType](inout array: NDArray[dtype], *Shape: Int, order: String = "C") raises:
+fn reshape[dtype: DType](inout array: NDArray[dtype], shape: VariadicList[Int], order: String = "C") raises:
     """
         Reshapes the NDArray to given Shape.
 
-        Raises:
-            Error: If the number of elements do not match.
+    Raises:
+        Error: If the number of elements do not match.
 
-        Args:
-            array: A NDArray.
-            Shape: Variadic integers of shape.
-            order: Order of the array - Row major `C` or Column major `F`.
-        
-        Returns:
-            A reshaped NDArray.
+    Args:
+        array: A NDArray.
+        shape: Variadic integers of shape.
+        order: Order of the array - Row major `C` or Column major `F`.
+    
     """
     var num_elements_new: Int = 1
     var ndim_new: Int = 0
-    for i in Shape:
+    for i in shape:
         num_elements_new *= i
         ndim_new += 1
 
-    if self.ndshape._size != num_elements_new:
+    if array.ndshape._size != num_elements_new:
         raise Error("Cannot reshape: Number of elements do not match.")
 
     var shape_new: List[Int] = List[Int]()
-
     for i in range(ndim_new):
-        shape_new.append(Shape[i])
+        shape_new.append(shape[i])
         var temp: Int = 1
         for j in range(i + 1, ndim_new):  # temp
-            temp *= Shape[j]
+            temp *= shape[j]
 
-    self.ndim = ndim_new
-    self.ndshape = NDArrayShape(shape=shape_new)
-    self.stride = NDArrayStride(shape=shape_new, order=order)
-    self.order = order
+    array.ndim = ndim_new
+    array.ndshape = NDArrayShape(shape=shape_new)
+    array.stride = NDArrayStride(shape=shape_new, order=order)
+    array.order = order
 
-
-fn ravel():
-    pass
-
+fn ravel[dtype: DType](inout array: NDArray[dtype], order: String = "C") raises:
+    """
+    Returns the raveled version of the NDArray.
+    """
+    if array.ndim == 1:
+        print("Array is already 1D")
+        return 
+    else:
+        if order == "C":
+            reshape[dtype](array, array.ndshape._size, order="C")
+        else:
+            reshape[dtype](array, array.ndshape._size, order="F")
 
 fn where[dtype: DType](inout x: NDArray[dtype], scalar: SIMD[dtype, 1], mask:NDArray[DType.bool]) raises:
     """
@@ -131,16 +102,14 @@ fn where[dtype: DType](inout x: NDArray[dtype], scalar: SIMD[dtype, 1], mask:NDA
         dtype: DType.
     
     Args:
-        array: A NDArray.
+        x: A NDArray.
         scalar: A SIMD value.
         mask: A NDArray.
 
-    Returns:
-        The modified array `x` after applying the mask
     """
-    for i in range(array.ndshape._size):
+    for i in range(x.ndshape._size):
         if mask.data[i] == True:
-            array.data.store(i, scalar)
+            x.data.store(i, scalar)
 
 # TODO: do it with vectorization
 fn where[dtype: DType](inout x: NDArray[dtype], y: NDArray[dtype], mask:NDArray[DType.bool]) raises:
@@ -158,8 +127,6 @@ fn where[dtype: DType](inout x: NDArray[dtype], y: NDArray[dtype], mask:NDArray[
         y: NDArray[dtype].
         mask: NDArray[DType.bool].
 
-    Returns:
-        The modified array `x` after applying the mask
     """
     if x.ndshape != y.ndshape:
         raise Error("Shape mismatch error: x and y must have the same shape")

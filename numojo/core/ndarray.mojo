@@ -49,6 +49,7 @@ from .ndarray_utils import (
 from ..math.math_funcs import Vectorized
 from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
+from .array_manipulation_routines import reshape 
 
 
 @register_passable("trivial")
@@ -2256,7 +2257,6 @@ struct NDArray[dtype: DType = DType.float32](
                     # The following code can be taken out as a function that
                     # convert any index to coordinates according to the order
                     var c_stride = NDArrayStride(shape=self.ndshape)
-                    print("c stride", c_stride)
                     var c_coordinates = List[Int]()
                     var idx: Int = index[0]
                     for i in range(c_stride._len):
@@ -2424,35 +2424,17 @@ struct NDArray[dtype: DType = DType.float32](
     #     pass
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
-    fn reshape(inout self, *Shape: Int, order: String = "C") raises:
+    fn reshape(inout self, *shape: Int, order: String = "C") raises:
         """
         Reshapes the NDArray to given Shape.
 
         Args:
-            Shape: Variadic list of shape.
+            shape: Variadic list of shape.
             order: Order of the array - Row major `C` or Column major `F`.
         """
-        var num_elements_new: Int = 1
-        var ndim_new: Int = 0
-        for i in Shape:
-            num_elements_new *= i
-            ndim_new += 1
+        var s: VariadicList[Int] = shape
+        reshape[dtype](self, s, order=order)
 
-        if self.ndshape._size != num_elements_new:
-            raise Error("Cannot reshape: Number of elements do not match.")
-
-        var shape_new: List[Int] = List[Int]()
-
-        for i in range(ndim_new):
-            shape_new.append(Shape[i])
-            var temp: Int = 1
-            for j in range(i + 1, ndim_new):  # temp
-                temp *= Shape[j]
-
-        self.ndim = ndim_new
-        self.ndshape = NDArrayShape(shape=shape_new)
-        self.stride = NDArrayStride(shape=shape_new, order=order)
-        self.order = order
 
     fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
         return self.data

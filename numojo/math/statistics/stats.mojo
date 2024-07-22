@@ -70,7 +70,7 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
     """
 
     var result = Scalar[array.dtype](0)
-    for i in range(array.ndshape._size):
+    for i in range(array.ndshape.ndsize):
         result[0] += array.data[i]
     return result
 
@@ -139,7 +139,7 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
     """
 
     var result = Scalar[array.dtype](1)
-    for i in range(array.ndshape._size):
+    for i in range(array.ndshape.ndsize):
         result[0] *= array.data[i]
     return result
 
@@ -181,7 +181,7 @@ fn meanall(array: NDArray) raises -> Float64:
 
     return (
         sumall(array).cast[DType.float64]()
-        / Int32(array.ndshape._size).cast[DType.float64]()
+        / Int32(array.ndshape.ndsize).cast[DType.float64]()
     )
 
 

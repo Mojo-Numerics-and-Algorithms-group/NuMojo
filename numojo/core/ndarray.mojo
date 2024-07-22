@@ -56,9 +56,12 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     """Implements the NDArrayShape."""
 
     # Fields
-    var _size: Int  # The total no of elements in the corresponding array
-    var _shape: DTypePointer[dtype]  # The shape of the corresponding array
-    var _len: Int  # The length of _shape
+    var ndsize: Int  
+    """Total no of elements in the corresponding array."""
+    var ndshape: DTypePointer[dtype]
+    """Shape of the corresponding array."""
+    var ndlen: Int 
+    """Length of ndshape."""
 
     @always_inline("nodebug")
     fn __init__(inout self, *shape: Int) raises:
@@ -68,13 +71,13 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         Args:
             shape: Variable number of integers representing the shape dimensions.
         """
-        self._size = 1
-        self._len = len(shape)
-        self._shape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self._shape, len(shape))
+        self.ndsize = 1
+        self.ndlen = len(shape)
+        self.ndshape = DTypePointer[dtype].alloc(len(shape))
+        memset_zero(self.ndshape, len(shape))
         for i in range(len(shape)):
-            self._shape[i] = shape[i]
-            self._size *= shape[i]
+            self.ndshape[i] = shape[i]
+            self.ndsize *= shape[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, *shape: Int, size: Int) raises:
@@ -85,13 +88,13 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
             shape: Variable number of integers representing the shape dimensions.
             size: The total number of elements in the array.
         """
-        self._size = size
-        self._len = len(shape)
-        self._shape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self._shape, len(shape))
+        self.ndsize = size
+        self.ndlen = len(shape)
+        self.ndshape = DTypePointer[dtype].alloc(len(shape))
+        memset_zero(self.ndshape, len(shape))
         var count: Int = 1
         for i in range(len(shape)):
-            self._shape[i] = shape[i]
+            self.ndshape[i] = shape[i]
             count *= shape[i]
         if count != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
@@ -104,13 +107,13 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         Args:
             shape: A list of integers representing the shape dimensions.
         """
-        self._size = 1
-        self._len = len(shape)
-        self._shape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self._shape, len(shape))
+        self.ndsize = 1
+        self.ndlen = len(shape)
+        self.ndshape = DTypePointer[dtype].alloc(len(shape))
+        memset_zero(self.ndshape, len(shape))
         for i in range(len(shape)):
-            self._shape[i] = shape[i]
-            self._size *= shape[i]
+            self.ndshape[i] = shape[i]
+            self.ndsize *= shape[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, shape: List[Int], size: Int) raises:
@@ -121,15 +124,15 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self._size = (
+        self.ndsize = (
             size  # maybe I should add a check here to make sure it matches
         )
-        self._len = len(shape)
-        self._shape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self._shape, len(shape))
+        self.ndlen = len(shape)
+        self.ndshape = DTypePointer[dtype].alloc(len(shape))
+        memset_zero(self.ndshape, len(shape))
         var count: Int = 1
         for i in range(len(shape)):
-            self._shape[i] = shape[i]
+            self.ndshape[i] = shape[i]
             count *= shape[i]
         if count != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
@@ -142,13 +145,13 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         Args:
             shape: A list of integers representing the shape dimensions.
         """
-        self._size = 1
-        self._len = len(shape)
-        self._shape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self._shape, len(shape))
+        self.ndsize = 1
+        self.ndlen = len(shape)
+        self.ndshape = DTypePointer[dtype].alloc(len(shape))
+        memset_zero(self.ndshape, len(shape))
         for i in range(len(shape)):
-            self._shape[i] = shape[i]
-            self._size *= shape[i]
+            self.ndshape[i] = shape[i]
+            self.ndsize *= shape[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, shape: VariadicList[Int], size: Int) raises:
@@ -159,15 +162,15 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self._size = (
+        self.ndsize = (
             size  # maybe I should add a check here to make sure it matches
         )
-        self._len = len(shape)
-        self._shape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self._shape, len(shape))
+        self.ndlen = len(shape)
+        self.ndshape = DTypePointer[dtype].alloc(len(shape))
+        memset_zero(self.ndshape, len(shape))
         var count: Int = 1
         for i in range(len(shape)):
-            self._shape[i] = shape[i]
+            self.ndshape[i] = shape[i]
             count *= shape[i]
         if count != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
@@ -180,69 +183,97 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         Args:
             shape: Another NDArrayShape to initialize from.
         """
-        self._size = shape._size
-        self._len = shape._len
-        self._shape = DTypePointer[dtype].alloc(shape._len)
-        memset_zero(self._shape, shape._len)
-        for i in range(shape._len):
-            self._shape[i] = shape[i]
+        self.ndsize = shape.ndsize
+        self.ndlen = shape.ndlen
+        self.ndshape = DTypePointer[dtype].alloc(shape.ndlen)
+        memset_zero(self.ndshape, shape.ndlen)
+        for i in range(shape.ndlen):
+            self.ndshape[i] = shape[i]
 
     fn __copy__(inout self, other: Self):
-        self._size = other._size
-        self._len = other._len
-        self._shape = DTypePointer[dtype].alloc(other._len)
-        memcpy(self._shape, other._shape, other._len)
+        """
+        Copy from other into self.
+        """
+        self.ndsize = other.ndsize
+        self.ndlen = other.ndlen
+        self.ndshape = DTypePointer[dtype].alloc(other.ndlen)
+        memcpy(self.ndshape, other.ndshape, other.ndlen)
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
-        if index >= self._len:
+        """
+        Get shape at specified index.
+        """
+        if index >= self.ndlen:
             raise Error("Index out of bound")
         if index >= 0:
-            return self._shape[index].__int__()
+            return self.ndshape[index].__int__()
         else:
-            return self._shape[self._len + index].__int__()
+            return self.ndshape[self.ndlen + index].__int__()
 
     @always_inline("nodebug")
     fn __setitem__(inout self, index: Int, val: Int) raises:
-        if index >= self._len:
+        """
+        Set shape at specified index.
+        """
+        if index >= self.ndlen:
             raise Error("Index out of bound")
         if index >= 0:
-            self._shape[index] = val
+            self.ndshape[index] = val
         else:
-            self._shape[self._len + index] = val
+            self.ndshape[self.ndlen + index] = val
 
     @always_inline("nodebug")
     fn size(self) -> Int:
-        return self._size
+        """
+        Get Size of array described by arrayshape.
+        """
+        return self.ndsize
 
     @always_inline("nodebug")
     fn len(self) -> Int:
-        return self._len
+        """
+        Get number of dimensions of the array described by arrayshape.
+        """
+        return self.ndlen
 
     @always_inline("nodebug")
     fn __str__(self: Self) -> String:
+        """
+        Return a string of the shape of the array described by arrayshape.
+        
+        """
         var result: String = "Shape: ["
-        for i in range(self._len):
-            if i == self._len - 1:
-                result += self._shape[i].__str__()
+        for i in range(self.ndlen):
+            if i == self.ndlen - 1:
+                result += self.ndshape[i].__str__()
             else:
-                result += self._shape[i].__str__() + ", "
+                result += self.ndshape[i].__str__() + ", "
         return result + "]"
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:
-        for i in range(self._len):
+        """
+        Check if two arrayshapes have identical dimensions.
+        """
+        for i in range(self.ndlen):
             if self[i] != other[i]:
                 return False
         return True
 
     @always_inline("nodebug")
     fn __ne__(self, other: Self) raises -> Bool:
+        """
+        Check if two arrayshapes don't have identical dimensions.
+        """
         return not self.__eq__(other)
 
     @always_inline("nodebug")
     fn __contains__(self, val: Int) raises -> Bool:
-        for i in range(self._len):
+        """
+        Check if any of the dimensions are equal to a value.
+        """
+        for i in range(self.ndlen):
             if self[i] == val:
                 return True
         return False
@@ -250,26 +281,38 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     # can be used for vectorized index calculation
     @always_inline("nodebug")
     fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        # if index >= self._len:
+        """
+        SIMD load dimensional information.
+        """
+        # if index >= self.ndlen:
         # raise Error("Index out of bound")
-        return self._shape.load[width=width](index)
+        return self.ndshape.load[width=width](index)
 
     # can be used for vectorized index retrieval
     @always_inline("nodebug")
     fn store[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[dtype, width]) raises:
-        # if index >= self._len:
+        """
+        SIMD store dimensional information.
+        """
+        # if index >= self.ndlen:
         #     raise Error("Index out of bound")
-        self._shape.store[width=width](index, val)
+        self.ndshape.store[width=width](index, val)
 
     @always_inline("nodebug")
     fn load_int(self, index: Int) -> Int:
-        return self._shape.load[width=1](index).__int__()
+        """
+        SIMD load dimensional information.
+        """
+        return self.ndshape.load[width=1](index).__int__()
 
     @always_inline("nodebug")
     fn store_int(inout self, index: Int, val: Int):
-        self._shape.store[width=1](index, val)
+        """
+        SIMD store dimensional information.
+        """
+        self.ndshape.store[width=1](index, val)
 
 
 @register_passable("trivial")
@@ -277,74 +320,74 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
     """Implements the NDArrayStride."""
 
     # Fields
-    var _offset: Int
-    var _stride: DTypePointer[dtype]
-    var _len: Int
+    var ndoffset: Int
+    var ndstride: DTypePointer[dtype]
+    var ndlen: Int
 
     @always_inline("nodebug")
     fn __init__(
         inout self, *stride: Int, offset: Int = 0
     ):  # maybe we should add checks for offset?
-        self._offset = offset
-        self._len = stride.__len__()
-        self._stride = DTypePointer[dtype].alloc(stride.__len__())
+        self.ndoffset = offset
+        self.ndlen = stride.__len__()
+        self.ndstride = DTypePointer[dtype].alloc(stride.__len__())
         for i in range(stride.__len__()):
-            self._stride[i] = stride[i]
+            self.ndstride[i] = stride[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, stride: List[Int], offset: Int = 0):
-        self._offset = offset
-        self._len = stride.__len__()
-        self._stride = DTypePointer[dtype].alloc(self._len)
-        memset_zero(self._stride, self._len)
-        for i in range(self._len):
-            self._stride[i] = stride[i]
+        self.ndoffset = offset
+        self.ndlen = stride.__len__()
+        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
+        memset_zero(self.ndstride, self.ndlen)
+        for i in range(self.ndlen):
+            self.ndstride[i] = stride[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, stride: VariadicList[Int], offset: Int = 0):
-        self._offset = offset
-        self._len = stride.__len__()
-        self._stride = DTypePointer[dtype].alloc(self._len)
-        memset_zero(self._stride, self._len)
-        for i in range(self._len):
-            self._stride[i] = stride[i]
+        self.ndoffset = offset
+        self.ndlen = stride.__len__()
+        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
+        memset_zero(self.ndstride, self.ndlen)
+        for i in range(self.ndlen):
+            self.ndstride[i] = stride[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, stride: NDArrayStride):
-        self._offset = stride._offset
-        self._len = stride._len
-        self._stride = DTypePointer[dtype].alloc(stride._len)
-        for i in range(self._len):
-            self._stride[i] = stride._stride[i]
+        self.ndoffset = stride.ndoffset
+        self.ndlen = stride.ndlen
+        self.ndstride = DTypePointer[dtype].alloc(stride.ndlen)
+        for i in range(self.ndlen):
+            self.ndstride[i] = stride.ndstride[i]
 
     @always_inline("nodebug")
     fn __init__(
         inout self, stride: NDArrayStride, offset: Int = 0
     ):  # separated two methods to remove if condition
-        self._offset = offset
-        self._len = stride._len
-        self._stride = DTypePointer[dtype].alloc(stride._len)
-        for i in range(self._len):
-            self._stride[i] = stride._stride[i]
+        self.ndoffset = offset
+        self.ndlen = stride.ndlen
+        self.ndstride = DTypePointer[dtype].alloc(stride.ndlen)
+        for i in range(self.ndlen):
+            self.ndstride[i] = stride.ndstride[i]
 
     @always_inline("nodebug")
     fn __init__(
         inout self, *shape: Int, offset: Int = 0, order: String = "C"
     ) raises:
-        self._offset = offset
-        self._len = shape.__len__()
-        self._stride = DTypePointer[dtype].alloc(self._len)
-        memset_zero(self._stride, self._len)
+        self.ndoffset = offset
+        self.ndlen = shape.__len__()
+        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
+        memset_zero(self.ndstride, self.ndlen)
         if order == "C":
-            for i in range(self._len):
+            for i in range(self.ndlen):
                 var temp: Int = 1
-                for j in range(i + 1, self._len):
+                for j in range(i + 1, self.ndlen):
                     temp = temp * shape[j]
-                self._stride[i] = temp
+                self.ndstride[i] = temp
         elif order == "F":
-            self._stride[0] = 1
-            for i in range(0, self._len - 1):
-                self._stride[i + 1] = self._stride[i] * shape[i]
+            self.ndstride[0] = 1
+            for i in range(0, self.ndlen - 1):
+                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -355,20 +398,20 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
     fn __init__(
         inout self, shape: List[Int], offset: Int = 0, order: String = "C"
     ) raises:
-        self._offset = offset
-        self._len = shape.__len__()
-        self._stride = DTypePointer[dtype].alloc(self._len)
-        memset_zero(self._stride, self._len)
+        self.ndoffset = offset
+        self.ndlen = shape.__len__()
+        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
+        memset_zero(self.ndstride, self.ndlen)
         if order == "C":
-            for i in range(self._len):
+            for i in range(self.ndlen):
                 var temp: Int = 1
-                for j in range(i + 1, self._len):
+                for j in range(i + 1, self.ndlen):
                     temp = temp * shape[j]
-                self._stride[i] = temp
+                self.ndstride[i] = temp
         elif order == "F":
-            self._stride[0] = 1
-            for i in range(0, self._len - 1):
-                self._stride[i + 1] = self._stride[i] * shape[i]
+            self.ndstride[0] = 1
+            for i in range(0, self.ndlen - 1):
+                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -382,20 +425,20 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
         offset: Int = 0,
         order: String = "C",
     ) raises:
-        self._offset = offset
-        self._len = shape.__len__()
-        self._stride = DTypePointer[dtype].alloc(self._len)
-        memset_zero(self._stride, self._len)
+        self.ndoffset = offset
+        self.ndlen = shape.__len__()
+        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
+        memset_zero(self.ndstride, self.ndlen)
         if order == "C":
-            for i in range(self._len):
+            for i in range(self.ndlen):
                 var temp: Int = 1
-                for j in range(i + 1, self._len):
+                for j in range(i + 1, self.ndlen):
                     temp = temp * shape[j]
-                self._stride[i] = temp
+                self.ndstride[i] = temp
         elif order == "F":
-            self._stride[0] = 1
-            for i in range(0, self._len - 1):
-                self._stride[i + 1] = self._stride[i] * shape[i]
+            self.ndstride[0] = 1
+            for i in range(0, self.ndlen - 1):
+                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -409,23 +452,23 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
         offset: Int = 0,
         order: String = "C",
     ) raises:
-        self._offset = offset
-        self._len = shape._len
-        self._stride = DTypePointer[dtype].alloc(shape._len)
-        memset_zero(self._stride, shape._len)
+        self.ndoffset = offset
+        self.ndlen = shape.ndlen
+        self.ndstride = DTypePointer[dtype].alloc(shape.ndlen)
+        memset_zero(self.ndstride, shape.ndlen)
         if order == "C":
-            if shape._len == 1:
-                self._stride[0] = 1
+            if shape.ndlen == 1:
+                self.ndstride[0] = 1
             else:
-                for i in range(shape._len):
+                for i in range(shape.ndlen):
                     var temp: Int = 1
-                    for j in range(i + 1, shape._len):
+                    for j in range(i + 1, shape.ndlen):
                         temp = temp * shape[j]
-                    self._stride[i] = temp
+                    self.ndstride[i] = temp
         elif order == "F":
-            self._stride[0] = 1
-            for i in range(0, self._len - 1):
-                self._stride[i + 1] = self._stride[i] * shape[i]
+            self.ndstride[0] = 1
+            for i in range(0, self.ndlen - 1):
+                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -433,46 +476,46 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
             )
 
     fn __copy__(inout self, other: Self):
-        self._offset = other._offset
-        self._len = other._len
-        self._stride = DTypePointer[dtype].alloc(other._len)
-        memcpy(self._stride, other._stride, other._len)
+        self.ndoffset = other.ndoffset
+        self.ndlen = other.ndlen
+        self.ndstride = DTypePointer[dtype].alloc(other.ndlen)
+        memcpy(self.ndstride, other.ndstride, other.ndlen)
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
-        if index >= self._len:
+        if index >= self.ndlen:
             raise Error("Index out of bound")
         if index >= 0:
-            return self._stride[index].__int__()
+            return self.ndstride[index].__int__()
         else:
-            return self._stride[self._len + index].__int__()
+            return self.ndstride[self.ndlen + index].__int__()
 
     @always_inline("nodebug")
     fn __setitem__(inout self, index: Int, val: Int) raises:
-        if index >= self._len:
+        if index >= self.ndlen:
             raise Error("Index out of bound")
         if index >= 0:
-            self._stride[index] = val
+            self.ndstride[index] = val
         else:
-            self._stride[self._len + index] = val
+            self.ndstride[self.ndlen + index] = val
 
     @always_inline("nodebug")
     fn len(self) -> Int:
-        return self._len
+        return self.ndlen
 
     @always_inline("nodebug")
     fn __str__(self: Self) -> String:
         var result: String = "Stride: ["
-        for i in range(self._len):
-            if i == self._len - 1:
-                result += self._stride[i].__str__()
+        for i in range(self.ndlen):
+            if i == self.ndlen - 1:
+                result += self.ndstride[i].__str__()
             else:
-                result += self._stride[i].__str__() + ", "
+                result += self.ndstride[i].__str__() + ", "
         return result + "]"
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:
-        for i in range(self._len):
+        for i in range(self.ndlen):
             if self[i] != other[i]:
                 return False
         return True
@@ -483,34 +526,34 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
 
     @always_inline("nodebug")
     fn __contains__(self, val: Int) raises -> Bool:
-        for i in range(self._len):
+        for i in range(self.ndlen):
             if self[i] == val:
                 return True
         return False
 
     @always_inline("nodebug")
     fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        # if index >= self._len:
+        # if index >= self.ndlen:
         #     raise Error("Index out of bound")
-        return self._stride.load[width=width](index)
+        return self.ndstride.load[width=width](index)
 
     @always_inline("nodebug")
     fn store[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[dtype, width]) raises:
-        # if index >= self._len:
+        # if index >= self.ndlen:
         #     raise Error("Index out of bound")
-        self._stride.store[width=width](index, val)
+        self.ndstride.store[width=width](index, val)
 
     @always_inline("nodebug")
     fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
-        return self._stride.load[width=width](index).__int__()
+        return self.ndstride.load[width=width](index).__int__()
 
     @always_inline("nodebug")
     fn store_unsafe[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[dtype, width]):
-        self._stride.store[width=width](index, val)
+        self.ndstride.store[width=width](index, val)
 
 
 @value
@@ -633,10 +676,10 @@ struct NDArray[dtype: DType = DType.float32](
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
         self.datatype = dtype
         self.order = order
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         if random:
-            rand[dtype](self.data, self.ndshape._size)
+            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
@@ -661,12 +704,12 @@ struct NDArray[dtype: DType = DType.float32](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if random:
-            rand[dtype](self.data, self.ndshape._size)
+            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
@@ -691,12 +734,12 @@ struct NDArray[dtype: DType = DType.float32](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if random:
-            rand[dtype](self.data, self.ndshape._size)
+            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
@@ -721,11 +764,11 @@ struct NDArray[dtype: DType = DType.float32](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape._size):
+        for i in range(self.ndshape.ndsize):
             self.data[i] = fill
 
     @always_inline("nodebug")
@@ -751,11 +794,11 @@ struct NDArray[dtype: DType = DType.float32](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape._size):
+        for i in range(self.ndshape.ndsize):
             self.data[i] = fill
 
     @always_inline("nodebug")
@@ -781,11 +824,11 @@ struct NDArray[dtype: DType = DType.float32](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape._size):
+        for i in range(self.ndshape.ndsize):
             self.data[i] = fill
 
     @always_inline("nodebug")
@@ -807,16 +850,16 @@ struct NDArray[dtype: DType = DType.float32](
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
-        self.ndim = shape._len
+        self.ndim = shape.ndlen
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, order=order)
         self.coefficient = NDArrayStride(shape, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if random:
-            rand[dtype](self.data, self.ndshape._size)
+            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
@@ -837,15 +880,15 @@ struct NDArray[dtype: DType = DType.float32](
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
-        self.ndim = shape._len
+        self.ndim = shape.ndlen
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, order=order)
         self.coefficient = NDArrayStride(shape, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
-        memset_zero(self.data, self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape._size):
+        for i in range(self.ndshape.ndsize):
             self.data[i] = fill
 
     fn __init__(
@@ -871,11 +914,11 @@ struct NDArray[dtype: DType = DType.float32](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape._size)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        memset_zero(self.data, self.ndshape._size)
-        for i in range(self.ndshape._size):
+        memset_zero(self.data, self.ndshape.ndsize)
+        for i in range(self.ndshape.ndsize):
             self.data[i] = data[i]
 
     # Why do  these last two constructors exist?
@@ -926,7 +969,7 @@ struct NDArray[dtype: DType = DType.float32](
         )
         self.datatype = dtype
         self.order = order
-        self.data = data + self.stride._offset
+        self.data = data + self.stride.ndoffset
 
     @always_inline("nodebug")
     fn __copyinit__(inout self, other: Self):
@@ -968,12 +1011,12 @@ struct NDArray[dtype: DType = DType.float32](
         """
         Set the value of a single index.
         """
-        if index >= self.ndshape._size:
+        if index >= self.ndshape.ndsize:
             raise Error("Invalid index: index out of bound")
         if index >= 0:
             self.data.store[width=1](index, val)
         else:
-            self.data.store[width=1](index + self.ndshape._size, val)
+            self.data.store[width=1](index + self.ndshape.ndsize, val)
 
     @always_inline("nodebug")
     fn __setitem__(inout self, *index: Int, val: SIMD[dtype, 1]) raises:
@@ -1040,12 +1083,12 @@ struct NDArray[dtype: DType = DType.float32](
         > A.item(3)  # Row 1, Col 0
         ```
         """
-        if index >= self.ndshape._size:
+        if index >= self.ndshape.ndsize:
             raise Error("Invalid index: index out of bound")
         if index >= 0:
             return self.data.load[width=1](index)
         else:
-            return self.data.load[width=1](index + self.ndshape._size)
+            return self.data.load[width=1](index + self.ndshape.ndsize)
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
@@ -1071,7 +1114,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         if self.ndim == 1:
             narr.ndim = 0
-            narr.ndshape._shape[0] = 0
+            narr.ndshape.ndshape[0] = 0
             
         return narr
 
@@ -1397,7 +1440,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         if count_int == self.ndim:
             narr.ndim = 0
-            narr.ndshape._shape[0] = 0
+            narr.ndshape.ndshape[0] = 0
 
         return narr
 
@@ -1476,12 +1519,12 @@ struct NDArray[dtype: DType = DType.float32](
         # Number of indice * shape from dim-1
         # So just change the first number of the ndshape
         var ndshape = self.ndshape
-        ndshape._shape.__setitem__(0, len(index))
-        ndshape._size = 1
-        for i in range(ndshape._len):
-            ndshape._size *= int(ndshape._shape[i])
+        ndshape.ndshape.__setitem__(0, len(index))
+        ndshape.ndsize = 1
+        for i in range(ndshape.ndlen):
+            ndshape.ndsize *= int(ndshape.ndshape[i])
         var result = NDArray[dtype](ndshape)
-        var size_per_item = ndshape._size // len(index)
+        var size_per_item = ndshape.ndsize // len(index)
 
         # Fill in the values
         for i in range(len(index)):
@@ -1539,7 +1582,7 @@ struct NDArray[dtype: DType = DType.float32](
             NDArray with items from the mask.
         """
         var true: List[Int] = List[Int]()
-        for i in range(mask.ndshape._size):
+        for i in range(mask.ndshape.ndsize):
             if mask.data.load[width=1](i):
                 true.append(i)
 
@@ -1559,7 +1602,7 @@ struct NDArray[dtype: DType = DType.float32](
         ):  # this behavious could be removed potentially
             raise Error("Mask and array must have the same shape")
 
-        for i in range(mask.ndshape._size):
+        for i in range(mask.ndshape.ndsize):
             if mask.data.load[width=1](i):
                 self.data.store[width=1](i, value.data.load[width=1](i))
 
@@ -1590,7 +1633,7 @@ struct NDArray[dtype: DType = DType.float32](
     #     if mask.ndshape != self.ndshape: # this behavious could be removed potentially
     #         raise Error("Mask and array must have the same shape")
 
-    #     for i in range(mask.ndshape._size):
+    #     for i in range(mask.ndshape.ndsize):
     #         if mask.data.load[width=1](i):
     #             print(value)
     #             self.data.store[width=1](i, value)
@@ -1847,7 +1890,7 @@ struct NDArray[dtype: DType = DType.float32](
         return self._elementwise_pow(p)
 
     fn __pow__(self, p: Self) raises -> Self:
-        if self.ndshape._size != p.ndshape._size:
+        if self.ndshape.ndsize != p.ndshape.ndsize:
             raise Error("Both arrays must have same number of elements")
 
         var result = Self(self.ndshape)
@@ -1861,7 +1904,7 @@ struct NDArray[dtype: DType = DType.float32](
                 ** p.load[width=simd_width](index),
             )
 
-        vectorize[vectorized_pow, nelts](self.ndshape._size)
+        vectorize[vectorized_pow, nelts](self.ndshape.ndsize)
         return result
 
     fn __ipow__(inout self, p: Int):
@@ -1877,7 +1920,7 @@ struct NDArray[dtype: DType = DType.float32](
                 index, pow(self.data.load[width=simd_width](index), p)
             )
 
-        vectorize[array_scalar_vectorize, simd_width](self.ndshape._size)
+        vectorize[array_scalar_vectorize, simd_width](self.ndshape.ndsize)
         return new_vec
 
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
@@ -2019,8 +2062,8 @@ struct NDArray[dtype: DType = DType.float32](
                 for i in self:
                     result = result + str(i) + str(",")
             result = result + str("), shape=List[Int](")
-            for i in range(self.ndshape._len):
-                result = result + str(self.ndshape._shape[i]) + ","
+            for i in range(self.ndshape.ndlen):
+                result = result + str(self.ndshape.ndshape[i]) + ","
             result = result + str("))")
             return result
         except e:
@@ -2029,7 +2072,7 @@ struct NDArray[dtype: DType = DType.float32](
 
     # Should len be size or number of dimensions instead of the first dimension shape?
     fn __len__(self) -> Int:
-        return int(self.ndshape._shape[0])
+        return int(self.ndshape.ndshape[0])
 
     fn __iter__(self) raises -> _NDArrayIter[__lifetime_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
@@ -2158,11 +2201,11 @@ struct NDArray[dtype: DType = DType.float32](
         """
         Inner product of two vectors.
         """
-        if self.ndshape._size != other.ndshape._size:
+        if self.ndshape.ndsize != other.ndshape.ndsize:
             raise Error("The lengths of two vectors do not match.")
 
         var sum = Scalar[dtype](0)
-        for i in range(self.ndshape._size):
+        for i in range(self.ndshape.ndsize):
             sum = sum + self.get_scalar(i) * other.get_scalar(i)
         return sum
 
@@ -2225,7 +2268,7 @@ struct NDArray[dtype: DType = DType.float32](
 
         if (self.ndim != 2) or (other.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
-        if self.ndshape._shape[1] != other.ndshape._shape[0]:
+        if self.ndshape.ndshape[1] != other.ndshape.ndshape[0]:
             raise Error(
                 "Second dimension of A does not match first dimension of B."
             )
@@ -2243,13 +2286,13 @@ struct NDArray[dtype: DType = DType.float32](
         """
         Function to retreive size.
         """
-        return self.ndshape._size
+        return self.ndshape.ndsize
 
     fn num_elements(self) -> Int:
         """
         Function to retreive size (compatability).
         """
-        return self.ndshape._size
+        return self.ndshape.ndsize
 
     # should this return the List[Int] shape and self.ndshape be used instead of making it a no input function call?
     fn shape(self) -> NDArrayShape:
@@ -2316,7 +2359,7 @@ struct NDArray[dtype: DType = DType.float32](
                 (self.data + idx).simd_strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_all, nelts](self.ndshape._size)
+        vectorize[vectorized_all, nelts](self.ndshape.ndsize)
         return result
 
     fn any(self) raises -> Bool:
@@ -2335,7 +2378,7 @@ struct NDArray[dtype: DType = DType.float32](
                 (self.data + idx).simd_strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_any, nelts](self.ndshape._size)
+        vectorize[vectorized_any, nelts](self.ndshape.ndsize)
         return result
 
     fn argmax(self) -> Int:
@@ -2344,7 +2387,7 @@ struct NDArray[dtype: DType = DType.float32](
         """
         var result: Int = 0
         var max_val: SIMD[dtype, 1] = self.load[width=1](0)
-        for i in range(1, self.ndshape._size):
+        for i in range(1, self.ndshape.ndsize):
             var temp: SIMD[dtype, 1] = self.load[width=1](i)
             if temp > max_val:
                 max_val = temp
@@ -2357,7 +2400,7 @@ struct NDArray[dtype: DType = DType.float32](
         """
         var result: Int = 0
         var min_val: SIMD[dtype, 1] = self.load[width=1](0)
-        for i in range(1, self.ndshape._size):
+        for i in range(1, self.ndshape.ndsize):
             var temp: SIMD[dtype, 1] = self.load[width=1](i)
             if temp < min_val:
                 min_val = temp
@@ -2396,7 +2439,7 @@ struct NDArray[dtype: DType = DType.float32](
                     self.load[width](idx).cast[type](), 1
                 )
 
-            vectorize[vectorized_astype, nelts](self.ndshape._size)
+            vectorize[vectorized_astype, nelts](self.ndshape.ndsize)
         else:
 
             @parameter
@@ -2411,14 +2454,14 @@ struct NDArray[dtype: DType = DType.float32](
                         .cast[type](),
                     )
 
-                vectorize[vectorized_astypenb_from_b, nelts](self.ndshape._size)
+                vectorize[vectorized_astypenb_from_b, nelts](self.ndshape.ndsize)
             else:
 
                 @parameter
                 fn vectorized_astypenb[width: Int](idx: Int) -> None:
                     narr.store[width](idx, self.load[width](idx).cast[type]())
 
-                vectorize[vectorized_astypenb, nelts](self.ndshape._size)
+                vectorize[vectorized_astypenb, nelts](self.ndshape.ndsize)
 
         return narr
 
@@ -2462,7 +2505,7 @@ struct NDArray[dtype: DType = DType.float32](
         fn vectorized_fill[simd_width: Int](index: Int) -> None:
             self.data.store[width=simd_width](index, val)
 
-        vectorize[vectorized_fill, simd_width](self.ndshape._size)
+        vectorize[vectorized_fill, simd_width](self.ndshape.ndsize)
         return self
 
     fn flatten(inout self, inplace: Bool = False) raises -> Optional[Self]:
@@ -2471,12 +2514,12 @@ struct NDArray[dtype: DType = DType.float32](
         """
         # inplace has some problems right now
         # if inplace:
-        #     self.ndshape = NDArrayShape(self.ndshape._size, size=self.ndshape._size)
+        #     self.ndshape = NDArrayShape(self.ndshape.ndsize, size=self.ndshape.ndsize)
         #     self.stride = NDArrayStride(shape = self.ndshape, offset=0)
         #     return self
 
         var res: NDArray[dtype] = NDArray[dtype](
-            self.ndshape._size, random=False
+            self.ndshape.ndsize, random=False
         )
         alias simd_width: Int = simdwidthof[dtype]()
 
@@ -2486,7 +2529,7 @@ struct NDArray[dtype: DType = DType.float32](
                 index, self.data.load[width=simd_width](index)
             )
 
-        vectorize[vectorized_flatten, simd_width](self.ndshape._size)
+        vectorize[vectorized_flatten, simd_width](self.ndshape.ndsize)
         if inplace:
             self = res
             return None
@@ -2563,7 +2606,7 @@ struct NDArray[dtype: DType = DType.float32](
                     print("c stride", c_stride)
                     var c_coordinates = List[Int]()
                     var idx: Int = index[0]
-                    for i in range(c_stride._len):
+                    for i in range(c_stride.ndlen):
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
@@ -2752,7 +2795,7 @@ struct NDArray[dtype: DType = DType.float32](
             num_elements_new *= i
             ndim_new += 1
 
-        if self.ndshape._size != num_elements_new:
+        if self.ndshape.ndsize != num_elements_new:
             raise Error("Cannot reshape: Number of elements do not match.")
 
         var shape_new: List[Int] = List[Int]()

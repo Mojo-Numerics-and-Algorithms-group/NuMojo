@@ -188,6 +188,15 @@ fn meanall(array: NDArray) raises -> Float64:
 fn max[
     dtype: DType
 ](array: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
+    """Maximums of array elements over a given axis.
+
+    Args:
+        array: NDArray.
+        axis: The axis along which the sum is performed.
+    
+    Returns:
+        An NDArray.
+    """
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):
@@ -225,6 +234,15 @@ fn max[
 fn min[
     dtype: DType
 ](array: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
+    """Minumums of array elements over a given axis.
+
+    Args:
+        array: NDArray.
+        axis: The axis along which the sum is performed.
+    
+    Returns:
+        An NDArray.
+    """
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):

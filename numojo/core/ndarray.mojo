@@ -1626,6 +1626,9 @@ struct NDArray[dtype: DType = DType.float32](
             )
 
     fn __pos__(self) raises -> Self:
+        """
+        Unary positve returens self unless boolean type.
+        """
         if self.dtype.is_bool():
             raise Error(
                 "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
@@ -1633,97 +1636,181 @@ struct NDArray[dtype: DType = DType.float32](
         return self
 
     fn __neg__(self) raises -> Self:
+        """
+        Unary negative returens self unless boolean type.
+
+        For bolean use `__invert__`(~)
+        """
+        if self.dtype.is_bool():
+            raise Error(
+                "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
+            )
         return self * -1.0
 
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
+        """
+        Itemwise equivelence.
+        """
         return math.equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise equivelence between scalar and Array.
+        """
         var other_array: Self = NDArray[dtype](self.shape(), fill=other)
         return math.equal[dtype](self, other_array)
 
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise nonequivelence.
+        """
         var other_array: Self = NDArray[dtype](self.shape(), fill=other)
         return math.not_equal[dtype](self, other_array)
 
     @always_inline("nodebug")
     fn __ne__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise nonequivelence between scalar and Array.
+        """
         return math.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than.
+        """
         var other_array: Self = NDArray[dtype](self.shape(), fill=other)
         return math.less[dtype](self, other_array)
 
     @always_inline("nodebug")
     fn __lt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than between scalar and Array.
+        """
         return math.less[dtype](self, other)
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal to.
+        """
         var other_array: Self = NDArray[dtype](self.shape(), fill=other)
         return math.less_equal[dtype](self, other_array)
 
     @always_inline("nodebug")
     fn __le__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal to between scalar and Array.
+        """
         return math.less_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than.
+        """
         var other_array: Self = NDArray[dtype](self.shape(), fill=other)
         return math.greater[dtype](self, other_array)
 
     @always_inline("nodebug")
     fn __gt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than between scalar and Array.
+        """
         return math.greater[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than or equal to.
+        """
         var other_array: Self = NDArray[dtype](self.shape(), fill=other)
         return math.greater_equal[dtype](self, other_array)
 
     @always_inline("nodebug")
     fn __ge__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal to between scalar and Array.
+        """
         return math.greater_equal[dtype](self, other)
 
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `array + scalar`.
+        """
         return math.add[dtype](self, other)
 
     fn __add__(inout self, other: Self) raises -> Self:
+        """
+        Enables `array + array`.
+        """
         return math.add[dtype](self, other)
 
     fn __radd__(inout self, rhs: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar + array`.
+        """
         return math.add[dtype](self, rhs)
 
     # TODO make an inplace version of arithmetic functions for the i dunders
     fn __iadd__(inout self, other: SIMD[dtype, 1]) raises:
+        """
+        Enables `array = array + scalar`.
+        """
         self = _af.math_func_one_array_one_SIMD_in_one_array_out[
             dtype, SIMD.__add__
         ](self, other)
 
     fn __iadd__(inout self, other: Self) raises:
+        """
+        Enables `array = array + array`.
+        """
         self = _af.math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
             self, other
         )
 
     fn __sub__(self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `array - scalar`.
+        """
         return math.sub[dtype](self, other)
 
     fn __sub__(self, other: Self) raises -> Self:
+        """
+        Enables `array - array`.
+        """
         return math.sub[dtype](self, other)
 
     fn __rsub__(self, s: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar - array`.
+        """
         return math.sub[dtype](s, self)
 
     fn __isub__(inout self, s: SIMD[dtype, 1]) raises:
+        """
+        Enables `array = array - scalar`.
+        """
+        self = self - s
+
+    fn __isub__(inout self, s: Self) raises:
+        """
+        Enables `array = array - array`.
+        """
         self = self - s
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `array * scalar`.
+        """
         return math.mul[dtype](self, other)
 
     fn __mul__(self, other: Self) raises -> Self:
+        """
+        Enables `array * array`.
+        """
         return math.mul[dtype](self, other)
 
     fn __matmul__(self, other: Self) raises -> Self:
@@ -1782,9 +1869,15 @@ struct NDArray[dtype: DType = DType.float32](
         return new_vec
 
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `array / scalar`.
+        """
         return math.div[dtype](self, other)
 
     fn __truediv__(self, other: Self) raises -> Self:
+        """
+        Enables `array / array`.
+        """
         return math.div[dtype](self, other)
 
     fn __itruediv__(inout self, s: SIMD[dtype, 1]) raises:
@@ -1797,9 +1890,15 @@ struct NDArray[dtype: DType = DType.float32](
         return math.div[dtype](s, self)
 
     fn __floordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `array // scalar`.
+        """
         return math.floor_div[dtype](self, other)
 
     fn __floordiv__(self, other: Self) raises -> Self:
+        """
+        Enables `array // array`.
+        """
         return math.floor_div[dtype](self, other)
 
     fn __ifloordiv__(inout self, s: SIMD[dtype, 1]) raises:
@@ -1812,9 +1911,15 @@ struct NDArray[dtype: DType = DType.float32](
         return math.floor_div[dtype](s, self)
 
     fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `array % scalar`.
+        """
         return math.mod[dtype](self, other)
 
     fn __mod__(inout self, other: NDArray[dtype]) raises -> Self:
+        """
+        Enables `array % array`.
+        """
         return math.mod[dtype](self, other)
 
     fn __imod__(inout self, other: SIMD[dtype, 1]) raises:

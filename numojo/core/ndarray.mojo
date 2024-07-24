@@ -975,10 +975,6 @@ struct NDArray[dtype: DType = DType.float32](
         Args:
             text: String representation of an ndarray.
             order: Memory order C or F.
-
-        Example:
-            `NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))`
-            Returns an array with shape 3 x 2 with input values.
         """
 
         var data = List[Scalar[dtype]]()

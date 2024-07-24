@@ -921,6 +921,97 @@ struct NDArray[dtype: DType = DType.float32](
         for i in range(self.ndshape.ndsize):
             self.data[i] = data[i]
 
+    fn __init__(
+        inout self,
+        text: String,
+        order: String = "C",
+    ) raises:
+        """
+        NDArray initialization from string representation of an ndarray.
+        The shape can be inferred from the string representation.
+        The literals will be casted to the dtype of the NDArray.
+
+        Note:
+        StringLiteral is also allowed as input as it is coerced to String type
+        before it is passed into the function.
+
+        Example:
+        ```mojo
+        import numojo as nm
+
+        fn main() raises:
+            var A = nm.NDArray[DType.int8]("[[[1,2],[3,4]],[[5,6],[7,8]]]")
+            var B = nm.NDArray[DType.float16]("[[1,2,3,4],[5,6,7,8]]")
+            var C = nm.NDArray("[0.1, -2.3, 41.5, 19.29145, -199]")
+            var D = nm.NDArray[DType.int32]("[0.1, -2.3, 41.5, 19.29145, -199]")
+
+            print(A)
+            print(B)
+            print(C)
+            print(D)
+        ```
+
+        The output goes as follows. Note that the numbers are automatically 
+        casted to the dtype of the NDArray.
+        
+        ```console
+        [[[     1       2       ]
+          [     3       4       ]]
+         [[     5       6       ]
+          [     7       8       ]]]
+        3-D array  Shape: [2, 2, 2]  DType: int8
+
+        [[      1.0     2.0     3.0     4.0     ]
+         [      5.0     6.0     7.0     8.0     ]]
+        2-D array  Shape: [2, 4]  DType: float16
+
+        [       0.10000000149011612     2.2999999523162842      41.5    19.291450500488281      199.0   ]
+        1-D array  Shape: [5]  DType: float32
+
+        [       0       2       41      19      199     ]
+        1-D array  Shape: [5]  DType: int32
+        ```
+
+        Args:
+            text: String representation of an ndarray.
+            order: Memory order C or F.
+        """
+
+        var data = List[Scalar[dtype]]()
+        """Inferred data buffer of the array"""
+        var shape = List[Int]()
+        """Inferred shape of the array"""
+        var bytes = text.as_bytes()
+        var ndim = 0
+        """Inferred number_as_str of dimensions."""
+        var level = 0
+        """Current level of the array."""
+        var number_as_str: String = ""
+        for i in range(len(bytes)):
+            var b = bytes[i]
+            if chr(int(b)) == "[":
+                level += 1
+                ndim = max(ndim, level)
+                if len(shape) < ndim:
+                    shape.append(0)
+                shape[level - 1] = 0
+
+            if isdigit(b) or chr(int(b)) == ".":
+                number_as_str = number_as_str + chr(int(b))
+            if (chr(int(b)) == ",") or (chr(int(b)) == "]"):
+                if number_as_str != "":
+                    var number = atof(number_as_str).cast[dtype]()
+                    data.append(number)  # Add the number to the data buffer
+                    number_as_str = ""  # Clean the number cache
+                    shape[-1] = shape[-1] + 1
+            if chr(int(b)) == "]":
+                level = level - 1
+                if level < 0:
+                    raise ("Unmatched left and right brackets!")
+                if level > 0:
+                    shape[level - 1] = shape[level - 1] + 1
+        self.__init__(data=data, shape=shape, order=order)
+
     # Why do  these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
     fn __init__(

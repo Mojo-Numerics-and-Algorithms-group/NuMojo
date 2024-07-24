@@ -989,7 +989,6 @@ struct NDArray[dtype: DType = DType.float32](
         var number_as_str: String = ""
         for i in range(len(bytes)):
             var b = bytes[i]
-            print(chr(int(b)))
             if chr(int(b)) == "[":
                 level += 1
                 ndim = max(ndim, level)
@@ -997,10 +996,6 @@ struct NDArray[dtype: DType = DType.float32](
                     shape.append(0)
                 shape[level - 1] = 0
 
-                print("shape: ", end="")
-                for i in shape:
-                    print(i[], end=",")
-                print()
             if isdigit(b) or chr(int(b)) == ".":
                 number_as_str = number_as_str + chr(int(b))
             if (chr(int(b)) == ",") or (chr(int(b)) == "]"):
@@ -1009,20 +1004,12 @@ struct NDArray[dtype: DType = DType.float32](
                     data.append(number)  # Add the number to the data buffer
                     number_as_str = ""  # Clean the number cache
                     shape[-1] = shape[-1] + 1
-                    print("shape: ", end="")
-                    for i in shape:
-                        print(i[], end=",")
-                    print()
             if chr(int(b)) == "]":
                 level = level - 1
                 if level < 0:
                     raise ("Unmatched left and right brackets!")
                 if level > 0:
                     shape[level - 1] = shape[level - 1] + 1
-                    print("shape: ", end="")
-                    for i in shape:
-                        print(i[], end=",")
-                    print()
         self.__init__(data=data, shape=shape, order=order)
 
     # Why do  these last two constructors exist?

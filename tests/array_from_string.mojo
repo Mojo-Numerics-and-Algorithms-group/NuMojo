@@ -10,3 +10,11 @@ fn main() raises:
     print(B)
     print(C)
     print(D)
+
+    var text = """
+[[1, 2, 3]
+ [4, 5, 6]
+ [7, 8, 9]]
+    """
+    var E = nm.NDArray(text)
+    print(E)

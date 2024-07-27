@@ -14,6 +14,8 @@
     <br />
     <!-- when we create docs -->
     <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>Explore the docs» </strong></a>
+    <br>
+    <a href="https://discord.com/channels/1149778565756366939/1149778566603620455"><strong>Check out our Discord» </strong></a>
     <br />
     <!-- <br /> -->
     <!-- <a href="">View Demo</a>

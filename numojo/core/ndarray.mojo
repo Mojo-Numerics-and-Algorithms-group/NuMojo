@@ -56,11 +56,11 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     """Implements the NDArrayShape."""
 
     # Fields
-    var ndsize: Int  
+    var ndsize: Int
     """Total no of elements in the corresponding array."""
     var ndshape: DTypePointer[dtype]
     """Shape of the corresponding array."""
-    var ndlen: Int 
+    var ndlen: Int
     """Length of ndshape."""
 
     @always_inline("nodebug")
@@ -241,7 +241,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
     fn __str__(self: Self) -> String:
         """
         Return a string of the shape of the array described by arrayshape.
-        
+
         """
         var result: String = "Shape: ["
         for i in range(self.ndlen):
@@ -612,13 +612,13 @@ struct _NDArrayIter[
 # ===----------------------------------------------------------------------===#
 
 
-struct NDArray[dtype: DType = DType.float32](
+struct NDArray[dtype: DType = DType.float64](
     Stringable, Representable, CollectionElement, Sized
 ):
     """The N-dimensional array (NDArray).
 
     Parameters:
-        dtype: Type of item in NDArray.
+        dtype: Type of item in NDArray. Default type is DType.float64.
 
     The array can be uniquely defined by the following:
         1. The data buffer of all items.
@@ -629,22 +629,22 @@ struct NDArray[dtype: DType = DType.float32](
         6. The order of the array: Row vs Columns major
     """
 
-    var data: DTypePointer[dtype]  
+    var data: DTypePointer[dtype]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
     """Number of Dimensions."""
-    var ndshape: NDArrayShape  
+    var ndshape: NDArrayShape
     """Size and shape of NDArray."""
-    var stride: NDArrayStride   
+    var stride: NDArrayStride
     """Contains offset, strides."""
-    var coefficient: NDArrayStride  
+    var coefficient: NDArrayStride
     """Contains offset, coefficient."""
-    var datatype: DType   
+    var datatype: DType
     """The datatype of memory."""
     var order: String
     "Memory layout of array C (C order row major) or F (Fortran order col major)."
 
-    alias simd_width: Int = simdwidthof[dtype]()  # 
+    alias simd_width: Int = simdwidthof[dtype]()  #
     """Vector size of the data type."""
 
     # ===-------------------------------------------------------------------===#
@@ -755,7 +755,7 @@ struct NDArray[dtype: DType = DType.float32](
             shape: Variadic shape.
             fill: Set all the values to this.
             order: Memory order C or F.
-        
+
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -785,7 +785,7 @@ struct NDArray[dtype: DType = DType.float32](
             shape: List of shape.
             fill: Set all the values to this.
             order: Memory order C or F.
-        
+
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -845,7 +845,7 @@ struct NDArray[dtype: DType = DType.float32](
             shape: Variadic shape.
             random: Set all the values randomly.
             order: Memory order C or F.
-        
+
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
@@ -942,7 +942,7 @@ struct NDArray[dtype: DType = DType.float32](
         fn main() raises:
             var A = nm.NDArray[DType.int8]("[[[1,2],[3,4]],[[5,6],[7,8]]]")
             var B = nm.NDArray[DType.float16]("[[1,2,3,4],[5,6,7,8]]")
-            var C = nm.NDArray("[0.1, -2.3, 41.5, 19.29145, -199]")
+            var C = nm.NDArray[DType.float32]("[0.1, -2.3, 41.5, 19.29145, -199]")
             var D = nm.NDArray[DType.int32]("[0.1, -2.3, 41.5, 19.29145, -199]")
 
             print(A)
@@ -951,9 +951,9 @@ struct NDArray[dtype: DType = DType.float32](
             print(D)
         ```
 
-        The output goes as follows. Note that the numbers are automatically 
+        The output goes as follows. Note that the numbers are automatically
         casted to the dtype of the NDArray.
-        
+
         ```console
         [[[     1       2       ]
           [     3       4       ]]
@@ -1024,7 +1024,6 @@ struct NDArray[dtype: DType = DType.float32](
         coefficient: List[Int],
         order: String = "C",
     ) raises:
-
         """
         Extremely specific NDArray initializer.
         """
@@ -1048,7 +1047,6 @@ struct NDArray[dtype: DType = DType.float32](
         coefficient: List[Int],
         order: String = "C",
     ) raises:
-
         """
         Extremely specific NDArray initializer.
         """
@@ -1206,7 +1204,7 @@ struct NDArray[dtype: DType = DType.float32](
         if self.ndim == 1:
             narr.ndim = 0
             narr.ndshape.ndshape[0] = 0
-            
+
         return narr
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
@@ -1629,7 +1627,7 @@ struct NDArray[dtype: DType = DType.float32](
     fn __getitem__(self, index: NDArray[DType.index]) raises -> Self:
         """
         Get items of array from an array of indices.
-        
+
         Refer to `__getitem__(self, index: List[Int])`.
 
         Example:
@@ -1934,7 +1932,7 @@ struct NDArray[dtype: DType = DType.float32](
         Enables `array -= array`.
         """
         self = self - s
-    
+
     fn __matmul__(self, other: Self) raises -> Self:
         return matmul_parallelized(self, other)
 
@@ -2103,7 +2101,6 @@ struct NDArray[dtype: DType = DType.float32](
         Enables `scalar % array`.
         """
         return math.mod[dtype](other, self)
-
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations
@@ -2437,7 +2434,7 @@ struct NDArray[dtype: DType = DType.float32](
         If all true return true.
         """
         # make this a compile time check
-        # Respnse to above compile time errors are way harder to read at the moment. 
+        # Respnse to above compile time errors are way harder to read at the moment.
         if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
@@ -2545,7 +2542,9 @@ struct NDArray[dtype: DType = DType.float32](
                         .cast[type](),
                     )
 
-                vectorize[vectorized_astypenb_from_b, nelts](self.ndshape.ndsize)
+                vectorize[vectorized_astypenb_from_b, nelts](
+                    self.ndshape.ndsize
+                )
             else:
 
                 @parameter

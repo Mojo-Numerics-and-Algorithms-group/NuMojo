@@ -63,7 +63,7 @@ fn arange[
     )
     for idx in range(num):
         result.data[idx] = (
-            start.cast[dtype]() + step.cast[dtype]() * idx
+            start + step * idx
         )
 
     return result
@@ -113,11 +113,11 @@ fn linspace[
     constrained[not dtype.is_integral()]()
     if parallel:
         return _linspace_parallel[dtype](
-            start.cast[dtype](), stop.cast[dtype](), num, endpoint
+            start, stop, num, endpoint
         )
     else:
         return _linspace_serial[dtype](
-            start.cast[dtype](), stop.cast[dtype](), num, endpoint
+            start, stop, num, endpoint
         )
 
 
@@ -245,18 +245,18 @@ fn logspace[
     #     )
     if parallel:
         return _logspace_parallel[dtype](
-            start.cast[dtype](),
-            stop.cast[dtype](),
+            start,
+            stop,
             num,
-            base.cast[dtype](),
+            base,
             endpoint,
         )
     else:
         return _logspace_serial[dtype](
-            start.cast[dtype](),
-            stop.cast[dtype](),
+            start,
+            stop,
             num,
-            base.cast[dtype](),
+            base,
             endpoint,
         )
 
@@ -382,13 +382,13 @@ fn geomspace[
     #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
     #     )
 
-    var a: Scalar[dtype] = start.cast[dtype]()
+    var a: Scalar[dtype] = start
 
     if endpoint:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
         var r: Scalar[dtype] = (
-            stop.cast[dtype]() / start.cast[dtype]()
-        ) ** (1 / (num - 1)).cast[dtype]()
+            stop / start
+        ) ** (1 / (num - 1))
         for i in range(num):
             result.data[i] = a * r**i
         return result
@@ -396,8 +396,8 @@ fn geomspace[
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
         var r: Scalar[dtype] = (
-            stop.cast[dtype]() / start.cast[dtype]()
-        ) ** (1 / (num)).cast[dtype]()
+            stop / start
+        ) ** (1 / (num))
         for i in range(num):
             result.data[i] = a * r**i
         return result
@@ -537,7 +537,7 @@ fn full[
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    var tens_value: SIMD[dtype, 1] = SIMD[dtype, 1](fill_value).cast[dtype]()
+    var tens_value: SIMD[dtype, 1] = SIMD[dtype, 1](fill_value)
     return NDArray[dtype](shape, fill=tens_value)
 
 

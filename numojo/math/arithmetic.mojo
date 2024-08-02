@@ -198,14 +198,13 @@ fn sub[
 
 
 fn diff[
-    in_dtype: DType, out_dtype: DType = in_dtype
-](array: NDArray[in_dtype], n: Int) raises -> NDArray[out_dtype]:
+     dtype: DType =  DType.float64
+](array: NDArray[ dtype], n: Int) raises -> NDArray[dtype]:
     """
     Compute the n-th order difference of the input array.
 
     Parameters:
-        in_dtype: Input data type.
-        out_dtype: Output data type, defaults to float32.
+        dtype: The element type.
 
     Args:
         array: A array.
@@ -215,19 +214,19 @@ fn diff[
         The n-th order difference of the input array.
     """
 
-    var array1: NDArray[out_dtype] = NDArray[out_dtype](
+    var array1: NDArray[dtype] = NDArray[dtype](
         NDArrayShape(array.num_elements())
     )
     for i in range(array.num_elements()):
-        array1.store(i, array.get_scalar(i).cast[out_dtype]())
+        array1.store(i, array.get_scalar(i))
 
     for num in range(n):
-        var result: NDArray[out_dtype] = NDArray[out_dtype](
+        var result: NDArray[dtype] = NDArray[dtype](
             NDArrayShape(array.num_elements() - (num + 1))
         )
         for i in range(array1.num_elements() - 1):
             result.store(
-                i, (array1.load[1](i + 1) - array1.load[1](i)).cast[out_dtype]()
+                i, (array1.load[1](i + 1) - array1.load[1](i))
             )
         array1 = result
     return array1

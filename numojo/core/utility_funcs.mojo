@@ -66,6 +66,7 @@ fn is_floattype[dtype: DType]() -> Bool:
         return True
     return False
 
+
 fn is_floattype(dtype: DType) -> Bool:
     """
     Check if the given dtype is a floating point type at run time.

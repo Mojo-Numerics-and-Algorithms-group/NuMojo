@@ -95,7 +95,7 @@ fn cummean[
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
-    
+
     Args:
         array: An NDArray.
 

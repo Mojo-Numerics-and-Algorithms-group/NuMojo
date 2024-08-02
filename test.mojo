@@ -2,6 +2,7 @@
 import time
 from benchmark.compiler import keep
 from python import Python
+from random import seed
 
 # import numojo as nm
 from numojo import *
@@ -16,7 +17,92 @@ from numojo import *
 #     #         print(array[i,j])
 #     print(res)
 
-def main():
+fn main() raises:
+    var A = arange[i16](1, 7, 1)
+    print(A)
+    var temp = flip(A)
+    print(temp)
+    # A.reshape(2, 3, order="F")
+    # nm.ravel(A)
+    # print(A)
+    # var B = arange[i16](0, 12, 1)
+    # B.reshape(3, 2, 2, order="F")
+    # ravel(B, order="C")
+    # print(B)
+
+    # print(A)
+    # var B = SIMD[i16, 1](15502)
+    # print(B)
+    # print(A >= SIMD[i16, 1](10))
+    # for i in A:
+    #     print(i)
+
+    
+    # var array = arange[i16](0, 12, 1)
+    # array.reshape(3, 2, 2)
+    # print(array)
+    # print("x[0]", array.item(0))
+    # print("x[1]", array.item(1))
+    # print("x[2]", array.item(2))
+    # swapaxis(array, 0, -1)
+    # print(array.ndshape)
+    # swapaxis(array, 0, 2)
+    # print(array.ndshape)
+    # moveaxis(array, 0, 2)
+    # array.reshape(2, 2, 3, order="C")
+    # swapaxis(array, 0, 1)
+    # print(array)
+    # print("x[0]", array.item(0))
+    # print("x[1]", array.item(1))
+    # print("x[2]", array.item(2))
+    # moveaxis(array, 0, 1)
+    # print(array.ndshape)
+    # var B = NDArray[i16](3, 3, random=True)
+    # print(B)
+    # A[A > 10.0] = B
+    # print(A)
+    # var gt = A > 10.0
+    # print(gt)
+    # var ge = A >= Scalar[i16](10)
+    # print(ge)
+    # var lt = A < Scalar[i16](10)
+    # print(lt)
+    # var le = A <= Scalar[i16](10)
+    # print(le)
+    # var eq = A == Scalar[i16](10)
+    # print(eq)
+    # var ne = A != Scalar[i16](10)
+    # print(ne)
+    # var mask = A[A > Scalar[i16](10)]
+    # print(mask)
+    # seed(10)
+    # var B = NDArray[i16](3, 3, random=True)
+    # print(B)
+    # var gta = A > B
+    # print(gta)
+    # var gte = A >= B
+    # print(gte)
+    # var lt = A < B
+    # print(lt)
+    # var le = A <= B
+    # print(le)
+    # var eq = A == B
+    # print(eq)
+    # var ne = A != B
+    # print(ne)
+    # var mask = A[A > B]
+    # print(mask)
+    # var temp = A * SIMD[i8, 1](2)
+    # print(temp)
+    # var temp1 = temp == 0
+    # var temp2 = A[temp]
+    # print(temp2)
+    # var temp2 = A[A%2 == 0]
+    # print(temp2)
+    # print(temp2.at(0))
+    # print(temp2.ndshape, temp2.stride, temp2.ndshape._size)
+
+# def main():
 
     # # CONSTRUCTORS TEST
     # var arr1 = numojo.NDArray[numojo.f32](3,4,5, random=True)
@@ -79,13 +165,13 @@ def main():
     # var x = numojo.linspace[numojo.f32](0.0, 60.0, 60)
     # var x = numojo.ones[numojo.f32](3, 2)
     # var x = numojo.logspace[numojo.f32](-3, 0, 60)
-    var x = arange[f32](0.0, 24.0, step=1)
-    x.reshape(2, 3, 4, order="C")
-    print(x[0,0,0], x[0,0,1], x[1,1,1], x[1,2,3])
-    print(x)
-    var slicedx = x[0:1, :, 1:2]
-    print(slicedx)
-    print()
+    # var x = arange[f32](0.0, 24.0, step=1)
+    # x.reshape(2, 3, 4, order="C")
+    # print(x[0,0,0], x[0,0,1], x[1,1,1], x[1,2,3])
+    # print(x)
+    # var slicedx = x[0:1, :, 1:2]
+    # print(slicedx)
+    # print()
 
     # var y = numojo.arange[numojo.f32](0.0, 24.0, step=1)
     # y.reshape(2,3,4, order="F")

@@ -17,7 +17,7 @@ fn sum(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     Args:
         array: NDArray.
         axis: The axis along which the sum is performed.
-    
+
     Returns:
         An NDArray.
     """
@@ -64,7 +64,7 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
 
     Args:
         array: NDArray.
-    
+
     Returns:
         Scalar.
     """
@@ -81,7 +81,7 @@ fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     Args:
         array: NDArray.
         axis: The axis along which the product is performed.
-    
+
     Returns:
         An NDArray.
     """
@@ -118,7 +118,7 @@ fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
 fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
     """Product of all items in the array.
-    
+
     Example:
     ```console
     > print(A)
@@ -133,7 +133,7 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
 
     Args:
         array: NDArray.
-    
+
     Returns:
         Scalar.
     """
@@ -171,10 +171,10 @@ fn meanall(array: NDArray) raises -> Float64:
     > print(nm.math.stats.meanall(A))
     0.39045463667975533
     ```
-    
+
     Args:
         array: NDArray.
-    
+
     Returns:
         Float64.
     """

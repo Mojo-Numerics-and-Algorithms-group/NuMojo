@@ -3,6 +3,12 @@
 /dist
 /local
 /.vscode
-
-# Compiled package
+.DS_Store
+*.html
+*.css
+*.py
+mojo
 numojo.mojopkg
+.gitignore
+bench.mojo
+test_ndarray.ipynb

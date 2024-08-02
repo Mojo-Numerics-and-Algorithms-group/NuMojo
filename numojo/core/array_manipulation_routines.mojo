@@ -75,7 +75,7 @@ fn reshape[
         num_elements_new *= i
         ndim_new += 1
 
-    if array.ndshape._size != num_elements_new:
+    if array.ndshape.ndsize != num_elements_new:
         raise Error("Cannot reshape: Number of elements do not match.")
 
     var shape_new: List[Int] = List[Int]()
@@ -100,9 +100,9 @@ fn ravel[dtype: DType](inout array: NDArray[dtype], order: String = "C") raises:
         return
     else:
         if order == "C":
-            reshape[dtype](array, array.ndshape._size, order="C")
+            reshape[dtype](array, array.ndshape.ndsize, order="C")
         else:
-            reshape[dtype](array, array.ndshape._size, order="F")
+            reshape[dtype](array, array.ndshape.ndsize, order="F")
 
 
 fn where[
@@ -122,7 +122,7 @@ fn where[
         mask: A NDArray.
 
     """
-    for i in range(x.ndshape._size):
+    for i in range(x.ndshape.ndsize):
         if mask.data[i] == True:
             x.data.store(i, scalar)
 
@@ -148,7 +148,7 @@ fn where[
     """
     if x.ndshape != y.ndshape:
         raise Error("Shape mismatch error: x and y must have the same shape")
-    for i in range(x.ndshape._size):
+    for i in range(x.ndshape.ndsize):
         if mask.data[i] == True:
             x.data.store(i, y.data[i])
 
@@ -172,6 +172,6 @@ fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = NDArray[dtype](
         shape=array.ndshape, order=array.order
     )
-    for i in range(array.ndshape._size):
-        result.data.store(i, array.data[array.ndshape._size - i - 1])
+    for i in range(array.ndshape.ndsize):
+        result.data.store(i, array.data[array.ndshape.ndsize - i - 1])
     return result

@@ -38,8 +38,7 @@ fn arange[
         Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
 
     Parameters:
-        dtype: Input datatype of the input values.
-        dtype: Output datatype of the output NDArray.
+        dtype: Datatype of the output array.
 
     Args:
         start: Scalar[dtype] - Start value.
@@ -64,7 +63,7 @@ fn arange[
     )
     for idx in range(num):
         result.data[idx] = (
-            start.cast[out_dtype]() + step.cast[out_dtype]() * idx
+            start.cast[dtype]() + step.cast[dtype]() * idx
         )
 
     return result
@@ -89,11 +88,10 @@ fn linspace[
     Function that computes a series of linearly spaced values starting from "start" to "stop" with given size. Wrapper function for _linspace_serial, _linspace_parallel.
 
     Raises:
-        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
+        Error if dtype is an integer.
 
     Parameters:
-        dtype: Datatype of the input values.
-        dtype: Datatype of the output NDArray.
+        dtype: Datatype of the output array.
 
     Args:
         start: Start value.
@@ -222,11 +220,10 @@ fn logspace[
     Generate a logrithmic spaced NDArray of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions.
 
     Raises:
-        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
+        Error if dtype is an integer.
 
     Parameters:
-        dtype: Datatype of the input values.
-        dtype: Datatype of the output NDArray.
+        dtype: Datatype of the output array.
 
     Args:
         start: The starting value of the NDArray.
@@ -363,11 +360,10 @@ fn geomspace[
     Generate a NDArray of `num` elements between `start` and `stop` in a geometric series.
 
     Raises:
-        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
+        Error if dtype is an integer.
 
     Parameters:
         dtype: Datatype of the input values.
-        dtype: Datatype of the output NDArray.
 
     Args:
         start: The starting value of the NDArray.

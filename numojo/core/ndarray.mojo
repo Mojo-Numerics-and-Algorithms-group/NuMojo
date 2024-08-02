@@ -1792,8 +1792,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise equivelence between scalar and Array.
         """
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.equal[dtype](self, other_array)
         return math.equal[dtype](self, other)
 
     @always_inline("nodebug")
@@ -1801,8 +1799,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise nonequivelence.
         """
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.not_equal[dtype](self, other_array)
         return math.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
@@ -1817,8 +1813,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise less than.
         """
-        var other_array: Self = NDArray[dtype](self.shape(), fill=other)
-        return math.less[dtype](self, other_array)
         return math.less[dtype](self, other)
 
     @always_inline("nodebug")

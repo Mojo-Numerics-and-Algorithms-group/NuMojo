@@ -38,6 +38,7 @@ fn greater[
         array1, array2
     )
 
+
 fn greater[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -85,6 +86,7 @@ fn greater_equal[
         array1, array2
     )
 
+
 fn greater_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -107,6 +109,7 @@ fn greater_equal[
     return backend().math_func_compare_array_and_scalar[dtype, SIMD.__ge__](
         array1, scalar
     )
+
 
 fn less[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -131,6 +134,7 @@ fn less[
         array1, array2
     )
 
+
 fn less[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -153,6 +157,7 @@ fn less[
     return backend().math_func_compare_array_and_scalar[dtype, SIMD.__lt__](
         array1, scalar
     )
+
 
 fn less_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -177,6 +182,7 @@ fn less_equal[
         array1, array2
     )
 
+
 fn less_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -199,6 +205,7 @@ fn less_equal[
     return backend().math_func_compare_array_and_scalar[dtype, SIMD.__le__](
         array1, scalar
     )
+
 
 fn equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -231,6 +238,7 @@ fn equal[
     #     result_array[i] = array1[i]==array2[i]
     # return result_array
 
+
 fn equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -253,6 +261,7 @@ fn equal[
     return backend().math_func_compare_array_and_scalar[dtype, SIMD.__eq__](
         array1, scalar
     )
+
 
 fn not_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -284,6 +293,7 @@ fn not_equal[
     # for i in range(result_array.size()):
     #     result_array[i] = array1[i]!=array2[i]
     # return result_array
+
 
 fn not_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized

@@ -47,15 +47,15 @@ fn interp1d[
 
     # quadratic
     # elif method == "quadratic" and fill_value == "extrapolate":
-        # return _interp1d_quadratic_extrapolate(xi, x, y)
+    # return _interp1d_quadratic_extrapolate(xi, x, y)
     # elif method == "quadratic" and fill_value == "interpolate":
-        # return _interp1d_quadratic_interpolate(xi, x, y)
+    # return _interp1d_quadratic_interpolate(xi, x, y)
 
     # cubic
     # elif method == "cubic" and fill_value == "extrapolate":
-        # return _interp1d_cubic_extrapolate(xi, x, y)
+    # return _interp1d_cubic_extrapolate(xi, x, y)
     # elif method == "cubic" and fill_value == "interpolate":
-        # return _interp1d_cubic_interpolate(xi, x, y)
+    # return _interp1d_cubic_interpolate(xi, x, y)
 
     else:
         print("Invalid interpolation method: " + type)
@@ -81,9 +81,9 @@ fn _interp1d_linear_interpolate[
     var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
         if xi.data[i] <= x.data[0]:
-            result.data.store[width = 1](i, y.data[0])
+            result.data.store[width=1](i, y.data[0])
         elif xi.data[i] >= x.data[x.num_elements() - 1]:
-            result.data.store[width = 1](i, y.data[y.num_elements() - 1])
+            result.data.store[width=1](i, y.data[y.num_elements() - 1])
         else:
             var j = 0
             while xi.data[i] > x.data[j]:
@@ -93,7 +93,7 @@ fn _interp1d_linear_interpolate[
             var y0 = y.data[j - 1]
             var y1 = y.data[j]
             var t = (xi.data[i] - x0) / (x1 - x0)
-            result.data.store[width = 1](i, y0 + t * (y1 - y0))
+            result.data.store[width=1](i, y0 + t * (y1 - y0))
     return result
 
 
@@ -119,9 +119,9 @@ fn _interp1d_linear_extrapolate[
             var slope = (y.data[1] - y.data[0]) / (x.data[1] - x.data[0])
             result.data[i] = y.data[0] + slope * (xi.data[i] - x.data[0])
         elif xi.data[i] >= x.data[x.num_elements() - 1]:
-            var slope = (y.data[y.num_elements() - 1] - y.data[y.num_elements() - 2]) / (
-                x.data[x.num_elements() - 1] - x.data[x.num_elements() - 2]
-            )
+            var slope = (
+                y.data[y.num_elements() - 1] - y.data[y.num_elements() - 2]
+            ) / (x.data[x.num_elements() - 1] - x.data[x.num_elements() - 2])
             result.data[i] = y.data[y.num_elements() - 1] + slope * (
                 xi.data[i] - x.data[x.num_elements() - 1]
             )

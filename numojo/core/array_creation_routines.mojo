@@ -51,7 +51,8 @@ fn arange[
         is_inttype[in_dtype]() and is_inttype[out_dtype]()
     ):
         raise Error(
-            "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+            "Both input and output datatypes cannot be integers. If the input"
+            " is a float, the output must also be a float."
         )
 
     var num: Int = ((stop - start) / step).__int__()
@@ -59,7 +60,9 @@ fn arange[
         NDArrayShape(num, size=num)
     )
     for idx in range(num):
-        result.data[idx] = start.cast[out_dtype]() + step.cast[out_dtype]() * idx
+        result.data[idx] = (
+            start.cast[out_dtype]() + step.cast[out_dtype]() * idx
+        )
 
     return result
 
@@ -104,7 +107,8 @@ fn linspace[
         is_floattype[in_dtype]() and is_inttype[out_dtype]()
     ):
         raise Error(
-            "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+            "Both input and output datatypes cannot be integers. If the input"
+            " is a float, the output must also be a float."
         )
 
     if parallel:
@@ -237,7 +241,8 @@ fn logspace[
         is_floattype[in_dtype]() and is_inttype[out_dtype]()
     ):
         raise Error(
-            "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+            "Both input and output datatypes cannot be integers. If the input"
+            " is a float, the output must also be a float."
         )
     if parallel:
         return _logspace_parallel[out_dtype](
@@ -376,7 +381,8 @@ fn geomspace[
         is_floattype[in_dtype]() and is_inttype[out_dtype]()
     ):
         raise Error(
-            "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+            "Both input and output datatypes cannot be integers. If the input"
+            " is a float, the output must also be a float."
         )
 
     var a: Scalar[out_dtype] = start.cast[out_dtype]()

@@ -10,6 +10,7 @@ from .ndarray import NDArray, NDArrayShape, NDArrayStride
 
 # TODO: there's some problem with using narr[idx] in traverse function, Make sure to correct this before v0.1
 
+
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
@@ -192,10 +193,10 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     Convert a NDArray to a numpy array.
 
     Example:
-    ```console 
+    ```console
     var arr = NDArray[DType.float32](3, 3, 3)
-    var np_arr = to_numpy(arr) 
-    var np_arr1 = arr.to_numpy() 
+    var np_arr = to_numpy(arr)
+    var np_arr1 = arr.to_numpy()
     ```
 
     Parameters:

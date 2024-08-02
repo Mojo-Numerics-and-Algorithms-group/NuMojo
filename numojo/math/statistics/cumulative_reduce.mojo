@@ -34,7 +34,7 @@ fn cumsum[
     To-do:
     1. The function currently returns a single number. In future, the function
     returns an array of the same shape as the input one.
-    2. In future, allow users to specify the axis along which the statistics are 
+    2. In future, allow users to specify the axis along which the statistics are
     calculated.
 
     Parameters:
@@ -67,7 +67,7 @@ fn cumprod[
     To-do:
     1. The function currently returns a single number. In future, the function
     returns an array of the same shape as the input one.
-    2. In future, allow users to specify the axis along which the statistics are 
+    2. In future, allow users to specify the axis along which the statistics are
     calculated.
 
     Parameters:
@@ -107,13 +107,13 @@ fn cummean[
     To-do:
     1. The function currently returns a single number. In future, the function
     returns an array of the same shape as the input one.
-    2. In future, allow users to specify the axis along which the statistics are 
+    2. In future, allow users to specify the axis along which the statistics are
     calculated.
 
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
-    
+
     Args:
         array: An NDArray.
 
@@ -135,7 +135,7 @@ fn mode[
     """Mode of all items of an array.
 
     To-do:
-    In future, allow users to specify the axis along which the statistics are 
+    In future, allow users to specify the axis along which the statistics are
     calculated.
 
     Parameters:
@@ -177,7 +177,7 @@ fn median[
     """Median value of all items of an array.
 
     To-do:
-    In future, allow users to specify the axis along which the statistics are 
+    In future, allow users to specify the axis along which the statistics are
     calculated.
 
     Parameters:

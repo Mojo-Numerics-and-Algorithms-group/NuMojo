@@ -49,7 +49,7 @@ from .ndarray_utils import (
 from ..math.math_funcs import Vectorized
 from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
-from .array_manipulation_routines import reshape 
+from .array_manipulation_routines import reshape
 
 
 @register_passable("trivial")
@@ -968,7 +968,7 @@ struct NDArray[dtype: DType = DType.float32](
         if self.ndim == 1:
             narr.ndim = 0
             narr.ndshape._shape[0] = 0
-            
+
         return narr
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
@@ -2434,7 +2434,6 @@ struct NDArray[dtype: DType = DType.float32](
         """
         var s: VariadicList[Int] = shape
         reshape[dtype](self, s, order=order)
-
 
     fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
         return self.data

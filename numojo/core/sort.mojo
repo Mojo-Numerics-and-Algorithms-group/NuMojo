@@ -224,11 +224,11 @@ fn _argsort_partition(
     """
 
     var pivot_value = ndarray.get_scalar(pivot_index)
-    
+
     var _value_at_pivot = ndarray.get_scalar(pivot_index)
     ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
     ndarray.__setitem__(right, _value_at_pivot)
-    
+
     var _value_at_pivot_index = idx_array.get_scalar(pivot_index)
     idx_array.__setitem__(pivot_index, idx_array.get_scalar(right))
     idx_array.__setitem__(right, _value_at_pivot_index)
@@ -240,7 +240,7 @@ fn _argsort_partition(
             var _value_at_store = ndarray.get_scalar(store_index)
             ndarray.__setitem__(store_index, ndarray.get_scalar(i))
             ndarray.__setitem__(i, _value_at_store)
-            
+
             var _value_at_store_index = idx_array.get_scalar(store_index)
             idx_array.__setitem__(store_index, idx_array.get_scalar(i))
             idx_array.__setitem__(i, _value_at_store_index)

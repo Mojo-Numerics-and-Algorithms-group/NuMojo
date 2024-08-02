@@ -225,7 +225,6 @@ struct Vectorized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
-        
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
         alias opt_nelts = simdwidthof[dtype]()
@@ -273,7 +272,7 @@ struct Vectorized(Backend):
 
         vectorize[closure, opt_nelts](array1.num_elements())
         return result_array
-    
+
     # TODO: add this function for other backends
     fn math_func_compare_array_and_scalar[
         dtype: DType,
@@ -579,7 +578,6 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-
     fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
@@ -614,7 +612,6 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             array1.num_elements()
         )
         return result_array
-
 
     fn math_func_compare_array_and_scalar[
         dtype: DType,
@@ -966,7 +963,7 @@ struct Parallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
-        
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
         alias opt_nelts = 1
         var num_cores: Int = num_physical_cores()
@@ -2390,7 +2387,7 @@ struct Naive(Backend):
                 func[dtype, 1](simd_data1, simd_data2),
             )
         return result_array
-        
+
     fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[

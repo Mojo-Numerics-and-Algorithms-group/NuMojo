@@ -44,6 +44,7 @@ fn add[
         array1, array2
     )
 
+
 fn add[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -62,9 +63,10 @@ fn add[
     Returns:
         The elementwise sum of `array1` and`array2`.
     """
-    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__add__](
-        array, scalar
-    )
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        dtype, SIMD.__add__
+    ](array, scalar)
+
 
 fn add[
     dtype: DType,
@@ -84,14 +86,15 @@ fn add[
     Returns:
         The elementwise sum of `array1` and`array2`.
     """
-    return add[dtype,backend=backend](array,scalar)
-
+    return add[dtype, backend=backend](array, scalar)
 
 
 fn add[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
-](owned *values:Variant[NDArray[dtype],Scalar[dtype]]) raises -> NDArray[dtype]:
+](owned *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
+    dtype
+]:
     """
     Perform addition on a list of arrays and a scalars.
 
@@ -111,15 +114,19 @@ fn add[
         if val[].isa[NDArray[dtype]]():
             array_list.append(val[].take[NDArray[dtype]]())
         elif val[].isa[Scalar[dtype]]():
-            scalar_part+=val[].take[Scalar[dtype]]()
-    if len(array_list)==0:
-        raise Error("math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]): No arrays in arguaments")
-    var result_array:NDArray[dtype] = NDArray[dtype](array_list[0].shape())
+            scalar_part += val[].take[Scalar[dtype]]()
+    if len(array_list) == 0:
+        raise Error(
+            "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
+            " No arrays in arguaments"
+        )
+    var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape())
     for array in array_list:
-        result_array = add[dtype,backend=backend](result_array,array)
-    result_array = add[dtype,backend=backend](result_array,scalar_part)
+        result_array = add[dtype, backend=backend](result_array, array)
+    result_array = add[dtype, backend=backend](result_array, scalar_part)
 
     return result_array
+
 
 fn sub[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -145,6 +152,7 @@ fn sub[
         array1, array2
     )
 
+
 fn sub[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -163,9 +171,10 @@ fn sub[
     Returns:
         The elementwise difference of `array1` and`array2`.
     """
-    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__sub__](
-        array, scalar
-    )
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        dtype, SIMD.__sub__
+    ](array, scalar)
+
 
 fn sub[
     dtype: DType,
@@ -185,7 +194,7 @@ fn sub[
     Returns:
         The elementwise difference of `array1` and`array2`.
     """
-    return sub[dtype,backend=backend](array,scalar)
+    return sub[dtype, backend=backend](array, scalar)
 
 
 fn diff[
@@ -210,14 +219,16 @@ fn diff[
         NDArrayShape(array.num_elements())
     )
     for i in range(array.num_elements()):
-        array1.store(i,array.get_scalar(i).cast[out_dtype]())
+        array1.store(i, array.get_scalar(i).cast[out_dtype]())
 
     for num in range(n):
         var result: NDArray[out_dtype] = NDArray[out_dtype](
             NDArrayShape(array.num_elements() - (num + 1))
         )
         for i in range(array1.num_elements() - 1):
-            result.store(i, (array1.load[1](i + 1) - array1.load[1](i)).cast[out_dtype]())
+            result.store(
+                i, (array1.load[1](i + 1) - array1.load[1](i)).cast[out_dtype]()
+            )
         array1 = result
     return array1
 
@@ -276,6 +287,7 @@ fn mod[
         array1, array2
     )
 
+
 fn mod[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -294,9 +306,10 @@ fn mod[
     Returns:
         The elementwise difference of `array1` and`array2`.
     """
-    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__mod__](
-        array, scalar
-    )
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        dtype, SIMD.__mod__
+    ](array, scalar)
+
 
 fn mod[
     dtype: DType,
@@ -316,7 +329,8 @@ fn mod[
     Returns:
         The elementwise difference of `array1` and`array2`.
     """
-    return mod[dtype,backend=backend](array,scalar)
+    return mod[dtype, backend=backend](array, scalar)
+
 
 fn mul[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -342,6 +356,7 @@ fn mul[
         array1, array2
     )
 
+
 fn mul[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -360,9 +375,10 @@ fn mul[
     Returns:
         The elementwise product of `array1` and`array2`.
     """
-    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__mul__](
-        array, scalar
-    )
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        dtype, SIMD.__mul__
+    ](array, scalar)
+
 
 fn mul[
     dtype: DType,
@@ -382,14 +398,15 @@ fn mul[
     Returns:
         The elementwise product of `array1` and`array2`.
     """
-    return mul[dtype,backend=backend](array,scalar)
-
+    return mul[dtype, backend=backend](array, scalar)
 
 
 fn mul[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
-](owned *values:Variant[NDArray[dtype],Scalar[dtype]]) raises -> NDArray[dtype]:
+](owned *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
+    dtype
+]:
     """
     Perform multiplication on a list of arrays an arrays and a scalars.
 
@@ -409,15 +426,19 @@ fn mul[
         if val[].isa[NDArray[dtype]]():
             array_list.append(val[].take[NDArray[dtype]]())
         elif val[].isa[Scalar[dtype]]():
-            scalar_part+=val[].take[Scalar[dtype]]()
-    if len(array_list)==0:
-        raise Error("math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]): No arrays in arguaments")
-    var result_array:NDArray[dtype] = NDArray[dtype](array_list[0].shape())
+            scalar_part += val[].take[Scalar[dtype]]()
+    if len(array_list) == 0:
+        raise Error(
+            "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
+            " No arrays in arguaments"
+        )
+    var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape())
     for array in array_list:
-        result_array = mul[dtype,backend=backend](result_array,array)
-    result_array = mul[dtype,backend=backend](result_array,scalar_part)
+        result_array = mul[dtype, backend=backend](result_array, array)
+    result_array = mul[dtype, backend=backend](result_array, scalar_part)
 
     return result_array
+
 
 fn div[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -443,6 +464,7 @@ fn div[
         dtype, SIMD.__truediv__
     ](array1, array2)
 
+
 fn div[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -461,9 +483,10 @@ fn div[
     Returns:
         The elementwise quotient of `array1` and`array2`.
     """
-    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__truediv__](
-        array, scalar
-    )
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        dtype, SIMD.__truediv__
+    ](array, scalar)
+
 
 fn div[
     dtype: DType,
@@ -483,7 +506,8 @@ fn div[
     Returns:
         The elementwise quotient of `array1` and`array2`.
     """
-    return div[dtype,backend=backend](array,scalar)
+    return div[dtype, backend=backend](array, scalar)
+
 
 fn floor_div[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -509,6 +533,7 @@ fn floor_div[
         dtype, SIMD.__floordiv__
     ](array1, array2)
 
+
 fn floor_div[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -527,9 +552,10 @@ fn floor_div[
     Returns:
         The elementwise quotient of `array1` and`array2`.
     """
-    return backend().math_func_1_array_1_scalar_in_one_array_out[dtype, SIMD.__floordiv__](
-        array, scalar
-    )
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        dtype, SIMD.__floordiv__
+    ](array, scalar)
+
 
 fn floor_div[
     dtype: DType,
@@ -549,7 +575,8 @@ fn floor_div[
     Returns:
         The elementwise quotient of `array1` and`array2`.
     """
-    return floor_div[dtype,backend=backend](array,scalar)
+    return floor_div[dtype, backend=backend](array, scalar)
+
 
 fn fma[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -1110,9 +1137,11 @@ fn nextafter[
         array1, array2
     )
 
+
 # ===------------------------------------------------------------------------===#
 # Boolean Arithmetic
 # ===------------------------------------------------------------------------===#
+
 
 fn invert[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -1133,6 +1162,11 @@ fn invert[
     Returns:
         A NDArray equal to the bitwise inversion of array.
     """
-    constrained[dtype.is_integral() or dtype.is_integral(),"Only Bools and integral types can be invertedd."]()
+    constrained[
+        dtype.is_integral() or dtype.is_integral(),
+        "Only Bools and integral types can be invertedd.",
+    ]()
 
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](array)
+    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](
+        array
+    )

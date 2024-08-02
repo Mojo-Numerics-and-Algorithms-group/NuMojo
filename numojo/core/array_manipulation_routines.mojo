@@ -135,5 +135,24 @@ fn where[dtype: DType](inout x: NDArray[dtype], y: NDArray[dtype], mask:NDArray[
             x.data.store(i, y.data[i])
 
 
+fn flip[dtype: DType](inout array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Flips the NDArray along the given axis.
 
+    Parameters:
+        dtype: DType.
+    
+    Args:
+        array: A NDArray.
 
+    Returns:
+        The flipped NDArray.
+    """
+    if array.ndim != 1:
+        raise Error("Flip is only supported for 1D arrays")
+
+    var result: NDArray[dtype] = NDArray[dtype](shape=array.ndshape, order=array.order)
+    for i in range(array.ndshape._size):
+        result.data.store(i, array.data[array.ndshape._size - i - 1])
+
+    return result

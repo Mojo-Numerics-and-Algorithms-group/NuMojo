@@ -877,6 +877,9 @@ fn log[
 
 
 alias ln = log
+"""
+Natural Log equivelent to log
+"""
 
 
 fn log2[

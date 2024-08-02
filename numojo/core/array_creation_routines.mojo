@@ -1,9 +1,11 @@
 """
+Array creation routine.
+"""
 # ===----------------------------------------------------------------------=== #
 # ARRAY CREATION ROUTINES
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 """
 # TODO (In order of priority)
@@ -23,40 +25,41 @@ from .utility_funcs import is_inttype, is_floattype
 # Arranged Value NDArray generation
 # ===------------------------------------------------------------------------===#
 fn arange[
-    in_dtype: DType, out_dtype: DType = DType.float64
+    dtype:DType = DType.float64
 ](
-    start: Scalar[in_dtype],
-    stop: Scalar[in_dtype],
-    step: Scalar[in_dtype] = Scalar[in_dtype](1),
-) raises -> NDArray[out_dtype]:
+    start: Scalar[dtype],
+    stop: Scalar[dtype],
+    step: Scalar[dtype] = Scalar[dtype](1),
+) raises -> NDArray[dtype]:
     """
     Function that computes a series of values starting from "start" to "stop" with given "step" size.
 
     Raises:
-        Error if both in_dtype and out_dtype are integers or if in_dtype is a float and out_dtype is an integer.
+        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
 
     Parameters:
-        in_dtype: Input datatype of the input values.
-        out_dtype: Output datatype of the output NDArray.
+        dtype: Input datatype of the input values.
+        dtype: Output datatype of the output NDArray.
 
     Args:
-        start: Scalar[in_dtype] - Start value.
-        stop: Scalar[in_dtype]  - End value.
-        step: Scalar[in_dtype]  - Step size between each element (default 1).
+        start: Scalar[dtype] - Start value.
+        stop: Scalar[dtype]  - End value.
+        step: Scalar[dtype]  - Step size between each element (default 1).
 
     Returns:
-        A NDArray of datatype `out_dtype` with elements ranging from `start` to `stop` incremented with `step`.
+        A NDArray of datatype `dtype` with elements ranging from `start` to `stop` incremented with `step`.
     """
-    if (is_floattype[in_dtype]() and is_inttype[out_dtype]()) or (
-        is_inttype[in_dtype]() and is_inttype[out_dtype]()
-    ):
-        raise Error(
-            "Both input and output datatypes cannot be integers. If the input"
-            " is a float, the output must also be a float."
-        )
+    # if (is_floattype[dtype]() and is_inttype[dtype]()) or (
+    #     is_inttype[dtype]() and is_inttype[dtype]()
+    # ):
+    #     raise Error(
+    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+    #     )
+    
+
 
     var num: Int = ((stop - start) / step).__int__()
-    var result: NDArray[out_dtype] = NDArray[out_dtype](
+    var result: NDArray[dtype] = NDArray[dtype](
         NDArrayShape(num, size=num)
     )
     for idx in range(num):
@@ -74,23 +77,23 @@ fn arange[
 
 # I think defaulting parallelization to False is better
 fn linspace[
-    in_dtype: DType, out_dtype: DType = DType.float64
+    dtype: DType
 ](
-    start: Scalar[in_dtype],
-    stop: Scalar[in_dtype],
+    start: Scalar[dtype],
+    stop: Scalar[dtype],
     num: Int = 50,
     endpoint: Bool = True,
     parallel: Bool = False,
-) raises -> NDArray[out_dtype]:
+) raises -> NDArray[dtype]:
     """
     Function that computes a series of linearly spaced values starting from "start" to "stop" with given size. Wrapper function for _linspace_serial, _linspace_parallel.
 
     Raises:
-        Error if both in_dtype and out_dtype are integers or if in_dtype is a float and out_dtype is an integer.
+        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
 
     Parameters:
-        in_dtype: Datatype of the input values.
-        out_dtype: Datatype of the output NDArray.
+        dtype: Datatype of the input values.
+        dtype: Datatype of the output NDArray.
 
     Args:
         start: Start value.
@@ -100,24 +103,23 @@ fn linspace[
         parallel: Specifies whether the linspace should be calculated using parallelization, deafults to False.
 
     Returns:
-        A NDArray of datatype `out_dtype` with elements ranging from `start` to `stop` with num elements.
+        A NDArray of datatype `dtype` with elements ranging from `start` to `stop` with num elements.
 
     """
-    if (is_inttype[in_dtype]() and is_inttype[out_dtype]()) or (
-        is_floattype[in_dtype]() and is_inttype[out_dtype]()
-    ):
-        raise Error(
-            "Both input and output datatypes cannot be integers. If the input"
-            " is a float, the output must also be a float."
-        )
-
+    # if (is_inttype[dtype]() and is_inttype[dtype]()) or (
+    #     is_floattype[dtype]() and is_inttype[dtype]()
+    # ):
+    #     raise Error(
+    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+    #     )
+    constrained[not dtype.is_integral()]()
     if parallel:
-        return _linspace_parallel[out_dtype](
-            start.cast[out_dtype](), stop.cast[out_dtype](), num, endpoint
+        return _linspace_parallel[dtype](
+            start.cast[dtype](), stop.cast[dtype](), num, endpoint
         )
     else:
-        return _linspace_serial[out_dtype](
-            start.cast[out_dtype](), stop.cast[out_dtype](), num, endpoint
+        return _linspace_serial[dtype](
+            start.cast[dtype](), stop.cast[dtype](), num, endpoint
         )
 
 
@@ -207,24 +209,24 @@ fn _linspace_parallel[
 # Logarithmic Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
 fn logspace[
-    in_dtype: DType, out_dtype: DType = DType.float64
+    dtype: DType
 ](
-    start: Scalar[in_dtype],
-    stop: Scalar[in_dtype],
+    start: Scalar[dtype],
+    stop: Scalar[dtype],
     num: Int,
     endpoint: Bool = True,
-    base: Scalar[in_dtype] = 10.0,
+    base: Scalar[dtype] = 10.0,
     parallel: Bool = False,
-) raises -> NDArray[out_dtype]:
+) raises -> NDArray[dtype]:
     """
     Generate a logrithmic spaced NDArray of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions.
 
     Raises:
-        Error if both in_dtype and out_dtype are integers or if in_dtype is a float and out_dtype is an integer.
+        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
 
     Parameters:
-        in_dtype: Datatype of the input values.
-        out_dtype: Datatype of the output NDArray.
+        dtype: Datatype of the input values.
+        dtype: Datatype of the output NDArray.
 
     Args:
         start: The starting value of the NDArray.
@@ -237,27 +239,27 @@ fn logspace[
     Returns:
     - A NDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    if (is_inttype[in_dtype]() and is_inttype[out_dtype]()) or (
-        is_floattype[in_dtype]() and is_inttype[out_dtype]()
-    ):
-        raise Error(
-            "Both input and output datatypes cannot be integers. If the input"
-            " is a float, the output must also be a float."
-        )
+    constrained[not dtype.is_integral()]()
+    # if (is_inttype[dtype]() and is_inttype[dtype]()) or (
+    #     is_floattype[dtype]() and is_inttype[dtype]()
+    # ):
+    #     raise Error(
+    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+    #     )
     if parallel:
-        return _logspace_parallel[out_dtype](
-            start.cast[out_dtype](),
-            stop.cast[out_dtype](),
+        return _logspace_parallel[dtype](
+            start.cast[dtype](),
+            stop.cast[dtype](),
             num,
-            base.cast[out_dtype](),
+            base.cast[dtype](),
             endpoint,
         )
     else:
-        return _logspace_serial[out_dtype](
-            start.cast[out_dtype](),
-            stop.cast[out_dtype](),
+        return _logspace_serial[dtype](
+            start.cast[dtype](),
+            stop.cast[dtype](),
             num,
-            base.cast[out_dtype](),
+            base.cast[dtype](),
             endpoint,
         )
 
@@ -350,22 +352,22 @@ fn _logspace_parallel[
 
 # ! Outputs wrong values for Integer type, works fine for float type.
 fn geomspace[
-    in_dtype: DType, out_dtype: DType = DType.float64
+    dtype: DType
 ](
-    start: Scalar[in_dtype],
-    stop: Scalar[in_dtype],
+    start: Scalar[dtype],
+    stop: Scalar[dtype],
     num: Int,
     endpoint: Bool = True,
-) raises -> NDArray[out_dtype]:
+) raises -> NDArray[dtype]:
     """
     Generate a NDArray of `num` elements between `start` and `stop` in a geometric series.
 
     Raises:
-        Error if both in_dtype and out_dtype are integers or if in_dtype is a float and out_dtype is an integer.
+        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
 
     Parameters:
-        in_dtype: Datatype of the input values.
-        out_dtype: Datatype of the output NDArray.
+        dtype: Datatype of the input values.
+        dtype: Datatype of the output NDArray.
 
     Args:
         start: The starting value of the NDArray.
@@ -376,31 +378,30 @@ fn geomspace[
     Returns:
         A NDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.
     """
+    constrained[not dtype.is_integral()]()
+    # if (is_inttype[dtype]() and is_inttype[dtype]()) or (
+    #     is_floattype[dtype]() and is_inttype[dtype]()
+    # ):
+    #     raise Error(
+    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
+    #     )
 
-    if (is_inttype[in_dtype]() and is_inttype[out_dtype]()) or (
-        is_floattype[in_dtype]() and is_inttype[out_dtype]()
-    ):
-        raise Error(
-            "Both input and output datatypes cannot be integers. If the input"
-            " is a float, the output must also be a float."
-        )
-
-    var a: Scalar[out_dtype] = start.cast[out_dtype]()
+    var a: Scalar[dtype] = start.cast[dtype]()
 
     if endpoint:
-        var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
-        var r: Scalar[out_dtype] = (
-            stop.cast[out_dtype]() / start.cast[out_dtype]()
-        ) ** (1 / (num - 1)).cast[out_dtype]()
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
+        var r: Scalar[dtype] = (
+            stop.cast[dtype]() / start.cast[dtype]()
+        ) ** (1 / (num - 1)).cast[dtype]()
         for i in range(num):
             result.data[i] = a * r**i
         return result
 
     else:
-        var result: NDArray[out_dtype] = NDArray[out_dtype](NDArrayShape(num))
-        var r: Scalar[out_dtype] = (
-            stop.cast[out_dtype]() / start.cast[out_dtype]()
-        ) ** (1 / (num)).cast[out_dtype]()
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
+        var r: Scalar[dtype] = (
+            stop.cast[dtype]() / start.cast[dtype]()
+        ) ** (1 / (num)).cast[dtype]()
         for i in range(num):
             result.data[i] = a * r**i
         return result

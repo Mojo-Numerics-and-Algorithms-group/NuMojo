@@ -346,6 +346,17 @@ struct Vectorized(Backend):
 fn bool_simd_store[
     width: Int
 ](ptr: DTypePointer[DType.bool], start: Int, val: SIMD[DType.bool, width]):
+    """
+    Work around function for storing bools from a simd into a DTypePointer.
+
+    Parameters:
+        width: Number of items to be retrieved.
+    
+    Args:
+        ptr: Pointer to be retreived from.
+        start: Start position in pointer.
+        val: Value to store at locations.
+    """
     (ptr + start).simd_strided_store[width=width, T=Int](val, 1)
 
 

@@ -31,12 +31,6 @@ fn cumsum[
 ](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """Sum of all items of an array.
 
-    To-do:
-    1. The function currently returns a single number. In future, the function
-    returns an array of the same shape as the input one.
-    2. In future, allow users to specify the axis along which the statistics are
-    calculated.
-
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
@@ -63,12 +57,6 @@ fn cumprod[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) -> SIMD[out_dtype, 1]:
     """Product of all items in an array.
-
-    To-do:
-    1. The function currently returns a single number. In future, the function
-    returns an array of the same shape as the input one.
-    2. In future, allow users to specify the axis along which the statistics are
-    calculated.
 
     Parameters:
         in_dtype: The input element type.
@@ -104,12 +92,6 @@ fn cummean[
 ](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """Arithmatic mean of all items of an array.
 
-    To-do:
-    1. The function currently returns a single number. In future, the function
-    returns an array of the same shape as the input one.
-    2. In future, allow users to specify the axis along which the statistics are
-    calculated.
-
     Parameters:
         in_dtype: The input element type.
         out_dtype: The output element type.
@@ -133,10 +115,6 @@ fn mode[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """Mode of all items of an array.
-
-    To-do:
-    In future, allow users to specify the axis along which the statistics are
-    calculated.
 
     Parameters:
         in_dtype: The input element type.
@@ -175,10 +153,6 @@ fn median[
     in_dtype: DType, out_dtype: DType = DType.float64
 ](array: NDArray[in_dtype]) raises -> SIMD[out_dtype, 1]:
     """Median value of all items of an array.
-
-    To-do:
-    In future, allow users to specify the axis along which the statistics are
-    calculated.
 
     Parameters:
         in_dtype: The input element type.

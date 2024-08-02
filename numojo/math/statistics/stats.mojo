@@ -70,7 +70,7 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
     """
 
     var result = Scalar[array.dtype](0)
-    for i in range(array.ndshape._size):
+    for i in range(array.ndshape.ndsize):
         result[0] += array.data[i]
     return result
 
@@ -139,7 +139,7 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
     """
 
     var result = Scalar[array.dtype](1)
-    for i in range(array.ndshape._size):
+    for i in range(array.ndshape.ndsize):
         result[0] *= array.data[i]
     return result
 
@@ -181,13 +181,22 @@ fn meanall(array: NDArray) raises -> Float64:
 
     return (
         sumall(array).cast[DType.float64]()
-        / Int32(array.ndshape._size).cast[DType.float64]()
+        / Int32(array.ndshape.ndsize).cast[DType.float64]()
     )
 
 
 fn max[
     dtype: DType
 ](array: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
+    """Maximums of array elements over a given axis.
+
+    Args:
+        array: NDArray.
+        axis: The axis along which the sum is performed.
+    
+    Returns:
+        An NDArray.
+    """
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):
@@ -225,6 +234,15 @@ fn max[
 fn min[
     dtype: DType
 ](array: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
+    """Minumums of array elements over a given axis.
+
+    Args:
+        array: NDArray.
+        axis: The axis along which the sum is performed.
+    
+    Returns:
+        An NDArray.
+    """
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):

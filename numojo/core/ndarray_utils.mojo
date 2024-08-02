@@ -1,9 +1,11 @@
 """
+Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 # Last updated: 2024-06-20
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 from python import Python
 from .ndarray import NDArray, NDArrayShape, NDArrayStride
@@ -23,7 +25,7 @@ fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights._len):
+    for i in range(weights.ndlen):
         idx += indices[i] * weights[i]
     return idx
 
@@ -40,7 +42,7 @@ fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights._len):
+    for i in range(weights.ndlen):
         idx += indices[i] * weights[i]
     return idx
 
@@ -57,7 +59,7 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights._len):
+    for i in range(weights.ndlen):
         idx += indices[i] * weights[i]
     return idx
 
@@ -74,7 +76,7 @@ fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights._len):
+    for i in range(weights.ndlen):
         idx += indices[i] * weights[i]
     return idx
 
@@ -148,7 +150,7 @@ fn _traverse_iterative[
         var idx = offset + _get_index(index, coefficients)
         var nidx = _get_index(index, strides)
         var temp = orig.data.load[width=1](idx)
-        if nidx >= narr.ndshape._size:
+        if nidx >= narr.ndshape.ndsize:
             raise Error("Invalid index: index out of bound")
         else:
             narr.data.store[width=1](nidx, temp)

@@ -1,9 +1,11 @@
 """
+Implements sort functions
+"""
 # ===----------------------------------------------------------------------=== #
 # Sort Module - Implements sort functions
 # Last updated: 2024-06-20
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
 from algorithm import vectorize
@@ -185,7 +187,7 @@ fn binary_sort[
         The sorted NDArray of type `out_dtype`.
     """
     var result: NDArray[out_dtype] = NDArray[out_dtype](array.shape())
-    for i in range(array.ndshape._size):
+    for i in range(array.ndshape.ndsize):
         result.store(i, array.get_scalar(i).cast[out_dtype]())
 
     var n = array.num_elements()

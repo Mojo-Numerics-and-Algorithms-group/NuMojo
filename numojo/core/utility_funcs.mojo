@@ -1,9 +1,11 @@
 """
+Type related utility functions.
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements Utility functions
 # Last updated: 2024-06-15
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 
 fn is_inttype[dtype: DType]() -> Bool:

@@ -568,11 +568,30 @@ fn diagflat[dtype: DType](inout v: NDArray[dtype], k: Int = 0) raises -> NDArray
     return result
 
 
-fn tri():
-    
+fn tri[dtype: DType](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
+    """
+    Generate a 2-D NDArray with ones on and below the k-th diagonal.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        N: Number of rows in the matrix.
+        M: Number of columns in the matrix.
+        k: Diagonal offset.
+
+    Returns:
+        A 2-D NDArray with ones on and below the k-th diagonal.
+    """
+    var result: NDArray[dtype] = NDArray[dtype](N, M, random=False)
+    for i in range(N):
+        for j in range(M):
+            if i >= j - k:
+                result.store(i, j, val=Scalar[dtype](1))
+    return result
 
 fn tril():
-    pass
+
 
 
 fn triu():

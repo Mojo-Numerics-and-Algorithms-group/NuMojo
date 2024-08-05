@@ -559,15 +559,17 @@ fn diagflat[dtype: DType](inout v: NDArray[dtype], k: Int = 0) raises -> NDArray
     var n: Int= v.ndshape.ndsize + abs(k)
     var result: NDArray[dtype]= NDArray[dtype](n, n, random=False)
 
-    for i in range(n):
-        print(n*i + i + k)
-        result.store(n*i + i + k, v.data[i])
+    if k > 0:
+        for i in range(n):
+            result.store(n*i + i + k, v.data[i])
+    else:
+        for i in range(n):
+            result.store(result.ndshape.ndsize - 1 - (n*i + i + abs(k)), v.data[v.ndshape.ndsize - 1 - i])
     return result
 
 
 fn tri():
-    pass
-
+    
 
 fn tril():
     pass

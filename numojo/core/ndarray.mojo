@@ -1209,6 +1209,9 @@ struct NDArray[dtype: DType = DType.float64](
         return narr
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
+        """
+        Adjusts the slice values to lie within 0 and dim.
+        """
         if span.start < 0:
             span.start = dim + span.start
         if not span._has_end():

@@ -12,3 +12,6 @@ numojo.mojopkg
 .gitignore
 bench.mojo
 test_ndarray.ipynb
+test.mojo
+test_array_creation.mojo
+.gitignore

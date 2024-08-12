@@ -39,6 +39,13 @@ def test_identity():
 def test_eye():
     var np = Python.import_module("numpy")
     check(nm.eye[nm.i64](100,100),np.eye(100,100,dtype=np.int64),"Eye is broken")
+
+def test_diagflat():
+    var np = Python.import_module("numpy")
+    var temp = nm.arange[nm.i64](1, 10, 10)
+    temp.reshape(3,3)
+    check(nm.diagflat[nm.i64](nm),np.diagflat(np.arange(1,10,10).reshape(3,3),"Diagflat is broken")
+
 def main():
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0,100)
@@ -51,8 +58,7 @@ def main():
     # check_is_close(nm.geomspace[nm.i64](1,100,5),np.geomspace(1,100,5,dtype=np.float64),"Logspace is broken")
     # print((arr@arr).to_numpy()-np.matmul(np_arr,np_arr))
     print(nm.matmul_naive[nm.f64](arr,arr).to_numpy())#-np.matmul(np_arr,np_arr))
-    print(np.matmul(np_arr,np_arr))
-    # # Basic ND arrays
+    print(np.matmul(np_arr,np_arr)) # # Basic ND arrays
     # print(nm.sin[nm.f64](nm.arange[nm.f64](0,15)))
     # print( np.sin(np.arange(0,15, dtype=np.float64)))
     # check(nm.zeros[nm.f64](10,10,10,10),np.zeros((10,10,10,10),dtype=np.float64),"Zeros is broken")

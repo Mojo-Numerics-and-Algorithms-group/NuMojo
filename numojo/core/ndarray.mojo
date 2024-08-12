@@ -2733,7 +2733,7 @@ struct NDArray[dtype: DType = DType.float64](
                 slices.append(Slice(0, shape[i]))
             else:
                 slices.append(Slice(0, 0))
-        print(result_shape.__str__())
+
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
         slices[axis] = Slice(0, 1)
         result = self[slices]
@@ -2824,14 +2824,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         return prod(self, axis)
 
-    # fn ravel(self):
-    #     pass
+    fn round(self) raises -> Self:
+        """
+        Rounds the elements of the array to a whole number.  
 
-    # fn resize(self):
-    #     pass
-
-    # fn round(self):
-    #     pass
+        Returns:
+            An NDArray. 
+        """
+        return tround[dtype](self)
 
     # for python compat this should be inplace
     fn sort(self) raises -> Self:
@@ -2850,23 +2850,23 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return sum(self, axis)
 
-    # fn stdev(self):
-    #     pass
+    fn tolist(self) -> List[Scalar[dtype]]:
+        """
+        Convert NDArray to a 1-D List.
 
-    # fn tolist(self):
-    #     pass
-
-    # fn tostring(self):
-    #     pass
+        Returns:
+            A 1-D List.
+        """
+        var result: List[Scalar[dtype]] = List[Scalar[dtype]]()
+        for i in range(self.ndshape.ndsize):
+            result.append(self.data[i])
+        return result
+    
+    # fn toint(self):
+        # pass
 
     # fn trace(self):
-    #     pass
-
-    # fn transpose(self):
-    #     pass
-
-    # fn variance(self):
-    #     pass
+        # pass
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
     fn reshape(inout self, *shape: Int, order: String = "C") raises:

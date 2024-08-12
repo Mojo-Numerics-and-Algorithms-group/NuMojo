@@ -1173,3 +1173,5 @@ fn invert[
     return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](
         array
     )
+
+

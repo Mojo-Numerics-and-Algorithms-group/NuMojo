@@ -20,7 +20,7 @@ Implements N-Dimensional Array
 """
 
 from builtin.type_aliases import AnyLifetime
-from random import rand
+from random import rand, random_si64, random_float64
 from builtin.math import pow
 from builtin.bool import all as allb
 from builtin.bool import any as anyb
@@ -921,6 +921,112 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         for i in range(self.ndshape.ndsize):
             self.data[i] = data[i]
+
+    @always_inline("nodebug")
+    fn __init__(
+        inout self,
+        *shape: Int,
+        min: Scalar[dtype],
+        max: Scalar[dtype],
+        order: String = "C",
+    ) raises:
+        """
+        NDArray initialization for variadic shape with random values between min and max.
+
+        Args:
+            shape: Variadic shape.
+            min: Minimum value for the NDArray.
+            max: Maximum value for the NDArray.
+            order: Memory order C or F.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            fn main() raises:
+                var A = nm.NDArray[DType.float16](2, 2, min=0.0, max=10.0)
+                print(A)
+            ```
+            A is an array with shape 2 x 2 and randomly values between 0 and 10.
+            The output goes as follows.
+            
+            ```console
+            [[	6.046875	6.98046875	]
+             [	6.6484375	1.736328125	]]
+            2-D array  Shape: [2, 2]  DType: float16
+            ```
+        """
+        self.ndim = shape.__len__()
+        self.ndshape = NDArrayShape(shape)
+        self.stride = NDArrayStride(shape, offset=0, order=order)
+        self.coefficient = NDArrayStride(shape, offset=0, order=order)
+        self.datatype = dtype
+        self.order = order
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        if dtype.is_floating_point():
+            for i in range(self.ndshape.ndsize):
+                self.data.store(
+                    i, 
+                    random_float64(min.cast[DType.float64](), max.cast[DType.float64]()).cast[dtype]()
+                )
+        elif dtype.is_integral():
+            for i in range(self.ndshape.ndsize):
+                self.data.store(
+                    i, 
+                    random_si64(int(min), int(max)).cast[dtype]()
+                )
+    
+    @always_inline("nodebug")
+    fn __init__(
+        inout self,
+        shape: List[Int],
+        min: Scalar[dtype],
+        max: Scalar[dtype],
+        order: String = "C",
+    ) raises:
+        """
+        NDArray initialization for list shape with random values between min and max.
+
+        Args:
+            shape: List of shape.
+            min: Minimum value for the NDArray.
+            max: Maximum value for the NDArray.
+            order: Memory order C or F.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            fn main() raises:
+                var A = nm.NDArray[DType.float16](List[Int](2, 2), min=0.0, max=10.0)
+                print(A)
+            ```
+            A is an array with shape 2 x 2 and randomly values between 0 and 10.
+            The output goes as follows.
+            
+            ```console
+            [[	6.046875	6.98046875	]
+             [	6.6484375	1.736328125	]]
+            2-D array  Shape: [2, 2]  DType: float16
+            ```
+        """
+        self.ndim = shape.__len__()
+        self.ndshape = NDArrayShape(shape)
+        self.stride = NDArrayStride(shape, offset=0, order=order)
+        self.coefficient = NDArrayStride(shape, offset=0, order=order)
+        self.datatype = dtype
+        self.order = order
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        if dtype.is_floating_point():
+            for i in range(self.ndshape.ndsize):
+                self.data.store(
+                    i, 
+                    random_float64(min.cast[DType.float64](), max.cast[DType.float64]()).cast[dtype]()
+                )
+        elif dtype.is_integral():
+            for i in range(self.ndshape.ndsize):
+                self.data.store(
+                    i, 
+                    random_si64(int(min), int(max)).cast[dtype]()
+                )
 
     fn __init__(
         inout self,

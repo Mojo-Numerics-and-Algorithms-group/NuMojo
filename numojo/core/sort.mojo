@@ -124,7 +124,7 @@ fn quick_sort_inplace[
 
 fn quick_sort[
     dtype: DType
-](inout ndarray: NDArray[dtype]) raises:
+](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Quick sort the NDArray.
     Adopt in-place partition.
@@ -148,9 +148,11 @@ fn quick_sort[
 
     """
 
+    var result: NDArray[dtype] = ndarray
     var length = ndarray.size()
+    quick_sort_inplace(result, 0, length - 1)
 
-    quick_sort_inplace(ndarray, 0, length - 1)
+    return result
 
 
 # ===------------------------------------------------------------------------===#

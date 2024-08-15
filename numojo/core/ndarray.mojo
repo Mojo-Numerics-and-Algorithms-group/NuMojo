@@ -9,14 +9,10 @@ Implements N-Dimensional Array
 
 """
 # TODO
-1) Add NDArray, NDArrayShape constructor overload for List, VariadicList types etc to cover more cases
-3) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
-4) Vectorize row(), col() to retrieve rows and columns for 2D arrays
-5) Add __getitem__() overload for (Slice, Int)
-7) Add vectorization for _get_index
-8) Write more explanatory Error("") statements
-9) Vectorize the for loops inside getitem or move these checks to compile time to try and remove the overhead from constantly checking
-10) Add List[Int] and Variadic[Int] Shape args for __init__ to make it more flexible
+1) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
+2) Add vectorization for _get_index
+3) Write more explanatory Error("") statements
+4) Create NDArrayView and remove coefficients. 
 """
 
 from builtin.type_aliases import AnyLifetime
@@ -639,7 +635,7 @@ struct NDArray[dtype: DType = DType.float64](
     var stride: NDArrayStride
     """Contains offset, strides."""
     var coefficient: NDArrayStride
-    """Contains offset, coefficient."""
+    """Contains offset, coefficients for slicing."""
     var datatype: DType
     """The datatype of memory."""
     var order: String
@@ -670,10 +666,8 @@ struct NDArray[dtype: DType = DType.float64](
             Returns an zero array with shape 3 x 2 x 4.
         """
         self.ndim = shape.__len__()
-        # I cannot name self.ndshape as self.shape as lsp gives unrecognized variable error
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
-        # I gotta make coefficients empty, but let's just keep it like for now
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
         self.datatype = dtype
         self.order = order
@@ -2088,7 +2082,6 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error("Both arrays must have same number of elements")
 
         var result = Self(self.ndshape)
-        alias nelts = simdwidthof[dtype]()
 
         @parameter
         fn vectorized_pow[simd_width: Int](index: Int) -> None:
@@ -2098,7 +2091,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ** p.load[width=simd_width](index),
             )
 
-        vectorize[vectorized_pow, nelts](self.ndshape.ndsize)
+        vectorize[vectorized_pow, self.simd_width](self.ndshape.ndsize)
         return result
 
     fn __ipow__(inout self, p: Int):
@@ -2543,7 +2536,6 @@ struct NDArray[dtype: DType = DType.float64](
         if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
-        alias nelts: Int = simdwidthof[dtype]()
         var result: Bool = True
 
         @parameter
@@ -2552,7 +2544,7 @@ struct NDArray[dtype: DType = DType.float64](
                 (self.data + idx).simd_strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_all, nelts](self.ndshape.ndsize)
+        vectorize[vectorized_all, self.simd_width](self.ndshape.ndsize)
         return result
 
     fn any(self) raises -> Bool:
@@ -2562,7 +2554,6 @@ struct NDArray[dtype: DType = DType.float64](
         # make this a compile time check
         if not (self.dtype.is_bool() or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
-        alias nelts: Int = simdwidthof[dtype]()
         var result: Bool = False
 
         @parameter
@@ -2571,7 +2562,7 @@ struct NDArray[dtype: DType = DType.float64](
                 (self.data + idx).simd_strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_any, nelts](self.ndshape.ndsize)
+        vectorize[vectorized_any, self.simd_width](self.ndshape.ndsize)
         return result
 
     fn argmax(self) -> Int:
@@ -2617,7 +2608,6 @@ struct NDArray[dtype: DType = DType.float64](
         Convert type of array.
         """
         # I wonder if we can do this operation inplace instead of allocating memory.
-        alias nelts = simdwidthof[dtype]()
         var narr: NDArray[type] = NDArray[type](
             self.ndshape, random=False, order=self.order
         )
@@ -2632,7 +2622,7 @@ struct NDArray[dtype: DType = DType.float64](
                     self.load[width](idx).cast[type](), 1
                 )
 
-            vectorize[vectorized_astype, nelts](self.ndshape.ndsize)
+            vectorize[vectorized_astype, self.simd_width](self.ndshape.ndsize)
         else:
 
             @parameter
@@ -2647,7 +2637,7 @@ struct NDArray[dtype: DType = DType.float64](
                         .cast[type](),
                     )
 
-                vectorize[vectorized_astypenb_from_b, nelts](
+                vectorize[vectorized_astypenb_from_b, self.simd_width](
                     self.ndshape.ndsize
                 )
             else:
@@ -2656,7 +2646,7 @@ struct NDArray[dtype: DType = DType.float64](
                 fn vectorized_astypenb[width: Int](idx: Int) -> None:
                     narr.store[width](idx, self.load[width](idx).cast[type]())
 
-                vectorize[vectorized_astypenb, nelts](self.ndshape.ndsize)
+                vectorize[vectorized_astypenb, self.simd_width](self.ndshape.ndsize)
 
         return narr
 
@@ -2939,11 +2929,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return tround[dtype](self)
 
-    fn sort(inout self) raises:
+    fn sorted(inout self) raises:
         """
         Sort the array inplace using quickstort.
         """
-        sort.quick_sort[dtype](self)
+        sort.quick_sort_inplace[dtype](self, 0, self.size() - 1)
 
     fn sum(self: Self, axis: Int) raises -> Self:
         """

@@ -2833,10 +2833,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return tround[dtype](self)
 
-    # for python compat this should be inplace
     fn sort(inout self) raises:
         """
-        Sort the array using quickstort.
+        Sort the array inplace using quickstort.
         """
         sort.quick_sort[dtype](self)
 
@@ -2862,9 +2861,6 @@ struct NDArray[dtype: DType = DType.float64](
             result.append(self.data[i])
         return result
     
-    # fn toint(self):
-        # pass
-
     # fn trace(self):
         # pass
 

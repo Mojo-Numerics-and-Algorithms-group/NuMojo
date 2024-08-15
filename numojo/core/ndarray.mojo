@@ -2834,11 +2834,11 @@ struct NDArray[dtype: DType = DType.float64](
         return tround[dtype](self)
 
     # for python compat this should be inplace
-    fn sort(self) raises -> Self:
+    fn sort(inout self) raises:
         """
         Sort the array using quickstort.
         """
-        return sort.quick_sort(self)
+        sort.quick_sort[dtype](self)
 
     fn sum(self: Self, axis: Int) raises -> Self:
         """

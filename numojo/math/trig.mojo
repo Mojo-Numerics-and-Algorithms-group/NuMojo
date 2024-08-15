@@ -13,7 +13,7 @@ from .arithmetic import sqrt, fma
 
 from ..core.ndarray import NDArray
 
-# TODO: add in_dtype, out_dtype in backends and pass it here.
+# TODO: add  dtype in backends and pass it here.
 # ===------------------------------------------------------------------------===#
 # Inverse Trig
 # ===------------------------------------------------------------------------===#

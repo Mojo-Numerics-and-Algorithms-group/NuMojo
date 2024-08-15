@@ -34,25 +34,16 @@ fn gradient[
     Returns:
         The integral of y over x using the trapezoidal rule.
     """
-    # var result: NDArray[dtype] = NDArray[dtype](x.shape(), random=False)
-    # var space: NDArray[dtype] =  NDArray[dtype](x.shape(), random=False)
-    # if spacing.isa[NDArray[dtype]]():
-    #     for i in range(x.num_elements()):
-    #         space[i] = spacing._get_ptr[NDArray[dtype]]()[][i].cast[dtype]()
-
-    # elif spacing.isa[Scalar[dtype]]():
-    #     var int: Scalar[dtype] = spacing._get_ptr[Scalar[dtype]]()[]
-    #     space = numojo.arange[dtype, dtype](1, x.num_elements(), step=int)
-
+    
     var result: NDArray[dtype] = NDArray[dtype](x.shape(), random=False)
     var space: NDArray[dtype] = core.arange[dtype](
-        1, x.num_elements() + 1, step=spacing.cast[dtype]()
+        1, x.num_elements() + 1, step=spacing
     )
     var hu: Scalar[dtype] = space.get_scalar(1)
     var hd: Scalar[dtype] = space.get_scalar(0)
     result.store(
         0,
-        (x.get_scalar(1).cast[dtype]() - x.get_scalar(0).cast[dtype]())
+        (x.get_scalar(1) - x.get_scalar(0))
         / (hu - hd),
     )
 
@@ -61,8 +52,8 @@ fn gradient[
     result.store(
         x.num_elements() - 1,
         (
-            x.get_scalar(x.num_elements() - 1).cast[dtype]()
-            - x.get_scalar(x.num_elements() - 2).cast[dtype]()
+            x.get_scalar(x.num_elements() - 1)
+            - x.get_scalar(x.num_elements() - 2)
         )
         / (hu - hd),
     )
@@ -75,9 +66,9 @@ fn gradient[
             i - 1
         )
         var fi: Scalar[dtype] = (
-            hd**2 * x.get_scalar(i + 1).cast[dtype]()
-            + (hu**2 - hd**2) * x.get_scalar(i).cast[dtype]()
-            - hu**2 * x.get_scalar(i - 1).cast[dtype]()
+            hd**2 * x.get_scalar(i + 1)
+            + (hu**2 - hd**2) * x.get_scalar(i)
+            - hu**2 * x.get_scalar(i - 1)
         ) / (hu * hd * (hu + hd))
         result.store(i, fi)
 

@@ -159,8 +159,8 @@ fn quick_sort[
 
 
 fn binary_sort[
-    in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
+     dtype: DType = DType.float64
+](array: NDArray[ dtype]) raises -> NDArray[dtype]:
     """
     Binary sorting of NDArray.
 
@@ -172,24 +172,27 @@ fn binary_sort[
         ```
 
     Parameters:
-        in_dtype: The input element type.
-        out_dtype: The output element type.
+         dtype: The element type.
 
     Args:
         array: A NDArray.
 
     Returns:
-        The sorted NDArray of type `out_dtype`.
+        The sorted NDArray of type `dtype`.
     """
-    var result: NDArray[out_dtype] = NDArray[out_dtype](array.shape())
+    @parameter
+    if dtype != array.dtype:
+        alias dtype = array.dtype
+
+    var result: NDArray[dtype] = NDArray[dtype](array.shape())
     for i in range(array.ndshape.ndsize):
-        result.store(i, array.get_scalar(i).cast[out_dtype]())
+        result.store(i, array.get_scalar(i).cast[dtype]())
 
     var n = array.num_elements()
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:
-                var temp: Scalar[out_dtype] = result.get_scalar(i - 1)
+                var temp: Scalar[dtype] = result.get_scalar(i - 1)
                 result[i - 1] = result[i]
                 result.store(i, temp)
     return result

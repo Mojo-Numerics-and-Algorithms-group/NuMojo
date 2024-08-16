@@ -582,29 +582,27 @@ fn tri[dtype: DType](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
     return result
 
 
-fn tril[dtype: DType](inout m: NDArray[dtype], k: Int = 0) raises:
-    """
-    Zero out elements above the k-th diagonal.
+# fn tril[dtype: DType](inout m: NDArray[dtype], k: Int = 0) raises:
+    # """
+    # Zero out elements above the k-th diagonal.
 
-    Parameters:
-        dtype: Datatype of the NDArray elements.
+    # Parameters:
+    #     dtype: Datatype of the NDArray elements.
 
-    Args:
-        m: NDArray to be zeroed out.
-        k: Diagonal offset.
-    """
-    var index: List[Int] = List[Int]()
-    for _ in range(m.ndshape.ndlen):
-        index.append(0)
+    # Args:
+    #     m: NDArray to be zeroed out.
+    #     k: Diagonal offset.
+    # """
+    # var index: List[Int] = List[Int]()
+    # for _ in range(m.ndshape.ndlen):
+    #     index.append(0)
 
-    for i in range(m.ndshape[-1]):
-        for j in range(m.ndshape[-2]):
-            var idx: Int = _get_index(index, m.ndshape)
-            if i >= j - k:
-                m.data[idx] = Scalar[dtype](0)
-            index[-2] += 1
-        index[-1] += 1
+    # for i in range(m.ndshape[-1]):
+    #     for j in range(m.ndshape[-2]):
+    #         var idx: Int = _get_index(index, m.ndshape)
+    #         if i >= j - k:
+    #             m.data[idx] = Scalar[dtype](0)
+    #         index[-2] += 1
 
-
-fn triu():
-    pass
+# fn triu():
+    # pass

@@ -36,7 +36,7 @@ fn cross[
         The cross product of two arrays.
     """
 
-    if array1.ndshape.ndlen == array2.ndshape.ndlen == 3:
+    if (array1.ndshape.ndsize == array2.ndshape.ndsize == 3) and (array1.ndshape.ndlen == array2.ndshape.ndlen == 1):
         var array3: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
         array3.store(
             0,
@@ -60,6 +60,45 @@ fn cross[
             ),
         )
         return array3
+    else:
+        raise Error(
+            "Cross product is not supported for arrays of shape "
+            + array1.shape().__str__()
+            + " and "
+            + array2.shape().__str__()
+        )
+
+# TODO: implement other cases for dot function
+fn dot[
+     dtype: DType = DType.float64
+](array1: NDArray[dtype], array2: NDArray[ dtype]) raises -> NDArray[
+    dtype
+]:
+    """
+    Compute the dot product of two arrays.
+
+    Parameters
+        dtype: The element type.
+
+    Args:
+        array1: A array.
+        array2: A array.
+
+    Constraints:
+        `array1` and `array2` must be 1 dimensional.
+
+    Returns:
+        The dot product of two arrays.
+    """
+
+    alias opt_nelts = simdwidthof[dtype]()
+    if array1.ndshape.ndlen == array2.ndshape.ndlen == 1:
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
+        @parameter
+        fn vectorized_dot[simd_width: Int](idx: Int) -> None:
+            result.store[width=simd_width](idx, array1.load[width=simd_width](idx) * array2.load[width=simd_width](idx))
+        vectorize[vectorized_dot, opt_nelts](array1.ndshape.ndsize)
+        return result
     else:
         raise Error(
             "Cross product is not supported for arrays of shape "

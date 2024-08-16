@@ -2699,6 +2699,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self.ndshape = NDArrayShape(self.ndshape.ndsize, size=self.ndshape.ndsize)
         self.stride = NDArrayStride(shape = self.ndshape, offset=0)
+        self.ndim = 1
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """

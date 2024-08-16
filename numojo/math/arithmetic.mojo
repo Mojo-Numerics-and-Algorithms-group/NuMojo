@@ -198,8 +198,8 @@ fn sub[
 
 
 fn diff[
-     dtype: DType =  DType.float64
-](array: NDArray[ dtype], n: Int) raises -> NDArray[dtype]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype], n: Int) raises -> NDArray[dtype]:
     """
     Compute the n-th order difference of the input array.
 
@@ -225,9 +225,7 @@ fn diff[
             NDArrayShape(array.num_elements() - (num + 1))
         )
         for i in range(array1.num_elements() - 1):
-            result.store(
-                i, (array1.load[1](i + 1) - array1.load[1](i))
-            )
+            result.store(i, (array1.load[1](i + 1) - array1.load[1](i)))
         array1 = result
     return array1
 
@@ -1172,5 +1170,3 @@ fn invert[
     return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](
         array
     )
-
-

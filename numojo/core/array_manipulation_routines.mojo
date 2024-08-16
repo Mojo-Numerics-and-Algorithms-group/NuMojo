@@ -7,7 +7,6 @@ Array manipulation routines.
 # ===----------------------------------------------------------------------=== #
 
 
-
 fn copyto():
     pass
 
@@ -176,30 +175,29 @@ fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         result.data.store(i, array.data[array.ndshape.ndsize - i - 1])
     return result
 
+
 fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
-        """
-        Flattens the NDArray.
+    """
+    Flattens the NDArray.
 
-        Parameters:
-            dtype: Dataype of the NDArray elements.
-        
-        Args:
-            array: A NDArray.
-        
-        Returns:
-            The 1 dimensional flattened NDArray.
-        """
+    Parameters:
+        dtype: Dataype of the NDArray elements.
 
-        var res: NDArray[dtype] = NDArray[dtype](
-            array.ndshape.ndsize, random=False
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The 1 dimensional flattened NDArray.
+    """
+
+    var res: NDArray[dtype] = NDArray[dtype](array.ndshape.ndsize, random=False)
+    alias simd_width: Int = simdwidthof[dtype]()
+
+    @parameter
+    fn vectorized_flatten[simd_width: Int](index: Int) -> None:
+        res.data.store[width=simd_width](
+            index, array.data.load[width=simd_width](index)
         )
-        alias simd_width: Int = simdwidthof[dtype]()
 
-        @parameter
-        fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-            res.data.store[width=simd_width](
-                index, array.data.load[width=simd_width](index)
-            )
-
-        vectorize[vectorized_flatten, simd_width](array.ndshape.ndsize)
-        return res
+    vectorize[vectorized_flatten, simd_width](array.ndshape.ndsize)
+    return res

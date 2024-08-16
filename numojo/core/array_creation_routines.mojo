@@ -25,7 +25,7 @@ from .ndarray_utils import _get_index
 # Arranged Value NDArray generation
 # ===------------------------------------------------------------------------===#
 fn arange[
-    dtype:DType = DType.float64
+    dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
@@ -54,17 +54,11 @@ fn arange[
     #     raise Error(
     #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
     #     )
-    
-
 
     var num: Int = ((stop - start) / step).__int__()
-    var result: NDArray[dtype] = NDArray[dtype](
-        NDArrayShape(num, size=num)
-    )
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num, size=num))
     for idx in range(num):
-        result.data[idx] = (
-            start + step * idx
-        )
+        result.data[idx] = start + step * idx
 
     return result
 
@@ -112,13 +106,9 @@ fn linspace[
     #     )
     constrained[not dtype.is_integral()]()
     if parallel:
-        return _linspace_parallel[dtype](
-            start, stop, num, endpoint
-        )
+        return _linspace_parallel[dtype](start, stop, num, endpoint)
     else:
-        return _linspace_serial[dtype](
-            start, stop, num, endpoint
-        )
+        return _linspace_serial[dtype](start, stop, num, endpoint)
 
 
 fn _linspace_serial[
@@ -386,18 +376,14 @@ fn geomspace[
 
     if endpoint:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var r: Scalar[dtype] = (
-            stop / start
-        ) ** (1 / (num - 1))
+        var r: Scalar[dtype] = (stop / start) ** (1 / (num - 1))
         for i in range(num):
             result.data[i] = a * r**i
         return result
 
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var r: Scalar[dtype] = (
-            stop / start
-        ) ** (1 / (num))
+        var r: Scalar[dtype] = (stop / start) ** (1 / (num))
         for i in range(num):
             result.data[i] = a * r**i
         return result
@@ -541,7 +527,9 @@ fn full[
     return NDArray[dtype](shape, fill=tens_value)
 
 
-fn diagflat[dtype: DType](inout v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
+fn diagflat[
+    dtype: DType
+](inout v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
     Generate a 2-D NDArray with the flattened input as the diagonal.
 
@@ -556,15 +544,18 @@ fn diagflat[dtype: DType](inout v: NDArray[dtype], k: Int = 0) raises -> NDArray
         A 2-D NDArray with the flattened input as the diagonal.
     """
     v.reshape(v.ndshape.ndsize, 1)
-    var n: Int= v.ndshape.ndsize + abs(k)
-    var result: NDArray[dtype]= NDArray[dtype](n, n, random=False)
+    var n: Int = v.ndshape.ndsize + abs(k)
+    var result: NDArray[dtype] = NDArray[dtype](n, n, random=False)
 
     if k > 0:
         for i in range(n):
-            result.store(n*i + i + k, v.data[i])
+            result.store(n * i + i + k, v.data[i])
     else:
         for i in range(n):
-            result.store(result.ndshape.ndsize - 1 - (n*i + i + abs(k)), v.data[v.ndshape.ndsize - 1 - i])
+            result.store(
+                result.ndshape.ndsize - 1 - (n * i + i + abs(k)),
+                v.data[v.ndshape.ndsize - 1 - i],
+            )
     return result
 
 
@@ -590,6 +581,7 @@ fn tri[dtype: DType](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
                 result.store(i, j, val=Scalar[dtype](1))
     return result
 
+
 fn tril[dtype: DType](inout m: NDArray[dtype], k: Int = 0) raises:
     """
     Zero out elements above the k-th diagonal.
@@ -604,7 +596,7 @@ fn tril[dtype: DType](inout m: NDArray[dtype], k: Int = 0) raises:
     var index: List[Int] = List[Int]()
     for _ in range(m.ndshape.ndlen):
         index.append(0)
-    
+
     for i in range(m.ndshape[-1]):
         for j in range(m.ndshape[-2]):
             var idx: Int = _get_index(index, m.ndshape)

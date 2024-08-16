@@ -122,9 +122,7 @@ fn quick_sort_inplace[
         quick_sort_inplace(ndarray, pivot_new_index + 1, right)
 
 
-fn quick_sort[
-    dtype: DType
-](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
+fn quick_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Quick sort the NDArray.
     Adopt in-place partition.
@@ -161,8 +159,8 @@ fn quick_sort[
 
 
 fn binary_sort[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> NDArray[dtype]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Binary sorting of NDArray.
 
@@ -182,6 +180,7 @@ fn binary_sort[
     Returns:
         The sorted NDArray of type `dtype`.
     """
+
     @parameter
     if dtype != array.dtype:
         alias dtype = array.dtype

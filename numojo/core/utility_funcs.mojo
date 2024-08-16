@@ -7,7 +7,6 @@ Type related utility functions.
 # ===----------------------------------------------------------------------=== #
 
 
-
 fn is_inttype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is an integer type at compile time.

@@ -2944,20 +2944,17 @@ struct NDArray[dtype: DType = DType.float64](
         return result
 
     # TODO: add axis parameter
-    fn trace[dtype: dtype](self, offset: int = 0, axis1: int = 0 , axis2: int = 1) -> NDArray[dtype]:
+    fn trace(self, offset: Int = 0, axis1: Int = 0 , axis2: Int = 1) raises -> NDArray[dtype]:
         """
-        computes the trace of a ndarray.
+        Computes the trace of a ndarray.
 
-        parameters:
-            dtype: data type of the array.
+        Args:
+            offset: Offset of the diagonal from the main diagonal.
+            axis1: First axis.
+            axis2: Second axis.
 
-        args:
-            offset: offset of the diagonal from the main diagonal. (default: 0)
-            axis1: first axis. (default: 0)
-            axis2: second axis. (default: 1)
-
-        returns:
-            the trace of the ndarray. 
+        Returns:
+            The trace of the ndarray. 
         """
         return trace[dtype](self, offset, axis1, axis2)
 

@@ -208,15 +208,16 @@ fn trace[dtype: DType](array: NDArray[dtype], offset: Int = 0, axis1: Int = 0 , 
     Computes the trace of a ndarray.
 
     Parameters:
-        dtype: data type of the array.
+        dtype: Data type of the array.
 
     Args:
-        offset: offset of the diagonal from the main diagonal. (default: 0)
-        axis1: first axis. (default: 0)
-        axis2: second axis. (default: 1)
+        array: A NDArray.
+        offset: Offset of the diagonal from the main diagonal.
+        axis1: First axis.
+        axis2: Second axis.
 
     Returns:
-        the trace of the ndarray. 
+        The trace of the NDArray. 
     """
     if array.ndim != 2:
         raise Error("Trace is currently only supported for 2D arrays")

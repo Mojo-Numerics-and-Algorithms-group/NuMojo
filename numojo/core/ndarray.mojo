@@ -2693,33 +2693,12 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[vectorized_fill, simd_width](self.ndshape.ndsize)
         return self
 
-    fn flatten(inout self, inplace: Bool = False) raises -> Optional[Self]:
+    fn flatten(inout self) raises:
         """
         Convert shape of array to one dimensional.
         """
-        # inplace has some problems right now
-        # if inplace:
-        #     self.ndshape = NDArrayShape(self.ndshape.ndsize, size=self.ndshape.ndsize)
-        #     self.stride = NDArrayStride(shape = self.ndshape, offset=0)
-        #     return self
-
-        var res: NDArray[dtype] = NDArray[dtype](
-            self.ndshape.ndsize, random=False
-        )
-        alias simd_width: Int = simdwidthof[dtype]()
-
-        @parameter
-        fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-            res.data.store[width=simd_width](
-                index, self.data.load[width=simd_width](index)
-            )
-
-        vectorize[vectorized_flatten, simd_width](self.ndshape.ndsize)
-        if inplace:
-            self = res
-            return None
-        else:
-            return res
+        self.ndshape = NDArrayShape(self.ndshape.ndsize, size=self.ndshape.ndsize)
+        self.stride = NDArrayStride(shape = self.ndshape, offset=0)
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """
@@ -2922,7 +2901,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn round(self) raises -> Self:
         """
-        Rounds the elements of the array to a whole number.  
+        Rounds the elements of the array to a whole number.
 
         Returns:
             An NDArray. 

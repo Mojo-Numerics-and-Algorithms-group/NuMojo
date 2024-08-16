@@ -2943,8 +2943,24 @@ struct NDArray[dtype: DType = DType.float64](
             result.append(self.data[i])
         return result
 
-    # fn trace(self):
-    # pass
+    # TODO: add axis parameter
+    fn trace[dtype: dtype](self, offset: int = 0, axis1: int = 0 , axis2: int = 1) -> NDArray[dtype]:
+        """
+        computes the trace of a ndarray.
+
+        parameters:
+            dtype: data type of the array.
+
+        args:
+            offset: offset of the diagonal from the main diagonal. (default: 0)
+            axis1: first axis. (default: 0)
+            axis2: second axis. (default: 1)
+
+        returns:
+            the trace of the ndarray. 
+        """
+        return trace[dtype](self, offset, axis1, axis2)
+
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
     fn reshape(inout self, *shape: Int, order: String = "C") raises:

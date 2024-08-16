@@ -201,3 +201,35 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
     vectorize[vectorized_flatten, simd_width](array.ndshape.ndsize)
     return res
+
+# TODO: implement for arbitrary axis
+fn trace[dtype: DType](array: NDArray[dtype], offset: Int = 0, axis1: Int = 0 , axis2: Int = 1) raises -> NDArray[dtype]:
+    """
+    Computes the trace of a ndarray.
+
+    Parameters:
+        dtype: data type of the array.
+
+    Args:
+        offset: offset of the diagonal from the main diagonal. (default: 0)
+        axis1: first axis. (default: 0)
+        axis2: second axis. (default: 1)
+
+    Returns:
+        the trace of the ndarray. 
+    """
+    if array.ndim != 2:
+        raise Error("Trace is currently only supported for 2D arrays")
+    if axis1 > array.ndim - 1 or axis2 > array.ndim - 1:
+        raise Error("axis cannot be greater than the rank of the array")
+    var result: NDArray[dtype] = NDArray[dtype](1, random=False)
+    var rows = array.ndshape[0]
+    var cols = array.ndshape[1]
+    var diag_length = min(rows, cols - offset) if offset >= 0 else min(rows + offset, cols)
+    
+    for i in range(diag_length):
+        var row = i if offset >= 0 else i - offset
+        var col = i + offset if offset >= 0 else i
+        result.data.store(0, result.data.load(0) + array.data[row * cols + col])
+
+    return result

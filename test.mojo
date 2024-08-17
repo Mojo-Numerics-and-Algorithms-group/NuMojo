@@ -2,6 +2,7 @@
 import time
 from benchmark.compiler import keep
 from python import Python
+from random import seed
 
 # import numojo as nm
 from numojo import *
@@ -16,7 +17,92 @@ from numojo import *
 #     #         print(array[i,j])
 #     print(res)
 
-def main():
+fn main() raises:
+    var A = arange[i16](1, 7, 1)
+    print(A)
+    var temp = flip(A)
+    print(temp)
+    # A.reshape(2, 3, order="F")
+    # nm.ravel(A)
+    # print(A)
+    # var B = arange[i16](0, 12, 1)
+    # B.reshape(3, 2, 2, order="F")
+    # ravel(B, order="C")
+    # print(B)
+
+    # print(A)
+    # var B = SIMD[i16, 1](15502)
+    # print(B)
+    # print(A >= SIMD[i16, 1](10))
+    # for i in A:
+    #     print(i)
+
+    
+    # var array = arange[i16](0, 12, 1)
+    # array.reshape(3, 2, 2)
+    # print(array)
+    # print("x[0]", array.item(0))
+    # print("x[1]", array.item(1))
+    # print("x[2]", array.item(2))
+    # swapaxis(array, 0, -1)
+    # print(array.ndshape)
+    # swapaxis(array, 0, 2)
+    # print(array.ndshape)
+    # moveaxis(array, 0, 2)
+    # array.reshape(2, 2, 3, order="C")
+    # swapaxis(array, 0, 1)
+    # print(array)
+    # print("x[0]", array.item(0))
+    # print("x[1]", array.item(1))
+    # print("x[2]", array.item(2))
+    # moveaxis(array, 0, 1)
+    # print(array.ndshape)
+    # var B = NDArray[i16](3, 3, random=True)
+    # print(B)
+    # A[A > 10.0] = B
+    # print(A)
+    # var gt = A > 10.0
+    # print(gt)
+    # var ge = A >= Scalar[i16](10)
+    # print(ge)
+    # var lt = A < Scalar[i16](10)
+    # print(lt)
+    # var le = A <= Scalar[i16](10)
+    # print(le)
+    # var eq = A == Scalar[i16](10)
+    # print(eq)
+    # var ne = A != Scalar[i16](10)
+    # print(ne)
+    # var mask = A[A > Scalar[i16](10)]
+    # print(mask)
+    # seed(10)
+    # var B = NDArray[i16](3, 3, random=True)
+    # print(B)
+    # var gta = A > B
+    # print(gta)
+    # var gte = A >= B
+    # print(gte)
+    # var lt = A < B
+    # print(lt)
+    # var le = A <= B
+    # print(le)
+    # var eq = A == B
+    # print(eq)
+    # var ne = A != B
+    # print(ne)
+    # var mask = A[A > B]
+    # print(mask)
+    # var temp = A * SIMD[i8, 1](2)
+    # print(temp)
+    # var temp1 = temp == 0
+    # var temp2 = A[temp]
+    # print(temp2)
+    # var temp2 = A[A%2 == 0]
+    # print(temp2)
+    # print(temp2.at(0))
+    # print(temp2.ndshape, temp2.stride, temp2.ndshape._size)
+
+# def main():
 
     # # CONSTRUCTORS TEST
     # var arr1 = numojo.NDArray[numojo.f32](3,4,5, random=True)
@@ -24,8 +110,8 @@ def main():
     # print("ndim: ", arr1.ndim)
     # print("shape: ", arr1.ndshape)
     # print("strides: ", arr1.stride)
-    # print("size: ", arr1.ndshape._size)
-    # print("offset: ", arr1.stride._offset)
+    # print("size: ", arr1.ndshape.ndsize)
+    # print("offset: ", arr1.stride.ndoffset)
     # print("dtype: ", arr1.dtype)
 
     # print()
@@ -35,8 +121,8 @@ def main():
     # print("ndim: ", arr2.ndim)
     # print("shape: ", arr2.ndshape)
     # print("strides: ", arr2.stride)
-    # print("size: ", arr2.ndshape._size)
-    # print("offset: ", arr2.stride._offset)
+    # print("size: ", arr2.ndshape.ndsize)
+    # print("offset: ", arr2.stride.ndoffset)
     # print("dtype: ", arr2.dtype)
  
     # var arr3 = numojo.NDArray[numojo.f32](VariadicList[Int](3, 4, 5), fill = 10.0)
@@ -44,8 +130,8 @@ def main():
     # print("ndim: ", arr3.ndim)
     # print("shape: ", arr3.ndshape)
     # print("strides: ", arr3.stride)
-    # print("size: ", arr3.ndshape._size)
-    # print("offset: ", arr3.stride._offset)
+    # print("size: ", arr3.ndshape.ndsize)
+    # print("offset: ", arr3.stride.ndoffset)
     # print("dtype: ", arr3.dtype)
 
     # var arr4 = numojo.NDArray[numojo.f32](List[Int](3, 4, 5), random=True)
@@ -53,8 +139,8 @@ def main():
     # print("ndim: ", arr4.ndim)
     # print("shape: ", arr4.ndshape)
     # print("strides: ", arr4.stride)
-    # print("size: ", arr4.ndshape._size)
-    # print("offset: ", arr4.stride._offset)
+    # print("size: ", arr4.ndshape.ndsize)
+    # print("offset: ", arr4.stride.ndoffset)
     # print("dtype: ", arr4.dtype) 
 
     # var arr5 = numojo.NDArray[numojo.f32](numojo.NDArrayShape(3,4,5), random=True)
@@ -62,8 +148,8 @@ def main():
     # print("ndim: ", arr5.ndim)
     # print("shape: ", arr5.ndshape)
     # print("strides: ", arr5.stride)
-    # print("size: ", arr5.ndshape._size)
-    # print("offset: ", arr5.stride._offset)
+    # print("size: ", arr5.ndshape.ndsize)
+    # print("offset: ", arr5.stride.ndoffset)
     # print("dtype: ", arr5.dtype) 
 
     # var arr6 = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10), shape=
@@ -72,20 +158,20 @@ def main():
     # print("ndim: ", arr6.ndim)
     # print("shape: ", arr6.ndshape)
     # print("strides: ", arr6.stride)
-    # print("size: ", arr6.ndshape._size)
-    # print("offset: ", arr6.stride._offset)
+    # print("size: ", arr6.ndshape.ndsize)
+    # print("offset: ", arr6.stride.ndoffset)
     # print("dtype: ", arr6.dtype) 
 
     # var x = numojo.linspace[numojo.f32](0.0, 60.0, 60)
     # var x = numojo.ones[numojo.f32](3, 2)
     # var x = numojo.logspace[numojo.f32](-3, 0, 60)
-    var x = arange[f32](0.0, 24.0, step=1)
-    x.reshape(2, 3, 4, order="C")
-    print(x[0,0,0], x[0,0,1], x[1,1,1], x[1,2,3])
-    print(x)
-    var slicedx = x[0:1, :, 1:2]
-    print(slicedx)
-    print()
+    # var x = arange[f32](0.0, 24.0, step=1)
+    # x.reshape(2, 3, 4, order="C")
+    # print(x[0,0,0], x[0,0,1], x[1,1,1], x[1,2,3])
+    # print(x)
+    # var slicedx = x[0:1, :, 1:2]
+    # print(slicedx)
+    # print()
 
     # var y = numojo.arange[numojo.f32](0.0, 24.0, step=1)
     # y.reshape(2,3,4, order="F")
@@ -148,7 +234,7 @@ def main():
     # print(arr1.argmin())
     # print(arr1.astype[numojo.i16]())
     # print(arr1.flatten(inplace=True))
-    # print(r.ndshape, r.stride, r.ndshape._size)
+    # print(r.ndshape, r.stride, r.ndshape.ndsize)
     # var t0 = time.now()
     # var res = numojo.math.linalg.matmul_tiled_unrolled_parallelized[numojo.f32](arr, arr1)
     # print((time.now()-t0)/1e9)

@@ -4,7 +4,8 @@
 # ===----------------------------------------------------------------------=== #
 
 import math
-import .. _math_funcs as _mf
+import .. math_funcs as _mf
+import ... core as core
 from ...core.ndarray import NDArray, NDArrayShape
 from ...core.utility_funcs import is_inttype, is_floattype
 
@@ -15,14 +16,13 @@ from ...core.utility_funcs import is_inttype, is_floattype
 
 
 fn gradient[
-    in_dtype: DType, out_dtype: DType = DType.float32
-](x: NDArray[in_dtype], spacing: Scalar[in_dtype]) raises -> NDArray[out_dtype]:
+    dtype: DType
+](x: NDArray[dtype], spacing: Scalar[dtype]) raises -> NDArray[dtype]:
     """
-    Compute the integral of y over x using the trapezoidal rule.
+    Compute the gradient of y over x using the trapezoidal rule.
 
     Parameters:
-        in_dtype: Input data type.
-        out_dtype: Output data type, defaults to float32.
+        dtype: Input data type.
 
     Args:
         x: An array.
@@ -34,39 +34,42 @@ fn gradient[
     Returns:
         The integral of y over x using the trapezoidal rule.
     """
-    # var result: NDArray[out_dtype] = NDArray[out_dtype](x.shape(), random=False)
-    # var space: NDArray[out_dtype] =  NDArray[out_dtype](x.shape(), random=False)
-    # if spacing.isa[NDArray[in_dtype]]():
-    #     for i in range(x.num_elements()):
-    #         space[i] = spacing._get_ptr[NDArray[in_dtype]]()[][i].cast[out_dtype]()
-
-    # elif spacing.isa[Scalar[in_dtype]]():
-    #     var int: Scalar[in_dtype] = spacing._get_ptr[Scalar[in_dtype]]()[]
-    #     space = numojo.arange[in_dtype, out_dtype](1, x.num_elements(), step=int)
-
-    var result: NDArray[out_dtype] = NDArray[out_dtype](x.shape(), random=False)
-    var space: NDArray[out_dtype] = numojo.arange[in_dtype, out_dtype](
-        1, x.num_elements() + 1, step=spacing.cast[in_dtype]()
+    
+    var result: NDArray[dtype] = NDArray[dtype](x.shape(), random=False)
+    var space: NDArray[dtype] = core.arange[dtype](
+        1, x.num_elements() + 1, step=spacing
     )
-    var hu: Scalar[out_dtype] = space[1]
-    var hd: Scalar[out_dtype] = space[0]
-    result[0] = (x[1].cast[out_dtype]() - x[0].cast[out_dtype]()) / (hu - hd)
+    var hu: Scalar[dtype] = space.get_scalar(1)
+    var hd: Scalar[dtype] = space.get_scalar(0)
+    result.store(
+        0,
+        (x.get_scalar(1) - x.get_scalar(0))
+        / (hu - hd),
+    )
 
-    hu = space[x.num_elements() - 1]
-    hd = space[x.num_elements() - 2]
-    result[x.num_elements() - 1] = (
-        x[x.num_elements() - 1].cast[out_dtype]()
-        - x[x.num_elements() - 2].cast[out_dtype]()
-    ) / (hu - hd)
+    hu = space.get_scalar(x.num_elements() - 1)
+    hd = space.get_scalar(x.num_elements() - 2)
+    result.store(
+        x.num_elements() - 1,
+        (
+            x.get_scalar(x.num_elements() - 1)
+            - x.get_scalar(x.num_elements() - 2)
+        )
+        / (hu - hd),
+    )
 
     for i in range(1, x.num_elements() - 1):
-        var hu: Scalar[out_dtype] = space[i + 1] - space[i]
-        var hd: Scalar[out_dtype] = space[i] - space[i - 1]
-        var fi: Scalar[out_dtype] = (
-            hd**2 * x[i + 1].cast[out_dtype]()
-            + (hu**2 - hd**2) * x[i].cast[out_dtype]()
-            - hu**2 * x[i - 1].cast[out_dtype]()
+        var hu: Scalar[dtype] = space.get_scalar(i + 1) - space.get_scalar(
+            i
+        )
+        var hd: Scalar[dtype] = space.get_scalar(i) - space.get_scalar(
+            i - 1
+        )
+        var fi: Scalar[dtype] = (
+            hd**2 * x.get_scalar(i + 1)
+            + (hu**2 - hd**2) * x.get_scalar(i)
+            - hu**2 * x.get_scalar(i - 1)
         ) / (hu * hd * (hu + hd))
-        result[i] = fi
+        result.store(i, fi)
 
     return result

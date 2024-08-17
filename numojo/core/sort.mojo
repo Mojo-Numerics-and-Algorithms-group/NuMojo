@@ -1,9 +1,11 @@
 """
+Implements sort functions
+"""
 # ===----------------------------------------------------------------------=== #
 # Sort Module - Implements sort functions
 # Last updated: 2024-06-20
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 import math
 from algorithm import vectorize
@@ -27,6 +29,13 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     Average complexity: O(n^2) comparisons, O(n^2) swaps.
     Worst-case complexity: O(n^2) comparisons, O(n^2) swaps.
     Worst-case space complexity: O(n).
+
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.bubble_sort(arr)
+        print(sorted_arr)
+        ```
 
     Parameters:
         dtype: The input element type.
@@ -58,15 +67,35 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 fn _partition(
     inout ndarray: NDArray, left: Int, right: Int, pivot_index: Int
 ) raises -> Int:
-    var pivot_value = ndarray[pivot_index]
-    ndarray[pivot_index], ndarray[right] = ndarray[right], ndarray[pivot_index]
+    """Do partition for the data buffer of ndarray.
+
+    Args:
+        ndarray: An NDArray.
+        left: Left index of the partition.
+        right: Right index of the partition.
+        pivot_index: Input pivot index
+
+    Returns:
+        New pivot index.
+    """
+
+    var pivot_value = ndarray.get_scalar(pivot_index)
+    var _value_at_pivot = ndarray.get_scalar(pivot_index)
+    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_pivot)
+
     var store_index = left
 
     for i in range(left, right):
-        if ndarray[i] < pivot_value:
-            ndarray[store_index], ndarray[i] = ndarray[i], ndarray[store_index]
+        if ndarray.get_scalar(i) < pivot_value:
+            var _value_at_store = ndarray.get_scalar(store_index)
+            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
+            ndarray.__setitem__(i, _value_at_store)
             store_index = store_index + 1
-    ndarray[right], ndarray[store_index] = ndarray[store_index], ndarray[right]
+
+    var _value_at_store = ndarray.get_scalar(store_index)
+    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_store)
 
     return store_index
 
@@ -104,6 +133,13 @@ fn quick_sort[
     Worst-case space complexity: O(n).
     Unstable.
 
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.quick_sort(arr)
+        print(sorted_arr)
+        ```
+
     Parameters:
         dtype: The input element type.
 
@@ -128,32 +164,42 @@ fn quick_sort[
 
 
 fn binary_sort[
-    in_dtype: DType, out_dtype: DType = DType.float64
-](array: NDArray[in_dtype]) raises -> NDArray[out_dtype]:
+     dtype: DType = DType.float64
+](array: NDArray[ dtype]) raises -> NDArray[dtype]:
     """
     Binary sorting of NDArray.
 
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.binary_sort(arr)
+        print(sorted_arr)
+        ```
+
     Parameters:
-        in_dtype: The input element type.
-        out_dtype: The output element type.
+         dtype: The element type.
 
     Args:
         array: A NDArray.
 
     Returns:
-        The sorted NDArray of type `out_dtype`.
+        The sorted NDArray of type `dtype`.
     """
-    var result: NDArray[out_dtype] = NDArray[out_dtype](array.shape())
-    for i in range(array.ndshape._size):
-        result[i] = array[i].cast[out_dtype]()
+    @parameter
+    if dtype != array.dtype:
+        alias dtype = array.dtype
+
+    var result: NDArray[dtype] = NDArray[dtype](array.shape())
+    for i in range(array.ndshape.ndsize):
+        result.store(i, array.get_scalar(i).cast[dtype]())
 
     var n = array.num_elements()
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:
-                var temp: Scalar[out_dtype] = result[i - 1]
+                var temp: Scalar[dtype] = result.get_scalar(i - 1)
                 result[i - 1] = result[i]
-                result[i] = temp
+                result.store(i, temp)
     return result
 
 
@@ -169,28 +215,50 @@ fn _argsort_partition(
     right: Int,
     pivot_index: Int,
 ) raises -> Int:
-    var pivot_value = ndarray[pivot_index]
-    ndarray[pivot_index], ndarray[right] = ndarray[right], ndarray[pivot_index]
-    idx_array[pivot_index], idx_array[right] = (
-        idx_array[right],
-        idx_array[pivot_index],
-    )
+    """Do partition for the indices of the data buffer of ndarray.
+
+    Args:
+        ndarray: An NDArray.
+        idx_array: An NDArray.
+        left: Left index of the partition.
+        right: Right index of the partition.
+        pivot_index: Input pivot index
+
+    Returns:
+        New pivot index.
+    """
+
+    var pivot_value = ndarray.get_scalar(pivot_index)
+
+    var _value_at_pivot = ndarray.get_scalar(pivot_index)
+    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_pivot)
+
+    var _value_at_pivot_index = idx_array.get_scalar(pivot_index)
+    idx_array.__setitem__(pivot_index, idx_array.get_scalar(right))
+    idx_array.__setitem__(right, _value_at_pivot_index)
+
     var store_index = left
 
     for i in range(left, right):
-        if ndarray[i] < pivot_value:
-            ndarray[store_index], ndarray[i] = ndarray[i], ndarray[store_index]
-            idx_array[store_index], idx_array[i] = (
-                idx_array[i],
-                idx_array[store_index],
-            )
+        if ndarray.get_scalar(i) < pivot_value:
+            var _value_at_store = ndarray.get_scalar(store_index)
+            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
+            ndarray.__setitem__(i, _value_at_store)
+
+            var _value_at_store_index = idx_array.get_scalar(store_index)
+            idx_array.__setitem__(store_index, idx_array.get_scalar(i))
+            idx_array.__setitem__(i, _value_at_store_index)
+
             store_index = store_index + 1
 
-    ndarray[right], ndarray[store_index] = ndarray[store_index], ndarray[right]
-    idx_array[right], idx_array[store_index] = (
-        idx_array[store_index],
-        idx_array[right],
-    )
+    var _value_at_store = ndarray.get_scalar(store_index)
+    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
+    ndarray.__setitem__(right, _value_at_store)
+
+    var _value_at_store_index = idx_array.get_scalar(store_index)
+    idx_array.__setitem__(store_index, idx_array.get_scalar(right))
+    idx_array.__setitem__(right, _value_at_store_index)
 
     return store_index
 
@@ -231,6 +299,13 @@ fn argsort[
     """
     Argsort of the NDArray using quick sort algorithm.
 
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.argsort(arr)
+        print(sorted_arr)
+        ```
+
     Parameters:
         dtype: The input element type.
 
@@ -246,7 +321,7 @@ fn argsort[
 
     var idx_array = NDArray[DType.index](length)
     for i in range(length):
-        idx_array[i] = i
+        idx_array.__setitem__(i, i)
 
     argsort_inplace(array, idx_array, 0, length - 1)
 

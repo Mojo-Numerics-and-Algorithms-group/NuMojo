@@ -5,10 +5,11 @@ from .comparison import *
 from .linalg import *
 from .statistics import *
 from .calculus import *
-from ._math_funcs import (
+from .math_funcs import (
     Vectorized,
     VectorizedParallelized,
     VectorizedUnroll,
     VectorizedVerbose,
     VectorizedParallelizedNWorkers,
 )
+from .interpolate import *

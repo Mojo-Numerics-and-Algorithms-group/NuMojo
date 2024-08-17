@@ -1,9 +1,11 @@
 """
+Implements backend functions for mathematics
+"""
 # ===----------------------------------------------------------------------=== #
 # Implements generic reusable functions for math
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
-"""
+
 
 from testing import assert_raises
 from algorithm.functional import parallelize, vectorize, num_physical_cores
@@ -27,7 +29,7 @@ struct Vectorized(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -36,18 +38,18 @@ struct Vectorized(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -66,10 +68,10 @@ struct Vectorized(Backend):
         # var op_count:Int =0
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
-            var simd_data3 = array3.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
+            var simd_data3 = array3.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
                 i, SIMD.fma(simd_data1, simd_data2, simd_data3)
             )
             # op_count+=1
@@ -78,7 +80,7 @@ struct Vectorized(Backend):
         # print(op_count)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -87,18 +89,18 @@ struct Vectorized(Backend):
         simd: SIMD[dtype, 1],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            simd: A SIMD[dtype,1] value to be added
+            array1: A NDArray.
+            array2: A NDArray.
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -113,31 +115,31 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
-            # var simd_data3 = array3.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
+            # var simd_data3 = array3.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
                 i, SIMD.fma(simd_data1, simd_data2, simd)
             )
 
         vectorize[closure, opt_nelts](array1.num_elements())
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -147,16 +149,16 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[closure, opt_nelts](array.num_elements())
 
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -165,18 +167,18 @@ struct Vectorized(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -192,16 +194,53 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data1, simd_data2)
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data1, simd_data2)
             )
 
         vectorize[closure, opt_nelts](result_array.num_elements())
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+        alias opt_nelts = simdwidthof[dtype]()
+
+        @parameter
+        fn closure[simdwidth: Int](i: Int):
+            var simd_data1 = array.load[width=simdwidth](i)
+            var simd_data2 = scalar
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data1, simd_data2)
+            )
+
+        vectorize[closure, opt_nelts](result_array.num_elements())
+        return result_array
+
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -220,16 +259,48 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data1, simd_data2)
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
+            # result_array.store[width=simdwidth](
+            #     i, func[dtype, simdwidth](simd_data1, simd_data2)
+            # )
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
         vectorize[closure, opt_nelts](array1.num_elements())
         return result_array
 
-    fn _math_func_is[
+    # TODO: add this function for other backends
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+        alias opt_nelts = simdwidthof[dtype]()
+
+        @parameter
+        fn closure[simdwidth: Int](i: Int):
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
+            )
+
+        vectorize[closure, opt_nelts](array1.num_elements())
+        return result_array
+
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -242,15 +313,15 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[closure, opt_nelts](array.num_elements())
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -261,14 +332,32 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
+            var simd_data = array.load[width=simdwidth](i)
 
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data, intval)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data, intval)
             )
 
         vectorize[closure, opt_nelts](array.num_elements())
         return result_array
+
+
+# This provides a way to bypass bitpacking issues with Bool
+fn bool_simd_store[
+    width: Int
+](ptr: DTypePointer[DType.bool], start: Int, val: SIMD[DType.bool, width]):
+    """
+    Work around function for storing bools from a simd into a DTypePointer.
+
+    Parameters:
+        width: Number of items to be retrieved.
+    
+    Args:
+        ptr: Pointer to be retreived from.
+        start: Start position in pointer.
+        val: Value to store at locations.
+    """
+    (ptr + start).simd_strided_store[width=width, T=Int](val, 1)
 
 
 struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
@@ -284,7 +373,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -293,18 +382,18 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -322,10 +411,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
-            var simd_data3 = array3.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
+            var simd_data3 = array3.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
                 i, SIMD.fma(simd_data1, simd_data2, simd_data3)
             )
 
@@ -334,7 +423,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -346,7 +435,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
@@ -354,7 +443,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -368,10 +457,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
 
-            result_array.store[width=opt_nelts](
+            result_array.store[width=simdwidth](
                 i, SIMD.fma(simd_data1, simd_data2, simd)
             )
 
@@ -380,21 +469,21 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -404,9 +493,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
@@ -415,7 +504,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -424,18 +513,18 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -450,10 +539,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data1, simd_data2)
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data1, simd_data2)
             )
 
         vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
@@ -461,7 +550,46 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+        alias opt_nelts = simdwidthof[dtype]()
+
+        @parameter
+        fn closure[simdwidth: Int](i: Int):
+            var simd_data1 = array.load[width=simdwidth](i)
+            var simd_data2 = scalar
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data1, simd_data2)
+            )
+
+        vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
+            array.num_elements()
+        )
+        return result_array
+
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -480,10 +608,15 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = array2.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data1, simd_data2)
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = array2.load[width=simdwidth](i)
+            # result_array.store[width=simdwidth](
+            #     i, func[dtype, simdwidth](simd_data1, simd_data2)
+            # )
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
         vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
@@ -491,7 +624,35 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_is[
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+        alias opt_nelts = simdwidthof[dtype]()
+
+        @parameter
+        fn closure[simdwidth: Int](i: Int):
+            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
+            )
+
+        vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
+            array1.num_elements()
+        )
+        return result_array
+
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -504,9 +665,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
@@ -514,7 +675,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         )
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -525,10 +686,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
+            var simd_data = array.load[width=simdwidth](i)
 
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data, intval)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data, intval)
             )
 
         vectorize[closure, opt_nelts, unroll_factor=unroll_factor](
@@ -548,7 +709,7 @@ struct Parallelized(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -557,18 +718,18 @@ struct Parallelized(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -590,16 +751,16 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data3 = array3.load[width=opt_nelts](
+                var simd_data3 = array3.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd_data3),
                 )
@@ -609,16 +770,16 @@ struct Parallelized(Backend):
         parallelize[par_closure]()
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=opt_nelts](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=opt_nelts](i+remainder_offset)
-        #     var simd_data3 = array3.load[width=opt_nelts](i+remainder_offset)
-        #     result_array.store[width=opt_nelts](
+        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data3 = array3.load[width=simdwidth](i+remainder_offset)
+        #     result_array.store[width=simdwidth](
         #         i+remainder_offset, SIMD.fma(simd_data1,simd_data2,simd_data3)
         #     )
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -630,7 +791,7 @@ struct Parallelized(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
@@ -638,7 +799,7 @@ struct Parallelized(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -656,14 +817,14 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
 
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd),
                 )
@@ -673,29 +834,29 @@ struct Parallelized(Backend):
         parallelize[par_closure]()
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=opt_nelts](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=opt_nelts](i+remainder_offset)
-        #     result_array.store[width=opt_nelts](
+        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
+        #     result_array.store[width=simdwidth](
         #         i+remainder_offset, SIMD.fma(simd_data1,simd_data2,simd)
         #     )
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -709,11 +870,11 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=opt_nelts](
+                var simd_data = array.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j, func[dtype, opt_nelts](simd_data)
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -721,14 +882,14 @@ struct Parallelized(Backend):
         parallelize[par_closure]()
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data = array.load[width=opt_nelts](i+remainder_offset)
-        #     result_array.store[width=opt_nelts](
-        #         i+remainder_offset, func[dtype, opt_nelts](simd_data)
+        #     var simd_data = array.load[width=simdwidth](i+remainder_offset)
+        #     result_array.store[width=simdwidth](
+        #         i+remainder_offset, func[dtype, simdwidth](simd_data)
         #     )
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -737,18 +898,18 @@ struct Parallelized(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -767,15 +928,15 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
-                    func[dtype, opt_nelts](simd_data1, simd_data2),
+                    func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -783,15 +944,61 @@ struct Parallelized(Backend):
         parallelize[par_closure]()
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=opt_nelts](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=opt_nelts](i+remainder_offset)
-        #     result_array.store[width=opt_nelts](
-        #         i+remainder_offset, func[dtype, opt_nelts](simd_data1, simd_data2)
+        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
+        #     result_array.store[width=simdwidth](
+        #         i+remainder_offset, func[dtype, simdwidth](simd_data1, simd_data2)
         #     )
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+        alias opt_nelts = 1
+        var num_cores: Int = num_physical_cores()
+        var comps_per_core: Int = array.num_elements() // num_cores
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = scalar
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
+            vectorize[closure, opt_nelts](comps_per_core)
+
+        parallelize[par_closure]()
+        return result_array
+
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -814,15 +1021,20 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j,
-                    func[dtype, opt_nelts](simd_data1, simd_data2),
+                # result_array.store[width=simdwidth](
+                #     i + comps_per_core * j,
+                #     func[dtype, simdwidth](simd_data1, simd_data2),
+                # )
+                bool_simd_store[simdwidth](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -830,15 +1042,53 @@ struct Parallelized(Backend):
         parallelize[par_closure]()
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=opt_nelts](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=opt_nelts](i+remainder_offset)
-        #     result_array.store[width=opt_nelts](
-        #         i+remainder_offset, func[dtype, opt_nelts](simd_data1, simd_data2)
+        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
+        #     result_array.store[width=simdwidth](
+        #         i+remainder_offset, func[dtype, simdwidth](simd_data1, simd_data2)
         #     )
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_is[
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+        alias opt_nelts = 1
+        var num_cores: Int = num_physical_cores()
+        var comps_per_core: Int = array1.num_elements() // num_cores
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array1.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+                # result_array.store[width=simdwidth](
+                #     i + comps_per_core * j,
+                #     func[dtype, simdwidth](simd_data1, simd_data2),
+                # )
+                bool_simd_store[simdwidth](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
+            vectorize[closure, opt_nelts](comps_per_core)
+
+        parallelize[par_closure]()
+        return result_array
+
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -855,11 +1105,11 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=opt_nelts](
+                var simd_data = array.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j, func[dtype, opt_nelts](simd_data)
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -867,14 +1117,14 @@ struct Parallelized(Backend):
         parallelize[par_closure]()
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data = array.load[width=opt_nelts](i+remainder_offset)
-        #     result_array.store[width=opt_nelts](
-        #         i+remainder_offset, func[dtype, opt_nelts](simd_data)
+        #     var simd_data = array.load[width=simdwidth](i+remainder_offset)
+        #     result_array.store[width=simdwidth](
+        #         i+remainder_offset, func[dtype, simdwidth](simd_data)
         #     )
         # vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -885,10 +1135,10 @@ struct Parallelized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
+            var simd_data = array.load[width=simdwidth](i)
 
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data, intval)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data, intval)
             )
 
         vectorize[closure, opt_nelts](array.num_elements())
@@ -906,7 +1156,7 @@ struct VectorizedParallelized(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -915,18 +1165,18 @@ struct VectorizedParallelized(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -950,16 +1200,16 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data3 = array3.load[width=opt_nelts](
+                var simd_data3 = array3.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd_data3),
                 )
@@ -970,10 +1220,10 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            var simd_data3 = array3.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            var simd_data3 = array3.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
                 i + remainder_offset,
                 SIMD.fma(simd_data1, simd_data2, simd_data3),
             )
@@ -981,7 +1231,7 @@ struct VectorizedParallelized(Backend):
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -993,7 +1243,7 @@ struct VectorizedParallelized(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
@@ -1001,7 +1251,7 @@ struct VectorizedParallelized(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1021,14 +1271,14 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
 
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd),
                 )
@@ -1039,30 +1289,30 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
                 i + remainder_offset, SIMD.fma(simd_data1, simd_data2, simd)
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1078,11 +1328,11 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=opt_nelts](
+                var simd_data = array.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j, func[dtype, opt_nelts](simd_data)
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1091,15 +1341,15 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
-                i + remainder_offset, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
+                i + remainder_offset, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1108,18 +1358,18 @@ struct VectorizedParallelized(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1140,15 +1390,15 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
-                    func[dtype, opt_nelts](simd_data1, simd_data2),
+                    func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1157,17 +1407,76 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
                 i + remainder_offset,
-                func[dtype, opt_nelts](simd_data1, simd_data2),
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+        alias opt_nelts = simdwidthof[dtype]()
+        var num_cores: Int = num_physical_cores()
+        var comps_per_core: Int = array.num_elements() // num_cores
+        var comps_remainder: Int = array.num_elements() % num_cores
+        var remainder_offset: Int = num_cores * comps_per_core
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = scalar
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
+            vectorize[closure, opt_nelts](comps_per_core)
+
+        parallelize[par_closure]()
+
+        @parameter
+        fn remainder_closure[simdwidth: Int](i: Int):
+            var simd_data1 = array.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = scalar
+            result_array.store[width=simdwidth](
+                i + remainder_offset,
+                func[dtype, simdwidth](simd_data1, simd_data2),
+            )
+
+        vectorize[remainder_closure, opt_nelts](comps_remainder)
+        return result_array
+
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1192,15 +1501,20 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j,
-                    func[dtype, opt_nelts](simd_data1, simd_data2),
+                # result_array.store[width=simdwidth](
+                #     i + comps_per_core * j,
+                #     func[dtype, simdwidth](simd_data1, simd_data2),
+                # )
+                bool_simd_store[simdwidth](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1209,17 +1523,70 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
-                i + remainder_offset,
-                func[dtype, opt_nelts](simd_data1, simd_data2),
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            # result_array.store[width=simdwidth](
+            #     i + remainder_offset,
+            #     func[dtype, simdwidth](simd_data1, simd_data2),
+            # )
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_is[
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+        alias opt_nelts = simdwidthof[dtype]()
+        var num_cores: Int = num_physical_cores()
+        var comps_per_core: Int = array1.num_elements() // num_cores
+        var comps_remainder: Int = array1.num_elements() % num_cores
+        var remainder_offset: Int = num_cores * comps_per_core
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array1.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+                bool_simd_store[simdwidth](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
+            vectorize[closure, opt_nelts](comps_per_core)
+
+        parallelize[par_closure]()
+
+        @parameter
+        fn remainder_closure[simdwidth: Int](i: Int):
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
+            )
+
+        vectorize[remainder_closure, opt_nelts](comps_remainder)
+        return result_array
+
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -1238,11 +1605,11 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=opt_nelts](
+                var simd_data = array.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j, func[dtype, opt_nelts](simd_data)
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1251,15 +1618,15 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
-                i + remainder_offset, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
+                i + remainder_offset, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -1270,10 +1637,10 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
+            var simd_data = array.load[width=simdwidth](i)
 
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data, intval)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data, intval)
             )
 
         vectorize[closure, opt_nelts](array.num_elements())
@@ -1293,7 +1660,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1302,18 +1669,18 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1339,16 +1706,16 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data3 = array3.load[width=opt_nelts](
+                var simd_data3 = array3.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd_data3),
                 )
@@ -1360,10 +1727,10 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            var simd_data3 = array3.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            var simd_data3 = array3.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
                 i + remainder_offset,
                 SIMD.fma(simd_data1, simd_data2, simd_data3),
             )
@@ -1373,7 +1740,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1385,7 +1752,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape.
 
         Parameters:
             dtype: The element type.
@@ -1393,7 +1760,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1413,14 +1780,14 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
 
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd),
                 )
@@ -1431,30 +1798,30 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
                 i + remainder_offset, SIMD.fma(simd_data1, simd_data2, simd)
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1470,11 +1837,11 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=opt_nelts](
+                var simd_data = array.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j, func[dtype, opt_nelts](simd_data)
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1483,15 +1850,15 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
-                i + remainder_offset, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
+                i + remainder_offset, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1500,18 +1867,18 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1532,15 +1899,15 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
+                result_array.store[width=simdwidth](
                     i + comps_per_core * j,
-                    func[dtype, opt_nelts](simd_data1, simd_data2),
+                    func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1549,17 +1916,74 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
                 i + remainder_offset,
-                func[dtype, opt_nelts](simd_data1, simd_data2),
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+        alias opt_nelts = simdwidthof[dtype]()
+        var comps_per_core: Int = array.num_elements() // num_cores
+        var comps_remainder: Int = array.num_elements() % num_cores
+        var remainder_offset: Int = num_cores * comps_per_core
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = scalar
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
+            vectorize[closure, opt_nelts](comps_per_core)
+
+        parallelize[par_closure](num_cores, num_cores)
+
+        @parameter
+        fn remainder_closure[simdwidth: Int](i: Int):
+            var simd_data1 = array.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = scalar
+            result_array.store[width=simdwidth](
+                i + remainder_offset,
+                func[dtype, simdwidth](simd_data1, simd_data2),
+            )
+
+        vectorize[remainder_closure, opt_nelts](comps_remainder)
+        return result_array
+
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1584,15 +2008,20 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=opt_nelts](
+                var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=opt_nelts](
+                var simd_data2 = array2.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j,
-                    func[dtype, opt_nelts](simd_data1, simd_data2),
+                # result_array.store[width=simdwidth](
+                #     i + comps_per_core * j,
+                #     func[dtype, simdwidth](simd_data1, simd_data2),
+                # )
+                bool_simd_store[simdwidth](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1601,17 +2030,70 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=opt_nelts](i + remainder_offset)
-            var simd_data2 = array2.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
-                i + remainder_offset,
-                func[dtype, opt_nelts](simd_data1, simd_data2),
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
+            # result_array.store[width=simdwidth](
+            #     i + remainder_offset,
+            #     func[dtype, simdwidth](simd_data1, simd_data2),
+            # )
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_is[
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+        alias opt_nelts = simdwidthof[dtype]()
+        # var num_cores: Int = num_physical_cores()
+        var comps_per_core: Int = array1.num_elements() // num_cores
+        var comps_remainder: Int = array1.num_elements() % num_cores
+        var remainder_offset: Int = num_cores * comps_per_core
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array1.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+                bool_simd_store[simdwidth](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
+            vectorize[closure, opt_nelts](comps_per_core)
+
+        parallelize[par_closure](num_cores, num_cores)
+
+        @parameter
+        fn remainder_closure[simdwidth: Int](i: Int):
+            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            bool_simd_store[simdwidth](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, simdwidth](simd_data1, simd_data2),
+            )
+
+        vectorize[remainder_closure, opt_nelts](comps_remainder)
+        return result_array
+
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -1630,11 +2112,11 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=opt_nelts](
+                var simd_data = array.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=opt_nelts](
-                    i + comps_per_core * j, func[dtype, opt_nelts](simd_data)
+                result_array.store[width=simdwidth](
+                    i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
             vectorize[closure, opt_nelts](comps_per_core)
@@ -1643,15 +2125,15 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i + remainder_offset)
-            result_array.store[width=opt_nelts](
-                i + remainder_offset, func[dtype, opt_nelts](simd_data)
+            var simd_data = array.load[width=simdwidth](i + remainder_offset)
+            result_array.store[width=simdwidth](
+                i + remainder_offset, func[dtype, simdwidth](simd_data)
             )
 
         vectorize[remainder_closure, opt_nelts](comps_remainder)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -1662,10 +2144,10 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=opt_nelts](i)
+            var simd_data = array.load[width=simdwidth](i)
 
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data, intval)
+            result_array.store[width=simdwidth](
+                i, func[dtype, simdwidth](simd_data, intval)
             )
 
         vectorize[closure, opt_nelts](array.num_elements())
@@ -1682,7 +2164,7 @@ struct Naive(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1691,18 +2173,18 @@ struct Naive(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1727,7 +2209,7 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1739,7 +2221,7 @@ struct Naive(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
@@ -1747,7 +2229,7 @@ struct Naive(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1768,21 +2250,21 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1794,7 +2276,7 @@ struct Naive(Backend):
             result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1803,18 +2285,18 @@ struct Naive(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1834,7 +2316,39 @@ struct Naive(Backend):
             )
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+
+        for i in range(array.num_elements()):
+            var simd_data1 = array.load[width=1](i)
+            var simd_data2 = scalar
+            result_array.store[width=1](
+                i, func[dtype, 1](simd_data1, simd_data2)
+            )
+        return result_array
+
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -1853,12 +2367,39 @@ struct Naive(Backend):
         for i in range(array1.num_elements()):
             var simd_data1 = array1.load[width=1](i)
             var simd_data2 = array2.load[width=1](i)
-            result_array.store[width=1](
-                i, func[dtype, 1](simd_data1, simd_data2)
+            # result_array.store[width=1](
+            #     i, func[dtype, 1](simd_data1, simd_data2)
+            # )
+            bool_simd_store[1](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, 1](simd_data1, simd_data2),
             )
         return result_array
 
-    fn _math_func_is[
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+
+        for i in range(array1.num_elements()):
+            var simd_data1 = array1.load[width=1](i)
+            var simd_data2 = scalar
+            bool_simd_store[1](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, 1](simd_data1, simd_data2),
+            )
+        return result_array
+
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -1873,7 +2414,7 @@ struct Naive(Backend):
             result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -1898,7 +2439,7 @@ struct VectorizedVerbose(Backend):
     fn __init__(inout self: Self):
         pass
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1907,18 +2448,18 @@ struct VectorizedVerbose(Backend):
         array3: NDArray[dtype],
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray
+        Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
-            array3: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
+            array3: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -1956,7 +2497,7 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn _math_func_fma[
+    fn math_func_fma[
         dtype: DType,
     ](
         self: Self,
@@ -1968,7 +2509,7 @@ struct VectorizedVerbose(Backend):
         Apply a SIMD level fuse multipy add function of three variables and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
@@ -1976,7 +2517,7 @@ struct VectorizedVerbose(Backend):
         Args:
             array1: A NDArray.
             array2: A NDArray.
-            simd: A SIMD[dtype,1] value to be added
+            simd: A SIMD[dtype,1] value to be added.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -2010,21 +2551,21 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn _math_func_1_tensor_in_one_tensor_out[
+    fn math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of one variable and one return to a NDArray
+        Apply a SIMD function of one variable and one return to a NDArray.
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array: A NDArray
+            array: A NDArray.
 
         Returns:
             A new NDArray that is NDArray with the function func applied.
@@ -2048,7 +2589,7 @@ struct VectorizedVerbose(Backend):
                 result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_2_tensor_in_one_tensor_out[
+    fn math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -2057,18 +2598,18 @@ struct VectorizedVerbose(Backend):
         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
     ) raises -> NDArray[dtype]:
         """
-        Apply a SIMD function of two variable and one return to a NDArray
+        Apply a SIMD function of two variable and one return to a NDArray.
 
         Constraints:
-            Both tensors must have the same shape
+            Both arrays must have the same shape
 
         Parameters:
             dtype: The element type.
-            func: the SIMD function to to apply.
+            func: The SIMD function to to apply.
 
         Args:
-            array1: A NDArray
-            array2: A NDArray
+            array1: A NDArray.
+            array2: A NDArray.
 
         Returns:
             A a new NDArray that is NDArray with the function func applied.
@@ -2101,7 +2642,52 @@ struct VectorizedVerbose(Backend):
                 )
         return result_array
 
-    fn _math_func_compare_2_tensors[
+    fn math_func_1_array_1_scalar_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            array: A NDArray.
+            scalar: A Scalars.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+        alias opt_nelts = simdwidthof[dtype]()
+        for i in range(
+            0, opt_nelts * (array.num_elements() // opt_nelts), opt_nelts
+        ):
+            var simd_data1 = array.load[width=opt_nelts](i)
+            var simd_data2 = scalar
+            result_array.store[width=opt_nelts](
+                i, func[dtype, opt_nelts](simd_data1, simd_data2)
+            )
+
+        if array.num_elements() % opt_nelts != 0:
+            for i in range(
+                opt_nelts * (array.num_elements() // opt_nelts),
+                array.num_elements(),
+            ):
+                var simd_data1 = array.load[width=1](i)
+                var simd_data2 = scalar
+                result_array.store[width=1](
+                    i, func[dtype, 1](simd_data1, simd_data2)
+                )
+        return result_array
+
+    fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -2122,10 +2708,14 @@ struct VectorizedVerbose(Backend):
         ):
             var simd_data1 = array1.load[width=opt_nelts](i)
             var simd_data2 = array2.load[width=opt_nelts](i)
-            result_array.store[width=opt_nelts](
-                i, func[dtype, opt_nelts](simd_data1, simd_data2)
+            # result_array.store[width=simdwidth](
+            #     i, func[dtype, opt_nelts](simd_data1, simd_data2)
+            # )
+            bool_simd_store[opt_nelts](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, opt_nelts](simd_data1, simd_data2),
             )
-
         if array1.num_elements() % opt_nelts != 0:
             for i in range(
                 opt_nelts * (array1.num_elements() // opt_nelts),
@@ -2133,12 +2723,53 @@ struct VectorizedVerbose(Backend):
             ):
                 var simd_data1 = array1.load[width=1](i)
                 var simd_data2 = array2.load[width=1](i)
-                result_array.store[width=1](
-                    i, func[dtype, 1](simd_data1, simd_data2)
+                # result_array.store[width=1](
+                #     i, func[dtype, 1](simd_data1, simd_data2)
+                # )
+                bool_simd_store[1](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, 1](simd_data1, simd_data2),
                 )
         return result_array
 
-    fn _math_func_is[
+    fn math_func_compare_array_and_scalar[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[DType.bool, simd_w],
+    ](
+        self: Self, array1: NDArray[dtype], scalar: Scalar[dtype]
+    ) raises -> NDArray[DType.bool]:
+        var result_array: NDArray[DType.bool] = NDArray[DType.bool](
+            array1.shape()
+        )
+        alias opt_nelts = simdwidthof[dtype]()
+        for i in range(
+            0, opt_nelts * (array1.num_elements() // opt_nelts), opt_nelts
+        ):
+            var simd_data1 = array1.load[width=opt_nelts](i)
+            var simd_data2 = SIMD[dtype, opt_nelts].splat(scalar)
+            bool_simd_store[opt_nelts](
+                result_array.unsafe_ptr(),
+                i,
+                func[dtype, opt_nelts](simd_data1, simd_data2),
+            )
+        if array1.num_elements() % opt_nelts != 0:
+            for i in range(
+                opt_nelts * (array1.num_elements() // opt_nelts),
+                array1.num_elements(),
+            ):
+                var simd_data1 = array1.load[width=1](i)
+                var simd_data2 = SIMD[dtype, 1].splat(scalar)
+                bool_simd_store[1](
+                    result_array.unsafe_ptr(),
+                    i,
+                    func[dtype, 1](simd_data1, simd_data2),
+                )
+        return result_array
+
+    fn math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -2165,7 +2796,7 @@ struct VectorizedVerbose(Backend):
                 result_array.store[width=1](i, simd_data)
         return result_array
 
-    fn _math_func_simd_int[
+    fn math_func_simd_int[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w

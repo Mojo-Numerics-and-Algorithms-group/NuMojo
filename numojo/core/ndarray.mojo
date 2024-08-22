@@ -21,6 +21,7 @@ from builtin.math import pow
 from builtin.bool import all as allb
 from builtin.bool import any as anyb
 from algorithm import parallelize, vectorize
+from python import Python
 
 import . _array_funcs as _af
 from ..math.statistics.stats import mean, prod, sum
@@ -1138,6 +1139,36 @@ struct NDArray[dtype: DType = DType.float64](
         self.order = order
         self.data = DTypePointer[dtype].alloc(size)
         memset_zero(self.data, size)
+
+    # creating NDArray from numpy array
+    fn __init__(inout self, *shape: Int, data: PythonObject, order: String = "C") raises:
+        self.ndim = shape.__len__()
+        self.ndshape = NDArrayShape(shape)
+        self.stride = NDArrayStride(shape, offset=0, order=order)
+        self.coefficient = NDArrayStride(shape, offset=0, order=order)
+        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
+        self.datatype = dtype
+        self.order = order
+        for i in range(self.ndshape.ndsize):
+            self.data[i] = data.item(PythonObject(i)).to_float64()
+        # if self.datatype != DType.float64:
+        #     raise Error("Only float64 is supported for now")
+
+        # var array: PythonObject
+        # try:
+        #     var np = Python.import_module("numpy")
+        #     array = np.float32(data.copy())
+        # except e:
+        #     array = data.copy()
+        #     print("Error in to_tensor", e)
+
+        # var pointer = int(array.__array_interface__["data"][0].to_float64())
+        # var pointer_d = DTypePointer[self.dtype](address=pointer)
+        # memcpy(self.data, pointer_d, self.ndshape.ndsize)
+
+        # _ = array  # to avoid unused variable warning
+        # _ = data
 
     # for creating views
     fn __init__(

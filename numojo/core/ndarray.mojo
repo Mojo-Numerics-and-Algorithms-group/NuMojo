@@ -2579,13 +2579,12 @@ struct NDArray[dtype: DType = DType.float64](
         var rows = self.ndshape[0]
         var cols = self.ndshape[1]
         
-        var transposed = NDArray[dtype](cols, rows)
+        var transposed = NDArray[dtype](cols, rows, random=False)
         for i in range(rows):
             for j in range(cols):
-                var xedni: List[Int] = List[Int](j, 1)
-                transposed[xedni] = self[i, j]
-        
-        self.data = transposed.data
+                # the setitem is not working due to the symmetry issue of getter and setter
+                transposed.__setitem__(VariadicList[Int](j,i), val=self.item(i, j)) 
+        self = transposed
 
     fn all(self) raises -> Bool:
         """

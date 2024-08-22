@@ -165,7 +165,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         )
         self.ndlen = len(shape)
         self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape))
+        memset_zero(self.ndshape, len(shape)) 
         var count: Int = 1
         for i in range(len(shape)):
             self.ndshape[i] = shape[i]
@@ -1142,9 +1142,15 @@ struct NDArray[dtype: DType = DType.float64](
 
     # creating NDArray from numpy array
     # TODO: Make it work for all data types apart from float64
-    fn __init__(inout self, *shape: Int, data: PythonObject, order: String = "C") raises:
+    fn __init__(inout self, data: PythonObject, order: String = "C") raises:
         if dtype != DType.float64:
             raise Error("Only float64 is supported for now")
+        var len = int(len(data.shape))
+        var shape: List[Int] = List[Int]()
+        for i in range(len):
+            if int(data.shape[i]) == 1:
+                continue
+            shape.append(int(data.shape[i]))
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)

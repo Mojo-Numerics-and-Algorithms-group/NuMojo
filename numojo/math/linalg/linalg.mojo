@@ -92,7 +92,7 @@ fn dot[
 
     alias opt_nelts = simdwidthof[dtype]()
     if array1.ndshape.ndlen == array2.ndshape.ndlen == 1:
-        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.ndshape.ndsize))
 
         @parameter
         fn vectorized_dot[simd_width: Int](idx: Int) -> None:
@@ -103,7 +103,7 @@ fn dot[
             )
 
         vectorize[vectorized_dot, opt_nelts](array1.ndshape.ndsize)
-        return result
+        return result^
     else:
         raise Error(
             "Cross product is not supported for arrays of shape "

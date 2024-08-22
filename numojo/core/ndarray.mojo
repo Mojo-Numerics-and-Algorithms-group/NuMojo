@@ -1141,7 +1141,10 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, size)
 
     # creating NDArray from numpy array
+    # TODO: Make it work for all data types apart from float64
     fn __init__(inout self, *shape: Int, data: PythonObject, order: String = "C") raises:
+        if dtype != DType.float64:
+            raise Error("Only float64 is supported for now")
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
@@ -1152,8 +1155,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.order = order
         for i in range(self.ndshape.ndsize):
             self.data[i] = data.item(PythonObject(i)).to_float64()
-        # if self.datatype != DType.float64:
-        #     raise Error("Only float64 is supported for now")
 
         # var array: PythonObject
         # try:
@@ -1226,7 +1227,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.data.free()
 
     # ===-------------------------------------------------------------------===#
-    # Set and get dunders
+    # Setter dunders
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
@@ -1288,6 +1289,22 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = _get_index(index, self.coefficient)
         self.data.store[width=1](idx, val)
 
+    # compiler doesn't accept this
+    # fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
+    #     """
+    #     Set the value of the array at the indices where the mask is true.
+    #     """
+    #     if mask.ndshape != self.ndshape: # this behavious could be removed potentially
+    #         raise Error("Mask and array must have the same shape")
+
+    #     for i in range(mask.ndshape.ndsize):
+    #         if mask.data.load[width=1](i):
+    #             print(value)
+    #             self.data.store[width=1](i, value)
+
+    # ===-------------------------------------------------------------------===#
+    # Getter dunders
+    # ===-------------------------------------------------------------------===#
     fn get_scalar(self, index: Int) raises -> SIMD[dtype, 1]:
         """
         Linearly retreive a value from the underlying Pointer.
@@ -1850,19 +1867,6 @@ struct NDArray[dtype: DType = DType.float64](
             "core:ndarray:NDArray:__bool__: Bool is currently only implemented"
             " for DType.bool"
         )
-
-    # compiler doesn't accept this
-    # fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
-    #     """
-    #     Set the value of the array at the indices where the mask is true.
-    #     """
-    #     if mask.ndshape != self.ndshape: # this behavious could be removed potentially
-    #         raise Error("Mask and array must have the same shape")
-
-    #     for i in range(mask.ndshape.ndsize):
-    #         if mask.data.load[width=1](i):
-    #             print(value)
-    #             self.data.store[width=1](i, value)
 
     fn __int__(self) raises -> Int:
         """Get Int representation of the array.
@@ -2559,6 +2563,23 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     # Operations along an axis
     # ===-------------------------------------------------------------------===#
+    # TODO: implement for arbitrary axis1, and axis2
+    fn T(inout self) raises:
+        """
+        Transpose the array.
+        """
+        if self.ndim !=2:
+            raise Error("Only 2-D arrays can be transposed currently.")
+        var rows = self.ndshape[0]
+        var cols = self.ndshape[1]
+        
+        var transposed = NDArray[dtype](cols, rows)
+        for i in range(rows):
+            for j in range(cols):
+                var xedni: List[Int] = List[Int](j, 1)
+                transposed[xedni] = self[i, j]
+        
+        self.data = transposed.data
 
     fn all(self) raises -> Bool:
         """

@@ -6,7 +6,7 @@ Implements backend functions for mathematics
 # Last updated: 2024-06-16
 # ===----------------------------------------------------------------------=== #
 
-
+from sys.info import simdwidthof
 from testing import assert_raises
 from algorithm.functional import parallelize, vectorize, num_physical_cores
 
@@ -290,7 +290,8 @@ struct Vectorized(Backend):
         @parameter
         fn closure[simdwidth: Int](i: Int):
             var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            # var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
                 i,
@@ -345,7 +346,7 @@ struct Vectorized(Backend):
 # This provides a way to bypass bitpacking issues with Bool
 fn bool_simd_store[
     width: Int
-](ptr: DTypePointer[DType.bool], start: Int, val: SIMD[DType.bool, width]):
+](ptr: UnsafePointer[Scalar[DType.bool]], start: Int, val: SIMD[DType.bool, width]):
     """
     Work around function for storing bools from a simd into a DTypePointer.
 
@@ -357,7 +358,9 @@ fn bool_simd_store[
         start: Start position in pointer.
         val: Value to store at locations.
     """
-    (ptr + start).simd_strided_store[width=width, T=Int](val, 1)
+    # (ptr + start).simd_strided_store[width=width, T=Int](val, 1)
+    # simd_strided_store[width=width, T=Int](ptr + start, val, 1)
+    pass
 
 
 struct VectorizedUnroll[unroll_factor: Int = 1](Backend):

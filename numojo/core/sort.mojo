@@ -164,8 +164,8 @@ fn quick_sort[
 
 
 fn binary_sort[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> NDArray[dtype]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Binary sorting of NDArray.
 
@@ -185,6 +185,7 @@ fn binary_sort[
     Returns:
         The sorted NDArray of type `dtype`.
     """
+
     @parameter
     if dtype != array.dtype:
         alias dtype = array.dtype

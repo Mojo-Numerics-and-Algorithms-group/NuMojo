@@ -7,7 +7,6 @@ Constants
 # ===----------------------------------------------------------------------=== #
 
 
-
 @value
 struct Constants(AnyType):
     """Define constants.

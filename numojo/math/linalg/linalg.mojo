@@ -15,10 +15,8 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
 
 fn cross[
-     dtype: DType = DType.float64
-](array1: NDArray[ dtype], array2: NDArray[ dtype]) raises -> NDArray[
-    dtype
-]:
+    dtype: DType = DType.float64
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Compute the cross product of two arrays.
 

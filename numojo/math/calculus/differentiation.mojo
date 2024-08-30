@@ -34,7 +34,7 @@ fn gradient[
     Returns:
         The integral of y over x using the trapezoidal rule.
     """
-    
+
     var result: NDArray[dtype] = NDArray[dtype](x.shape(), random=False)
     var space: NDArray[dtype] = core.arange[dtype](
         1, x.num_elements() + 1, step=spacing
@@ -43,8 +43,7 @@ fn gradient[
     var hd: Scalar[dtype] = space.get_scalar(0)
     result.store(
         0,
-        (x.get_scalar(1) - x.get_scalar(0))
-        / (hu - hd),
+        (x.get_scalar(1) - x.get_scalar(0)) / (hu - hd),
     )
 
     hu = space.get_scalar(x.num_elements() - 1)
@@ -59,12 +58,8 @@ fn gradient[
     )
 
     for i in range(1, x.num_elements() - 1):
-        var hu: Scalar[dtype] = space.get_scalar(i + 1) - space.get_scalar(
-            i
-        )
-        var hd: Scalar[dtype] = space.get_scalar(i) - space.get_scalar(
-            i - 1
-        )
+        var hu: Scalar[dtype] = space.get_scalar(i + 1) - space.get_scalar(i)
+        var hd: Scalar[dtype] = space.get_scalar(i) - space.get_scalar(i - 1)
         var fi: Scalar[dtype] = (
             hd**2 * x.get_scalar(i + 1)
             + (hu**2 - hd**2) * x.get_scalar(i)

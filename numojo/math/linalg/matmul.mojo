@@ -67,9 +67,9 @@ fn matmul_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    
+
     Matrix multiplication Vectorized and parallelized.
-    
+
     Conduct `matmul` using `vectorize` and `parallelize`.
 
     Reference: https://docs.modular.com/mojo/notebooks/Matmul

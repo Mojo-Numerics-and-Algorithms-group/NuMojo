@@ -1,0 +1,45 @@
+name: Run pre-commit
+on:
+  # Run pre-commit on pull requests
+  pull_request:
+  # Add a workflow_dispatch event to run pre-commit manually
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint:
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download Modular installer
+        run: |
+          curl -s https://get.modular.com | sh -
+
+      - name: Install Mojo
+        run: |
+          modular install mojo
+
+          # Put Mojo on the PATH
+          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
+          echo "$HOME/.modular/pkg/packages.modular.com_nightly_mojo/bin" >> $GITHUB_PATH
+      
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit install
+      
+      - name: Run pre-commit
+        run: pre-commit run --all-files

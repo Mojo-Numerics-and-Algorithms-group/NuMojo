@@ -193,7 +193,7 @@ fn max[
     Args:
         array: NDArray.
         axis: The axis along which the sum is performed.
-    
+
     Returns:
         An NDArray.
     """
@@ -239,7 +239,7 @@ fn min[
     Args:
         array: NDArray.
         axis: The axis along which the sum is performed.
-    
+
     Returns:
         An NDArray.
     """

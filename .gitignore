@@ -12,3 +12,4 @@ numojo.mojopkg
 .gitignore
 bench.mojo
 test_ndarray.ipynb
+/venv

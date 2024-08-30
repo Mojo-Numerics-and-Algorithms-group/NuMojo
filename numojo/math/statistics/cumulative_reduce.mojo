@@ -27,8 +27,8 @@ TODO:
 
 
 fn cumsum[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     """Sum of all items of an array.
 
     Parameters:
@@ -41,20 +41,20 @@ fn cumsum[
         The sum of all items in the array as a SIMD Value of `dtype`.
     """
     var result = Scalar[dtype]()
-    alias opt_nelts: Int = simdwidthof[ dtype]()
+    alias opt_nelts: Int = simdwidthof[dtype]()
 
     @parameter
     fn vectorize_sum[simd_width: Int](idx: Int) -> None:
         var simd_data = array.load[width=simd_width](idx)
-        result += (simd_data.reduce_add())
+        result += simd_data.reduce_add()
 
     vectorize[vectorize_sum, opt_nelts](array.num_elements())
     return result
 
 
 fn cumprod[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) -> SIMD[dtype, 1]:
     """Product of all items in an array.
 
     Parameters:
@@ -68,12 +68,12 @@ fn cumprod[
     """
 
     var result: SIMD[dtype, 1] = SIMD[dtype, 1](1.0)
-    alias opt_nelts = simdwidthof[ dtype]()
+    alias opt_nelts = simdwidthof[dtype]()
 
     @parameter
     fn vectorize_sum[simd_width: Int](idx: Int) -> None:
         var simd_data = array.load[width=simd_width](idx)
-        result *= (simd_data.reduce_mul())
+        result *= simd_data.reduce_mul()
 
     vectorize[vectorize_sum, opt_nelts](array.num_elements())
     return result
@@ -86,8 +86,8 @@ fn cumprod[
 
 
 fn cummean[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
     """Arithmatic mean of all items of an array.
 
     Parameters:
@@ -100,17 +100,17 @@ fn cummean[
         The mean of all of the member values of array as a SIMD Value of `dtype`.
     """
     # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[ dtype]() and is_inttype[dtype]():
+    if is_inttype[dtype]() and is_inttype[dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
-    return cumsum[ dtype](array) / (array.num_elements())
+    return cumsum[dtype](array) / (array.num_elements())
 
 
 fn mode[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
     """Mode of all items of an array.
 
     Parameters:
@@ -122,9 +122,7 @@ fn mode[
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_array: NDArray[dtype] = binary_sort[ dtype](
-        array
-    )
+    var sorted_array: NDArray[dtype] = binary_sort[dtype](array)
     var max_count = 0
     var mode_value = sorted_array.item(0)
     var current_count = 1
@@ -146,8 +144,8 @@ fn mode[
 
 # * IMPLEMENT median high and low
 fn median[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
     """Median value of all items of an array.
 
     Parameters:
@@ -159,7 +157,7 @@ fn median[
     Returns:
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_array = binary_sort[ dtype](array)
+    var sorted_array = binary_sort[dtype](array)
     var n = array.num_elements()
     if n % 2 == 1:
         return sorted_array.item(n // 2)
@@ -169,8 +167,8 @@ fn median[
 
 # for max and min, I can later change to the latest reduce.max, reduce.min()
 fn maxT[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
     """
     Maximum value of a array.
 
@@ -183,8 +181,8 @@ fn maxT[
         The maximum of all of the member values of array as a SIMD Value of `dtype`.
     """
     # TODO: Test this
-    alias opt_nelts = simdwidthof[ dtype]()
-    var max_value = NDArray[ dtype](NDArrayShape(opt_nelts))
+    alias opt_nelts = simdwidthof[dtype]()
+    var max_value = NDArray[dtype](NDArrayShape(opt_nelts))
     for i in range(opt_nelts):
         max_value[i] = array[0]
     # var max_value: SIMD[ dtype, opt_nelts] = SIMD[ dtype, opt_nelts](array[0])
@@ -201,7 +199,7 @@ fn maxT[
 
     vectorize[vectorized_max, opt_nelts](array.num_elements())
 
-    var result: Scalar[ dtype] = Scalar[dtype](max_value.get_scalar(0))
+    var result: Scalar[dtype] = Scalar[dtype](max_value.get_scalar(0))
     for i in range(max_value.__len__()):
         if max_value.get_scalar(i) > result:
             result = max_value.get_scalar(i)
@@ -209,8 +207,8 @@ fn maxT[
 
 
 fn minT[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
     """
     Minimum value of a array.
 
@@ -223,8 +221,8 @@ fn minT[
     Returns:
         The minimum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    alias opt_nelts = simdwidthof[ dtype]()
-    var min_value = NDArray[ dtype](NDArrayShape(opt_nelts))
+    alias opt_nelts = simdwidthof[dtype]()
+    var min_value = NDArray[dtype](NDArrayShape(opt_nelts))
     for i in range(opt_nelts):
         min_value[i] = array[0]
 
@@ -240,7 +238,7 @@ fn minT[
 
     vectorize[vectorized_min, opt_nelts](array.num_elements())
 
-    var result: Scalar[ dtype] = Scalar[dtype](min_value.get_scalar(0))
+    var result: Scalar[dtype] = Scalar[dtype](min_value.get_scalar(0))
     for i in range(min_value.__len__()):
         if min_value.get_scalar(i) < result:
             result = min_value.get_scalar(i)
@@ -249,10 +247,10 @@ fn minT[
 
 
 fn cumpvariance[
-     dtype: DType = DType.float64
-](
-    array: NDArray[ dtype], mu: Optional[Scalar[ dtype]] = None
-) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
+    dtype, 1
+]:
     """
     Population variance of a array.
 
@@ -266,7 +264,7 @@ fn cumpvariance[
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
     # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[ dtype]() and is_inttype[dtype]():
+    if is_inttype[dtype]() and is_inttype[dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
@@ -274,7 +272,7 @@ fn cumpvariance[
 
     var mean_value: Scalar[dtype]
     if not mu:
-        mean_value = cummean[ dtype](array)
+        mean_value = cummean[dtype](array)
     else:
         mean_value = mu.value()[]
 
@@ -287,10 +285,10 @@ fn cumpvariance[
 
 
 fn cumvariance[
-     dtype: DType = DType.float64
-](
-    array: NDArray[ dtype], mu: Optional[Scalar[ dtype]] = None
-) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
+    dtype, 1
+]:
     """
     Variance of a array.
 
@@ -305,7 +303,7 @@ fn cumvariance[
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
     # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[ dtype]() and is_inttype[dtype]():
+    if is_inttype[dtype]() and is_inttype[dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
@@ -313,7 +311,7 @@ fn cumvariance[
     var mean_value: Scalar[dtype]
 
     if not mu:
-        mean_value = cummean[ dtype](array)
+        mean_value = cummean[dtype](array)
     else:
         mean_value = mu.value()[]
 
@@ -325,10 +323,10 @@ fn cumvariance[
 
 
 fn cumpstdev[
-     dtype: DType = DType.float64
-](
-    array: NDArray[ dtype], mu: Optional[Scalar[ dtype]] = None
-) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
+    dtype, 1
+]:
     """
     Population standard deviation of a array.
 
@@ -343,19 +341,19 @@ fn cumpstdev[
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
     # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[ dtype]() and is_inttype[dtype]():
+    if is_inttype[dtype]() and is_inttype[dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
-    return math.sqrt(cumpvariance[ dtype](array, mu))
+    return math.sqrt(cumpvariance[dtype](array, mu))
 
 
 fn cumstdev[
-     dtype: DType = DType.float64
-](
-    array: NDArray[ dtype], mu: Optional[Scalar[ dtype]] = None
-) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
+    dtype, 1
+]:
     """
     Standard deviation of a array.
 
@@ -369,18 +367,18 @@ fn cumstdev[
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
     # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[ dtype]() and is_inttype[dtype]():
+    if is_inttype[dtype]() and is_inttype[dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"
             " precision errors"
         )
-    return math.sqrt(cumvariance[ dtype](array, mu))
+    return math.sqrt(cumvariance[dtype](array, mu))
 
 
 # this roughly seems to be just an alias for min in numpy
 fn amin[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
     """
     Minimum value of an array.
 
@@ -392,13 +390,13 @@ fn amin[
     Returns:
         The minimum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return minT[ dtype](array)
+    return minT[dtype](array)
 
 
 # this roughly seems to be just an alias for max in numpy
 fn amax[
-     dtype: DType = DType.float64
-](array: NDArray[ dtype]) raises -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
     """
     Maximum value of a array.
 
@@ -410,12 +408,12 @@ fn amax[
     Returns:
         The maximum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return maxT[ dtype](array)
+    return maxT[dtype](array)
 
 
 fn mimimum[
-     dtype: DType = DType.float64
-](s1: SIMD[ dtype, 1], s2: SIMD[ dtype, 1]) -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](s1: SIMD[dtype, 1], s2: SIMD[dtype, 1]) -> SIMD[dtype, 1]:
     """
     Minimum value of two SIMD values.
 
@@ -432,8 +430,8 @@ fn mimimum[
 
 
 fn maximum[
-     dtype: DType = DType.float64
-](s1: SIMD[ dtype, 1], s2: SIMD[ dtype, 1]) -> SIMD[dtype, 1]:
+    dtype: DType = DType.float64
+](s1: SIMD[dtype, 1], s2: SIMD[dtype, 1]) -> SIMD[dtype, 1]:
     """
     Maximum value of two SIMD values.
 
@@ -450,10 +448,8 @@ fn maximum[
 
 
 fn minimum[
-     dtype: DType = DType.float64
-](array1: NDArray[ dtype], array2: NDArray[ dtype]) raises -> NDArray[
-    dtype
-]:
+    dtype: DType = DType.float64
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element wise minimum of two arrays.
 
@@ -468,7 +464,7 @@ fn minimum[
     """
     var result: NDArray[dtype] = NDArray[dtype](array1.shape())
 
-    alias nelts = simdwidthof[ dtype]()
+    alias nelts = simdwidthof[dtype]()
     if array1.shape() != array2.shape():
         raise Error("array shapes are not the same")
 
@@ -487,10 +483,8 @@ fn minimum[
 
 
 fn maximum[
-     dtype: DType = DType.float64
-](array1: NDArray[ dtype], array2: NDArray[ dtype]) raises -> NDArray[
-    dtype
-]:
+    dtype: DType = DType.float64
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element wise maximum of two arrays.
 
@@ -505,7 +499,7 @@ fn maximum[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](array1.shape())
-    alias nelts = simdwidthof[ dtype]()
+    alias nelts = simdwidthof[dtype]()
     if array1.shape() != array2.shape():
         raise Error("array shapes are not the same")
 

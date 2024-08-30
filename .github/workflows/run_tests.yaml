@@ -1,0 +1,53 @@
+name: NuMojo Unit Tests
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  testing-numojo:
+    name: with ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macos-14"]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download Modular installer
+        run: |
+          curl -s https://get.modular.com | sh -
+
+      - name: Activate virtualenv
+        run: |
+          python3 -m venv $HOME/venv/
+          . $HOME/venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
+      - name: Install Mojo
+        run: |
+          modular install mojo
+
+      - name: Set path Mojo
+        run: |
+          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
+          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+
+      - name: Run tests
+        run: |
+          pip install numpy
+          mojo test tests -I .

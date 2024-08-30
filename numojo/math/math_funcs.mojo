@@ -351,7 +351,7 @@ fn bool_simd_store[
 
     Parameters:
         width: Number of items to be retrieved.
-    
+
     Args:
         ptr: Pointer to be retreived from.
         start: Start position in pointer.

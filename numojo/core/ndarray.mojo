@@ -948,7 +948,7 @@ struct NDArray[dtype: DType = DType.float64](
             ```
             A is an array with shape 2 x 2 and randomly values between 0 and 10.
             The output goes as follows.
-            
+
             ```console
             [[	6.046875	6.98046875	]
              [	6.6484375	1.736328125	]]
@@ -965,16 +965,17 @@ struct NDArray[dtype: DType = DType.float64](
         if dtype.is_floating_point():
             for i in range(self.ndshape.ndsize):
                 self.data.store(
-                    i, 
-                    random_float64(min.cast[DType.float64](), max.cast[DType.float64]()).cast[dtype]()
+                    i,
+                    random_float64(
+                        min.cast[DType.float64](), max.cast[DType.float64]()
+                    ).cast[dtype](),
                 )
         elif dtype.is_integral():
             for i in range(self.ndshape.ndsize):
                 self.data.store(
-                    i, 
-                    random_si64(int(min), int(max)).cast[dtype]()
+                    i, random_si64(int(min), int(max)).cast[dtype]()
                 )
-    
+
     @always_inline("nodebug")
     fn __init__(
         inout self,
@@ -1001,7 +1002,7 @@ struct NDArray[dtype: DType = DType.float64](
             ```
             A is an array with shape 2 x 2 and randomly values between 0 and 10.
             The output goes as follows.
-            
+
             ```console
             [[	6.046875	6.98046875	]
              [	6.6484375	1.736328125	]]
@@ -1018,14 +1019,15 @@ struct NDArray[dtype: DType = DType.float64](
         if dtype.is_floating_point():
             for i in range(self.ndshape.ndsize):
                 self.data.store(
-                    i, 
-                    random_float64(min.cast[DType.float64](), max.cast[DType.float64]()).cast[dtype]()
+                    i,
+                    random_float64(
+                        min.cast[DType.float64](), max.cast[DType.float64]()
+                    ).cast[dtype](),
                 )
         elif dtype.is_integral():
             for i in range(self.ndshape.ndsize):
                 self.data.store(
-                    i, 
-                    random_si64(int(min), int(max)).cast[dtype]()
+                    i, random_si64(int(min), int(max)).cast[dtype]()
                 )
 
     fn __init__(

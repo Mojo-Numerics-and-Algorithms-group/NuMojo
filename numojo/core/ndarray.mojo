@@ -749,7 +749,6 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(self.ndshape.ndsize):
                 self.data[i] = fill.value()[]
 
-
     @always_inline("nodebug")
     fn __init__(
         inout self,
@@ -781,7 +780,6 @@ struct NDArray[dtype: DType = DType.float64](
         if fill is not None:
             for i in range(self.ndshape.ndsize):
                 self.data[i] = fill.value()[]
-
 
     fn __init__(
         inout self,
@@ -2508,9 +2506,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         # I wonder if we can do this operation inplace instead of allocating memory.
         alias nelts = simdwidthof[dtype]()
-        var narr: NDArray[type] = NDArray[type](
-            self.ndshape, order=self.order
-        )
+        var narr: NDArray[type] = NDArray[type](self.ndshape, order=self.order)
         # narr.datatype = type
 
         @parameter
@@ -2603,9 +2599,7 @@ struct NDArray[dtype: DType = DType.float64](
         #     self.stride = NDArrayStride(shape = self.ndshape, offset=0)
         #     return self
 
-        var res: NDArray[dtype] = NDArray[dtype](
-            self.ndshape.ndsize
-        )
+        var res: NDArray[dtype] = NDArray[dtype](self.ndshape.ndsize)
         alias simd_width: Int = simdwidthof[dtype]()
 
         @parameter

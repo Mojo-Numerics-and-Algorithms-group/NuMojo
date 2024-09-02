@@ -11,7 +11,8 @@ from random import random
 from .ndarray import NDArray
 from builtin.tuple import Tuple
 
-fn rand[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
+
+fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype.
 
@@ -33,7 +34,10 @@ fn rand[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = NDArray[dtype](shape)
     return result^
 
-fn rand[dtype: DType](*shape: Int, min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[dtype]:
+
+fn rand[
+    dtype: DType = DType.float64
+](*shape: Int, min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype with values between `min` and `max`.
 
@@ -44,7 +48,7 @@ fn rand[dtype: DType](*shape: Int, min: Scalar[dtype], max: Scalar[dtype]) raise
         ```
     Raises:
         Error: If the dtype is not an integral or floating-point type.
-    
+
     Parameters:
         dtype: The data type of the NDArray elements.
 
@@ -59,16 +63,31 @@ fn rand[dtype: DType](*shape: Int, min: Scalar[dtype], max: Scalar[dtype]) raise
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.seed()
     if dtype.is_integral():
-        random.randint[dtype](ptr= result.data, size= result.ndshape.ndsize, low= int(min), high= int(max))
+        random.randint[dtype](
+            ptr=result.data,
+            size=result.ndshape.ndsize,
+            low=int(min),
+            high=int(max),
+        )
     elif dtype.is_floating_point():
         for i in range(result.ndshape.ndsize):
-            var temp: Scalar[dtype] = random.random_float64(min.cast[f64](), max.cast[f64]()).cast[dtype]()
+            var temp: Scalar[dtype] = random.random_float64(
+                min.cast[f64](), max.cast[f64]()
+            ).cast[dtype]()
             result.__setitem__(i, temp)
     else:
-        raise Error("Invalid type provided. dtype must be either an integral or floating-point type.")
-    return result^ 
+        raise Error(
+            "Invalid type provided. dtype must be either an integral or"
+            " floating-point type."
+        )
+    return result^
 
-fn rand[dtype: DType](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[dtype]:
+
+fn rand[
+    dtype: DType = DType.float64
+](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[
+    dtype
+]:
     """
     Generate a random NDArray of the given shape and dtype with values between `min` and `max`.
 
@@ -80,7 +99,7 @@ fn rand[dtype: DType](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) 
 
     Raises:
         Error: If the dtype is not an integral or floating-point type.
-    
+
     Parameters:
         dtype: The data type of the NDArray elements.
 
@@ -95,16 +114,31 @@ fn rand[dtype: DType](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) 
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.seed()
     if dtype.is_integral():
-        random.randint[dtype](ptr= result.data, size= result.ndshape.ndsize, low= int(min), high= int(max))
+        random.randint[dtype](
+            ptr=result.data,
+            size=result.ndshape.ndsize,
+            low=int(min),
+            high=int(max),
+        )
     elif dtype.is_floating_point():
         for i in range(result.ndshape.ndsize):
-            var temp: Scalar[dtype] = random.random_float64(min.cast[f64](), max.cast[f64]()).cast[dtype]()
+            var temp: Scalar[dtype] = random.random_float64(
+                min.cast[f64](), max.cast[f64]()
+            ).cast[dtype]()
             result.__setitem__(i, temp)
     else:
-        raise Error("Invalid type provided. dtype must be either an integral or floating-point type.")
-    return result^ 
+        raise Error(
+            "Invalid type provided. dtype must be either an integral or"
+            " floating-point type."
+        )
+    return result^
 
-fn rand_meanvar[dtype: DType](*shape: Int, mean: Scalar[dtype], variance: Scalar[dtype]) raises -> NDArray[dtype]:
+
+fn rand_meanvar[
+    dtype: DType = DType.float64
+](*shape: Int, mean: Scalar[dtype], variance: Scalar[dtype]) raises -> NDArray[
+    dtype
+]:
     """
     Generate a random NDArray of the given shape and dtype with values having a mean and variance.
 
@@ -113,7 +147,7 @@ fn rand_meanvar[dtype: DType](*shape: Int, mean: Scalar[dtype], variance: Scalar
         var arr = numojo.core.random.rand_meanvar[numojo.i16](3,2,4, mean=0, variance=1)
         print(arr)
         ```
-    
+
     Parameters:
         dtype: The data type of the NDArray elements.
 
@@ -127,10 +161,20 @@ fn rand_meanvar[dtype: DType](*shape: Int, mean: Scalar[dtype], variance: Scalar
     """
     random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
-    random.randn[dtype](ptr= result.data, size= result.ndshape.ndsize, mean= mean.cast[DType.float64](), variance= variance.cast[DType.float64]())
+    random.randn[dtype](
+        ptr=result.data,
+        size=result.ndshape.ndsize,
+        mean=mean.cast[DType.float64](),
+        variance=variance.cast[DType.float64](),
+    )
     return result^
 
-fn rand_meanvar[dtype: DType](shape: List[Int], mean: Scalar[dtype], variance: Scalar[dtype]) raises -> NDArray[dtype]:
+
+fn rand_meanvar[
+    dtype: DType = DType.float64
+](
+    shape: List[Int], mean: Scalar[dtype], variance: Scalar[dtype]
+) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype with values having a mean and variance.
 
@@ -139,7 +183,7 @@ fn rand_meanvar[dtype: DType](shape: List[Int], mean: Scalar[dtype], variance: S
         var arr = numojo.core.random.rand_meanvar[numojo.i16](List[Int](3,2,4), mean=0, variance=1)
         print(arr)
         ```
-    
+
     Parameters:
         dtype: The data type of the NDArray elements.
 
@@ -153,8 +197,10 @@ fn rand_meanvar[dtype: DType](shape: List[Int], mean: Scalar[dtype], variance: S
     """
     random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
-    random.randn[dtype](ptr= result.data, size= result.ndshape.ndsize, mean= mean.cast[DType.float64](), variance= variance.cast[DType.float64]())
+    random.randn[dtype](
+        ptr=result.data,
+        size=result.ndshape.ndsize,
+        mean=mean.cast[DType.float64](),
+        variance=variance.cast[DType.float64](),
+    )
     return result^
-
-
-

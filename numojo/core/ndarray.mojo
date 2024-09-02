@@ -655,14 +655,13 @@ struct NDArray[dtype: DType = DType.float64](
     # default constructor
     @always_inline("nodebug")
     fn __init__(
-        inout self, *shape: Int, random: Bool = False, order: String = "C"
+        inout self, *shape: Int, order: String = "C"
     ) raises:
         """
         NDArray initialization for variadic shape.
 
         Args:
             shape: Variadic shape.
-            random: Set the values randomly.
             order: Memory order C or F.
 
         Example:
@@ -679,14 +678,11 @@ struct NDArray[dtype: DType = DType.float64](
         self.order = order
         self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
         memset_zero(self.data, self.ndshape.ndsize)
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: List[Int],
-        random: Bool = False,
         order: String = "C",
     ) raises:
         """
@@ -694,7 +690,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         Args:
             shape: List of shape.
-            random: Set the values randomly.
             order: Memory order C or F.
 
         Example:
@@ -709,14 +704,11 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: VariadicList[Int],
-        random: Bool = False,
         order: String = "C",
     ) raises:
         """
@@ -724,7 +716,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         Args:
             shape: Variadic List shape.
-            random: Set the values randomly.
             order: Memory order C or F.
 
         Example:
@@ -739,8 +730,6 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
@@ -836,7 +825,6 @@ struct NDArray[dtype: DType = DType.float64](
     fn __init__(
         inout self,
         shape: NDArrayShape,
-        random: Bool = False,
         order: String = "C",
     ) raises:
         """
@@ -844,7 +832,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         Args:
             shape: Variadic shape.
-            random: Set all the values randomly.
             order: Memory order C or F.
 
         Example:
@@ -859,8 +846,6 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
 
     @always_inline("nodebug")
     fn __init__(
@@ -1784,7 +1769,7 @@ struct NDArray[dtype: DType = DType.float64](
             if mask.data.load[width=1](i):
                 true.append(i)
 
-        var result = Self(true.__len__(), random=False)
+        var result = Self(true.__len__())
         for i in range(true.__len__()):
             result.data.store[width=1](i, self.get_scalar(true[i]))
 
@@ -2618,7 +2603,7 @@ struct NDArray[dtype: DType = DType.float64](
         # I wonder if we can do this operation inplace instead of allocating memory.
         alias nelts = simdwidthof[dtype]()
         var narr: NDArray[type] = NDArray[type](
-            self.ndshape, random=False, order=self.order
+            self.ndshape, order=self.order
         )
         # narr.datatype = type
 
@@ -2713,7 +2698,7 @@ struct NDArray[dtype: DType = DType.float64](
         #     return self
 
         var res: NDArray[dtype] = NDArray[dtype](
-            self.ndshape.ndsize, random=False
+            self.ndshape.ndsize
         )
         alias simd_width: Int = simdwidthof[dtype]()
 

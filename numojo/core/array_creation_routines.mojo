@@ -408,7 +408,7 @@ fn empty[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    return NDArray[dtype](shape, fill=0)
+    return NDArray[dtype](shape=shape)
 
 
 fn zeros[dtype: DType](*shape: Int) raises -> NDArray[dtype]:

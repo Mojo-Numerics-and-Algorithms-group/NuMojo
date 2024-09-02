@@ -657,8 +657,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn __init__(
         inout self,
         *shape: Int,
-        fill: Scalar[dtype] = Scalar[dtype](0),
-        random: Bool = False,
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -667,19 +666,12 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: Variadic shape.
             fill: Set all the values to this.
-            random: Set values randomly.
             order: Memory order C or F.
 
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
-
-        if random == True and fill != 0:
-            raise Error(
-                "numojo/core/ndarray:NDArray: __init__(*shape, fill, random)):"
-                " Error if random is true you cannot set a fill value"
-            )
 
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
@@ -689,18 +681,15 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-        else:
+        if fill is not None:
             for i in range(self.ndshape.ndsize):
-                self.data[i] = fill
+                self.data[i] = fill.value()[]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: List[Int],
-        fill: Scalar[dtype] = Scalar[dtype](0),
-        random: Bool = False,
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -709,19 +698,12 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: List of shape.
             fill: Set all the values to this.
-            random: Set values randomly.
             order: Memory order C or F.
 
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
-
-        if random == True and fill != 0:
-            raise Error(
-                "numojo/core/ndarray:NDArray: __init__(List[Int], fill,"
-                " random)): Error if random is true you cannot set a fill value"
-            )
 
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
@@ -731,18 +713,15 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-        else:
+        if fill is not None:
             for i in range(self.ndshape.ndsize):
-                self.data[i] = fill
+                self.data[i] = fill.value()[]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: VariadicList[Int],
-        fill: Scalar[dtype] = Scalar[dtype](0),
-        random: Bool = False,
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -751,18 +730,12 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: Variadic List of shape.
             fill: Set all the values to this.
-            random: Set values randomly.
             order: Memory order C or F.
 
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
-        if random == True and fill != 0:
-            raise Error(
-                "numojo/core/ndarray:NDArray: __init__(VariadicList[Int], fill,"
-                " random)): Error if random is true you cannot set a fill value"
-            )
 
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
@@ -772,18 +745,16 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-        else:
+        if fill is not None:
             for i in range(self.ndshape.ndsize):
-                self.data[i] = fill
+                self.data[i] = fill.value()[]
+
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: NDArrayShape,
-        fill: Scalar[dtype] = Scalar[dtype](0),
-        random: Bool = False,
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -792,19 +763,12 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: Variadic shape.
             fill: Set all the the values to this.
-            random: Set values randomly.
             order: Memory order C or F.
 
         Example:
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
-
-        if random == True and fill != 0:
-            raise Error(
-                "numojo/core/ndarray:NDArray: __init__(NDArrayShape, fill,"
-                " random)): Error if random is true you cannot set a fill value"
-            )
 
         self.ndim = shape.ndlen
         self.ndshape = NDArrayShape(shape)
@@ -814,11 +778,10 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-        else:
+        if fill is not None:
             for i in range(self.ndshape.ndsize):
-                self.data[i] = fill
+                self.data[i] = fill.value()[]
+
 
     fn __init__(
         inout self,

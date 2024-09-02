@@ -7,30 +7,31 @@ from testing.testing import assert_raises
 
 def test_list_creation_methods():
     var np = Python.import_module("numpy")
+    var fill_val: Scalar[nm.i32] = 5
     check(
-        nm.NDArray(5, 5, 5, fill=5),
+        nm.NDArray(5, 5, 5, fill=fill_val),
         np.zeros([5, 5, 5], dtype=np.float64) + 5,
         "*shape broken",
     )
     check(
-        nm.NDArray(List[Int](5, 5, 5), fill=5),
+        nm.NDArray(List[Int](5, 5, 5), fill=fill_val),
         np.zeros([5, 5, 5], dtype=np.float64) + 5,
         "List[int] shape broken",
     )
     check(
-        nm.NDArray(VariadicList[Int](5, 5, 5), fill=5),
+        nm.NDArray(VariadicList[Int](5, 5, 5), fill=fill_val),
         np.zeros([5, 5, 5], dtype=np.float64) + 5,
         "VariadicList[Int] shape broken",
     )
     check(
-        nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=5),
+        nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=fill_val),
         np.zeros([5, 5, 5], dtype=np.float64) + 5,
         "NDArrayShape shape broken",
     )
-    with assert_raises(
-        contains="Error if random is true you cannot set a fill value"
-    ):
-        _ = nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=5, random=True)
+    # with assert_raises(
+    #     contains="Error if random is true you cannot set a fill value"
+    # ):
+    #     _ = nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=fill_val)
 
 
 def test_arange():
@@ -125,7 +126,8 @@ def main():
     # arr.reshape(10, 10)
     # var np_arr = np.arange(0, 100).reshape(10, 10)
     var np = Python.import_module("numpy")
-    print(nm.NDArray(5, 5, 5, fill=5).shape())
+    var fill_val: Scalar[nm.i32] = 5
+    print(nm.NDArray(5, 5, 5, fill=fill_val).shape())
     print(np.zeros([5, 5, 5], dtype=np.float64).fill(5))
     # Arange like flat arrays
     # check(nm.arange[nm.i64](0,100),np.arange(0,100,dtype=np.int64),"Arange is broken")

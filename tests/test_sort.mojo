@@ -5,7 +5,7 @@ from utils_for_test import check, check_is_close
 
 
 def test_sort_1d():
-    arr = nm.NDArray(25, random=True)
+    arr = nm.core.random.rand(25)
     var np = Python.import_module("numpy")
     arr_sorted = arr.sort()
     np_arr_sorted = np.sort(arr.to_numpy())

@@ -7,7 +7,8 @@ Implements array arithmetic
 # ===----------------------------------------------------------------------=== #
 
 
-import math
+# import math
+from math import math
 import . math_funcs as _mf
 from ..core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize

@@ -290,7 +290,7 @@ struct Vectorized(Backend):
         @parameter
         fn closure[simdwidth: Int](i: Int):
             var simd_data1 = array1.load[width=simdwidth](i)
-            # var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            # var simd_data2 = SIMD[dtype, simdwidth](scalar)
             var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
@@ -643,7 +643,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         @parameter
         fn closure[simdwidth: Int](i: Int):
             var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
                 i,
@@ -1075,7 +1075,7 @@ struct Parallelized(Backend):
                 var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+                var simd_data2 = SIMD[dtype, simdwidth](scalar)
                 # result_array.store[width=simdwidth](
                 #     i + comps_per_core * j,
                 #     func[dtype, simdwidth](simd_data1, simd_data2),
@@ -1565,7 +1565,7 @@ struct VectorizedParallelized(Backend):
                 var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+                var simd_data2 = SIMD[dtype, simdwidth](scalar)
                 bool_simd_store[simdwidth](
                     result_array.unsafe_ptr(),
                     i,
@@ -1579,7 +1579,7 @@ struct VectorizedParallelized(Backend):
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
             var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
                 i,
@@ -2072,7 +2072,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
                 var simd_data1 = array1.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+                var simd_data2 = SIMD[dtype, simdwidth](scalar)
                 bool_simd_store[simdwidth](
                     result_array.unsafe_ptr(),
                     i,
@@ -2086,7 +2086,7 @@ struct VectorizedParallelizedNWorkers[num_cores: Int = num_physical_cores()](
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
             var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-            var simd_data2 = SIMD[dtype, simdwidth].splat(scalar)
+            var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
                 i,
@@ -2752,7 +2752,7 @@ struct VectorizedVerbose(Backend):
             0, opt_nelts * (array1.num_elements() // opt_nelts), opt_nelts
         ):
             var simd_data1 = array1.load[width=opt_nelts](i)
-            var simd_data2 = SIMD[dtype, opt_nelts].splat(scalar)
+            var simd_data2 = SIMD[dtype, opt_nelts](scalar)
             bool_simd_store[opt_nelts](
                 result_array.unsafe_ptr(),
                 i,
@@ -2764,7 +2764,7 @@ struct VectorizedVerbose(Backend):
                 array1.num_elements(),
             ):
                 var simd_data1 = array1.load[width=1](i)
-                var simd_data2 = SIMD[dtype, 1].splat(scalar)
+                var simd_data2 = SIMD[dtype, 1](scalar)
                 bool_simd_store[1](
                     result_array.unsafe_ptr(),
                     i,

@@ -114,6 +114,15 @@ fn matmul_naive[
     """
     Matrix multiplication with three nested loops.
     """
+    if B.ndshape.len() == 1:
+        var C: NDArray[dtype] = NDArray[dtype](
+            A.ndshape.load_int(0) 
+        )
+        for m in range(C.ndshape.load_int(0)):
+            for k in range(A.ndshape.load_int(1)):
+                C.store(m, val=C.load(m) + A.load(m, k) * B.load(k))
+        return C
+        
     var C: NDArray[dtype] = NDArray[dtype](
         A.ndshape.load_int(0), B.ndshape.load_int(1)
     )

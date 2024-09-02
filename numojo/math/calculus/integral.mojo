@@ -42,7 +42,7 @@ fn trapz[
             " `Idtype` is not a floating-point type"
         )
 
-    var integral: SIMD[dtype] = 0.0
+    var integral: SIMD[dtype, 1] = 0.0
     for i in range(x.num_elements() - 1):
         var temp = (x.get_scalar(i + 1) - x.get_scalar(i)) * (
             y.get_scalar(i) + y.get_scalar(i + 1)

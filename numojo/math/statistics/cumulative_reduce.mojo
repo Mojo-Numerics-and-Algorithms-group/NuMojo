@@ -7,7 +7,6 @@ Cumulative reduction statistics functions for NDArrays
 # ===----------------------------------------------------------------------=== #
 
 from sys.info import simdwidthof
-from math import max, min
 from collections.optional import Optional
 
 import math
@@ -194,7 +193,7 @@ fn maxT[
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
         max_value.store[width=simd_width](
             0,
-            SIMD.max(
+            max(
                 max_value.load[width=simd_width](0),
                 array.load[width=simd_width](idx),
             ),
@@ -237,10 +236,6 @@ fn minT[
                 min_value.load[width=simd_width](0),
                 array.load[width=simd_width](idx),
             ),
-            # SIMD.min(
-                # min_value.load[width=simd_width](0),
-                # array.load[width=simd_width](idx),
-            # ),
         )
 
     vectorize[vectorized_min, opt_nelts](array.num_elements())
@@ -483,10 +478,6 @@ fn minimum[
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
             ),
-            # SIMD.min(
-                # array1.load[width=simd_width](idx),
-                # array2.load[width=simd_width](idx),
-            # ),
         )
 
     vectorize[vectorized_min, nelts](array1.num_elements())
@@ -522,10 +513,6 @@ fn maximum[
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
             ),
-            # SIMD.max(
-            #     array1.load[width=simd_width](idx),
-            #     array2.load[width=simd_width](idx),
-            # ),
         )
 
     vectorize[vectorized_max, nelts](array1.num_elements())

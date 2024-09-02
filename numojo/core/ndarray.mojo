@@ -2629,8 +2629,8 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         fn vectorized_all[simd_width: Int](idx: Int) -> None:
             result = result and allb(
-                # (self.data + idx).simd_strided_load[width=simd_width](1)
-                simd_strided_load[width=simd_width](self.data + idx, 1)
+                # (self.data + idx).strided_load[width=simd_width](1)
+                (self.data + idx).strided_load[width=simd_width](1)
             )
 
         vectorize[vectorized_all, self.simd_width](self.ndshape.ndsize)
@@ -2649,7 +2649,7 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         fn vectorized_any[simd_width: Int](idx: Int) -> None:
             result = result or anyb(
-                (self.data + idx).simd_strided_load[width=simd_width](1)
+                (self.data + idx).strided_load[width=simd_width](1)
             )
 
         vectorize[vectorized_any, self.simd_width](self.ndshape.ndsize)
@@ -2708,7 +2708,7 @@ struct NDArray[dtype: DType = DType.float64](
 
             @parameter
             fn vectorized_astype[width: Int](idx: Int) -> None:
-                (narr.unsafe_ptr() + idx).simd_strided_store[width](
+                (narr.unsafe_ptr() + idx).strided_store[dtype, width](
                     self.load[width](idx).cast[type](), 1
                 )
 
@@ -2722,9 +2722,7 @@ struct NDArray[dtype: DType = DType.float64](
                 fn vectorized_astypenb_from_b[width: Int](idx: Int) -> None:
                     narr.store[width](
                         idx,
-                        (self.data + idx)
-                        .simd_strided_load[width](1)
-                        .cast[type](),
+                        (self.data + idx).strided_load[dtype, width](1).cast[type](),
                     )
 
                 vectorize[vectorized_astypenb_from_b, self.simd_width](

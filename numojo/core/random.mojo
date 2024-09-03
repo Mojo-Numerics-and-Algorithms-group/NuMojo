@@ -170,7 +170,7 @@ fn rand_meanvar[
     return result^
 
 
-fn rand_meanvar[
+fn randn[
     dtype: DType = DType.float64
 ](
     shape: List[Int], mean: Scalar[dtype], variance: Scalar[dtype]

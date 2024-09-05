@@ -10,7 +10,7 @@
   <h1 align="center" style="font-size: 3em; color: white; font-family: 'Avenir'; text-shadow: 1px 1px orange;">NuMojo</h1>
 
   <p align="center">
-    NuMojo 是为 Mojo 🔥 设计的多维数组运算库，类似 NumPy, SciPy。
+    NuMojo 是为 Mojo 🔥 设计的多维数组运算库，类似 Python 中的 NumPy, SciPy。
     <br />
     <!-- when we create docs -->
     <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>阅读文档» </strong></a>
@@ -22,7 +22,7 @@
 
 ## 关于本项目
 
-NuMojo 的设计，旨在为 Mojo 语言生态系统提供数值计算和多维数组运算功能，类似于 NumPy、SciPy 和 Scikit 等数学库在 Python 语言生态系统中所扮演的角色。
+NuMojo，旨在为 Mojo 语言生态系统提供数值计算和多维数组运算功能，类似于 NumPy、SciPy 和 Scikit 等数学库在 Python 语言生态系统中所扮演的角色。
 
 NuMojo 充分利用 Mojo 的潜力，包括向量化、并行化和 GPU 加速。目前，NuMojo 扩展了大部分 Mojo 标准库中的数学函数，用以处理多维数组。
 
@@ -42,7 +42,7 @@ NuMojo 也可为其他需要高速数值计算、多维数组运算等功能的 
 - 数组操作：叠加、切片、拼合等
 - 微积分
 - 优化
-- 函数逼近
+- 函数逼近和估值
 - 排序
 
 ## 使用方法

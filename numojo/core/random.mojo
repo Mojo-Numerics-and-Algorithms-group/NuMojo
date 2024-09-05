@@ -6,7 +6,7 @@ Random values array generation.
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 
-
+import math as mt 
 from random import random
 from .ndarray import NDArray
 from builtin.tuple import Tuple
@@ -32,6 +32,9 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
         The generated NDArray of type `dtype` filled with random values.
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
+    for i in range(result.ndshape.ndsize):
+        var temp: Scalar[dtype] = random.random_float64(0, 1).cast[dtype]()
+        result.__setitem__(i, temp)
     return result^
 
 
@@ -62,24 +65,29 @@ fn rand[
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.seed()
-    if dtype.is_integral():
-        random.randint[dtype](
-            ptr=result.data,
-            size=result.ndshape.ndsize,
-            low=int(min),
-            high=int(max),
-        )
-    elif dtype.is_floating_point():
-        for i in range(result.ndshape.ndsize):
-            var temp: Scalar[dtype] = random.random_float64(
-                min.cast[f64](), max.cast[f64]()
-            ).cast[dtype]()
-            result.__setitem__(i, temp)
-    else:
-        raise Error(
-            "Invalid type provided. dtype must be either an integral or"
-            " floating-point type."
-        )
+    # if dtype.is_integral():
+    #     random.randint[dtype](
+    #         ptr=result.data,
+    #         size=result.ndshape.ndsize,
+    #         low=int(min),
+    #         high=int(max),
+    #     )
+    # elif dtype.is_floating_point():
+    #     for i in range(result.ndshape.ndsize):
+    #         var temp: Scalar[dtype] = random.random_float64(
+    #             min.cast[f64](), max.cast[f64]()
+    #         ).cast[dtype]()
+    #         result.__setitem__(i, temp)
+    # else:
+    #     raise Error(
+    #         "Invalid type provided. dtype must be either an integral or"
+    #         " floating-point type."
+    #     )
+    for i in range(result.ndshape.ndsize):
+        var temp: Scalar[dtype] = random.random_float64(
+            min.cast[f64](), max.cast[f64]()
+        ).cast[dtype]()
+        result.data[i] = temp
     return result^
 
 
@@ -113,30 +121,35 @@ fn rand[
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.seed()
-    if dtype.is_integral():
-        random.randint[dtype](
-            ptr=result.data,
-            size=result.ndshape.ndsize,
-            low=int(min),
-            high=int(max),
-        )
-    elif dtype.is_floating_point():
-        for i in range(result.ndshape.ndsize):
-            var temp: Scalar[dtype] = random.random_float64(
-                min.cast[f64](), max.cast[f64]()
-            ).cast[dtype]()
-            result.__setitem__(i, temp)
-    else:
-        raise Error(
-            "Invalid type provided. dtype must be either an integral or"
-            " floating-point type."
-        )
-    return result^
+    # if dtype.is_integral():
+    #     random.randint[dtype](
+    #         ptr=result.data,
+    #         size=result.ndshape.ndsize,
+    #         low=int(min),
+    #         high=int(max),
+    #     )
+    # elif dtype.is_floating_point():
+    #     for i in range(result.ndshape.ndsize):
+    #         var temp: Scalar[dtype] = random.random_float64(
+    #             min.cast[f64](), max.cast[f64]()
+    #         ).cast[dtype]()
+    #         result.data[i] = temp
+    # else:
+    #     raise Error(
+    #         "Invalid type provided. dtype must be either an integral or"
+    #         " floating-point type."
+    #     )
+    for i in range(result.ndshape.ndsize):
+        var temp: Scalar[dtype] = random.random_float64(
+            min.cast[f64](), max.cast[f64]()
+        ).cast[dtype]()
+        result.data[i] = temp
+    return result
 
 
-fn rand_meanvar[
+fn randn[
     dtype: DType = DType.float64
-](*shape: Int, mean: Scalar[dtype], variance: Scalar[dtype]) raises -> NDArray[
+](*shape: Int, mean: Scalar[dtype]=0, variance: Scalar[dtype]=1) raises -> NDArray[
     dtype
 ]:
     """
@@ -173,7 +186,7 @@ fn rand_meanvar[
 fn randn[
     dtype: DType = DType.float64
 ](
-    shape: List[Int], mean: Scalar[dtype], variance: Scalar[dtype]
+    shape: List[Int], mean: Scalar[dtype]=0, variance: Scalar[dtype]=1
 ) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype with values having a mean and variance.
@@ -204,3 +217,72 @@ fn randn[
         variance=variance.cast[DType.float64](),
     )
     return result^
+
+
+fn rand_exponential[
+    dtype: DType = DType.float64
+](
+    *shape: Int, rate: Scalar[dtype] = 1.0
+) raises -> NDArray[dtype]:
+    """
+    Generate a random NDArray of the given shape and dtype with values from an exponential distribution.
+
+    Example:
+        ```py
+        var arr = numojo.core.random.rand_exponential[numojo.f64](3, 2, 4, rate=2.0)
+        print(arr)
+        ```
+
+    Parameters:
+        dtype: The data type of the NDArray elements.
+
+    Args:
+        shape: The shape of the NDArray.
+        rate: The rate parameter of the exponential distribution (lambda).
+
+    Returns:
+        The generated NDArray of type `dtype` filled with random values from an exponential distribution.
+    """
+    random.seed()
+    var result = NDArray[dtype](NDArrayShape(shape))
+    
+    for i in range(result.num_elements()):
+        var u = random.random_float64()
+        result.data[i] = -mt.log(1 - u) / rate.cast[DType.float64]()
+    
+    return result^
+
+
+fn rand_exponential[
+    dtype: DType = DType.float64
+](
+    shape: List[Int], rate: Scalar[dtype] = 1.0
+) raises -> NDArray[dtype]:
+    """
+    Generate a random NDArray of the given shape and dtype with values from an exponential distribution.
+
+    Example:
+        ```py
+        var arr = numojo.core.random.rand_exponential[numojo.f64](List[Int](3, 2, 4), rate=2.0)
+        print(arr)
+        ```
+
+    Parameters:
+        dtype: The data type of the NDArray elements.
+
+    Args:
+        shape: The shape of the NDArray as a List[Int].
+        rate: The rate parameter of the exponential distribution (lambda).
+
+    Returns:
+        The generated NDArray of type `dtype` filled with random values from an exponential distribution.
+    """
+    random.seed()
+    var result = NDArray[dtype](shape)
+    
+    for i in range(result.num_elements()):
+        var u = random.random_float64()
+        result.data[i] = -mt.log(1 - u) / rate.cast[DType.float64]()
+    
+    return result^
+

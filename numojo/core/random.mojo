@@ -6,7 +6,7 @@ Random values array generation.
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 
-import math as mt 
+import math as mt
 from random import random
 from .ndarray import NDArray
 from builtin.tuple import Tuple
@@ -149,9 +149,9 @@ fn rand[
 
 fn randn[
     dtype: DType = DType.float64
-](*shape: Int, mean: Scalar[dtype]=0, variance: Scalar[dtype]=1) raises -> NDArray[
-    dtype
-]:
+](
+    *shape: Int, mean: Scalar[dtype] = 0, variance: Scalar[dtype] = 1
+) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype with values having a mean and variance.
 
@@ -186,7 +186,7 @@ fn randn[
 fn randn[
     dtype: DType = DType.float64
 ](
-    shape: List[Int], mean: Scalar[dtype]=0, variance: Scalar[dtype]=1
+    shape: List[Int], mean: Scalar[dtype] = 0, variance: Scalar[dtype] = 1
 ) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype with values having a mean and variance.
@@ -221,9 +221,7 @@ fn randn[
 
 fn rand_exponential[
     dtype: DType = DType.float64
-](
-    *shape: Int, rate: Scalar[dtype] = 1.0
-) raises -> NDArray[dtype]:
+](*shape: Int, rate: Scalar[dtype] = 1.0) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype with values from an exponential distribution.
 
@@ -245,19 +243,17 @@ fn rand_exponential[
     """
     random.seed()
     var result = NDArray[dtype](NDArrayShape(shape))
-    
+
     for i in range(result.num_elements()):
         var u = random.random_float64()
         result.data[i] = -mt.log(1 - u) / rate.cast[DType.float64]()
-    
+
     return result^
 
 
 fn rand_exponential[
     dtype: DType = DType.float64
-](
-    shape: List[Int], rate: Scalar[dtype] = 1.0
-) raises -> NDArray[dtype]:
+](shape: List[Int], rate: Scalar[dtype] = 1.0) raises -> NDArray[dtype]:
     """
     Generate a random NDArray of the given shape and dtype with values from an exponential distribution.
 
@@ -279,10 +275,9 @@ fn rand_exponential[
     """
     random.seed()
     var result = NDArray[dtype](shape)
-    
+
     for i in range(result.num_elements()):
         var u = random.random_float64()
         result.data[i] = -mt.log(1 - u) / rate.cast[DType.float64]()
-    
-    return result^
 
+    return result^

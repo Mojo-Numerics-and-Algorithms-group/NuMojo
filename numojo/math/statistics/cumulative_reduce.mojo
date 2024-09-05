@@ -264,7 +264,7 @@ fn cumpvariance[
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
     # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    # * REMOVE THIS CONSTRAINT? 
+    # * REMOVE THIS CONSTRAINT?
     if is_inttype[dtype]() and is_inttype[dtype]():
         raise Error(
             "Input and output cannot be `Int` datatype as it may lead to"

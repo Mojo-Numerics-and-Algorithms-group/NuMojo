@@ -8,6 +8,8 @@ Provides:
 
 from ...core.ndarray import NDArray
 
+alias inv = inverse
+
 
 fn lu_decomposition[
     dtype: DType = DType.float64

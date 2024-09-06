@@ -8,8 +8,6 @@ Provides:
 
 from ...core.ndarray import NDArray
 
-alias inv = inverse
-
 
 fn lu_decomposition[
     dtype: DType = DType.float64
@@ -57,7 +55,9 @@ fn lu_decomposition[
         https://en.wikipedia.org/wiki/LU_decomposition
         https://www.scicoding.com/how-to-calculate-lu-decomposition-in-python/
         https://courses.physics.illinois.edu/cs357/sp2020/notes/ref-9-linsys.html
-        https://math.libretexts.org/Bookshelves/Linear_Algebra/Introduction_to_Matrix_Algebra_(Kaw)/01%3A_Chapters/1.07%3A_LU_Decomposition_Method_for_Solving_Simultaneous_Linear_Equations
+
+    TODO: Optimize the speed.
+
     """
 
     # Check whether the dimension is 2
@@ -119,7 +119,7 @@ fn forward_substitution[
         y: A vector.
 
     Returns:
-        x: Solution to `Lx = y`. It is a vector.
+        Solution to `Lx = y`. It is a vector.
 
     """
 
@@ -153,7 +153,7 @@ fn back_substitution[
         y: A vector.
 
     Returns:
-        x: Solution to `Ux = y`. It is a vector.
+        Solution to `Ux = y`. It is a vector.
 
     """
 
@@ -186,6 +186,8 @@ fn inverse[
     Returns:
         The reversed matrix of the original matrix.
 
+    An example goes as follows:
+
     ```mojo
     import numojo as nm
     fn main() raises:
@@ -215,6 +217,8 @@ fn inverse[
      [      0.0     0.0     1.0     ]]
     2-D array  Shape: [3, 3]  DType: float64
     ```
+
+    TODO: Optimize the speed.
 
     """
 

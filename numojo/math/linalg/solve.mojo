@@ -45,7 +45,7 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
     2-D array  Shape: [3, 3]  DType: float64
     ```
 
-    Reference:  
+    Further reading:  
         Linear Algebra And Its Applications, fourth edition, Gilbert Strang  
         https://en.wikipedia.org/wiki/LU_decomposition  
         https://www.scicoding.com/how-to-calculate-lu-decomposition-in-python/
@@ -134,7 +134,7 @@ fn back_substitution[dtype: DType](U: NDArray[dtype], y: NDArray[dtype]) raises 
         dtype: dtype of the resulting vector.
 
     Args:
-        L: A upper triangular matrix.
+        U: A upper triangular matrix.
         y: A vector.
     
     Returns:
@@ -155,3 +155,75 @@ fn back_substitution[dtype: DType](U: NDArray[dtype], y: NDArray[dtype]) raises 
         x.__setitem__(i, value_on_hold)
     
     return x
+
+fn inverse[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
+    """Find the inverse of a non-singular, square matrix.
+
+    Parameters:
+        dtype: Data type of the inversed matrix. Default value is `f64`.
+
+    Args:
+        array: Input matrix. It should be non-singular and square.
+
+    Returns:
+        The reversed matrix of the original matrix.
+        
+    ```mojo
+    import numojo as nm
+    fn main() raises:
+        var A = nm.NDArray("[[1,0,1], [0,2,1], [1,1,1]]")
+        var B = nm.math.linalg.solve.inverse(A)
+        print("Original matrix:")
+        print(A)
+        print("Reversed matrix:")
+        print(B)
+        print("Verify whether AB = I:")
+        print(A @ B)
+    ```
+    ```console
+    Original matrix:
+    [[      1.0     0.0     1.0     ]
+     [      0.0     2.0     1.0     ]
+     [      1.0     1.0     1.0     ]]
+    2-D array  Shape: [3, 3]  DType: float64
+    Reversed matrix:
+    [[      -1.0    -1.0    2.0     ]
+     [      -1.0    0.0     1.0     ]
+     [      2.0     1.0     -2.0    ]]
+    2-D array  Shape: [3, 3]  DType: float64
+    Verify whether AB = I:
+    [[      1.0     0.0     0.0     ]
+     [      0.0     1.0     0.0     ]
+     [      0.0     0.0     1.0     ]]
+    2-D array  Shape: [3, 3]  DType: float64
+    ```
+
+    """
+
+    var U: NDArray
+    var L: NDArray
+    L, U = lu_decomposition(array)
+
+    var m = array.shape()[0]
+    var inversed = NDArray[dtype](shape=array.shape())
+
+    # Initialize vectors
+    var y = NDArray(m)
+    var z = NDArray(m)
+    var x = NDArray(m)
+
+    for i in range(m):
+        # Each time, one of the item is changed to 1
+        y = NDArray(m, fill=0)
+        y.__setitem__(i, 1)
+
+        # Solve `Lz = y` for `z`
+        z = forward_substitution(L, y)
+
+        # Solve `Ux = z` for `x`
+        x = back_substitution(U, z)
+
+        for j in range(m):
+            inversed.__setitem__(List[Int](j, i), x.item(j))
+
+    return inversed

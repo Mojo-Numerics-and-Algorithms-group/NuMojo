@@ -1,3 +1,9 @@
+"""
+Linear Algebra Solver
+
+Solver of `Ax = y` using LU decomposition algorithm.
+"""
+
 from ...core.ndarray import NDArray
 
 fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
@@ -43,6 +49,8 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
         Linear Algebra And Its Applications, fourth edition, Gilbert Strang  
         https://en.wikipedia.org/wiki/LU_decomposition  
         https://www.scicoding.com/how-to-calculate-lu-decomposition-in-python/
+        https://courses.physics.illinois.edu/cs357/sp2020/notes/ref-9-linsys.html
+        https://math.libretexts.org/Bookshelves/Linear_Algebra/Introduction_to_Matrix_Algebra_(Kaw)/01%3A_Chapters/1.07%3A_LU_Decomposition_Method_for_Solving_Simultaneous_Linear_Equations
     """
 
     # Check whether the dimension is 2
@@ -87,8 +95,63 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
 
     return L, U
 
+fn forward_substitution[dtype: DType](L: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Perform forward substitution to solve `Lx = y`.
+
+    Paramters:
+        dtype: dtype of the resulting vector.
+
+    Args:
+        L: A lower triangular matrix.
+        y: A vector.
+    
+    Returns:
+        x: Solution to `Lx = y`. It is a vector.
+
+    """
+
+    # length of L
+    var m = L.shape()[0]
+
+    # Initialize x
+    var x = NDArray[dtype](m, fill=0)
+
+    for i in range(m):
+        var value_on_hold: Scalar[dtype] = y.item(i)
+        for j in range(i):
+            value_on_hold = value_on_hold - L.item(i, j) * x.item(j)
+        value_on_hold = value_on_hold / L.item(i, i)
+
+        x.__setitem__(i, value_on_hold)
+    
+    return x
 
 
+fn back_substitution[dtype: DType](U: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Perform forward substitution to solve `Ux = y`.
 
+    Paramters:
+        dtype: dtype of the resulting vector.
 
+    Args:
+        L: A upper triangular matrix.
+        y: A vector.
+    
+    Returns:
+        x: Solution to `Ux = y`. It is a vector.
 
+    """
+
+    # length of U
+    var m = U.shape()[0]
+    # Initialize x
+    var x = NDArray[dtype](m, fill=0)
+
+    for i in range(m-1, -1, -1):
+        var value_on_hold: Scalar[dtype] = y.item(i)
+        for j in range(i+1, m):
+            value_on_hold = value_on_hold - U.item(i, j) * x.item(j)
+        value_on_hold = value_on_hold / U.item(i, i)
+        x.__setitem__(i, value_on_hold)
+    
+    return x

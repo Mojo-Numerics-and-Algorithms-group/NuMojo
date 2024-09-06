@@ -55,10 +55,9 @@
 
 NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy and Scikit.
 
-NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
-NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
+NuMojo aims to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
 
-NuMojo intends to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
+We intend NuMojo to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 
 ### What NuMojo is not
 
@@ -109,10 +108,10 @@ There are two approach to install and use the Numojo package.
 This approach invovles building a standalone package file `mojopkg`.
 
 1. Clone the repository.
-1. Build the package using `mojo pacakge numojo`
-1. Move the numojo.mojopkg into the directory containing the your code.
+2. Build the package using `mojo pacakge numojo`
+3. Move the numojo.mojopkg into the directory containing the your code.
 
-### Inlcude NuMojo's path for compiler and LSP
+### Include NuMojo's path for compiler and LSP
 
 This approach does not require buiding a package file. Instead, when you compile your code, you can include the path of NuMojo reporsitory with the following command:
 
@@ -125,11 +124,11 @@ This is more flexible as you are able to edit the NuMojo source files when testi
 In order to allow VSCode LSP to resolve the imported `numojo` package, you can:
 
 1. Go to preference page of VSCode.
-1. Got to `Mojo › Lsp: Include Dirs`
-1. Click `add item` and write the path where the Numojo repository is located, e.g. `/Users/Name/Programs/NuMojo`.
-1. Restart the Mojo LSP server.
+2. Go to `Mojo › Lsp: Include Dirs`
+3. Click `add item` and write the path where the Numojo repository is located, e.g. `/Users/Name/Programs/NuMojo`.
+4. Restart the Mojo LSP server.
 
-Now VSCode can show function hints for the Numojo pakcage!
+Now VSCode can show function hints for the Numojo package!
 
 ## Contributing
 

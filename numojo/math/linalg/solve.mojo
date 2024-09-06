@@ -1,12 +1,17 @@
 """
 Linear Algebra Solver
 
-Solver of `Ax = y` using LU decomposition algorithm.
+Provides:
+    - Solver of `Ax = y` using LU decomposition algorithm.
+    - Inverse of an invertible matrix.
 """
 
 from ...core.ndarray import NDArray
 
-fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
+
+fn lu_decomposition[
+    dtype: DType = DType.float64
+](array: NDArray) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
     """Perform LU (lower-upper) decomposition for matrix.
 
     Parameters:
@@ -18,7 +23,7 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
     Returns:
         A tuple of the upper and lower triangular matrices.
 
-    Example:  
+    Example:
     ```mojo
     import numojo as nm
     fn main() raises:
@@ -45,9 +50,9 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
     2-D array  Shape: [3, 3]  DType: float64
     ```
 
-    Further reading:  
-        Linear Algebra And Its Applications, fourth edition, Gilbert Strang  
-        https://en.wikipedia.org/wiki/LU_decomposition  
+    Further reading:
+        Linear Algebra And Its Applications, fourth edition, Gilbert Strang
+        https://en.wikipedia.org/wiki/LU_decomposition
         https://www.scicoding.com/how-to-calculate-lu-decomposition-in-python/
         https://courses.physics.illinois.edu/cs357/sp2020/notes/ref-9-linsys.html
         https://math.libretexts.org/Bookshelves/Linear_Algebra/Introduction_to_Matrix_Algebra_(Kaw)/01%3A_Chapters/1.07%3A_LU_Decomposition_Method_for_Solving_Simultaneous_Linear_Equations
@@ -55,15 +60,15 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
 
     # Check whether the dimension is 2
     if array.ndim != 2:
-        raise("The array is not 2-dimensional!")
-    
+        raise ("The array is not 2-dimensional!")
+
     # Check whether the matrix is square
     var shape_of_array = array.shape()
     var m = shape_of_array[0]
     var n = shape_of_array[1]
     if m != n:
-        raise("The matrix is not square!")
-    
+        raise ("The matrix is not square!")
+
     # Check whether the matrix is singular
     # if singular:
     #     raise("The matrix is singular!")
@@ -85,7 +90,10 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
                 var sum_of_products_for_L: Scalar[dtype] = 0
                 for k in range(0, i):
                     sum_of_products_for_L += L.item(j, k) * U.item(k, i)
-                L.__setitem__(List[Int](j, i), (A.item(j, i) - sum_of_products_for_L) / U.item(i, i))
+                L.__setitem__(
+                    List[Int](j, i),
+                    (A.item(j, i) - sum_of_products_for_L) / U.item(i, i),
+                )
 
             # Fill in U
             var sum_of_products_for_U: Scalar[dtype] = 0
@@ -95,7 +103,10 @@ fn lu_decomposition[dtype: DType = DType.float64](array: NDArray) raises -> Tupl
 
     return L, U
 
-fn forward_substitution[dtype: DType](L: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
+
+fn forward_substitution[
+    dtype: DType
+](L: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """Perform forward substitution to solve `Lx = y`.
 
     Paramters:
@@ -104,7 +115,7 @@ fn forward_substitution[dtype: DType](L: NDArray[dtype], y: NDArray[dtype]) rais
     Args:
         L: A lower triangular matrix.
         y: A vector.
-    
+
     Returns:
         x: Solution to `Lx = y`. It is a vector.
 
@@ -123,11 +134,13 @@ fn forward_substitution[dtype: DType](L: NDArray[dtype], y: NDArray[dtype]) rais
         value_on_hold = value_on_hold / L.item(i, i)
 
         x.__setitem__(i, value_on_hold)
-    
+
     return x
 
 
-fn back_substitution[dtype: DType](U: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
+fn back_substitution[
+    dtype: DType
+](U: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """Perform forward substitution to solve `Ux = y`.
 
     Paramters:
@@ -136,7 +149,7 @@ fn back_substitution[dtype: DType](U: NDArray[dtype], y: NDArray[dtype]) raises 
     Args:
         U: A upper triangular matrix.
         y: A vector.
-    
+
     Returns:
         x: Solution to `Ux = y`. It is a vector.
 
@@ -147,16 +160,19 @@ fn back_substitution[dtype: DType](U: NDArray[dtype], y: NDArray[dtype]) raises 
     # Initialize x
     var x = NDArray[dtype](m, fill=0)
 
-    for i in range(m-1, -1, -1):
+    for i in range(m - 1, -1, -1):
         var value_on_hold: Scalar[dtype] = y.item(i)
-        for j in range(i+1, m):
+        for j in range(i + 1, m):
             value_on_hold = value_on_hold - U.item(i, j) * x.item(j)
         value_on_hold = value_on_hold / U.item(i, i)
         x.__setitem__(i, value_on_hold)
-    
+
     return x
 
-fn inverse[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
+
+fn inverse[
+    dtype: DType = DType.float64
+](array: NDArray) raises -> NDArray[dtype]:
     """Find the inverse of a non-singular, square matrix.
 
     Parameters:
@@ -167,7 +183,7 @@ fn inverse[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype
 
     Returns:
         The reversed matrix of the original matrix.
-        
+
     ```mojo
     import numojo as nm
     fn main() raises:

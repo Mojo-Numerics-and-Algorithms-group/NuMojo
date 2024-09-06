@@ -652,96 +652,9 @@ struct NDArray[dtype: DType = DType.float64](
     # default constructor
     @always_inline("nodebug")
     fn __init__(
-        inout self, *shape: Int, random: Bool = False, order: String = "C"
-    ) raises:
-        """
-        NDArray initialization for variadic shape.
-
-        Args:
-            shape: Variadic shape.
-            random: Set the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.int8](3,2,4)
-            Returns an zero array with shape 3 x 2 x 4.
-        """
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.datatype = dtype
-        self.order = order
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: List[Int],
-        random: Bool = False,
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for list shape.
-
-        Args:
-            shape: List of shape.
-            random: Set the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
-        """
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        self.datatype = dtype
-        self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: VariadicList[Int],
-        random: Bool = False,
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for variadic shape.
-
-        Args:
-            shape: Variadic List shape.
-            random: Set the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
-        """
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        self.datatype = dtype
-        self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
         inout self,
         *shape: Int,
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -756,6 +669,7 @@ struct NDArray[dtype: DType = DType.float64](
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
+
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
@@ -764,14 +678,15 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            for i in range(self.ndshape.ndsize):
+                self.data[i] = fill.value()[]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: List[Int],
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -786,6 +701,7 @@ struct NDArray[dtype: DType = DType.float64](
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
+
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
@@ -794,14 +710,15 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            for i in range(self.ndshape.ndsize):
+                self.data[i] = fill.value()[]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: VariadicList[Int],
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -816,6 +733,7 @@ struct NDArray[dtype: DType = DType.float64](
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
+
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
@@ -824,44 +742,15 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            for i in range(self.ndshape.ndsize):
+                self.data[i] = fill.value()[]
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: NDArrayShape,
-        random: Bool = False,
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for NDArrayShape.
-
-        Args:
-            shape: Variadic shape.
-            random: Set all the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
-        """
-        self.ndim = shape.ndlen
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, order=order)
-        self.coefficient = NDArrayStride(shape, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        self.datatype = dtype
-        self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: NDArrayShape,
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -876,6 +765,7 @@ struct NDArray[dtype: DType = DType.float64](
             NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
             Returns an array with shape 3 x 2 x 4 and randomly values.
         """
+
         self.ndim = shape.ndlen
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, order=order)
@@ -884,8 +774,9 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            for i in range(self.ndshape.ndsize):
+                self.data[i] = fill.value()[]
 
     fn __init__(
         inout self,
@@ -1835,7 +1726,7 @@ struct NDArray[dtype: DType = DType.float64](
             if mask.data.load[width=1](i):
                 true.append(i)
 
-        var result = Self(true.__len__(), random=False)
+        var result = Self(true.__len__())
         for i in range(true.__len__()):
             result.data.store[width=1](i, self.get_scalar(true[i]))
 
@@ -2667,9 +2558,8 @@ struct NDArray[dtype: DType = DType.float64](
         Convert type of array.
         """
         # I wonder if we can do this operation inplace instead of allocating memory.
-        var narr: NDArray[type] = NDArray[type](
-            self.ndshape, random=False, order=self.order
-        )
+        alias nelts = simdwidthof[dtype]()
+        var narr: NDArray[type] = NDArray[type](self.ndshape, order=self.order)
         # narr.datatype = type
 
         @parameter
@@ -2758,11 +2648,27 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Convert shape of array to one dimensional.
         """
-        self.ndshape = NDArrayShape(
-            self.ndshape.ndsize, size=self.ndshape.ndsize
-        )
-        self.stride = NDArrayStride(shape=self.ndshape, offset=0)
-        self.ndim = 1
+        # inplace has some problems right now
+        # if inplace:
+        #     self.ndshape = NDArrayShape(self.ndshape.ndsize, size=self.ndshape.ndsize)
+        #     self.stride = NDArrayStride(shape = self.ndshape, offset=0)
+        #     return self
+
+        var res: NDArray[dtype] = NDArray[dtype](self.ndshape.ndsize)
+        alias simd_width: Int = simdwidthof[dtype]()
+
+        @parameter
+        fn vectorized_flatten[simd_width: Int](index: Int) -> None:
+            res.data.store[width=simd_width](
+                index, self.data.load[width=simd_width](index)
+            )
+
+        vectorize[vectorized_flatten, simd_width](self.ndshape.ndsize)
+        if inplace:
+            self = res
+            return None
+        else:
+            return res
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """

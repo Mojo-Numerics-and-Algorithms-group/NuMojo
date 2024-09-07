@@ -42,6 +42,7 @@ from .ndarray_utils import (
     _traverse_iterative,
     to_numpy,
     bool_to_numeric,
+    fill_pointer,
 )
 from ..math.math_funcs import Vectorized
 from .utility_funcs import is_inttype
@@ -675,12 +676,10 @@ struct NDArray[dtype: DType = DType.float64](
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
         self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            for i in range(self.ndshape.ndsize):
-                self.data[i] = fill.value()[]
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
 
     @always_inline("nodebug")
     fn __init__(
@@ -707,12 +706,10 @@ struct NDArray[dtype: DType = DType.float64](
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
         self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            for i in range(self.ndshape.ndsize):
-                self.data[i] = fill.value()[]
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
 
     @always_inline("nodebug")
     fn __init__(
@@ -739,12 +736,10 @@ struct NDArray[dtype: DType = DType.float64](
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
         self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            for i in range(self.ndshape.ndsize):
-                self.data[i] = fill.value()[]
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
 
     @always_inline("nodebug")
     fn __init__(
@@ -771,12 +766,10 @@ struct NDArray[dtype: DType = DType.float64](
         self.stride = NDArrayStride(shape, order=order)
         self.coefficient = NDArrayStride(shape, order=order)
         self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            for i in range(self.ndshape.ndsize):
-                self.data[i] = fill.value()[]
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
 
     fn __init__(
         inout self,
@@ -804,7 +797,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        memset_zero(self.data, self.ndshape.ndsize)
         for i in range(self.ndshape.ndsize):
             self.data[i] = data[i]
 
@@ -2415,7 +2407,8 @@ struct NDArray[dtype: DType = DType.float64](
         return self.ndshape.ndsize
 
     # should this return the List[Int] shape and self.ndshape be used instead of making it a no input function call?
-    fn shape(self) -> NDArrayShape:
+    # * We are fixed dtype for this array shape for the linalg solve module.
+    fn shape(self) -> NDArrayShape[i32]:
         """
         Get the shape as an NDArray Shape.
 
@@ -2553,7 +2546,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return sort.argsort(self)
 
-    fn astype[type: DType](inout self) raises -> NDArray[type]:
+    fn astype[type: DType](self) raises -> NDArray[type]:
         """
         Convert type of array.
         """

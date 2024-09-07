@@ -2500,7 +2500,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return sort.argsort(self)
 
-    fn astype[type: DType](inout self) raises -> NDArray[type]:
+    fn astype[type: DType](self) raises -> NDArray[type]:
         """
         Convert type of array.
         """

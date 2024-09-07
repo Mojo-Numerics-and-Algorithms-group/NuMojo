@@ -4,9 +4,10 @@ from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
 from python import Python
 
+
 def test_arr_manipulation():
     var np = Python.import_module("numpy")
-    
+
     # Test arange
     var A = nm.arange[nm.i16](1, 7, 1)
     var np_A = np.arange(1, 7, 1, dtype=np.int16)

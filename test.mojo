@@ -2,6 +2,7 @@
 import time
 from benchmark.compiler import keep
 from python import Python
+
 # from random import seed
 
 import numojo as nm
@@ -18,8 +19,9 @@ from numojo import *
 #     #         print(array[i,j])
 #     print(res)
 
+
 fn test_constructors1() raises:
-    var arr1 = NDArray[f32](3,4,5)
+    var arr1 = NDArray[f32](3, 4, 5)
     print(arr1)
     print("ndim: ", arr1.ndim)
     print("shape: ", arr1.ndshape)
@@ -55,7 +57,7 @@ fn test_constructors1() raises:
     print("offset: ", arr4.stride.ndoffset)
     print("dtype: ", arr4.dtype)
 
-    var arr5 = NDArray[f32](NDArrayShape(3,4,5))
+    var arr5 = NDArray[f32](NDArrayShape(3, 4, 5))
     print(arr5)
     print("ndim: ", arr5.ndim)
     print("shape: ", arr5.ndshape)
@@ -64,8 +66,10 @@ fn test_constructors1() raises:
     print("offset: ", arr5.stride.ndoffset)
     print("dtype: ", arr5.dtype)
 
-    var arr6 = NDArray[f32](data=List[SIMD[f32, 1]](1,2,3,4,5,6,7,8,9,10), shape=
-    List[Int](2,5))
+    var arr6 = NDArray[f32](
+        data=List[SIMD[f32, 1]](1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+        shape=List[Int](2, 5),
+    )
     print(arr6)
     print("ndim: ", arr6.ndim)
     print("shape: ", arr6.ndshape)
@@ -74,23 +78,32 @@ fn test_constructors1() raises:
     print("offset: ", arr6.stride.ndoffset)
     print("dtype: ", arr6.dtype)
 
+
 fn test_constructors2() raises:
     var fill_value: SIMD[i32, 1] = 10
     var A = NDArray[i32](3, 2, fill=fill_value)
     print(A)
 
+
 fn test_random() raises:
-    var arr_variadic = nm.core.random.rand(shape=List[Int](10, 10, 10), min=1.0, max=2.0)
+    var arr_variadic = nm.core.random.rand(
+        shape=List[Int](10, 10, 10), min=1.0, max=2.0
+    )
     print(arr_variadic)
     var random_array_var = nm.core.random.randn[i16](3, 2, mean=0, variance=5)
     print(random_array_var)
-    var random_array_list = nm.core.random.randn[i16](List[Int](3, 2), mean=0, variance=1)
+    var random_array_list = nm.core.random.randn[i16](
+        List[Int](3, 2), mean=0, variance=1
+    )
     print(random_array_list)
 
     var random_array_var1 = nm.core.random.rand[i16](3, 2, min=0, max=100)
     print(random_array_var1)
-    var random_array_list1 = nm.core.random.rand[i16](List[Int](3, 2), min=0, max=100)
+    var random_array_list1 = nm.core.random.rand[i16](
+        List[Int](3, 2), min=0, max=100
+    )
     print(random_array_list1)
+
 
 fn test_arr_manipulation() raises:
     var A = arange[i16](1, 7, 1)
@@ -126,6 +139,7 @@ fn test_arr_manipulation() raises:
     # print("x[2]", array.item(2))
     # moveaxis(array, 0, 1)
 
+
 fn test_bool_masks1() raises:
     var A = nm.core.random.rand[i16](3, 2, 2)
     print(A.ndshape)
@@ -150,6 +164,7 @@ fn test_bool_masks1() raises:
     print(mask)
     random.seed(12)
 
+
 fn test_bool_masks2() raises:
     var np = Python.import_module("numpy")
     var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
@@ -163,7 +178,7 @@ fn test_bool_masks2() raises:
     print(np_gt)
     gt.to_numpy()
     print(gt)
-    
+
     var AA = nm.core.random.rand[i16](3, 3)
     var BB = nm.core.random.rand[i16](3, 3)
     print(BB)
@@ -183,13 +198,14 @@ fn test_bool_masks2() raises:
     print(mask)
     var temp = AA * SIMD[i16, 1](2)
     print(temp)
-    var temp1= temp == SIMD[i16, 1](0)
+    var temp1 = temp == SIMD[i16, 1](0)
     var temp2 = AA[temp1]
     print(temp2)
-    var temp3 = AA[AA%SIMD[i16, 1](2) == SIMD[i16, 1](0)]
+    var temp3 = AA[AA % SIMD[i16, 1](2) == SIMD[i16, 1](0)]
     print(temp3)
     print(temp3.get_scalar(0))
     print(temp3.ndshape, temp3.stride, temp3.ndshape.ndsize)
+
 
 fn test_creation_routines() raises:
     var x = linspace[numojo.f32](0.0, 60.0, 60)
@@ -201,31 +217,35 @@ fn test_creation_routines() raises:
     print(z)
     print(w)
 
+
 fn test_slicing() raises:
     var raw = List[Int32]()
     for _ in range(16):
-        raw.append(random.randn_float64()*10)
-    var arr1 = numojo.NDArray[numojo.i32](data=raw, shape=List[Int](4,4), order="C")
+        raw.append(random.randn_float64() * 10)
+    var arr1 = numojo.NDArray[numojo.i32](
+        data=raw, shape=List[Int](4, 4), order="C"
+    )
     print(arr1)
-    print(arr1[0,1])
+    print(arr1[0, 1])
     print(arr1[0:1, :])
     print(arr1[1:2, 3:4])
 
     var w = arange[f32](0.0, 24.0, step=1)
     w.reshape(2, 3, 4, order="C")
-    print(w[0,0,0], w[0,0,1], w[1,1,1], w[1,2,3])
+    print(w[0, 0, 0], w[0, 0, 1], w[1, 1, 1], w[1, 2, 3])
     print(w)
     var slicedw = w[0:1, :, 1:2]
     print(slicedw)
     print()
 
     var y = arange[numojo.f32](0.0, 24.0, step=1)
-    y.reshape(2,3,4, order="F")
-    print(y[0,0,0], y[0,0,1], y[1,1,1], y[1,2,3])
+    y.reshape(2, 3, 4, order="F")
+    print(y[0, 0, 0], y[0, 0, 1], y[1, 1, 1], y[1, 2, 3])
     print(y)
     print(y.order)
     var slicedy = y[:, :, 1:2]
     print(slicedy)
+
 
 fn main() raises:
     # test_constructors1()
@@ -236,6 +256,7 @@ fn main() raises:
     test_bool_masks2()
     # test_creation_routines()
     # test_slicing()
+
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
 # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2),

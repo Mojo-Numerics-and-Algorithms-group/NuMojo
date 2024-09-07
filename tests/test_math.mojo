@@ -83,7 +83,7 @@ def test_inverse():
 
 def test_inverse_2():
     var np = Python.import_module("numpy")
-    var arr = nm.NDArray(100, 100, random=True)
+    var arr = nm.core.random.rand(100, 100)
     var np_arr = arr.to_numpy()
     check_is_close(
         nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"

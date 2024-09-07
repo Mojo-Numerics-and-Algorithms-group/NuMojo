@@ -70,3 +70,21 @@ def test_matmul():
     )
     # The only matmul that currently works is par (__matmul__)
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
+
+
+def test_inverse():
+    var np = Python.import_module("numpy")
+    var arr = nm.NDArray("[[1,0,1], [0,2,1], [1,1,1]]")
+    var np_arr = arr.to_numpy()
+    check_is_close(
+        nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
+    )
+
+
+def test_inverse_2():
+    var np = Python.import_module("numpy")
+    var arr = nm.NDArray(100, 100, random=True)
+    var np_arr = arr.to_numpy()
+    check_is_close(
+        nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
+    )

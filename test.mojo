@@ -149,6 +149,17 @@ fn test_bool_masks1() raises:
     random.seed(12)
 
 fn test_bool_masks2() raises:
+    var np = Python.import_module("numpy")
+    var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
+    var A = nm.arange[nm.i16](0, 24)
+    A.reshape(3, 2, 4)
+
+    # Test greater than
+    var np_gt = np_A > 10
+    var gt = A > Scalar[nm.i16](10)
+    print(gt)
+    print(np_gt)
+
     var AA = nm.core.random.rand[i16](3, 3)
     var BB = nm.core.random.rand[i16](3, 3)
     print(BB)
@@ -213,14 +224,14 @@ fn test_slicing() raises:
     print(slicedy)
 
 fn main() raises:
-    test_constructors1()
-    test_constructors2()
-    test_random()
-    test_arr_manipulation()
-    test_bool_masks1()
+    # test_constructors1()
+    # test_constructors2()
+    # test_random()
+    # test_arr_manipulation()
+    # test_bool_masks1()
     test_bool_masks2()
-    test_creation_routines()
-    test_slicing()
+    # test_creation_routines()
+    # test_slicing()
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
 # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2),

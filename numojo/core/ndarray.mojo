@@ -45,7 +45,7 @@ from .ndarray_utils import (
     _traverse_iterative,
     to_numpy,
     bool_to_numeric,
-    fill_pointer
+    fill_pointer,
 )
 from ..math.math_funcs import Vectorized
 from .utility_funcs import is_inttype

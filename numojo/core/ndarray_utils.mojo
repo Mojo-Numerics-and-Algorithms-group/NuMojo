@@ -17,7 +17,7 @@ fn fill_pointer[
 ](inout array: DTypePointer[dtype], size: Int, value: Scalar[dtype]) raises:
     """
     Fill a NDArray with a specific value.
-    
+
     Parameters:
         dtype: The data type of the NDArray elements.
 
@@ -27,13 +27,14 @@ fn fill_pointer[
         value: The value to fill the NDArray with.
     """
     alias width = simdwidthof[dtype]()
-    
+
     @parameter
     fn vectorized_fill[simd_width: Int](idx: Int):
         array.store[width=simd_width](idx, value)
+
     vectorize[vectorized_fill, width](size)
 
-    
+
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.

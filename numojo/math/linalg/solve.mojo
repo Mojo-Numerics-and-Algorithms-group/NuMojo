@@ -79,8 +79,8 @@ fn lu_decomposition[
     var A = array.astype[dtype]()
 
     # Initiate upper and lower triangular matrices
-    var U = NDArray[dtype](shape=shape_of_array, fill=0)
-    var L = NDArray[dtype](shape=shape_of_array, fill=0)
+    var U = NDArray[dtype](shape=shape_of_array, fill=SIMD[dtype, 1](0))
+    var L = NDArray[dtype](shape=shape_of_array, fill=SIMD[dtype, 1](0))
 
     # Fill in L and U
     for i in range(0, n):
@@ -127,7 +127,7 @@ fn forward_substitution[
     var m = L.shape()[0]
 
     # Initialize x
-    var x = NDArray[dtype](m, fill=0)
+    var x = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
 
     for i in range(m):
         var value_on_hold: Scalar[dtype] = y.item(i)
@@ -160,7 +160,7 @@ fn back_substitution[
     # length of U
     var m = U.shape()[0]
     # Initialize x
-    var x = NDArray[dtype](m, fill=0)
+    var x = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
 
     for i in range(m - 1, -1, -1):
         var value_on_hold: Scalar[dtype] = y.item(i)
@@ -222,21 +222,21 @@ fn inverse[
 
     """
 
-    var U: NDArray
-    var L: NDArray
-    L, U = lu_decomposition(array)
+    var U: NDArray[dtype]
+    var L: NDArray[dtype]
+    L, U = lu_decomposition[dtype](array)
 
     var m = array.shape()[0]
     var inversed = NDArray[dtype](shape=array.shape())
 
     # Initialize vectors
-    var y = NDArray(m)
-    var z = NDArray(m)
-    var x = NDArray(m)
+    var y = NDArray[dtype](m)
+    var z = NDArray[dtype](m)
+    var x = NDArray[dtype](m)
 
     for i in range(m):
         # Each time, one of the item is changed to 1
-        y = NDArray(m, fill=0)
+        y = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
         y.__setitem__(i, 1)
 
         # Solve `Lz = y` for `z`

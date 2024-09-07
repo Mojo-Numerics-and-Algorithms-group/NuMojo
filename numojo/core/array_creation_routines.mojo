@@ -394,7 +394,6 @@ fn geomspace[
 # ===------------------------------------------------------------------------===#
 
 
-# empty basically has to be either random or zero, can't return a purely empty matrix I think.
 fn empty[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a NDArray of given shape with arbitrary values.
@@ -408,7 +407,7 @@ fn empty[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    return NDArray[dtype](shape, fill=0)
+    return NDArray[dtype](shape=shape)
 
 
 fn zeros[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
@@ -424,7 +423,7 @@ fn zeros[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    return NDArray[dtype](shape, random=False)
+    return NDArray[dtype](shape, fill=SIMD[dtype, 1](0))
 
 
 fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
@@ -441,7 +440,7 @@ fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with size N x M and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](N, M, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](N, M, fill=SIMD[dtype, 1](0))
     var one = Scalar[dtype](1)
     for i in range(min(N, M)):
         result.store[1](i, i, val=one)
@@ -461,7 +460,7 @@ fn identity[dtype: DType](N: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](N, N, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](N, N, fill=SIMD[dtype, 1](0))
     var one = Scalar[dtype](1)
     for i in range(N):
         result.store[1](i, i, val=one)
@@ -545,7 +544,7 @@ fn diagflat[
     """
     v.reshape(v.ndshape.ndsize, 1)
     var n: Int = v.ndshape.ndsize + abs(k)
-    var result: NDArray[dtype] = NDArray[dtype](n, n, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](n, n)
 
     for i in range(n):
         print(n * i + i + k)

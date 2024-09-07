@@ -2697,6 +2697,84 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error("Error: Elements of `index` exceed the array shape")
         return self.data.load[width=1](_get_index(index, self.stride))
 
+
+    fn itemset(inout self, index: Variant[Int, List[Int]], item: Scalar[dtype]) raises:
+        """Set the scalar at the coordinates.
+
+        Args:
+            index: The coordinates of the item.
+                Can either be `Int` or `List[Int]`.
+                If `Int` is passed, it is the index of i-th item of the whole array.
+                If `List[Int]` is passed, it is the coordinate of the item.
+            item: The scalar to be set.
+
+        Note:
+            This is similar to `numpy.ndarray.itemset`.
+            The difference is that we takes in `List[Int]`, but numpy takes in a tuple.
+
+        An example goes as follows.
+
+        ```mojo
+        import numojo as nm
+
+        fn main() raises:
+            var A = nm.zeros[nm.i16](3, 3)
+            print(A)
+            A.itemset(5, 256)
+            print(A)
+            A.itemset(List(1,1), 1024)
+            print(A)
+        ```
+        ```console
+        [[      0       0       0       ]
+         [      0       0       0       ]
+         [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        [[      0       0       0       ]
+         [      0       0       256     ]
+         [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        [[      0       0       0       ]
+         [      0       1024    256     ]
+         [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        ```
+        """
+
+        # If one index is given
+        if index.isa[Int]():
+            var idx = index._get_ptr[Int]()[]
+            if idx < self.size():
+                if (
+                    self.order == "F"
+                ):  # column-major should be converted to row-major
+                    # The following code can be taken out as a function that
+                    # convert any index to coordinates according to the order
+                    var c_stride = NDArrayStride(shape=self.ndshape)
+                    var c_coordinates = List[Int]()
+                    for i in range(c_stride.ndlen):
+                        var coordinate = idx // c_stride[i]
+                        idx = idx - c_stride[i] * coordinate
+                        c_coordinates.append(coordinate)
+                    self.data.store[width=1](
+                        _get_index(c_coordinates, self.stride), item
+                    )
+
+                self.data.store[width=1](idx, item)
+            else:
+                raise Error("Error: Elements of `index` exceed the array size")
+
+        else:
+            var indices = index._get_ptr[List[Int]]()[]
+            # If more than one index is given
+            if indices.__len__() != self.ndim:
+                raise Error("Error: Length of Indices do not match the shape")
+            for i in range(indices.__len__()):
+                if indices[i] >= self.ndshape[i]:
+                    raise Error("Error: Elements of `index` exceed the array shape")
+            self.data.store[width=1](_get_index(indices, self.stride), item)
+
+
     fn max(self, axis: Int = 0) raises -> Self:
         """
         Max on axis.

@@ -49,5 +49,5 @@ jobs:
 
       - name: Run tests
         run: |
-          pip install numpy
+          pip install "numpy<2.0"
           mojo test tests -I .

@@ -91,10 +91,10 @@ def test_inverse_2():
 
 def test_setitem():
     var np = Python.import_module("numpy")
-    var arr = nm.NDArray(100, 100, random=True)
+    var arr = nm.NDArray(4, 4, fill=0)
     var np_arr = arr.to_numpy()
-    arr.itemset(40, 1000)
-    np_arr.itemset(40, 1000)
+    arr.itemset(List(2,2), 1000)
+    np_arr[(2, 2)] = 1000
     check_is_close(
-        arr, np_arr, "Inverse is broken"
+        arr, np_arr, "Itemset is broken"
     )

@@ -159,7 +159,9 @@ fn test_bool_masks2() raises:
     var gt = A > Scalar[nm.i16](10)
     print(gt)
     print(np_gt)
-
+    gt.to_numpy()
+    print(gt)
+    
     var AA = nm.core.random.rand[i16](3, 3)
     var BB = nm.core.random.rand[i16](3, 3)
     print(BB)

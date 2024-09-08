@@ -166,7 +166,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         )
         self.ndlen = len(shape)
         self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape)) 
+        memset_zero(self.ndshape, len(shape))
         var count: Int = 1
         for i in range(len(shape)):
             self.ndshape[i] = shape[i]
@@ -643,7 +643,7 @@ struct NDArray[dtype: DType = DType.float64](
     var order: String
     "Memory layout of array C (C order row major) or F (Fortran order col major)."
 
-    alias simd_width: Int = simdwidthof[dtype]()  #
+    alias width: Int = simdwidthof[dtype]()  #
     """Vector size of the data type."""
 
     # ===-------------------------------------------------------------------===#
@@ -2017,14 +2017,13 @@ struct NDArray[dtype: DType = DType.float64](
                 ** p.load[width=simd_width](index),
             )
 
-        vectorize[vectorized_pow, self.simd_width](self.ndshape.ndsize)
+        vectorize[vectorized_pow, self.width](self.ndshape.ndsize)
         return result
 
     fn __ipow__(inout self, p: Int):
         self = self.__pow__(p)
 
     fn _elementwise_pow(self, p: Int) -> Self:
-        alias simd_width: Int = simdwidthof[dtype]()
         var new_vec = self
 
         @parameter
@@ -2033,7 +2032,7 @@ struct NDArray[dtype: DType = DType.float64](
                 index, pow(self.data.load[width=simd_width](index), p)
             )
 
-        vectorize[array_scalar_vectorize, simd_width](self.ndshape.ndsize)
+        vectorize[array_scalar_vectorize, self.width](self.ndshape.ndsize)
         return new_vec
 
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
@@ -2458,16 +2457,18 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Transpose the array.
         """
-        if self.ndim !=2:
+        if self.ndim != 2:
             raise Error("Only 2-D arrays can be transposed currently.")
         var rows = self.ndshape[0]
         var cols = self.ndshape[1]
-        
-        var transposed = NDArray[dtype](cols, rows, random=False)
+
+        var transposed = NDArray[dtype](cols, rows)
         for i in range(rows):
             for j in range(cols):
                 # the setitem is not working due to the symmetry issue of getter and setter
-                transposed.__setitem__(VariadicList[Int](j,i), val=self.item(i, j)) 
+                transposed.__setitem__(
+                    VariadicList[Int](j, i), val=self.item(i, j)
+                )
         self = transposed
 
     fn all(self) raises -> Bool:
@@ -2487,7 +2488,7 @@ struct NDArray[dtype: DType = DType.float64](
                 (self.data + idx).simd_strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_all, self.simd_width](self.ndshape.ndsize)
+        vectorize[vectorized_all, self.width](self.ndshape.ndsize)
         return result
 
     fn any(self) raises -> Bool:
@@ -2505,7 +2506,7 @@ struct NDArray[dtype: DType = DType.float64](
                 (self.data + idx).simd_strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_any, self.simd_width](self.ndshape.ndsize)
+        vectorize[vectorized_any, self.width](self.ndshape.ndsize)
         return result
 
     fn argmax(self) -> Int:
@@ -2564,7 +2565,7 @@ struct NDArray[dtype: DType = DType.float64](
                     self.load[width](idx).cast[type](), 1
                 )
 
-            vectorize[vectorized_astype, self.simd_width](self.ndshape.ndsize)
+            vectorize[vectorized_astype, self.width](self.ndshape.ndsize)
         else:
 
             @parameter
@@ -2579,7 +2580,7 @@ struct NDArray[dtype: DType = DType.float64](
                         .cast[type](),
                     )
 
-                vectorize[vectorized_astypenb_from_b, self.simd_width](
+                vectorize[vectorized_astypenb_from_b, self.width](
                     self.ndshape.ndsize
                 )
             else:
@@ -2588,9 +2589,7 @@ struct NDArray[dtype: DType = DType.float64](
                 fn vectorized_astypenb[width: Int](idx: Int) -> None:
                     narr.store[width](idx, self.load[width](idx).cast[type]())
 
-                vectorize[vectorized_astypenb, self.simd_width](
-                    self.ndshape.ndsize
-                )
+                vectorize[vectorized_astypenb, self.width](self.ndshape.ndsize)
 
         return narr
 
@@ -2628,40 +2627,35 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Fill all items of array with value.
         """
-        alias simd_width: Int = simdwidthof[dtype]()
 
         @parameter
         fn vectorized_fill[simd_width: Int](index: Int) -> None:
             self.data.store[width=simd_width](index, val)
 
-        vectorize[vectorized_fill, simd_width](self.ndshape.ndsize)
+        vectorize[vectorized_fill, self.width](self.ndshape.ndsize)
+
         return self
 
     fn flatten(inout self) raises:
         """
         Convert shape of array to one dimensional.
         """
-        # inplace has some problems right now
-        # if inplace:
-        #     self.ndshape = NDArrayShape(self.ndshape.ndsize, size=self.ndshape.ndsize)
-        #     self.stride = NDArrayStride(shape = self.ndshape, offset=0)
-        #     return self
+        self.ndshape = NDArrayShape(
+            self.ndshape.ndsize, size=self.ndshape.ndsize
+        )
+        self.stride = NDArrayStride(shape=self.ndshape, offset=0)
 
-        var res: NDArray[dtype] = NDArray[dtype](self.ndshape.ndsize)
-        alias simd_width: Int = simdwidthof[dtype]()
+        # var res: NDArray[dtype] = NDArray[dtype](self.ndshape.ndsize)
+        # alias width: Int = simdwidthof[dtype]()
 
-        @parameter
-        fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-            res.data.store[width=simd_width](
-                index, self.data.load[width=simd_width](index)
-            )
+        # @parameter
+        # fn vectorized_flatten[simd_width: Int](index: Int) -> None:
+        #     res.data.store[width=simd_width](
+        #         index, self.data.load[width=simd_width](index)
+        #     )
 
-        vectorize[vectorized_flatten, simd_width](self.ndshape.ndsize)
-        if inplace:
-            self = res
-            return None
-        else:
-            return res
+        # vectorize[vectorized_flatten, simd_width](self.ndshape.ndsize)
+        # self = res^
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """
@@ -2900,7 +2894,9 @@ struct NDArray[dtype: DType = DType.float64](
         return result
 
     # TODO: add axis parameter
-    fn trace(self, offset: Int = 0, axis1: Int = 0 , axis2: Int = 1) raises -> NDArray[dtype]:
+    fn trace(
+        self, offset: Int = 0, axis1: Int = 0, axis2: Int = 1
+    ) raises -> NDArray[dtype]:
         """
         Computes the trace of a ndarray.
 
@@ -2910,10 +2906,9 @@ struct NDArray[dtype: DType = DType.float64](
             axis2: Second axis.
 
         Returns:
-            The trace of the ndarray. 
+            The trace of the ndarray.
         """
         return trace[dtype](self, offset, axis1, axis2)
-
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
     fn reshape(inout self, *shape: Int, order: String = "C") raises:

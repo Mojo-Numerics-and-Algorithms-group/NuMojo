@@ -190,8 +190,8 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The 1 dimensional flattened NDArray.
     """
 
-    var res: NDArray[dtype] = NDArray[dtype](array.ndshape.ndsize, random=False)
-    alias simd_width: Int = simdwidthof[dtype]()
+    var res: NDArray[dtype] = NDArray[dtype](array.ndshape.ndsize)
+    alias width: Int = simdwidthof[dtype]()
 
     @parameter
     fn vectorized_flatten[simd_width: Int](index: Int) -> None:
@@ -199,11 +199,16 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
             index, array.data.load[width=simd_width](index)
         )
 
-    vectorize[vectorized_flatten, simd_width](array.ndshape.ndsize)
+    vectorize[vectorized_flatten, width](array.ndshape.ndsize)
     return res
 
+
 # TODO: implement for arbitrary axis
-fn trace[dtype: DType](array: NDArray[dtype], offset: Int = 0, axis1: Int = 0 , axis2: Int = 1) raises -> NDArray[dtype]:
+fn trace[
+    dtype: DType
+](
+    array: NDArray[dtype], offset: Int = 0, axis1: Int = 0, axis2: Int = 1
+) raises -> NDArray[dtype]:
     """
     Computes the trace of a ndarray.
 
@@ -217,17 +222,19 @@ fn trace[dtype: DType](array: NDArray[dtype], offset: Int = 0, axis1: Int = 0 , 
         axis2: Second axis.
 
     Returns:
-        The trace of the NDArray. 
+        The trace of the NDArray.
     """
     if array.ndim != 2:
         raise Error("Trace is currently only supported for 2D arrays")
     if axis1 > array.ndim - 1 or axis2 > array.ndim - 1:
         raise Error("axis cannot be greater than the rank of the array")
-    var result: NDArray[dtype] = NDArray[dtype](1, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](1)
     var rows = array.ndshape[0]
     var cols = array.ndshape[1]
-    var diag_length = min(rows, cols - offset) if offset >= 0 else min(rows + offset, cols)
-    
+    var diag_length = min(rows, cols - offset) if offset >= 0 else min(
+        rows + offset, cols
+    )
+
     for i in range(diag_length):
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i

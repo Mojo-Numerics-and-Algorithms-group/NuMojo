@@ -3,13 +3,15 @@ Random values array generation.
 """
 # ===----------------------------------------------------------------------=== #
 # Implements RANDOM
-# Last updated: 2024-06-18
+# Last updated: 2024-09-06
 # ===----------------------------------------------------------------------=== #
 
 import math as mt
 from random import random
-from .ndarray import NDArray
 from builtin.tuple import Tuple
+
+from .ndarray import NDArray
+from .utility_funcs import is_inttype, is_floattype
 
 
 fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
@@ -121,19 +123,19 @@ fn rand[
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.seed()
-    # if dtype.is_integral():
+    # if is_inttype(dtype):
+    #     for i in range(result.ndshape.ndsize):
+    #         var temp: Scalar[dtype] = random.random_float64(
+    #             min.cast[f64](), max.cast[f64]()
+    #         ).cast[dtype]()
+    #         result.data[i] = temp
+    # elif is_floattype(dtype):
     #     random.randint[dtype](
     #         ptr=result.data,
     #         size=result.ndshape.ndsize,
     #         low=int(min),
     #         high=int(max),
     #     )
-    # elif dtype.is_floating_point():
-    #     for i in range(result.ndshape.ndsize):
-    #         var temp: Scalar[dtype] = random.random_float64(
-    #             min.cast[f64](), max.cast[f64]()
-    #         ).cast[dtype]()
-    #         result.data[i] = temp
     # else:
     #     raise Error(
     #         "Invalid type provided. dtype must be either an integral or"
@@ -144,7 +146,7 @@ fn rand[
             min.cast[f64](), max.cast[f64]()
         ).cast[dtype]()
         result.data[i] = temp
-    return result
+    return result^
 
 
 fn randn[

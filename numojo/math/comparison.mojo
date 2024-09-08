@@ -8,6 +8,7 @@ Implements comparison math currently not using backend due to bool bitpacking is
 
 
 import math
+
 import . math_funcs as _mf
 from ..core.ndarray import NDArray
 

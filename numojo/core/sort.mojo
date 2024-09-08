@@ -9,13 +9,13 @@ Implements sort functions
 
 import math
 from algorithm import vectorize
+
 from ..core.ndarray import NDArray, NDArrayShape
 
 """
-TODO: 
+TODO:
 1) Add more sorting algorithms.
-2) Add argument "inplace" for some functions.
-3) Add axis.
+2) Add axis.
 """
 
 # ===------------------------------------------------------------------------===#

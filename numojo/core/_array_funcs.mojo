@@ -27,16 +27,16 @@ fn math_func_1_array_in_one_array_out[
         A new NDArray that is the result of applying the function to the NDArray.
     """
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
-    alias opt_nelts = simdwidthof[dtype]()
+    alias width = simdwidthof[dtype]()
 
     @parameter
-    fn closure[simdwidth: Int](i: Int):
-        var simd_data = array.load[width=opt_nelts](i)
-        result_array.store[width=opt_nelts](
-            i, func[dtype, opt_nelts](simd_data)
+    fn closure[simd_width: Int](i: Int):
+        var simd_data = array.load[width=simd_width](i)
+        result_array.store[width=simd_width](
+            i, func[dtype, simd_width](simd_data)
         )
 
-    vectorize[closure, opt_nelts](array.num_elements())
+    vectorize[closure, width](array.num_elements())
 
     return result_array
 
@@ -69,17 +69,18 @@ fn math_func_2_array_in_one_array_out[
         raise Error("Shape Mismatch error shapes must match for this function")
 
     var result_array: NDArray[dtype] = NDArray[dtype](array1.shape())
-    alias opt_nelts = simdwidthof[dtype]()
+    alias width = simdwidthof[dtype]()
 
     @parameter
-    fn closure[simdwidth: Int](i: Int):
-        var simd_data1 = array1.load[width=opt_nelts](i)
-        var simd_data2 = array2.load[width=opt_nelts](i)
-        result_array.store[width=opt_nelts](
-            i, func[dtype, opt_nelts](simd_data1, simd_data2)
+    fn closure[simd_width: Int](i: Int):
+        var simd_data1 = array1.load[width=simd_width](i)
+        var simd_data2 = array2.load[width=simd_width](i)
+        result_array.store[width=simd_width](
+            i, func[dtype, simd_width](simd_data1, simd_data2)
         )
 
-    vectorize[closure, opt_nelts](result_array.num_elements())
+    vectorize[closure, width](result_array.num_elements())
+
     return result_array
 
 
@@ -105,14 +106,14 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
     """
 
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
-    alias opt_nelts = simdwidthof[dtype]()
+    alias width = simdwidthof[dtype]()
 
     @parameter
-    fn closure[simdwidth: Int](i: Int):
-        var simd_data1 = array.load[width=opt_nelts](i)
-        result_array.store[width=opt_nelts](
-            i, func[dtype, opt_nelts](simd_data1, scalar)
+    fn closure[simd_width: Int](i: Int):
+        var simd_data1 = array.load[width=simd_width](i)
+        result_array.store[width=simd_width](
+            i, func[dtype, simd_width](simd_data1, scalar)
         )
 
-    vectorize[closure, opt_nelts](result_array.num_elements())
+    vectorize[closure, width](result_array.num_elements())
     return result_array

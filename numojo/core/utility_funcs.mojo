@@ -83,3 +83,33 @@ fn is_floattype(dtype: DType) -> Bool:
     ):
         return True
     return False
+
+
+fn is_booltype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is a boolean type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+    if dtype == DType.bool:
+        return True
+    return False
+
+
+fn is_booltype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is a boolean type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+    if dtype == DType.bool:
+        return True
+    return False

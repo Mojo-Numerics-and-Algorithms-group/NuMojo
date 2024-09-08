@@ -113,39 +113,15 @@ def test_identity():
 
 def test_eye():
     var np = Python.import_module("numpy")
-    check(nm.eye[nm.i64](100,100),np.eye(100,100,dtype=np.int64),"Eye is broken")
+    check(
+        nm.eye[nm.i64](100, 100),
+        np.eye(100, 100, dtype=np.int64),
+        "Eye is broken",
+    )
 
-def test_diagflat():
-    var np = Python.import_module("numpy")
-    var temp = nm.arange[nm.i64](1, 10, 10)
-    temp.reshape(3,3)
-    check(nm.diagflat[nm.i64](nm),np.diagflat(np.arange(1,10,10).reshape(3,3),"Diagflat is broken")
 
-def main():
-    # var np = Python.import_module("numpy")
-    # var arr = nm.arange[nm.f64](0, 100)
-    # arr.reshape(10, 10)
-    # var np_arr = np.arange(0, 100).reshape(10, 10)
-    var np = Python.import_module("numpy")
-    var fill_val: Scalar[nm.i32] = 5
-    print(nm.NDArray(5, 5, 5, fill=fill_val).shape())
-    print(np.zeros([5, 5, 5], dtype=np.float64).fill(5))
-    # Arange like flat arrays
-    # check(nm.arange[nm.i64](0,100),np.arange(0,100,dtype=np.int64),"Arange is broken")
-    # check(nm.linspace[nm.i64](0,100),np.linspace(0,100,dtype=np.float64),"Linspace is broken")
-    # check_is_close(nm.logspace[nm.i64](0,100,5),np.logspace(0,100,5,dtype=np.float64),"Logspace is broken")
-    # check_is_close(nm.geomspace[nm.i64](1,100,5),np.geomspace(1,100,5,dtype=np.float64),"Logspace is broken")
-    # print((arr@arr).to_numpy()-np.matmul(np_arr,np_arr))
-    print(nm.matmul_naive[nm.f64](arr,arr).to_numpy())#-np.matmul(np_arr,np_arr))
-    print(np.matmul(np_arr,np_arr)) # # Basic ND arrays
-    # print(nm.sin[nm.f64](nm.arange[nm.f64](0,15)))
-    # print( np.sin(np.arange(0,15, dtype=np.float64)))
-    # check(nm.zeros[nm.f64](10,10,10,10),np.zeros((10,10,10,10),dtype=np.float64),"Zeros is broken")
-    # check(nm.ones[nm.f64](10,10,10,10),np.ones((10,10,10,10),dtype=np.float64),"Ones is broken")
-    # check(nm.full[nm.f64](10,10,10,10,fill_value=10),np.full((10,10,10,10),10,dtype=np.float64),"Full is broken")
-
-    # # 2d Linalg related arrays
-
-    # check(nm.identity[nm.i64](100),np.identity(100,dtype=np.int64),"Identity is broken")
-    # check(nm.eye[nm.i64](100,100),np.eye(100,100,dtype=np.int64),"Eye is broken")
-    # check(nm.eye[nm.i64](100,100),np.eye(100,100,dtype=np.int64),"Eye is broken")
+# def test_diagflat():
+#     var np = Python.import_module("numpy")
+#     var temp = nm.arange[nm.i64](1, 10, 10)
+#     temp.reshape(3,3)
+#     check(nm.diagflat[nm.i64](nm), np.diagflat(np.arange(1,10,10).reshape(3,3), "Diagflat is broken")

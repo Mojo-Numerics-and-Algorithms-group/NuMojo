@@ -8,10 +8,11 @@ Linear Algebra misc. functions
 
 
 import math
-import .. math_funcs as _mf
-from ...core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+
+import .. math_funcs as _mf
+from ...core.ndarray import NDArray, NDArrayShape
 
 
 fn cross[
@@ -90,9 +91,11 @@ fn dot[
         The dot product of two arrays.
     """
 
-    alias opt_nelts = simdwidthof[dtype]()
+    alias width = simdwidthof[dtype]()
     if array1.ndshape.ndlen == array2.ndshape.ndlen == 1:
-        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.ndshape.ndsize))
+        var result: NDArray[dtype] = NDArray[dtype](
+            NDArrayShape(array1.ndshape.ndsize)
+        )
 
         @parameter
         fn vectorized_dot[simd_width: Int](idx: Int) -> None:
@@ -102,7 +105,7 @@ fn dot[
                 * array2.load[width=simd_width](idx),
             )
 
-        vectorize[vectorized_dot, opt_nelts](array1.ndshape.ndsize)
+        vectorize[vectorized_dot, width](array1.ndshape.ndsize)
         return result^
     else:
         raise Error(

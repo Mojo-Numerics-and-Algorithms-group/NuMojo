@@ -12,7 +12,7 @@ Implements N-Dimensional Array
 1) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
 2) Add vectorization for _get_index
 3) Write more explanatory Error("") statements
-4) Create NDArrayView and remove coefficients. 
+4) Create NDArrayView and remove coefficients.
 """
 
 from builtin.type_aliases import AnyLifetime

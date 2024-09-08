@@ -78,6 +78,9 @@ fn test_constructors1() raises:
     print("offset: ", arr6.stride.ndoffset)
     print("dtype: ", arr6.dtype)
 
+    var arr7 = nm.NDArray[nm.f32](String("[[1.0,0,1], [0,2,1], [1,1,1]]"))
+    print(arr7)
+
 
 fn test_constructors2() raises:
     var fill_value: SIMD[i32, 1] = 10
@@ -86,34 +89,34 @@ fn test_constructors2() raises:
 
 
 fn test_random() raises:
-    var arr_variadic = nm.core.random.rand(
-        shape=List[Int](10, 10, 10), min=1.0, max=2.0
-    )
-    print(arr_variadic)
-    var random_array_var = nm.core.random.randn[i16](3, 2, mean=0, variance=5)
-    print(random_array_var)
-    var random_array_list = nm.core.random.randn[i16](
-        List[Int](3, 2), mean=0, variance=1
-    )
-    print(random_array_list)
+    # var arr_variadic = nm.core.random.rand(
+    #     shape=List[Int](10, 10, 10), min=1.0, max=2.0
+    # )
+    # print(arr_variadic)
+    # var random_array_var = nm.core.random.randn[i16](3, 2, mean=0, variance=5)
+    # print(random_array_var)
+    # var random_array_list = nm.core.random.randn[i16](
+    #     List[Int](3, 2), mean=0, variance=1
+    # )
+    # print(random_array_list)
 
-    var random_array_var1 = nm.core.random.rand[i16](3, 2, min=0, max=100)
-    print(random_array_var1)
-    var random_array_list1 = nm.core.random.rand[i16](
+    # var random_array_var1 = nm.core.random.rand[i16](3, 2, min=0, max=100)
+    # print(random_array_var1)
+    var random_array_list1 = nm.core.random.rand[i32](
         List[Int](3, 2), min=0, max=100
     )
     print(random_array_list1)
 
-
 fn test_arr_manipulation() raises:
-    var A = arange[i16](1, 7, 1)
+    var np = Python.import_module("numpy")
+    var A = np.arange(12)
     print(A)
     var temp = NDArray[f64](data=A)
     print(temp)
     temp.T()
     print(temp)
     A.reshape(2, 3, order="F")
-    nm.ravel(A)
+    # nm.ravel(A)
     print(A)
     var B = arange[i16](0, 12, 1)
     B.reshape(3, 2, 2, order="F")
@@ -250,10 +253,10 @@ fn test_slicing() raises:
 fn main() raises:
     # test_constructors1()
     # test_constructors2()
-    # test_random()
+    test_random()
     # test_arr_manipulation()
     # test_bool_masks1()
-    test_bool_masks2()
+    # test_bool_masks2()
     # test_creation_routines()
     # test_slicing()
 

@@ -7,6 +7,7 @@ Provides:
 """
 
 from ...core.ndarray import NDArray
+from ...core.array_creation_routines import zeros, eye
 
 
 fn lu_decomposition[
@@ -245,7 +246,104 @@ fn inverse[
         # Solve `Ux = z` for `x`
         x = back_substitution(U, z)
 
+        # print("z2", z)
+        # print("x2", x)
+
         for j in range(m):
             inversed.__setitem__(List[Int](j, i), x.item(j))
 
     return inversed
+
+
+# fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
+#     var U: NDArray[dtype]
+#     var L: NDArray[dtype]
+#     L, U = lu_decomposition[dtype](array)
+
+#     var m = array.shape()[0]
+
+#     var y = eye[dtype](m, m)
+#     var z = zeros[dtype](m, m)
+#     var x = zeros[dtype](m, m)
+
+#     # @parameter
+#     # fn calculate_by_col(col: Int):
+#     for col in range(m):  # col of x y z
+#         # Solve `Lz = y` for `z` for each col
+#         for i in range(m):  # row of L
+#             var value_on_hold: Scalar[dtype] = y.data.load[width=1](i * m + col)
+#             for j in range(i):  # col of L
+#                 value_on_hold = value_on_hold - L.data.load[width=1](
+#                     i * m + j
+#                 ) * z.data.load[width=1](j * m + col)
+#             value_on_hold = value_on_hold / L.data.load[width=1](i * m + i)
+#             z.data.store[width=1](i * m + col, value_on_hold)
+
+#         # # Solve `Ux = z` for `x` for each col
+#         # var x = s
+#         for i in range(m - 1, -1, -1):
+#             var value_on_hold: Scalar[dtype] = z.data.load[width=1](i * m + col)
+#             for j in range(i + 1, m):
+#                 value_on_hold = value_on_hold - U.data.load[width=1](
+#                     i * m + j
+#                 ) * x.data.load[width=1](j * m + col)
+#             value_on_hold = value_on_hold / U.data.load[width=1](i * m + i)
+#             x.data.store[width=1](i * m + col, value_on_hold)
+
+#     # parallelize[calculate_by_col](m, m)
+#     return x
+
+
+fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
+    """Find the inverse of a non-singular matrix, using LU decomposition algorithm.
+
+    Parameters:
+        dtype: Data type of the inversed matrix. Default value is `f64`.
+
+    Args:
+        array: Input matrix. It should be non-singular, square, and row-major.
+
+    Returns:
+        The reversed matrix of the original matrix.
+
+    TODO: Optimize the speed with `parallelize`.
+    """
+
+    var U: NDArray[dtype]
+    var L: NDArray[dtype]
+    L, U = lu_decomposition[dtype](array)
+
+    var m = array.shape()[0]
+
+    var y = eye[dtype](m, m)
+    var z = zeros[dtype](m, m)
+    var x = zeros[dtype](m, m)
+
+    # @parameter
+    # fn calculate_by_col(col: Int):
+    for col in range(m):  # col of x y z
+        # Solve `Lz = y` for `z` for each col
+        for i in range(m):  # row of L
+            var value_on_hold: Scalar[dtype] = y.data.load[width=1](i * m + col)
+            for j in range(m):  # col of L
+                if j < i:  # for j in range(i)
+                    value_on_hold = value_on_hold - L.data.load[width=1](
+                        i * m + j
+                    ) * z.data.load[width=1](j * m + col)
+            value_on_hold = value_on_hold / L.data.load[width=1](i * m + i)
+            z.data.store[width=1](i * m + col, value_on_hold)
+
+        # # Solve `Ux = z` for `x` for each col
+        # var x = s
+        for i in range(m - 1, -1, -1):
+            var value_on_hold: Scalar[dtype] = z.data.load[width=1](i * m + col)
+            for j in range(m):
+                if j >= i + 1:  # for j in range(i+1, m)
+                    value_on_hold = value_on_hold - U.data.load[width=1](
+                        i * m + j
+                    ) * x.data.load[width=1](j * m + col)
+            value_on_hold = value_on_hold / U.data.load[width=1](i * m + i)
+            x.data.store[width=1](i * m + col, value_on_hold)
+
+    # parallelize[calculate_by_col](m, m)
+    return x

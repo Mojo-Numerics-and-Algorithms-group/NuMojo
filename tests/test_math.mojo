@@ -89,12 +89,29 @@ def test_inverse_2():
         nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
     )
 
+
+def test_inv():
+    var np = Python.import_module("numpy")
+    var arr = nm.NDArray("[[1,0,1], [0,2,1], [1,1,1]]")
+    var np_arr = arr.to_numpy()
+    check_is_close(
+        nm.math.linalg.inv(arr), np.linalg.inv(np_arr), "Inverse is broken"
+    )
+
+
+def test_inv_2():
+    var np = Python.import_module("numpy")
+    var arr = nm.core.random.rand(100, 100)
+    var np_arr = arr.to_numpy()
+    check_is_close(
+        nm.math.linalg.inv(arr), np.linalg.inv(np_arr), "Inverse is broken"
+    )
+
+
 def test_setitem():
     var np = Python.import_module("numpy")
     var arr = nm.NDArray(4, 4)
     var np_arr = arr.to_numpy()
-    arr.itemset(List(2,2), 1000)
+    arr.itemset(List(2, 2), 1000)
     np_arr[(2, 2)] = 1000
-    check_is_close(
-        arr, np_arr, "Itemset is broken"
-    )
+    check_is_close(arr, np_arr, "Itemset is broken")

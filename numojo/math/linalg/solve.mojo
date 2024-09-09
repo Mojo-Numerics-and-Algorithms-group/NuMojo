@@ -26,7 +26,7 @@ fn lu_decomposition[
         A tuple of the upper and lower triangular matrices.
 
     Example:
-    ```mojo
+    ```
     import numojo as nm
     fn main() raises:
         var arr = nm.NDArray[nm.f64]("[[1,2,3], [4,5,6], [7,8,9]]")
@@ -190,7 +190,7 @@ fn inverse[
 
     An example goes as follows:
 
-    ```mojo
+    ```
     import numojo as nm
     fn main() raises:
         var A = nm.NDArray("[[1,0,1], [0,2,1], [1,1,1]]")

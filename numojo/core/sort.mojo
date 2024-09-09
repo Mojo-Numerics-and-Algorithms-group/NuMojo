@@ -9,13 +9,13 @@ Implements sort functions
 
 import math
 from algorithm import vectorize
+
 from ..core.ndarray import NDArray, NDArrayShape
 
 """
-TODO: 
+TODO:
 1) Add more sorting algorithms.
-2) Add argument "inplace" for some functions.
-3) Add axis.
+2) Add axis.
 """
 
 # ===------------------------------------------------------------------------===#
@@ -122,9 +122,7 @@ fn quick_sort_inplace[
         quick_sort_inplace(ndarray, pivot_new_index + 1, right)
 
 
-fn quick_sort[
-    dtype: DType
-](ndarray: NDArray[dtype],) raises -> NDArray[dtype]:
+fn quick_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Quick sort the NDArray.
     Adopt in-place partition.
@@ -146,13 +144,10 @@ fn quick_sort[
     Args:
         ndarray: An NDArray.
 
-    Returns:
-        The sorted NDArray.
     """
 
     var result: NDArray[dtype] = ndarray
     var length = ndarray.size()
-
     quick_sort_inplace(result, 0, length - 1)
 
     return result

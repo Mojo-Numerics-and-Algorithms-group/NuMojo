@@ -923,7 +923,7 @@ struct NDArray[dtype: DType = DType.float64](
         before it is passed into the function.
 
         Example:
-        ```mojo
+        ```
         import numojo as nm
 
         fn main() raises:

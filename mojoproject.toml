@@ -16,9 +16,11 @@ license = "Apache-2.0"
 [tasks]
 # test whether tests pass and the package can be built
 test = " magic run mojo test tests -I ./ && magic run mojo package numojo"
-package = "magic run mojo package numojo"
 # runs all final checks before a commit
 final = "magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo"
+# defaults tasks
+package = "magic run mojo package numojo"
+format = "magic run mojo format ./"
 
 [dependencies]
 max = ">=24.4.0,<25"

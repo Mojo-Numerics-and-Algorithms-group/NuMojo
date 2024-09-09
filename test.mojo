@@ -4,6 +4,7 @@ from benchmark.compiler import keep
 from python import Python
 
 # from random import seed
+from random.random import randint, random_float64
 
 import numojo as nm
 from numojo import *
@@ -89,23 +90,24 @@ fn test_constructors2() raises:
 
 
 fn test_random() raises:
-    # var arr_variadic = nm.core.random.rand(
-    #     shape=List[Int](10, 10, 10), min=1.0, max=2.0
-    # )
-    # print(arr_variadic)
-    # var random_array_var = nm.core.random.randn[i16](3, 2, mean=0, variance=5)
-    # print(random_array_var)
-    # var random_array_list = nm.core.random.randn[i16](
-    #     List[Int](3, 2), mean=0, variance=1
-    # )
-    # print(random_array_list)
+    var arr_variadic = nm.core.random.rand(
+        shape=List[Int](10, 10, 10), min=1.0, max=2.0
+    )
+    print(arr_variadic)
+    var random_array_var = nm.core.random.randn[i16](3, 2, mean=0, variance=5)
+    print(random_array_var)
+    var random_array_list = nm.core.random.randn[i16](
+        List[Int](3, 2), mean=0, variance=1
+    )
+    print(random_array_list)
 
-    # var random_array_var1 = nm.core.random.rand[i16](3, 2, min=0, max=100)
-    # print(random_array_var1)
+    var random_array_var1 = nm.core.random.rand[f16](3, 2, min=0, max=100)
+    print(random_array_var1)
     var random_array_list1 = nm.core.random.rand[i32](
         List[Int](3, 2), min=0, max=100
     )
     print(random_array_list1)
+
 
 fn test_arr_manipulation() raises:
     var np = Python.import_module("numpy")
@@ -248,6 +250,33 @@ fn test_slicing() raises:
     print(y.order)
     var slicedy = y[:, :, 1:2]
     print(slicedy)
+
+
+fn test_rand_funcs[
+    dtype: DType = DType.float64
+](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[
+    dtype
+]:
+    var result: NDArray[dtype] = NDArray[dtype](shape)
+    if dtype.is_integral():
+        random.randint[dtype](
+            ptr=result.data,
+            size=result.ndshape.ndsize,
+            low=int(min),
+            high=int(max),
+        )
+    elif dtype.is_floating_point():
+        for i in range(result.ndshape.ndsize):
+            var temp: Scalar[dtype] = random.random_float64(
+                min.cast[f64](), max.cast[f64]()
+            ).cast[dtype]()
+            result.__setitem__(i, temp)
+    else:
+        raise Error(
+            "Invalid type provided. dtype must be either an integral or"
+            " floating-point type."
+        )
+    return result
 
 
 fn main() raises:

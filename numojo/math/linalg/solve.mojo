@@ -324,26 +324,28 @@ fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
     for col in range(m):  # col of x y z
         # Solve `Lz = y` for `z` for each col
         for i in range(m):  # row of L
-            var value_on_hold: Scalar[dtype] = y.data.load[width=1](i * m + col)
+            z.store(i * m + col, y.load(i * m + col))
             for j in range(m):  # col of L
                 if j < i:  # for j in range(i)
-                    value_on_hold = value_on_hold - L.data.load[width=1](
-                        i * m + j
-                    ) * z.data.load[width=1](j * m + col)
-            value_on_hold = value_on_hold / L.data.load[width=1](i * m + i)
-            z.data.store[width=1](i * m + col, value_on_hold)
+                    z.store(
+                        i * m + col,
+                        z.load(i * m + col)
+                        - L.load(i * m + j) * z.load(j * m + col),
+                    )
+            z.store(i * m + col, z.load(i * m + col) / L.load(i * m + i))
 
         # # Solve `Ux = z` for `x` for each col
         # var x = s
         for i in range(m - 1, -1, -1):
-            var value_on_hold: Scalar[dtype] = z.data.load[width=1](i * m + col)
+            x.store(i * m + col, z.load(i * m + col))
             for j in range(m):
                 if j >= i + 1:  # for j in range(i+1, m)
-                    value_on_hold = value_on_hold - U.data.load[width=1](
-                        i * m + j
-                    ) * x.data.load[width=1](j * m + col)
-            value_on_hold = value_on_hold / U.data.load[width=1](i * m + i)
-            x.data.store[width=1](i * m + col, value_on_hold)
+                    x.store(
+                        i * m + col,
+                        x.load(i * m + col)
+                        - U.load(i * m + j) * x.load(j * m + col),
+                    )
+            x.store(i * m + col, x.load(i * m + col) / U.load(i * m + i))
 
     # parallelize[calculate_by_col](m, m)
     return x

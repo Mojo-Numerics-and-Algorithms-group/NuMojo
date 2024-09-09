@@ -4,6 +4,7 @@
 # ===----------------------------------------------------------------------=== #
 
 import math
+
 import .. math_funcs as _mf
 import ... core as core
 from ...core.ndarray import NDArray, NDArrayShape
@@ -16,7 +17,7 @@ from ...core.utility_funcs import is_inttype, is_floattype
 
 
 fn gradient[
-    dtype: DType
+    dtype: DType = DType.float64
 ](x: NDArray[dtype], spacing: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Compute the gradient of y over x using the trapezoidal rule.
@@ -67,4 +68,4 @@ fn gradient[
         ) / (hu * hd * (hu + hd))
         result.store(i, fi)
 
-    return result
+    return result^

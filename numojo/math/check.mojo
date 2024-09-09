@@ -8,6 +8,7 @@ Implements Checking routines: currently not SIMD due to bool bit packing issue
 
 
 import math
+
 import . math_funcs as _mf
 from ..core.ndarray import NDArray
 

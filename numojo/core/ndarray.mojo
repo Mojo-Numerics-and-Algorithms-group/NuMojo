@@ -2746,8 +2746,9 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error("Error: Elements of `index` exceed the array shape")
         return self.data.load[width=1](_get_index(index, self.stride))
 
-
-    fn itemset(inout self, index: Variant[Int, List[Int]], item: Scalar[dtype]) raises:
+    fn itemset(
+        inout self, index: Variant[Int, List[Int]], item: Scalar[dtype]
+    ) raises:
         """Set the scalar at the coordinates.
 
         Args:
@@ -2820,9 +2821,10 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error("Error: Length of Indices do not match the shape")
             for i in range(indices.__len__()):
                 if indices[i] >= self.ndshape[i]:
-                    raise Error("Error: Elements of `index` exceed the array shape")
+                    raise Error(
+                        "Error: Elements of `index` exceed the array shape"
+                    )
             self.data.store[width=1](_get_index(indices, self.stride), item)
-
 
     fn max(self, axis: Int = 0) raises -> Self:
         """

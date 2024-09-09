@@ -12,6 +12,7 @@ authors = [
 channels = ["conda-forge", "https://conda.modular.com/max"]
 platforms = ["osx-arm64", "linux-64"]
 license = "Apache-2.0"
+readme = "README.md"
 
 [tasks]
 # test whether tests pass and the package can be built

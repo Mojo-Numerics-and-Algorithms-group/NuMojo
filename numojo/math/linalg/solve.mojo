@@ -7,6 +7,8 @@ Provides:
 """
 
 from ...core.ndarray import NDArray
+from ...core.array_creation_routines import zeros, eye
+from algorithm import parallelize
 
 
 fn lu_decomposition[
@@ -245,7 +247,68 @@ fn inverse[
         # Solve `Ux = z` for `x`
         x = back_substitution(U, z)
 
+        # print("z2", z)
+        # print("x2", x)
+
         for j in range(m):
             inversed.__setitem__(List[Int](j, i), x.item(j))
 
     return inversed
+
+
+fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
+    """Find the inverse of a non-singular, row-major matrix, using LU decomposition algorithm.
+
+    The speed is faster than numpy for matrices smaller than 100x100,
+    and is slower for larger matrices.
+
+    TODO: Use LAPACK for large matrices when it is available.
+
+    Parameters:
+        dtype: Data type of the inversed matrix. Default value is `f64`.
+
+    Args:
+        array: Input matrix. It should be non-singular, square, and row-major.
+
+    Returns:
+        The reversed matrix of the original matrix.
+
+    """
+
+    var U: NDArray[dtype]
+    var L: NDArray[dtype]
+    L, U = lu_decomposition[dtype](array)
+
+    var m = array.shape()[0]
+
+    var Y = eye[dtype](m, m)
+    var Z = zeros[dtype](m, m)
+    var X = zeros[dtype](m, m)
+
+    @parameter
+    fn calculate_X(col: Int) -> None:
+        # Solve `LZ = Y` for `Z` for each col
+        for i in range(m):  # row of L
+            var _temp = Y.load(i * m + col)
+            for j in range(i):  # col of L
+                _temp = _temp - L.load(i * m + j) * Z.load(j * m + col)
+            _temp = _temp / L.load(i * m + i)
+            Z.store(i * m + col, _temp)
+
+        # Solve `UZ = Z` for `X` for each col
+        for i in range(m - 1, -1, -1):
+            var _temp2 = Z.load(i * m + col)
+            for j in range(i + 1, m):
+                _temp2 = _temp2 - U.load(i * m + j) * X.load(j * m + col)
+            _temp2 = _temp2 / U.load(i * m + i)
+            X.store(i * m + col, _temp2)
+
+    parallelize[calculate_X](m, m)
+
+    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
+    # This is disadvantage of Mojo's ASAP policy
+    var _Y = Y^
+    var _L = L^
+    var _U = U^
+
+    return X

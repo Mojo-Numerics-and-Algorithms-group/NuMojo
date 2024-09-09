@@ -74,19 +74,19 @@ def test_matmul():
 
 def test_inverse():
     var np = Python.import_module("numpy")
-    var arr = nm.NDArray[nm.f32](String("[[1,0,1], [0,2,1], [1,1,1]]"))
+    var arr = nm.core.random.rand(100, 100)
     var np_arr = arr.to_numpy()
     check_is_close(
         nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
     )
 
 
-def test_inverse_2():
+def test_inv():
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(100, 100)
     var np_arr = arr.to_numpy()
     check_is_close(
-        nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
+        nm.math.linalg.inv(arr), np.linalg.inv(np_arr), "Inverse is broken"
     )
 
 

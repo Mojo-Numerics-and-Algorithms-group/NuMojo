@@ -4,17 +4,26 @@ This is a list of UNRELEASED changes for the NuMojo Package.
 
 When we make a release, the items in this file will be edited and moved to `changelog.md`.
 
-## ⭐️ New
+## dd/mm/yyyy (v0.3)
 
-- Add workflows with unit tests and linting ([PR #95](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/95)
-by [@sandstromviktor](https://github.com/sandstromviktor))
-- Add multi-langual support for the readme file ([PR #99](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/99) by [@forFudan](https://github.com/forFudan)).
+### ⭐️ New
 
-## 🦋 Changed
+- Add functions for calculating the inverse of a matrix and LU decomposition (PR #101 by @forFudan).
+- Add `itemset` method to fill a scalar into an ndarray (PR #102 by @forFudan).
 
-- Modify initialization of NDArray ([PR #97](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/97)
-by [@MadAlex1997](https://github.com/MadAlex1997))
+### 🦋 Changed
 
-## ❌ Removed
+- Modify initialization of NDArray (PR #97 by @MadAlex1997)
 
-## 🛠️ Fixed
+### ❌ Removed
+
+- Refine the `NDArray` initializers. Remove `random` argument from `NDArray` constructors. Make random initilizer a standalone functions (Issue #96 by @MadAlex1997, PR #97 by @MadAlex1997, PR #98 by @shivasankarka).
+
+### 🛠️ Fixed
+
+- Make `sort` method an inplace method (Issue #87 by @mmenendezg, PR #91 by @shivasankarka).
+
+### 📚 Documentatory and testing
+
+- Add workflows with unit tests and linting (PR #95 by @sandstromviktor).
+- Add multi-langual support (Chinese, Japanese, and Korean) for the readme file (PR #99 by @forFudan, PR #100 by @shivasankarka).

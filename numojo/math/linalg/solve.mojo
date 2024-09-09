@@ -8,6 +8,7 @@ Provides:
 
 from ...core.ndarray import NDArray
 from ...core.array_creation_routines import zeros, eye
+from algorithm import parallelize
 
 
 fn lu_decomposition[
@@ -255,47 +256,13 @@ fn inverse[
     return inversed
 
 
-# fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
-#     var U: NDArray[dtype]
-#     var L: NDArray[dtype]
-#     L, U = lu_decomposition[dtype](array)
-
-#     var m = array.shape()[0]
-
-#     var y = eye[dtype](m, m)
-#     var z = zeros[dtype](m, m)
-#     var x = zeros[dtype](m, m)
-
-#     # @parameter
-#     # fn calculate_by_col(col: Int):
-#     for col in range(m):  # col of x y z
-#         # Solve `Lz = y` for `z` for each col
-#         for i in range(m):  # row of L
-#             var value_on_hold: Scalar[dtype] = y.data.load[width=1](i * m + col)
-#             for j in range(i):  # col of L
-#                 value_on_hold = value_on_hold - L.data.load[width=1](
-#                     i * m + j
-#                 ) * z.data.load[width=1](j * m + col)
-#             value_on_hold = value_on_hold / L.data.load[width=1](i * m + i)
-#             z.data.store[width=1](i * m + col, value_on_hold)
-
-#         # # Solve `Ux = z` for `x` for each col
-#         # var x = s
-#         for i in range(m - 1, -1, -1):
-#             var value_on_hold: Scalar[dtype] = z.data.load[width=1](i * m + col)
-#             for j in range(i + 1, m):
-#                 value_on_hold = value_on_hold - U.data.load[width=1](
-#                     i * m + j
-#                 ) * x.data.load[width=1](j * m + col)
-#             value_on_hold = value_on_hold / U.data.load[width=1](i * m + i)
-#             x.data.store[width=1](i * m + col, value_on_hold)
-
-#     # parallelize[calculate_by_col](m, m)
-#     return x
-
-
 fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
-    """Find the inverse of a non-singular matrix, using LU decomposition algorithm.
+    """Find the inverse of a non-singular, row-major matrix, using LU decomposition algorithm.
+
+    The speed is faster than numpy for matrices smaller than 100x100,
+    and is slower for larger matrices.
+
+    TODO: Use LAPACK for large matrices when it is available.
 
     Parameters:
         dtype: Data type of the inversed matrix. Default value is `f64`.
@@ -306,7 +273,6 @@ fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
     Returns:
         The reversed matrix of the original matrix.
 
-    TODO: Optimize the speed with `parallelize`.
     """
 
     var U: NDArray[dtype]
@@ -315,37 +281,34 @@ fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
 
     var m = array.shape()[0]
 
-    var y = eye[dtype](m, m)
-    var z = zeros[dtype](m, m)
-    var x = zeros[dtype](m, m)
+    var Y = eye[dtype](m, m)
+    var Z = zeros[dtype](m, m)
+    var X = zeros[dtype](m, m)
 
-    # @parameter
-    # fn calculate_by_col(col: Int):
-    for col in range(m):  # col of x y z
-        # Solve `Lz = y` for `z` for each col
+    @parameter
+    fn calculate_X(col: Int) -> None:
+        # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            z.store(i * m + col, y.load(i * m + col))
-            for j in range(m):  # col of L
-                if j < i:  # for j in range(i)
-                    z.store(
-                        i * m + col,
-                        z.load(i * m + col)
-                        - L.load(i * m + j) * z.load(j * m + col),
-                    )
-            z.store(i * m + col, z.load(i * m + col) / L.load(i * m + i))
+            var _temp = Y.load(i * m + col)
+            for j in range(i):  # col of L
+                _temp = _temp - L.load(i * m + j) * Z.load(j * m + col)
+            _temp = _temp / L.load(i * m + i)
+            Z.store(i * m + col, _temp)
 
-        # # Solve `Ux = z` for `x` for each col
-        # var x = s
+        # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            x.store(i * m + col, z.load(i * m + col))
-            for j in range(m):
-                if j >= i + 1:  # for j in range(i+1, m)
-                    x.store(
-                        i * m + col,
-                        x.load(i * m + col)
-                        - U.load(i * m + j) * x.load(j * m + col),
-                    )
-            x.store(i * m + col, x.load(i * m + col) / U.load(i * m + i))
+            var _temp2 = Z.load(i * m + col)
+            for j in range(i + 1, m):
+                _temp2 = _temp2 - U.load(i * m + j) * X.load(j * m + col)
+            _temp2 = _temp2 / U.load(i * m + i)
+            X.store(i * m + col, _temp2)
 
-    # parallelize[calculate_by_col](m, m)
-    return x
+    parallelize[calculate_X](m, m)
+
+    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
+    # This is disadvantage of Mojo's ASAP policy
+    var _Y = Y^
+    var _L = L^
+    var _U = U^
+
+    return X

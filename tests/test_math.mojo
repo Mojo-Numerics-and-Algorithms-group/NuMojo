@@ -90,10 +90,14 @@ def test_inv():
     )
 
 
-def test_setitem():
+def test_solve():
     var np = Python.import_module("numpy")
-    var arr = nm.NDArray(4, 4)
-    var np_arr = arr.to_numpy()
-    arr.itemset(List(2, 2), 1000)
-    np_arr[(2, 2)] = 1000
-    check_is_close(arr, np_arr, "Itemset is broken")
+    var A = nm.core.random.randn(100, 100)
+    var B = nm.core.random.randn(100, 50)
+    var A_np = A.to_numpy()
+    var B_np = B.to_numpy()
+    check_is_close(
+        nm.math.linalg.solver.solve(A, B),
+        np.linalg.solve(A_np, B_np),
+        "Solve is broken",
+    )

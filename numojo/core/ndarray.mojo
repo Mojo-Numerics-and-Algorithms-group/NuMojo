@@ -1221,7 +1221,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
-        Retreive a slice of the array corrisponding to the index at the first dimension.
+        Retreive a slice of the array corresponding to the index at the first dimension.
 
         Example:
             `arr[1]` returns the second row of the array.
@@ -1693,10 +1693,37 @@ struct NDArray[dtype: DType = DType.float64](
             new_index.append(int(i.item(0)))
 
         return self.__getitem__(new_index)
+    
+    fn __setitem__(self, index: NDArray[DType.index]) raises -> Self:
+        """
+        Returns the items of the array from an array of indices.
+        
+        Refer to `__getitem__(self, index: List[Int])`.
+
+        Example:
+        ```console
+        > var X = nm.NDArray[nm.i8](3,random=True)
+        > print(X)
+        [       32      21      53      ]
+        1-D array  Shape: [3]  DType: int8
+        > print(X.argsort())
+        [       1       0       2       ]
+        1-D array  Shape: [3]  DType: index
+        > print(X[X.argsort()])
+        [       21      32      53      ]
+        1-D array  Shape: [3]  DType: int8
+        ```
+        """
+
+        var new_index = List[Int]()
+        for i in index:
+            new_index.append(int(i.item(0)))
+
+        return self.__getitem__(new_index)
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """
-        Get items of array corrisponding to a mask.
+        Get items of array corresponding to a mask.
 
         Example:
             ```
@@ -1728,6 +1755,15 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Set the value of the array at the indices where the mask is true.
 
+        Example:
+        ```
+        var A = numojo.core.NDArray[numojo.i16](6, random=True)
+        var mask = A > 0
+        print(A)
+        print(mask)
+        A[mask] = 0
+        print(A)
+        ```
         """
         if (
             mask.ndshape != self.ndshape

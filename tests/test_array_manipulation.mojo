@@ -31,3 +31,12 @@ def test_arr_manipulation():
     # var raveled_B = nm.ravel(B, order="C")
     # var np_raveled_B = np.ravel(np_B, order='C')
     # check_is_close(raveled_B, np_raveled_B, "Ravel operation")
+
+
+def test_setitem():
+    var np = Python.import_module("numpy")
+    var arr = nm.NDArray(4, 4)
+    var np_arr = arr.to_numpy()
+    arr.itemset(List(2, 2), 1000)
+    np_arr[(2, 2)] = 1000
+    check_is_close(arr, np_arr, "Itemset is broken")

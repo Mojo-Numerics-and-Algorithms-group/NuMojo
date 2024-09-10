@@ -12,18 +12,21 @@ from algorithm import parallelize
 
 
 fn lu_decomposition[
-    dtype: DType = DType.float64
-](array: NDArray) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
+    dtype: DType
+](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
     """Perform LU (lower-upper) decomposition for matrix.
 
     Parameters:
         dtype: Data type of the upper and upper triangular matrices.
 
     Args:
-        array: Input matrix for decoposition.
+        A: Input matrix for decoposition.
 
     Returns:
         A tuple of the upper and lower triangular matrices.
+
+    For efficiency, `dtype` of the output arrays will be the same as the input
+    array. Thus, use `astype()` before passing the array to this function.
 
     Example:
     ```
@@ -63,11 +66,11 @@ fn lu_decomposition[
     """
 
     # Check whether the dimension is 2
-    if array.ndim != 2:
+    if A.ndim != 2:
         raise ("The array is not 2-dimensional!")
 
     # Check whether the matrix is square
-    var shape_of_array = array.shape()
+    var shape_of_array = A.shape()
     var m = shape_of_array[0]
     var n = shape_of_array[1]
     if m != n:
@@ -78,7 +81,7 @@ fn lu_decomposition[
     #     raise("The matrix is singular!")
 
     # Change dtype of array to defined dtype
-    var A = array.astype[dtype]()
+    # var A = array.astype[dtype]()
 
     # Initiate upper and lower triangular matrices
     var U = NDArray[dtype](shape=shape_of_array, fill=SIMD[dtype, 1](0))
@@ -174,12 +177,11 @@ fn back_substitution[
     return x
 
 
-fn inverse[
-    dtype: DType = DType.float64
-](array: NDArray) raises -> NDArray[dtype]:
+fn inverse[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """Find the inverse of a non-singular, square matrix.
 
-    This function is slower than `inv` as it does not adopt parallelization.
+    WARNING: This function is slower than `inv`
+    as it does not adopt parallelization.
 
     Parameters:
         dtype: Data type of the inversed matrix. Default value is `f64`.
@@ -258,13 +260,16 @@ fn inverse[
     return inversed
 
 
-fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
-    """Find the inverse of a non-singular, row-major matrix, using LU decomposition algorithm.
+fn inv[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Find the inverse of a non-singular, row-major matrix.
+
+    Use LU decomposition algorithm.
 
     The speed is faster than numpy for matrices smaller than 100x100,
     and is slower for larger matrices.
 
-    TODO: Use LAPACK for large matrices when it is available.
+    TODO: Use `solve()` function to calculate inverse.
+    `AX = I` where `I` is an identity matrix.
 
     Parameters:
         dtype: Data type of the inversed matrix. Default value is `f64`.
@@ -316,17 +321,21 @@ fn inv[dtype: DType = DType.float64](array: NDArray) raises -> NDArray[dtype]:
     return X
 
 
-fn solve[dtype: DType = DType.float64](A: NDArray, Y: NDArray) raises -> NDArray[dtype]:
+fn solve[
+    dtype: DType
+](A: NDArray[dtype], Y: NDArray[dtype]) raises -> NDArray[dtype]:
     """Solve the linear system `AX = Y` for `X`.
 
-    Notes:  
     `A` should be a non-singular, row-major matrix (m x m).
-    `B` should be a matrix of (m x n).
-    `X` is a matrix of (m x n).  
+    `Y` should be a matrix of (m x n).
+    `X` is a matrix of (m x n).
     LU decomposition algorithm is adopted.
 
     The speed is faster than numpy for matrices smaller than 100x100,
     and is slower for larger matrices.
+
+    For efficiency, `dtype` of the output array will be the same as the input
+    arrays. Thus, use `astype()` before passing the arrays to this function.
 
     TODO: Use LAPACK for large matrices when it is available.
 
@@ -335,46 +344,62 @@ fn solve[dtype: DType = DType.float64](A: NDArray, Y: NDArray) raises -> NDArray
 
     Args:
         A: Non-singular, square, and row-major matrix. The size is m x m.
-        B: Matrix of size m x m.
+        Y: Matrix of size m x n.
 
     Returns:
-        Matrix of size m x m.
+        Matrix of size m x n.
+
+    An example goes as follows.
+
+    ```mojo
+    import numojo as nm
+    fn main() raises:
+        var A = nm.NDArray(str("[[1, 0, 1], [0, 2, 1], [1, 1, 1]]"))
+        var B = nm.NDArray(str("[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"))
+        var X = nm.solve.solve(A, B)
+        print(X)
+    ```
+    ```console
+    [[      -1.0    -1.0    2.0     ]
+     [      -1.0    0.0     1.0     ]
+     [      2.0     1.0     -2.0    ]]
+    2-D array  Shape: [3, 3]  DType: float64
+    ```
 
     """
 
     var U: NDArray[dtype]
     var L: NDArray[dtype]
-    L, U = lu_decomposition[dtype](array)
+    L, U = lu_decomposition[dtype](A)
 
     var m = A.shape()[0]
+    var n = Y.shape()[1]
 
-    var Y = B.astype[dtype]()
-    var Z = zeros[dtype](m, m)
-    var X = zeros[dtype](m, m)
+    var Z = zeros[dtype](m, n)
+    var X = zeros[dtype](m, n)
 
     @parameter
     fn calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y.load(i * m + col)
+            var _temp = Y.load(i * n + col)
             for j in range(i):  # col of L
-                _temp = _temp - L.load(i * m + j) * Z.load(j * m + col)
+                _temp = _temp - L.load(i * m + j) * Z.load(j * n + col)
             _temp = _temp / L.load(i * m + i)
-            Z.store(i * m + col, _temp)
+            Z.store(i * n + col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z.load(i * m + col)
+            var _temp2 = Z.load(i * n + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U.load(i * m + j) * X.load(j * m + col)
+                _temp2 = _temp2 - U.load(i * m + j) * X.load(j * n + col)
             _temp2 = _temp2 / U.load(i * m + i)
-            X.store(i * m + col, _temp2)
+            X.store(i * n + col, _temp2)
 
-    parallelize[calculate_X](m, m)
+    parallelize[calculate_X](n, n)
 
     # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
     # This is disadvantage of Mojo's ASAP policy
-    var _Y = Y^
     var _L = L^
     var _U = U^
 

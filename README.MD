@@ -18,7 +18,7 @@
     </div>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="./docs/readme_cn.md"><strong>中文» </strong></a> &nbsp; <a href="./docs/readme_jp.md"><strong>日本語» </strong></a>
+        <a href="./docs/readme_zh_cn.md"><strong>中文» </strong></a> &nbsp; <a href="./docs/readme_jp.md"><strong>日本語» </strong></a>
     </div>
     <!-- <a href="./docs/readme_kr.md"><strong>한국어 문서» </strong></a> -->
     <!-- <br /> -->

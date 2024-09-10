@@ -45,7 +45,7 @@ from .ndarray_utils import (
     fill_pointer,
 )
 from ..math.math_funcs import Vectorized
-from .utility_funcs import is_inttype
+from .utility_funcs import is_inttype, is_booltype
 from ..math.linalg.matmul import matmul_parallelized
 from .array_manipulation_routines import reshape
 
@@ -1027,7 +1027,7 @@ struct NDArray[dtype: DType = DType.float64](
     # TODO: Make it work for all data types apart from float64
     fn __init__(inout self, data: PythonObject, order: String = "C") raises:
         if dtype != DType.float64:
-            raise Error("Only float64 is supported for now")
+            raise Error("Only float64 is supported currently")
         var len = int(len(data.shape))
         var shape: List[Int] = List[Int]()
         for i in range(len):
@@ -2513,7 +2513,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         # make this a compile time check
         # Respnse to above compile time errors are way harder to read at the moment.
-        if not (self.dtype.is_bool() or self.dtype.is_integral()):
+        if not (is_inttype(self.dtype) or is_booltype(self.dtype)):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
         var result: Bool = True

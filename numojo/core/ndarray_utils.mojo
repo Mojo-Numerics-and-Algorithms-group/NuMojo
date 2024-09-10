@@ -185,6 +185,55 @@ fn _traverse_iterative[
             orig, narr, ndim, coefficients, strides, offset, index, newdepth
         )
 
+fn _traverse_iterative_setter[
+    dtype: DType
+](
+    orig: NDArray[dtype],
+    inout narr: NDArray[dtype],
+    ndim: List[Int],
+    coefficients: List[Int],
+    strides: List[Int],
+    offset: Int,
+    inout index: List[Int],
+    depth: Int,
+) raises:
+    """
+    Traverse a multi-dimensional array in a iterative manner.
+
+    Raises:
+        Error: If the index is out of bound.
+
+    Parameters:
+        dtype: The data type of the NDArray elements.
+
+    Args:
+        orig: The original array.
+        narr: The array to store the result.
+        ndim: The number of dimensions of the array.
+        coefficients: The coefficients to traverse the sliced part of the original array.
+        strides: The strides to traverse the new NDArray `narr`.
+        offset: The offset to the first element of the original NDArray.
+        index: The list of indices.
+        depth: The depth of the indices.
+    """
+    if depth == ndim.__len__():
+        var idx = offset + _get_index(index, coefficients)
+        var nidx = _get_index(index, strides)
+        var temp = orig.data.load[width=1](idx)
+        if nidx >= narr.ndshape.ndsize:
+            raise Error("Invalid index: index out of bound")
+        else:
+            narr.data.store[width=1](nidx, temp)
+        return
+
+    fn parallelized(idx: Int) -> None:
+    # for i in range(ndim[depth]):
+        index[depth] = i
+        var newdepth = depth + 1
+        _traverse_iterative(
+            orig, narr, ndim, coefficients, strides, offset, index, newdepth
+        )
+    parallelized[parallelized](ndim[depth], ndim[depth])
 
 fn bool_to_numeric[
     dtype: DType

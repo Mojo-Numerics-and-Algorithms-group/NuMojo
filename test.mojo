@@ -278,17 +278,32 @@ fn test_rand_funcs[
         )
     return result
 
+fn test_setter() raises:
+    # var x = NDArray[f32](2, 3, 4, fill=Scalar[f32](1), order="F")
+    var x = nm.core.random.rand[f32](2, 3, 4)
+    print(x)
+    var z = x[0]
+    print(z)
+    var y = NDArray[f32](3, 4, fill=Scalar[f32](1))
+    x[0] = y
+    print(x)
+
+    # var np = Python.import_module("numpy")
+    # var np_x = np.random.rand(2, 3, 4)
+    # print(np_x)
+    # print(np_x[1])
+
 
 fn main() raises:
     # test_constructors1()
     # test_constructors2()
-    test_random()
+    # test_random()
     # test_arr_manipulation()
     # test_bool_masks1()
     # test_bool_masks2()
     # test_creation_routines()
     # test_slicing()
-
+    test_setter()
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
 # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2),

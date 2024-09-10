@@ -40,6 +40,7 @@ from ..math.arithmetic import abs
 from .ndarray_utils import (
     _get_index,
     _traverse_iterative,
+    _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
     fill_pointer,
@@ -1247,6 +1248,93 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
+    fn __setitem__(inout self, idx: Int, arr: Self) raises:
+        """
+        Retreive a slice of the array corresponding to the index at the first dimension.
+
+        Example:
+            `arr[1]` returns the second row of the array.
+        """
+        # TODO: add support for different dtypes
+        if self.ndim == 0 and arr.ndim == 0:
+            self.data.store[width=1](0, arr.data.load[width=1](0))
+
+        var slice_list = List[Slice]()
+        slice_list.append(Slice(idx, idx + 1))
+
+        if self.ndim > 1:
+            for i in range(1, self.ndim):
+                var size_at_dim: Int = self.ndshape[i]
+                slice_list.append(Slice(0, size_at_dim))
+
+        var n_slices: Int = slice_list.__len__()
+        var ndims: Int = 0
+        var spec: List[Int] = List[Int]()
+        var count: Int = 0
+        for i in range(slice_list.__len__()):
+            self._adjust_slice_(slice_list[i], self.ndshape[i])
+            if (
+                slice_list[i].start >= self.ndshape[i]
+                or slice_list[i].end > self.ndshape[i]
+            ):
+                raise Error("Error: Slice value exceeds the array shape")
+            spec.append(slice_list[i].unsafe_indices())
+            if slice_list[i].unsafe_indices() != 1:
+                ndims += 1
+            else:
+                count += 1
+        if count == slice_list.__len__():
+            ndims = 1
+
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+
+        var j: Int = 0
+        count = 0
+        for _ in range(ndims):
+            while spec[j] == 1:
+                count += 1
+                j += 1
+            if j >= self.ndim:
+                break
+            nshape.append(slice_list[j].unsafe_indices())
+            nnum_elements *= slice_list[j].unsafe_indices()
+            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            j += 1
+
+        var noffset: Int = 0
+        if self.order == "C":
+            noffset = 0
+            for i in range(ndims):
+                var temp_stride: Int = 1
+                for j in range(i + 1, ndims):  # temp
+                    temp_stride *= nshape[j]
+                nstrides.append(temp_stride)
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start * self.stride[i]
+        elif self.order == "F":
+            noffset = 0
+            nstrides.append(1)
+            for i in range(0, ndims - 1):
+                nstrides.append(nstrides[i] * nshape[i])
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start * self.stride[i]
+        # print("nshape: ", nshape.__str__())
+        # print("ncoefficients: ", ncoefficients.__str__())
+        # print("nnum_elements: ", nnum_elements)
+        # print("nstrides: ", nstrides.__str__())
+        # print("noffset: ", noffset)
+
+        var index = List[Int]()
+        for _ in range(ndims):
+            index.append(0)
+
+        _traverse_iterative_setter[dtype](
+            arr, self, nshape, ncoefficients, nstrides, noffset, index, 0
+        )
+
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
         """
         Adjusts the slice values to lie within 0 and dim.
@@ -1693,11 +1781,11 @@ struct NDArray[dtype: DType = DType.float64](
             new_index.append(int(i.item(0)))
 
         return self.__getitem__(new_index)
-    
+
     fn __setitem__(self, index: NDArray[DType.index]) raises -> Self:
         """
         Returns the items of the array from an array of indices.
-        
+
         Refer to `__getitem__(self, index: List[Int])`.
 
         Example:
@@ -2588,7 +2676,6 @@ struct NDArray[dtype: DType = DType.float64](
         Convert type of array.
         """
         # I wonder if we can do this operation inplace instead of allocating memory.
-        alias nelts = simdwidthof[dtype]()
         var narr: NDArray[type] = NDArray[type](self.ndshape, order=self.order)
         # narr.datatype = type
 

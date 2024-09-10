@@ -113,7 +113,7 @@ There are two approach to install and use the Numojo package.
 This approach invovles building a standalone package file `mojopkg`.
 
 1. Clone the repository.
-2. Build the package using `mojo pacakge numojo`
+2. Build the package using `mojo package numojo`
 3. Move the numojo.mojopkg into the directory containing the your code.
 
 ### Include NuMojo's path for compiler and LSP

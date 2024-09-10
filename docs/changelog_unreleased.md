@@ -8,11 +8,15 @@ When we make a release, the items in this file will be edited and moved to `chan
 
 ### ⭐️ New
 
-- Add functions for calculating the inverse of a matrix and LU decomposition (PR #101 by @forFudan).
+- Add support for `magic` system (PR #91 by @shivasankarka).
+- Add some basic functions, e.g., `diagflat`, `tri`, `trace`, `T` (PR #91 by @shivasankarka).
+- Add a constructor which reads arrays from numpy arrays (PR #91 by @shivasankarka).
+- Add functions for solving linear algrebra `AX = Y` for `X`, finding inverse of a matrix, and conducting LU decomposition (PR #101 #104 #105 by @forFudan).
 - Add `itemset` method to fill a scalar into an ndarray (PR #102 by @forFudan).
 
 ### 🦋 Changed
 
+- Make some methods, e.g., `sort`, `flatten`, inplace (Issue #87 by @mmenendezg, PR #91 by @shivasankarka).
 - Modify initialization of NDArray (PR #97 by @MadAlex1997)
 
 ### ❌ Removed
@@ -21,9 +25,7 @@ When we make a release, the items in this file will be edited and moved to `chan
 
 ### 🛠️ Fixed
 
-- Make `sort` method an inplace method (Issue #87 by @mmenendezg, PR #91 by @shivasankarka).
-
 ### 📚 Documentatory and testing
 
 - Add workflows with unit tests and linting (PR #95 by @sandstromviktor).
-- Add multi-langual support (Chinese, Japanese, and Korean) for the readme file (PR #99 by @forFudan, PR #100 by @shivasankarka).
+- Add multi-langual support (Chinese, Japanese) for the readme file (PR #99 by @forFudan, PR #100 by @shivasankarka).

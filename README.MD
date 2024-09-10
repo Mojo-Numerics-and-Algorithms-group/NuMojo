@@ -13,10 +13,15 @@
     NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python.
     <br />
     <!-- when we create docs -->
-    <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>Explore the docs» </strong></a>
-    <br>
-    <a href="https://discord.com/channels/1149778565756366939/1149778566603620455"><strong>Check out our Discord» </strong></a>
+    <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
+        <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>Explore the docs» </strong></a> &nbsp; &nbsp; <a href="https://discord.com/channels/1149778565756366939/1149778566603620455" ><strong>Check out our Discord» </strong></a>
+    </div>
     <br />
+    <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
+        <a href="./docs/readme_zh_cn.md"><strong>中文» </strong></a> &nbsp; <a href="./docs/readme_jp.md"><strong>日本語» </strong></a>
+    </div>
+    <!-- <a href="./docs/readme_kr.md"><strong>한국어 문서» </strong></a> -->
+    <!-- <br /> -->
     <!-- <br /> -->
     <!-- <a href="">View Demo</a>
     ·
@@ -57,7 +62,7 @@ NuMojo intends to capture a wide swath of numerics capability present in the Pyt
 
 NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
 
-NuMojo intends to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
+We intend NuMojo to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 
 ### What NuMojo is not
 
@@ -108,10 +113,10 @@ There are two approach to install and use the Numojo package.
 This approach invovles building a standalone package file `mojopkg`.
 
 1. Clone the repository.
-1. Build the package using `mojo pacakge numojo`
-1. Move the numojo.mojopkg into the directory containing the your code.
+2. Build the package using `mojo package numojo`
+3. Move the numojo.mojopkg into the directory containing the your code.
 
-### Inlcude NuMojo's path for compiler and LSP
+### Include NuMojo's path for compiler and LSP
 
 This approach does not require buiding a package file. Instead, when you compile your code, you can include the path of NuMojo reporsitory with the following command:
 
@@ -124,11 +129,11 @@ This is more flexible as you are able to edit the NuMojo source files when testi
 In order to allow VSCode LSP to resolve the imported `numojo` package, you can:
 
 1. Go to preference page of VSCode.
-1. Got to `Mojo › Lsp: Include Dirs`
-1. Click `add item` and write the path where the Numojo repository is located, e.g. `/Users/Name/Programs/NuMojo`.
-1. Restart the Mojo LSP server.
+2. Go to `Mojo › Lsp: Include Dirs`
+3. Click `add item` and write the path where the Numojo repository is located, e.g. `/Users/Name/Programs/NuMojo`.
+4. Restart the Mojo LSP server.
 
-Now VSCode can show function hints for the Numojo pakcage!
+Now VSCode can show function hints for the Numojo package!
 
 ## Contributing
 

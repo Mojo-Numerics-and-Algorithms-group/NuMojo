@@ -10,7 +10,7 @@ Please follow the Mojo standard library style guide for all contributions. Consi
 - Write concise, well-documented code.
 - Adhere to formatting conventions for indentation, spacing, and line breaks.
 
-Additionally refer to `style guide.md` for docstring and nameing conventions.
+Additionally refer to `style guide.md` for docstring and naming conventions.
 
 ## Pull Requests
 
@@ -50,16 +50,20 @@ Following this structure ensures that similar functionalities are grouped togeth
    ```
 
 4. **Make Your Changes**: Implement your changes in your branch.
-5. **Commit Your Changes**: Commit your changes with a clear and descriptive commit message.
+5. **Run Tests**: NuMojo now uses the `Magic` package manager by Modular. To ensure that all unit tests pass, the NuMojo module packages correctly, and the .mojo files are properly formatted, run the following command:
+   ```sh
+   magic run final
+   ```
+6. **Commit Your Changes**: Commit your changes with a clear and descriptive commit message.
 
    ```sh
    git commit -m "Add feature XYZ"
    ```
 
-6. **Push Your Changes**: Push your branch to your fork on GitHub.
+7. **Push Your Changes**: Push your branch to your fork on GitHub.
 
    ```sh
    git push origin feature-name
    ```
 
-7. **Submit a Pull Request**: Open a pull request to the `main` branch of the original repository.
+8. **Submit a Pull Request**: Open a pull request to the `main` branch of the original repository.

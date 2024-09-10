@@ -2,9 +2,11 @@
 import time
 from benchmark.compiler import keep
 from python import Python
-from random import seed
 
-# import numojo as nm
+# from random import seed
+from random.random import randint, random_float64
+
+import numojo as nm
 from numojo import *
 
 # alias backend = nm.VectorizedParallelizedNWorkers[8]
@@ -19,32 +21,116 @@ from numojo import *
 #     print(res)
 
 
-fn main() raises:
-    var A = arange[i16](1, 7, 1)
+fn test_constructors1() raises:
+    var arr1 = NDArray[f32](3, 4, 5)
+    print(arr1)
+    print("ndim: ", arr1.ndim)
+    print("shape: ", arr1.ndshape)
+    print("strides: ", arr1.stride)
+    print("size: ", arr1.ndshape.ndsize)
+    print("offset: ", arr1.stride.ndoffset)
+    print("dtype: ", arr1.dtype)
+
+    var arr2 = NDArray[f32](VariadicList[Int](3, 4, 5))
+    print(arr2)
+    print("ndim: ", arr2.ndim)
+    print("shape: ", arr2.ndshape)
+    print("strides: ", arr2.stride)
+    print("size: ", arr2.ndshape.ndsize)
+    print("offset: ", arr2.stride.ndoffset)
+    print("dtype: ", arr2.dtype)
+
+    var arr3 = NDArray[f32](VariadicList[Int](3, 4, 5), fill=Scalar[f32](10.0))
+    print(arr3)
+    print("ndim: ", arr3.ndim)
+    print("shape: ", arr3.ndshape)
+    print("strides: ", arr3.stride)
+    print("size: ", arr3.ndshape.ndsize)
+    print("offset: ", arr3.stride.ndoffset)
+    print("dtype: ", arr3.dtype)
+
+    var arr4 = NDArray[f32](List[Int](3, 4, 5))
+    print(arr4)
+    print("ndim: ", arr4.ndim)
+    print("shape: ", arr4.ndshape)
+    print("strides: ", arr4.stride)
+    print("size: ", arr4.ndshape.ndsize)
+    print("offset: ", arr4.stride.ndoffset)
+    print("dtype: ", arr4.dtype)
+
+    var arr5 = NDArray[f32](NDArrayShape(3, 4, 5))
+    print(arr5)
+    print("ndim: ", arr5.ndim)
+    print("shape: ", arr5.ndshape)
+    print("strides: ", arr5.stride)
+    print("size: ", arr5.ndshape.ndsize)
+    print("offset: ", arr5.stride.ndoffset)
+    print("dtype: ", arr5.dtype)
+
+    var arr6 = NDArray[f32](
+        data=List[SIMD[f32, 1]](1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+        shape=List[Int](2, 5),
+    )
+    print(arr6)
+    print("ndim: ", arr6.ndim)
+    print("shape: ", arr6.ndshape)
+    print("strides: ", arr6.stride)
+    print("size: ", arr6.ndshape.ndsize)
+    print("offset: ", arr6.stride.ndoffset)
+    print("dtype: ", arr6.dtype)
+
+    var arr7 = nm.NDArray[nm.f32](String("[[1.0,0,1], [0,2,1], [1,1,1]]"))
+    print(arr7)
+
+
+fn test_constructors2() raises:
+    var fill_value: SIMD[i32, 1] = 10
+    var A = NDArray[i32](3, 2, fill=fill_value)
     print(A)
-    var temp = flip(A)
+
+
+fn test_random() raises:
+    var arr_variadic = nm.core.random.rand(
+        shape=List[Int](10, 10, 10), min=1.0, max=2.0
+    )
+    print(arr_variadic)
+    var random_array_var = nm.core.random.randn[i16](3, 2, mean=0, variance=5)
+    print(random_array_var)
+    var random_array_list = nm.core.random.randn[i16](
+        List[Int](3, 2), mean=0, variance=1
+    )
+    print(random_array_list)
+
+    var random_array_var1 = nm.core.random.rand[f16](3, 2, min=0, max=100)
+    print(random_array_var1)
+    var random_array_list1 = nm.core.random.rand[i32](
+        List[Int](3, 2), min=0, max=100
+    )
+    print(random_array_list1)
+
+
+fn test_arr_manipulation() raises:
+    var np = Python.import_module("numpy")
+    var A = np.arange(12)
+    print(A)
+    var temp = NDArray[f64](data=A)
     print(temp)
-    # A.reshape(2, 3, order="F")
+    temp.T()
+    print(temp)
+    A.reshape(2, 3, order="F")
     # nm.ravel(A)
-    # print(A)
-    # var B = arange[i16](0, 12, 1)
-    # B.reshape(3, 2, 2, order="F")
-    # ravel(B, order="C")
-    # print(B)
+    print(A)
+    var B = arange[i16](0, 12, 1)
+    B.reshape(3, 2, 2, order="F")
+    ravel(B, order="C")
+    print(B)
 
-    # print(A)
-    # var B = SIMD[i16, 1](15502)
-    # print(B)
-    # print(A >= SIMD[i16, 1](10))
-    # for i in A:
-    #     print(i)
-
-    # var array = arange[i16](0, 12, 1)
-    # array.reshape(3, 2, 2)
-    # print(array)
-    # print("x[0]", array.item(0))
-    # print("x[1]", array.item(1))
-    # print("x[2]", array.item(2))
+    var array = arange[i16](0, 12, 1)
+    array.reshape(3, 2, 2)
+    print(array)
+    print("x[0]", array.item(0))
+    print("x[1]", array.item(1))
+    print("x[2]", array.item(2))
     # swapaxis(array, 0, -1)
     # print(array.ndshape)
     # swapaxis(array, 0, 2)
@@ -57,131 +143,153 @@ fn main() raises:
     # print("x[1]", array.item(1))
     # print("x[2]", array.item(2))
     # moveaxis(array, 0, 1)
-    # print(array.ndshape)
-    # var B = NDArray[i16](3, 3, random=True)
-    # print(B)
-    # A[A > 10.0] = B
-    # print(A)
-    # var gt = A > 10.0
-    # print(gt)
-    # var ge = A >= Scalar[i16](10)
-    # print(ge)
-    # var lt = A < Scalar[i16](10)
-    # print(lt)
-    # var le = A <= Scalar[i16](10)
-    # print(le)
-    # var eq = A == Scalar[i16](10)
-    # print(eq)
-    # var ne = A != Scalar[i16](10)
-    # print(ne)
-    # var mask = A[A > Scalar[i16](10)]
-    # print(mask)
-    # seed(10)
-    # var B = NDArray[i16](3, 3, random=True)
-    # print(B)
-    # var gta = A > B
-    # print(gta)
-    # var gte = A >= B
-    # print(gte)
-    # var lt = A < B
-    # print(lt)
-    # var le = A <= B
-    # print(le)
-    # var eq = A == B
-    # print(eq)
-    # var ne = A != B
-    # print(ne)
-    # var mask = A[A > B]
-    # print(mask)
-    # var temp = A * SIMD[i8, 1](2)
-    # print(temp)
-    # var temp1 = temp == 0
-    # var temp2 = A[temp]
-    # print(temp2)
-    # var temp2 = A[A%2 == 0]
-    # print(temp2)
-    # print(temp2.at(0))
-    # print(temp2.ndshape, temp2.stride, temp2.ndshape._size)
 
 
-# def main():
+fn test_bool_masks1() raises:
+    var A = nm.core.random.rand[i16](3, 2, 2)
+    print(A.ndshape)
+    random.seed(10)
+    var B = nm.core.random.rand[i16](3, 2, 2)
+    print(B)
+    A[A > 10.0] = B
+    print(A)
+    var gt = A > 10.0
+    print(gt)
+    var ge = A >= Scalar[i16](10)
+    print(ge)
+    var lt = A < Scalar[i16](10)
+    print(lt)
+    var le = A <= Scalar[i16](10)
+    print(le)
+    var eq = A == Scalar[i16](10)
+    print(eq)
+    var ne = A != Scalar[i16](10)
+    print(ne)
+    var mask = A[A > Scalar[i16](10)]
+    print(mask)
+    random.seed(12)
 
-# # CONSTRUCTORS TEST
-# var arr1 = numojo.NDArray[numojo.f32](3,4,5, random=True)
-# print(arr1)
-# print("ndim: ", arr1.ndim)
-# print("shape: ", arr1.ndshape)
-# print("strides: ", arr1.stride)
-# print("size: ", arr1.ndshape.ndsize)
-# print("offset: ", arr1.stride.ndoffset)
-# print("dtype: ", arr1.dtype)
 
-# print()
+fn test_bool_masks2() raises:
+    var np = Python.import_module("numpy")
+    var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
+    var A = nm.arange[nm.i16](0, 24)
+    A.reshape(3, 2, 4)
 
-# var arr2 = numojo.NDArray[numojo.f32](VariadicList[Int](3, 4, 5), random=True)
-# print(arr2)
-# print("ndim: ", arr2.ndim)
-# print("shape: ", arr2.ndshape)
-# print("strides: ", arr2.stride)
-# print("size: ", arr2.ndshape.ndsize)
-# print("offset: ", arr2.stride.ndoffset)
-# print("dtype: ", arr2.dtype)
+    # Test greater than
+    var np_gt = np_A > 10
+    var gt = A > Scalar[nm.i16](10)
+    print(gt)
+    print(np_gt)
+    gt.to_numpy()
+    print(gt)
 
-# var arr3 = numojo.NDArray[numojo.f32](VariadicList[Int](3, 4, 5), fill = 10.0)
-# print(arr3)
-# print("ndim: ", arr3.ndim)
-# print("shape: ", arr3.ndshape)
-# print("strides: ", arr3.stride)
-# print("size: ", arr3.ndshape.ndsize)
-# print("offset: ", arr3.stride.ndoffset)
-# print("dtype: ", arr3.dtype)
+    var AA = nm.core.random.rand[i16](3, 3)
+    var BB = nm.core.random.rand[i16](3, 3)
+    print(BB)
+    var gta = AA > BB
+    print(gta)
+    var gte = AA >= BB
+    print(gte)
+    var lt = AA < BB
+    print(lt)
+    var le = AA <= BB
+    print(le)
+    var eq = AA == BB
+    print(eq)
+    var ne = AA != BB
+    print(ne)
+    var mask = AA[AA > BB]
+    print(mask)
+    var temp = AA * SIMD[i16, 1](2)
+    print(temp)
+    var temp1 = temp == SIMD[i16, 1](0)
+    var temp2 = AA[temp1]
+    print(temp2)
+    var temp3 = AA[AA % SIMD[i16, 1](2) == SIMD[i16, 1](0)]
+    print(temp3)
+    print(temp3.get_scalar(0))
+    print(temp3.ndshape, temp3.stride, temp3.ndshape.ndsize)
 
-# var arr4 = numojo.NDArray[numojo.f32](List[Int](3, 4, 5), random=True)
-# print(arr4)
-# print("ndim: ", arr4.ndim)
-# print("shape: ", arr4.ndshape)
-# print("strides: ", arr4.stride)
-# print("size: ", arr4.ndshape.ndsize)
-# print("offset: ", arr4.stride.ndoffset)
-# print("dtype: ", arr4.dtype)
 
-# var arr5 = numojo.NDArray[numojo.f32](numojo.NDArrayShape(3,4,5), random=True)
-# print(arr5)
-# print("ndim: ", arr5.ndim)
-# print("shape: ", arr5.ndshape)
-# print("strides: ", arr5.stride)
-# print("size: ", arr5.ndshape.ndsize)
-# print("offset: ", arr5.stride.ndoffset)
-# print("dtype: ", arr5.dtype)
+fn test_creation_routines() raises:
+    var x = linspace[numojo.f32](0.0, 60.0, 60)
+    var y = ones[numojo.f32](3, 2)
+    var z = logspace[numojo.f32](-3, 0, 60)
+    var w = arange[f32](0.0, 24.0, step=1)
+    print(x)
+    print(y)
+    print(z)
+    print(w)
 
-# var arr6 = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10), shape=
-# List[Int](2,5))
-# print(arr6)
-# print("ndim: ", arr6.ndim)
-# print("shape: ", arr6.ndshape)
-# print("strides: ", arr6.stride)
-# print("size: ", arr6.ndshape.ndsize)
-# print("offset: ", arr6.stride.ndoffset)
-# print("dtype: ", arr6.dtype)
 
-# var x = numojo.linspace[numojo.f32](0.0, 60.0, 60)
-# var x = numojo.ones[numojo.f32](3, 2)
-# var x = numojo.logspace[numojo.f32](-3, 0, 60)
-# var x = arange[f32](0.0, 24.0, step=1)
-# x.reshape(2, 3, 4, order="C")
-# print(x[0,0,0], x[0,0,1], x[1,1,1], x[1,2,3])
-# print(x)
-# var slicedx = x[0:1, :, 1:2]
-# print(slicedx)
-# print()
+fn test_slicing() raises:
+    var raw = List[Int32]()
+    for _ in range(16):
+        raw.append(random.randn_float64() * 10)
+    var arr1 = numojo.NDArray[numojo.i32](
+        data=raw, shape=List[Int](4, 4), order="C"
+    )
+    print(arr1)
+    print(arr1[0, 1])
+    print(arr1[0:1, :])
+    print(arr1[1:2, 3:4])
 
-# var y = numojo.arange[numojo.f32](0.0, 24.0, step=1)
-# y.reshape(2,3,4, order="F")
-# print(y[0,0,0], y[0,0,1], y[1,1,1], y[1,2,3])
-# print(y)
-# print(y.order)
-# var slicedy = y[:, :, 1:2]
-# print(slicedy)
+    var w = arange[f32](0.0, 24.0, step=1)
+    w.reshape(2, 3, 4, order="C")
+    print(w[0, 0, 0], w[0, 0, 1], w[1, 1, 1], w[1, 2, 3])
+    print(w)
+    var slicedw = w[0:1, :, 1:2]
+    print(slicedw)
+    print()
+
+    var y = arange[numojo.f32](0.0, 24.0, step=1)
+    y.reshape(2, 3, 4, order="F")
+    print(y[0, 0, 0], y[0, 0, 1], y[1, 1, 1], y[1, 2, 3])
+    print(y)
+    print(y.order)
+    var slicedy = y[:, :, 1:2]
+    print(slicedy)
+
+
+fn test_rand_funcs[
+    dtype: DType = DType.float64
+](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[
+    dtype
+]:
+    var result: NDArray[dtype] = NDArray[dtype](shape)
+    if dtype.is_integral():
+        random.randint[dtype](
+            ptr=result.data,
+            size=result.ndshape.ndsize,
+            low=int(min),
+            high=int(max),
+        )
+    elif dtype.is_floating_point():
+        for i in range(result.ndshape.ndsize):
+            var temp: Scalar[dtype] = random.random_float64(
+                min.cast[f64](), max.cast[f64]()
+            ).cast[dtype]()
+            result.__setitem__(i, temp)
+    else:
+        raise Error(
+            "Invalid type provided. dtype must be either an integral or"
+            " floating-point type."
+        )
+    return result
+
+
+fn main() raises:
+    # test_constructors1()
+    # test_constructors2()
+    test_random()
+    # test_arr_manipulation()
+    # test_bool_masks1()
+    # test_bool_masks2()
+    # test_creation_routines()
+    # test_slicing()
+
+
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
 # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2),
 # order="F")
@@ -200,19 +308,6 @@ fn main() raises:
 # var maxval = x.max(axis=0)
 # print(maxval)
 
-# var arr = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0),
-# shape=List[Int](3,3), order="C")
-# var raw = List[Int32]()
-# for _ in range(16):
-#     raw.append(random.randn_float64()*10)
-# var arr1 = numojo.NDArray[numojo.i32](data=raw, shape=List[Int](4,4), order="C")
-# var arr = numojo.NDArray[DType.int8](3,3,3, random=True, order="C")
-# var arr1 = numojo.NDArray[DType.bool](data=List[SIMD[DType.bool, 1]](False, False, False, True),
-# shape=List[Int](2,2))
-# print(arr1)
-# print(arr1[0,1])
-# print(arr1[0:1, :])
-# print(arr1[1:2, 3:4])
 
 # var array = nj.NDArray[nj.f64](10,10)
 # for i in range(array.size()):
@@ -259,6 +354,7 @@ fn main() raises:
 # numojo.math.linalg.dot[t10=3, t11=3, t21=3, dtype=numojo.f32](result, arr, arr1)
 # print(result)
 
+
 # fn main() raises:
 #     var size:VariadicList[Int] = VariadicList[Int](16,128,256,512,1024)
 #     alias size1: StaticIntTuple[5] = StaticIntTuple[5](16,128,256,512,1024)
@@ -269,8 +365,8 @@ fn main() raises:
 # fn measure_time[dtype:DType, size1: StaticIntTuple[5]](size:VariadicList[Int], inout times:List[Float64]) raises:
 
 #     for i in range(size.__len__()):
-#         var arr1 = numojo.NDArray[dtype](size[i], size[i], random=True)
-#         var arr2 = numojo.NDArray[dtype](size[i], size[i], random=True)
+#         var arr1 = numojo.NDArray[dtype](size[i], size[i])
+#         var arr2 = numojo.NDArray[dtype](size[i], size[i])
 #         var arr_mul = numojo.NDArray[dtype](size[i], size[i])
 
 #         var t0 = time.now()
@@ -295,8 +391,8 @@ fn main() raises:
 
 #     var n = 4
 #     alias m = 4
-#     var arr1 = numojo.NDArray[dtype](size[n], size[n], random=True)
-#     var arr2 = numojo.NDArray[dtype](size[n], size[n], random=True)
+#     var arr1 = numojo.NDArray[dtype](size[n], size[n])
+#     var arr2 = numojo.NDArray[dtype](size[n], size[n])
 #     var arr_mul = numojo.NDArray[dtype](size[n], size[n])
 
 #     var t0 = time.now()

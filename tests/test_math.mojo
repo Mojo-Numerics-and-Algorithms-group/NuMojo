@@ -70,3 +70,30 @@ def test_matmul():
     )
     # The only matmul that currently works is par (__matmul__)
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
+
+
+def test_inverse():
+    var np = Python.import_module("numpy")
+    var arr = nm.core.random.rand(100, 100)
+    var np_arr = arr.to_numpy()
+    check_is_close(
+        nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
+    )
+
+
+def test_inv():
+    var np = Python.import_module("numpy")
+    var arr = nm.core.random.rand(100, 100)
+    var np_arr = arr.to_numpy()
+    check_is_close(
+        nm.math.linalg.inv(arr), np.linalg.inv(np_arr), "Inverse is broken"
+    )
+
+
+def test_setitem():
+    var np = Python.import_module("numpy")
+    var arr = nm.NDArray(4, 4)
+    var np_arr = arr.to_numpy()
+    arr.itemset(List(2, 2), 1000)
+    np_arr[(2, 2)] = 1000
+    check_is_close(arr, np_arr, "Itemset is broken")

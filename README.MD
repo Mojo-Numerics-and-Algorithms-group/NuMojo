@@ -55,7 +55,7 @@
 
 NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy and Scikit.
 
-NuMojo aims to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
+NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
 
 We intend NuMojo to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 

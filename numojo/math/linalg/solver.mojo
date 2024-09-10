@@ -35,7 +35,7 @@ fn lu_decomposition[
         var arr = nm.NDArray[nm.f64]("[[1,2,3], [4,5,6], [7,8,9]]")
         var U: nm.NDArray
         var L: nm.NDArray
-        L, U = nm.math.linalg.solve.lu_decomposition(arr)
+        L, U = nm.math.linalg.solver.lu_decomposition(arr)
         print(arr)
         print(L)
         print(U)
@@ -206,7 +206,7 @@ fn inverse[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     import numojo as nm
     fn main() raises:
         var A = nm.NDArray("[[1,0,1], [0,2,1], [1,1,1]]")
-        var B = nm.math.linalg.solve.inverse(A)
+        var B = nm.math.linalg.solver.inverse(A)
         print("Original matrix:")
         print(A)
         print("Reversed matrix:")
@@ -364,7 +364,7 @@ fn solve[
     fn main() raises:
         var A = nm.NDArray(str("[[1, 0, 1], [0, 2, 1], [1, 1, 1]]"))
         var B = nm.NDArray(str("[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"))
-        var X = nm.solve.solve(A, B)
+        var X = nm.solver.solve(A, B)
         print(X)
     ```
     ```console
@@ -373,6 +373,8 @@ fn solve[
      [      2.0     1.0     -2.0    ]]
     2-D array  Shape: [3, 3]  DType: float64
     ```
+
+    The example is also a way to calculate inverse of matrix.
 
     """
 

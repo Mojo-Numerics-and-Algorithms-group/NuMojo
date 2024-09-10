@@ -97,7 +97,7 @@ def test_solve():
     var A_np = A.to_numpy()
     var B_np = B.to_numpy()
     check_is_close(
-        nm.math.linalg.solve.solve(A, B),
+        nm.math.linalg.solver.solve(A, B),
         np.linalg.solve(A_np, B_np),
         "Solve is broken",
     )

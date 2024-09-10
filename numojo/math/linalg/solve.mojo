@@ -20,7 +20,7 @@ fn lu_decomposition[
         dtype: Data type of the upper and upper triangular matrices.
 
     Args:
-        A: Input matrix for decoposition.
+        A: Input matrix for decoposition. It should be a row-major matrix.
 
     Returns:
         A tuple of the upper and lower triangular matrices.
@@ -71,10 +71,9 @@ fn lu_decomposition[
 
     # Check whether the matrix is square
     var shape_of_array = A.shape()
-    var m = shape_of_array[0]
-    var n = shape_of_array[1]
-    if m != n:
+    if shape_of_array[0] != shape_of_array[1]:
         raise ("The matrix is not square!")
+    var n = shape_of_array[0]
 
     # Check whether the matrix is singular
     # if singular:
@@ -88,25 +87,34 @@ fn lu_decomposition[
     var L = NDArray[dtype](shape=shape_of_array, fill=SIMD[dtype, 1](0))
 
     # Fill in L and U
+    # @parameter
+    # fn calculate(i: Int):
     for i in range(0, n):
         for j in range(i, n):
             # Fill in L
             if i == j:
-                L.__setitem__(List[Int](i, i), 1)
+                L.store[width=1](i * n + i, 1)
             else:
                 var sum_of_products_for_L: Scalar[dtype] = 0
                 for k in range(0, i):
-                    sum_of_products_for_L += L.item(j, k) * U.item(k, i)
-                L.__setitem__(
-                    List[Int](j, i),
-                    (A.item(j, i) - sum_of_products_for_L) / U.item(i, i),
+                    sum_of_products_for_L += L.load(j * n + k) * U.load(
+                        k * n + i
+                    )
+                L.store[width=1](
+                    j * n + i,
+                    (A.load(j * n + i) - sum_of_products_for_L)
+                    / U.load(i * n + i),
                 )
 
             # Fill in U
             var sum_of_products_for_U: Scalar[dtype] = 0
             for k in range(0, i):
-                sum_of_products_for_U += L.item(i, k) * U.item(k, j)
-            U.__setitem__(List[Int](i, j), A.item(i, j) - sum_of_products_for_U)
+                sum_of_products_for_U += L.load(i * n + k) * U.load(k * n + j)
+            U.store[width=1](
+                i * n + j, A.load(i * n + j) - sum_of_products_for_U
+            )
+
+    # parallelize[calculate](n, n)
 
     return L, U
 

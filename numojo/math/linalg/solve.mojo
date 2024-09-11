@@ -238,8 +238,8 @@ fn inverse[
 
     for i in range(m):
         # Each time, one of the item is changed to 1
-        y = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
-        y.__setitem__(i, 1)
+        y = NDArray[dtype](m, fill=Scalar[dtype](0))
+        y.__setitem__(i, Scalar[dtype](1))
 
         # Solve `Lz = y` for `z`
         z = forward_substitution(L, y)

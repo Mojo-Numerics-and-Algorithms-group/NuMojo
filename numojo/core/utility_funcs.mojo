@@ -7,6 +7,7 @@ Type related utility functions.
 # ===----------------------------------------------------------------------=== #
 
 
+@parameter
 fn is_inttype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is an integer type at compile time.
@@ -17,6 +18,8 @@ fn is_inttype[dtype: DType]() -> Bool:
     Returns:
         Bool: True if the given dtype is an integer type, False otherwise.
     """
+
+    @parameter
     if (
         dtype == DType.int8
         or dtype == DType.int16
@@ -47,6 +50,7 @@ fn is_inttype(dtype: DType) -> Bool:
     return False
 
 
+@parameter
 fn is_floattype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is a floating point type at compile time.
@@ -57,6 +61,8 @@ fn is_floattype[dtype: DType]() -> Bool:
     Returns:
         Bool: True if the given dtype is a floating point type, False otherwise.
     """
+
+    @parameter
     if (
         dtype == DType.float16
         or dtype == DType.float32
@@ -81,5 +87,38 @@ fn is_floattype(dtype: DType) -> Bool:
         or dtype == DType.float32
         or dtype == DType.float64
     ):
+        return True
+    return False
+
+
+@parameter
+fn is_booltype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is a boolean type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+
+    @parameter
+    if dtype == DType.bool:
+        return True
+    return False
+
+
+fn is_booltype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is a boolean type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+    if dtype == DType.bool:
         return True
     return False

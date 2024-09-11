@@ -8,9 +8,9 @@ Implements Trigonometry functions for arrays.
 
 
 import math
-import . math_funcs as _mf
-from .arithmetic import sqrt, fma
 
+from .arithmetic import sqrt, fma
+import . math_funcs as _mf
 from ..core.ndarray import NDArray
 
 # TODO: add  dtype in backends and pass it here.

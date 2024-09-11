@@ -3,13 +3,15 @@ Random values array generation.
 """
 # ===----------------------------------------------------------------------=== #
 # Implements RANDOM
-# Last updated: 2024-06-18
+# Last updated: 2024-09-06
 # ===----------------------------------------------------------------------=== #
 
 import math as mt
 from random import random
-from .ndarray import NDArray
 from builtin.tuple import Tuple
+
+from .ndarray import NDArray
+from .utility_funcs import is_inttype, is_floattype
 
 
 fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
@@ -36,6 +38,51 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
         var temp: Scalar[dtype] = random.random_float64(0, 1).cast[dtype]()
         result.__setitem__(i, temp)
     return result^
+
+
+@parameter
+fn int_rand_func[
+    dtype: DType
+](inout result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
+    """
+    Generate random integers between `min` and `max` and store them in the given NDArray.
+
+    Parameters:
+        dtype: The data type of the random integers.
+
+    Args:
+        result: The NDArray to store the random integers.
+        min: The minimum value of the random integers.
+        max: The maximum value of the random integers.
+    """
+    random.randint[dtype](
+        ptr=result.data,
+        size=result.ndshape.ndsize,
+        low=int(min),
+        high=int(max),
+    )
+
+
+@parameter
+fn float_rand_func[
+    dtype: DType
+](inout result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
+    """
+    Generate random floating-point numbers between `min` and `max` and store them in the given NDArray.
+
+    Parameters:
+        dtype: The data type of the random floating-point numbers.
+
+    Args:
+        result: The NDArray to store the random floating-point numbers.
+        min: The minimum value of the random floating-point numbers.
+        max: The maximum value of the random floating-point numbers.
+    """
+    for i in range(result.ndshape.ndsize):
+        var temp: Scalar[dtype] = random.random_float64(
+            min.cast[f64](), max.cast[f64]()
+        ).cast[dtype]()
+        result.data[i] = temp
 
 
 fn rand[
@@ -65,29 +112,18 @@ fn rand[
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.seed()
-    # if dtype.is_integral():
-    #     random.randint[dtype](
-    #         ptr=result.data,
-    #         size=result.ndshape.ndsize,
-    #         low=int(min),
-    #         high=int(max),
-    #     )
-    # elif dtype.is_floating_point():
-    #     for i in range(result.ndshape.ndsize):
-    #         var temp: Scalar[dtype] = random.random_float64(
-    #             min.cast[f64](), max.cast[f64]()
-    #         ).cast[dtype]()
-    #         result.__setitem__(i, temp)
-    # else:
-    #     raise Error(
-    #         "Invalid type provided. dtype must be either an integral or"
-    #         " floating-point type."
-    #     )
-    for i in range(result.ndshape.ndsize):
-        var temp: Scalar[dtype] = random.random_float64(
-            min.cast[f64](), max.cast[f64]()
-        ).cast[dtype]()
-        result.data[i] = temp
+
+    @parameter
+    if is_floattype[dtype]():
+        float_rand_func[dtype](result, min, max)
+    elif is_inttype[dtype]():
+        int_rand_func[dtype](result, min, max)
+    else:
+        raise Error(
+            "Invalid type provided. dtype must be either an integral or"
+            " floating-point type."
+        )
+
     return result^
 
 
@@ -121,30 +157,19 @@ fn rand[
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.seed()
-    # if dtype.is_integral():
-    #     random.randint[dtype](
-    #         ptr=result.data,
-    #         size=result.ndshape.ndsize,
-    #         low=int(min),
-    #         high=int(max),
-    #     )
-    # elif dtype.is_floating_point():
-    #     for i in range(result.ndshape.ndsize):
-    #         var temp: Scalar[dtype] = random.random_float64(
-    #             min.cast[f64](), max.cast[f64]()
-    #         ).cast[dtype]()
-    #         result.data[i] = temp
-    # else:
-    #     raise Error(
-    #         "Invalid type provided. dtype must be either an integral or"
-    #         " floating-point type."
-    #     )
-    for i in range(result.ndshape.ndsize):
-        var temp: Scalar[dtype] = random.random_float64(
-            min.cast[f64](), max.cast[f64]()
-        ).cast[dtype]()
-        result.data[i] = temp
-    return result
+
+    @parameter
+    if is_floattype[dtype]():
+        float_rand_func[dtype](result, min, max)
+    elif is_inttype[dtype]():
+        int_rand_func[dtype](result, min, max)
+    else:
+        raise Error(
+            "Invalid type provided. dtype must be either an integral or"
+            " floating-point type."
+        )
+
+    return result^
 
 
 fn randn[

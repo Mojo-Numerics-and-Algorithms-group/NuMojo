@@ -168,22 +168,46 @@ fn _traverse_iterative[
         index: The list of indices.
         depth: The depth of the indices.
     """
-    if depth == ndim.__len__():
-        var idx = offset + _get_index(index, coefficients)
-        var nidx = _get_index(index, strides)
-        var temp = orig.data.load[width=1](idx)
-        if nidx >= narr.ndshape.ndsize:
-            raise Error("Invalid index: index out of bound")
-        else:
-            narr.data.store[width=1](nidx, temp)
-        return
+    # var end_depth: Int = ndim.__len__()
+    # var current_dim: Int = ndim[depth]
 
-    for i in range(ndim[depth]):
-        index[depth] = i
-        var newdepth = depth + 1
-        _traverse_iterative(
-            orig, narr, ndim, coefficients, strides, offset, index, newdepth
-        )
+    # if depth == end_depth:
+    #     var idx = offset + _get_index(index, coefficients)
+    #     var nidx = _get_index(index, strides)
+    #     var temp = orig.data.load[width=1](idx)
+    #     if nidx >= narr.ndshape.ndsize:
+    #         raise Error("Invalid index: index out of bound")
+    #     else:
+    #         narr.data.store[width=1](nidx, temp)
+    #     return
+
+    # for i in range(ndim[depth]):
+    #     index[depth] = i
+    #     var newdepth = depth + 1
+    #     _traverse_iterative(
+    #         orig, narr, ndim, coefficients, strides, offset, index, newdepth
+    #     )
+
+    var total_elements = narr.ndshape.ndsize
+
+    # # parallelized version was slower xD
+    for flat_idx in range(total_elements):
+        var orig_idx = offset + _get_index(index, coefficients)
+        var narr_idx = _get_index(index, strides)
+        try:
+            if narr_idx >= total_elements:
+                raise Error("Invalid index: index out of bound")
+        except:
+            return
+
+        narr.data.store[width=1](narr_idx, orig.data.load[width=1](orig_idx))
+
+        # Update index
+        for d in range(ndim.__len__() - 1, -1, -1):
+            index[d] += 1
+            if index[d] < ndim[d]:
+                break
+            index[d] = 0
 
 fn _traverse_iterative_setter[
     dtype: DType
@@ -226,14 +250,12 @@ fn _traverse_iterative_setter[
             narr.data.store[width=1](nidx, temp)
         return
 
-    fn parallelized(idx: Int) -> None:
-    # for i in range(ndim[depth]):
+    for i in range(ndim[depth]):
         index[depth] = i
         var newdepth = depth + 1
-        _traverse_iterative(
+        _traverse_iterative_setter(
             orig, narr, ndim, coefficients, strides, offset, index, newdepth
         )
-    parallelized[parallelized](ndim[depth], ndim[depth])
 
 fn bool_to_numeric[
     dtype: DType

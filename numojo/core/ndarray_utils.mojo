@@ -191,7 +191,7 @@ fn _traverse_iterative[
     var total_elements = narr.ndshape.ndsize
 
     # # parallelized version was slower xD
-    for flat_idx in range(total_elements):
+    for _ in range(total_elements):
         var orig_idx = offset + _get_index(index, coefficients)
         var narr_idx = _get_index(index, strides)
         try:

@@ -3,14 +3,36 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 """
 # ===----------------------------------------------------------------------=== #
 # Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-# Last updated: 2024-06-20
+# Last updated: 2024-09-08
 # ===----------------------------------------------------------------------=== #
 
+from algorithm.functional import vectorize
 
 from python import Python
 from .ndarray import NDArray, NDArrayShape, NDArrayStride
 
-# TODO: there's some problem with using narr[idx] in traverse function, Make sure to correct this before v0.1
+
+fn fill_pointer[
+    dtype: DType
+](inout array: DTypePointer[dtype], size: Int, value: Scalar[dtype]) raises:
+    """
+    Fill a NDArray with a specific value.
+
+    Parameters:
+        dtype: The data type of the NDArray elements.
+
+    Args:
+        array: The pointer to the NDArray.
+        size: The size of the NDArray.
+        value: The value to fill the NDArray with.
+    """
+    alias width = simdwidthof[dtype]()
+
+    @parameter
+    fn vectorized_fill[simd_width: Int](idx: Int):
+        array.store[width=simd_width](idx, value)
+
+    vectorize[vectorized_fill, width](size)
 
 
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:

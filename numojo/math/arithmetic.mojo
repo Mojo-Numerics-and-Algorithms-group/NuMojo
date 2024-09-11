@@ -7,12 +7,13 @@ Implements array arithmetic
 # ===----------------------------------------------------------------------=== #
 
 
-# import math
-from math import math
-import . math_funcs as _mf
-from ..core.ndarray import NDArray, NDArrayShape
+import math
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+
+import . math_funcs as _mf
+from ..core.ndarray import NDArray, NDArrayShape
+from ..core.utility_funcs import is_inttype, is_floattype, is_booltype
 
 
 # ===------------------------------------------------------------------------===#
@@ -1164,7 +1165,7 @@ fn invert[
         A NDArray equal to the bitwise inversion of array.
     """
     constrained[
-        dtype.is_integral() or dtype.is_integral(),
+        is_inttype[dtype]() or is_booltype[dtype](),
         "Only Bools and integral types can be invertedd.",
     ]()
 

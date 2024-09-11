@@ -3,15 +3,13 @@ Array creation routine.
 """
 # ===----------------------------------------------------------------------=== #
 # ARRAY CREATION ROUTINES
-# Last updated: 2024-06-16
+# Last updated: 2024-09-08
 # ===----------------------------------------------------------------------=== #
 
 
 """
 # TODO (In order of priority)
-1) Add function overload for List, VariadicList types 
-2) Implement axis argument for the NDArray creation functions
-3) Implement Row/Column Major option
+1) Implement axis argument for the NDArray creation functions
 """
 
 from algorithm import parallelize
@@ -48,13 +46,6 @@ fn arange[
     Returns:
         A NDArray of datatype `dtype` with elements ranging from `start` to `stop` incremented with `step`.
     """
-    # if (is_floattype[dtype]() and is_inttype[dtype]()) or (
-    #     is_inttype[dtype]() and is_inttype[dtype]()
-    # ):
-    #     raise Error(
-    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
-    #     )
-
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num, size=num))
     for idx in range(num):
@@ -66,11 +57,8 @@ fn arange[
 # ===------------------------------------------------------------------------===#
 # Linear Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
-
-
-# I think defaulting parallelization to False is better
 fn linspace[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
@@ -98,12 +86,6 @@ fn linspace[
         A NDArray of datatype `dtype` with elements ranging from `start` to `stop` with num elements.
 
     """
-    # if (is_inttype[dtype]() and is_inttype[dtype]()) or (
-    #     is_floattype[dtype]() and is_inttype[dtype]()
-    # ):
-    #     raise Error(
-    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
-    #     )
     constrained[not dtype.is_integral()]()
     if parallel:
         return _linspace_parallel[dtype](start, stop, num, endpoint)
@@ -112,7 +94,7 @@ fn linspace[
 
 
 fn _linspace_serial[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     start: SIMD[dtype, 1],
     stop: SIMD[dtype, 1],
@@ -150,7 +132,7 @@ fn _linspace_serial[
 
 
 fn _linspace_parallel[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     start: SIMD[dtype, 1], stop: SIMD[dtype, 1], num: Int, endpoint: Bool = True
 ) raises -> NDArray[dtype]:
@@ -197,7 +179,7 @@ fn _linspace_parallel[
 # Logarithmic Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
 fn logspace[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
@@ -227,12 +209,6 @@ fn logspace[
     - A NDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
     constrained[not dtype.is_integral()]()
-    # if (is_inttype[dtype]() and is_inttype[dtype]()) or (
-    #     is_floattype[dtype]() and is_inttype[dtype]()
-    # ):
-    #     raise Error(
-    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
-    #     )
     if parallel:
         return _logspace_parallel[dtype](
             start,
@@ -252,7 +228,7 @@ fn logspace[
 
 
 fn _logspace_serial[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
@@ -290,7 +266,7 @@ fn _logspace_serial[
 
 
 fn _logspace_parallel[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
@@ -339,7 +315,7 @@ fn _logspace_parallel[
 
 # ! Outputs wrong values for Integer type, works fine for float type.
 fn geomspace[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
@@ -365,13 +341,6 @@ fn geomspace[
         A NDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.
     """
     constrained[not dtype.is_integral()]()
-    # if (is_inttype[dtype]() and is_inttype[dtype]()) or (
-    #     is_floattype[dtype]() and is_inttype[dtype]()
-    # ):
-    #     raise Error(
-    #         "Both input and output datatypes cannot be integers. If the input is a float, the output must also be a float."
-    #     )
-
     var a: Scalar[dtype] = start
 
     if endpoint:
@@ -393,10 +362,7 @@ fn geomspace[
 # ===------------------------------------------------------------------------===#
 # Commonly used NDArray Generation routines
 # ===------------------------------------------------------------------------===#
-
-
-# empty basically has to be either random or zero, can't return a purely empty matrix I think.
-fn empty[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
+fn empty[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a NDArray of given shape with arbitrary values.
 
@@ -409,10 +375,10 @@ fn empty[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    return NDArray[dtype](shape, fill=0)
+    return NDArray[dtype](shape=shape)
 
 
-fn zeros[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
+fn zeros[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a NDArray of zeros with given shape.
 
@@ -425,10 +391,10 @@ fn zeros[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    return NDArray[dtype](shape, random=False)
+    return NDArray[dtype](shape, fill=SIMD[dtype, 1](0))
 
 
-fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
+fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
     """
     Return a 2-D NDArray with ones on the diagonal and zeros elsewhere.
 
@@ -442,14 +408,14 @@ fn eye[dtype: DType](N: Int, M: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with size N x M and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](N, M, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](N, M, fill=SIMD[dtype, 1](0))
     var one = Scalar[dtype](1)
     for i in range(min(N, M)):
         result.store[1](i, i, val=one)
     return result
 
 
-fn identity[dtype: DType](N: Int) raises -> NDArray[dtype]:
+fn identity[dtype: DType = DType.float64](N: Int) raises -> NDArray[dtype]:
     """
     Generate an identity matrix of size N x N.
 
@@ -462,14 +428,14 @@ fn identity[dtype: DType](N: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](N, N, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](N, N, fill=SIMD[dtype, 1](0))
     var one = Scalar[dtype](1)
     for i in range(N):
         result.store[1](i, i, val=one)
     return result
 
 
-fn ones[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
+fn ones[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
     Generate a NDArray of ones with given shape filled with ones.
 
@@ -490,7 +456,7 @@ fn ones[dtype: DType](*shape: Int) raises -> NDArray[dtype]:
 
 
 fn full[
-    dtype: DType
+    dtype: DType = DType.float64
 ](*shape: Int, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Generate a NDArray of `fill_value` with given shape.
@@ -509,7 +475,7 @@ fn full[
 
 
 fn full[
-    dtype: DType
+    dtype: DType = DType.float64
 ](shape: VariadicList[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Generate a NDArray of `fill_value` with given shape.
@@ -529,7 +495,7 @@ fn full[
 
 
 fn diagflat[
-    dtype: DType
+    dtype: DType = DType.float64
 ](inout v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
     Generate a 2-D NDArray with the flattened input as the diagonal.
@@ -546,8 +512,11 @@ fn diagflat[
     """
     v.reshape(v.ndshape.ndsize, 1)
     var n: Int = v.ndshape.ndsize + abs(k)
-    var result: NDArray[dtype] = NDArray[dtype](n, n, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](n, n)
 
+    for i in range(n):
+        print(n * i + i + k)
+        result.store(n * i + i + k, v.data[i])
     if k > 0:
         for i in range(n):
             result.store(n * i + i + k, v.data[i])
@@ -560,7 +529,9 @@ fn diagflat[
     return result
 
 
-fn tri[dtype: DType](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
+fn tri[
+    dtype: DType = DType.float64
+](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
     """
     Generate a 2-D NDArray with ones on and below the k-th diagonal.
 
@@ -575,7 +546,7 @@ fn tri[dtype: DType](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
     Returns:
         A 2-D NDArray with ones on and below the k-th diagonal.
     """
-    var result: NDArray[dtype] = NDArray[dtype](N, M, random=False)
+    var result: NDArray[dtype] = NDArray[dtype](N, M, fill=SIMD[dtype, 1](0))
     for i in range(N):
         for j in range(M):
             if i >= j - k:
@@ -583,27 +554,27 @@ fn tri[dtype: DType](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
     return result
 
 
-# fn tril[dtype: DType](inout m: NDArray[dtype], k: Int = 0) raises:
-    # """
-    # Zero out elements above the k-th diagonal.
+# fn tril[dtype: DType = DType.float64](inout m: NDArray[dtype], k: Int = 0) raises:
+# """
+# Zero out elements above the k-th diagonal.
 
-    # Parameters:
-    #     dtype: Datatype of the NDArray elements.
+# Parameters:
+#     dtype: Datatype of the NDArray elements.
 
-    # Args:
-    #     m: NDArray to be zeroed out.
-    #     k: Diagonal offset.
-    # """
-    # var index: List[Int] = List[Int]()
-    # for _ in range(m.ndshape.ndlen):
-    #     index.append(0)
+# Args:
+#     m: NDArray to be zeroed out.
+#     k: Diagonal offset.
+# """
+# var index: List[Int] = List[Int]()
+# for _ in range(m.ndshape.ndlen):
+#     index.append(0)
 
-    # for i in range(m.ndshape[-1]):
-    #     for j in range(m.ndshape[-2]):
-    #         var idx: Int = _get_index(index, m.ndshape)
-    #         if i >= j - k:
-    #             m.data[idx] = Scalar[dtype](0)
-    #         index[-2] += 1
+# for i in range(m.ndshape[-1]):
+#     for j in range(m.ndshape[-2]):
+#         var idx: Int = _get_index(index, m.ndshape)
+#         if i >= j - k:
+#             m.data[idx] = Scalar[dtype](0)
+#         index[-2] += 1
 
 # fn triu():
-    # pass
+# pass

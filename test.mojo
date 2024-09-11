@@ -1,13 +1,14 @@
 # import numojo as nj
 import time
 from benchmark.compiler import keep
-from python import Python
+from python import Python, PythonObject
 
 # from random import seed
 from random.random import randint, random_float64
 
 import numojo as nm
 from numojo import *
+from time import now
 
 # alias backend = nm.VectorizedParallelizedNWorkers[8]
 # def main():
@@ -224,33 +225,42 @@ fn test_creation_routines() raises:
 
 
 fn test_slicing() raises:
-    var raw = List[Int32]()
-    for _ in range(16):
-        raw.append(random.randn_float64() * 10)
-    var arr1 = numojo.NDArray[numojo.i32](
-        data=raw, shape=List[Int](4, 4), order="C"
-    )
-    print(arr1)
-    print(arr1[0, 1])
-    print(arr1[0:1, :])
-    print(arr1[1:2, 3:4])
+    # var raw = List[Int32]()
+    # for _ in range(16):
+    #     raw.append(random.randn_float64() * 10)
+    # var arr1 = numojo.NDArray[numojo.i32](
+    #     data=raw, shape=List[Int](4, 4), order="C"
+    # )
+    # print(arr1)
+    # print(arr1[0, 1])
+    # print(arr1[0:1, :])
+    # print(arr1[1:2, 3:4])
 
-    var w = arange[f32](0.0, 24.0, step=1)
-    w.reshape(2, 3, 4, order="C")
-    print(w[0, 0, 0], w[0, 0, 1], w[1, 1, 1], w[1, 2, 3])
-    print(w)
-    var slicedw = w[0:1, :, 1:2]
-    print(slicedw)
-    print()
+    # var w = arange[f32](0.0, 24.0, step=1)
+    # w.reshape(2, 3, 4, order="C")
+    # print(w[0, 0, 0], w[0, 0, 1], w[1, 1, 1], w[1, 2, 3])
+    # print(w)
+    # var slicedw = w[0:1, :, 1:2]
+    # print(slicedw)
+    # print()
 
     var y = arange[numojo.f32](0.0, 24.0, step=1)
-    y.reshape(2, 3, 4, order="F")
-    print(y[0, 0, 0], y[0, 0, 1], y[1, 1, 1], y[1, 2, 3])
-    print(y)
+    y.reshape(3, 2, 4, order="C")
+    # print(y[0, 0, 0], y[0, 0, 1], y[1, 1, 1], y[1, 2, 3])
+    print("y: ", y)
     print(y.order)
+
+    # var start = time.now()
+    # for _ in range(10):
     var slicedy = y[:, :, 1:2]
     print(slicedy)
-
+    var slicedy1 = y[0:1, :, :]
+    print(slicedy1)
+    var slicedy2 = y[:, 0:1, :]
+    print(slicedy2)
+    var slicedy3 = y[0:1, 0:1, 0:1]
+    print(slicedy3)
+    # print("Time taken: ", (time.now() - start)/1e9/10)
 
 fn test_rand_funcs[
     dtype: DType = DType.float64
@@ -284,9 +294,9 @@ fn test_setter() raises:
     print(x)
     var z = x[0]
     print(z)
-    var y = NDArray[f32](3, 4, fill=Scalar[f32](1))
-    x[0] = y
-    print(x)
+    # var y = NDArray[f32](3, 4, fill=Scalar[f32](1))
+    # x[0] = y
+    # print(x)
 
     # var np = Python.import_module("numpy")
     # var np_x = np.random.rand(2, 3, 4)
@@ -302,8 +312,8 @@ fn main() raises:
     # test_bool_masks1()
     # test_bool_masks2()
     # test_creation_routines()
-    # test_slicing()
-    test_setter()
+    test_slicing()
+    # test_setter()
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
 # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2),

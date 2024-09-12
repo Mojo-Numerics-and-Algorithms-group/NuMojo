@@ -171,7 +171,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         )
         self.ndlen = len(shape)
         self.ndshape = UnsafePointer[Scalar[dtype]].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape)) 
+        memset_zero(self.ndshape, len(shape))
         var count: Int = 1
         for i in range(len(shape)):
             self.ndshape[i] = shape[i]
@@ -242,18 +242,21 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable):
         return self.ndlen
 
     @always_inline("nodebug")
-    fn __str__(self: Self) -> String:
+    fn __str__(self) -> String:
         """
         Return a string of the shape of the array described by arrayshape.
-
         """
+        return String.format_sequence(self)
+
+    fn format_to(self, inout writer: Formatter):
         var result: String = "Shape: ["
         for i in range(self.ndlen):
             if i == self.ndlen - 1:
                 result += self.ndshape[i].__str__()
             else:
                 result += self.ndshape[i].__str__() + ", "
-        return result + "]"
+        result = result + "]"
+        writer.write(result)
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:
@@ -508,14 +511,18 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable):
         return self.ndlen
 
     @always_inline("nodebug")
-    fn __str__(self: Self) -> String:
+    fn __str__(self) -> String:
+        return String.format_sequence(self)
+
+    fn format_to(self, inout writer: Formatter):
         var result: String = "Stride: ["
         for i in range(self.ndlen):
             if i == self.ndlen - 1:
                 result += self.ndstride[i].__str__()
             else:
                 result += self.ndstride[i].__str__() + ", "
-        return result + "]"
+        result = result + "]"
+        writer.write(result)
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:
@@ -685,7 +692,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
@@ -716,7 +723,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
@@ -747,7 +754,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
@@ -778,7 +785,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value()[])
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     fn __init__(
         inout self,
@@ -1261,12 +1268,12 @@ struct NDArray[dtype: DType = DType.float64](
         Adjusts the slice values to lie within 0 and dim.
         """
         if span.start.value() < 0:
-            span.start.value()  = dim + span.start.value() 
+            span.start.value()  = dim + span.start.value()
         # if not span._has_end():
         if not span.end.value():
             span.end.value()  = dim
         elif span.end.value()  < 0:
-            span.end.value()  = dim + span.end.value() 
+            span.end.value()  = dim + span.end.value()
         if span.end.value()  > dim:
             span.end.value()  = dim
         if span.end.value()  < span.start.value() :
@@ -1740,7 +1747,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return result
 
-    fn __setitem__(inout self, mask: NDArray[DType.bool], value: Self) raises:
+    fn __setitem__(inout self, mask: NDArray[DType.bool], val: Self) raises:
         """
         Set the value of the array at the indices where the mask is true.
 
@@ -1752,7 +1759,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         for i in range(mask.ndshape.ndsize):
             if mask.data.load[width=1](i):
-                self.data.store[width=1](i, value.data.load[width=1](i))
+                self.data.store[width=1](i, val.data.load[width=1](i))
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
@@ -2149,22 +2156,6 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __str__(self) -> String:
         return String.format_sequence(self)
-        # """
-        # Enables str(array)
-        # """
-        # try:
-        #     return (
-        #         self._array_to_string(0, 0)
-        #         + "\n"
-        #         + str(self.ndim)
-        #         + "-D array  "
-        #         + self.ndshape.__str__()
-        #         + "  DType: "
-        #         + self.dtype.__str__()
-        #     )
-        # except e:
-        #     print("Cannot convert array to string", e)
-        #     return ""
 
     fn format_to(self, inout writer: Formatter):
         # writer.write("(", self.x, ", ", self.y, ")")
@@ -2595,10 +2586,11 @@ struct NDArray[dtype: DType = DType.float64](
         if type == DType.bool:
 
             @parameter
-            fn vectorized_astype[width: Int](idx: Int) -> None:
-                (narr.unsafe_ptr() + idx).strided_store[dtype, width](
-                    self.load[width](idx).cast[type](), 1
-                )
+            fn vectorized_astype[simd_width: Int](idx: Int) -> None:
+                # (narr.unsafe_ptr() + idx).strided_store[dtype, width=width](
+                    # self.load[width](idx).cast[type](), 1
+                # )
+                (narr.unsafe_ptr()+idx).store[](offset=idx, val=self.data.load[width=simd_width](idx).cast[type]())
 
             vectorize[vectorized_astype, self.width](self.ndshape.ndsize)
         else:
@@ -2607,11 +2599,12 @@ struct NDArray[dtype: DType = DType.float64](
             if self.dtype == DType.bool:
 
                 @parameter
-                fn vectorized_astypenb_from_b[width: Int](idx: Int) -> None:
-                    narr.store[width](
-                        idx,
-                        (self.data + idx).strided_load[dtype, width](1).cast[type](),
-                    )
+                fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
+                    # narr.store[width](
+                    #     idx,
+                    #     (self.data + idx).strided_load[dtype, width](1).cast[type](),
+                    # )
+                    narr.data.store[](offset=idx, val=self.data.load[width=simd_width](idx).cast[type]())
 
                 vectorize[vectorized_astypenb_from_b, self.width](
                     self.ndshape.ndsize

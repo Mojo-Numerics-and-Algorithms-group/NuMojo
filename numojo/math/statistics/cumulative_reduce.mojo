@@ -17,8 +17,8 @@ from ...core.utility_funcs import is_inttype, is_floattype
 from ...core.sort import binary_sort
 
 """
-TODO: 
-1) Add support for axis parameter.  
+TODO:
+1) Add support for axis parameter.
 2) Currently, constrained is crashing mojo, so commented it out and added raise Error. Check later.
 3) Relax constrained[] to let user get whatever output they want, but make a warning instead.
 """
@@ -181,7 +181,7 @@ fn maxT[
     alias width = simdwidthof[dtype]()
     var max_value = NDArray[dtype](NDArrayShape(width))
     for i in range(width):
-        max_value[i] = array[0]
+        max_value.__setitem__(i, array[0])
     # var max_value: SIMD[ dtype, width] = SIMD[ dtype, width](array[0])
 
     @parameter
@@ -221,7 +221,7 @@ fn minT[
     alias width = simdwidthof[dtype]()
     var min_value = NDArray[dtype](NDArrayShape(width))
     for i in range(width):
-        min_value[i] = array[0]
+        min_value.__setitem__(i, array[0])
 
     @parameter
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
@@ -264,7 +264,7 @@ fn cumpvariance[
     if not mu:
         mean_value = cummean[dtype](array)
     else:
-        mean_value = mu.value()[]
+        mean_value = mu.value()
 
     var result = Scalar[dtype]()
 
@@ -297,7 +297,7 @@ fn cumvariance[
     if not mu:
         mean_value = cummean[dtype](array)
     else:
-        mean_value = mu.value()[]
+        mean_value = mu.value()
 
     var result = Scalar[dtype]()
     for i in range(array.num_elements()):

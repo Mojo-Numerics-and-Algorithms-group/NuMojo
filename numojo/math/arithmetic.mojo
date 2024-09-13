@@ -10,6 +10,7 @@ Implements array arithmetic
 import math
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+from utils import Variant
 
 import . math_funcs as _mf
 from ..core.ndarray import NDArray, NDArrayShape

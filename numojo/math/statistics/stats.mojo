@@ -101,12 +101,8 @@ fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
         else:
             slices.append(Slice(0, 0))
 
-    var result: NDArray[array.dtype] = NDArray[array.dtype](
-        NDArrayShape(result_shape)
-    )
-
     slices[axis] = Slice(0, 1)
-    result = array[slices]
+    var result: NDArray[array.dtype] = array[slices]
 
     for i in range(1, axis_size):
         slices[axis] = Slice(i, i + 1)
@@ -213,9 +209,10 @@ fn max[
         else:
             slices.append(Slice(0, 0))
     print(result_shape.__str__())
-    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
+
     slices[axis] = Slice(0, 1)
-    result = array[slices]
+
+    var result: NDArray[dtype] = array[slices]
     for i in range(1, axis_size):
         slices[axis] = Slice(i, i + 1)
         var arr_slice = array[slices]
@@ -259,9 +256,9 @@ fn min[
         else:
             slices.append(Slice(0, 0))
 
-    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
     slices[axis] = Slice(0, 1)
-    result = array[slices]
+
+    var result: NDArray[dtype] = array[slices]
     for i in range(1, axis_size):
         slices[axis] = Slice(i, i + 1)
         var arr_slice = array[slices]

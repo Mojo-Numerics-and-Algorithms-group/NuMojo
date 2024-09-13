@@ -42,6 +42,13 @@ struct Matrix[dtype: DType = DType.float64]():
         3. The strides (row-major or column-major).
         4. The data type of the elements (compile-time known).
 
+    Attributes:
+        - data
+        - shape
+        - size
+        - stride
+        - order
+
     Default constructor: dtype(parameter), shape, order.
     """
 
@@ -68,7 +75,7 @@ struct Matrix[dtype: DType = DType.float64]():
         inout self,
         shape: Tuple[Int, Int],
         order: String = "C",
-    ) raises:
+    ):
         """
         Matrix NDArray initialization.
 
@@ -82,3 +89,30 @@ struct Matrix[dtype: DType = DType.float64]():
         self.size = shape[0] * shape[1]
         self.data = DTypePointer[dtype].alloc(self.size)
         self.order = order
+
+    @always_inline("nodebug")
+    fn __copyinit__(inout self, other: Self):
+        """
+        Copy other into self.
+        """
+        self.shape = (other.shape[0], other.shape[1])
+        self.stride = (other.stride[0], other.stride[1])
+        self.size = other.size
+        self.order = other.order
+        self.data = DTypePointer[dtype].alloc(other.size)
+        memcpy(self.data, other.data, other.size)
+
+    @always_inline("nodebug")
+    fn __moveinit__(inout self, owned other: Self):
+        """
+        Move other into self.
+        """
+        self.shape = (other.shape[0], other.shape[1])
+        self.stride = (other.stride[0], other.stride[1])
+        self.size = other.size
+        self.order = other.order
+        self.data = other.data
+
+    @always_inline("nodebug")
+    fn __del__(owned self):
+        self.data.free()

@@ -9,6 +9,8 @@ Cumulative reduction statistics functions for NDArrays
 
 import math
 from algorithm import vectorize
+from sys import simdwidthof
+from collections.optional import Optional
 
 from ...core.ndarray import NDArray, NDArrayShape
 from ...core.utility_funcs import is_inttype, is_floattype
@@ -186,7 +188,7 @@ fn maxT[
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
         max_value.store[width=simd_width](
             0,
-            SIMD.max(
+            max(
                 max_value.load[width=simd_width](0),
                 array.load[width=simd_width](idx),
             ),
@@ -225,7 +227,7 @@ fn minT[
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
         min_value.store[width=simd_width](
             0,
-            SIMD.min(
+            min(
                 min_value.load[width=simd_width](0),
                 array.load[width=simd_width](idx),
             ),
@@ -262,7 +264,7 @@ fn cumpvariance[
     if not mu:
         mean_value = cummean[dtype](array)
     else:
-        mean_value = mu.value()[]
+        mean_value = mu.value()
 
     var result = Scalar[dtype]()
 
@@ -295,7 +297,7 @@ fn cumvariance[
     if not mu:
         mean_value = cummean[dtype](array)
     else:
-        mean_value = mu.value()[]
+        mean_value = mu.value()
 
     var result = Scalar[dtype]()
     for i in range(array.num_elements()):
@@ -396,7 +398,7 @@ fn mimimum[
     Returns:
         The minimum of the two SIMD Values as a SIMD Value of `dtype`.
     """
-    return SIMD.min(s1, s2)
+    return min(s1, s2)
 
 
 fn maximum[
@@ -414,7 +416,7 @@ fn maximum[
     Returns:
         The maximum of the two SIMD Values as a SIMD Value of `dtype`.
     """
-    return SIMD.max(s1, s2)
+    return max(s1, s2)
 
 
 fn minimum[
@@ -442,7 +444,7 @@ fn minimum[
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
         result.store[width=simd_width](
             idx,
-            SIMD.min(
+            min(
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
             ),
@@ -477,7 +479,7 @@ fn maximum[
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
         result.store[width=simd_width](
             idx,
-            SIMD.max(
+            max(
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
             ),

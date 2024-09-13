@@ -8,13 +8,15 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 
 from algorithm.functional import vectorize
 
-from python import Python
+from python import Python, PythonObject
 from .ndarray import NDArray, NDArrayShape, NDArrayStride
 
 
 fn fill_pointer[
     dtype: DType
-](inout array: DTypePointer[dtype], size: Int, value: Scalar[dtype]) raises:
+](
+    inout array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
+) raises:
     """
     Fill a NDArray with a specific value.
 
@@ -260,9 +262,8 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             np_dtype = np.int8
 
         numpyarray = np.empty(np_arr_dim, dtype=np_dtype)
-        var pointer = numpyarray.__array_interface__["data"][0]
-        var pointer_d = DTypePointer[array.dtype](address=pointer)
-        memcpy(pointer_d, array.data, array.num_elements())
+        var pointer_d = numpyarray.__array_interface__["data"][0].unsafe_get_as_pointer[dtype]()
+        memcpy(pointer_d, array.unsafe_ptr(), array.num_elements())
         _ = array
 
         return numpyarray^

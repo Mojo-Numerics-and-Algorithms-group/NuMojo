@@ -10,6 +10,7 @@ Matrix multiplication functions for NDArrays
 import math
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+from sys import simdwidthof
 
 import .. math_funcs as _mf
 from ...core.ndarray import NDArray, NDArrayShape

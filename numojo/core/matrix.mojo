@@ -3,17 +3,17 @@
 
 - Matrix type (2D array) with initialization and basic manipulation.
 - Auxilliary types, e.g., MatrixIter.
-- Functioon to construct matrix from other data objects, 
+- Functioon to construct matrix from other data objects,
 e.g., List, NDArray, String, and numpy array.
 
 Because the number of dimension is known at the compile time,
 the Matrix type gains advantages in the running speed compared to
 the NDArray type when the users only want to deal with the matrices
-manipulation, and it can also be more consistent with numpy. 
+manipulation, and it can also be more consistent with numpy.
 For example:
 
-- For `__getitem__`, inputting two `Int` returns a scalar, 
-inputting one `Int` returns a vector, and inputting no `Int` 
+- For `__getitem__`, inputting two `Int` returns a scalar,
+inputting one `Int` returns a vector, and inputting no `Int`
 returns a Matrix.
 - For row-major and column-major matrices, it is easier to get the
 values by the indices, as strides are only two numbers.
@@ -125,112 +125,106 @@ struct Matrix[dtype: DType = DType.float64]():
     # Dunder methods
     # ===-------------------------------------------------------------------===#
 
+    fn __getitem__(self, index: Tuple[Int, Int]) raises -> Scalar[dtype]:
+        """
+        Return the scalar at the coordinates (tuple).
+
+        Args:
+            index: The coordinates of the item.
+
+        Returns:
+            A scalar matching the dtype of the array.
+        """
+
+        # If more than one index is given
+        if index.__len__() != 2:
+            raise Error("Error: Length of the index does not match the shape.")
+        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
+            raise Error("Error: Elements of `index` exceed the array shape")
+        return self.data.load(index[0] * self.stride[0] + index[1] * self.stride[1])
+
+
+    fn __setitem__(self, index: Tuple[Int, Int], value: Scalar[dtype]) raises:
+        """
+        Return the scalar at the coordinates (tuple).
+
+        Args:
+            index: The coordinates of the item.
+            value: The value to be set.
+        """
+
+        # If more than one index is given
+        if index.__len__() != 2:
+            raise Error("Error: Length of the index does not match the shape.")
+        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
+            raise Error("Error: Elements of `index` exceed the array shape")
+        self.data.store(index[0] * self.stride[0] + index[1] * self.stride[1], value)
+
+
     fn __str__(self) -> String:
         """
         Enables str(array)
         """
-        try:
-            return (
-                self._array_to_string(0, 0)
-                + "\n"
-                + str(self.shape[0])
-                + "x"
-                + str(self.shape[1])
-                + "  DType: "
-                + str(self.dtype)
-            )
-        except e:
-            print("Cannot convert array to string", e)
-            return ""
+        return (
+            self._array_to_string(0)
+            + "\n"
+            + str(self.shape[0])
+            + "x"
+            + str(self.shape[1])
+            + "  DType: "
+            + str(self.dtype)
+        )
 
     fn _array_to_string(
         self,
         dimension: Int,
-    ) raises -> String:
-        if dimension == 1:
+        offset: Int = 0,
+    ) -> String:
+        if dimension == 1:  # each item in a row
             var result: String = str("[\t")
             var number_of_items = self.shape[1]
             if number_of_items <= 6:  # Print all items
                 for i in range(number_of_items):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.stride[dimension]
-                        ).__str__()
+                    result += (
+                        self.data.load(offset + i * self.stride[1]).__str__() + "\t"
                     )
-                    result = result + "\t"
             else:  # Print first 3 and last 3 items
                 for i in range(3):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.stride[dimension]
-                        ).__str__()
+                    result += (
+                        self.data.load(offset + i * self.stride[1]).__str__() + "\t"
                     )
-                    result = result + "\t"
                 result = result + "...\t"
                 for i in range(number_of_items - 3, number_of_items):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.stride[dimension]
-                        ).__str__()
+                    result += (
+                        self.data.load(offset + i * self.stride[1]).__str__() + "\t"
                     )
-                    result = result + "\t"
             result = result + "]"
             return result
-        else:
+        else:  # each row
             var result: String = str("[")
-            var number_of_items = self.ndshape[dimension]
+            var number_of_items = self.shape[0]
             if number_of_items <= 6:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
-                        result = result + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.stride[dimension].__int__(),
-                        )
+                        result += self._array_to_string(1, offset + i * self.stride[0])
                     if i > 0:
-                        result = (
-                            result
-                            + str(" ") * (dimension + 1)
-                            + self._array_to_string(
-                                dimension + 1,
-                                offset + i * self.stride[dimension].__int__(),
-                            )
-                        )
+                        result += str(" ") + self._array_to_string(1, offset + i * self.stride[0])
                     if i < (number_of_items - 1):
-                        result = result + "\n"
+                        result += "\n"
             else:  # Print first 3 and last 3 items
                 for i in range(3):
                     if i == 0:
-                        result = result + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.stride[dimension].__int__(),
-                        )
+                        result += self._array_to_string(1, offset + i * self.stride[0])
                     if i > 0:
-                        result = (
-                            result
-                            + str(" ") * (dimension + 1)
-                            + self._array_to_string(
-                                dimension + 1,
-                                offset + i * self.stride[dimension].__int__(),
-                            )
-                        )
+                        result += str(" ") + self._array_to_string(1, offset + i * self.stride[0])
                     if i < (number_of_items - 1):
                         result += "\n"
-                result = result + "...\n"
+                result += "...\n"
                 for i in range(number_of_items - 3, number_of_items):
-                    result = (
-                        result
-                        + str(" ") * (dimension + 1)
-                        + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.stride[dimension].__int__(),
-                        )
-                    )
+                    result += str(" ") + self._array_to_string(1, offset + i * self.stride[0])
                     if i < (number_of_items - 1):
-                        result = result + "\n"
-            result = result + "]"
+                        result += "\n"
+            result += "]"
             return result
 
 
@@ -249,7 +243,7 @@ fn full[
     var matrix = Matrix[dtype](shape, order)
     try:
         fill_pointer[dtype](matrix.data, matrix.size, fill_value)
-    except:
+    except e:
         print("Cannot fill in the values", e)
 
     return matrix

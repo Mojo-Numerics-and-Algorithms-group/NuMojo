@@ -3,7 +3,7 @@ import time
 from benchmark.compiler import keep
 from python import Python, PythonObject
 
-# from random import seed
+from random import seed
 from random.random import randint, random_float64
 
 import numojo as nm
@@ -149,12 +149,13 @@ fn test_arr_manipulation() raises:
 fn test_bool_masks1() raises:
     var A = nm.core.random.rand[i16](3, 2, 2)
     print(A.ndshape)
-    random.seed(10)
+    seed(10)
     var B = nm.core.random.rand[i16](3, 2, 2)
     print(B)
-    A[A > 10.0] = B
+    var mask: NDArray[DType.bool] = A > Scalar[i16](10)
+    A[mask] = B
     print(A)
-    var gt = A > 10.0
+    var gt = A > Scalar[i16](10)
     print(gt)
     var ge = A >= Scalar[i16](10)
     print(ge)
@@ -166,9 +167,9 @@ fn test_bool_masks1() raises:
     print(eq)
     var ne = A != Scalar[i16](10)
     print(ne)
-    var mask = A[A > Scalar[i16](10)]
-    print(mask)
-    random.seed(12)
+    var mask1 = A[A > Scalar[i16](10)]
+    print(mask1)
+    seed(12)
 
 
 fn test_bool_masks2() raises:
@@ -225,16 +226,16 @@ fn test_creation_routines() raises:
 
 
 fn test_slicing() raises:
-    # var raw = List[Int32]()
-    # for _ in range(16):
-    #     raw.append(random.randn_float64() * 10)
-    # var arr1 = numojo.NDArray[numojo.i32](
-    #     data=raw, shape=List[Int](4, 4), order="C"
-    # )
-    # print(arr1)
-    # print(arr1[0, 1])
-    # print(arr1[0:1, :])
-    # print(arr1[1:2, 3:4])
+    var raw = List[Int32]()
+    for _ in range(16):
+        raw.append(random.random_float64().cast[i32]() * 10)
+    var arr1 = numojo.NDArray[numojo.i32](
+        data=raw, shape=List[Int](4, 4), order="C"
+    )
+    print(arr1)
+    print(arr1[0, 1])
+    print(arr1[0:1, :])
+    print(arr1[1:2, 3:4])
 
     # var w = arange[f32](0.0, 24.0, step=1)
     # w.reshape(2, 3, 4, order="C")
@@ -269,7 +270,7 @@ fn test_rand_funcs[
 ]:
     var result: NDArray[dtype] = NDArray[dtype](shape)
     if dtype.is_integral():
-        random.randint[dtype](
+        randint[dtype](
             ptr=result.data,
             size=result.ndshape.ndsize,
             low=int(min),
@@ -288,20 +289,49 @@ fn test_rand_funcs[
         )
     return result
 
-fn test_setter() raises:
-    # var x = NDArray[f32](2, 3, 4, fill=Scalar[f32](1), order="F")
-    var x = nm.core.random.rand[f32](2, 3, 4)
-    print(x)
-    var z = x[0]
-    print(z)
-    # var y = NDArray[f32](3, 4, fill=Scalar[f32](1))
-    # x[0] = y
-    # print(x)
 
-    # var np = Python.import_module("numpy")
-    # var np_x = np.random.rand(2, 3, 4)
-    # print(np_x)
-    # print(np_x[1])
+fn test_linalg() raises:
+    var np = Python.import_module("numpy")
+    var arr = nm.arange[nm.f64](0, 100)
+    arr.reshape(10, 10)
+    var np_arr = np.arange(0, 100).reshape(10, 10)
+    print(arr)
+    print(nm.math.linalg.matmul_naive[f64](arr, arr))
+    print(np.matmul(np_arr, np_arr))
+    # The only matmul that currently works is par (__matmul__)
+    # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
+
+
+def test_inv1():
+    var np = Python.import_module("numpy")
+    var arr = nm.core.random.rand(5, 5)
+    var np_arr = arr.to_numpy()
+    print("arr: ", arr)
+    print("np_arr: ", np_arr)
+    print("inverse: ", nm.math.linalg.inverse(arr))
+    print("np inverse: ", np.linalg.inv(np_arr))
+
+
+def test_inv():
+    var np = Python.import_module("numpy")
+    var arr = nm.core.random.rand(5, 5)
+    var np_arr = arr.to_numpy()
+    print("arr: ", arr)
+    print("np_arr: ", np_arr)
+    print(nm.math.linalg.inv(arr))
+    print(np.linalg.inv(np_arr))
+
+
+def test_solve():
+    var np = Python.import_module("numpy")
+    var A = nm.core.random.randn(10, 10)
+    var B = nm.core.random.randn(10, 5)
+    var A_np = A.to_numpy()
+    var B_np = B.to_numpy()
+    print(
+        nm.math.linalg.solver.solve(A, B),
+        np.linalg.solve(A_np, B_np),
+    )
 
 
 fn main() raises:
@@ -313,7 +343,11 @@ fn main() raises:
     # test_bool_masks2()
     # test_creation_routines()
     # test_slicing()
-    test_setter()
+    # test_inv1()
+    test_inv()
+    test_solve()
+    # test_linalg()
+
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
 # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2),

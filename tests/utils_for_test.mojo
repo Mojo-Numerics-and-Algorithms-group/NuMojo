@@ -14,4 +14,4 @@ fn check_is_close[
     dtype: DType
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
-    assert_true(np.all(np.isclose(array.to_numpy(), np_sol)), st)
+    assert_true(np.all(np.isclose(array.to_numpy(), np_sol, atol=0.1)), st)

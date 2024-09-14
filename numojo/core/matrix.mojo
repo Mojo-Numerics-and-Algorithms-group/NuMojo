@@ -30,7 +30,7 @@ the behavior of `NDArray` type and the `Matrix` type.
 # ===----------------------------------------------------------------------===#
 
 
-struct Matrix[dtype: DType = DType.float64]():
+struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     """A marix (2d array).
 
     Parameters:
@@ -64,7 +64,7 @@ struct Matrix[dtype: DType = DType.float64]():
     """Strides of matrix."""
 
     # To be filled by constructing functions.
-    var data: DTypePointer[dtype]
+    var data: UnsafePointer[Scalar[dtype]]
     """Data buffer of the items in the NDArray."""
 
     alias width: Int = simdwidthof[dtype]()  #
@@ -91,7 +91,7 @@ struct Matrix[dtype: DType = DType.float64]():
         self.shape = (shape[0], shape[1])
         self.stride = Tuple(shape[1], 1) if order == "C" else Tuple(1, shape[0])
         self.size = shape[0] * shape[1]
-        self.data = DTypePointer[dtype].alloc(self.size)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.order = order
 
     @always_inline("nodebug")
@@ -103,7 +103,7 @@ struct Matrix[dtype: DType = DType.float64]():
         self.stride = (other.stride[0], other.stride[1])
         self.size = other.size
         self.order = other.order
-        self.data = DTypePointer[dtype].alloc(other.size)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(other.size)
         memcpy(self.data, other.data, other.size)
 
     @always_inline("nodebug")
@@ -164,6 +164,9 @@ struct Matrix[dtype: DType = DType.float64]():
         )
 
     fn __str__(self) -> String:
+        return String.format_sequence(self)
+
+    fn format_to(self, inout writer: Formatter):
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
             var result: String = str("[")
             var number_of_sep: Int = 1
@@ -193,7 +196,7 @@ struct Matrix[dtype: DType = DType.float64]():
                 for i in range(self.shape[0]):
                     if i == self.shape[0] - 1:
                         number_of_newline = 0
-                        result += (
+                    result += (
                             print_row(self, i, sep)
                             + newline * number_of_newline
                         )
@@ -210,7 +213,7 @@ struct Matrix[dtype: DType = DType.float64]():
         except e:
             print("Cannot tranfer matrix to string!", e)
         result += str("]")
-        return (
+        writer.write(
             result
             + "\nSize: "
             + str(self.shape[0])
@@ -234,10 +237,8 @@ fn full[
     """Return a matrix with given shape and filled value."""
 
     var matrix = Matrix[dtype](shape, order)
-    try:
-        fill_pointer[dtype](matrix.data, matrix.size, fill_value)
-    except e:
-        print("Cannot fill in the values", e)
+    for i in range(shape[0] * shape[1]):
+        matrix.data.store(i, fill_value)
 
     return matrix
 

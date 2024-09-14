@@ -726,7 +726,9 @@ fn cbrt[
 #     return backend().math_func_simd_int[dtype, math.pow](array1, intval)
 
 
-fn _mt_rsqrt[dtype: DType, simd_width: Int](value: SIMD[dtype, simd_width]) -> SIMD[dtype, simd_width]:
+fn _mt_rsqrt[
+    dtype: DType, simd_width: Int
+](value: SIMD[dtype, simd_width]) -> SIMD[dtype, simd_width]:
     """
     Elementwise reciprocal squareroot of SIMD.
     Parameters:
@@ -756,9 +758,7 @@ fn rsqrt[
     Returns:
         A NDArray equal to 1/NDArray**(1/2).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype,  _mt_rsqrt](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, _mt_rsqrt](array)
 
 
 fn sqrt[

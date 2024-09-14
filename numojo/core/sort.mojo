@@ -194,7 +194,7 @@ fn binary_sort[
         for i in range(1, end):
             if result[i - 1] > result[i]:
                 var temp: Scalar[dtype] = result.get_scalar(i - 1)
-                result.__setitem__(i-1, result.get_scalar(i))
+                result.__setitem__(i - 1, result.get_scalar(i))
                 result.store(i, temp)
     return result
 

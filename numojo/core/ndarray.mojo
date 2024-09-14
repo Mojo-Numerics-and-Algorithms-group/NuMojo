@@ -1192,11 +1192,15 @@ struct NDArray[dtype: DType = DType.float64](
         self.data.store[width=1](idx, val)
 
     # compiler doesn't accept this
-    fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
+    fn __setitem__(
+        inout self, mask: NDArray[DType.bool], value: Scalar[dtype]
+    ) raises:
         """
         Set the value of the array at the indices where the mask is true.
         """
-        if mask.ndshape != self.ndshape: # this behavious could be removed potentially
+        if (
+            mask.ndshape != self.ndshape
+        ):  # this behavious could be removed potentially
             raise Error("Mask and array must have the same shape")
 
         for i in range(mask.ndshape.ndsize):
@@ -1324,7 +1328,13 @@ struct NDArray[dtype: DType = DType.float64](
             ):
                 raise Error("Error: Slice value exceeds the array shape")
             # spec.append(slices[i].unsafe_indices())
-            var slice_len: Int = len(range(slices[i].start.value(), slices[i].end.value(), slices[i].step))
+            var slice_len: Int = len(
+                range(
+                    slices[i].start.value(),
+                    slices[i].end.value(),
+                    slices[i].step,
+                )
+            )
             spec.append(slice_len)
             if slice_len != 1:
                 ndims += 1
@@ -1346,9 +1356,15 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
-            var slice_len: Int = len(range(slices[j].start.value(), slices[j].end.value(), slices[j].step))
+            var slice_len: Int = len(
+                range(
+                    slices[j].start.value(),
+                    slices[j].end.value(),
+                    slices[j].step,
+                )
+            )
             nshape.append(slice_len)
-            nnum_elements *= slice_len 
+            nnum_elements *= slice_len
             ncoefficients.append(self.stride[j] * slices[j].step)
             j += 1
 
@@ -1743,7 +1759,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         return result
 
-    fn __setitem__(inout self, mask: NDArray[DType.bool], val: NDArray[dtype]) raises:
+    fn __setitem__(
+        inout self, mask: NDArray[DType.bool], val: NDArray[dtype]
+    ) raises:
         """
         Set the value of the array at the indices where the mask is true.
 
@@ -2149,19 +2167,21 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:
         """
-        Enables str(array)
+        Enables str(array).
         """
         return String.format_sequence(self)
 
     fn format_to(self, inout writer: Formatter):
         try:
-            writer.write(self._array_to_string(0, 0)
+            writer.write(
+                self._array_to_string(0, 0)
                 + "\n"
                 + str(self.ndim)
                 + "-D array  "
                 + self.ndshape.__str__()
                 + "  DType: "
-                + self.dtype.__str__())
+                + self.dtype.__str__()
+            )
         except e:
             writer.write("Cannot convert array to string")
 
@@ -2589,10 +2609,14 @@ struct NDArray[dtype: DType = DType.float64](
             if self.dtype == DType.bool:
 
                 @parameter
-                fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
+                fn vectorized_astypenb_from_b[
+                    simd_width: Int
+                ](idx: Int) -> None:
                     narr.store[simd_width](
                         idx,
-                        (self.data + idx).strided_load[width=simd_width](1).cast[type](),
+                        (self.data + idx)
+                        .strided_load[width=simd_width](1)
+                        .cast[type](),
                     )
 
                 vectorize[vectorized_astypenb_from_b, self.width](
@@ -2602,7 +2626,9 @@ struct NDArray[dtype: DType = DType.float64](
 
                 @parameter
                 fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                    narr.store[simd_width](idx, self.load[simd_width](idx).cast[type]())
+                    narr.store[simd_width](
+                        idx, self.load[simd_width](idx).cast[type]()
+                    )
 
                 vectorize[vectorized_astypenb, self.width](self.ndshape.ndsize)
 

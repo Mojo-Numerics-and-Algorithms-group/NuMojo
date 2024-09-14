@@ -151,8 +151,8 @@ fn test_bool_masks1() raises:
     seed(10)
     var B = nm.core.random.rand[i16](3, 2, 2)
     print(B)
-    var mask: NDArray[DType.bool] = A > Scalar[i16](10) 
-    A[ mask ] = B
+    var mask: NDArray[DType.bool] = A > Scalar[i16](10)
+    A[mask] = B
     print(A)
     var gt = A > Scalar[i16](10)
     print(gt)
@@ -279,6 +279,7 @@ fn test_rand_funcs[
         )
     return result
 
+
 fn test_linalg() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 100)
@@ -300,6 +301,7 @@ def test_inv1():
     print("inverse: ", nm.math.linalg.inverse(arr))
     print("np inverse: ", np.linalg.inv(np_arr))
 
+
 def test_inv():
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(5, 5)
@@ -316,7 +318,8 @@ def test_solve():
     var B = nm.core.random.randn(10, 5)
     var A_np = A.to_numpy()
     var B_np = B.to_numpy()
-    print(nm.math.linalg.solver.solve(A, B),
+    print(
+        nm.math.linalg.solver.solve(A, B),
         np.linalg.solve(A_np, B_np),
     )
 

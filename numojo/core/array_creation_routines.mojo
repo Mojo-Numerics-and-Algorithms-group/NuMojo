@@ -157,7 +157,7 @@ fn _linspace_parallel[
 
     if endpoint:
         var denominator: SIMD[dtype, 1] = Scalar[dtype](num) - 1.0
-        var step: SIMD[dtype, 1] = (stop - start) / denominator 
+        var step: SIMD[dtype, 1] = (stop - start) / denominator
 
         @parameter
         fn parallelized_linspace(idx: Int) -> None:
@@ -349,7 +349,7 @@ fn geomspace[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
         var base: Scalar[dtype] = (stop / start)
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
-        var r: Scalar[dtype] = base ** power
+        var r: Scalar[dtype] = base**power
         for i in range(num):
             result.data[i] = a * r**i
         return result
@@ -358,7 +358,7 @@ fn geomspace[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
         var base: Scalar[dtype] = (stop / start)
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
-        var r: Scalar[dtype] = base ** power
+        var r: Scalar[dtype] = base**power
         for i in range(num):
             result.data[i] = a * r**i
         return result

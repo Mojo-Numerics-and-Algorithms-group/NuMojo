@@ -1180,17 +1180,17 @@ struct NDArray[dtype: DType = DType.float64](
         self.data.store[width=1](idx, val)
 
     # compiler doesn't accept this
-    # fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
-    #     """
-    #     Set the value of the array at the indices where the mask is true.
-    #     """
-    #     if mask.ndshape != self.ndshape: # this behavious could be removed potentially
-    #         raise Error("Mask and array must have the same shape")
+    fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+        """
+        if mask.ndshape != self.ndshape: # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
 
-    #     for i in range(mask.ndshape.ndsize):
-    #         if mask.data.load[width=1](i):
-    #             print(value)
-    #             self.data.store[width=1](i, value)
+        for i in range(mask.ndshape.ndsize):
+            if mask.data.load[width=1](i):
+                print(value)
+                self.data.store[width=1](i, value)
 
     # ===-------------------------------------------------------------------===#
     # Getter dunders
@@ -1248,10 +1248,10 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
-    fn __setitem__(inout self, idx: Int, arr: Self) raises:
+    fn __setitem__(inout self, idx: Int, arr: NDArray[dtype]) raises:
         """
-        Retreive a slice of the array corresponding to the index at the first dimension.
-
+        Set a slice of array with given array.
+        
         Example:
             `arr[1]` returns the second row of the array.
         """
@@ -1271,7 +1271,7 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var spec: List[Int] = List[Int]()
         var count: Int = 0
-        for i in range(slice_list.__len__()):
+        for i in range(n_slices):
             self._adjust_slice_(slice_list[i], self.ndshape[i])
             if (
                 slice_list[i].start >= self.ndshape[i]

@@ -312,8 +312,8 @@ fn main() raises:
     # test_bool_masks1()
     # test_bool_masks2()
     # test_creation_routines()
-    test_slicing()
-    # test_setter()
+    # test_slicing()
+    test_setter()
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)
 # var x = numojo.NDArray[numojo.f32](data=List[SIMD[numojo.f32, 1]](1,2,3,4,5,6,7,8,9,10,11,12), shape=List[Int](2,3,2),

@@ -1291,8 +1291,8 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(n_slices):
             self._adjust_slice_(slice_list[i], self.ndshape[i])
             if (
-                slice_list[i].start >= self.ndshape[i]
-                or slice_list[i].end > self.ndshape[i]
+                slice_list[i].start.value() >= self.ndshape[i]
+                or slice_list[i].end.value() > self.ndshape[i]
             ):
                 raise Error("Error: Slice value exceeds the array shape")
             spec.append(slice_list[i].unsafe_indices())
@@ -1415,7 +1415,6 @@ struct NDArray[dtype: DType = DType.float64](
                 or slices[i].end.value() > self.ndshape[i]
             ):
                 raise Error("Error: Slice value exceeds the array shape")
-            # spec.append(slices[i].unsafe_indices())
             var slice_len: Int = len(
                 range(
                     slices[i].start.value(),

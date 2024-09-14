@@ -333,6 +333,9 @@ def test_solve():
         np.linalg.solve(A_np, B_np),
     )
 
+fn test_setter() raises:
+    var A = NDArray[i16](3, 2, fill=Scalar[i16](1.0))
+    
 
 fn main() raises:
     # test_constructors1()
@@ -344,8 +347,8 @@ fn main() raises:
     # test_creation_routines()
     # test_slicing()
     # test_inv1()
-    test_inv()
-    test_solve()
+    # test_inv()
+    # test_solve()
     # test_linalg()
 
 

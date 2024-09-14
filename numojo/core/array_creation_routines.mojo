@@ -156,7 +156,8 @@ fn _linspace_parallel[
     alias nelts = simdwidthof[dtype]()
 
     if endpoint:
-        var step: SIMD[dtype, 1] = (stop - start) / (num - 1.0)
+        var denominator: SIMD[dtype, 1] = Scalar[dtype](num) - 1.0
+        var step: SIMD[dtype, 1] = (stop - start) / denominator
 
         @parameter
         fn parallelized_linspace(idx: Int) -> None:
@@ -346,14 +347,18 @@ fn geomspace[
 
     if endpoint:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var r: Scalar[dtype] = (stop / start) ** (1 / (num - 1))
+        var base: Scalar[dtype] = (stop / start)
+        var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
+        var r: Scalar[dtype] = base**power
         for i in range(num):
             result.data[i] = a * r**i
         return result
 
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var r: Scalar[dtype] = (stop / start) ** (1 / (num))
+        var base: Scalar[dtype] = (stop / start)
+        var power: Scalar[dtype] = 1 / Scalar[dtype](num)
+        var r: Scalar[dtype] = base**power
         for i in range(num):
             result.data[i] = a * r**i
         return result

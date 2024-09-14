@@ -44,7 +44,7 @@ fn trapz[
     if x.shape() != y.shape():
         raise Error("x and y must have the same shape")
 
-    var integral: SIMD[dtype] = 0.0
+    var integral: Scalar[dtype] = 0.0
     for i in range(x.num_elements() - 1):
         var temp = (x.get_scalar(i + 1) - x.get_scalar(i)) * (
             y.get_scalar(i) + y.get_scalar(i + 1)

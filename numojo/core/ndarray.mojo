@@ -2344,7 +2344,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     # Should len be size or number of dimensions instead of the first dimension shape?
     fn __len__(self) -> Int:
-        return int(self.ndshape.ndshape[0])
+        return int(self.ndshape.ndsize)
 
     fn __iter__(self) raises -> _NDArrayIter[__lifetime_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
@@ -2567,7 +2567,7 @@ struct NDArray[dtype: DType = DType.float64](
         return self.ndshape.ndsize
 
     # should this return the List[Int] shape and self.ndshape be used instead of making it a no input function call?
-    # * We are fixed dtype for this array shape for the linalg solve module.
+    # * We fix return dtype of this array shape for the linalg solve module.
     fn shape(self) -> NDArrayShape[i32]:
         """
         Get the shape as an NDArray Shape.
@@ -2636,9 +2636,8 @@ struct NDArray[dtype: DType = DType.float64](
         """
         If all true return true.
         """
-        # make this a compile time check
-        # Respnse to above compile time errors are way harder to read at the moment.
-        if not (is_inttype(self.dtype) or is_booltype(self.dtype)):
+        # make this a compile time check when they become more readable
+        if not (self.dtype is DType.bool or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
         var result: Bool = True
@@ -2807,18 +2806,6 @@ struct NDArray[dtype: DType = DType.float64](
             self.ndshape.ndsize, size=self.ndshape.ndsize
         )
         self.stride = NDArrayStride(shape=self.ndshape, offset=0)
-
-        # var res: NDArray[dtype] = NDArray[dtype](self.ndshape.ndsize)
-        # alias width: Int = simdwidthof[dtype]()
-
-        # @parameter
-        # fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-        #     res.data.store[width=simd_width](
-        #         index, self.data.load[width=simd_width](index)
-        #     )
-
-        # vectorize[vectorized_flatten, simd_width](self.ndshape.ndsize)
-        # self = res^
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """

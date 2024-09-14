@@ -108,7 +108,7 @@ fn matmul_parallelized[
             vectorize[dot, width](t2)
 
     parallelize[calculate_A_rows](t0, t0)
-    return C
+    return C^
 
 
 fn matmul_naive[
@@ -125,4 +125,4 @@ fn matmul_naive[
             for n in range(C.ndshape.load_int(1)):
                 C.store(m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n))
 
-    return C
+    return C^

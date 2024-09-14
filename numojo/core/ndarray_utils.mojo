@@ -262,7 +262,9 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             np_dtype = np.int8
 
         numpyarray = np.empty(np_arr_dim, dtype=np_dtype)
-        var pointer_d = numpyarray.__array_interface__["data"][0].unsafe_get_as_pointer[dtype]()
+        var pointer_d = numpyarray.__array_interface__["data"][
+            0
+        ].unsafe_get_as_pointer[dtype]()
         memcpy(pointer_d, array.unsafe_ptr(), array.num_elements())
         _ = array
 

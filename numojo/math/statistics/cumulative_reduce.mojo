@@ -181,7 +181,7 @@ fn maxT[
     alias width = simdwidthof[dtype]()
     var max_value = NDArray[dtype](NDArrayShape(width))
     for i in range(width):
-        max_value[i] = array[0]
+        max_value.__setitem__(i, array[0])
     # var max_value: SIMD[ dtype, width] = SIMD[ dtype, width](array[0])
 
     @parameter
@@ -221,7 +221,7 @@ fn minT[
     alias width = simdwidthof[dtype]()
     var min_value = NDArray[dtype](NDArrayShape(width))
     for i in range(width):
-        min_value[i] = array[0]
+        min_value.__setitem__(i, array[0])
 
     @parameter
     fn vectorized_min[simd_width: Int](idx: Int) -> None:

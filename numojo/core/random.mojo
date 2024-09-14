@@ -270,8 +270,8 @@ fn rand_exponential[
     var result = NDArray[dtype](NDArrayShape(shape))
 
     for i in range(result.num_elements()):
-        var u = random.random_float64()
-        result.data[i] = -mt.log(1 - u) / rate.cast[DType.float64]()
+        var u = random.random_float64().cast[dtype]()
+        result.data[i] = -mt.log(1 - u) / rate
 
     return result^
 
@@ -302,7 +302,7 @@ fn rand_exponential[
     var result = NDArray[dtype](shape)
 
     for i in range(result.num_elements()):
-        var u = random.random_float64()
-        result.data[i] = -mt.log(1 - u) / rate.cast[DType.float64]()
+        var u = random.random_float64().cast[dtype]()
+        result.data[i] = -mt.log(1 - u) / rate
 
     return result^

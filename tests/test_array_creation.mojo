@@ -119,6 +119,11 @@ def test_eye():
         "Eye is broken",
     )
 
+def test_from_string():
+    var A = nm.from_string("[[[1,2],[3,4]],[[5,6],[7,8]]]")
+    var B = nm.array[DType.int32]("[0.1, -2.3, 41.5, 19.29145, -199]")
+    print(A)
+    print(B)
 
 # def test_diagflat():
 #     var np = Python.import_module("numpy")

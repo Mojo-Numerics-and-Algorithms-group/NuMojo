@@ -25,6 +25,8 @@ the behavior of `NDArray` type and the `Matrix` type.
 
 """
 
+from .ndarray import NDArray
+
 # ===----------------------------------------------------------------------===#
 # Matrix struct
 # ===----------------------------------------------------------------------===#
@@ -46,7 +48,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         - data
         - shape
         - size
-        - stride
+        - strides
         - order
 
     Default constructor: dtype(parameter), shape, order.
@@ -60,7 +62,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     # To be calculated at the initialization.
     var size: Int
     """Size of Matrix."""
-    var stride: Tuple[Int, Int]
+    var strides: Tuple[Int, Int]
     """Strides of matrix."""
 
     # To be filled by constructing functions.
@@ -89,7 +91,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         self.shape = (shape[0], shape[1])
-        self.stride = Tuple(shape[1], 1) if order == "C" else Tuple(1, shape[0])
+        self.strides = Tuple(shape[1], 1) if order == "C" else Tuple(
+            1, shape[0]
+        )
         self.size = shape[0] * shape[1]
         self.data = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.order = order
@@ -100,7 +104,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Copy other into self.
         """
         self.shape = (other.shape[0], other.shape[1])
-        self.stride = (other.stride[0], other.stride[1])
+        self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self.order = other.order
         self.data = UnsafePointer[Scalar[dtype]]().alloc(other.size)
@@ -112,7 +116,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Move other into self.
         """
         self.shape = (other.shape[0], other.shape[1])
-        self.stride = (other.stride[0], other.stride[1])
+        self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self.order = other.order
         self.data = other.data
@@ -140,9 +144,31 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         if index.__len__() != 2:
             raise Error("Error: Length of the index does not match the shape.")
         if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
-            raise Error("Error: Elements of `index` exceed the array shape")
+            raise Error("Error: Elements of `index` exceed the array shape.")
         return self.data.load(
-            index[0] * self.stride[0] + index[1] * self.stride[1]
+            index[0] * self.strides[0] + index[1] * self.strides[1]
+        )
+
+    fn _getitem(self, index: Tuple[Int, Int]) -> Scalar[dtype]:
+        """
+        Return the scalar at the coordinates (tuple).
+
+        [Unsafe] It does not raise error when boundary check fails!
+
+        Args:
+            index: The coordinates of the item.
+
+        Returns:
+            A scalar matching the dtype of the array.
+        """
+
+        # If more than one index is given
+        if index.__len__() != 2:
+            print("Error: Length of the index does not match the shape.")
+        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
+            print("Error: Elements of `index` exceed the array shape.")
+        return self.data.load(
+            index[0] * self.strides[0] + index[1] * self.strides[1]
         )
 
     fn __setitem__(self, index: Tuple[Int, Int], value: Scalar[dtype]) raises:
@@ -160,7 +186,27 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
             raise Error("Error: Elements of `index` exceed the array shape")
         self.data.store(
-            index[0] * self.stride[0] + index[1] * self.stride[1], value
+            index[0] * self.strides[0] + index[1] * self.strides[1], value
+        )
+
+    fn _setitem(self, index: Tuple[Int, Int], value: Scalar[dtype]):
+        """
+        Return the scalar at the coordinates (tuple).
+
+        [Unsafe] It does not raise error when boundary check fails!
+
+        Args:
+            index: The coordinates of the item.
+            value: The value to be set.
+        """
+
+        # If more than one index is given
+        if index.__len__() != 2:
+            print("Error: Length of the index does not match the shape.")
+        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
+            print("Error: Elements of `index` exceed the array shape")
+        self.data.store(
+            index[0] * self.strides[0] + index[1] * self.strides[1], value
         )
 
     fn __str__(self) -> String:
@@ -197,9 +243,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                     if i == self.shape[0] - 1:
                         number_of_newline = 0
                     result += (
-                            print_row(self, i, sep)
-                            + newline * number_of_newline
-                        )
+                        print_row(self, i, sep) + newline * number_of_newline
+                    )
             else:
                 for i in range(3):
                     result += print_row(self, i, sep) + newline
@@ -243,6 +288,17 @@ fn full[
     return matrix
 
 
+fn identity[
+    dtype: DType = DType.float64
+](len: Int, order: String = "C") -> Matrix[dtype]:
+    """Return a matrix with given shape and filled value."""
+
+    var matrix = Matrix[dtype]((len, len), order)
+    for i in range(len):
+        matrix.data.store(i * matrix.strides[0] + i * matrix.strides[1], 1)
+    return matrix
+
+
 fn rand[
     dtype: DType = DType.float64
 ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
@@ -259,3 +315,21 @@ fn rand[
     for i in range(result.size):
         result.data.store(i, random.random_float64(0, 1).cast[dtype]())
     return result
+
+
+fn _from_2darray[dtype: DType
+](array: NDArray[dtype]) raises -> Matrix[dtype]:
+    """Create a matrix from an 2-darray.
+
+    [Unsafe] It simply uses the buffer of an ndarray.
+
+    It is useful when we want to solve a linear system. In this case, we treat
+    ndarray as a matrix. This simplify calculation and avoid too much check.
+    """
+
+    var matrix = Matrix[dtype](
+        shape=(array.ndshape[0], array.ndshape[1]), order=array.order
+    )
+    matrix.data = array.data
+
+    return matrix

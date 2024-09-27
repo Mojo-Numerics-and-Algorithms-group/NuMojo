@@ -77,6 +77,7 @@ def test_inv():
         nm.math.linalg.inv(arr), np.linalg.inv(np_arr), "Inverse is broken"
     )
 
+
 # ! The `solve` is broken, it outputs -INF, nan, 0 etc for some values
 def test_solve():
     var np = Python.import_module("numpy")

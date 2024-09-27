@@ -188,7 +188,7 @@ fn back_substitution[
 fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """Find the inverse of a non-singular, row-major matrix.
 
-    It uses the function `solve()` to solve `AB = I` for B, where I is 
+    It uses the function `solve()` to solve `AB = I` for B, where I is
     an identity matrix.
 
     The speed is faster than numpy for matrices smaller than 100x100,
@@ -476,4 +476,3 @@ fn solve[
             X.store(i * n + col, _temp2)
 
     return X
-

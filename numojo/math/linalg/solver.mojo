@@ -185,14 +185,40 @@ fn back_substitution[
     return x
 
 
-fn inverse[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """Find the inverse of a non-singular, square matrix.
+fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Find the inverse of a non-singular, row-major matrix.
 
-    WARNING: This function is slower than `inv`
-    as it does not adopt parallelization.
+    It uses the function `solve()` to solve `AB = I` for B, where I is 
+    an identity matrix.
+
+    The speed is faster than numpy for matrices smaller than 100x100,
+    and is slower for larger matrices.
 
     Parameters:
-        dtype: Data type of the inversed matrix. Default value is `f64`.
+        dtype: Data type of the inversed matrix.
+
+    Args:
+        A: Input matrix. It should be non-singular, square, and row-major.
+
+    Returns:
+        The reversed matrix of the original matrix.
+
+    """
+
+    var m = A.shape()[0]
+    var I = eye[dtype](m, m)
+
+    return solve(A, I)
+
+
+fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Find the inverse of a non-singular, square matrix.
+
+    WARNING: This function is slower than `inv`.
+    as it does not adopt parallelization by using raw methods.
+
+    Parameters:
+        dtype: Data type of the inversed matrix.
 
     Args:
         array: Input matrix. It should be non-singular and square.
@@ -206,7 +232,7 @@ fn inverse[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     import numojo as nm
     fn main() raises:
         var A = nm.NDArray("[[1,0,1], [0,2,1], [1,1,1]]")
-        var B = nm.math.linalg.solver.inverse(A)
+        var B = nm.math.linalg.solver.inv_raw(A)
         print("Original matrix:")
         print(A)
         print("Reversed matrix:")
@@ -268,7 +294,7 @@ fn inverse[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return inversed
 
 
-fn inv[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """Find the inverse of a non-singular, row-major matrix.
 
     Use LU decomposition algorithm.
@@ -276,11 +302,11 @@ fn inv[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     The speed is faster than numpy for matrices smaller than 100x100,
     and is slower for larger matrices.
 
-    TODO: Use `solve()` function to calculate inverse.
+    TODO: Fix the issues in parallelization.
     `AX = I` where `I` is an identity matrix.
 
     Parameters:
-        dtype: Data type of the inversed matrix. Default value is `f64`.
+        dtype: Data type of the inversed matrix.
 
     Args:
         array: Input matrix. It should be non-singular, square, and row-major.
@@ -348,7 +374,7 @@ fn solve[
     TODO: Use LAPACK for large matrices when it is available.
 
     Parameters:
-        dtype: Data type of the inversed matrix. Default value is `f64`.
+        dtype: Data type of the inversed matrix.
 
     Args:
         A: Non-singular, square, and row-major matrix. The size is m x m.

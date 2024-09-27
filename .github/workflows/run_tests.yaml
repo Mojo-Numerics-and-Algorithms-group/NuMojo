@@ -1,6 +1,5 @@
 name: NuMojo Unit Tests
 on:
-  push:
   pull_request:
   workflow_dispatch:
 

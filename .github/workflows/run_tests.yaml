@@ -1,8 +1,6 @@
 name: NuMojo Unit Tests
 on:
   push:
-    branches:
-      - testflow
   pull_request:
   workflow_dispatch:
 

@@ -1,5 +1,8 @@
 name: NuMojo Unit Tests
 on:
+  push:
+    branches:
+      - testflow
   pull_request:
   workflow_dispatch:
 
@@ -28,9 +31,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download Modular installer
+      - name: Install magic
         run: |
-          curl -s https://get.modular.com | sh -
+          curl -ssL https://magic.modular.com/ff414efd-16ac-4bf3-8efc-50b059272ab6 | bash
+      
+      - name: Add path
+        run: |
+          source $HOME/.bash_profile
+          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
+          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
+          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
 
       - name: Activate virtualenv
         run: |
@@ -38,16 +48,11 @@ jobs:
           . $HOME/venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
-      - name: Install Mojo
+      - name: Install packages
         run: |
-          modular install mojo
-
-      - name: Set path Mojo
-        run: |
-          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
-          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+          pip install "numpy"
 
       - name: Run tests
         run: |
-          pip install "numpy<2.0"
-          mojo test tests -I .
+          magic install
+          magic run mojo test tests -I .

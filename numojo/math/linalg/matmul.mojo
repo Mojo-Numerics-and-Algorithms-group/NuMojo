@@ -108,6 +108,14 @@ fn matmul_parallelized[
             vectorize[dot, width](t2)
 
     parallelize[calculate_A_rows](t0, t0)
+
+    var _t0 = t0
+    var _t1 = t1
+    var _t2 = t2
+    var _A = A
+    var _B = B
+    var _width = width
+
     return C^
 
 

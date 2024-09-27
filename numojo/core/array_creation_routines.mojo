@@ -588,7 +588,7 @@ fn tri[
 # Construct array from string representation or txt files
 # ===------------------------------------------------------------------------===#
 
-fn from_string[
+fn fromstring[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
     """
@@ -605,10 +605,10 @@ fn from_string[
     import numojo as nm
 
     fn main() raises:
-        var A = nm.from_string[DType.int8]("[[[1,2],[3,4]],[[5,6],[7,8]]]")
-        var B = nm.from_string[DType.float16]("[[1,2,3,4],[5,6,7,8]]")
-        var C = nm.from_string[DType.float32]("[0.1, -2.3, 41.5, 19.29145, -199]")
-        var D = nm.from_string[DType.int32]("[0.1, -2.3, 41.5, 19.29145, -199]")
+        var A = nm.fromstring[DType.int8]("[[[1,2],[3,4]],[[5,6],[7,8]]]")
+        var B = nm.fromstring[DType.float16]("[[1,2,3,4],[5,6,7,8]]")
+        var C = nm.fromstring[DType.float32]("[0.1, -2.3, 41.5, 19.29145, -199]")
+        var D = nm.fromstring[DType.int32]("[0.1, -2.3, 41.5, 19.29145, -199]")
 
         print(A)
         print(B)
@@ -687,6 +687,6 @@ fn array[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
     """
-    This reload is an alias of `from_string`.
+    This reload is an alias of `fromstring`.
     """
-    return from_string[dtype](text, order)
+    return fromstring[dtype](text, order)

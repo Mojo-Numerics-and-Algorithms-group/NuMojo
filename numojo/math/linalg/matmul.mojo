@@ -10,6 +10,7 @@ Matrix multiplication functions for NDArrays
 import math
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+from sys import simdwidthof
 
 import .. math_funcs as _mf
 from ...core.ndarray import NDArray, NDArrayShape
@@ -107,7 +108,15 @@ fn matmul_parallelized[
             vectorize[dot, width](t2)
 
     parallelize[calculate_A_rows](t0, t0)
-    return C
+
+    var _t0 = t0
+    var _t1 = t1
+    var _t2 = t2
+    var _A = A
+    var _B = B
+    var _width = width
+
+    return C^
 
 
 fn matmul_naive[
@@ -124,4 +133,4 @@ fn matmul_naive[
             for n in range(C.ndshape.load_int(1)):
                 C.store(m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n))
 
-    return C
+    return C^

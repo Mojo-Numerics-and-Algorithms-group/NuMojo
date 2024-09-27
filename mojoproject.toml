@@ -12,7 +12,7 @@ authors = [
 channels = ["conda-forge", "https://conda.modular.com/max"]
 platforms = ["osx-arm64", "linux-64"]
 license = "Apache-2.0"
-readme = "README.md"
+readme = "README.MD"
 
 [tasks]
 # test whether tests pass and the package can be built
@@ -24,4 +24,4 @@ package = "magic run mojo package numojo"
 format = "magic run mojo format ./"
 
 [dependencies]
-max = ">=24.4.0,<25"
+max = ">=24.5.0,<25"

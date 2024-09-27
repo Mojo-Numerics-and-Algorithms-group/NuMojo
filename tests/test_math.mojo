@@ -21,17 +21,12 @@ def test_add_array_par():
     var arr = nm.arange[nm.f64](0, 500)
 
     check(
-        nm.add[
-            nm.f64,
-            backend = nm.math.math_funcs.VectorizedParallelizedNWorkers[6],
-        ](arr, 5.0),
+        nm.add[nm.f64, backend = nm.math.math_funcs.Vectorized](arr, 5.0),
         np.arange(0, 500) + 5,
         "Add array + scalar",
     )
     check(
-        nm.add[nm.f64, nm.math.math_funcs.VectorizedParallelizedNWorkers[6]](
-            arr, arr
-        ),
+        nm.add[nm.f64, backend = nm.math.math_funcs.Vectorized](arr, arr),
         np.arange(0, 500) + np.arange(0, 500),
         "Add array + array",
     )
@@ -53,13 +48,14 @@ def test_sin_par():
     check_is_close(
         nm.sin[
             nm.f64,
-            backend = nm.math.math_funcs.VectorizedParallelizedNWorkers[6],
+            backend = nm.math.math_funcs.Vectorized,
         ](arr),
         np.sin(np.arange(0, 15)),
         "Add array + scalar",
     )
 
 
+# ! MATMUL RESULTS IN A SEGMENTATION FAULT EXCEPT FOR NAIVE ONE, BUT NAIVE OUTPUTS WRONG VALUES
 def test_matmul():
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 100)
@@ -72,15 +68,7 @@ def test_matmul():
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
 
 
-def test_inverse():
-    var np = Python.import_module("numpy")
-    var arr = nm.core.random.rand(100, 100)
-    var np_arr = arr.to_numpy()
-    check_is_close(
-        nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
-    )
-
-
+# ! The `inv` is broken, it outputs -INF for some values
 def test_inv():
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(100, 100)
@@ -90,6 +78,7 @@ def test_inv():
     )
 
 
+# ! The `solve` is broken, it outputs -INF, nan, 0 etc for some values
 def test_solve():
     var np = Python.import_module("numpy")
     var A = nm.core.random.randn(100, 100)

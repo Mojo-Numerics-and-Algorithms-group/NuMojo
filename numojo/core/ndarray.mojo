@@ -831,7 +831,7 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            ```mojo
+            ```
             import numojo as nm
             fn main() raises:
                 var A = nm.NDArray[DType.float16](2, 2, min=0.0, max=10.0)
@@ -886,7 +886,7 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            ```mojo
+            ```
             import numojo as nm
             fn main() raises:
                 var A = nm.NDArray[DType.float16](List[Int](2, 2), min=0.0, max=10.0)
@@ -1040,8 +1040,7 @@ struct NDArray[dtype: DType = DType.float64](
     # creating NDArray from numpy array
     # TODO: Make it work for all data types apart from float64
     fn __init__(inout self, data: PythonObject, order: String = "C") raises:
-        if not is_floattype(dtype):
-            raise Error("Only float64 is supported for now")
+        var np_dtype = data.dtype
         var len = int(len(data.shape))
         var shape: List[Int] = List[Int]()
         for i in range(len):
@@ -1056,8 +1055,9 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self.data, self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
+
+        # for i in range(self.ndshape.ndsize):
+        #     self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
         # var array: PythonObject
         # try:
@@ -1067,9 +1067,8 @@ struct NDArray[dtype: DType = DType.float64](
         #     array = data.copy()
         #     print("Error in to_tensor", e)
 
-        # var pointer = int(array.__array_interface__["data"][0].to_float64())
-        # var pointer_d = DTypePointer[self.dtype](address=pointer)
-        # memcpy(self.data, pointer_d, self.ndshape.ndsize)
+        # var pointer = int(array.__array_interface__["data"][0].unsafe_get_as_pointer[dtype]()
+        # memcpy(self.data, pointer, self.ndshape.ndsize)
 
         # _ = array  # to avoid unused variable warning
         # _ = data
@@ -1193,21 +1192,21 @@ struct NDArray[dtype: DType = DType.float64](
         self.data.store[width=1](idx, val)
 
     # compiler doesn't accept this
-    fn __setitem__(
-        inout self, mask: NDArray[DType.bool], value: Scalar[dtype]
-    ) raises:
-        """
-        Set the value of the array at the indices where the mask is true.
-        """
-        if (
-            mask.ndshape != self.ndshape
-        ):  # this behavious could be removed potentially
-            raise Error("Mask and array must have the same shape")
+    # fn __setitem__(
+    #     inout self, mask: NDArray[DType.bool], value: Scalar[dtype]
+    # ) raises:
+    #     """
+    #     Set the value of the array at the indices where the mask is true.
+    #     """
+    #     if (
+    #         mask.ndshape != self.ndshape
+    #     ):  # this behavious could be removed potentially
+    #         raise Error("Mask and array must have the same shape")
 
-        for i in range(mask.ndshape.ndsize):
-            if mask.data.load[width=1](i):
-                print(value)
-                self.data.store[width=1](i, value)
+    #     for i in range(mask.ndshape.ndsize):
+    #         if mask.data.load[width=1](i):
+    #             print(value)
+    #             self.data.store[width=1](i, value)
 
     # ===-------------------------------------------------------------------===#
     # Getter dunders
@@ -1265,16 +1264,16 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
-    fn __setitem__(inout self, idx: Int, arr: NDArray[dtype]) raises:
+    fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
         """
         Set a slice of array with given array.
-        
+
         Example:
             `arr[1]` returns the second row of the array.
         """
         # TODO: add support for different dtypes
-        if self.ndim == 0 and arr.ndim == 0:
-            self.data.store[width=1](0, arr.data.load[width=1](0))
+        if self.ndim == 0 and val.ndim == 0:
+            self.data.store[width=1](0, val.data.load[width=1](0))
 
         var slice_list = List[Slice]()
         slice_list.append(Slice(idx, idx + 1))
@@ -1289,14 +1288,21 @@ struct NDArray[dtype: DType = DType.float64](
         var spec: List[Int] = List[Int]()
         var count: Int = 0
         for i in range(n_slices):
+            var slice_len: Int = len(
+                range(
+                    slice_list[i].start.value(),
+                    slice_list[i].end.value(),
+                    slice_list[i].step,
+                )
+            )
             self._adjust_slice_(slice_list[i], self.ndshape[i])
             if (
                 slice_list[i].start.value() >= self.ndshape[i]
                 or slice_list[i].end.value() > self.ndshape[i]
             ):
                 raise Error("Error: Slice value exceeds the array shape")
-            spec.append(slice_list[i].unsafe_indices())
-            if slice_list[i].unsafe_indices() != 1:
+            spec.append(slice_len)
+            if slice_len != 1:
                 ndims += 1
             else:
                 count += 1
@@ -1316,8 +1322,15 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
-            nshape.append(slice_list[j].unsafe_indices())
-            nnum_elements *= slice_list[j].unsafe_indices()
+            var slice_len: Int = len(
+                    range(
+                        slice_list[j].start.value(),
+                        slice_list[j].end.value(),
+                        slice_list[j].step,
+                    )
+                )
+            nshape.append(slice_len)
+            nnum_elements *= slice_len
             ncoefficients.append(self.stride[j] * slice_list[j].step)
             j += 1
 
@@ -1330,15 +1343,15 @@ struct NDArray[dtype: DType = DType.float64](
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start * self.stride[i]
+                noffset += slice_list[i].start.value() * self.stride[i]
         elif self.order == "F":
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start * self.stride[i]
-        # print("nshape: ", nshape.__str__())
+                noffset += slice_list[i].start.value() * self.stride[i]
+        # print("nshape: ", nshape.__str__(
         # print("ncoefficients: ", ncoefficients.__str__())
         # print("nnum_elements: ", nnum_elements)
         # print("nstrides: ", nstrides.__str__())
@@ -1349,7 +1362,7 @@ struct NDArray[dtype: DType = DType.float64](
             index.append(0)
 
         _traverse_iterative_setter[dtype](
-            arr, self, nshape, ncoefficients, nstrides, noffset, index, 0
+            val, self, nshape, ncoefficients, nstrides, noffset, index
         )
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
@@ -2312,7 +2325,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Compute the "official" string representation of NDArray.
         An example is:
-        ```mojo
+        ```
         fn main() raises:
             var A = NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
             print(repr(A))
@@ -2914,7 +2927,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         An example goes as follows.
 
-        ```mojo
+        ```
         import numojo as nm
 
         fn main() raises:

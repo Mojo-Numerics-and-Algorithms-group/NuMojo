@@ -85,9 +85,13 @@ fn test_constructors1() raises:
 
 
 fn test_constructors2() raises:
-    var fill_value: SIMD[i32, 1] = 10
-    var A = NDArray[i32](3, 2, fill=fill_value)
-    print(A)
+    # var fill_value: SIMD[i32, 1] = 10
+    # var A = NDArray[i32](3, 2, fill=fill_value)
+    # print(A)
+    var np = Python.import_module("numpy")
+    var A = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    var B = NDArray[f32](data=A)
+    print(B)
 
 
 fn test_random() raises:
@@ -263,6 +267,7 @@ fn test_slicing() raises:
     print(slicedy3)
     # print("Time taken: ", (time.now() - start)/1e9/10)
 
+
 fn test_rand_funcs[
     dtype: DType = DType.float64
 ](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[
@@ -333,9 +338,14 @@ def test_solve():
         np.linalg.solve(A_np, B_np),
     )
 
+
 fn test_setter() raises:
-    var A = NDArray[i16](3, 2, fill=Scalar[i16](1.0))
-    
+    print("Testing setter")
+    var A = NDArray[i16](2, 3, 2, fill=Scalar[i16](1))
+    var B = NDArray[i16](3, 2, fill=Scalar[i16](2))
+    A[0] = B
+    print(A)
+
 
 fn main() raises:
     # test_constructors1()
@@ -350,6 +360,7 @@ fn main() raises:
     # test_inv()
     # test_solve()
     # test_linalg()
+    test_setter()
 
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)

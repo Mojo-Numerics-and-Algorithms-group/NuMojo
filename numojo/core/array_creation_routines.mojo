@@ -588,6 +588,7 @@ fn tri[
 # Construct array from string representation or txt files
 # ===------------------------------------------------------------------------===#
 
+
 fn fromstring[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
@@ -682,6 +683,7 @@ fn fromstring[
 # Construct array from various objects.
 # It can be reloaded to allow different types of input.
 # ===------------------------------------------------------------------------===#
+
 
 fn array[
     dtype: DType = DType.float64

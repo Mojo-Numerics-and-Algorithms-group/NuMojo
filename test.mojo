@@ -292,16 +292,6 @@ fn test_linalg() raises:
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
 
 
-def test_inv1():
-    var np = Python.import_module("numpy")
-    var arr = nm.core.random.rand(5, 5)
-    var np_arr = arr.to_numpy()
-    print("arr: ", arr)
-    print("np_arr: ", np_arr)
-    print("inverse: ", nm.math.linalg.inverse(arr))
-    print("np inverse: ", np.linalg.inv(np_arr))
-
-
 def test_inv():
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(5, 5)

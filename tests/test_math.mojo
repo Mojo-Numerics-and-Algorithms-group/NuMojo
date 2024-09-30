@@ -68,15 +68,6 @@ def test_matmul():
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
 
 
-def test_inverse():
-    var np = Python.import_module("numpy")
-    var arr = nm.core.random.rand(100, 100)
-    var np_arr = arr.to_numpy()
-    check_is_close(
-        nm.math.linalg.inverse(arr), np.linalg.inv(np_arr), "Inverse is broken"
-    )
-
-
 # ! The `inv` is broken, it outputs -INF for some values
 def test_inv():
     var np = Python.import_module("numpy")
@@ -85,6 +76,7 @@ def test_inv():
     check_is_close(
         nm.math.linalg.inv(arr), np.linalg.inv(np_arr), "Inverse is broken"
     )
+
 
 # ! The `solve` is broken, it outputs -INF, nan, 0 etc for some values
 def test_solve():

@@ -417,48 +417,14 @@ fn solve[
     ####################################################################
     # Parallelization
     #
-    # Parallelization does not work any more since MAX 24.5.
-    # We temporarily switch to a non-paralleled approach.
-    # Thus, this block of code is commented out.
-    # TODO: Fix the issues in parallelization.
+    # Parallelization does not work well since MAX 24.5.
+    # This is because the ASAP destruction policy.
+    # We temporarily use the variables to prolong their lifetime
+    # TODO: Remove manual prolonging of lifetime in future if allowed.
     ####################################################################
 
-    # @parameter
-    # fn calculate_X(col: Int) -> None:
-    #     # Solve `LZ = Y` for `Z` for each col
-    #     for i in range(m):  # row of L
-    #         var _temp = Y.load(i * n + col)
-    #         for j in range(i):  # col of L
-    #             _temp = _temp - L.load(i * m + j) * Z.load(j * n + col)
-    #         _temp = _temp / L.load(i * m + i)
-    #         Z.store(i * n + col, _temp)
-
-    #     # Solve `UZ = Z` for `X` for each col
-    #     for i in range(m - 1, -1, -1):
-    #         var _temp2 = Z.load(i * n + col)
-    #         for j in range(i + 1, m):
-    #             _temp2 = _temp2 - U.load(i * m + j) * X.load(j * n + col)
-    #         _temp2 = _temp2 / U.load(i * m + i)
-    #         X.store(i * n + col, _temp2)
-
-    # parallelize[calculate_X](n, n)
-
-    # # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
-    # # This is disadvantage of Mojo's ASAP policy
-    # var _L = L^
-    # var _U = U^
-
-    # return X
-
-    ####################################################################
-    # Non-parallelization
-    #
-    # Parallelization does not work any more since MAX 24.5.
-    # We temporarily switch to a non-paralleled approach.
-    # TODO: Remove the following code when parallelization works again.
-    ####################################################################
-
-    for col in range(n):
+    @parameter
+    fn calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y.load(i * n + col)
@@ -475,4 +441,39 @@ fn solve[
             _temp2 = _temp2 / U.load(i * m + i)
             X.store(i * n + col, _temp2)
 
-    return X
+    parallelize[calculate_X](n, n)
+
+    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
+    # This is disadvantage of Mojo's ASAP policy
+    var _L = L^
+    var _U = U^
+    var _Z = Z^
+    var _m = m
+    var _n = n
+
+    return X^
+
+    ####################################################################
+    # Non-parallelization
+    #
+    # This approach does not adopt parallelization.
+    ####################################################################
+
+    # for col in range(n):
+    #     # Solve `LZ = Y` for `Z` for each col
+    #     for i in range(m):  # row of L
+    #         var _temp = Y.load(i * n + col)
+    #         for j in range(i):  # col of L
+    #             _temp = _temp - L.load(i * m + j) * Z.load(j * n + col)
+    #         _temp = _temp / L.load(i * m + i)
+    #         Z.store(i * n + col, _temp)
+
+    #     # Solve `UZ = Z` for `X` for each col
+    #     for i in range(m - 1, -1, -1):
+    #         var _temp2 = Z.load(i * n + col)
+    #         for j in range(i + 1, m):
+    #             _temp2 = _temp2 - U.load(i * m + j) * X.load(j * n + col)
+    #         _temp2 = _temp2 / U.load(i * m + i)
+    #         X.store(i * n + col, _temp2)
+
+    # return X

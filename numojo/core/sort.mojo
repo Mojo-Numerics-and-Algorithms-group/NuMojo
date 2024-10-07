@@ -317,7 +317,7 @@ fn argsort[
 
     var idx_array = NDArray[DType.index](length)
     for i in range(length):
-        idx_array.__setitem__(i, i)
+        idx_array.__setitem__(i, SIMD[DType.index, 1](i))
 
     argsort_inplace(array, idx_array, 0, length - 1)
 

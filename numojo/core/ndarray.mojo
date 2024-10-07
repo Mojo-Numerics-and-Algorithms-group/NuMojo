@@ -964,22 +964,8 @@ struct NDArray[dtype: DType = DType.float64](
         self.datatype = dtype
         self.order = order
 
-        # for i in range(self.ndshape.ndsize):
-        #     self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
-
-        # var array: PythonObject
-        # try:
-        #     var np = Python.import_module("numpy")
-        #     array = np.float32(data.copy())
-        # except e:
-        #     array = data.copy()
-        #     print("Error in to_tensor", e)
-
-        # var pointer = int(array.__array_interface__["data"][0].unsafe_get_as_pointer[dtype]()
-        # memcpy(self.data, pointer, self.ndshape.ndsize)
-
-        # _ = array  # to avoid unused variable warning
-        # _ = data
+        for i in range(self.ndshape.ndsize):
+            self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
     # for creating views
     fn __init__(
@@ -1116,6 +1102,263 @@ struct NDArray[dtype: DType = DType.float64](
     #             print(value)
     #             self.data.store[width=1](i, value)
 
+    fn __setitem__(
+        inout self, owned slices: List[Slice], val: NDArray[dtype]
+    ) raises:
+        """
+        Sets the slices of an array from list of slices and array.
+
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+        print("slices: ", slices[0], slices[1], slices[2])
+        var n_slices: Int = len(slices)
+        var ndims: Int = 0
+        var count: Int = 0
+        var spec: List[Int] = List[Int]()
+        var slice_list: List[Slice] = List[Slice]()
+        for i in range(n_slices):
+            var start: Int = 0
+            var end: Int = 0
+            if slices[i].start is None and slices[i].end is None:
+                start = 0
+                end = self.ndshape[i]
+                temp = Slice(
+                    start=Optional(start),
+                    end=Optional(end),
+                    step=Optional(slices[i].step),
+                )
+                slice_list.append(temp)
+            if slices[i].start is None and slices[i].end is not None:
+                start = 0
+                temp = Slice(
+                    start=Optional(start),
+                    end=Optional(slices[i].end.value()),
+                    step=Optional(slices[i].step),
+                )
+                slice_list.append(temp)
+            if slices[i].start is not None and slices[i].end is None:
+                end = self.ndshape[i]
+                temp = Slice(
+                    start=Optional(slices[i].start.value()),
+                    end=Optional(end),
+                    step=Optional(slices[i].step),
+                )
+                slice_list.append(temp)
+            if slices[i].start is not None and slices[i].end is not None:
+                slice_list.append(slices[i])
+
+        for i in range(n_slices):
+            if (
+                slice_list[i].start.value() >= self.ndshape[i]
+                or slice_list[i].end.value() > self.ndshape[i]
+            ):
+                raise Error("Error: Slice value exceeds the array shape")
+            var slice_len: Int = (
+                (slice_list[i].end.value() - slice_list[i].start.value())
+                / slice_list[i].step
+            ).__int__()
+            spec.append(slice_len)
+            if slice_len != 1:
+                ndims += 1
+            else:
+                count += 1
+        if count == slice_list.__len__():
+            ndims = 1
+
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+
+        var j: Int = 0
+        count = 0
+        for _ in range(ndims):
+            while spec[j] == 1:
+                count += 1
+                j += 1
+            if j >= self.ndim:
+                break
+            var slice_len: Int = (
+                (slice_list[j].end.value() - slice_list[j].start.value())
+                / slice_list[j].step
+            ).__int__()
+            nshape.append(slice_len)
+            nnum_elements *= slice_len
+            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            j += 1
+
+        # We can remove this check after we have support for broadcasting
+        for i in range(ndims):
+            if nshape[i] != val.ndshape[i]:
+                raise Error(
+                    "Error: Shape mismatch, Cannot set the array values with"
+                    " given array"
+                )
+
+        var noffset: Int = 0
+        if self.order == "C":
+            noffset = 0
+            for i in range(ndims):
+                var temp_stride: Int = 1
+                for j in range(i + 1, ndims):  # temp
+                    temp_stride *= nshape[j]
+                nstrides.append(temp_stride)
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+        elif self.order == "F":
+            noffset = 0
+            nstrides.append(1)
+            for i in range(0, ndims - 1):
+                nstrides.append(nstrides[i] * nshape[i])
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+
+        var index = List[Int]()
+        for _ in range(ndims):
+            index.append(0)
+
+        _traverse_iterative_setter[dtype](
+            val, self, nshape, ncoefficients, nstrides, noffset, index
+        )
+
+    fn __setitem__(
+        inout self, owned *slices: Slice, val: NDArray[dtype]
+    ) raises:
+        """
+        Retreive slices of an array from variadic slices.
+
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+        var slice_list: List[Slice] = List[Slice]()
+        for i in range(slices.__len__()):
+            slice_list.append(slices[i])
+        self.__setitem__(slices=slice_list, val=val)
+
+    # TODO: add support for different dtypes
+    fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
+        """
+        Set a slice of array with given array.
+
+        Example:
+            `arr[1]` returns the second row of the array.
+        """
+        if self.ndim == 0 and val.ndim == 0:
+            self.data.store[width=1](0, val.data.load[width=1](0))
+
+        var slice_list = List[Slice]()
+        slice_list.append(Slice(idx, idx + 1))
+        if self.ndim > 1:
+            for i in range(1, self.ndim):
+                var size_at_dim: Int = self.ndshape[i]
+                slice_list.append(Slice(0, size_at_dim))
+
+        # self.__setitem__(slice_list=slice_list, val=val)
+        var n_slices: Int = len(slice_list)
+        var ndims: Int = 0
+        var count: Int = 0
+        var spec: List[Int] = List[Int]()
+        for i in range(n_slices):
+            self._adjust_slice_(slice_list[i], self.ndshape[i])
+            if (
+                slice_list[i].start.value() >= self.ndshape[i]
+                or slice_list[i].end.value() > self.ndshape[i]
+            ):
+                raise Error("Error: Slice value exceeds the array shape")
+            var slice_len: Int = (
+                (slice_list[i].end.value() - slice_list[i].start.value())
+                / slice_list[i].step
+            ).__int__()
+            spec.append(slice_len)
+            if slice_len != 1:
+                ndims += 1
+            else:
+                count += 1
+        if count == slice_list.__len__():
+            ndims = 1
+
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+
+        var j: Int = 0
+        count = 0
+        for _ in range(ndims):
+            while spec[j] == 1:
+                count += 1
+                j += 1
+            if j >= self.ndim:
+                break
+            var slice_len: Int = (
+                (slice_list[j].end.value() - slice_list[j].start.value())
+                / slice_list[j].step
+            ).__int__()
+            nshape.append(slice_len)
+            nnum_elements *= slice_len
+            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            j += 1
+
+        # We can remove this check after we have support for broadcasting
+        for i in range(ndims):
+            if nshape[i] != val.ndshape[i]:
+                raise Error(
+                    "Error: Shape mismatch, Cannot set the array values with"
+                    " given array"
+                )
+
+        var noffset: Int = 0
+        if self.order == "C":
+            noffset = 0
+            for i in range(ndims):
+                var temp_stride: Int = 1
+                for j in range(i + 1, ndims):  # temp
+                    temp_stride *= nshape[j]
+                nstrides.append(temp_stride)
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+        elif self.order == "F":
+            noffset = 0
+            nstrides.append(1)
+            for i in range(0, ndims - 1):
+                nstrides.append(nstrides[i] * nshape[i])
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+
+        var index = List[Int]()
+        for _ in range(ndims):
+            index.append(0)
+
+        _traverse_iterative_setter[dtype](
+            val, self, nshape, ncoefficients, nstrides, noffset, index
+        )
+
+    ### compiler doesn't accept this.
+    # fn __setitem__(self, owned *slices: Variant[Slice, Int], val: NDArray[dtype]) raises:
+    #     """
+    #     Get items by a series of either slices or integers.
+    #     """
+    #     var n_slices: Int = slices.__len__()
+    #     if n_slices > self.ndim:
+    #         raise Error("Error: No of slices greater than rank of array")
+    #     var slice_list: List[Slice] = List[Slice]()
+
+    #     var count_int = 0
+    #     for i in range(len(slices)):
+    #         if slices[i].isa[Slice]():
+    #             slice_list.append(slices[i]._get_ptr[Slice]()[0])
+    #         elif slices[i].isa[Int]():
+    #             count_int += 1
+    #             var int: Int = slices[i]._get_ptr[Int]()[0]
+    #             slice_list.append(Slice(int, int + 1))
+
+    #     if n_slices < self.ndim:
+    #         for i in range(n_slices, self.ndim):
+    #             var size_at_dim: Int = self.ndshape[i]
+    #             slice_list.append(Slice(0, size_at_dim))
+
+    #     self.__setitem__(slices=slice_list, val=val)
     # ===-------------------------------------------------------------------===#
     # Getter dunders
     # ===-------------------------------------------------------------------===#
@@ -1171,218 +1414,6 @@ struct NDArray[dtype: DType = DType.float64](
             narr.ndshape.ndshape[0] = 0
 
         return narr
-
-    fn __setitem__(inout self, owned slices: List[Slice], val: NDArray[dtype]) raises:
-        """
-        Sets the slices of an array from list of slices and array.
-
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
-        """
-        print("slices: ", slices[0], slices[1], slices[2])
-        var n_slices: Int = len(slices)
-        var ndims: Int = 0
-        var count: Int = 0
-        var spec: List[Int] = List[Int]()
-        var slice_list: List[Slice] = List[Slice]()
-        for i in range(n_slices):
-            var start: Int = 0
-            var end: Int = 0
-            if slices[i].start is None and slices[i].end is None:
-                start = 0
-                end = self.ndshape[i]
-                temp = Slice(start=Optional(start), end=Optional(end), step=Optional(slices[i].step))
-                slice_list.append(temp)
-            if slices[i].start is None and slices[i].end is not None:
-                start = 0
-                temp = Slice(start=Optional(start), end=Optional(slices[i].end.value()), step=Optional(slices[i].step))
-                slice_list.append(temp)
-            if slices[i].start is not None and slices[i].end is None:
-                end = self.ndshape[i]
-                temp = Slice(start=Optional(slices[i].start.value()), end=Optional(end), step=Optional(slices[i].step))
-                slice_list.append(temp)
-            if slices[i].start is not None and slices[i].end is not None:
-                slice_list.append(slices[i])
-
-        for i in range(n_slices):
-            if (
-                slice_list[i].start.value() >= self.ndshape[i]
-                or slice_list[i].end.value() > self.ndshape[i]
-            ):
-                raise Error("Error: Slice value exceeds the array shape")
-            var slice_len: Int = ((
-                slice_list[i].end.value() - slice_list[i].start.value()
-            ) / slice_list[i].step).__int__()
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
-            else:
-                count += 1
-        if count == slice_list.__len__():
-            ndims = 1
-
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
-
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = ((
-                slice_list[j].end.value() - slice_list[j].start.value()
-            ) / slice_list[j].step).__int__()
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(self.stride[j] * slice_list[j].step)
-            j += 1
-
-        print("ndims:", ndims)
-        print("nshape: ", nshape.__str__())
-        print("ncoefficients: ", ncoefficients.__str__())
-        print("nstrides: ", nstrides.__str__())
-        print("nnum_elements: ", nnum_elements)
-        # We can remove this check after we have support for broadcasting
-        for i in range(ndims):
-            print("nshape: ", nshape[i], "ndshape: ", self.ndshape[i])
-            if nshape[i] != val.ndshape[i]:
-                raise Error("Error: Shape mismatch, Cannot set the array values with given array")
-
-        var noffset: Int = 0
-        if self.order == "C":
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
-        elif self.order == "F":
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
-
-        var index = List[Int]()
-        for _ in range(ndims):
-            index.append(0)
-
-        _traverse_iterative_setter[dtype](
-            val, self, nshape, ncoefficients, nstrides, noffset, index
-        )
-
-    fn __setitem__(inout self, owned *slices: Slice, val: NDArray[dtype]) raises:
-        """
-        Retreive slices of an array from variadic slices.
-
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
-        """
-        var slice_list: List[Slice] = List[Slice]()
-        for i in range(slices.__len__()):
-            slice_list.append(slices[i])
-        self.__setitem__(slices=slice_list, val=val)
-
-    # TODO: add support for different dtypes
-    fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
-        """
-        Set a slice of array with given array.
-
-        Example:
-            `arr[1]` returns the second row of the array.
-        """
-        if self.ndim == 0 and val.ndim == 0:
-            self.data.store[width=1](0, val.data.load[width=1](0))
-
-        var slice_list = List[Slice]()
-        slice_list.append(Slice(idx, idx + 1))
-        if self.ndim > 1:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.ndshape[i]
-                slice_list.append(Slice(0, size_at_dim))
-
-        # self.__setitem__(slice_list=slice_list, val=val)
-        var n_slices: Int = len(slice_list)
-        var ndims: Int = 0
-        var count: Int = 0
-        var spec: List[Int] = List[Int]()
-        for i in range(n_slices):
-            self._adjust_slice_(slice_list[i], self.ndshape[i])
-            if (
-                slice_list[i].start.value() >= self.ndshape[i]
-                or slice_list[i].end.value() > self.ndshape[i]
-            ):
-                raise Error("Error: Slice value exceeds the array shape")
-            var slice_len: Int = ((
-                slice_list[i].end.value() - slice_list[i].start.value()
-            ) / slice_list[i].step).__int__()
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
-            else:
-                count += 1
-        if count == slice_list.__len__():
-            ndims = 1
-
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
-
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = ((
-                slice_list[j].end.value() - slice_list[j].start.value()
-            ) / slice_list[j].step).__int__()
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(self.stride[j] * slice_list[j].step)
-            j += 1
-
-        # We can remove this check after we have support for broadcasting
-        for i in range(ndims):
-            if nshape[i] != val.ndshape[i]:
-                raise Error("Error: Shape mismatch, Cannot set the array values with given array")
-
-        var noffset: Int = 0
-        if self.order == "C":
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
-        elif self.order == "F":
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
-
-        var index = List[Int]()
-        for _ in range(ndims):
-            index.append(0)
-
-        _traverse_iterative_setter[dtype](
-            val, self, nshape, ncoefficients, nstrides, noffset, index
-        )
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
         """

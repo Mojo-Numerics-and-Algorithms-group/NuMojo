@@ -289,7 +289,7 @@ fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         # print("x2", x)
 
         for j in range(m):
-            inversed.__setitem__(List[Int](j, i), x.item(j))
+            inversed.__setitem__(idx(j, i), x.item(j))
 
     return inversed
 

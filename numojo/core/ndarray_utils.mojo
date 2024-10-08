@@ -27,12 +27,12 @@ struct _IdxIter[
     """
 
     var index: Int
-    var array: idx
+    var array: Idx
     var length: Int
 
     fn __init__(
         inout self,
-        array: idx,
+        array: Idx,
         length: Int,
     ):
         self.index = 0 if forward else length
@@ -61,7 +61,7 @@ struct _IdxIter[
             return self.index
 
 
-struct idx(CollectionElement, Formattable):
+struct Idx(CollectionElement, Formattable):
     alias dtype: DType = DType.index
     alias width = simdwidthof[Self.dtype]()
     var storage: UnsafePointer[Scalar[Self.dtype]]
@@ -261,7 +261,7 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
     return idx
 
 
-fn _get_index(indices: idx, weights: NDArrayStride) raises -> Int:
+fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
 

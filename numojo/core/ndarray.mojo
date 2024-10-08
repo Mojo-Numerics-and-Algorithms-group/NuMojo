@@ -1049,7 +1049,7 @@ struct NDArray[dtype: DType = DType.float64](
     #     self.data.store[width=1](idx, val)
 
     @always_inline("nodebug")
-    fn __setitem__(inout self, index: idx, val: SIMD[dtype, 1]) raises:
+    fn __setitem__(inout self, index: Idx, val: SIMD[dtype, 1]) raises:
         """
         Set the value at the index list.
         """
@@ -1062,7 +1062,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.data.store[width=1](idx, val)
 
     @always_inline("nodebug")
-    fn __getitem__(inout self, index: idx) raises -> SIMD[dtype, 1]:
+    fn __getitem__(inout self, index: Idx) raises -> SIMD[dtype, 1]:
         """
         Set the value at the index list.
         """
@@ -2553,7 +2553,7 @@ struct NDArray[dtype: DType = DType.float64](
         for row in range(self.ndshape[0]):
             for col in range(other.ndshape[1]):
                 new_matrix.__setitem__(
-                    idx(row, col),
+                    Idx(row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
         return new_matrix
@@ -2680,7 +2680,7 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(rows):
             for j in range(cols):
                 # the setitem is not working due to the symmetry issue of getter and setter
-                transposed.__setitem__(idx(j, i), val=self.item(i, j))
+                transposed.__setitem__(Idx(j, i), val=self.item(i, j))
         self = transposed
 
     fn all(self) raises -> Bool:

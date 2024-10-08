@@ -129,7 +129,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     # Dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __getitem__(self, index: Tuple[Int, Int]) raises -> Scalar[dtype]:
+    fn __getitem__(self, index: Tuple[Int, Int]) -> Scalar[dtype]:
         """
         Return the scalar at the coordinates (tuple).
 
@@ -141,10 +141,16 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         # If more than one index is given
-        if index.__len__() != 2:
-            raise Error("Error: Length of the index does not match the shape.")
-        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
-            raise Error("Error: Elements of `index` exceed the array shape.")
+        try:
+            if index.__len__() != 2:
+                raise Error("Error: Length of the index does not match the shape.")
+        except e:
+            print(e)
+        try:
+            if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
+                raise Error("Error: Elements of `index` exceed the array shape.")
+        except e:
+            print(e)
         return self.data.load(
             index[0] * self.strides[0] + index[1] * self.strides[1]
         )
@@ -171,7 +177,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             index[0] * self.strides[0] + index[1] * self.strides[1]
         )
 
-    fn __setitem__(self, index: Tuple[Int, Int], value: Scalar[dtype]) raises:
+    fn __setitem__(self, index: Tuple[Int, Int], value: Scalar[dtype]):
         """
         Return the scalar at the coordinates (tuple).
 
@@ -181,10 +187,16 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         # If more than one index is given
-        if index.__len__() != 2:
-            raise Error("Error: Length of the index does not match the shape.")
-        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
-            raise Error("Error: Elements of `index` exceed the array shape")
+        try:
+            if index.__len__() != 2:
+                raise Error("Error: Length of the index does not match the shape.")
+        except e:
+            print(e)
+        try:
+            if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
+                raise Error("Error: Elements of `index` exceed the array shape")
+        except e:
+            print(e)
         self.data.store(
             index[0] * self.strides[0] + index[1] * self.strides[1], value
         )
@@ -268,10 +280,26 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             + str(self.dtype)
         )
 
+    # ===-------------------------------------------------------------------===#
+    # Other methods
+    # ===-------------------------------------------------------------------===#
 
-# ===----------------------------------------------------------------------===#
+    fn to_ndarray(self) raises -> NDArray[dtype]:
+        """Create a ndarray from a matrix.
+
+        It makes a copy of the buffer of the matrix.
+        """
+
+        var ndarray = NDArray[dtype](
+            shape=List[Int](self.shape[0], self.shape[1]), order=self.order
+        )
+        memcpy(ndarray.data, self.data, ndarray.size())
+
+        return ndarray
+
+# ===-----------------------------------------------------------------------===#
 # Fucntions for constructing Matrix
-# ===----------------------------------------------------------------------===#
+# ===-----------------------------------------------------------------------===#
 
 
 fn full[
@@ -317,8 +345,27 @@ fn rand[
     return result
 
 
-fn _from_2darray[dtype: DType
-](array: NDArray[dtype]) raises -> Matrix[dtype]:
+fn from_ndarray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
+    """Create a matrix from a ndarray. It must be 2-dimensional.
+
+    It makes a copy of the buffer of the ndarray.
+
+    It is useful when we want to solve a linear system. In this case, we treat
+    ndarray as a matrix. This simplify calculation and avoid too much check.
+    """
+
+    if array.ndim != 2:
+        raise Error("The original array is not 2-dimensional!")
+
+    var matrix = Matrix[dtype](
+        shape=(array.ndshape[0], array.ndshape[1]), order=array.order
+    )
+    memcpy(matrix.data, array.data, matrix.size)
+
+    return matrix
+
+
+fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
     """Create a matrix from an 2-darray.
 
     [Unsafe] It simply uses the buffer of an ndarray.
@@ -333,3 +380,85 @@ fn _from_2darray[dtype: DType
     matrix.data = array.data
 
     return matrix
+
+
+# ===-----------------------------------------------------------------------===#
+# Fucntions for linear algebra
+# ===-----------------------------------------------------------------------===#
+
+fn lu_decomposition[
+    dtype: DType
+](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+
+    # Check whether the matrix is square
+    if A.shape[0] != A.shape[1]:
+        raise ("The matrix is not square!")
+    var n = A.shape[0]
+
+    # Initiate upper and lower triangular matrices
+    var U = full[dtype](shape=(n,n))
+    var L = full[dtype](shape=(n,n))
+
+    # Fill in L and U
+    for i in range(0, n):
+        for j in range(i, n):
+            # Fill in L
+            if i == j:
+                L[(i, i)] = 1
+            else:
+                var sum_of_products_for_L: Scalar[dtype] = 0
+                for k in range(0, i):
+                    sum_of_products_for_L += L[(j, k)] * U[(k, i)]
+                L[(j, i)] = (A[(j, i)] - sum_of_products_for_L) / U[(i, i)]
+
+            # Fill in U
+            var sum_of_products_for_U: Scalar[dtype] = 0
+            for k in range(0, i):
+                sum_of_products_for_U += L[(i, k)] * U[(k ,j)]
+            U[(i, j)] = A[(i,j)] - sum_of_products_for_U
+
+    return L, U
+
+fn solve[
+    dtype: DType
+](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+
+    var U: Matrix[dtype]
+    var L: Matrix[dtype]
+    L, U = lu_decomposition[dtype](A)
+
+    var m = A.shape[0]
+    var n = Y.shape[1]
+
+    var Z = full[dtype]((m, n))
+    var X = full[dtype]((m, n))
+
+    @parameter
+    fn calculate_X(col: Int) -> None:
+        # Solve `LZ = Y` for `Z` for each col
+        for i in range(m):  # row of L
+            var _temp = Y[(i, col)]
+            for j in range(i):  # col of L
+                _temp = _temp - L[(i, j)] * Z[(j, col)]
+            _temp = _temp / L[(i ,i)]
+            Z[(i, col)] = _temp
+
+        # Solve `UZ = Z` for `X` for each col
+        for i in range(m - 1, -1, -1):
+            var _temp2 = Z[(i, col)]
+            for j in range(i + 1, m):
+                _temp2 = _temp2 - U[(i,j)] * X[(j,col)]
+            _temp2 = _temp2 / U[(i,i)]
+            X[(i, col)] = _temp2
+
+    parallelize[calculate_X](n, n)
+
+    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
+    # This is disadvantage of Mojo's ASAP policy
+    var _L = L^
+    var _U = U^
+    var _Z = Z^
+    var _m = m
+    var _n = n
+
+    return X^

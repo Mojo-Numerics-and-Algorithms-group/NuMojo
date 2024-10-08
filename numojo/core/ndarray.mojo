@@ -946,9 +946,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.data = UnsafePointer[Scalar[dtype]]().alloc(size)
         memset_zero(self.data, size)
 
-    # TODO: Make it work for all data types apart from float64
     fn __init__(inout self, data: PythonObject, order: String = "C") raises:
-        var np_dtype = data.dtype
         var len = int(len(data.shape))
         var shape: List[Int] = List[Int]()
         for i in range(len):
@@ -961,9 +959,8 @@ struct NDArray[dtype: DType = DType.float64](
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
         self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         memset_zero(self.data, self.ndshape.ndsize)
-        self.datatype = dtype
         self.order = order
-
+        self.datatype = dtype
         for i in range(self.ndshape.ndsize):
             self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
@@ -1038,8 +1035,21 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             self.data.store[width=1](index + self.ndshape.ndsize, val)
 
+    # @always_inline("nodebug")
+    # fn __setitem__(inout self, *index: Int, val: SIMD[dtype, 1]) raises:
+    #     """
+    #     Set the value at the index list.
+    #     """
+    #     if index.__len__() != self.ndim:
+    #         raise Error("Error: Length of Indices do not match the shape")
+    #     for i in range(index.__len__()):
+    #         if index[i] >= self.ndshape[i]:
+    #             raise Error("Error: Elements of `index` exceed the array shape")
+    #     var idx: Int = _get_index(index, self.coefficient)
+    #     self.data.store[width=1](idx, val)
+
     @always_inline("nodebug")
-    fn __setitem__(inout self, *index: Int, val: SIMD[dtype, 1]) raises:
+    fn __setitem__(inout self, index: idx, val: SIMD[dtype, 1]) raises:
         """
         Set the value at the index list.
         """
@@ -1052,11 +1062,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.data.store[width=1](idx, val)
 
     @always_inline("nodebug")
-    fn __setitem__(
-        inout self,
-        index: List[Int],
-        val: SIMD[dtype, 1],
-    ) raises:
+    fn __getitem__(inout self, index: idx) raises -> SIMD[dtype, 1]:
         """
         Set the value at the index list.
         """
@@ -1066,24 +1072,7 @@ struct NDArray[dtype: DType = DType.float64](
             if index[i] >= self.ndshape[i]:
                 raise Error("Error: Elements of `index` exceed the array shape")
         var idx: Int = _get_index(index, self.coefficient)
-        self.data.store[width=1](idx, val)
-
-    @always_inline("nodebug")
-    fn __setitem__(
-        inout self,
-        index: VariadicList[Int],
-        val: SIMD[dtype, 1],
-    ) raises:
-        """
-        Set the value at the index corisponding to the varaidic list.
-        """
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
-        self.data.store[width=1](idx, val)
+        return self.data.load[width=1](idx)
 
     # compiler doesn't accept this
     # fn __setitem__(
@@ -1879,6 +1868,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self.__getitem__(new_index)
 
+    # TODO: fix this setter
     fn __setitem__(self, index: NDArray[DType.index]) raises -> Self:
         """
         Returns the items of the array from an array of indices.
@@ -2563,7 +2553,7 @@ struct NDArray[dtype: DType = DType.float64](
         for row in range(self.ndshape[0]):
             for col in range(other.ndshape[1]):
                 new_matrix.__setitem__(
-                    List[Int](row, col),
+                    idx(row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
         return new_matrix
@@ -2690,9 +2680,7 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(rows):
             for j in range(cols):
                 # the setitem is not working due to the symmetry issue of getter and setter
-                transposed.__setitem__(
-                    VariadicList[Int](j, i), val=self.item(i, j)
-                )
+                transposed.__setitem__(idx(j, i), val=self.item(i, j))
         self = transposed
 
     fn all(self) raises -> Bool:

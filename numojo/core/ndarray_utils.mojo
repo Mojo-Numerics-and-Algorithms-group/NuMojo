@@ -12,6 +12,178 @@ from python import Python, PythonObject
 from .ndarray import NDArray, NDArrayShape, NDArrayStride
 
 
+@value
+struct _IdxIter[
+    is_mutable: Bool, //,
+    lifetime: AnyLifetime[is_mutable].type,
+    forward: Bool = True,
+]:
+    """Iterator for idx.
+
+    Parameters:
+        is_mutable: Whether the iterator is mutable.
+        lifetime: The lifetime of the underlying idx data.
+        forward: The iteration direction. `False` is backwards.
+    """
+
+    var index: Int
+    var array: idx
+    var length: Int
+
+    fn __init__(
+        inout self,
+        array: idx,
+        length: Int,
+    ):
+        self.index = 0 if forward else length
+        self.length = length
+        self.array = array
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __next__(inout self) raises -> Scalar[DType.index]:
+        @parameter
+        if forward:
+            var current_index = self.index
+            self.index += 1
+            return self.array.__getitem__(current_index)
+        else:
+            var current_index = self.index
+            self.index -= 1
+            return self.array.__getitem__(current_index)
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index
+
+
+struct idx(CollectionElement, Formattable):
+    alias dtype: DType = DType.index
+    alias width = simdwidthof[Self.dtype]()
+    var storage: UnsafePointer[Scalar[Self.dtype]]
+    var len: Int
+
+    @always_inline("nodebug")
+    fn __init__(inout self, owned *args: Scalar[Self.dtype]):
+        """Construct the tuple.
+
+        Args:
+            args: Initial values.
+        """
+        self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
+        self.len = args.__len__()
+        for i in range(args.__len__()):
+            self.storage[i] = args[i]
+
+    @always_inline("nodebug")
+    fn __init__(
+        inout self, owned args: Variant[List[Int], VariadicList[Int]]
+    ) raises:
+        """Construct the tuple.
+
+        Args:
+            args: Initial values.
+        """
+        if args.isa[List[Int]]():
+            self.len = args[List[Int]].__len__()
+            self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
+            for i in range(self.len):
+                self.storage[i] = args[List[Int]][i]
+        elif args.isa[VariadicList[Int]]():
+            self.len = args[VariadicList[Int]].__len__()
+            self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
+            for i in range(self.len):
+                self.storage[i] = args[VariadicList[Int]][i]
+        else:
+            raise Error("Invalid type")
+
+    @always_inline("nodebug")
+    fn __copyinit__(inout self, other: Self):
+        """Copy construct the tuple.
+
+        Args:
+            other: The tuple to copy.
+        """
+        self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(
+            other.__len__()
+        )
+        self.len = other.len
+        for i in range(other.__len__()):
+            self.storage[i] = other[i]
+
+    @always_inline("nodebug")
+    fn __moveinit__(inout self, owned other: Self):
+        """Move construct the tuple.
+
+        Args:
+            other: The tuple to move.
+        """
+        self.storage = other.storage
+        self.len = other.len
+
+    @always_inline("nodebug")
+    fn __len__(self) -> Int:
+        """Get the length of the tuple.
+
+        Returns:
+            The length of the tuple.
+        """
+        return self.len
+
+    @always_inline("nodebug")
+    fn __getitem__(self, index: Int) -> Int:
+        """Get the value at the specified index.
+
+        Args:
+            index: The index of the value to get.
+
+        Returns:
+            The value at the specified index.
+        """
+        return int(self.storage[index])
+
+    @always_inline("nodebug")
+    fn __setitem__(self, index: Int, val: Scalar[Self.dtype]):
+        """Set the value at the specified index.
+
+        Args:
+            index: The index of the value to set.
+            val: The value to set.
+        """
+        self.storage[index] = val
+
+    fn __iter__(self) raises -> _IdxIter[__lifetime_of(self)]:
+        """Iterate over elements of the NDArray, returning copied value.
+
+        Returns:
+            An iterator of NDArray elements.
+
+        Notes:
+            Need to add lifetimes after the new release.
+        """
+
+        return _IdxIter[__lifetime_of(self)](
+            array=self,
+            length=self.len,
+        )
+
+    fn format_to(self, inout writer: Formatter):
+        writer.write("Idx: " + self.str() + "\n" + "Length: " + str(self.len))
+
+    fn str(self) -> String:
+        var result: String = "["
+        for i in range(self.len):
+            result += str(self.storage[i])
+            if i < self.len - 1:
+                result += ", "
+        result += "]"
+        return result
+
+
 fn fill_pointer[
     dtype: DType
 ](
@@ -37,6 +209,7 @@ fn fill_pointer[
     vectorize[vectorized_fill, width](size)
 
 
+# define a ndarray internal trait and remove multiple overloads of these _get_index
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
@@ -86,6 +259,23 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
     for i in range(weights.ndlen):
         idx += indices[i] * weights[i]
     return idx
+
+
+fn _get_index(indices: idx, weights: NDArrayStride) raises -> Int:
+    """
+    Get the index of a multi-dimensional array from a list of indices and weights.
+
+    Args:
+        indices: The list of indices.
+        weights: The weights of the indices.
+
+    Returns:
+        The scalar index of the multi-dimensional array.
+    """
+    var index: Int = 0
+    for i in range(weights.ndlen):
+        index += indices[i] * weights[i]
+    return index
 
 
 fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
@@ -184,7 +374,6 @@ fn _traverse_iterative[
 
         narr.data.store[width=1](narr_idx, orig.data.load[width=1](orig_idx))
 
-        # Update index
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
             if index[d] < ndim[d]:
@@ -234,7 +423,6 @@ fn _traverse_iterative_setter[
 
         narr.data.store[width=1](orig_idx, orig.data.load[width=1](narr_idx))
 
-        # Update index
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
             if index[d] < ndim[d]:

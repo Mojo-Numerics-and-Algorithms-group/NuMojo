@@ -81,21 +81,21 @@ fn _partition(
 
     var pivot_value = ndarray.get(pivot_index)
     var _value_at_pivot = ndarray.get(pivot_index)
-    ndarray.__setitem__(pivot_index, ndarray.get(right))
-    ndarray.__setitem__(right, _value_at_pivot)
+    ndarray.set(pivot_index, ndarray.get(right))
+    ndarray.set(right, _value_at_pivot)
 
     var store_index = left
 
     for i in range(left, right):
         if ndarray.get(i) < pivot_value:
             var _value_at_store = ndarray.get(store_index)
-            ndarray.__setitem__(store_index, ndarray.get(i))
-            ndarray.__setitem__(i, _value_at_store)
+            ndarray.set(store_index, ndarray.get(i))
+            ndarray.set(i, _value_at_store)
             store_index = store_index + 1
 
     var _value_at_store = ndarray.get(store_index)
-    ndarray.__setitem__(store_index, ndarray.get(right))
-    ndarray.__setitem__(right, _value_at_store)
+    ndarray.set(store_index, ndarray.get(right))
+    ndarray.set(right, _value_at_store)
 
     return store_index
 
@@ -194,7 +194,7 @@ fn binary_sort[
         for i in range(1, end):
             if result[i - 1] > result[i]:
                 var temp: Scalar[dtype] = result.get(i - 1)
-                result.__setitem__(i - 1, result.get(i))
+                result.set(i - 1, result.get(i))
                 result.store(i, temp)
     return result
 
@@ -227,34 +227,34 @@ fn _argsort_partition(
     var pivot_value = ndarray.get(pivot_index)
 
     var _value_at_pivot = ndarray.get(pivot_index)
-    ndarray.__setitem__(pivot_index, ndarray.get(right))
-    ndarray.__setitem__(right, _value_at_pivot)
+    ndarray.set(pivot_index, ndarray.get(right))
+    ndarray.set(right, _value_at_pivot)
 
     var _value_at_pivot_index = idx_array.get(pivot_index)
-    idx_array.__setitem__(pivot_index, idx_array.get(right))
-    idx_array.__setitem__(right, _value_at_pivot_index)
+    idx_array.set(pivot_index, idx_array.get(right))
+    idx_array.set(right, _value_at_pivot_index)
 
     var store_index = left
 
     for i in range(left, right):
         if ndarray.get(i) < pivot_value:
             var _value_at_store = ndarray.get(store_index)
-            ndarray.__setitem__(store_index, ndarray.get(i))
-            ndarray.__setitem__(i, _value_at_store)
+            ndarray.set(store_index, ndarray.get(i))
+            ndarray.set(i, _value_at_store)
 
             var _value_at_store_index = idx_array.get(store_index)
-            idx_array.__setitem__(store_index, idx_array.get(i))
-            idx_array.__setitem__(i, _value_at_store_index)
+            idx_array.set(store_index, idx_array.get(i))
+            idx_array.set(i, _value_at_store_index)
 
             store_index = store_index + 1
 
     var _value_at_store = ndarray.get(store_index)
-    ndarray.__setitem__(store_index, ndarray.get(right))
-    ndarray.__setitem__(right, _value_at_store)
+    ndarray.set(store_index, ndarray.get(right))
+    ndarray.set(right, _value_at_store)
 
     var _value_at_store_index = idx_array.get(store_index)
-    idx_array.__setitem__(store_index, idx_array.get(right))
-    idx_array.__setitem__(right, _value_at_store_index)
+    idx_array.set(store_index, idx_array.get(right))
+    idx_array.set(right, _value_at_store_index)
 
     return store_index
 
@@ -317,7 +317,7 @@ fn argsort[
 
     var idx_array = NDArray[DType.index](length)
     for i in range(length):
-        idx_array.__setitem__(i, SIMD[DType.index, 1](i))
+        idx_array.set(i, SIMD[DType.index, 1](i))
 
     argsort_inplace(array, idx_array, 0, length - 1)
 

@@ -4,7 +4,7 @@
 # from utils_for_test import check, check
 # from python import Python
 
-# TODO: there's something wrong with bool comparision even though result looks same. 
+# TODO: there's something wrong with bool comparision even though result looks same.
 # def test_bool_masks_gt():
 #     var np = Python.import_module("numpy")
 #     var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))

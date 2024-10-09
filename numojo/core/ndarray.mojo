@@ -112,6 +112,7 @@ struct _NDArrayIter[
         else:
             return self.index
 
+
 # ===----------------------------------------------------------------------===#
 # NDArray
 # ===----------------------------------------------------------------------===#
@@ -831,7 +832,6 @@ struct NDArray[dtype: DType = DType.float64](
     #             slice_list.append(Slice(0, size_at_dim))
 
     #     self.__setitem__(slices=slice_list, val=val)
-
 
     # TODO: fix this setter, add bound checks. Not sure about it's use case.
     fn __setitem__(self, index: NDArray[DType.index], val: NDArray) raises:

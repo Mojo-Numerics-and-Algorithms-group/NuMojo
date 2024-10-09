@@ -1,6 +1,7 @@
 from utils import Variant
 from builtin.type_aliases import AnyLifetime
 
+
 @value
 struct _IdxIter[
     is_mutable: Bool, //,
@@ -191,6 +192,7 @@ struct Idx(CollectionElement, Formattable):
         width: Int = 1
     ](inout self, index: Int, val: SIMD[Self.dtype, width]):
         self.storage.store[width=width](index, val)
+
 
 @register_passable("trivial")
 struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):

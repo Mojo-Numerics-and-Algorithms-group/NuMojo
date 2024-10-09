@@ -41,7 +41,7 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
         )
     for i in range(result.ndshape.ndsize):
         var temp: Scalar[dtype] = random.random_float64(0, 1).cast[dtype]()
-        result.__setitem__(i, temp)
+        result.set(i, temp)
     return result^
 
 

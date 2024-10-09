@@ -9,7 +9,8 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 from algorithm.functional import vectorize
 
 from python import Python, PythonObject
-from .ndarray import NDArray, NDArrayShape, NDArrayStride
+from .containers import NDArrayShape, NDArrayStride
+from .ndarray import NDArray
 
 
 fn fill_pointer[
@@ -37,6 +38,7 @@ fn fill_pointer[
     vectorize[vectorized_fill, width](size)
 
 
+# define a ndarray internal trait and remove multiple overloads of these _get_index
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
@@ -86,6 +88,23 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
     for i in range(weights.ndlen):
         idx += indices[i] * weights[i]
     return idx
+
+
+fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
+    """
+    Get the index of a multi-dimensional array from a list of indices and weights.
+
+    Args:
+        indices: The list of indices.
+        weights: The weights of the indices.
+
+    Returns:
+        The scalar index of the multi-dimensional array.
+    """
+    var index: Int = 0
+    for i in range(weights.ndlen):
+        index += indices[i] * weights[i]
+    return index
 
 
 fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
@@ -170,22 +189,74 @@ fn _traverse_iterative[
         index: The list of indices.
         depth: The depth of the indices.
     """
-    if depth == ndim.__len__():
-        var idx = offset + _get_index(index, coefficients)
-        var nidx = _get_index(index, strides)
-        var temp = orig.data.load[width=1](idx)
-        if nidx >= narr.ndshape.ndsize:
-            raise Error("Invalid index: index out of bound")
-        else:
-            narr.data.store[width=1](nidx, temp)
-        return
+    var total_elements = narr.ndshape.ndsize
 
-    for i in range(ndim[depth]):
-        index[depth] = i
-        var newdepth = depth + 1
-        _traverse_iterative(
-            orig, narr, ndim, coefficients, strides, offset, index, newdepth
-        )
+    # # parallelized version was slower xD
+    for _ in range(total_elements):
+        var orig_idx = offset + _get_index(index, coefficients)
+        var narr_idx = _get_index(index, strides)
+        try:
+            if narr_idx >= total_elements:
+                raise Error("Invalid index: index out of bound")
+        except:
+            return
+
+        narr.data.store[width=1](narr_idx, orig.data.load[width=1](orig_idx))
+
+        for d in range(ndim.__len__() - 1, -1, -1):
+            index[d] += 1
+            if index[d] < ndim[d]:
+                break
+            index[d] = 0
+
+
+fn _traverse_iterative_setter[
+    dtype: DType
+](
+    orig: NDArray[dtype],
+    inout narr: NDArray[dtype],
+    ndim: List[Int],
+    coefficients: List[Int],
+    strides: List[Int],
+    offset: Int,
+    inout index: List[Int],
+) raises:
+    """
+    Traverse a multi-dimensional array in a iterative manner.
+
+    Raises:
+        Error: If the index is out of bound.
+
+    Parameters:
+        dtype: The data type of the NDArray elements.
+
+    Args:
+        orig: The original array.
+        narr: The array to store the result.
+        ndim: The number of dimensions of the array.
+        coefficients: The coefficients to traverse the sliced part of the original array.
+        strides: The strides to traverse the new NDArray `narr`.
+        offset: The offset to the first element of the original NDArray.
+        index: The list of indices.
+    """
+    var total_elements = narr.ndshape.ndsize
+
+    for _ in range(total_elements):
+        var orig_idx = offset + _get_index(index, coefficients)
+        var narr_idx = _get_index(index, strides)
+        try:
+            if narr_idx >= total_elements:
+                raise Error("Invalid index: index out of bound")
+        except:
+            return
+
+        narr.data.store[width=1](orig_idx, orig.data.load[width=1](narr_idx))
+
+        for d in range(ndim.__len__() - 1, -1, -1):
+            index[d] += 1
+            if index[d] < ndim[d]:
+                break
+            index[d] = 0
 
 
 fn bool_to_numeric[

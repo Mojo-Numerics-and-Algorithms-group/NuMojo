@@ -31,7 +31,7 @@ def test_constructors():
     var arr3 = NDArray[f32](VariadicList[Int](3, 4, 5), fill=Scalar[f32](10.0))
     # maybe it's better to return a scalar for arr[0, 0, 0]
     assert_equal(
-        arr3[0, 0, 0].get_scalar(0), 10.0, "NDArray constructor with fill value"
+        arr3[idx(0, 0, 0)], 10.0, "NDArray constructor with fill value"
     )
 
     var arr4 = NDArray[f32](List[Int](3, 4, 5))
@@ -72,7 +72,7 @@ def test_constructors():
         "NDArray constructor with data and shape: shape element 1",
     )
     assert_equal(
-        arr6[1, 4].get_scalar(0),
+        arr6[idx(1, 4)],
         10.0,
         "NDArray constructor with data: value check",
     )

@@ -1023,30 +1023,128 @@ struct NDArray[dtype: DType = DType.float64](
     # Setter dunders
     # ===-------------------------------------------------------------------===#
 
-    @always_inline("nodebug")
-    fn __setitem__(inout self, index: Int, val: SIMD[dtype, 1]) raises:
+    fn set(self, index: Int, val: SIMD[dtype, 1]) raises:
         """
-        Set the value of a single index.
+        Linearly retreive a value from the underlying Pointer.
+
+        Example:
+        ```console
+        > Array.get(15)
+        ```
+        returns the item of index 15 from the array's data buffer.
+
+        Not that it is different from `item()` as `get` does not checked
+        against C-order or F-order.
+        ```console
+        > # A is a 3x3 matrix, F-order (column-major)
+        > A.get(3)  # Row 0, Col 1
+        > A.item(3)  # Row 1, Col 0
+        ```
         """
         if index >= self.ndshape.ndsize:
             raise Error("Invalid index: index out of bound")
         if index >= 0:
-            self.data.store[width=1](index, val)
+            return self.data.store[width=1](index, val)
         else:
-            self.data.store[width=1](index + self.ndshape.ndsize, val)
+            return self.data.store[width=1](index + self.ndshape.ndsize, val)
 
-    # @always_inline("nodebug")
-    # fn __setitem__(inout self, *index: Int, val: SIMD[dtype, 1]) raises:
-    #     """
-    #     Set the value at the index list.
-    #     """
-    #     if index.__len__() != self.ndim:
-    #         raise Error("Error: Length of Indices do not match the shape")
-    #     for i in range(index.__len__()):
-    #         if index[i] >= self.ndshape[i]:
-    #             raise Error("Error: Elements of `index` exceed the array shape")
-    #     var idx: Int = _get_index(index, self.coefficient)
-    #     self.data.store[width=1](idx, val)
+    # TODO: add support for different dtypes
+    fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
+        """
+        Set a slice of array with given array.
+
+        Example:
+            `arr[1]` returns the second row of the array.
+        """
+        if self.ndim == 0 and val.ndim == 0:
+            self.data.store[width=1](0, val.data.load[width=1](0))
+
+        var slice_list = List[Slice]()
+        slice_list.append(Slice(idx, idx + 1))
+        if self.ndim > 1:
+            for i in range(1, self.ndim):
+                var size_at_dim: Int = self.ndshape[i]
+                slice_list.append(Slice(0, size_at_dim))
+
+        # self.__setitem__(slice_list=slice_list, val=val)
+        var n_slices: Int = len(slice_list)
+        var ndims: Int = 0
+        var count: Int = 0
+        var spec: List[Int] = List[Int]()
+        for i in range(n_slices):
+            self._adjust_slice_(slice_list[i], self.ndshape[i])
+            if (
+                slice_list[i].start.value() >= self.ndshape[i]
+                or slice_list[i].end.value() > self.ndshape[i]
+            ):
+                raise Error("Error: Slice value exceeds the array shape")
+            var slice_len: Int = (
+                (slice_list[i].end.value() - slice_list[i].start.value())
+                / slice_list[i].step
+            ).__int__()
+            spec.append(slice_len)
+            if slice_len != 1:
+                ndims += 1
+            else:
+                count += 1
+        if count == slice_list.__len__():
+            ndims = 1
+
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+
+        var j: Int = 0
+        count = 0
+        for _ in range(ndims):
+            while spec[j] == 1:
+                count += 1
+                j += 1
+            if j >= self.ndim:
+                break
+            var slice_len: Int = (
+                (slice_list[j].end.value() - slice_list[j].start.value())
+                / slice_list[j].step
+            ).__int__()
+            nshape.append(slice_len)
+            nnum_elements *= slice_len
+            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            j += 1
+
+        # We can remove this check after we have support for broadcasting
+        for i in range(ndims):
+            if nshape[i] != val.ndshape[i]:
+                raise Error(
+                    "Error: Shape mismatch, Cannot set the array values with"
+                    " given array"
+                )
+
+        var noffset: Int = 0
+        if self.order == "C":
+            noffset = 0
+            for i in range(ndims):
+                var temp_stride: Int = 1
+                for j in range(i + 1, ndims):  # temp
+                    temp_stride *= nshape[j]
+                nstrides.append(temp_stride)
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+        elif self.order == "F":
+            noffset = 0
+            nstrides.append(1)
+            for i in range(0, ndims - 1):
+                nstrides.append(nstrides[i] * nshape[i])
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+
+        var index = List[Int]()
+        for _ in range(ndims):
+            index.append(0)
+
+        _traverse_iterative_setter[dtype](
+            val, self, nshape, ncoefficients, nstrides, noffset, index
+        )
 
     @always_inline("nodebug")
     fn __setitem__(inout self, index: Idx, val: SIMD[dtype, 1]) raises:
@@ -1060,19 +1158,6 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error("Error: Elements of `index` exceed the array shape")
         var idx: Int = _get_index(index, self.coefficient)
         self.data.store[width=1](idx, val)
-
-    @always_inline("nodebug")
-    fn __getitem__(inout self, index: Idx) raises -> SIMD[dtype, 1]:
-        """
-        Set the value at the index list.
-        """
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
-        return self.data.load[width=1](idx)
 
     # compiler doesn't accept this
     # fn __setitem__(
@@ -1090,6 +1175,20 @@ struct NDArray[dtype: DType = DType.float64](
     #         if mask.data.load[width=1](i):
     #             print(value)
     #             self.data.store[width=1](i, value)
+
+    fn __setitem__(
+        inout self, owned *slices: Slice, val: NDArray[dtype]
+    ) raises:
+        """
+        Retreive slices of an array from variadic slices.
+
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+        var slice_list: List[Slice] = List[Slice]()
+        for i in range(slices.__len__()):
+            slice_list.append(slices[i])
+        self.__setitem__(slices=slice_list, val=val)
 
     fn __setitem__(
         inout self, owned slices: List[Slice], val: NDArray[dtype]
@@ -1211,118 +1310,6 @@ struct NDArray[dtype: DType = DType.float64](
             val, self, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    fn __setitem__(
-        inout self, owned *slices: Slice, val: NDArray[dtype]
-    ) raises:
-        """
-        Retreive slices of an array from variadic slices.
-
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
-        """
-        var slice_list: List[Slice] = List[Slice]()
-        for i in range(slices.__len__()):
-            slice_list.append(slices[i])
-        self.__setitem__(slices=slice_list, val=val)
-
-    # TODO: add support for different dtypes
-    fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
-        """
-        Set a slice of array with given array.
-
-        Example:
-            `arr[1]` returns the second row of the array.
-        """
-        if self.ndim == 0 and val.ndim == 0:
-            self.data.store[width=1](0, val.data.load[width=1](0))
-
-        var slice_list = List[Slice]()
-        slice_list.append(Slice(idx, idx + 1))
-        if self.ndim > 1:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.ndshape[i]
-                slice_list.append(Slice(0, size_at_dim))
-
-        # self.__setitem__(slice_list=slice_list, val=val)
-        var n_slices: Int = len(slice_list)
-        var ndims: Int = 0
-        var count: Int = 0
-        var spec: List[Int] = List[Int]()
-        for i in range(n_slices):
-            self._adjust_slice_(slice_list[i], self.ndshape[i])
-            if (
-                slice_list[i].start.value() >= self.ndshape[i]
-                or slice_list[i].end.value() > self.ndshape[i]
-            ):
-                raise Error("Error: Slice value exceeds the array shape")
-            var slice_len: Int = (
-                (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step
-            ).__int__()
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
-            else:
-                count += 1
-        if count == slice_list.__len__():
-            ndims = 1
-
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
-
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = (
-                (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step
-            ).__int__()
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(self.stride[j] * slice_list[j].step)
-            j += 1
-
-        # We can remove this check after we have support for broadcasting
-        for i in range(ndims):
-            if nshape[i] != val.ndshape[i]:
-                raise Error(
-                    "Error: Shape mismatch, Cannot set the array values with"
-                    " given array"
-                )
-
-        var noffset: Int = 0
-        if self.order == "C":
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
-        elif self.order == "F":
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
-
-        var index = List[Int]()
-        for _ in range(ndims):
-            index.append(0)
-
-        _traverse_iterative_setter[dtype](
-            val, self, nshape, ncoefficients, nstrides, noffset, index
-        )
-
     ### compiler doesn't accept this.
     # fn __setitem__(self, owned *slices: Variant[Slice, Int], val: NDArray[dtype]) raises:
     #     """
@@ -1348,24 +1335,76 @@ struct NDArray[dtype: DType = DType.float64](
     #             slice_list.append(Slice(0, size_at_dim))
 
     #     self.__setitem__(slices=slice_list, val=val)
+
+
+    # TODO: fix this setter, add bound checks. Not sure about it's use case. 
+    fn __setitem__(self, index: NDArray[DType.index], val: NDArray) raises:
+        """
+        Returns the items of the array from an array of indices.
+
+        Refer to `__getitem__(self, index: List[Int])`.
+
+        Example:
+        ```console
+        > var X = nm.NDArray[nm.i8](3,random=True)
+        > print(X)
+        [       32      21      53      ]
+        1-D array  Shape: [3]  DType: int8
+        > print(X.argsort())
+        [       1       0       2       ]
+        1-D array  Shape: [3]  DType: index
+        > print(X[X.argsort()])
+        [       21      32      53      ]
+        1-D array  Shape: [3]  DType: int8
+        ```
+        """
+
+        for i in range(len(index)):
+            self.set(int(index.get(i)), rebind[Scalar[dtype]](val.get(i)))
+
+    fn __setitem__(
+        inout self, mask: NDArray[DType.bool], val: NDArray[dtype]
+    ) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+
+        Example:
+        ```
+        var A = numojo.core.NDArray[numojo.i16](6, random=True)
+        var mask = A > 0
+        print(A)
+        print(mask)
+        A[mask] = 0
+        print(A)
+        ```
+        """
+        if (
+            mask.ndshape != self.ndshape
+        ):  # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
+
+        for i in range(mask.ndshape.ndsize):
+            if mask.data.load[width=1](i):
+                self.data.store[width=1](i, val.data.load[width=1](i))
+                
     # ===-------------------------------------------------------------------===#
     # Getter dunders
     # ===-------------------------------------------------------------------===#
-    fn get_scalar(self, index: Int) raises -> SIMD[dtype, 1]:
+    fn get(self, index: Int) raises -> SIMD[dtype, 1]:
         """
         Linearly retreive a value from the underlying Pointer.
 
         Example:
         ```console
-        > Array.get_scalar(15)
+        > Array.get(15)
         ```
         returns the item of index 15 from the array's data buffer.
 
-        Not that it is different from `item()` as `get_scalar` does not checked
+        Not that it is different from `item()` as `get` does not checked
         against C-order or F-order.
         ```console
         > # A is a 3x3 matrix, F-order (column-major)
-        > A.get_scalar(3)  # Row 0, Col 1
+        > A.get(3)  # Row 0, Col 1
         > A.item(3)  # Row 1, Col 0
         ```
         """
@@ -1403,6 +1442,19 @@ struct NDArray[dtype: DType = DType.float64](
             narr.ndshape.ndshape[0] = 0
 
         return narr
+
+    @always_inline("nodebug")
+    fn __getitem__(inout self, index: Idx) raises -> SIMD[dtype, 1]:
+        """
+        Set the value at the index list.
+        """
+        if index.__len__() != self.ndim:
+            raise Error("Error: Length of Indices do not match the shape")
+        for i in range(index.__len__()):
+            if index[i] >= self.ndshape[i]:
+                raise Error("Error: Elements of `index` exceed the array shape")
+        var idx: Int = _get_index(index, self.coefficient)
+        return self.data.load[width=1](idx)
 
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
         """
@@ -1868,34 +1920,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self.__getitem__(new_index)
 
-    # TODO: fix this setter
-    fn __setitem__(self, index: NDArray[DType.index]) raises -> Self:
-        """
-        Returns the items of the array from an array of indices.
-
-        Refer to `__getitem__(self, index: List[Int])`.
-
-        Example:
-        ```console
-        > var X = nm.NDArray[nm.i8](3,random=True)
-        > print(X)
-        [       32      21      53      ]
-        1-D array  Shape: [3]  DType: int8
-        > print(X.argsort())
-        [       1       0       2       ]
-        1-D array  Shape: [3]  DType: index
-        > print(X[X.argsort()])
-        [       21      32      53      ]
-        1-D array  Shape: [3]  DType: int8
-        ```
-        """
-
-        var new_index = List[Int]()
-        for i in index:
-            new_index.append(int(i.item(0)))
-
-        return self.__getitem__(new_index)
-
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """
         Get items of array corresponding to a mask.
@@ -1922,34 +1946,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         var result = Self(true.__len__())
         for i in range(true.__len__()):
-            result.data.store[width=1](i, self.get_scalar(true[i]))
+            result.data.store[width=1](i, self.get(true[i]))
 
         return result
-
-    fn __setitem__(
-        inout self, mask: NDArray[DType.bool], val: NDArray[dtype]
-    ) raises:
-        """
-        Set the value of the array at the indices where the mask is true.
-
-        Example:
-        ```
-        var A = numojo.core.NDArray[numojo.i16](6, random=True)
-        var mask = A > 0
-        print(A)
-        print(mask)
-        A[mask] = 0
-        print(A)
-        ```
-        """
-        if (
-            mask.ndshape != self.ndshape
-        ):  # this behavious could be removed potentially
-            raise Error("Mask and array must have the same shape")
-
-        for i in range(mask.ndshape.ndsize):
-            if mask.data.load[width=1](i):
-                self.data.store[width=1](i, val.data.load[width=1](i))
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
@@ -1994,7 +1993,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         """
         if (self.size() == 1) or (self.ndim == 0):
-            return int(self.get_scalar(0))
+            return int(self.get(0))
         else:
             raise (
                 "Only 0-D arrays or length-1 arrays can be converted to scalars"
@@ -2531,7 +2530,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var sum = Scalar[dtype](0)
         for i in range(self.ndshape.ndsize):
-            sum = sum + self.get_scalar(i) * other.get_scalar(i)
+            sum = sum + self.get(i) * other.get(i)
         return sum
 
     fn mdot(self, other: Self) raises -> Self:

@@ -214,7 +214,7 @@ fn test_bool_masks2() raises:
     print(temp2)
     var temp3 = AA[AA % SIMD[i16, 1](2) == SIMD[i16, 1](0)]
     print(temp3)
-    print(temp3.get_scalar(0))
+    print(temp3.get(0))
     print(temp3.ndshape, temp3.stride, temp3.ndshape.ndsize)
 
 
@@ -286,7 +286,7 @@ fn test_rand_funcs[
             var temp: Scalar[dtype] = random.random_float64(
                 min.cast[f64](), max.cast[f64]()
             ).cast[dtype]()
-            result.__setitem__(i, temp)
+            result.set(i, temp)
     else:
         raise Error(
             "Invalid type provided. dtype must be either an integral or"
@@ -331,12 +331,19 @@ def test_solve():
 
 fn test_setter() raises:
     print("Testing setter")
-    var A = NDArray[i16](2, 3, 2, fill=Scalar[i16](1))
-    var B = NDArray[i16](3, 2, fill=Scalar[i16](2))
-    A[0] = B
-    print(A)
+    # var A = NDArray[i16](2, 3, 2, fill=Scalar[i16](1))
+    # var B = NDArray[i16](3, 2, fill=Scalar[i16](2))
+    # A[0] = B
+    # print(A)
 
-
+    var A = ndarray[i16](3, 3, 3, fill=Scalar[i16](1))
+    print("1: ", A)
+    var D = nm.random.rand[i16](3, 3, min=0, max=100)
+    A[1] = D # sets the elements of A[1:2, :, :] with the array `D`
+    print("2: ", A)
+    A[:, 0:1, :] = D # sets the elements of A[:, 0:1, :] with the array `D`
+    print("3: ", A)
+    
 fn main() raises:
     # test_constructors1()
     # test_constructors2()

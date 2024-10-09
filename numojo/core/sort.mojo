@@ -79,22 +79,22 @@ fn _partition(
         New pivot index.
     """
 
-    var pivot_value = ndarray.get_scalar(pivot_index)
-    var _value_at_pivot = ndarray.get_scalar(pivot_index)
-    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
+    var pivot_value = ndarray.get(pivot_index)
+    var _value_at_pivot = ndarray.get(pivot_index)
+    ndarray.__setitem__(pivot_index, ndarray.get(right))
     ndarray.__setitem__(right, _value_at_pivot)
 
     var store_index = left
 
     for i in range(left, right):
-        if ndarray.get_scalar(i) < pivot_value:
-            var _value_at_store = ndarray.get_scalar(store_index)
-            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
+        if ndarray.get(i) < pivot_value:
+            var _value_at_store = ndarray.get(store_index)
+            ndarray.__setitem__(store_index, ndarray.get(i))
             ndarray.__setitem__(i, _value_at_store)
             store_index = store_index + 1
 
-    var _value_at_store = ndarray.get_scalar(store_index)
-    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
+    var _value_at_store = ndarray.get(store_index)
+    ndarray.__setitem__(store_index, ndarray.get(right))
     ndarray.__setitem__(right, _value_at_store)
 
     return store_index
@@ -187,14 +187,14 @@ fn binary_sort[
 
     var result: NDArray[dtype] = NDArray[dtype](array.shape())
     for i in range(array.ndshape.ndsize):
-        result.store(i, array.get_scalar(i).cast[dtype]())
+        result.store(i, array.get(i).cast[dtype]())
 
     var n = array.num_elements()
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:
-                var temp: Scalar[dtype] = result.get_scalar(i - 1)
-                result.__setitem__(i - 1, result.get_scalar(i))
+                var temp: Scalar[dtype] = result.get(i - 1)
+                result.__setitem__(i - 1, result.get(i))
                 result.store(i, temp)
     return result
 
@@ -224,36 +224,36 @@ fn _argsort_partition(
         New pivot index.
     """
 
-    var pivot_value = ndarray.get_scalar(pivot_index)
+    var pivot_value = ndarray.get(pivot_index)
 
-    var _value_at_pivot = ndarray.get_scalar(pivot_index)
-    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
+    var _value_at_pivot = ndarray.get(pivot_index)
+    ndarray.__setitem__(pivot_index, ndarray.get(right))
     ndarray.__setitem__(right, _value_at_pivot)
 
-    var _value_at_pivot_index = idx_array.get_scalar(pivot_index)
-    idx_array.__setitem__(pivot_index, idx_array.get_scalar(right))
+    var _value_at_pivot_index = idx_array.get(pivot_index)
+    idx_array.__setitem__(pivot_index, idx_array.get(right))
     idx_array.__setitem__(right, _value_at_pivot_index)
 
     var store_index = left
 
     for i in range(left, right):
-        if ndarray.get_scalar(i) < pivot_value:
-            var _value_at_store = ndarray.get_scalar(store_index)
-            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
+        if ndarray.get(i) < pivot_value:
+            var _value_at_store = ndarray.get(store_index)
+            ndarray.__setitem__(store_index, ndarray.get(i))
             ndarray.__setitem__(i, _value_at_store)
 
-            var _value_at_store_index = idx_array.get_scalar(store_index)
-            idx_array.__setitem__(store_index, idx_array.get_scalar(i))
+            var _value_at_store_index = idx_array.get(store_index)
+            idx_array.__setitem__(store_index, idx_array.get(i))
             idx_array.__setitem__(i, _value_at_store_index)
 
             store_index = store_index + 1
 
-    var _value_at_store = ndarray.get_scalar(store_index)
-    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
+    var _value_at_store = ndarray.get(store_index)
+    ndarray.__setitem__(store_index, ndarray.get(right))
     ndarray.__setitem__(right, _value_at_store)
 
-    var _value_at_store_index = idx_array.get_scalar(store_index)
-    idx_array.__setitem__(store_index, idx_array.get_scalar(right))
+    var _value_at_store_index = idx_array.get(store_index)
+    idx_array.__setitem__(store_index, idx_array.get(right))
     idx_array.__setitem__(right, _value_at_store_index)
 
     return store_index

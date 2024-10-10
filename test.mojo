@@ -339,11 +339,12 @@ fn test_setter() raises:
     var A = ndarray[i16](3, 3, 3, fill=Scalar[i16](1))
     print("1: ", A)
     var D = nm.random.rand[i16](3, 3, min=0, max=100)
-    A[1] = D # sets the elements of A[1:2, :, :] with the array `D`
+    A[1] = D  # sets the elements of A[1:2, :, :] with the array `D`
     print("2: ", A)
-    A[:, 0:1, :] = D # sets the elements of A[:, 0:1, :] with the array `D`
+    A[:, 0:1, :] = D  # sets the elements of A[:, 0:1, :] with the array `D`
     print("3: ", A)
-    
+
+
 fn main() raises:
     # test_constructors1()
     # test_constructors2()

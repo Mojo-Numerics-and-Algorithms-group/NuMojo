@@ -676,7 +676,10 @@ fn fromstring[
                 raise ("Unmatched left and right brackets!")
             if level > 0:
                 shape[level - 1] = shape[level - 1] + 1
-    return NDArray[dtype](data=data, shape=shape, order=order)
+    var result: NDArray[dtype] = NDArray[dtype](
+        data=data, shape=shape, order=order
+    )
+    return result^
 
 
 # ===------------------------------------------------------------------------===#

@@ -1,37 +1,48 @@
 from ..core.array_creation_routines import fromstring
 
-fn loadtxt[dtype: DType = f64](filename: String, delimiter: String = ',', skiprows: Int = 0, usecols: Optional[List[Int]] = None) raises -> NDArray[dtype]:
-    with open(filename, 'r') as file:
+
+fn loadtxt[
+    dtype: DType = f64
+](
+    filename: String,
+    delimiter: String = ",",
+    skiprows: Int = 0,
+    usecols: Optional[List[Int]] = None,
+) raises -> NDArray[dtype]:
+    with open(filename, "r") as file:
         string = file.read()
-        var shape_offset_init: Int = string.find('[')
-        var shape_offset_fin: Int = string.find(']')
-        var ndim_offset_init: Int = string.find('[', start = shape_offset_fin)
-        var ndim_offset_fin: Int = string.find(']', start = ndim_offset_init)
-        var ndim: Int = int(string[ndim_offset_init+1:ndim_offset_fin])
+        var shape_offset_init: Int = string.find("[")
+        var shape_offset_fin: Int = string.find("]")
+        var ndim_offset_init: Int = string.find("[", start=shape_offset_fin)
+        var ndim_offset_fin: Int = string.find("]", start=ndim_offset_init)
+        var ndim: Int = int(string[ndim_offset_init + 1 : ndim_offset_fin])
         var ndshape: List[Int] = List[Int]()
-        for i in range(shape_offset_init+1, shape_offset_fin):
+        for i in range(shape_offset_init + 1, shape_offset_fin):
             if string[i].isdigit():
                 ndshape.append(int(string[i]))
         var data: List[Scalar[dtype]] = List[Scalar[dtype]]()
-        for i in range(ndim_offset_fin+2, len(string)):
+        for i in range(ndim_offset_fin + 2, len(string)):
             if string[i].isdigit():
                 var number: String = string[i]
                 data.append(atof(number).cast[dtype]())
-        return NDArray[dtype](data=data, shape=ndshape, order='C')
+        return NDArray[dtype](data=data, shape=ndshape, order="C")
 
-fn savetxt[dtype: DType = f64](filename: String, array: NDArray[dtype], delimiter: String = ',') raises:
+
+fn savetxt[
+    dtype: DType = f64
+](filename: String, array: NDArray[dtype], delimiter: String = ",") raises:
     var shape: String = "ndshape=["
     for i in range(array.ndshape.ndlen):
         shape += str(array.ndshape[i])
         if i != array.ndshape.ndlen - 1:
-            shape = shape + ', '
-    shape = shape + ']'
+            shape = shape + ", "
+    shape = shape + "]"
     print(shape)
 
-    with open(filename, 'w') as file:
-        file.write(shape+"\n")
-        file.write('ndim=['+str(array.ndim)+']\n')
+    with open(filename, "w") as file:
+        file.write(shape + "\n")
+        file.write("ndim=[" + str(array.ndim) + "]\n")
         for i in range(array.ndshape.ndsize):
             if i % 10 == 0:
-                file.write(str('\n'))
-            file.write(str(array.data[i])+',')
+                file.write(str("\n"))
+            file.write(str(array.data[i]) + ",")

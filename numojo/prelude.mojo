@@ -2,15 +2,15 @@
 prelude
 =======
 
-Numojo comes a wide range of functions, types, and constants. 
-If you have to manually import every thing, 
-it would makes the header of the file too long. 
+NuMojo comes a wide range of functions, types, and constants. 
+If you manually import everything, 
+it will make the header of the file too long. 
 On the other hand, using `from numojo import *` would import a lot of functions 
 that you never use and would pollute the naming space.
 
 This module tries to find out a balance by providing a list of things 
 that can be imported at one time. 
-The lists on contains those functions or types 
+The list contains the functions or types 
 that are the most essential for a user. 
 
 You can use the following code to import them:

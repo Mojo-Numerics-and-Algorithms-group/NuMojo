@@ -6,6 +6,7 @@ Implements Idx type.
 
 from utils import Variant
 from builtin.type_aliases import AnyLifetime
+from memory import memset_zero, memcpy
 
 
 struct Idx(CollectionElement, Formattable):

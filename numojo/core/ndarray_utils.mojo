@@ -331,6 +331,16 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             np_dtype = np.int16
         elif dtype == DType.int8:
             np_dtype = np.int8
+        elif dtype == DType.uint64:
+            np_dtype = np.uint64
+        elif dtype == DType.uint32:
+            np_dtype = np.uint32
+        elif dtype == DType.uint16:
+            np_dtype = np.uint16
+        elif dtype == DType.uint8:
+            np_dtype = np.uint8
+        elif dtype == DType.bool:
+            np_dtype = np.bool_
 
         numpyarray = np.empty(np_arr_dim, dtype=np_dtype)
         var pointer_d = numpyarray.__array_interface__["data"][

@@ -1,3 +1,9 @@
+"""
+Implements Idx type.
+
+`Idx` is a series of `Int` on the heap.
+"""
+
 from utils import Variant
 from builtin.type_aliases import AnyLifetime
 from memory import memset_zero, memcpy

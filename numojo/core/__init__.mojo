@@ -1,4 +1,6 @@
 # ARRAYS
+
+# Structs
 from .ndarray import *
 from .index import Idx
 from .ndshape import NDArrayShape

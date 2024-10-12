@@ -1518,36 +1518,32 @@ struct NDArray[dtype: DType = DType.float64](
         return self * -1.0
 
     @always_inline("nodebug")
-    fn __eq__(self, other: Self) raises -> Scalar[DType.bool]:
+    fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
         """
         Itemwise equivelence.
         """
-        var result: NDArray[DType.bool] = math.equal[dtype](self, other)
-        return result.all()
+        return math.equal[dtype](self, other)
 
     @always_inline("nodebug")
-    fn __eq__(self, other: SIMD[dtype, 1]) raises -> Scalar[DType.bool]:
+    fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise equivelence between scalar and Array.
         """
-        var result: NDArray[DType.bool] = math.equal[dtype](self, other)
-        return result.all()
+        return math.equal[dtype](self, other)
 
     @always_inline("nodebug")
-    fn __ne__(self, other: SIMD[dtype, 1]) raises -> Scalar[DType.bool]:
+    fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise nonequivelence.
         """
-        var result: NDArray[DType.bool] = math.equal[dtype](self, other)
-        return result.all()
+        return math.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
-    fn __ne__(self, other: NDArray[dtype]) raises -> Scalar[DType.bool]:
+    fn __ne__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise nonequivelence between scalar and Array.
         """
-        var result: NDArray[DType.bool] = math.equal[dtype](self, other)
-        return result.all()
+        return math.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:

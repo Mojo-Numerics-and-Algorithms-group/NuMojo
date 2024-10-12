@@ -50,14 +50,16 @@ def test_bool_masks_eq():
     A.reshape(3, 2, 4)
 
     # Test equal
-    var np_eq = np_A == 10
+    # var np_eq = np_A == 10 # has a python interop problem.
+    var np_eq = np.equal(np_A, 10)
     var eq = A == Scalar[nm.i16](10)
-    assert_equal(eq, np_eq, "Equal mask")
+    check(eq, np_eq, "Equal mask")
 
     # Test not equal
-    var np_ne = np_A != 10
+    # var np_ne = np_A != 10 # has a python interop problem.
+    var np_ne = np.not_equal(np_A, 10)
     var ne = A != Scalar[nm.i16](10)
-    assert_equal(ne, np_ne, "Not equal mask")
+    check(ne, np_ne, "Not equal mask")
 
     # Test masked array
     var np_mask = np_A[np_A > 10]

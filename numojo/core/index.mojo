@@ -3,55 +3,6 @@ from builtin.type_aliases import AnyLifetime
 from memory import memset_zero, memcpy
 
 
-@value
-struct _IdxIter[
-    is_mutable: Bool, //,
-    lifetime: AnyLifetime[is_mutable].type,
-    forward: Bool = True,
-]:
-    """Iterator for idx.
-
-    Parameters:
-        is_mutable: Whether the iterator is mutable.
-        lifetime: The lifetime of the underlying idx data.
-        forward: The iteration direction. `False` is backwards.
-    """
-
-    var index: Int
-    var array: Idx
-    var length: Int
-
-    fn __init__(
-        inout self,
-        array: Idx,
-        length: Int,
-    ):
-        self.index = 0 if forward else length
-        self.length = length
-        self.array = array
-
-    fn __iter__(self) -> Self:
-        return self
-
-    fn __next__(inout self) raises -> Scalar[DType.index]:
-        @parameter
-        if forward:
-            var current_index = self.index
-            self.index += 1
-            return self.array.__getitem__(current_index)
-        else:
-            var current_index = self.index
-            self.index -= 1
-            return self.array.__getitem__(current_index)
-
-    fn __len__(self) -> Int:
-        @parameter
-        if forward:
-            return self.length - self.index
-        else:
-            return self.index
-
-
 struct Idx(CollectionElement, Formattable):
     alias dtype: DType = DType.index
     alias width = simdwidthof[Self.dtype]()
@@ -193,3 +144,52 @@ struct Idx(CollectionElement, Formattable):
         width: Int = 1
     ](inout self, index: Int, val: SIMD[Self.dtype, width]):
         self.storage.store[width=width](index, val)
+
+
+@value
+struct _IdxIter[
+    is_mutable: Bool, //,
+    lifetime: AnyLifetime[is_mutable].type,
+    forward: Bool = True,
+]:
+    """Iterator for idx.
+
+    Parameters:
+        is_mutable: Whether the iterator is mutable.
+        lifetime: The lifetime of the underlying idx data.
+        forward: The iteration direction. `False` is backwards.
+    """
+
+    var index: Int
+    var array: Idx
+    var length: Int
+
+    fn __init__(
+        inout self,
+        array: Idx,
+        length: Int,
+    ):
+        self.index = 0 if forward else length
+        self.length = length
+        self.array = array
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __next__(inout self) raises -> Scalar[DType.index]:
+        @parameter
+        if forward:
+            var current_index = self.index
+            self.index += 1
+            return self.array.__getitem__(current_index)
+        else:
+            var current_index = self.index
+            self.index -= 1
+            return self.array.__getitem__(current_index)
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index

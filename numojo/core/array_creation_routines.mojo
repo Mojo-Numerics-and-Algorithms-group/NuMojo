@@ -17,7 +17,7 @@ from builtin.math import pow
 from sys import simdwidthof
 
 from .ndarray import NDArray
-from .ndarrayshape import NDArrayShape
+from .ndshape import NDArrayShape
 from .ndarray_utils import _get_index
 
 

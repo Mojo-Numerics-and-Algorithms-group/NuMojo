@@ -4,6 +4,7 @@ from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check
 from python import Python
 
+
 # TODO: there's something wrong with bool comparision even though result looks same.
 def test_bool_masks_gt():
     var np = Python.import_module("numpy")
@@ -19,6 +20,7 @@ def test_bool_masks_gt():
     var np_ge = np_A >= 10
     var ge = A >= Scalar[nm.i16](10)
     check(ge, np_ge, "Greater than or equal mask")
+
 
 def test_bool_masks_lt():
     var np = Python.import_module("numpy")
@@ -38,6 +40,7 @@ def test_bool_masks_lt():
     var le = A <= Scalar[nm.i16](10)
     check(le, np_le, "Less than or equal mask")
 
+
 def test_bool_masks_eq():
     var np = Python.import_module("numpy")
 
@@ -49,12 +52,12 @@ def test_bool_masks_eq():
     # Test equal
     var np_eq = np_A == 10
     var eq = A == Scalar[nm.i16](10)
-    check(eq, np_eq, "Equal mask")
+    assert_equal(eq, np_eq, "Equal mask")
 
     # Test not equal
     var np_ne = np_A != 10
     var ne = A != Scalar[nm.i16](10)
-    check(ne, np_ne, "Not equal mask")
+    assert_equal(ne, np_ne, "Not equal mask")
 
     # Test masked array
     var np_mask = np_A[np_A > 10]

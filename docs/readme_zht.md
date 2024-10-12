@@ -17,7 +17,7 @@
     </div>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="./docs/readme_zht.md"><strong>中文·简化汉字» </strong></a>
+        <a href="./readme_zhs.md"><strong>中文·简化汉字» </strong></a>
     </div>
   </p>
 </div>
@@ -70,7 +70,7 @@ fn main() raises:
 
     # 矩陣求逆
     var I = nm.inv(A)
-    
+
     # 矩陣切片
     var A_slice = A[1:3, 4:19]
 

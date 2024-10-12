@@ -17,7 +17,7 @@
     </div>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="./docs/readme_zht.md"><strong>中文·傳統漢字» </strong></a>
+        <a href="./readme_zht.md"><strong>中文·傳統漢字» </strong></a>
     </div>
   </p>
 </div>

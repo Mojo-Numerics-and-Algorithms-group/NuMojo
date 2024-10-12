@@ -54,7 +54,8 @@ from ..math.math_funcs import Vectorized
 from .utility_funcs import is_inttype, is_booltype
 from ..math.linalg.matmul import matmul_parallelized
 from .array_manipulation_routines import reshape
-from .containers import NDArrayShape, NDArrayStride
+from .ndshape import NDArrayShape
+from .ndstride import NDArrayStride
 
 
 # ===----------------------------------------------------------------------===#

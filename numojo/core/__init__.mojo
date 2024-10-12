@@ -1,6 +1,8 @@
 # ARRAYS
 from .ndarray import *
-from .containers import *
+from .index import Idx
+from .ndshape import NDArrayShape
+from .ndstride import NDArrayStride
 from .array_creation_routines import *
 from .array_manipulation_routines import *
 from .constants import *

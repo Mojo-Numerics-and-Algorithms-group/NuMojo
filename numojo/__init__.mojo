@@ -5,7 +5,7 @@ An Array Mathematics library for Mojo.
 from .core import *
 from .math import *
 from .math.statistics import stats
-from .IO import *
+from .io import *
 
 alias __version__ = "V0.2"
 

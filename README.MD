@@ -18,7 +18,7 @@
     </div>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="./docs/readme_zh_cn.md"><strong>中文» </strong></a> &nbsp; <a href="./docs/readme_jp.md"><strong>日本語» </strong></a>
+        <a href="./docs/readme_zhs.md"><strong>中文» </strong></a> &nbsp; <a href="./docs/readme_jp.md"><strong>日本語» </strong></a>
     </div>
     <!-- <a href="./docs/readme_kr.md"><strong>한국어 문서» </strong></a> -->
     <!-- <br /> -->
@@ -92,14 +92,30 @@ An example goes as follows.
 
 ```mojo
 import numojo as nm
+from numojo.prelude import *
 
 fn main() raises:
     # Generate two 1000x1000 matrices with random float64 values
-    var A = nm.NDArray[nm.f64](shape=List[Int](1000,1000), random=True)
-    var B = nm.NDArray[nm.f64](1000,1000, random=True)
+    var A = nm.random.randn[f64](shape=List[Int](1000, 1000))
+    var B = nm.random.randn[f64](shape=List[Int](1000, 1000))
 
-    # Print AB
-    print(nm.linalg.matmul_parallelized(A, B))
+    # Generate a 3x2 matrix from string representation
+    var X = nm.fromstring[f32]("[[1.1, -0.32, 1], [0.1, -3, 2.124]]")
+
+    # Print array
+    print(A)
+
+    # Array multiplication
+    var C = A @ B
+
+    # Array inversion
+    var I = nm.inv(A)
+
+    # Array slicing
+    var A_slice = A[1:3, 4:19]
+
+    # Get scalar from array
+    var A_item = A.item(291, 141)
 ```
 
 Please find all the available functions [here](features.md)

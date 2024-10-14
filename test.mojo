@@ -1,13 +1,14 @@
 # import numojo as nj
 import time
 from benchmark.compiler import keep
-from python import Python
+from python import Python, PythonObject
 
 from random import seed
 from random.random import randint, random_float64
 
 import numojo as nm
 from numojo import *
+from time import now
 
 # alias backend = nm.VectorizedParallelizedNWorkers[8]
 # def main():
@@ -84,9 +85,13 @@ fn test_constructors1() raises:
 
 
 fn test_constructors2() raises:
-    var fill_value: SIMD[i32, 1] = 10
-    var A = NDArray[i32](3, 2, fill=fill_value)
-    print(A)
+    # var fill_value: SIMD[i32, 1] = 10
+    # var A = NDArray[i32](3, 2, fill=fill_value)
+    # print(A)
+    var np = Python.import_module("numpy")
+    var A = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    var B = NDArray[f32](data=A)
+    print(B)
 
 
 fn test_random() raises:
@@ -209,7 +214,7 @@ fn test_bool_masks2() raises:
     print(temp2)
     var temp3 = AA[AA % SIMD[i16, 1](2) == SIMD[i16, 1](0)]
     print(temp3)
-    print(temp3.get_scalar(0))
+    print(temp3.get(0))
     print(temp3.ndshape, temp3.stride, temp3.ndshape.ndsize)
 
 
@@ -236,21 +241,31 @@ fn test_slicing() raises:
     print(arr1[0:1, :])
     print(arr1[1:2, 3:4])
 
-    var w = arange[f32](0.0, 24.0, step=1)
-    w.reshape(2, 3, 4, order="C")
-    print(w[0, 0, 0], w[0, 0, 1], w[1, 1, 1], w[1, 2, 3])
-    print(w)
-    var slicedw = w[0:1, :, 1:2]
-    print(slicedw)
-    print()
+    # var w = arange[f32](0.0, 24.0, step=1)
+    # w.reshape(2, 3, 4, order="C")
+    # print(w[0, 0, 0], w[0, 0, 1], w[1, 1, 1], w[1, 2, 3])
+    # print(w)
+    # var slicedw = w[0:1, :, 1:2]
+    # print(slicedw)
+    # print()
 
     var y = arange[numojo.f32](0.0, 24.0, step=1)
-    y.reshape(2, 3, 4, order="F")
-    print(y[0, 0, 0], y[0, 0, 1], y[1, 1, 1], y[1, 2, 3])
-    print(y)
+    y.reshape(3, 2, 4, order="C")
+    # print(y[0, 0, 0], y[0, 0, 1], y[1, 1, 1], y[1, 2, 3])
+    print("y: ", y)
     print(y.order)
+
+    # var start = time.now()
+    # for _ in range(10):
     var slicedy = y[:, :, 1:2]
     print(slicedy)
+    var slicedy1 = y[0:1, :, :]
+    print(slicedy1)
+    var slicedy2 = y[:, 0:1, :]
+    print(slicedy2)
+    var slicedy3 = y[0:1, 0:1, 0:1]
+    print(slicedy3)
+    # print("Time taken: ", (time.now() - start)/1e9/10)
 
 
 fn test_rand_funcs[
@@ -271,7 +286,7 @@ fn test_rand_funcs[
             var temp: Scalar[dtype] = random.random_float64(
                 min.cast[f64](), max.cast[f64]()
             ).cast[dtype]()
-            result.__setitem__(i, temp)
+            result.set(i, temp)
     else:
         raise Error(
             "Invalid type provided. dtype must be either an integral or"
@@ -314,6 +329,22 @@ def test_solve():
     )
 
 
+fn test_setter() raises:
+    print("Testing setter")
+    # var A = NDArray[i16](2, 3, 2, fill=Scalar[i16](1))
+    # var B = NDArray[i16](3, 2, fill=Scalar[i16](2))
+    # A[0] = B
+    # print(A)
+
+    var A = ndarray[i16](3, 3, 3, fill=Scalar[i16](1))
+    print("1: ", A)
+    var D = nm.random.rand[i16](3, 3, min=0, max=100)
+    A[1] = D  # sets the elements of A[1:2, :, :] with the array `D`
+    print("2: ", A)
+    A[:, 0:1, :] = D  # sets the elements of A[:, 0:1, :] with the array `D`
+    print("3: ", A)
+
+
 fn main() raises:
     # test_constructors1()
     # test_constructors2()
@@ -324,9 +355,10 @@ fn main() raises:
     # test_creation_routines()
     # test_slicing()
     # test_inv1()
-    test_inv()
-    test_solve()
+    # test_inv()
+    # test_solve()
     # test_linalg()
+    test_setter()
 
 
 # var x = numojo.full[numojo.f32](3, 2, fill_value=16.0)

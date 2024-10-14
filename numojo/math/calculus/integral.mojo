@@ -9,7 +9,7 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
 import .. math_funcs as _mf
 from ...core.ndarray import NDArray, NDArrayShape
-from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.utility import is_inttype, is_floattype
 
 
 # naive loop implementation, optimize later
@@ -46,8 +46,6 @@ fn trapz[
 
     var integral: Scalar[dtype] = 0.0
     for i in range(x.num_elements() - 1):
-        var temp = (x.get_scalar(i + 1) - x.get_scalar(i)) * (
-            y.get_scalar(i) + y.get_scalar(i + 1)
-        ) / 2.0
+        var temp = (x.get(i + 1) - x.get(i)) * (y.get(i) + y.get(i + 1)) / 2.0
         integral += temp
     return integral

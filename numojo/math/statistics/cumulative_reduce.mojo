@@ -13,7 +13,7 @@ from sys import simdwidthof
 from collections.optional import Optional
 
 from ...core.ndarray import NDArray, NDArrayShape
-from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.utility import is_inttype, is_floattype
 from ...core.sort import binary_sort
 
 """
@@ -196,10 +196,10 @@ fn maxT[
 
     vectorize[vectorized_max, width](array.num_elements())
 
-    var result: Scalar[dtype] = Scalar[dtype](max_value.get_scalar(0))
+    var result: Scalar[dtype] = Scalar[dtype](max_value.get(0))
     for i in range(max_value.__len__()):
-        if max_value.get_scalar(i) > result:
-            result = max_value.get_scalar(i)
+        if max_value.get(i) > result:
+            result = max_value.get(i)
     return result
 
 
@@ -235,10 +235,10 @@ fn minT[
 
     vectorize[vectorized_min, width](array.num_elements())
 
-    var result: Scalar[dtype] = Scalar[dtype](min_value.get_scalar(0))
+    var result: Scalar[dtype] = Scalar[dtype](min_value.get(0))
     for i in range(min_value.__len__()):
-        if min_value.get_scalar(i) < result:
-            result = min_value.get_scalar(i)
+        if min_value.get(i) < result:
+            result = min_value.get(i)
 
     return result
 
@@ -269,7 +269,7 @@ fn cumpvariance[
     var result = Scalar[dtype]()
 
     for i in range(array.num_elements()):
-        result += (array.get_scalar(i) - mean_value) ** 2
+        result += (array.get(i) - mean_value) ** 2
 
     return math.sqrt(result / (array.num_elements()))
 
@@ -301,7 +301,7 @@ fn cumvariance[
 
     var result = Scalar[dtype]()
     for i in range(array.num_elements()):
-        result += (array.get_scalar(i) - mean_value) ** 2
+        result += (array.get(i) - mean_value) ** 2
 
     return math.sqrt(result / (array.num_elements() - 1))
 
@@ -506,10 +506,10 @@ fn argmax[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var max_val: Scalar[dtype] = array.get_scalar(0)
+    var max_val: Scalar[dtype] = array.get(0)
     for i in range(1, array.num_elements()):
-        if array.get_scalar(i) > max_val:
-            max_val = array.get_scalar(i)
+        if array.get(i) > max_val:
+            max_val = array.get(i)
             idx = i
     return idx
 
@@ -529,10 +529,10 @@ fn argmin[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var min_val: Scalar[dtype] = array.get_scalar(0)
+    var min_val: Scalar[dtype] = array.get(0)
 
     for i in range(1, array.num_elements()):
-        if array.get_scalar(i) < min_val:
-            min_val = array.get_scalar(i)
+        if array.get(i) < min_val:
+            min_val = array.get(i)
             idx = i
     return idx

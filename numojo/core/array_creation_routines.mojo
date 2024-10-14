@@ -16,8 +16,9 @@ from algorithm import parallelize
 from builtin.math import pow
 from sys import simdwidthof
 
-from .ndarray import NDArray, NDArrayShape
-from .ndarray_utils import _get_index
+from .ndarray import NDArray
+from .ndshape import NDArrayShape
+from .utility import _get_index
 
 
 # ===------------------------------------------------------------------------===#
@@ -676,7 +677,10 @@ fn fromstring[
                 raise ("Unmatched left and right brackets!")
             if level > 0:
                 shape[level - 1] = shape[level - 1] + 1
-    return NDArray[dtype](data=data, shape=shape, order=order)
+    var result: NDArray[dtype] = NDArray[dtype](
+        data=data, shape=shape, order=order
+    )
+    return result^
 
 
 # ===------------------------------------------------------------------------===#
@@ -692,3 +696,174 @@ fn array[
     This reload is an alias of `fromstring`.
     """
     return fromstring[dtype](text, order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](
+    *shape: Int, fill: Optional[Scalar[dtype]] = None, order: String = "C"
+) raises -> NDArray[dtype]:
+    """
+    Array creation with given variadic shape and fill value.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: Variadic shape.
+        fill: Set all the values to this.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        nm.array[f16](3, 2, 4, fill=Scalar[f16](10))
+        ```
+
+    Returns:
+        An Array of given shape and fill value.
+    """
+    return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](
+    shape: List[Int], fill: Optional[Scalar[dtype]] = None, order: String = "C"
+) raises -> NDArray[dtype]:
+    """
+    Array creation with given shape and fill value.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: List of shape.
+        fill: Set all the values to this.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
+        ```
+
+    Returns:
+        An Array of given shape and fill value.
+    """
+    return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](
+    shape: VariadicList[Int],
+    fill: Optional[Scalar[dtype]] = None,
+    order: String = "C",
+) raises -> NDArray[dtype]:
+    """
+    Array creation with given shape and fill value.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: VariadicList of shape.
+        fill: Set all the values to this.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
+        ```
+
+    Returns:
+        An Array of given shape and fill value.
+    """
+    return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](
+    shape: NDArrayShape,
+    fill: Optional[Scalar[dtype]] = None,
+    order: String = "C",
+) raises -> NDArray[dtype]:
+    """
+    Array creation with given shape and fill value.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: NDArrayShape of the array.
+        fill: Set all the values to this.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        nm.array[f16](NDArrayShape(2, 3, 4), fill=Scalar[f16](10))
+        ```
+
+    Returns:
+        An Array of given shape and fill value.
+    """
+    return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](
+    data: List[Scalar[dtype]], shape: List[Int], order: String = "C"
+) raises -> NDArray[dtype]:
+    """
+    Array creation with given data, shape and order.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        data: List of data.
+        shape: List of shape.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+        ```
+
+    Returns:
+        An Array of given data, shape and order.
+    """
+    return NDArray[dtype](data=data, shape=shape, order=order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](data: PythonObject, order: String = "C") raises -> NDArray[dtype]:
+    """
+    Array creation with given data, shape and order.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        data: A Numpy array (PythonObject).
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        var np = Python.import_module("numpy")
+        var np_arr = np.array([1, 2, 3, 4])
+        nm.array[f16](data=np_arr, order="C")
+        ```
+
+    Returns:
+        An Array of given data, shape and order.
+    """
+    return NDArray[dtype](data=data, order=order)

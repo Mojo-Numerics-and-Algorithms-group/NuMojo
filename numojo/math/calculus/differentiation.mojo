@@ -4,10 +4,11 @@
 # ===----------------------------------------------------------------------=== #
 
 import math
+
 import .. math_funcs as _mf
 import ... core as core
 from ...core.ndarray import NDArray, NDArrayShape
-from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.utility import is_inttype, is_floattype
 
 """TODO: 
 1) add a Variant[NDArray, Scalar, ...] to include all possibilities
@@ -16,7 +17,7 @@ from ...core.utility_funcs import is_inttype, is_floattype
 
 
 fn gradient[
-    dtype: DType
+    dtype: DType = DType.float64
 ](x: NDArray[dtype], spacing: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Compute the gradient of y over x using the trapezoidal rule.
@@ -35,36 +36,32 @@ fn gradient[
         The integral of y over x using the trapezoidal rule.
     """
 
-    var result: NDArray[dtype] = NDArray[dtype](x.shape(), random=False)
+    var result: NDArray[dtype] = NDArray[dtype](x.shape())
     var space: NDArray[dtype] = core.arange[dtype](
         1, x.num_elements() + 1, step=spacing
     )
-    var hu: Scalar[dtype] = space.get_scalar(1)
-    var hd: Scalar[dtype] = space.get_scalar(0)
+    var hu: Scalar[dtype] = space.get(1)
+    var hd: Scalar[dtype] = space.get(0)
     result.store(
         0,
-        (x.get_scalar(1) - x.get_scalar(0)) / (hu - hd),
+        (x.get(1) - x.get(0)) / (hu - hd),
     )
 
-    hu = space.get_scalar(x.num_elements() - 1)
-    hd = space.get_scalar(x.num_elements() - 2)
+    hu = space.get(x.num_elements() - 1)
+    hd = space.get(x.num_elements() - 2)
     result.store(
         x.num_elements() - 1,
-        (
-            x.get_scalar(x.num_elements() - 1)
-            - x.get_scalar(x.num_elements() - 2)
-        )
-        / (hu - hd),
+        (x.get(x.num_elements() - 1) - x.get(x.num_elements() - 2)) / (hu - hd),
     )
 
     for i in range(1, x.num_elements() - 1):
-        var hu: Scalar[dtype] = space.get_scalar(i + 1) - space.get_scalar(i)
-        var hd: Scalar[dtype] = space.get_scalar(i) - space.get_scalar(i - 1)
+        var hu: Scalar[dtype] = space.get(i + 1) - space.get(i)
+        var hd: Scalar[dtype] = space.get(i) - space.get(i - 1)
         var fi: Scalar[dtype] = (
-            hd**2 * x.get_scalar(i + 1)
-            + (hu**2 - hd**2) * x.get_scalar(i)
-            - hu**2 * x.get_scalar(i - 1)
+            hd**2 * x.get(i + 1)
+            + (hu**2 - hd**2) * x.get(i)
+            - hu**2 * x.get(i - 1)
         ) / (hu * hd * (hu + hd))
         result.store(i, fi)
 
-    return result
+    return result^

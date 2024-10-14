@@ -9,13 +9,13 @@ Implements sort functions
 
 import math
 from algorithm import vectorize
+
 from ..core.ndarray import NDArray, NDArrayShape
 
 """
-TODO: 
+TODO:
 1) Add more sorting algorithms.
-2) Add argument "inplace" for some functions.
-3) Add axis.
+2) Add axis.
 """
 
 # ===------------------------------------------------------------------------===#
@@ -79,23 +79,23 @@ fn _partition(
         New pivot index.
     """
 
-    var pivot_value = ndarray.get_scalar(pivot_index)
-    var _value_at_pivot = ndarray.get_scalar(pivot_index)
-    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
-    ndarray.__setitem__(right, _value_at_pivot)
+    var pivot_value = ndarray.get(pivot_index)
+    var _value_at_pivot = ndarray.get(pivot_index)
+    ndarray.set(pivot_index, ndarray.get(right))
+    ndarray.set(right, _value_at_pivot)
 
     var store_index = left
 
     for i in range(left, right):
-        if ndarray.get_scalar(i) < pivot_value:
-            var _value_at_store = ndarray.get_scalar(store_index)
-            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
-            ndarray.__setitem__(i, _value_at_store)
+        if ndarray.get(i) < pivot_value:
+            var _value_at_store = ndarray.get(store_index)
+            ndarray.set(store_index, ndarray.get(i))
+            ndarray.set(i, _value_at_store)
             store_index = store_index + 1
 
-    var _value_at_store = ndarray.get_scalar(store_index)
-    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
-    ndarray.__setitem__(right, _value_at_store)
+    var _value_at_store = ndarray.get(store_index)
+    ndarray.set(store_index, ndarray.get(right))
+    ndarray.set(right, _value_at_store)
 
     return store_index
 
@@ -122,9 +122,7 @@ fn quick_sort_inplace[
         quick_sort_inplace(ndarray, pivot_new_index + 1, right)
 
 
-fn quick_sort[
-    dtype: DType
-](ndarray: NDArray[dtype],) raises -> NDArray[dtype]:
+fn quick_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Quick sort the NDArray.
     Adopt in-place partition.
@@ -146,13 +144,10 @@ fn quick_sort[
     Args:
         ndarray: An NDArray.
 
-    Returns:
-        The sorted NDArray.
     """
 
     var result: NDArray[dtype] = ndarray
     var length = ndarray.size()
-
     quick_sort_inplace(result, 0, length - 1)
 
     return result
@@ -192,14 +187,14 @@ fn binary_sort[
 
     var result: NDArray[dtype] = NDArray[dtype](array.shape())
     for i in range(array.ndshape.ndsize):
-        result.store(i, array.get_scalar(i).cast[dtype]())
+        result.store(i, array.get(i).cast[dtype]())
 
     var n = array.num_elements()
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:
-                var temp: Scalar[dtype] = result.get_scalar(i - 1)
-                result[i - 1] = result[i]
+                var temp: Scalar[dtype] = result.get(i - 1)
+                result.set(i - 1, result.get(i))
                 result.store(i, temp)
     return result
 
@@ -229,37 +224,37 @@ fn _argsort_partition(
         New pivot index.
     """
 
-    var pivot_value = ndarray.get_scalar(pivot_index)
+    var pivot_value = ndarray.get(pivot_index)
 
-    var _value_at_pivot = ndarray.get_scalar(pivot_index)
-    ndarray.__setitem__(pivot_index, ndarray.get_scalar(right))
-    ndarray.__setitem__(right, _value_at_pivot)
+    var _value_at_pivot = ndarray.get(pivot_index)
+    ndarray.set(pivot_index, ndarray.get(right))
+    ndarray.set(right, _value_at_pivot)
 
-    var _value_at_pivot_index = idx_array.get_scalar(pivot_index)
-    idx_array.__setitem__(pivot_index, idx_array.get_scalar(right))
-    idx_array.__setitem__(right, _value_at_pivot_index)
+    var _value_at_pivot_index = idx_array.get(pivot_index)
+    idx_array.set(pivot_index, idx_array.get(right))
+    idx_array.set(right, _value_at_pivot_index)
 
     var store_index = left
 
     for i in range(left, right):
-        if ndarray.get_scalar(i) < pivot_value:
-            var _value_at_store = ndarray.get_scalar(store_index)
-            ndarray.__setitem__(store_index, ndarray.get_scalar(i))
-            ndarray.__setitem__(i, _value_at_store)
+        if ndarray.get(i) < pivot_value:
+            var _value_at_store = ndarray.get(store_index)
+            ndarray.set(store_index, ndarray.get(i))
+            ndarray.set(i, _value_at_store)
 
-            var _value_at_store_index = idx_array.get_scalar(store_index)
-            idx_array.__setitem__(store_index, idx_array.get_scalar(i))
-            idx_array.__setitem__(i, _value_at_store_index)
+            var _value_at_store_index = idx_array.get(store_index)
+            idx_array.set(store_index, idx_array.get(i))
+            idx_array.set(i, _value_at_store_index)
 
             store_index = store_index + 1
 
-    var _value_at_store = ndarray.get_scalar(store_index)
-    ndarray.__setitem__(store_index, ndarray.get_scalar(right))
-    ndarray.__setitem__(right, _value_at_store)
+    var _value_at_store = ndarray.get(store_index)
+    ndarray.set(store_index, ndarray.get(right))
+    ndarray.set(right, _value_at_store)
 
-    var _value_at_store_index = idx_array.get_scalar(store_index)
-    idx_array.__setitem__(store_index, idx_array.get_scalar(right))
-    idx_array.__setitem__(right, _value_at_store_index)
+    var _value_at_store_index = idx_array.get(store_index)
+    idx_array.set(store_index, idx_array.get(right))
+    idx_array.set(right, _value_at_store_index)
 
     return store_index
 
@@ -322,7 +317,7 @@ fn argsort[
 
     var idx_array = NDArray[DType.index](length)
     for i in range(length):
-        idx_array.__setitem__(i, i)
+        idx_array.set(i, SIMD[DType.index, 1](i))
 
     argsort_inplace(array, idx_array, 0, length - 1)
 

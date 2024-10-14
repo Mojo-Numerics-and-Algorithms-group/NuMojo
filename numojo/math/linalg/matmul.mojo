@@ -8,10 +8,12 @@ Matrix multiplication functions for NDArrays
 
 
 import math
-import .. math_funcs as _mf
-from ...core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+from sys import simdwidthof
+
+import .. math_funcs as _mf
+from ...core.ndarray import NDArray, NDArrayShape
 
 
 # Perform 2D tiling on the iteration space defined by end_x and end_y.
@@ -29,7 +31,7 @@ fn matmul_tiled_unrolled_parallelized[
     """
     Matrix multiplication vectorized, tiled, unrolled, and parallelized.
     """
-    alias nelts = max(simdwidthof[dtype](), 16)
+    alias width = max(simdwidthof[dtype](), 16)
     var C: NDArray[dtype] = NDArray[dtype](
         A.ndshape.load_int(0), B.ndshape.load_int(1)
     )
@@ -44,20 +46,21 @@ fn matmul_tiled_unrolled_parallelized[
             for k in range(y, y + tile_y):
 
                 @parameter
-                fn dot[nelts: Int](n: Int):
+                fn dot[simd_width: Int](n: Int):
                     C.store(
                         m * t2 + (n + x),
-                        val=C.load[nelts](m * t2 + (n + x))
-                        + A.load(m * t1 + k) * B.load[nelts](k * t2 + (n + x)),
+                        val=C.load[simd_width](m * t2 + (n + x))
+                        + A.load(m * t1 + k)
+                        * B.load[simd_width](k * t2 + (n + x)),
                     )
 
-                alias unroll_factor = tile_x // nelts
+                alias unroll_factor = tile_x // width
                 vectorize[
-                    dot, nelts, size=tile_x, unroll_factor=unroll_factor
+                    dot, width, size=tile_x, unroll_factor=unroll_factor
                 ]()
 
         alias tile_size = 4
-        tile[calc_tile, nelts * tile_size, tile_size](t1, t2)
+        tile[calc_tile, width * tile_size, tile_size](t1, t2)
 
     parallelize[calculate_A_rows](t0, t0)
     return C
@@ -81,7 +84,7 @@ fn matmul_parallelized[
     matrices.
     """
 
-    alias nelts = max(simdwidthof[dtype](), 16)
+    alias width = max(simdwidthof[dtype](), 16)
 
     var C: NDArray[dtype] = NDArray[dtype](
         A.ndshape.load_int(0), B.ndshape.load_int(1)
@@ -95,17 +98,25 @@ fn matmul_parallelized[
         for k in range(t1):
 
             @parameter
-            fn dot[nelts: Int](n: Int):
+            fn dot[simd_width: Int](n: Int):
                 C.store(
                     m * t2 + n,
-                    val=C.load[nelts](m * t2 + n)
-                    + A.load(m * t1 + k) * B.load[nelts](k * t2 + n),
+                    val=C.load[simd_width](m * t2 + n)
+                    + A.load(m * t1 + k) * B.load[simd_width](k * t2 + n),
                 )
 
-            vectorize[dot, nelts](t2)
+            vectorize[dot, width](t2)
 
     parallelize[calculate_A_rows](t0, t0)
-    return C
+
+    var _t0 = t0
+    var _t1 = t1
+    var _t2 = t2
+    var _A = A
+    var _B = B
+    var _width = width
+
+    return C^
 
 
 fn matmul_naive[
@@ -122,4 +133,4 @@ fn matmul_naive[
             for n in range(C.ndshape.load_int(1)):
                 C.store(m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n))
 
-    return C
+    return C^

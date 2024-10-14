@@ -9,8 +9,11 @@ Cumulative reduction statistics functions for NDArrays
 
 import math
 from algorithm import vectorize
+from sys import simdwidthof
+from collections.optional import Optional
+
 from ...core.ndarray import NDArray, NDArrayShape
-from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.utility import is_inttype, is_floattype
 from ...core.sort import binary_sort
 
 """
@@ -41,14 +44,14 @@ fn cumsum[
         The sum of all items in the array as a SIMD Value of `dtype`.
     """
     var result = Scalar[dtype]()
-    alias opt_nelts: Int = simdwidthof[dtype]()
+    alias width: Int = simdwidthof[dtype]()
 
     @parameter
     fn vectorize_sum[simd_width: Int](idx: Int) -> None:
         var simd_data = array.load[width=simd_width](idx)
         result += simd_data.reduce_add()
 
-    vectorize[vectorize_sum, opt_nelts](array.num_elements())
+    vectorize[vectorize_sum, width](array.num_elements())
     return result
 
 
@@ -68,14 +71,14 @@ fn cumprod[
     """
 
     var result: SIMD[dtype, 1] = SIMD[dtype, 1](1.0)
-    alias opt_nelts = simdwidthof[dtype]()
+    alias width = simdwidthof[dtype]()
 
     @parameter
     fn vectorize_sum[simd_width: Int](idx: Int) -> None:
         var simd_data = array.load[width=simd_width](idx)
         result *= simd_data.reduce_mul()
 
-    vectorize[vectorize_sum, opt_nelts](array.num_elements())
+    vectorize[vectorize_sum, width](array.num_elements())
     return result
 
 
@@ -99,12 +102,6 @@ fn cummean[
     Returns:
         The mean of all of the member values of array as a SIMD Value of `dtype`.
     """
-    # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[dtype]() and is_inttype[dtype]():
-        raise Error(
-            "Input and output cannot be `Int` datatype as it may lead to"
-            " precision errors"
-        )
     return cumsum[dtype](array) / (array.num_elements())
 
 
@@ -181,28 +178,28 @@ fn maxT[
         The maximum of all of the member values of array as a SIMD Value of `dtype`.
     """
     # TODO: Test this
-    alias opt_nelts = simdwidthof[dtype]()
-    var max_value = NDArray[dtype](NDArrayShape(opt_nelts))
-    for i in range(opt_nelts):
-        max_value[i] = array[0]
-    # var max_value: SIMD[ dtype, opt_nelts] = SIMD[ dtype, opt_nelts](array[0])
+    alias width = simdwidthof[dtype]()
+    var max_value = NDArray[dtype](NDArrayShape(width))
+    for i in range(width):
+        max_value.__setitem__(i, array[0])
+    # var max_value: SIMD[ dtype, width] = SIMD[ dtype, width](array[0])
 
     @parameter
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
         max_value.store[width=simd_width](
             0,
-            SIMD.max(
+            max(
                 max_value.load[width=simd_width](0),
                 array.load[width=simd_width](idx),
             ),
         )
 
-    vectorize[vectorized_max, opt_nelts](array.num_elements())
+    vectorize[vectorized_max, width](array.num_elements())
 
-    var result: Scalar[dtype] = Scalar[dtype](max_value.get_scalar(0))
+    var result: Scalar[dtype] = Scalar[dtype](max_value.get(0))
     for i in range(max_value.__len__()):
-        if max_value.get_scalar(i) > result:
-            result = max_value.get_scalar(i)
+        if max_value.get(i) > result:
+            result = max_value.get(i)
     return result
 
 
@@ -221,27 +218,27 @@ fn minT[
     Returns:
         The minimum of all of the member values of array as a SIMD Value of `dtype`.
     """
-    alias opt_nelts = simdwidthof[dtype]()
-    var min_value = NDArray[dtype](NDArrayShape(opt_nelts))
-    for i in range(opt_nelts):
-        min_value[i] = array[0]
+    alias width = simdwidthof[dtype]()
+    var min_value = NDArray[dtype](NDArrayShape(width))
+    for i in range(width):
+        min_value.__setitem__(i, array[0])
 
     @parameter
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
         min_value.store[width=simd_width](
             0,
-            SIMD.min(
+            min(
                 min_value.load[width=simd_width](0),
                 array.load[width=simd_width](idx),
             ),
         )
 
-    vectorize[vectorized_min, opt_nelts](array.num_elements())
+    vectorize[vectorized_min, width](array.num_elements())
 
-    var result: Scalar[dtype] = Scalar[dtype](min_value.get_scalar(0))
+    var result: Scalar[dtype] = Scalar[dtype](min_value.get(0))
     for i in range(min_value.__len__()):
-        if min_value.get_scalar(i) < result:
-            result = min_value.get_scalar(i)
+        if min_value.get(i) < result:
+            result = min_value.get(i)
 
     return result
 
@@ -263,25 +260,18 @@ fn cumpvariance[
     Returns:
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
-    # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[dtype]() and is_inttype[dtype]():
-        raise Error(
-            "Input and output cannot be `Int` datatype as it may lead to"
-            " precision errors"
-        )
-
     var mean_value: Scalar[dtype]
     if not mu:
         mean_value = cummean[dtype](array)
     else:
-        mean_value = mu.value()[]
+        mean_value = mu.value()
 
     var result = Scalar[dtype]()
 
     for i in range(array.num_elements()):
-        result += (array.get_scalar(i) - mean_value) ** 2
+        result += (array.get(i) - mean_value) ** 2
 
-    return result / (array.num_elements())
+    return math.sqrt(result / (array.num_elements()))
 
 
 fn cumvariance[
@@ -302,24 +292,18 @@ fn cumvariance[
     Returns:
         The variance of all of the member values of array as a SIMD Value of `dtype`.
     """
-    # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[dtype]() and is_inttype[dtype]():
-        raise Error(
-            "Input and output cannot be `Int` datatype as it may lead to"
-            " precision errors"
-        )
     var mean_value: Scalar[dtype]
 
     if not mu:
         mean_value = cummean[dtype](array)
     else:
-        mean_value = mu.value()[]
+        mean_value = mu.value()
 
     var result = Scalar[dtype]()
     for i in range(array.num_elements()):
-        result += (array.get_scalar(i) - mean_value) ** 2
+        result += (array.get(i) - mean_value) ** 2
 
-    return result / (array.num_elements() - 1)
+    return math.sqrt(result / (array.num_elements() - 1))
 
 
 fn cumpstdev[
@@ -340,12 +324,6 @@ fn cumpstdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
-    # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[dtype]() and is_inttype[dtype]():
-        raise Error(
-            "Input and output cannot be `Int` datatype as it may lead to"
-            " precision errors"
-        )
     return math.sqrt(cumpvariance[dtype](array, mu))
 
 
@@ -366,12 +344,6 @@ fn cumstdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
-    # constrained[is_inttype[ dtype]() and is_inttype[dtype](), "Input and output both cannot be `Integer` datatype as it may lead to precision errors"]()
-    if is_inttype[dtype]() and is_inttype[dtype]():
-        raise Error(
-            "Input and output cannot be `Int` datatype as it may lead to"
-            " precision errors"
-        )
     return math.sqrt(cumvariance[dtype](array, mu))
 
 
@@ -426,7 +398,7 @@ fn mimimum[
     Returns:
         The minimum of the two SIMD Values as a SIMD Value of `dtype`.
     """
-    return SIMD.min(s1, s2)
+    return min(s1, s2)
 
 
 fn maximum[
@@ -444,7 +416,7 @@ fn maximum[
     Returns:
         The maximum of the two SIMD Values as a SIMD Value of `dtype`.
     """
-    return SIMD.max(s1, s2)
+    return max(s1, s2)
 
 
 fn minimum[
@@ -464,7 +436,7 @@ fn minimum[
     """
     var result: NDArray[dtype] = NDArray[dtype](array1.shape())
 
-    alias nelts = simdwidthof[dtype]()
+    alias width = simdwidthof[dtype]()
     if array1.shape() != array2.shape():
         raise Error("array shapes are not the same")
 
@@ -472,13 +444,13 @@ fn minimum[
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
         result.store[width=simd_width](
             idx,
-            SIMD.min(
+            min(
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
             ),
         )
 
-    vectorize[vectorized_min, nelts](array1.num_elements())
+    vectorize[vectorized_min, width](array1.num_elements())
     return result
 
 
@@ -499,7 +471,7 @@ fn maximum[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](array1.shape())
-    alias nelts = simdwidthof[dtype]()
+    alias width = simdwidthof[dtype]()
     if array1.shape() != array2.shape():
         raise Error("array shapes are not the same")
 
@@ -507,13 +479,13 @@ fn maximum[
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
         result.store[width=simd_width](
             idx,
-            SIMD.max(
+            max(
                 array1.load[width=simd_width](idx),
                 array2.load[width=simd_width](idx),
             ),
         )
 
-    vectorize[vectorized_max, nelts](array1.num_elements())
+    vectorize[vectorized_max, width](array1.num_elements())
     return result
 
 
@@ -534,10 +506,10 @@ fn argmax[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var max_val: Scalar[dtype] = array.get_scalar(0)
+    var max_val: Scalar[dtype] = array.get(0)
     for i in range(1, array.num_elements()):
-        if array.get_scalar(i) > max_val:
-            max_val = array.get_scalar(i)
+        if array.get(i) > max_val:
+            max_val = array.get(i)
             idx = i
     return idx
 
@@ -557,10 +529,10 @@ fn argmin[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var min_val: Scalar[dtype] = array.get_scalar(0)
+    var min_val: Scalar[dtype] = array.get(0)
 
     for i in range(1, array.num_elements()):
-        if array.get_scalar(i) < min_val:
-            min_val = array.get_scalar(i)
+        if array.get(i) < min_val:
+            min_val = array.get(i)
             idx = i
     return idx

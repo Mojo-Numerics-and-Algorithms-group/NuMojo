@@ -9,7 +9,15 @@
 *.py
 mojo
 numojo.mojopkg
-.gitignore
 bench.mojo
 test_ndarray.ipynb
-/venv
+/venv# pixi environments
+.pixi
+*.egg-info
+*.pyc
+
+# magic environments
+.magic
+
+.gitattributes
+.gitignore

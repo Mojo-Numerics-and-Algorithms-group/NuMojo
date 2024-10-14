@@ -8,10 +8,13 @@ Implements array arithmetic
 
 
 import math
-import . math_funcs as _mf
-from ..core.ndarray import NDArray, NDArrayShape
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+from utils import Variant
+
+import . math_funcs as _mf
+from ..core.ndarray import NDArray, NDArrayShape
+from ..core.utility import is_inttype, is_floattype, is_booltype
 
 
 # ===------------------------------------------------------------------------===#
@@ -218,7 +221,7 @@ fn diff[
         NDArrayShape(array.num_elements())
     )
     for i in range(array.num_elements()):
-        array1.store(i, array.get_scalar(i))
+        array1.store(i, array.get(i))
 
     for num in range(n):
         var result: NDArray[dtype] = NDArray[dtype](
@@ -723,6 +726,22 @@ fn cbrt[
 #     return backend().math_func_simd_int[dtype, math.pow](array1, intval)
 
 
+fn _mt_rsqrt[
+    dtype: DType, simd_width: Int
+](value: SIMD[dtype, simd_width]) -> SIMD[dtype, simd_width]:
+    """
+    Elementwise reciprocal squareroot of SIMD.
+    Parameters:
+        dtype: The element type.
+        simd_width: The SIMD width.
+    Args:
+        value: A SIMD vector.
+    Returns:
+        A SIMD equal to 1/SIMD**(1/2).
+    """
+    return math.sqrt(SIMD.__truediv__(1, value))
+
+
 fn rsqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -739,9 +758,7 @@ fn rsqrt[
     Returns:
         A NDArray equal to 1/NDArray**(1/2).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.rsqrt](
-        array
-    )
+    return backend().math_func_1_array_in_one_array_out[dtype, _mt_rsqrt](array)
 
 
 fn sqrt[
@@ -1163,7 +1180,7 @@ fn invert[
         A NDArray equal to the bitwise inversion of array.
     """
     constrained[
-        dtype.is_integral() or dtype.is_integral(),
+        is_inttype[dtype]() or is_booltype[dtype](),
         "Only Bools and integral types can be invertedd.",
     ]()
 

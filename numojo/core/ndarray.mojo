@@ -3,20 +3,16 @@ Implements N-Dimensional Array
 """
 # ===----------------------------------------------------------------------=== #
 # Implements ROW MAJOR N-DIMENSIONAL ARRAYS
-# Last updated: 2024-07-14
+# Last updated: 2024-10-14
 # ===----------------------------------------------------------------------=== #
 
 
 """
 # TODO
-1) Add NDArray, NDArrayShape constructor overload for List, VariadicList types etc to cover more cases
-3) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
-4) Vectorize row(), col() to retrieve rows and columns for 2D arrays
-5) Add __getitem__() overload for (Slice, Int)
-7) Add vectorization for _get_index
-8) Write more explanatory Error("") statements
-9) Vectorize the for loops inside getitem or move these checks to compile time to try and remove the overhead from constantly checking
-10) Add List[Int] and Variadic[Int] Shape args for __init__ to make it more flexible
+1) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
+2) Add vectorization for _get_index
+3) Write more explanatory Error("") statements
+4) Create NDArrayView and remove coefficients.
 """
 
 from builtin.type_aliases import AnyLifetime
@@ -25,6 +21,12 @@ from builtin.math import pow
 from builtin.bool import all as allb
 from builtin.bool import any as anyb
 from algorithm import parallelize, vectorize
+from python import Python, PythonObject
+from sys import simdwidthof
+from collections.optional import Optional
+from utils import Variant
+from memory import memset_zero, memcpy
+
 
 import . _array_funcs as _af
 from ..math.statistics.stats import mean, prod, sum
@@ -40,521 +42,26 @@ import .. math as math
 from ..traits import Backend
 from ..math.check import any, all
 from ..math.arithmetic import abs
-from .ndarray_utils import (
+from .utility import (
     _get_index,
     _traverse_iterative,
+    _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
+    fill_pointer,
+    is_inttype,
+    is_booltype,
 )
 from ..math.math_funcs import Vectorized
-from .utility_funcs import is_inttype
 from ..math.linalg.matmul import matmul_parallelized
 from .array_manipulation_routines import reshape
+from .ndshape import NDArrayShape
+from .ndstride import NDArrayStride
 
 
-@register_passable("trivial")
-struct NDArrayShape[dtype: DType = DType.int32](Stringable):
-    """Implements the NDArrayShape."""
-
-    # Fields
-    var ndsize: Int
-    """Total no of elements in the corresponding array."""
-    var ndshape: DTypePointer[dtype]
-    """Shape of the corresponding array."""
-    var ndlen: Int
-    """Length of ndshape."""
-
-    @always_inline("nodebug")
-    fn __init__(inout self, *shape: Int) raises:
-        """
-        Initializes the NDArrayShape with variable shape dimensions.
-
-        Args:
-            shape: Variable number of integers representing the shape dimensions.
-        """
-        self.ndsize = 1
-        self.ndlen = len(shape)
-        self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape))
-        for i in range(len(shape)):
-            self.ndshape[i] = shape[i]
-            self.ndsize *= shape[i]
-
-    @always_inline("nodebug")
-    fn __init__(inout self, *shape: Int, size: Int) raises:
-        """
-        Initializes the NDArrayShape with variable shape dimensions and a specified size.
-
-        Args:
-            shape: Variable number of integers representing the shape dimensions.
-            size: The total number of elements in the array.
-        """
-        self.ndsize = size
-        self.ndlen = len(shape)
-        self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape))
-        var count: Int = 1
-        for i in range(len(shape)):
-            self.ndshape[i] = shape[i]
-            count *= shape[i]
-        if count != size:
-            raise Error("Cannot create NDArray: shape and size mismatch")
-
-    @always_inline("nodebug")
-    fn __init__(inout self, shape: List[Int]):
-        """
-        Initializes the NDArrayShape with a list of shape dimensions.
-
-        Args:
-            shape: A list of integers representing the shape dimensions.
-        """
-        self.ndsize = 1
-        self.ndlen = len(shape)
-        self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape))
-        for i in range(len(shape)):
-            self.ndshape[i] = shape[i]
-            self.ndsize *= shape[i]
-
-    @always_inline("nodebug")
-    fn __init__(inout self, shape: List[Int], size: Int) raises:
-        """
-        Initializes the NDArrayShape with a list of shape dimensions and a specified size.
-
-        Args:
-            shape: A list of integers representing the shape dimensions.
-            size: The specified size of the NDArrayShape.
-        """
-        self.ndsize = (
-            size  # maybe I should add a check here to make sure it matches
-        )
-        self.ndlen = len(shape)
-        self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape))
-        var count: Int = 1
-        for i in range(len(shape)):
-            self.ndshape[i] = shape[i]
-            count *= shape[i]
-        if count != size:
-            raise Error("Cannot create NDArray: shape and size mismatch")
-
-    @always_inline("nodebug")
-    fn __init__(inout self, shape: VariadicList[Int]):
-        """
-        Initializes the NDArrayShape with a list of shape dimensions.
-
-        Args:
-            shape: A list of integers representing the shape dimensions.
-        """
-        self.ndsize = 1
-        self.ndlen = len(shape)
-        self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape))
-        for i in range(len(shape)):
-            self.ndshape[i] = shape[i]
-            self.ndsize *= shape[i]
-
-    @always_inline("nodebug")
-    fn __init__(inout self, shape: VariadicList[Int], size: Int) raises:
-        """
-        Initializes the NDArrayShape with a list of shape dimensions and a specified size.
-
-        Args:
-            shape: A list of integers representing the shape dimensions.
-            size: The specified size of the NDArrayShape.
-        """
-        self.ndsize = (
-            size  # maybe I should add a check here to make sure it matches
-        )
-        self.ndlen = len(shape)
-        self.ndshape = DTypePointer[dtype].alloc(len(shape))
-        memset_zero(self.ndshape, len(shape))
-        var count: Int = 1
-        for i in range(len(shape)):
-            self.ndshape[i] = shape[i]
-            count *= shape[i]
-        if count != size:
-            raise Error("Cannot create NDArray: shape and size mismatch")
-
-    @always_inline("nodebug")
-    fn __init__(inout self, shape: NDArrayShape) raises:
-        """
-        Initializes the NDArrayShape with another NDArrayShape.
-
-        Args:
-            shape: Another NDArrayShape to initialize from.
-        """
-        self.ndsize = shape.ndsize
-        self.ndlen = shape.ndlen
-        self.ndshape = DTypePointer[dtype].alloc(shape.ndlen)
-        memset_zero(self.ndshape, shape.ndlen)
-        for i in range(shape.ndlen):
-            self.ndshape[i] = shape[i]
-
-    fn __copy__(inout self, other: Self):
-        """
-        Copy from other into self.
-        """
-        self.ndsize = other.ndsize
-        self.ndlen = other.ndlen
-        self.ndshape = DTypePointer[dtype].alloc(other.ndlen)
-        memcpy(self.ndshape, other.ndshape, other.ndlen)
-
-    @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Int:
-        """
-        Get shape at specified index.
-        """
-        if index >= self.ndlen:
-            raise Error("Index out of bound")
-        if index >= 0:
-            return self.ndshape[index].__int__()
-        else:
-            return self.ndshape[self.ndlen + index].__int__()
-
-    @always_inline("nodebug")
-    fn __setitem__(inout self, index: Int, val: Int) raises:
-        """
-        Set shape at specified index.
-        """
-        if index >= self.ndlen:
-            raise Error("Index out of bound")
-        if index >= 0:
-            self.ndshape[index] = val
-        else:
-            self.ndshape[self.ndlen + index] = val
-
-    @always_inline("nodebug")
-    fn size(self) -> Int:
-        """
-        Get Size of array described by arrayshape.
-        """
-        return self.ndsize
-
-    @always_inline("nodebug")
-    fn len(self) -> Int:
-        """
-        Get number of dimensions of the array described by arrayshape.
-        """
-        return self.ndlen
-
-    @always_inline("nodebug")
-    fn __str__(self: Self) -> String:
-        """
-        Return a string of the shape of the array described by arrayshape.
-
-        """
-        var result: String = "Shape: ["
-        for i in range(self.ndlen):
-            if i == self.ndlen - 1:
-                result += self.ndshape[i].__str__()
-            else:
-                result += self.ndshape[i].__str__() + ", "
-        return result + "]"
-
-    @always_inline("nodebug")
-    fn __eq__(self, other: Self) raises -> Bool:
-        """
-        Check if two arrayshapes have identical dimensions.
-        """
-        for i in range(self.ndlen):
-            if self[i] != other[i]:
-                return False
-        return True
-
-    @always_inline("nodebug")
-    fn __ne__(self, other: Self) raises -> Bool:
-        """
-        Check if two arrayshapes don't have identical dimensions.
-        """
-        return not self.__eq__(other)
-
-    @always_inline("nodebug")
-    fn __contains__(self, val: Int) raises -> Bool:
-        """
-        Check if any of the dimensions are equal to a value.
-        """
-        for i in range(self.ndlen):
-            if self[i] == val:
-                return True
-        return False
-
-    # can be used for vectorized index calculation
-    @always_inline("nodebug")
-    fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        """
-        SIMD load dimensional information.
-        """
-        # if index >= self.ndlen:
-        # raise Error("Index out of bound")
-        return self.ndshape.load[width=width](index)
-
-    # can be used for vectorized index retrieval
-    @always_inline("nodebug")
-    fn store[
-        width: Int = 1
-    ](inout self, index: Int, val: SIMD[dtype, width]) raises:
-        """
-        SIMD store dimensional information.
-        """
-        # if index >= self.ndlen:
-        #     raise Error("Index out of bound")
-        self.ndshape.store[width=width](index, val)
-
-    @always_inline("nodebug")
-    fn load_int(self, index: Int) -> Int:
-        """
-        SIMD load dimensional information.
-        """
-        return self.ndshape.load[width=1](index).__int__()
-
-    @always_inline("nodebug")
-    fn store_int(inout self, index: Int, val: Int):
-        """
-        SIMD store dimensional information.
-        """
-        self.ndshape.store[width=1](index, val)
-
-
-@register_passable("trivial")
-struct NDArrayStride[dtype: DType = DType.int32](Stringable):
-    """Implements the NDArrayStride."""
-
-    # Fields
-    var ndoffset: Int
-    var ndstride: DTypePointer[dtype]
-    var ndlen: Int
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self, *stride: Int, offset: Int = 0
-    ):  # maybe we should add checks for offset?
-        self.ndoffset = offset
-        self.ndlen = stride.__len__()
-        self.ndstride = DTypePointer[dtype].alloc(stride.__len__())
-        for i in range(stride.__len__()):
-            self.ndstride[i] = stride[i]
-
-    @always_inline("nodebug")
-    fn __init__(inout self, stride: List[Int], offset: Int = 0):
-        self.ndoffset = offset
-        self.ndlen = stride.__len__()
-        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride[i]
-
-    @always_inline("nodebug")
-    fn __init__(inout self, stride: VariadicList[Int], offset: Int = 0):
-        self.ndoffset = offset
-        self.ndlen = stride.__len__()
-        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride[i]
-
-    @always_inline("nodebug")
-    fn __init__(inout self, stride: NDArrayStride):
-        self.ndoffset = stride.ndoffset
-        self.ndlen = stride.ndlen
-        self.ndstride = DTypePointer[dtype].alloc(stride.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride.ndstride[i]
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self, stride: NDArrayStride, offset: Int = 0
-    ):  # separated two methods to remove if condition
-        self.ndoffset = offset
-        self.ndlen = stride.ndlen
-        self.ndstride = DTypePointer[dtype].alloc(stride.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride.ndstride[i]
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self, *shape: Int, offset: Int = 0, order: String = "C"
-    ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.__len__()
-        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
-        if order == "C":
-            for i in range(self.ndlen):
-                var temp: Int = 1
-                for j in range(i + 1, self.ndlen):
-                    temp = temp * shape[j]
-                self.ndstride[i] = temp
-        elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
-        else:
-            raise Error(
-                "Invalid order: Only C style row major `C` & Fortran style"
-                " column major `F` are supported"
-            )
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self, shape: List[Int], offset: Int = 0, order: String = "C"
-    ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.__len__()
-        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
-        if order == "C":
-            for i in range(self.ndlen):
-                var temp: Int = 1
-                for j in range(i + 1, self.ndlen):
-                    temp = temp * shape[j]
-                self.ndstride[i] = temp
-        elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
-        else:
-            raise Error(
-                "Invalid order: Only C style row major `C` & Fortran style"
-                " column major `F` are supported"
-            )
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: VariadicList[Int],
-        offset: Int = 0,
-        order: String = "C",
-    ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.__len__()
-        self.ndstride = DTypePointer[dtype].alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
-        if order == "C":
-            for i in range(self.ndlen):
-                var temp: Int = 1
-                for j in range(i + 1, self.ndlen):
-                    temp = temp * shape[j]
-                self.ndstride[i] = temp
-        elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
-        else:
-            raise Error(
-                "Invalid order: Only C style row major `C` & Fortran style"
-                " column major `F` are supported"
-            )
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        owned shape: NDArrayShape,
-        offset: Int = 0,
-        order: String = "C",
-    ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.ndlen
-        self.ndstride = DTypePointer[dtype].alloc(shape.ndlen)
-        memset_zero(self.ndstride, shape.ndlen)
-        if order == "C":
-            if shape.ndlen == 1:
-                self.ndstride[0] = 1
-            else:
-                for i in range(shape.ndlen):
-                    var temp: Int = 1
-                    for j in range(i + 1, shape.ndlen):
-                        temp = temp * shape[j]
-                    self.ndstride[i] = temp
-        elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
-        else:
-            raise Error(
-                "Invalid order: Only C style row major `C` & Fortran style"
-                " column major `F` are supported"
-            )
-
-    fn __copy__(inout self, other: Self):
-        self.ndoffset = other.ndoffset
-        self.ndlen = other.ndlen
-        self.ndstride = DTypePointer[dtype].alloc(other.ndlen)
-        memcpy(self.ndstride, other.ndstride, other.ndlen)
-
-    @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Int:
-        if index >= self.ndlen:
-            raise Error("Index out of bound")
-        if index >= 0:
-            return self.ndstride[index].__int__()
-        else:
-            return self.ndstride[self.ndlen + index].__int__()
-
-    @always_inline("nodebug")
-    fn __setitem__(inout self, index: Int, val: Int) raises:
-        if index >= self.ndlen:
-            raise Error("Index out of bound")
-        if index >= 0:
-            self.ndstride[index] = val
-        else:
-            self.ndstride[self.ndlen + index] = val
-
-    @always_inline("nodebug")
-    fn len(self) -> Int:
-        return self.ndlen
-
-    @always_inline("nodebug")
-    fn __str__(self: Self) -> String:
-        var result: String = "Stride: ["
-        for i in range(self.ndlen):
-            if i == self.ndlen - 1:
-                result += self.ndstride[i].__str__()
-            else:
-                result += self.ndstride[i].__str__() + ", "
-        return result + "]"
-
-    @always_inline("nodebug")
-    fn __eq__(self, other: Self) raises -> Bool:
-        for i in range(self.ndlen):
-            if self[i] != other[i]:
-                return False
-        return True
-
-    @always_inline("nodebug")
-    fn __ne__(self, other: Self) raises -> Bool:
-        return not self.__eq__(other)
-
-    @always_inline("nodebug")
-    fn __contains__(self, val: Int) raises -> Bool:
-        for i in range(self.ndlen):
-            if self[i] == val:
-                return True
-        return False
-
-    @always_inline("nodebug")
-    fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        # if index >= self.ndlen:
-        #     raise Error("Index out of bound")
-        return self.ndstride.load[width=width](index)
-
-    @always_inline("nodebug")
-    fn store[
-        width: Int = 1
-    ](inout self, index: Int, val: SIMD[dtype, width]) raises:
-        # if index >= self.ndlen:
-        #     raise Error("Index out of bound")
-        self.ndstride.store[width=width](index, val)
-
-    @always_inline("nodebug")
-    fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
-        return self.ndstride.load[width=width](index).__int__()
-
-    @always_inline("nodebug")
-    fn store_unsafe[
-        width: Int = 1
-    ](inout self, index: Int, val: SIMD[dtype, width]):
-        self.ndstride.store[width=width](index, val)
+# ===----------------------------------------------------------------------===#
+# NDArrayIterator
+# ===----------------------------------------------------------------------===#
 
 
 @value
@@ -614,7 +121,7 @@ struct _NDArrayIter[
 
 
 struct NDArray[dtype: DType = DType.float64](
-    Stringable, Representable, CollectionElement, Sized
+    Stringable, Representable, CollectionElement, Sized, Formattable
 ):
     """The N-dimensional array (NDArray).
 
@@ -630,7 +137,7 @@ struct NDArray[dtype: DType = DType.float64](
         6. The order of the array: Row vs Columns major
     """
 
-    var data: DTypePointer[dtype]
+    var data: UnsafePointer[Scalar[dtype]]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
     """Number of Dimensions."""
@@ -639,13 +146,13 @@ struct NDArray[dtype: DType = DType.float64](
     var stride: NDArrayStride
     """Contains offset, strides."""
     var coefficient: NDArrayStride
-    """Contains offset, coefficient."""
+    """Contains offset, coefficients for slicing."""
     var datatype: DType
     """The datatype of memory."""
     var order: String
     "Memory layout of array C (C order row major) or F (Fortran order col major)."
 
-    alias simd_width: Int = simdwidthof[dtype]()  #
+    alias width: Int = simdwidthof[dtype]()  #
     """Vector size of the data type."""
 
     # ===-------------------------------------------------------------------===#
@@ -655,98 +162,9 @@ struct NDArray[dtype: DType = DType.float64](
     # default constructor
     @always_inline("nodebug")
     fn __init__(
-        inout self, *shape: Int, random: Bool = False, order: String = "C"
-    ) raises:
-        """
-        NDArray initialization for variadic shape.
-
-        Args:
-            shape: Variadic shape.
-            random: Set the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.int8](3,2,4)
-            Returns an zero array with shape 3 x 2 x 4.
-        """
-        self.ndim = shape.__len__()
-        # I cannot name self.ndshape as self.shape as lsp gives unrecognized variable error
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        # I gotta make coefficients empty, but let's just keep it like for now
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.datatype = dtype
-        self.order = order
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: List[Int],
-        random: Bool = False,
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for list shape.
-
-        Args:
-            shape: List of shape.
-            random: Set the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
-        """
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        self.datatype = dtype
-        self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: VariadicList[Int],
-        random: Bool = False,
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for variadic shape.
-
-        Args:
-            shape: Variadic List shape.
-            random: Set the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
-        """
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        self.datatype = dtype
-        self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
         inout self,
         *shape: Int,
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -758,25 +176,27 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](3, 2, 4, fill=Scalar[f16](10))
+            ```
         """
+
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: List[Int],
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -788,25 +208,27 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](3, 2, 4, fill=Scalar[f16](10))
+            ```
         """
+
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: VariadicList[Int],
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -818,55 +240,27 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
+            ```
         """
+
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
         inout self,
         shape: NDArrayShape,
-        random: Bool = False,
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for NDArrayShape.
-
-        Args:
-            shape: Variadic shape.
-            random: Set all the values randomly.
-            order: Memory order C or F.
-
-        Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
-        """
-        self.ndim = shape.ndlen
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, order=order)
-        self.coefficient = NDArrayStride(shape, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        self.datatype = dtype
-        self.order = order
-        if random:
-            rand[dtype](self.data, self.ndshape.ndsize)
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: NDArrayShape,
-        fill: Scalar[dtype],
+        fill: Optional[Scalar[dtype]] = None,
         order: String = "C",
     ) raises:
         """
@@ -878,19 +272,21 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](NDArrayShape(2, 3, 4), fill=Scalar[f16](10))
+            ```
         """
+
         self.ndim = shape.ndlen
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, order=order)
         self.coefficient = NDArrayStride(shape, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = fill
+        if fill is not None:
+            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
 
     fn __init__(
         inout self,
@@ -907,219 +303,54 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            `NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))`
-            Returns an array with shape 3 x 2 with input values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+            ```
         """
 
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
-        memset_zero(self.data, self.ndshape.ndsize)
         for i in range(self.ndshape.ndsize):
             self.data[i] = data[i]
 
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        *shape: Int,
-        min: Scalar[dtype],
-        max: Scalar[dtype],
-        order: String = "C",
-    ) raises:
+    fn __init__(inout self, data: PythonObject, order: String = "C") raises:
         """
-        NDArray initialization for variadic shape with random values between min and max.
+        NDArray initialization from Numpy arrays.
 
         Args:
-            shape: Variadic shape.
-            min: Minimum value for the NDArray.
-            max: Maximum value for the NDArray.
+            data: Numpy array.
             order: Memory order C or F.
 
         Example:
             ```mojo
             import numojo as nm
-            fn main() raises:
-                var A = nm.NDArray[DType.float16](2, 2, min=0.0, max=10.0)
-                print(A)
-            ```
-            A is an array with shape 2 x 2 and randomly values between 0 and 10.
-            The output goes as follows.
-
-            ```console
-            [[	6.046875	6.98046875	]
-             [	6.6484375	1.736328125	]]
-            2-D array  Shape: [2, 2]  DType: float16
+            var np = Python.import_module("numpy")
+            var np_arr = np.array([1, 2, 3, 4])
+            nm.array[f16](data=np_arr, order="C")
             ```
         """
+        var len = int(len(data.shape))
+        var shape: List[Int] = List[Int]()
+        for i in range(len):
+            if int(data.shape[i]) == 1:
+                continue
+            shape.append(int(data.shape[i]))
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.datatype = dtype
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
+        memset_zero(self.data, self.ndshape.ndsize)
         self.order = order
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        if dtype.is_floating_point():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i,
-                    random_float64(
-                        min.cast[DType.float64](), max.cast[DType.float64]()
-                    ).cast[dtype](),
-                )
-        elif dtype.is_integral():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i, random_si64(int(min), int(max)).cast[dtype]()
-                )
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: List[Int],
-        min: Scalar[dtype],
-        max: Scalar[dtype],
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for list shape with random values between min and max.
-
-        Args:
-            shape: List of shape.
-            min: Minimum value for the NDArray.
-            max: Maximum value for the NDArray.
-            order: Memory order C or F.
-
-        Example:
-            ```mojo
-            import numojo as nm
-            fn main() raises:
-                var A = nm.NDArray[DType.float16](List[Int](2, 2), min=0.0, max=10.0)
-                print(A)
-            ```
-            A is an array with shape 2 x 2 and randomly values between 0 and 10.
-            The output goes as follows.
-
-            ```console
-            [[	6.046875	6.98046875	]
-             [	6.6484375	1.736328125	]]
-            2-D array  Shape: [2, 2]  DType: float16
-            ```
-        """
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
         self.datatype = dtype
-        self.order = order
-        self.data = DTypePointer[dtype].alloc(self.ndshape.ndsize)
-        if dtype.is_floating_point():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i,
-                    random_float64(
-                        min.cast[DType.float64](), max.cast[DType.float64]()
-                    ).cast[dtype](),
-                )
-        elif dtype.is_integral():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i, random_si64(int(min), int(max)).cast[dtype]()
-                )
-
-    fn __init__(
-        inout self,
-        text: String,
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization from string representation of an ndarray.
-        The shape can be inferred from the string representation.
-        The literals will be casted to the dtype of the NDArray.
-
-        Note:
-        StringLiteral is also allowed as input as it is coerced to String type
-        before it is passed into the function.
-
-        Example:
-        ```mojo
-        import numojo as nm
-
-        fn main() raises:
-            var A = nm.NDArray[DType.int8]("[[[1,2],[3,4]],[[5,6],[7,8]]]")
-            var B = nm.NDArray[DType.float16]("[[1,2,3,4],[5,6,7,8]]")
-            var C = nm.NDArray[DType.float32]("[0.1, -2.3, 41.5, 19.29145, -199]")
-            var D = nm.NDArray[DType.int32]("[0.1, -2.3, 41.5, 19.29145, -199]")
-
-            print(A)
-            print(B)
-            print(C)
-            print(D)
-        ```
-
-        The output goes as follows. Note that the numbers are automatically
-        casted to the dtype of the NDArray.
-
-        ```console
-        [[[     1       2       ]
-          [     3       4       ]]
-         [[     5       6       ]
-          [     7       8       ]]]
-        3-D array  Shape: [2, 2, 2]  DType: int8
-
-        [[      1.0     2.0     3.0     4.0     ]
-         [      5.0     6.0     7.0     8.0     ]]
-        2-D array  Shape: [2, 4]  DType: float16
-
-        [       0.10000000149011612     2.2999999523162842      41.5    19.291450500488281      199.0   ]
-        1-D array  Shape: [5]  DType: float32
-
-        [       0       2       41      19      199     ]
-        1-D array  Shape: [5]  DType: int32
-        ```
-
-        Args:
-            text: String representation of an ndarray.
-            order: Memory order C or F.
-        """
-
-        var data = List[Scalar[dtype]]()
-        """Inferred data buffer of the array"""
-        var shape = List[Int]()
-        """Inferred shape of the array"""
-        var bytes = text.as_bytes()
-        var ndim = 0
-        """Inferred number_as_str of dimensions."""
-        var level = 0
-        """Current level of the array."""
-        var number_as_str: String = ""
-        for i in range(len(bytes)):
-            var b = bytes[i]
-            if chr(int(b)) == "[":
-                level += 1
-                ndim = max(ndim, level)
-                if len(shape) < ndim:
-                    shape.append(0)
-                shape[level - 1] = 0
-
-            if isdigit(b) or chr(int(b)) == ".":
-                number_as_str = number_as_str + chr(int(b))
-            if (chr(int(b)) == ",") or (chr(int(b)) == "]"):
-                if number_as_str != "":
-                    var number = atof(number_as_str).cast[dtype]()
-                    data.append(number)  # Add the number to the data buffer
-                    number_as_str = ""  # Clean the number cache
-                    shape[-1] = shape[-1] + 1
-            if chr(int(b)) == "]":
-                level = level - 1
-                if level < 0:
-                    raise ("Unmatched left and right brackets!")
-                if level > 0:
-                    shape[level - 1] = shape[level - 1] + 1
-        self.__init__(data=data, shape=shape, order=order)
+        for i in range(self.ndshape.ndsize):
+            self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
     # Why do  these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
@@ -1142,13 +373,13 @@ struct NDArray[dtype: DType = DType.float64](
         self.coefficient = NDArrayStride(stride=coefficient, offset=offset)
         self.datatype = dtype
         self.order = order
-        self.data = DTypePointer[dtype].alloc(size)
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(size)
         memset_zero(self.data, size)
 
     # for creating views
     fn __init__(
         inout self,
-        data: DTypePointer[dtype],
+        data: UnsafePointer[Scalar[dtype]],
         ndim: Int,
         offset: Int,
         shape: List[Int],
@@ -1180,7 +411,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.coefficient = other.coefficient
         self.datatype = other.datatype
         self.order = other.order
-        self.data = DTypePointer[dtype].alloc(other.ndshape.size())
+        self.data = UnsafePointer[Scalar[dtype]]().alloc(other.ndshape.size())
         memcpy(self.data, other.data, other.ndshape.size())
 
     @always_inline("nodebug")
@@ -1201,83 +432,390 @@ struct NDArray[dtype: DType = DType.float64](
         self.data.free()
 
     # ===-------------------------------------------------------------------===#
-    # Set and get dunders
+    # Setter dunders
     # ===-------------------------------------------------------------------===#
 
-    @always_inline("nodebug")
-    fn __setitem__(inout self, index: Int, val: SIMD[dtype, 1]) raises:
-        """
-        Set the value of a single index.
-        """
-        if index >= self.ndshape.ndsize:
-            raise Error("Invalid index: index out of bound")
-        if index >= 0:
-            self.data.store[width=1](index, val)
-        else:
-            self.data.store[width=1](index + self.ndshape.ndsize, val)
-
-    @always_inline("nodebug")
-    fn __setitem__(inout self, *index: Int, val: SIMD[dtype, 1]) raises:
-        """
-        Set the value at the index list.
-        """
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
-        self.data.store[width=1](idx, val)
-
-    @always_inline("nodebug")
-    fn __setitem__(
-        inout self,
-        index: List[Int],
-        val: SIMD[dtype, 1],
-    ) raises:
-        """
-        Set the value at the index list.
-        """
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
-        self.data.store[width=1](idx, val)
-
-    @always_inline("nodebug")
-    fn __setitem__(
-        inout self,
-        index: VariadicList[Int],
-        val: SIMD[dtype, 1],
-    ) raises:
-        """
-        Set the value at the index corisponding to the varaidic list.
-        """
-        if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
-        for i in range(index.__len__()):
-            if index[i] >= self.ndshape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
-        var idx: Int = _get_index(index, self.coefficient)
-        self.data.store[width=1](idx, val)
-
-    fn get_scalar(self, index: Int) raises -> SIMD[dtype, 1]:
+    fn set(self, index: Int, val: SIMD[dtype, 1]) raises:
         """
         Linearly retreive a value from the underlying Pointer.
 
         Example:
         ```console
-        > Array.get_scalar(15)
+        > Array.get(15)
         ```
         returns the item of index 15 from the array's data buffer.
 
-        Not that it is different from `item()` as `get_scalar` does not checked
+        Not that it is different from `item()` as `get` does not checked
         against C-order or F-order.
         ```console
         > # A is a 3x3 matrix, F-order (column-major)
-        > A.get_scalar(3)  # Row 0, Col 1
+        > A.get(3)  # Row 0, Col 1
+        > A.item(3)  # Row 1, Col 0
+        ```
+        """
+        if index >= self.ndshape.ndsize:
+            raise Error("Invalid index: index out of bound")
+        if index >= 0:
+            return self.data.store[width=1](index, val)
+        else:
+            return self.data.store[width=1](index + self.ndshape.ndsize, val)
+
+    # TODO: add support for different dtypes
+    fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
+        """
+        Set a slice of array with given array.
+
+        Example:
+            `arr[1]` returns the second row of the array.
+        """
+        if self.ndim == 0 and val.ndim == 0:
+            self.data.store[width=1](0, val.data.load[width=1](0))
+
+        var slice_list = List[Slice]()
+        slice_list.append(Slice(idx, idx + 1))
+        if self.ndim > 1:
+            for i in range(1, self.ndim):
+                var size_at_dim: Int = self.ndshape[i]
+                slice_list.append(Slice(0, size_at_dim))
+
+        # self.__setitem__(slice_list=slice_list, val=val)
+        var n_slices: Int = len(slice_list)
+        var ndims: Int = 0
+        var count: Int = 0
+        var spec: List[Int] = List[Int]()
+        for i in range(n_slices):
+            self._adjust_slice_(slice_list[i], self.ndshape[i])
+            if (
+                slice_list[i].start.value() >= self.ndshape[i]
+                or slice_list[i].end.value() > self.ndshape[i]
+            ):
+                raise Error("Error: Slice value exceeds the array shape")
+            var slice_len: Int = (
+                (slice_list[i].end.value() - slice_list[i].start.value())
+                / slice_list[i].step
+            ).__int__()
+            spec.append(slice_len)
+            if slice_len != 1:
+                ndims += 1
+            else:
+                count += 1
+        if count == slice_list.__len__():
+            ndims = 1
+
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+
+        var j: Int = 0
+        count = 0
+        for _ in range(ndims):
+            while spec[j] == 1:
+                count += 1
+                j += 1
+            if j >= self.ndim:
+                break
+            var slice_len: Int = (
+                (slice_list[j].end.value() - slice_list[j].start.value())
+                / slice_list[j].step
+            ).__int__()
+            nshape.append(slice_len)
+            nnum_elements *= slice_len
+            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            j += 1
+
+        # We can remove this check after we have support for broadcasting
+        for i in range(ndims):
+            if nshape[i] != val.ndshape[i]:
+                raise Error(
+                    "Error: Shape mismatch, Cannot set the array values with"
+                    " given array"
+                )
+
+        var noffset: Int = 0
+        if self.order == "C":
+            noffset = 0
+            for i in range(ndims):
+                var temp_stride: Int = 1
+                for j in range(i + 1, ndims):  # temp
+                    temp_stride *= nshape[j]
+                nstrides.append(temp_stride)
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+        elif self.order == "F":
+            noffset = 0
+            nstrides.append(1)
+            for i in range(0, ndims - 1):
+                nstrides.append(nstrides[i] * nshape[i])
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+
+        var index = List[Int]()
+        for _ in range(ndims):
+            index.append(0)
+
+        _traverse_iterative_setter[dtype](
+            val, self, nshape, ncoefficients, nstrides, noffset, index
+        )
+
+    @always_inline("nodebug")
+    fn __setitem__(inout self, index: Idx, val: SIMD[dtype, 1]) raises:
+        """
+        Set the value at the index list.
+        """
+        if index.__len__() != self.ndim:
+            raise Error("Error: Length of Indices do not match the shape")
+        for i in range(index.__len__()):
+            if index[i] >= self.ndshape[i]:
+                raise Error("Error: Elements of `index` exceed the array shape")
+        var idx: Int = _get_index(index, self.coefficient)
+        self.data.store[width=1](idx, val)
+
+    # compiler doesn't accept this
+    # fn __setitem__(
+    #     inout self, mask: NDArray[DType.bool], value: Scalar[dtype]
+    # ) raises:
+    #     """
+    #     Set the value of the array at the indices where the mask is true.
+    #     """
+    #     if (
+    #         mask.ndshape != self.ndshape
+    #     ):  # this behavious could be removed potentially
+    #         raise Error("Mask and array must have the same shape")
+
+    #     for i in range(mask.ndshape.ndsize):
+    #         if mask.data.load[width=1](i):
+    #             print(value)
+    #             self.data.store[width=1](i, value)
+
+    fn __setitem__(
+        inout self, owned *slices: Slice, val: NDArray[dtype]
+    ) raises:
+        """
+        Retreive slices of an array from variadic slices.
+
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+        var slice_list: List[Slice] = List[Slice]()
+        for i in range(slices.__len__()):
+            slice_list.append(slices[i])
+        self.__setitem__(slices=slice_list, val=val)
+
+    fn __setitem__(
+        inout self, owned slices: List[Slice], val: NDArray[dtype]
+    ) raises:
+        """
+        Sets the slices of an array from list of slices and array.
+
+        Example:
+            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        """
+        print("slices: ", slices[0], slices[1], slices[2])
+        var n_slices: Int = len(slices)
+        var ndims: Int = 0
+        var count: Int = 0
+        var spec: List[Int] = List[Int]()
+        var slice_list: List[Slice] = List[Slice]()
+        for i in range(n_slices):
+            var start: Int = 0
+            var end: Int = 0
+            if slices[i].start is None and slices[i].end is None:
+                start = 0
+                end = self.ndshape[i]
+                temp = Slice(
+                    start=Optional(start),
+                    end=Optional(end),
+                    step=Optional(slices[i].step),
+                )
+                slice_list.append(temp)
+            if slices[i].start is None and slices[i].end is not None:
+                start = 0
+                temp = Slice(
+                    start=Optional(start),
+                    end=Optional(slices[i].end.value()),
+                    step=Optional(slices[i].step),
+                )
+                slice_list.append(temp)
+            if slices[i].start is not None and slices[i].end is None:
+                end = self.ndshape[i]
+                temp = Slice(
+                    start=Optional(slices[i].start.value()),
+                    end=Optional(end),
+                    step=Optional(slices[i].step),
+                )
+                slice_list.append(temp)
+            if slices[i].start is not None and slices[i].end is not None:
+                slice_list.append(slices[i])
+
+        for i in range(n_slices):
+            if (
+                slice_list[i].start.value() >= self.ndshape[i]
+                or slice_list[i].end.value() > self.ndshape[i]
+            ):
+                raise Error("Error: Slice value exceeds the array shape")
+            var slice_len: Int = (
+                (slice_list[i].end.value() - slice_list[i].start.value())
+                / slice_list[i].step
+            ).__int__()
+            spec.append(slice_len)
+            if slice_len != 1:
+                ndims += 1
+            else:
+                count += 1
+        if count == slice_list.__len__():
+            ndims = 1
+
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var nstrides: List[Int] = List[Int]()
+        var nnum_elements: Int = 1
+
+        var j: Int = 0
+        count = 0
+        for _ in range(ndims):
+            while spec[j] == 1:
+                count += 1
+                j += 1
+            if j >= self.ndim:
+                break
+            var slice_len: Int = (
+                (slice_list[j].end.value() - slice_list[j].start.value())
+                / slice_list[j].step
+            ).__int__()
+            nshape.append(slice_len)
+            nnum_elements *= slice_len
+            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            j += 1
+
+        # We can remove this check after we have support for broadcasting
+        for i in range(ndims):
+            if nshape[i] != val.ndshape[i]:
+                raise Error(
+                    "Error: Shape mismatch, Cannot set the array values with"
+                    " given array"
+                )
+
+        var noffset: Int = 0
+        if self.order == "C":
+            noffset = 0
+            for i in range(ndims):
+                var temp_stride: Int = 1
+                for j in range(i + 1, ndims):  # temp
+                    temp_stride *= nshape[j]
+                nstrides.append(temp_stride)
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+        elif self.order == "F":
+            noffset = 0
+            nstrides.append(1)
+            for i in range(0, ndims - 1):
+                nstrides.append(nstrides[i] * nshape[i])
+            for i in range(slice_list.__len__()):
+                noffset += slice_list[i].start.value() * self.stride[i]
+
+        var index = List[Int]()
+        for _ in range(ndims):
+            index.append(0)
+
+        _traverse_iterative_setter[dtype](
+            val, self, nshape, ncoefficients, nstrides, noffset, index
+        )
+
+    ### compiler doesn't accept this.
+    # fn __setitem__(self, owned *slices: Variant[Slice, Int], val: NDArray[dtype]) raises:
+    #     """
+    #     Get items by a series of either slices or integers.
+    #     """
+    #     var n_slices: Int = slices.__len__()
+    #     if n_slices > self.ndim:
+    #         raise Error("Error: No of slices greater than rank of array")
+    #     var slice_list: List[Slice] = List[Slice]()
+
+    #     var count_int = 0
+    #     for i in range(len(slices)):
+    #         if slices[i].isa[Slice]():
+    #             slice_list.append(slices[i]._get_ptr[Slice]()[0])
+    #         elif slices[i].isa[Int]():
+    #             count_int += 1
+    #             var int: Int = slices[i]._get_ptr[Int]()[0]
+    #             slice_list.append(Slice(int, int + 1))
+
+    #     if n_slices < self.ndim:
+    #         for i in range(n_slices, self.ndim):
+    #             var size_at_dim: Int = self.ndshape[i]
+    #             slice_list.append(Slice(0, size_at_dim))
+
+    #     self.__setitem__(slices=slice_list, val=val)
+
+    # TODO: fix this setter, add bound checks. Not sure about it's use case.
+    fn __setitem__(self, index: NDArray[DType.index], val: NDArray) raises:
+        """
+        Returns the items of the array from an array of indices.
+
+        Refer to `__getitem__(self, index: List[Int])`.
+
+        Example:
+        ```console
+        > var X = nm.NDArray[nm.i8](3,random=True)
+        > print(X)
+        [       32      21      53      ]
+        1-D array  Shape: [3]  DType: int8
+        > print(X.argsort())
+        [       1       0       2       ]
+        1-D array  Shape: [3]  DType: index
+        > print(X[X.argsort()])
+        [       21      32      53      ]
+        1-D array  Shape: [3]  DType: int8
+        ```
+        """
+
+        for i in range(len(index)):
+            self.set(int(index.get(i)), rebind[Scalar[dtype]](val.get(i)))
+
+    fn __setitem__(
+        inout self, mask: NDArray[DType.bool], val: NDArray[dtype]
+    ) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+
+        Example:
+        ```
+        var A = numojo.core.NDArray[numojo.i16](6, random=True)
+        var mask = A > 0
+        print(A)
+        print(mask)
+        A[mask] = 0
+        print(A)
+        ```
+        """
+        if (
+            mask.ndshape != self.ndshape
+        ):  # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
+
+        for i in range(mask.ndshape.ndsize):
+            if mask.data.load[width=1](i):
+                self.data.store[width=1](i, val.data.load[width=1](i))
+
+    # ===-------------------------------------------------------------------===#
+    # Getter dunders
+    # ===-------------------------------------------------------------------===#
+    fn get(self, index: Int) raises -> SIMD[dtype, 1]:
+        """
+        Linearly retreive a value from the underlying Pointer.
+
+        Example:
+        ```console
+        > Array.get(15)
+        ```
+        returns the item of index 15 from the array's data buffer.
+
+        Not that it is different from `item()` as `get` does not checked
+        against C-order or F-order.
+        ```console
+        > # A is a 3x3 matrix, F-order (column-major)
+        > A.get(3)  # Row 0, Col 1
         > A.item(3)  # Row 1, Col 0
         ```
         """
@@ -1290,7 +828,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
-        Retreive a slice of the array corrisponding to the index at the first dimension.
+        Retreive a slice of the array corresponding to the index at the first dimension.
 
         Example:
             `arr[1]` returns the second row of the array.
@@ -1316,18 +854,37 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
+    @always_inline("nodebug")
+    fn __getitem__(inout self, index: Idx) raises -> SIMD[dtype, 1]:
+        """
+        Set the value at the index list.
+        """
+        if index.__len__() != self.ndim:
+            raise Error("Error: Length of Indices do not match the shape")
+        for i in range(index.__len__()):
+            if index[i] >= self.ndshape[i]:
+                raise Error("Error: Elements of `index` exceed the array shape")
+        var idx: Int = _get_index(index, self.coefficient)
+        return self.data.load[width=1](idx)
+
     fn _adjust_slice_(self, inout span: Slice, dim: Int):
-        if span.start < 0:
-            span.start = dim + span.start
-        if not span._has_end():
-            span.end = dim
-        elif span.end < 0:
-            span.end = dim + span.end
-        if span.end > dim:
-            span.end = dim
-        if span.end < span.start:
-            span.start = 0
-            span.end = 0
+        """
+        Adjusts the slice values to lie within 0 and dim.
+        """
+        if span.start or span.end:
+            var start = int(span.start.value())
+            var end = int(span.end.value())
+            if start < 0:
+                start = dim + start
+            if not span.end:
+                end = dim
+            elif end < 0:
+                end = dim + end
+            if end > dim:
+                end = dim
+            if end < start:
+                start = 0
+                end = 0
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
@@ -1369,12 +926,19 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(slices.__len__()):
             self._adjust_slice_(slices[i], self.ndshape[i])
             if (
-                slices[i].start >= self.ndshape[i]
-                or slices[i].end > self.ndshape[i]
+                slices[i].start.value() >= self.ndshape[i]
+                or slices[i].end.value() > self.ndshape[i]
             ):
                 raise Error("Error: Slice value exceeds the array shape")
-            spec.append(slices[i].unsafe_indices())
-            if slices[i].unsafe_indices() != 1:
+            var slice_len: Int = len(
+                range(
+                    slices[i].start.value(),
+                    slices[i].end.value(),
+                    slices[i].step,
+                )
+            )
+            spec.append(slice_len)
+            if slice_len != 1:
                 ndims += 1
             else:
                 count += 1
@@ -1394,8 +958,15 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
-            nshape.append(slices[j].unsafe_indices())
-            nnum_elements *= slices[j].unsafe_indices()
+            var slice_len: Int = len(
+                range(
+                    slices[j].start.value(),
+                    slices[j].end.value(),
+                    slices[j].step,
+                )
+            )
+            nshape.append(slice_len)
+            nnum_elements *= slice_len
             ncoefficients.append(self.stride[j] * slices[j].step)
             j += 1
 
@@ -1413,7 +984,7 @@ struct NDArray[dtype: DType = DType.float64](
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slices.__len__()):
-                noffset += slices[i].start * self.stride[i]
+                noffset += slices[i].start.value() * self.stride[i]
 
         elif self.order == "F":
             noffset = 0
@@ -1421,7 +992,7 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
             for i in range(slices.__len__()):
-                noffset += slices[i].start * self.stride[i]
+                noffset += slices[i].start.value() * self.stride[i]
 
         var narr = Self(
             ndims,
@@ -1674,7 +1245,7 @@ struct NDArray[dtype: DType = DType.float64](
         [      -2      -94     -18     ]]
         2-D array  Shape: [5, 3]  DType: int8
         >
-        > var C = nm.NDArray[nm.i8](3, 3, 3,random=True)
+        > var C = nm.NDArray[nm.i8](3, 3, 3, random=True)
         > print(C)
         [[[     -126    -88     -79     ]
         [     14      78      99      ]
@@ -1717,7 +1288,7 @@ struct NDArray[dtype: DType = DType.float64](
         # Number of indice * shape from dim-1
         # So just change the first number of the ndshape
         var ndshape = self.ndshape
-        ndshape.ndshape.__setitem__(0, len(index))
+        ndshape[0] = len(index)
         ndshape.ndsize = 1
         for i in range(ndshape.ndlen):
             ndshape.ndsize *= int(ndshape.ndshape[i])
@@ -1762,7 +1333,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """
-        Get items of array corrisponding to a mask.
+        Get items of array corresponding to a mask.
 
         Example:
             ```
@@ -1784,25 +1355,11 @@ struct NDArray[dtype: DType = DType.float64](
             if mask.data.load[width=1](i):
                 true.append(i)
 
-        var result = Self(true.__len__(), random=False)
+        var result = Self(true.__len__())
         for i in range(true.__len__()):
-            result.data.store[width=1](i, self.get_scalar(true[i]))
+            result.data.store[width=1](i, self.get(true[i]))
 
         return result
-
-    fn __setitem__(inout self, mask: NDArray[DType.bool], value: Self) raises:
-        """
-        Set the value of the array at the indices where the mask is true.
-
-        """
-        if (
-            mask.ndshape != self.ndshape
-        ):  # this behavious could be removed potentially
-            raise Error("Mask and array must have the same shape")
-
-        for i in range(mask.ndshape.ndsize):
-            if mask.data.load[width=1](i):
-                self.data.store[width=1](i, value.data.load[width=1](i))
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
@@ -1822,19 +1379,6 @@ struct NDArray[dtype: DType = DType.float64](
             "core:ndarray:NDArray:__bool__: Bool is currently only implemented"
             " for DType.bool"
         )
-
-    # compiler doesn't accept this
-    # fn __setitem__(inout self, mask: NDArray[DType.bool], value: Scalar[dtype]) raises:
-    #     """
-    #     Set the value of the array at the indices where the mask is true.
-    #     """
-    #     if mask.ndshape != self.ndshape: # this behavious could be removed potentially
-    #         raise Error("Mask and array must have the same shape")
-
-    #     for i in range(mask.ndshape.ndsize):
-    #         if mask.data.load[width=1](i):
-    #             print(value)
-    #             self.data.store[width=1](i, value)
 
     fn __int__(self) raises -> Int:
         """Get Int representation of the array.
@@ -1856,11 +1400,11 @@ struct NDArray[dtype: DType = DType.float64](
         ```
 
         Returns:
-            Int representation of the array
+            Int representation of the array.
 
         """
         if (self.size() == 1) or (self.ndim == 0):
-            return int(self.get_scalar(0))
+            return int(self.get(0))
         else:
             raise (
                 "Only 0-D arrays or length-1 arrays can be converted to scalars"
@@ -1870,7 +1414,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Unary positve returens self unless boolean type.
         """
-        if self.dtype.is_bool():
+        if self.dtype is DType.bool:
             raise Error(
                 "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
             )
@@ -1882,7 +1426,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         For bolean use `__invert__`(~)
         """
-        if self.dtype.is_bool():
+        if self.dtype is DType.bool:
             raise Error(
                 "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
             )
@@ -2087,7 +1631,6 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error("Both arrays must have same number of elements")
 
         var result = Self(self.ndshape)
-        alias nelts = simdwidthof[dtype]()
 
         @parameter
         fn vectorized_pow[simd_width: Int](index: Int) -> None:
@@ -2097,14 +1640,13 @@ struct NDArray[dtype: DType = DType.float64](
                 ** p.load[width=simd_width](index),
             )
 
-        vectorize[vectorized_pow, nelts](self.ndshape.ndsize)
+        vectorize[vectorized_pow, self.width](self.ndshape.ndsize)
         return result
 
     fn __ipow__(inout self, p: Int):
         self = self.__pow__(p)
 
     fn _elementwise_pow(self, p: Int) -> Self:
-        alias simd_width: Int = simdwidthof[dtype]()
         var new_vec = self
 
         @parameter
@@ -2113,7 +1655,7 @@ struct NDArray[dtype: DType = DType.float64](
                 index, pow(self.data.load[width=simd_width](index), p)
             )
 
-        vectorize[array_scalar_vectorize, simd_width](self.ndshape.ndsize)
+        vectorize[array_scalar_vectorize, self.width](self.ndshape.ndsize)
         return new_vec
 
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
@@ -2209,13 +1751,15 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     # Trait implementations
     # ===-------------------------------------------------------------------===#
-
     fn __str__(self) -> String:
         """
-        Enables str(array)
+        Enables str(array).
         """
+        return String.format_sequence(self)
+
+    fn format_to(self, inout writer: Formatter):
         try:
-            return (
+            writer.write(
                 self._array_to_string(0, 0)
                 + "\n"
                 + str(self.ndim)
@@ -2225,14 +1769,13 @@ struct NDArray[dtype: DType = DType.float64](
                 + self.dtype.__str__()
             )
         except e:
-            print("Cannot convert array to string", e)
-            return ""
+            writer.write("Cannot convert array to string")
 
     fn __repr__(self) -> String:
         """
         Compute the "official" string representation of NDArray.
         An example is:
-        ```mojo
+        ```
         fn main() raises:
             var A = NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
             print(repr(A))
@@ -2240,7 +1783,7 @@ struct NDArray[dtype: DType = DType.float64](
         It prints what can be used to construct the array itself:
         ```console
         NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))
-        ```
+        ```.
         """
         try:
             var result: String = str("NDArray[DType.") + str(self.dtype) + str(
@@ -2264,7 +1807,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     # Should len be size or number of dimensions instead of the first dimension shape?
     fn __len__(self) -> Int:
-        return int(self.ndshape.ndshape[0])
+        return int(self.ndshape.ndsize)
 
     fn __iter__(self) raises -> _NDArrayIter[__lifetime_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
@@ -2398,7 +1941,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var sum = Scalar[dtype](0)
         for i in range(self.ndshape.ndsize):
-            sum = sum + self.get_scalar(i) * other.get_scalar(i)
+            sum = sum + self.get(i) * other.get(i)
         return sum
 
     fn mdot(self, other: Self) raises -> Self:
@@ -2420,7 +1963,7 @@ struct NDArray[dtype: DType = DType.float64](
         for row in range(self.ndshape[0]):
             for col in range(other.ndshape[1]):
                 new_matrix.__setitem__(
-                    List[Int](row, col),
+                    Idx(row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
         return new_matrix
@@ -2434,7 +1977,7 @@ struct NDArray[dtype: DType = DType.float64](
         var width = self.ndshape[1]
         var buffer = Self(width)
         for i in range(width):
-            buffer.__setitem__(i, self.data.load[width=1](i + id * width))
+            buffer.set(i, self.data.load[width=1](i + id * width))
         return buffer
 
     fn col(self, id: Int) raises -> Self:
@@ -2447,7 +1990,7 @@ struct NDArray[dtype: DType = DType.float64](
         var height = self.ndshape[0]
         var buffer = Self(height)
         for i in range(height):
-            buffer.__setitem__(i, self.data.load[width=1](id + i * width))
+            buffer.set(i, self.data.load[width=1](id + i * width))
         return buffer
 
     # # * same as mdot
@@ -2468,7 +2011,7 @@ struct NDArray[dtype: DType = DType.float64](
         var new_matrix = Self(self.ndshape[0], other.ndshape[1])
         for row in range(self.ndshape[0]):
             for col in range(other.ndshape[1]):
-                new_matrix.__setitem__(
+                new_matrix.set(
                     col + row * other.ndshape[1],
                     self.row(row).vdot(other.col(col)),
                 )
@@ -2487,7 +2030,8 @@ struct NDArray[dtype: DType = DType.float64](
         return self.ndshape.ndsize
 
     # should this return the List[Int] shape and self.ndshape be used instead of making it a no input function call?
-    fn shape(self) -> NDArrayShape:
+    # * We fix return dtype of this array shape for the linalg solve module.
+    fn shape(self) -> NDArrayShape[i32]:
         """
         Get the shape as an NDArray Shape.
 
@@ -2532,26 +2076,40 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     # Operations along an axis
     # ===-------------------------------------------------------------------===#
+    # TODO: implement for arbitrary axis1, and axis2
+    fn T(inout self) raises:
+        """
+        Transpose the array.
+        """
+        if self.ndim != 2:
+            raise Error("Only 2-D arrays can be transposed currently.")
+        var rows = self.ndshape[0]
+        var cols = self.ndshape[1]
+
+        var transposed = NDArray[dtype](cols, rows)
+        for i in range(rows):
+            for j in range(cols):
+                # the setitem is not working due to the symmetry issue of getter and setter
+                transposed.__setitem__(Idx(j, i), val=self.item(i, j))
+        self = transposed
 
     fn all(self) raises -> Bool:
         """
         If all true return true.
         """
-        # make this a compile time check
-        # Respnse to above compile time errors are way harder to read at the moment.
-        if not (self.dtype.is_bool() or self.dtype.is_integral()):
+        # make this a compile time check when they become more readable
+        if not (self.dtype is DType.bool or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
         # We might need to figure out how we want to handle truthyness before can do this
-        alias nelts: Int = simdwidthof[dtype]()
         var result: Bool = True
 
         @parameter
         fn vectorized_all[simd_width: Int](idx: Int) -> None:
             result = result and allb(
-                (self.data + idx).simd_strided_load[width=simd_width](1)
+                (self.data + idx).strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_all, nelts](self.ndshape.ndsize)
+        vectorize[vectorized_all, self.width](self.ndshape.ndsize)
         return result
 
     fn any(self) raises -> Bool:
@@ -2559,18 +2117,17 @@ struct NDArray[dtype: DType = DType.float64](
         True if any true.
         """
         # make this a compile time check
-        if not (self.dtype.is_bool() or self.dtype.is_integral()):
+        if not (self.dtype is DType.bool or self.dtype.is_integral()):
             raise Error("Array elements must be Boolean or Integer.")
-        alias nelts: Int = simdwidthof[dtype]()
         var result: Bool = False
 
         @parameter
         fn vectorized_any[simd_width: Int](idx: Int) -> None:
             result = result or anyb(
-                (self.data + idx).simd_strided_load[width=simd_width](1)
+                (self.data + idx).strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_any, nelts](self.ndshape.ndsize)
+        vectorize[vectorized_any, self.width](self.ndshape.ndsize)
         return result
 
     fn argmax(self) -> Int:
@@ -2611,51 +2168,51 @@ struct NDArray[dtype: DType = DType.float64](
 
         return sort.argsort(self)
 
-    fn astype[type: DType](inout self) raises -> NDArray[type]:
+    fn astype[type: DType](self) raises -> NDArray[type]:
         """
         Convert type of array.
         """
         # I wonder if we can do this operation inplace instead of allocating memory.
-        alias nelts = simdwidthof[dtype]()
-        var narr: NDArray[type] = NDArray[type](
-            self.ndshape, random=False, order=self.order
-        )
-        # narr.datatype = type
+        var narr: NDArray[type] = NDArray[type](self.ndshape, order=self.order)
 
         @parameter
         if type == DType.bool:
 
             @parameter
-            fn vectorized_astype[width: Int](idx: Int) -> None:
-                (narr.unsafe_ptr() + idx).simd_strided_store[width](
-                    self.load[width](idx).cast[type](), 1
+            fn vectorized_astype[simd_width: Int](idx: Int) -> None:
+                (narr.unsafe_ptr() + idx).strided_store[width=simd_width](
+                    self.load[simd_width](idx).cast[type](), 1
                 )
 
-            vectorize[vectorized_astype, nelts](self.ndshape.ndsize)
+            vectorize[vectorized_astype, self.width](self.ndshape.ndsize)
         else:
 
             @parameter
             if self.dtype == DType.bool:
 
                 @parameter
-                fn vectorized_astypenb_from_b[width: Int](idx: Int) -> None:
-                    narr.store[width](
+                fn vectorized_astypenb_from_b[
+                    simd_width: Int
+                ](idx: Int) -> None:
+                    narr.store[simd_width](
                         idx,
                         (self.data + idx)
-                        .simd_strided_load[width](1)
+                        .strided_load[width=simd_width](1)
                         .cast[type](),
                     )
 
-                vectorize[vectorized_astypenb_from_b, nelts](
+                vectorize[vectorized_astypenb_from_b, self.width](
                     self.ndshape.ndsize
                 )
             else:
 
                 @parameter
-                fn vectorized_astypenb[width: Int](idx: Int) -> None:
-                    narr.store[width](idx, self.load[width](idx).cast[type]())
+                fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
+                    narr.store[simd_width](
+                        idx, self.load[simd_width](idx).cast[type]()
+                    )
 
-                vectorize[vectorized_astypenb, nelts](self.ndshape.ndsize)
+                vectorize[vectorized_astypenb, self.width](self.ndshape.ndsize)
 
         return narr
 
@@ -2693,42 +2250,23 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Fill all items of array with value.
         """
-        alias simd_width: Int = simdwidthof[dtype]()
 
         @parameter
         fn vectorized_fill[simd_width: Int](index: Int) -> None:
             self.data.store[width=simd_width](index, val)
 
-        vectorize[vectorized_fill, simd_width](self.ndshape.ndsize)
+        vectorize[vectorized_fill, self.width](self.ndshape.ndsize)
+
         return self
 
-    fn flatten(inout self, inplace: Bool = False) raises -> Optional[Self]:
+    fn flatten(inout self) raises:
         """
         Convert shape of array to one dimensional.
         """
-        # inplace has some problems right now
-        # if inplace:
-        #     self.ndshape = NDArrayShape(self.ndshape.ndsize, size=self.ndshape.ndsize)
-        #     self.stride = NDArrayStride(shape = self.ndshape, offset=0)
-        #     return self
-
-        var res: NDArray[dtype] = NDArray[dtype](
-            self.ndshape.ndsize, random=False
+        self.ndshape = NDArrayShape(
+            self.ndshape.ndsize, size=self.ndshape.ndsize
         )
-        alias simd_width: Int = simdwidthof[dtype]()
-
-        @parameter
-        fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-            res.data.store[width=simd_width](
-                index, self.data.load[width=simd_width](index)
-            )
-
-        vectorize[vectorized_flatten, simd_width](self.ndshape.ndsize)
-        if inplace:
-            self = res
-            return None
-        else:
-            return res
+        self.stride = NDArrayStride(shape=self.ndshape, offset=0)
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """
@@ -2819,6 +2357,86 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error("Error: Elements of `index` exceed the array shape")
         return self.data.load[width=1](_get_index(index, self.stride))
 
+    fn itemset(
+        inout self, index: Variant[Int, List[Int]], item: Scalar[dtype]
+    ) raises:
+        """Set the scalar at the coordinates.
+
+        Args:
+            index: The coordinates of the item.
+                Can either be `Int` or `List[Int]`.
+                If `Int` is passed, it is the index of i-th item of the whole array.
+                If `List[Int]` is passed, it is the coordinate of the item.
+            item: The scalar to be set.
+
+        Note:
+            This is similar to `numpy.ndarray.itemset`.
+            The difference is that we takes in `List[Int]`, but numpy takes in a tuple.
+
+        An example goes as follows.
+
+        ```
+        import numojo as nm
+
+        fn main() raises:
+            var A = nm.zeros[nm.i16](3, 3)
+            print(A)
+            A.itemset(5, 256)
+            print(A)
+            A.itemset(List(1,1), 1024)
+            print(A)
+        ```
+        ```console
+        [[      0       0       0       ]
+         [      0       0       0       ]
+         [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        [[      0       0       0       ]
+         [      0       0       256     ]
+         [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        [[      0       0       0       ]
+         [      0       1024    256     ]
+         [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        ```
+        """
+
+        # If one index is given
+        if index.isa[Int]():
+            var idx = index._get_ptr[Int]()[]
+            if idx < self.size():
+                if (
+                    self.order == "F"
+                ):  # column-major should be converted to row-major
+                    # The following code can be taken out as a function that
+                    # convert any index to coordinates according to the order
+                    var c_stride = NDArrayStride(shape=self.ndshape)
+                    var c_coordinates = List[Int]()
+                    for i in range(c_stride.ndlen):
+                        var coordinate = idx // c_stride[i]
+                        idx = idx - c_stride[i] * coordinate
+                        c_coordinates.append(coordinate)
+                    self.data.store[width=1](
+                        _get_index(c_coordinates, self.stride), item
+                    )
+
+                self.data.store[width=1](idx, item)
+            else:
+                raise Error("Error: Elements of `index` exceed the array size")
+
+        else:
+            var indices = index._get_ptr[List[Int]]()[]
+            # If more than one index is given
+            if indices.__len__() != self.ndim:
+                raise Error("Error: Length of Indices do not match the shape")
+            for i in range(indices.__len__()):
+                if indices[i] >= self.ndshape[i]:
+                    raise Error(
+                        "Error: Elements of `index` exceed the array shape"
+                    )
+            self.data.store[width=1](_get_index(indices, self.stride), item)
+
     fn max(self, axis: Int = 0) raises -> Self:
         """
         Max on axis.
@@ -2838,10 +2456,9 @@ struct NDArray[dtype: DType = DType.float64](
                 slices.append(Slice(0, shape[i]))
             else:
                 slices.append(Slice(0, 0))
-        print(result_shape.__str__())
-        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
+
         slices[axis] = Slice(0, 1)
-        result = self[slices]
+        var result: NDArray[dtype] = self[slices]
         for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
@@ -2876,9 +2493,8 @@ struct NDArray[dtype: DType = DType.float64](
             else:
                 slices.append(Slice(0, 0))
 
-        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(result_shape))
         slices[axis] = Slice(0, 1)
-        result = self[slices]
+        var result: NDArray[dtype] = self[slices]
         for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
@@ -2929,21 +2545,20 @@ struct NDArray[dtype: DType = DType.float64](
 
         return prod(self, axis)
 
-    # fn ravel(self):
-    #     pass
-
-    # fn resize(self):
-    #     pass
-
-    # fn round(self):
-    #     pass
-
-    # for python compat this should be inplace
-    fn sort(self) raises -> Self:
+    fn round(self) raises -> Self:
         """
-        Sort the array using quickstort.
+        Rounds the elements of the array to a whole number.
+
+        Returns:
+            An NDArray.
         """
-        return sort.quick_sort(self)
+        return tround[dtype](self)
+
+    fn sort(inout self) raises:
+        """
+        Sort the array inplace using quickstort.
+        """
+        sort.quick_sort_inplace[dtype](self, 0, self.size() - 1)
 
     fn sum(self: Self, axis: Int) raises -> Self:
         """
@@ -2955,23 +2570,34 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return sum(self, axis)
 
-    # fn stdev(self):
-    #     pass
+    fn tolist(self) -> List[Scalar[dtype]]:
+        """
+        Convert NDArray to a 1-D List.
 
-    # fn tolist(self):
-    #     pass
+        Returns:
+            A 1-D List.
+        """
+        var result: List[Scalar[dtype]] = List[Scalar[dtype]]()
+        for i in range(self.ndshape.ndsize):
+            result.append(self.data[i])
+        return result
 
-    # fn tostring(self):
-    #     pass
+    # TODO: add axis parameter
+    fn trace(
+        self, offset: Int = 0, axis1: Int = 0, axis2: Int = 1
+    ) raises -> NDArray[dtype]:
+        """
+        Computes the trace of a ndarray.
 
-    # fn trace(self):
-    #     pass
+        Args:
+            offset: Offset of the diagonal from the main diagonal.
+            axis1: First axis.
+            axis2: Second axis.
 
-    # fn transpose(self):
-    #     pass
-
-    # fn variance(self):
-    #     pass
+        Returns:
+            The trace of the ndarray.
+        """
+        return trace[dtype](self, offset, axis1, axis2)
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
     fn reshape(inout self, *shape: Int, order: String = "C") raises:
@@ -2985,7 +2611,7 @@ struct NDArray[dtype: DType = DType.float64](
         var s: VariadicList[Int] = shape
         reshape[dtype](self, s, order=order)
 
-    fn unsafe_ptr(self) -> DTypePointer[dtype, 0]:
+    fn unsafe_ptr(self) -> UnsafePointer[Scalar[dtype]]:
         """
         Retreive pointer without taking ownership.
         """

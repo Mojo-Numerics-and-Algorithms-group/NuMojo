@@ -5,11 +5,11 @@ from utils_for_test import check, check_is_close
 
 
 def test_sort_1d():
-    arr = nm.NDArray(25, random=True)
+    var arr = nm.core.random.rand[nm.i16](25, min=0, max=100)
     var np = Python.import_module("numpy")
-    arr_sorted = arr.sort()
+    arr.sort()
     np_arr_sorted = np.sort(arr.to_numpy())
-    return check(arr_sorted, np_arr_sorted, "quick sort is broken")
+    return check[nm.i16](arr, np_arr_sorted, "quick sort is broken")
 
 
 # ND sorting currently works differently than numpy which has an on axis

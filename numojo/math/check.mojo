@@ -8,6 +8,7 @@ Implements Checking routines: currently not SIMD due to bool bit packing issue
 
 
 import math
+
 import . math_funcs as _mf
 from ..core.ndarray import NDArray
 
@@ -49,7 +50,7 @@ fn isinf[
 
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape())
     for i in range(result_array.size()):
-        result_array.store(i, math.isinf(array.get_scalar(i)))
+        result_array.store(i, math.isinf(array.get(i)))
     return result_array
 
 
@@ -72,7 +73,7 @@ fn isfinite[
     # return backend().math_func_is[dtype, math.isfinite](array)
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape())
     for i in range(result_array.size()):
-        result_array.store(i, math.isfinite(array.get_scalar(i)))
+        result_array.store(i, math.isfinite(array.get(i)))
     return result_array
 
 
@@ -95,7 +96,7 @@ fn isnan[
     # return backend().math_func_is[dtype, math.isnan](array)
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape())
     for i in range(result_array.size()):
-        result_array.store(i, math.isnan(array.get_scalar(i)))
+        result_array.store(i, math.isnan(array.get(i)))
     return result_array
 
 
@@ -119,7 +120,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     # vectorize[vectorize_sum, opt_nelts](array.num_elements())
     # return result
     for i in range(array.size()):
-        result |= array.get_scalar(i)
+        result |= array.get(i)
     return result
 
 
@@ -143,5 +144,5 @@ fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     # vectorize[vectorize_sum, opt_nelts](array.num_elements())
     # return result
     for i in range(array.size()):
-        result &= array.get_scalar(i)
+        result &= array.get(i)
     return result

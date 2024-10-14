@@ -10,6 +10,5 @@ from .math_funcs import (
     VectorizedParallelized,
     VectorizedUnroll,
     VectorizedVerbose,
-    VectorizedParallelizedNWorkers,
 )
 from .interpolate import *

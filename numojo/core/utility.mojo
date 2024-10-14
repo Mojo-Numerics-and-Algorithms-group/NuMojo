@@ -39,6 +39,9 @@ fn fill_pointer[
     vectorize[vectorized_fill, width](size)
 
 
+# ===----------------------------------------------------------------------=== #
+# GET INDEX FUNCIONS FOR NDARRAY
+# ===----------------------------------------------------------------------=== #
 # define a ndarray internal trait and remove multiple overloads of these _get_index
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     """
@@ -159,6 +162,9 @@ fn _get_index(indices: VariadicList[Int], weights: VariadicList[Int]) -> Int:
     return idx
 
 
+# ===----------------------------------------------------------------------=== #
+# Funcitons to traverse a multi-dimensional array
+# ===----------------------------------------------------------------------=== #
 fn _traverse_iterative[
     dtype: DType
 ](
@@ -260,6 +266,9 @@ fn _traverse_iterative_setter[
             index[d] = 0
 
 
+# ===----------------------------------------------------------------------=== #
+# NDArray conversions
+# ===----------------------------------------------------------------------=== #
 fn bool_to_numeric[
     dtype: DType
 ](array: NDArray[DType.bool]) raises -> NDArray[dtype]:
@@ -357,6 +366,9 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         return PythonObject()
 
 
+# ===----------------------------------------------------------------------=== #
+# Type checking functions
+# ===----------------------------------------------------------------------=== #
 @parameter
 fn is_inttype[dtype: DType]() -> Bool:
     """

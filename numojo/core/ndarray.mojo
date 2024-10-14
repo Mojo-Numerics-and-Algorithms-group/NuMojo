@@ -175,8 +175,10 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](3, 2, 4, fill=Scalar[f16](10))
+            ```
         """
 
         self.ndim = shape.__len__()
@@ -205,8 +207,10 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](3, 2, 4, fill=Scalar[f16](10))
+            ```
         """
 
         self.ndim = shape.__len__()
@@ -235,8 +239,10 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
+            ```
         """
 
         self.ndim = shape.__len__()
@@ -265,8 +271,10 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            NDArray[DType.float16](VariadicList[Int](3, 2, 4), random=True)
-            Returns an array with shape 3 x 2 x 4 and randomly values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](NDArrayShape(2, 3, 4), fill=Scalar[f16](10))
+            ```
         """
 
         self.ndim = shape.ndlen
@@ -294,8 +302,10 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
 
         Example:
-            `NDArray[DType.int8](List[Int8](1,2,3,4,5,6), shape=List[Int](2,3))`
-            Returns an array with shape 3 x 2 with input values.
+            ```mojo
+            import numojo as nm
+            nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+            ```
         """
 
         self.ndim = shape.__len__()
@@ -308,114 +318,38 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(self.ndshape.ndsize):
             self.data[i] = data[i]
 
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        *shape: Int,
-        min: Scalar[dtype],
-        max: Scalar[dtype],
-        order: String = "C",
-    ) raises:
+    fn __init__(inout self, data: PythonObject, order: String = "C") raises:
         """
-        NDArray initialization for variadic shape with random values between min and max.
+        NDArray initialization from Numpy arrays.
 
         Args:
-            shape: Variadic shape.
-            min: Minimum value for the NDArray.
-            max: Maximum value for the NDArray.
+            data: Numpy array.
             order: Memory order C or F.
-
+        
         Example:
-            ```
+            ```mojo
             import numojo as nm
-            fn main() raises:
-                var A = nm.NDArray[DType.float16](2, 2, min=0.0, max=10.0)
-                print(A)
-            ```
-            A is an array with shape 2 x 2 and randomly values between 0 and 10.
-            The output goes as follows.
-
-            ```console
-            [[	6.046875	6.98046875	]
-             [	6.6484375	1.736328125	]]
-            2-D array  Shape: [2, 2]  DType: float16
+            var np = Python.import_module("numpy")
+            var np_arr = np.array([1, 2, 3, 4])
+            nm.array[f16](data=np_arr, order="C")
             ```
         """
+        var len = int(len(data.shape))
+        var shape: List[Int] = List[Int]()
+        for i in range(len):
+            if int(data.shape[i]) == 1:
+                continue
+            shape.append(int(data.shape[i]))
         self.ndim = shape.__len__()
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.datatype = dtype
-        self.order = order
         self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
-        if dtype.is_floating_point():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i,
-                    random_float64(
-                        min.cast[DType.float64](), max.cast[DType.float64]()
-                    ).cast[dtype](),
-                )
-                # UnsafePointer[Scalar[DType.float32]]().
-        elif dtype.is_integral():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i, random_si64(int(min), int(max)).cast[dtype]()
-                )
-
-    @always_inline("nodebug")
-    fn __init__(
-        inout self,
-        shape: List[Int],
-        min: Scalar[dtype],
-        max: Scalar[dtype],
-        order: String = "C",
-    ) raises:
-        """
-        NDArray initialization for list shape with random values between min and max.
-
-        Args:
-            shape: List of shape.
-            min: Minimum value for the NDArray.
-            max: Maximum value for the NDArray.
-            order: Memory order C or F.
-
-        Example:
-            ```
-            import numojo as nm
-            fn main() raises:
-                var A = nm.NDArray[DType.float16](List[Int](2, 2), min=0.0, max=10.0)
-                print(A)
-            ```
-            A is an array with shape 2 x 2 and randomly values between 0 and 10.
-            The output goes as follows.
-
-            ```console
-            [[	6.046875	6.98046875	]
-             [	6.6484375	1.736328125	]]
-            2-D array  Shape: [2, 2]  DType: float16
-            ```
-        """
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.datatype = dtype
+        memset_zero(self.data, self.ndshape.ndsize)
         self.order = order
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
-        if dtype.is_floating_point():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i,
-                    random_float64(
-                        min.cast[DType.float64](), max.cast[DType.float64]()
-                    ).cast[dtype](),
-                )
-        elif dtype.is_integral():
-            for i in range(self.ndshape.ndsize):
-                self.data.store(
-                    i, random_si64(int(min), int(max)).cast[dtype]()
-                )
+        self.datatype = dtype
+        for i in range(self.ndshape.ndsize):
+            self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
     # Why do  these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
@@ -440,27 +374,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.order = order
         self.data = UnsafePointer[Scalar[dtype]]().alloc(size)
         memset_zero(self.data, size)
-
-    fn __init__(inout self, data: PythonObject, order: String = "C") raises:
-        """
-        Initialize NDArray from numpy array.
-        """
-        var len = int(len(data.shape))
-        var shape: List[Int] = List[Int]()
-        for i in range(len):
-            if int(data.shape[i]) == 1:
-                continue
-            shape.append(int(data.shape[i]))
-        self.ndim = shape.__len__()
-        self.ndshape = NDArrayShape(shape)
-        self.stride = NDArrayStride(shape, offset=0, order=order)
-        self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
-        self.order = order
-        self.datatype = dtype
-        for i in range(self.ndshape.ndsize):
-            self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
     # for creating views
     fn __init__(

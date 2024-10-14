@@ -16,6 +16,3 @@ alias c = core.constants.Constants.c
 
 # core alias
 alias idx = Idx
-alias ndarray = NDArray
-alias ndshape = NDArrayShape
-alias ndstride = NDArrayStride

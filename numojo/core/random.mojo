@@ -11,7 +11,7 @@ from random import random
 from builtin.tuple import Tuple
 
 from .ndarray import NDArray
-from .utility_funcs import is_inttype, is_floattype
+from .utility import is_inttype, is_floattype
 
 
 fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:

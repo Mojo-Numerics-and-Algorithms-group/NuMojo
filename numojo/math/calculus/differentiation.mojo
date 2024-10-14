@@ -8,7 +8,7 @@ import math
 import .. math_funcs as _mf
 import ... core as core
 from ...core.ndarray import NDArray, NDArrayShape
-from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.utility import is_inttype, is_floattype
 
 """TODO: 
 1) add a Variant[NDArray, Scalar, ...] to include all possibilities

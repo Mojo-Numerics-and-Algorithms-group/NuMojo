@@ -9,7 +9,7 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
 import .. math_funcs as _mf
 from ...core.ndarray import NDArray, NDArrayShape
-from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.utility import is_inttype, is_floattype
 
 
 # naive loop implementation, optimize later

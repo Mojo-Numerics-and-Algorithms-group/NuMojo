@@ -13,7 +13,7 @@ from sys import simdwidthof
 from collections.optional import Optional
 
 from ...core.ndarray import NDArray, NDArrayShape
-from ...core.utility_funcs import is_inttype, is_floattype
+from ...core.utility import is_inttype, is_floattype
 from ...core.sort import binary_sort
 
 """

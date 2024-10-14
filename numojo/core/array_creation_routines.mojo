@@ -18,7 +18,7 @@ from sys import simdwidthof
 
 from .ndarray import NDArray
 from .ndshape import NDArrayShape
-from .ndarray_utils import _get_index
+from .utility import _get_index
 
 
 # ===------------------------------------------------------------------------===#

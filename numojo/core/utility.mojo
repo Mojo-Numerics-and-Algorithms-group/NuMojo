@@ -3,7 +3,7 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 """
 # ===----------------------------------------------------------------------=== #
 # Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-# Last updated: 2024-09-08
+# Last updated: 2024-10-14
 # ===----------------------------------------------------------------------=== #
 
 from algorithm.functional import vectorize
@@ -355,3 +355,120 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     except e:
         print("Error in converting to numpy", e)
         return PythonObject()
+
+
+@parameter
+fn is_inttype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is an integer type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is an integer type, False otherwise.
+    """
+
+    @parameter
+    if (
+        dtype == DType.int8
+        or dtype == DType.int16
+        or dtype == DType.int32
+        or dtype == DType.int64
+    ):
+        return True
+    return False
+
+
+fn is_inttype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is an integer type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is an integer type, False otherwise.
+    """
+    if (
+        dtype == DType.int8
+        or dtype == DType.int16
+        or dtype == DType.int32
+        or dtype == DType.int64
+    ):
+        return True
+    return False
+
+
+@parameter
+fn is_floattype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is a floating point type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a floating point type, False otherwise.
+    """
+
+    @parameter
+    if (
+        dtype == DType.float16
+        or dtype == DType.float32
+        or dtype == DType.float64
+    ):
+        return True
+    return False
+
+
+fn is_floattype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is a floating point type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a floating point type, False otherwise.
+    """
+    if (
+        dtype == DType.float16
+        or dtype == DType.float32
+        or dtype == DType.float64
+    ):
+        return True
+    return False
+
+
+@parameter
+fn is_booltype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is a boolean type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+
+    @parameter
+    if dtype == DType.bool:
+        return True
+    return False
+
+
+fn is_booltype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is a boolean type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+    if dtype == DType.bool:
+        return True
+    return False

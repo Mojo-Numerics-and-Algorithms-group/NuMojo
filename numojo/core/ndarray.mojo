@@ -3,7 +3,7 @@ Implements N-Dimensional Array
 """
 # ===----------------------------------------------------------------------=== #
 # Implements ROW MAJOR N-DIMENSIONAL ARRAYS
-# Last updated: 2024-07-14
+# Last updated: 2024-10-14
 # ===----------------------------------------------------------------------=== #
 
 
@@ -42,16 +42,17 @@ import .. math as math
 from ..traits import Backend
 from ..math.check import any, all
 from ..math.arithmetic import abs
-from .ndarray_utils import (
+from .utility import (
     _get_index,
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
     fill_pointer,
+    is_inttype,
+    is_booltype,
 )
 from ..math.math_funcs import Vectorized
-from .utility_funcs import is_inttype, is_booltype
 from ..math.linalg.matmul import matmul_parallelized
 from .array_manipulation_routines import reshape
 from .ndshape import NDArrayShape

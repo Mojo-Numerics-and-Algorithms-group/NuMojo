@@ -13,11 +13,15 @@
     NuMojo 是为 Mojo 🔥 设计的多维数组运算库，类似 Python 中的 NumPy, SciPy。
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>阅读文档» </strong></a> &nbsp; &nbsp; <a href="https://discord.com/channels/1149778565756366939/1149778566603620455" ><strong>加入 Discord 讨论频道» </strong></a>
+        <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>阅读文档» </strong></a> &nbsp; &nbsp; 
+        <a href="./changelog.md"><strong>更新日志» </strong></a> &nbsp; &nbsp;
+        <a href="https://discord.com/channels/1149778565756366939/1149778566603620455" ><strong>加入 Discord 讨论频道» </strong></a>
     </div>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="./readme_zht.md"><strong>中文·傳統漢字» </strong></a>
+        <a href="./readme_zht.md"><strong>中文·繁» </strong></a> &nbsp;
+        <a href="./readme_jp.md"><strong>日本語» </strong></a>
+        <a href="../readme.md"><strong>English» </strong></a> &nbsp;
     </div>
   </p>
 </div>

@@ -325,7 +325,7 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             data: Numpy array.
             order: Memory order C or F.
-        
+
         Example:
             ```mojo
             import numojo as nm

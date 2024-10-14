@@ -844,9 +844,7 @@ fn array[
 
 fn array[
     dtype: DType = DType.float64
-](
-    data: PythonObject, order: String = "C"
-) raises -> NDArray[dtype]:
+](data: PythonObject, order: String = "C") raises -> NDArray[dtype]:
     """
     Array creation with given data, shape and order.
 
@@ -869,5 +867,3 @@ fn array[
         An Array of given data, shape and order.
     """
     return NDArray[dtype](data=data, order=order)
-
-

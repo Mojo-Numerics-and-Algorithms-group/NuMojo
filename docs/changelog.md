@@ -2,7 +2,7 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
-## dd/mm/yyyy (v0.3)
+## 14/10/2024 (v0.3)
 
 ### ⭐️ New
 

@@ -3,13 +3,15 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 """
 # ===----------------------------------------------------------------------=== #
 # Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-# Last updated: 2024-09-08
+# Last updated: 2024-10-14
 # ===----------------------------------------------------------------------=== #
 
 from algorithm.functional import vectorize
 
 from python import Python, PythonObject
-from .ndarray import NDArray, NDArrayShape, NDArrayStride
+from .ndshape import NDArrayShape
+from .ndstride import NDArrayStride
+from .ndarray import NDArray
 
 
 fn fill_pointer[
@@ -37,6 +39,10 @@ fn fill_pointer[
     vectorize[vectorized_fill, width](size)
 
 
+# ===----------------------------------------------------------------------=== #
+# GET INDEX FUNCIONS FOR NDARRAY
+# ===----------------------------------------------------------------------=== #
+# define a ndarray internal trait and remove multiple overloads of these _get_index
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
@@ -86,6 +92,23 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
     for i in range(weights.ndlen):
         idx += indices[i] * weights[i]
     return idx
+
+
+fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
+    """
+    Get the index of a multi-dimensional array from a list of indices and weights.
+
+    Args:
+        indices: The list of indices.
+        weights: The weights of the indices.
+
+    Returns:
+        The scalar index of the multi-dimensional array.
+    """
+    var index: Int = 0
+    for i in range(weights.ndlen):
+        index += indices[i] * weights[i]
+    return index
 
 
 fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
@@ -139,6 +162,9 @@ fn _get_index(indices: VariadicList[Int], weights: VariadicList[Int]) -> Int:
     return idx
 
 
+# ===----------------------------------------------------------------------=== #
+# Funcitons to traverse a multi-dimensional array
+# ===----------------------------------------------------------------------=== #
 fn _traverse_iterative[
     dtype: DType
 ](
@@ -170,24 +196,79 @@ fn _traverse_iterative[
         index: The list of indices.
         depth: The depth of the indices.
     """
-    if depth == ndim.__len__():
-        var idx = offset + _get_index(index, coefficients)
-        var nidx = _get_index(index, strides)
-        var temp = orig.data.load[width=1](idx)
-        if nidx >= narr.ndshape.ndsize:
-            raise Error("Invalid index: index out of bound")
-        else:
-            narr.data.store[width=1](nidx, temp)
-        return
+    var total_elements = narr.ndshape.ndsize
 
-    for i in range(ndim[depth]):
-        index[depth] = i
-        var newdepth = depth + 1
-        _traverse_iterative(
-            orig, narr, ndim, coefficients, strides, offset, index, newdepth
-        )
+    # # parallelized version was slower xD
+    for _ in range(total_elements):
+        var orig_idx = offset + _get_index(index, coefficients)
+        var narr_idx = _get_index(index, strides)
+        try:
+            if narr_idx >= total_elements:
+                raise Error("Invalid index: index out of bound")
+        except:
+            return
+
+        narr.data.store[width=1](narr_idx, orig.data.load[width=1](orig_idx))
+
+        for d in range(ndim.__len__() - 1, -1, -1):
+            index[d] += 1
+            if index[d] < ndim[d]:
+                break
+            index[d] = 0
 
 
+fn _traverse_iterative_setter[
+    dtype: DType
+](
+    orig: NDArray[dtype],
+    inout narr: NDArray[dtype],
+    ndim: List[Int],
+    coefficients: List[Int],
+    strides: List[Int],
+    offset: Int,
+    inout index: List[Int],
+) raises:
+    """
+    Traverse a multi-dimensional array in a iterative manner.
+
+    Raises:
+        Error: If the index is out of bound.
+
+    Parameters:
+        dtype: The data type of the NDArray elements.
+
+    Args:
+        orig: The original array.
+        narr: The array to store the result.
+        ndim: The number of dimensions of the array.
+        coefficients: The coefficients to traverse the sliced part of the original array.
+        strides: The strides to traverse the new NDArray `narr`.
+        offset: The offset to the first element of the original NDArray.
+        index: The list of indices.
+    """
+    var total_elements = narr.ndshape.ndsize
+
+    for _ in range(total_elements):
+        var orig_idx = offset + _get_index(index, coefficients)
+        var narr_idx = _get_index(index, strides)
+        try:
+            if narr_idx >= total_elements:
+                raise Error("Invalid index: index out of bound")
+        except:
+            return
+
+        narr.data.store[width=1](orig_idx, orig.data.load[width=1](narr_idx))
+
+        for d in range(ndim.__len__() - 1, -1, -1):
+            index[d] += 1
+            if index[d] < ndim[d]:
+                break
+            index[d] = 0
+
+
+# ===----------------------------------------------------------------------=== #
+# NDArray conversions
+# ===----------------------------------------------------------------------=== #
 fn bool_to_numeric[
     dtype: DType
 ](array: NDArray[DType.bool]) raises -> NDArray[dtype]:
@@ -260,6 +341,16 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             np_dtype = np.int16
         elif dtype == DType.int8:
             np_dtype = np.int8
+        elif dtype == DType.uint64:
+            np_dtype = np.uint64
+        elif dtype == DType.uint32:
+            np_dtype = np.uint32
+        elif dtype == DType.uint16:
+            np_dtype = np.uint16
+        elif dtype == DType.uint8:
+            np_dtype = np.uint8
+        elif dtype == DType.bool:
+            np_dtype = np.bool_
 
         numpyarray = np.empty(np_arr_dim, dtype=np_dtype)
         var pointer_d = numpyarray.__array_interface__["data"][
@@ -273,3 +364,123 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     except e:
         print("Error in converting to numpy", e)
         return PythonObject()
+
+
+# ===----------------------------------------------------------------------=== #
+# Type checking functions
+# ===----------------------------------------------------------------------=== #
+@parameter
+fn is_inttype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is an integer type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is an integer type, False otherwise.
+    """
+
+    @parameter
+    if (
+        dtype == DType.int8
+        or dtype == DType.int16
+        or dtype == DType.int32
+        or dtype == DType.int64
+    ):
+        return True
+    return False
+
+
+fn is_inttype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is an integer type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is an integer type, False otherwise.
+    """
+    if (
+        dtype == DType.int8
+        or dtype == DType.int16
+        or dtype == DType.int32
+        or dtype == DType.int64
+    ):
+        return True
+    return False
+
+
+@parameter
+fn is_floattype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is a floating point type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a floating point type, False otherwise.
+    """
+
+    @parameter
+    if (
+        dtype == DType.float16
+        or dtype == DType.float32
+        or dtype == DType.float64
+    ):
+        return True
+    return False
+
+
+fn is_floattype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is a floating point type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a floating point type, False otherwise.
+    """
+    if (
+        dtype == DType.float16
+        or dtype == DType.float32
+        or dtype == DType.float64
+    ):
+        return True
+    return False
+
+
+@parameter
+fn is_booltype[dtype: DType]() -> Bool:
+    """
+    Check if the given dtype is a boolean type at compile time.
+
+    Parameters:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+
+    @parameter
+    if dtype == DType.bool:
+        return True
+    return False
+
+
+fn is_booltype(dtype: DType) -> Bool:
+    """
+    Check if the given dtype is a boolean type at run time.
+
+    Args:
+        dtype: DType.
+
+    Returns:
+        Bool: True if the given dtype is a boolean type, False otherwise.
+    """
+    if dtype == DType.bool:
+        return True
+    return False

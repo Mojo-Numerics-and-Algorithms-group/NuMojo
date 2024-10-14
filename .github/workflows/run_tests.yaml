@@ -34,7 +34,6 @@ jobs:
       
       - name: Add path
         run: |
-          source $HOME/.bash_profile
           echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
           echo "$HOME/.modular/bin"  >> $GITHUB_PATH
           echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH

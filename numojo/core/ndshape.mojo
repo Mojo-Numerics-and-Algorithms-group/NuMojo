@@ -1,5 +1,14 @@
-from memory import memset_zero, memcpy
+"""
+Implements NDArrayShape type.
 
+`NDArrayShape` is a series of `DType.int32` on the heap.
+"""
+
+from memory import memset_zero, memcpy
+from utils import Variant
+from builtin.type_aliases import AnyLifetime
+
+alias Shp = NDArrayShape
 
 @register_passable("trivial")
 struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):

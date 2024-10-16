@@ -1,4 +1,5 @@
 import numojo as nm
+from numojo.prelude import *
 from time import now
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
@@ -78,7 +79,7 @@ def test_geomspace():
 def test_zeros():
     var np = Python.import_module("numpy")
     check(
-        nm.zeros[nm.f64](10, 10, 10, 10),
+        nm.zeros[f64](Shp(10, 10, 10, 10)),
         np.zeros((10, 10, 10, 10), dtype=np.float64),
         "Zeros is broken",
     )
@@ -87,7 +88,7 @@ def test_zeros():
 def test_ones():
     var np = Python.import_module("numpy")
     check(
-        nm.ones[nm.f64](10, 10, 10, 10),
+        nm.ones[nm.f64](Shp(10, 10, 10, 10)),
         np.ones((10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
@@ -96,7 +97,7 @@ def test_ones():
 def test_full():
     var np = Python.import_module("numpy")
     check(
-        nm.full[nm.f64](10, 10, 10, 10, fill_value=10),
+        nm.full[nm.f64](Shp(10, 10, 10, 10), fill_value=10),
         np.full((10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )

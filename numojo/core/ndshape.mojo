@@ -10,6 +10,7 @@ from builtin.type_aliases import AnyLifetime
 
 alias Shp = NDArrayShape
 
+
 @register_passable("trivial")
 struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
     """Implements the NDArrayShape."""

@@ -357,6 +357,14 @@ fn zeros[
     return full[dtype](shape=shape, fill_value=0, order=order)
 
 
+fn ones[
+    dtype: DType = DType.float64
+](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+    """Return a matrix with given shape and filled with ones."""
+
+    return full[dtype](shape=shape, fill_value=1, order=order)
+
+
 fn identity[
     dtype: DType = DType.float64
 ](len: Int, order: String = "C") -> Matrix[dtype]:

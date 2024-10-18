@@ -64,7 +64,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     # To be calculated at the initialization.
     var size: Int
     """Size of Matrix."""
-    var strides: Tuple[Int, Int]
+    var strides: SIMD[DType.int32, 2]
     """Strides of matrix."""
 
     # To be filled by constructing functions.
@@ -93,9 +93,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         self.shape = (shape[0], shape[1])
-        self.strides = Tuple(shape[1], 1) if order == "C" else Tuple(
-            1, shape[0]
-        )
+        self.strides = SIMD[DType.int32, 2](
+            shape[1], 1
+        ) if order == "C" else SIMD[DType.int32, 2](1, shape[0])
         self.size = shape[0] * shape[1]
         self._buffer = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.order = order
@@ -106,7 +106,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Copy other into self.
         """
         self.shape = (other.shape[0], other.shape[1])
-        self.strides = (other.strides[0], other.strides[1])
+        self.strides = other.strides
         self.size = other.size
         self.order = other.order
         self._buffer = UnsafePointer[Scalar[dtype]]().alloc(other.size)
@@ -118,7 +118,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Move other into self.
         """
         self.shape = (other.shape[0], other.shape[1])
-        self.strides = (other.strides[0], other.strides[1])
+        self.strides = other.strides
         self.size = other.size
         self.order = other.order
         self._buffer = other._buffer
@@ -152,20 +152,21 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             print(e)
         return self._buffer.load(x * self.strides[0] + y * self.strides[1])
 
-    fn load[width: Int](self, x: Int, y: Int) -> SIMD[dtype, width]:
+    fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
         `__getitem__` with width.
+        Unsafe: No boundary check!
         """
-        try:
-            if (x >= self.shape[0]) or (y >= self.shape[1]):
-                raise Error(
-                    "Error: Elements of `index` exceed the array shape."
-                )
-        except e:
-            print(e)
         return self._buffer.load[width=width](
             x * self.strides[0] + y * self.strides[1]
         )
+
+    fn _loadc[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
+        """
+        `__getitem__` with width.
+        Unsafe: No boundary check!
+        """
+        return self._buffer.load[width=width](x * self.strides[0] + y)
 
     fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]):
         """
@@ -184,13 +185,25 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             print(e)
         self._buffer.store(x * self.strides[0] + y * self.strides[1], value)
 
-    fn store[width: Int](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
+    fn _store[
+        width: Int = 1
+    ](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
         """
         `__setitem__` with width.
+        Unsafe: No boundary check!
         """
         self._buffer.store[width=width](
             x * self.strides[0] + y * self.strides[1], simd
         )
+
+    fn _storec[
+        width: Int = 1
+    ](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
+        """
+        `__setitem__` with width.
+        Unsafe: No boundary check!
+        """
+        self._buffer.store[width=width](x * self.strides[0] + y, simd)
 
     fn __str__(self) -> String:
         return String.format_sequence(self)
@@ -509,7 +522,7 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     See `numojo.math.linalg.matmul.matmul_parallelized()`.
     """
 
-    alias width = simdwidthof[dtype]()
+    alias width = max(simdwidthof[dtype](), 16)
 
     try:
         if A.shape[1] != B.shape[0]:
@@ -522,27 +535,36 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     var t2 = B.shape[1]
     var C: Matrix[dtype] = zeros[dtype](shape=(t0, t2))
 
-    @parameter
-    fn calculate_A_rows(m: Int):
-        # for m in range(t0):
-        for k in range(t1):
-            if B.order == "C":
+    if (A.order == "C") and (B.order == "C"):
+
+        @parameter
+        fn calculate_CC(m: Int):
+            for k in range(t1):
 
                 @parameter
                 fn dot[simd_width: Int](n: Int):
-                    C.store[simd_width](
+                    C._storec[simd_width](
                         m,
                         n,
-                        C.load[simd_width](m, n)
-                        + A[m, k] * B.load[simd_width](k, n),
+                        C._loadc[simd_width](m, n)
+                        + A._loadc(m, k) * B._loadc[simd_width](k, n),
                     )
 
                 vectorize[dot, width](t2)
-            else:
-                for n in range(t2):
-                    C[m, n] = C[m, n] + A[m, k] * B[k, n]
 
-    parallelize[calculate_A_rows](t0, t0)
+        parallelize[calculate_CC](t0, t0)
+
+    else:
+
+        @parameter
+        fn calculate_other(m: Int):
+            for k in range(t1):
+                for n in range(t2):
+                    C._store(
+                        m, n, C._load(m, n) + A._load(m, k) * B._load(k, n)
+                    )
+
+        parallelize[calculate_other](t0, t0)
 
     var _t0 = t0
     var _t1 = t1

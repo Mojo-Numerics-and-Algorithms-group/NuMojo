@@ -26,6 +26,8 @@ the behavior of `NDArray` type and the `Matrix` type.
 """
 
 from .ndarray import NDArray
+from memory import memcmp
+from sys import simdwidthof
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct
@@ -33,7 +35,7 @@ from .ndarray import NDArray
 
 
 struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
-    """A marix (2d array).
+    """A marix (2d-array).
 
     Parameters:
         dtype: Type of item in NDArray. Default type is DType.float64.
@@ -45,7 +47,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         4. The data type of the elements (compile-time known).
 
     Attributes:
-        - data
+        - _buffer
         - shape
         - size
         - strides
@@ -66,7 +68,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     """Strides of matrix."""
 
     # To be filled by constructing functions.
-    var data: UnsafePointer[Scalar[dtype]]
+    var _buffer: UnsafePointer[Scalar[dtype]]
     """Data buffer of the items in the NDArray."""
 
     alias width: Int = simdwidthof[dtype]()  #
@@ -95,7 +97,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             1, shape[0]
         )
         self.size = shape[0] * shape[1]
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.size)
+        self._buffer = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.order = order
 
     @always_inline("nodebug")
@@ -107,8 +109,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self.order = other.order
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(other.size)
-        memcpy(self.data, other.data, other.size)
+        self._buffer = UnsafePointer[Scalar[dtype]]().alloc(other.size)
+        memcpy(self._buffer, other._buffer, other.size)
 
     @always_inline("nodebug")
     fn __moveinit__(inout self, owned other: Self):
@@ -119,106 +121,75 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self.order = other.order
-        self.data = other.data
+        self._buffer = other._buffer
 
     @always_inline("nodebug")
     fn __del__(owned self):
-        self.data.free()
+        self._buffer.free()
 
     # ===-------------------------------------------------------------------===#
     # Dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __getitem__(self, index: Tuple[Int, Int]) -> Scalar[dtype]:
+    fn __getitem__(self, x: Int, y: Int) -> Scalar[dtype]:
         """
-        Return the scalar at the coordinates (tuple).
+        Return the scalar at the coordinates.
 
         Args:
-            index: The coordinates of the item.
+            x: The row number.
+            y: The column number.
 
         Returns:
             A scalar matching the dtype of the array.
         """
 
-        # If more than one index is given
         try:
-            if index.__len__() != 2:
-                raise Error("Error: Length of the index does not match the shape.")
+            if (x >= self.shape[0]) or (y >= self.shape[1]):
+                raise Error(
+                    "Error: Elements of `index` exceed the array shape."
+                )
         except e:
             print(e)
+        return self._buffer.load(x * self.strides[0] + y * self.strides[1])
+
+    fn load[width: Int](self, x: Int, y: Int) -> SIMD[dtype, width]:
+        """
+        `__getitem__` with width.
+        """
         try:
-            if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
-                raise Error("Error: Elements of `index` exceed the array shape.")
+            if (x >= self.shape[0]) or (y >= self.shape[1]):
+                raise Error(
+                    "Error: Elements of `index` exceed the array shape."
+                )
         except e:
             print(e)
-        return self.data.load(
-            index[0] * self.strides[0] + index[1] * self.strides[1]
+        return self._buffer.load[width=width](
+            x * self.strides[0] + y * self.strides[1]
         )
 
-    fn _getitem(self, index: Tuple[Int, Int]) -> Scalar[dtype]:
+    fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]):
         """
-        Return the scalar at the coordinates (tuple).
-
-        [Unsafe] It does not raise error when boundary check fails!
+        Return the scalar at the coordinates.
 
         Args:
-            index: The coordinates of the item.
-
-        Returns:
-            A scalar matching the dtype of the array.
-        """
-
-        # If more than one index is given
-        if index.__len__() != 2:
-            print("Error: Length of the index does not match the shape.")
-        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
-            print("Error: Elements of `index` exceed the array shape.")
-        return self.data.load(
-            index[0] * self.strides[0] + index[1] * self.strides[1]
-        )
-
-    fn __setitem__(self, index: Tuple[Int, Int], value: Scalar[dtype]):
-        """
-        Return the scalar at the coordinates (tuple).
-
-        Args:
-            index: The coordinates of the item.
+            x: The row number.
+            y: The column number.
             value: The value to be set.
         """
 
-        # If more than one index is given
         try:
-            if index.__len__() != 2:
-                raise Error("Error: Length of the index does not match the shape.")
-        except e:
-            print(e)
-        try:
-            if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
+            if (x >= self.shape[0]) or (y >= self.shape[1]):
                 raise Error("Error: Elements of `index` exceed the array shape")
         except e:
             print(e)
-        self.data.store(
-            index[0] * self.strides[0] + index[1] * self.strides[1], value
-        )
+        self._buffer.store(x * self.strides[0] + y * self.strides[1], value)
 
-    fn _setitem(self, index: Tuple[Int, Int], value: Scalar[dtype]):
+    fn store[width: Int](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
         """
-        Return the scalar at the coordinates (tuple).
-
-        [Unsafe] It does not raise error when boundary check fails!
-
-        Args:
-            index: The coordinates of the item.
-            value: The value to be set.
+        `__setitem__` with width.
         """
-
-        # If more than one index is given
-        if index.__len__() != 2:
-            print("Error: Length of the index does not match the shape.")
-        if (index[0] >= self.shape[0]) or (index[1] >= self.shape[1]):
-            print("Error: Elements of `index` exceed the array shape")
-        self.data.store(
-            index[0] * self.strides[0] + index[1] * self.strides[1], value
+        self._buffer.store[width=width](
+            x * self.strides[0] + y * self.strides[1], simd
         )
 
     fn __str__(self) -> String:
@@ -232,15 +203,15 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 for j in range(self.shape[1]):
                     if j == self.shape[1] - 1:
                         number_of_sep = 0
-                    result += str(self[(i, j)]) + sep * number_of_sep
+                    result += str(self[i, j]) + sep * number_of_sep
             else:
                 for j in range(3):
-                    result += str(self[(i, j)]) + sep
+                    result += str(self[i, j]) + sep
                 result += str("...") + sep
                 for j in range(self.shape[1] - 3, self.shape[1]):
                     if j == self.shape[1] - 1:
                         number_of_sep = 0
-                    result += str(self[(i, j)]) + sep * number_of_sep
+                    result += str(self[i, j]) + sep * number_of_sep
             result += str("]")
             return result
 
@@ -280,6 +251,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             + str(self.dtype)
         )
 
+    fn __matmul__(self, other: Self) -> Self:
+        return matmul(self, other)
+
     # ===-------------------------------------------------------------------===#
     # Other methods
     # ===-------------------------------------------------------------------===#
@@ -293,9 +267,55 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         var ndarray = NDArray[dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order=self.order
         )
-        memcpy(ndarray.data, self.data, ndarray.size())
+        memcpy(ndarray.data, self._buffer, ndarray.size())
 
         return ndarray
+
+    fn to_numpy(self) raises -> PythonObject:
+        """See `numojo.core.utility.to_numpy`."""
+        try:
+            var np = Python.import_module("numpy")
+
+            np.set_printoptions(4)
+
+            # Implement a dictionary for this later
+            var numpyarray: PythonObject
+            var np_dtype = np.float64
+            if dtype == DType.float16:
+                np_dtype = np.float16
+            elif dtype == DType.float32:
+                np_dtype = np.float32
+            elif dtype == DType.int64:
+                np_dtype = np.int64
+            elif dtype == DType.int32:
+                np_dtype = np.int32
+            elif dtype == DType.int16:
+                np_dtype = np.int16
+            elif dtype == DType.int8:
+                np_dtype = np.int8
+            elif dtype == DType.uint64:
+                np_dtype = np.uint64
+            elif dtype == DType.uint32:
+                np_dtype = np.uint32
+            elif dtype == DType.uint16:
+                np_dtype = np.uint16
+            elif dtype == DType.uint8:
+                np_dtype = np.uint8
+            elif dtype == DType.bool:
+                np_dtype = np.bool_
+
+            numpyarray = np.empty(self.shape, dtype=np_dtype)
+            var pointer_d = numpyarray.__array_interface__["data"][
+                0
+            ].unsafe_get_as_pointer[dtype]()
+            memcpy(pointer_d, self._buffer, self.size)
+
+            return numpyarray^
+
+        except e:
+            print("Error in converting to numpy", e)
+            return PythonObject()
+
 
 # ===-----------------------------------------------------------------------===#
 # Fucntions for constructing Matrix
@@ -311,9 +331,17 @@ fn full[
 
     var matrix = Matrix[dtype](shape, order)
     for i in range(shape[0] * shape[1]):
-        matrix.data.store(i, fill_value)
+        matrix._buffer.store(i, fill_value)
 
     return matrix
+
+
+fn zeros[
+    dtype: DType = DType.float64
+](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+    """Return a matrix with given shape and filled with zeros."""
+
+    return full[dtype](shape=shape, fill_value=0, order=order)
 
 
 fn identity[
@@ -323,7 +351,7 @@ fn identity[
 
     var matrix = Matrix[dtype]((len, len), order)
     for i in range(len):
-        matrix.data.store(i * matrix.strides[0] + i * matrix.strides[1], 1)
+        matrix._buffer.store(i * matrix.strides[0] + i * matrix.strides[1], 1)
     return matrix
 
 
@@ -341,11 +369,16 @@ fn rand[
     """
     var result = Matrix[dtype](shape, order)
     for i in range(result.size):
-        result.data.store(i, random.random_float64(0, 1).cast[dtype]())
+        result._buffer.store(i, random.random_float64(0, 1).cast[dtype]())
     return result
 
 
-fn from_ndarray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
+# ===-----------------------------------------------------------------------===#
+# Fucntions for constructing Matrix from an object
+# ===-----------------------------------------------------------------------===#
+
+
+fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
     """Create a matrix from a ndarray. It must be 2-dimensional.
 
     It makes a copy of the buffer of the ndarray.
@@ -354,15 +387,21 @@ fn from_ndarray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
     ndarray as a matrix. This simplify calculation and avoid too much check.
     """
 
-    if array.ndim != 2:
+    if object.ndim != 2:
         raise Error("The original array is not 2-dimensional!")
 
     var matrix = Matrix[dtype](
-        shape=(array.ndshape[0], array.ndshape[1]), order=array.order
+        shape=(object.ndshape[0], object.ndshape[1]), order=object.order
     )
-    memcpy(matrix.data, array.data, matrix.size)
+    memcpy(matrix._buffer, object.data, matrix.size)
 
     return matrix
+
+
+fn matrix[dtype: DType](owned object: Matrix[dtype]) raises -> Matrix[dtype]:
+    """Create a matrix from a matrix."""
+
+    return object^
 
 
 fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
@@ -377,7 +416,7 @@ fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
     var matrix = Matrix[dtype](
         shape=(array.ndshape[0], array.ndshape[1]), order=array.order
     )
-    matrix.data = array.data
+    matrix._buffer = array.data
 
     return matrix
 
@@ -386,43 +425,43 @@ fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
 # Fucntions for linear algebra
 # ===-----------------------------------------------------------------------===#
 
+
 fn lu_decomposition[
     dtype: DType
 ](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
-
     # Check whether the matrix is square
     if A.shape[0] != A.shape[1]:
         raise ("The matrix is not square!")
     var n = A.shape[0]
 
     # Initiate upper and lower triangular matrices
-    var U = full[dtype](shape=(n,n))
-    var L = full[dtype](shape=(n,n))
+    var U = full[dtype](shape=(n, n))
+    var L = full[dtype](shape=(n, n))
 
     # Fill in L and U
     for i in range(0, n):
         for j in range(i, n):
             # Fill in L
             if i == j:
-                L[(i, i)] = 1
+                L[i, i] = 1
             else:
                 var sum_of_products_for_L: Scalar[dtype] = 0
                 for k in range(0, i):
-                    sum_of_products_for_L += L[(j, k)] * U[(k, i)]
-                L[(j, i)] = (A[(j, i)] - sum_of_products_for_L) / U[(i, i)]
+                    sum_of_products_for_L += L[j, k] * U[k, i]
+                L[j, i] = (A[j, i] - sum_of_products_for_L) / U[i, i]
 
             # Fill in U
             var sum_of_products_for_U: Scalar[dtype] = 0
             for k in range(0, i):
-                sum_of_products_for_U += L[(i, k)] * U[(k ,j)]
-            U[(i, j)] = A[(i,j)] - sum_of_products_for_U
+                sum_of_products_for_U += L[i, k] * U[k, j]
+            U[i, j] = A[i, j] - sum_of_products_for_U
 
     return L, U
+
 
 fn solve[
     dtype: DType
 ](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
-
     var U: Matrix[dtype]
     var L: Matrix[dtype]
     L, U = lu_decomposition[dtype](A)
@@ -437,19 +476,19 @@ fn solve[
     fn calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y[(i, col)]
+            var _temp = Y[i, col]
             for j in range(i):  # col of L
-                _temp = _temp - L[(i, j)] * Z[(j, col)]
-            _temp = _temp / L[(i ,i)]
-            Z[(i, col)] = _temp
+                _temp = _temp - L[i, j] * Z[j, col]
+            _temp = _temp / L[i, i]
+            Z[i, col] = _temp
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z[(i, col)]
+            var _temp2 = Z[i, col]
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U[(i,j)] * X[(j,col)]
-            _temp2 = _temp2 / U[(i,i)]
-            X[(i, col)] = _temp2
+                _temp2 = _temp2 - U[i, j] * X[j, col]
+            _temp2 = _temp2 / U[i, i]
+            X[i, col] = _temp2
 
     parallelize[calculate_X](n, n)
 
@@ -462,3 +501,53 @@ fn solve[
     var _n = n
 
     return X^
+
+
+fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
+    """Matrix multiplication.
+
+    See `numojo.math.linalg.matmul.matmul_parallelized()`.
+    """
+
+    alias width = simdwidthof[dtype]()
+
+    try:
+        if A.shape[1] != B.shape[0]:
+            raise Error("The shapes of matrices do not match!")
+    except e:
+        print(e)
+
+    var t0 = A.shape[0]
+    var t1 = A.shape[1]
+    var t2 = B.shape[1]
+    var C: Matrix[dtype] = zeros[dtype](shape=(t0, t2))
+
+    @parameter
+    fn calculate_A_rows(m: Int):
+        # for m in range(t0):
+        for k in range(t1):
+            if B.order == "C":
+
+                @parameter
+                fn dot[simd_width: Int](n: Int):
+                    C.store[simd_width](
+                        m,
+                        n,
+                        C.load[simd_width](m, n)
+                        + A[m, k] * B.load[simd_width](k, n),
+                    )
+
+                vectorize[dot, width](t2)
+            else:
+                for n in range(t2):
+                    C[m, n] = C[m, n] + A[m, k] * B[k, n]
+
+    parallelize[calculate_A_rows](t0, t0)
+
+    var _t0 = t0
+    var _t1 = t1
+    var _t2 = t2
+    var _A = A
+    var _B = B
+
+    return C^

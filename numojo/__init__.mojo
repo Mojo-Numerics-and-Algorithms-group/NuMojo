@@ -13,6 +13,3 @@ alias __version__ = "V0.2"
 alias pi = core.constants.Constants.pi
 alias e = core.constants.Constants.e
 alias c = core.constants.Constants.c
-
-# core alias
-alias idx = Idx

@@ -8,6 +8,7 @@ from utils import Variant
 from builtin.type_aliases import AnyLifetime
 from memory import memset_zero, memcpy
 
+alias idx = Idx
 
 struct Idx(CollectionElement, Formattable):
     alias dtype: DType = DType.index

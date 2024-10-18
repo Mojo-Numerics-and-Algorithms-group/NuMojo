@@ -12,11 +12,17 @@
   <p align="center">
     NuMojo 是为 Mojo 🔥 设计的多维数组运算库，类似 Python 中的 NumPy, SciPy。
     <br />
-    <!-- when we create docs -->
-    <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>阅读文档» </strong></a>
-    <br>
-    <a href="https://discord.com/channels/1149778565756366939/1149778566603620455"><strong>加入 Discord 讨论频道» </strong></a>
+    <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
+        <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>阅读文档» </strong></a> &nbsp; &nbsp; 
+        <a href="./changelog.md"><strong>更新日志» </strong></a> &nbsp; &nbsp;
+        <a href="https://discord.com/channels/1149778565756366939/1149778566603620455" ><strong>加入 Discord 讨论频道» </strong></a>
+    </div>
     <br />
+    <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
+        <a href="./readme_zht.md"><strong>中文·繁» </strong></a> &nbsp;
+        <a href="./readme_jp.md"><strong>日本語» </strong></a>
+        <a href="../readme.md"><strong>English» </strong></a> &nbsp;
+    </div>
   </p>
 </div>
 
@@ -51,27 +57,30 @@ NuMojo 也可为其他需要高速数值计算、多维数组运算等功能的 
 
 ```mojo
 import numojo as nm
+from numojo.prelude import *
 
 fn main() raises:
     # 生成两个 1000x1000 矩阵，数值随机且为 64 位浮点数
-    var A = nm.NDArray[nm.f64](shape=List[Int](1000,1000), random=True)
-    var B = nm.NDArray[nm.f64](1000,1000, random=True)
+    var A = nm.random.randn[f64](shape=List[Int](1000, 1000))
+    var B = nm.random.randn[f64](shape=List[Int](1000, 1000))
 
     # 根据字符串生成 3x2 矩阵，数据类型为 32 位浮点数
-    var X = nm.NDArray[nm.f32]("[[1.1, -0.32, 1], [0.1, -3, 2.124]]")
+    var X = nm.fromstring[f32]("[[1.1, -0.32, 1], [0.1, -3, 2.124]]")
 
     # 打印矩阵
     print(A)
 
     # 矩阵相乘
     var C = A @ B
-    print(C)
+
+    # 矩阵求逆
+    var I = nm.inv(A)
 
     # 矩阵切片
     var A_slice = A[1:3, 4:19]
 
     # 提取矩阵元素
-    var A_item = A.at(291, 141)
+    var A_item = A.item(291, 141)
 ```
 
 请在 [此文档](../features.md) 中查询所有可用的函数。

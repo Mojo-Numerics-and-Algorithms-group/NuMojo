@@ -7,9 +7,8 @@ from .statistics import *
 from .calculus import *
 from .math_funcs import (
     Vectorized,
-    # VectorizedParallelized,
+    VectorizedParallelized,
     VectorizedUnroll,
     VectorizedVerbose,
-    # VectorizedParallelizedNWorkers,
 )
 from .interpolate import *

@@ -11,7 +11,7 @@ from random import random
 from builtin.tuple import Tuple
 
 from .ndarray import NDArray
-from .utility_funcs import is_inttype, is_floattype
+from .utility import is_inttype, is_floattype
 
 
 fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
@@ -34,9 +34,14 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
         The generated NDArray of type `dtype` filled with random values.
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
+    if dtype.is_integral():
+        raise Error(
+            "Integral values cannot be sampled between 0 and 1. Use"
+            " `rand(*shape, min, max)` instead."
+        )
     for i in range(result.ndshape.ndsize):
         var temp: Scalar[dtype] = random.random_float64(0, 1).cast[dtype]()
-        result.__setitem__(i, temp)
+        result.set(i, temp)
     return result^
 
 

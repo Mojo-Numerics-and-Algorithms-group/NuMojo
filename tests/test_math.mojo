@@ -1,4 +1,5 @@
 import numojo as nm
+from numojo.prelude import *
 from time import now
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
@@ -56,6 +57,17 @@ def test_sin_par():
 
 
 # ! MATMUL RESULTS IN A SEGMENTATION FAULT EXCEPT FOR NAIVE ONE, BUT NAIVE OUTPUTS WRONG VALUES
+
+
+def test_matmul_small():
+    var np = Python.import_module("numpy")
+    var arr = nm.ones[i8](4, 4)
+    var np_arr = np.ones((4, 4), dtype=np.int8)
+    check_is_close(
+        arr @ arr, np.matmul(np_arr, np_arr), "Dunder matmul is broken"
+    )
+
+
 def test_matmul():
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 100)

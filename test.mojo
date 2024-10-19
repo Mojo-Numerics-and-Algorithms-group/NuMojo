@@ -293,7 +293,7 @@ fn test_slicing() raises:
     # print(np_arr)
     # print(np_slicedy)
     # print(np.all(np.equal(np_arr, np_slicedy)))
-    
+
 
 fn test_rand_funcs[
     dtype: DType = DType.float64

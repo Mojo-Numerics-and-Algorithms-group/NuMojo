@@ -106,6 +106,7 @@ def test_slicing_getter5():
     )
     check(nm_slice5, np_sliced5, "3D array slicing (C-order) [1, :, 1:3]")
 
+
 # def test_slicing_setter1():
 #     var np = Python.import_module("numpy")
 

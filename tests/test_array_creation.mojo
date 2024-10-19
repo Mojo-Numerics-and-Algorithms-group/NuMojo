@@ -1,4 +1,5 @@
 import numojo as nm
+from numojo.prelude import *
 from time import now
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
@@ -9,29 +10,10 @@ def test_list_creation_methods():
     var np = Python.import_module("numpy")
     var fill_val: Scalar[nm.i32] = 5
     check(
-        nm.NDArray(5, 5, 5, fill=fill_val),
+        nm.NDArray(nm.shape(5, 5, 5), fill=fill_val),
         np.zeros([5, 5, 5], dtype=np.float64) + 5,
         "*shape broken",
     )
-    check(
-        nm.NDArray(List[Int](5, 5, 5), fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "List[int] shape broken",
-    )
-    check(
-        nm.NDArray(VariadicList[Int](5, 5, 5), fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "VariadicList[Int] shape broken",
-    )
-    check(
-        nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "NDArrayShape shape broken",
-    )
-    # with assert_raises(
-    #     contains="Error if random is true you cannot set a fill value"
-    # ):
-    #     _ = nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=fill_val)
 
 
 def test_arange():
@@ -78,7 +60,7 @@ def test_geomspace():
 def test_zeros():
     var np = Python.import_module("numpy")
     check(
-        nm.zeros[nm.f64](10, 10, 10, 10),
+        nm.zeros[nm.f64](shape(10, 10, 10, 10)),
         np.zeros((10, 10, 10, 10), dtype=np.float64),
         "Zeros is broken",
     )
@@ -87,7 +69,7 @@ def test_zeros():
 def test_ones():
     var np = Python.import_module("numpy")
     check(
-        nm.ones[nm.f64](10, 10, 10, 10),
+        nm.ones[nm.f64](shape(10, 10, 10, 10)),
         np.ones((10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
@@ -96,7 +78,7 @@ def test_ones():
 def test_full():
     var np = Python.import_module("numpy")
     check(
-        nm.full[nm.f64](10, 10, 10, 10, fill_value=10),
+        nm.full[nm.f64](shape(10, 10, 10, 10), fill_value=10),
         np.full((10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )

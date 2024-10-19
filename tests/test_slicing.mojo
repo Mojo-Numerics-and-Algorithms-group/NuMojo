@@ -22,8 +22,7 @@
 
 #     # Test slicing
 #     slicedw = w[0:1, :, 1:2]
-#     # var py_list: PythonObject = [0:1, :, 1:2]
-#     np_slicedw = np_w[PythonObject0:1, :, 1:2]
+#     np_slicedw = np.take(np.take(np.take(np_w, [0], axis=0), slice(None), axis=1), slice(1, 2), axis=2)
 #     check_is_close(slicedw, np_slicedw, "3D array slicing (C-order)")
 
 #     # Test F-order array slicing
@@ -41,7 +40,7 @@
 
 #     # Test slicing
 #     slicedy = y[:, :, 1:2]
-#     np_slicedy = np_y[:, :, 1:2]
+#     np_slicedy = np.take(np.take(np.take(np_y, np.arange(0, 2), axis=0), np.arange(0, 4), axis=1), np.arange(1, 2), axis=2)
 #     check_is_close(slicedy, np_slicedy, "3D array slicing (F-order)")
 
 #     # Test integer array

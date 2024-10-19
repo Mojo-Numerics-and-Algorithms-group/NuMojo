@@ -843,26 +843,40 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(n_slices):
             if i >= self.ndim:
                 raise Error("Error: Number of slices exceeds array dimensions")
-            
+
             var start: Int = 0
             var end: Int = self.ndshape[i]
             var step: Int = 1
             if slice_list[i].start is not None:
                 start = slice_list[i].start.value()
                 if start < 0:
-                    start += self.ndshape[i] + 1
-            
+                    # start += self.ndshape[i]
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+
             if slice_list[i].end is not None:
                 end = slice_list[i].end.value()
                 if end < 0:
-                    end += self.ndshape[i] + 1
-            
+                    # end += self.ndshape[i] + 1
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+
             step = slice_list[i].step
             if step == 0:
                 raise Error("Error: Slice step cannot be zero")
-            
-            slices.append(Slice(start=Optional(start), end=Optional(end), step=Optional(step)))
-        
+
+            slices.append(
+                Slice(
+                    start=Optional(start),
+                    end=Optional(end),
+                    step=Optional(step),
+                )
+            )
+
         return slices^
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:

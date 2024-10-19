@@ -1,3 +1,11 @@
+"""
+Implements NDArrayStride type.
+
+`NDArrayShape` is a series of `DType.int32` on the heap.
+"""
+
+from utils import Variant
+from builtin.type_aliases import AnyLifetime
 from memory import memset_zero, memcpy
 
 

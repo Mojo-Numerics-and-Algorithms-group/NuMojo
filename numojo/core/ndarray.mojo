@@ -478,7 +478,6 @@ struct NDArray[dtype: DType = DType.float64](
                 var size_at_dim: Int = self.ndshape[i]
                 slice_list.append(Slice(0, size_at_dim))
 
-        # self.__setitem__(slice_list=slice_list, val=val)
         var n_slices: Int = len(slice_list)
         var ndims: Int = 0
         var count: Int = 0
@@ -842,40 +841,42 @@ struct NDArray[dtype: DType = DType.float64](
         var n_slices: Int = slice_list.__len__()
         var slices = List[Slice]()
         for i in range(n_slices):
+            if i >= self.ndim:
+                raise Error("Error: Number of slices exceeds array dimensions")
+
             var start: Int = 0
-            var end: Int = 0
-            if slice_list[i].start is None and slice_list[i].end is None:
-                start = 0
-                end = self.ndshape[i]
-                temp = Slice(
+            var end: Int = self.ndshape[i]
+            var step: Int = 1
+            if slice_list[i].start is not None:
+                start = slice_list[i].start.value()
+                if start < 0:
+                    # start += self.ndshape[i]
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+
+            if slice_list[i].end is not None:
+                end = slice_list[i].end.value()
+                if end < 0:
+                    # end += self.ndshape[i] + 1
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+
+            step = slice_list[i].step
+            if step == 0:
+                raise Error("Error: Slice step cannot be zero")
+
+            slices.append(
+                Slice(
                     start=Optional(start),
                     end=Optional(end),
-                    step=Optional(slice_list[i].step),
+                    step=Optional(step),
                 )
-                slices.append(temp)
-            if slice_list[i].start is None and slice_list[i].end is not None:
-                start = 0
-                temp = Slice(
-                    start=Optional(start),
-                    end=Optional(slice_list[i].end.value()),
-                    step=Optional(slice_list[i].step),
-                )
-                slices.append(temp)
-            if slice_list[i].start is not None and slice_list[i].end is None:
-                end = self.ndshape[i]
-                temp = Slice(
-                    start=Optional(slice_list[i].start.value()),
-                    end=Optional(end),
-                    step=Optional(slice_list[i].step),
-                )
-                slices.append(temp)
-            if (
-                slice_list[i].start is not None
-                and slice_list[i].end is not None
-            ):
-                slices.append(slice_list[i])
-            else:
-                raise Error("Error: Undefined Slice")
+            )
+
         return slices^
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:

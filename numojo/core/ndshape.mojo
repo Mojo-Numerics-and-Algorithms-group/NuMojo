@@ -7,6 +7,10 @@ Implements NDArrayShape type.
 from utils import Variant
 from builtin.type_aliases import AnyLifetime
 from memory import memset_zero, memcpy
+from utils import Variant
+from builtin.type_aliases import AnyLifetime
+
+alias Shp = NDArrayShape
 
 
 @register_passable("trivial")

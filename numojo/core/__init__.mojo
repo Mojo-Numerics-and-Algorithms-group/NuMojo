@@ -12,5 +12,6 @@ from .constants import *
 from .datatypes import *
 from .utility import *
 
+alias idx = Idx
 alias shape = NDArrayShape
 alias Shape = NDArrayShape

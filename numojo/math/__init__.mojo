@@ -12,3 +12,6 @@ from .math_funcs import (
     VectorizedVerbose,
 )
 from .interpolate import *
+
+# Sub-packages
+import .signal

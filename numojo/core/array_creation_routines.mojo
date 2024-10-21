@@ -414,7 +414,7 @@ fn zeros[
         dtype: Datatype of the NDArray elements.
 
     Args:
-        a: NDArray to be used as a reference for the shape.
+        shape: Shape of the NDArray.
 
     Returns:
         A NDArray of `dtype` with given `shape`.
@@ -536,24 +536,11 @@ fn ones_like[
     return NDArray[dtype](shape=a.ndshape, fill=SIMD[dtype, 1](1))
 
 
-fn zeros[
+fn full[
     dtype: DType = DType.float64
-](shape: NDArrayShape) raises -> NDArray[dtype]:
-    """
-    Generate a NDArray of zeros with given shape.
-
-    Parameters:
-        dtype: Datatype of the NDArray elements.
-
-    Args:
-        shape: Shape of the NDArray.
-
-    Returns:
-        A NDArray of `dtype` with given `shape`.
-    """
-    var A = NDArray[dtype](shape=shape)
-    fill_pointer[dtype](A.data, A.ndshape.ndsize, fill_value)
-    return A
+](shape: NDArrayShape, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+    """Overload of function `full` that reads a list of ints."""
+    return NDArray[dtype](shape=shape, fill=fill_value)
 
 
 fn full[

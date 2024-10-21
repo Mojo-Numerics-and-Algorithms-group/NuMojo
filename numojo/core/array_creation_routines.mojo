@@ -712,7 +712,7 @@ fn fromstring[
                 shape.append(0)
             shape[level - 1] = 0
 
-        if isdigit(b) or chr(int(b)) == ".":
+        if isdigit(b) or (chr(int(b)) == ".") or (chr(int(b)) == "-"):
             number_as_str = number_as_str + chr(int(b))
         if (chr(int(b)) == ",") or (chr(int(b)) == "]"):
             if number_as_str != "":

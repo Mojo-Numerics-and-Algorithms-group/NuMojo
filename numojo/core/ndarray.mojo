@@ -13,6 +13,8 @@ Implements N-Dimensional Array
 2) Add vectorization for _get_index
 3) Write more explanatory Error("") statements
 4) Create NDArrayView and remove coefficients.
+5) Reduce the number of `__init__`.
+6) Rename some variables or methods that should not be exposed to users.
 """
 
 from builtin.type_aliases import AnyLifetime

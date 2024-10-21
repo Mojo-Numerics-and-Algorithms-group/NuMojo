@@ -14,7 +14,7 @@ alias pi = core.constants.Constants.pi
 alias e = core.constants.Constants.e
 alias c = core.constants.Constants.c
 
-# core alias
-alias idx = Idx
-alias shape = NDArrayShape
-alias Shape = NDArrayShape
+# Alias for users
+# For ease of use, the name of the types may not follow the Mojo convention,
+# e.g., lower case can also be used for alias of structs.
+alias idx = core.index.Idx

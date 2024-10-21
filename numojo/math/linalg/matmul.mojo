@@ -87,7 +87,7 @@ fn matmul_parallelized[
     alias width = max(simdwidthof[dtype](), 16)
 
     var C: NDArray[dtype] = zeros[dtype](
-        NDArrayShape(A.ndshape.load_int(0), B.ndshape.load_int(1))
+        Shape(A.ndshape.load_int(0), B.ndshape.load_int(1))
     )
     var t0 = A.ndshape.load_int(0)
     var t1 = A.ndshape.load_int(1)

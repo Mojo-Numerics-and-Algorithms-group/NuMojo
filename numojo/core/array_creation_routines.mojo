@@ -10,6 +10,8 @@ Array creation routine.
 """
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
+2) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and 
+    reduce the number of function reloads.
 """
 
 from algorithm import parallelize
@@ -386,11 +388,27 @@ fn empty[
     return NDArray[dtype](shape=shape)
 
 
-fn empty_like[
+fn empty[
     dtype: DType = DType.float64
-](a: NDArray[dtype]) raises -> NDArray[dtype]:
+](shape: List[Int]) raises -> NDArray[dtype]:
+    """Overload of function `empty` that reads a list of ints."""
+    return empty[dtype](shape=Shape(shape))
+
+
+fn empty[
+    dtype: DType = DType.float64
+](shape: VariadicList[Int]) raises -> NDArray[dtype]:
+    """Overload of function `empty` that reads a variadic list of ints."""
+    return empty[dtype](shape=Shape(shape))
+
+
+fn zeros[
+    dtype: DType = DType.float64
+](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
-    Generate a NDArray of the same shape as `a` with arbitrary values.
+    Generate a NDArray of zeros with given shape.
+
+    It calls the function `full`.
 
     Parameters:
         dtype: Datatype of the NDArray elements.
@@ -399,9 +417,26 @@ fn empty_like[
         a: NDArray to be used as a reference for the shape.
 
     Returns:
-        A NDArray of `dtype` with the same shape as `a`.
+        A NDArray of `dtype` with given `shape`.
+
+    TODO: The fill step should be done via this function but not via `__init__`
+    of NDArray.
     """
-    return NDArray[dtype](shape=a.ndshape)
+    return full[dtype](shape=shape, fill_value=0)
+
+
+fn zeros[
+    dtype: DType = DType.float64
+](shape: List[Int]) raises -> NDArray[dtype]:
+    """Overload of function `zeros` that reads a list of ints."""
+    return zeros[dtype](shape=Shape(shape))
+
+
+fn zeros[
+    dtype: DType = DType.float64
+](shape: VariadicList[Int]) raises -> NDArray[dtype]:
+    """Overload of function `zeros` that reads a variadic list of ints."""
+    return zeros[dtype](shape=Shape(shape))
 
 
 fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
@@ -455,6 +490,8 @@ fn ones[
     """
     Generate a NDArray of ones with given shape filled with ones.
 
+    It calls the function `full`.
+
     Parameters:
         dtype: Datatype of the NDArray.
 
@@ -464,7 +501,21 @@ fn ones[
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    return NDArray[dtype](shape, fill=SIMD[dtype, 1](1))
+    return full[dtype](shape=shape, fill_value=1)
+
+
+fn ones[
+    dtype: DType = DType.float64
+](shape: List[Int]) raises -> NDArray[dtype]:
+    """Overload of function `ones` that reads a list of ints."""
+    return ones[dtype](shape=Shape(shape))
+
+
+fn ones[
+    dtype: DType = DType.float64
+](shape: VariadicList[Int]) raises -> NDArray[dtype]:
+    """Overload of function `ones` that reads a variadic of ints."""
+    return ones[dtype](shape=Shape(shape))
 
 
 fn ones_like[
@@ -500,149 +551,23 @@ fn zeros[
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    return NDArray[dtype](shape, fill=SIMD[dtype, 1](0))
-
-
-fn zeros_like[
-    dtype: DType = DType.float64
-](a: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Generate a NDArray of the same shape as `a` filled with zeros.
-
-    Parameters:
-        dtype: Datatype of the NDArray elements.
-
-    Args:
-        a: NDArray to be used as a reference for the shape.
-
-    Returns:
-        A NDArray of `dtype` with the same shape as `a` filled with zeros.
-    """
-    return NDArray[dtype](shape=a.ndshape, fill=SIMD[dtype, 1](0))
+    var A = NDArray[dtype](shape=shape)
+    fill_pointer[dtype](A.data, A.ndshape.ndsize, fill_value)
+    return A
 
 
 fn full[
     dtype: DType = DType.float64
-](shape: NDArrayShape, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
-    """
-    Generate a NDArray of `fill_value` with given shape.
-
-    Parameters:
-        dtype: Datatype of the NDArray elements.
-
-    Args:
-        shape: Shape of the NDArray.
-        fill_value: Value to be splatted over the NDArray.
-
-    Returns:
-        A NDArray of `dtype` with given `shape`.
-    """
-    return NDArray[dtype](shape, fill=fill_value)
+](shape: List[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+    """Overload of function `full` that reads a list of ints."""
+    return full[dtype](shape=Shape(shape), fill_value=fill_value)
 
 
-fn full_like[
+fn full[
     dtype: DType = DType.float64
-](a: NDArray[dtype], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
-    """
-    Generate a NDArray of the same shape as `a` filled with `fill_value`.
-
-    Parameters:
-        dtype: Datatype of the NDArray elements.
-
-    Args:
-        a: NDArray to be used as a reference for the shape.
-        fill_value: Value to be splatted over the NDArray.
-
-    Returns:
-        A NDArray of `dtype` with the same shape as `a` filled with `fill_value`.
-    """
-    return NDArray[dtype](shape=a.ndshape, fill=fill_value)
-
-
-fn array[
-    dtype: DType = DType.float64
-](text: String, order: String = "C",) raises -> NDArray[dtype]:
-    """
-    This reload is an alias of `fromstring`.
-    """
-    return fromstring[dtype](text, order)
-
-
-fn array[
-    dtype: DType = DType.float64
-](
-    data: List[Scalar[dtype]], shape: NDArrayShape, order: String = "C"
-) raises -> NDArray[dtype]:
-    """
-    Array creation with given data, shape and order.
-
-    Parameters:
-        dtype: Datatype of the NDArray elements.
-
-    Args:
-        data: List of data.
-        shape: List of shape.
-        order: Memory order C or F.
-
-    Example:
-        ```mojo
-        import numojo as nm
-        nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=shape(2, 2))
-        ```
-
-    Returns:
-        An Array of given data, shape and order.
-    """
-    return NDArray[dtype](data=data, shape=shape, order=order)
-
-
-fn array[
-    dtype: DType = DType.float64
-](data: PythonObject, order: String = "C") raises -> NDArray[dtype]:
-    """
-    Array creation with given data, shape and order.
-
-    Parameters:
-        dtype: Datatype of the NDArray elements.
-
-    Args:
-        data: A Numpy array (PythonObject).
-        order: Memory order C or F.
-
-    Example:
-        ```mojo
-        import numojo as nm
-        var np = Python.import_module("numpy")
-        var np_arr = np.array([1, 2, 3, 4])
-        nm.array[f16](data=np_arr, order="C")
-        ```
-
-    Returns:
-        An Array of given data, shape and order.
-    """
-    return NDArray[dtype](data=data, order=order)
-
-
-fn asarray[
-    dtype: DType = DType.float64
-](
-    data: List[Scalar[dtype]], shape: NDArrayShape, order: String = "C"
-) raises -> NDArray[dtype]:
-    """
-    Convert the input data to an NDArray.
-
-    Parameters:
-        dtype: Datatype of the NDArray elements.
-
-    Args:
-        data: List of data.
-        shape: NDArrayShape of the NDArray.
-        order: Memory order C or F.
-
-    Returns:
-        An NDArray of `dtype` with the given data and order.
-    """
-    return NDArray[dtype](data=data, shape=shape, order=order)
+](shape: VariadicList[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+    """Overload of function `full` that reads a variadic list of ints."""
+    return full[dtype](shape=Shape(shape), fill_value=fill_value)
 
 
 fn diagflat[
@@ -834,3 +759,186 @@ fn fromstring[
 # Construct array from various objects.
 # It can be reloaded to allow different types of input.
 # ===------------------------------------------------------------------------===#
+
+
+fn array[
+    dtype: DType = DType.float64
+](text: String, order: String = "C",) raises -> NDArray[dtype]:
+    """
+    This reload is an alias of `fromstring`.
+    """
+    return fromstring[dtype](text, order)
+
+
+# identical with `full`
+# fn array[
+#     dtype: DType = DType.float64
+# ](
+#     *shape: Int, fill: Optional[Scalar[dtype]] = None, order: String = "C"
+# ) raises -> NDArray[dtype]:
+#     """
+#     Array creation with given variadic shape and fill value.
+
+#     Parameters:
+#         dtype: Datatype of the NDArray elements.
+
+#     Args:
+#         shape: Variadic shape.
+#         fill: Set all the values to this.
+#         order: Memory order C or F.
+
+#     Example:
+#         ```mojo
+#         import numojo as nm
+#         nm.array[f16](3, 2, 4, fill=Scalar[f16](10))
+#         ```
+
+#     Returns:
+#         An Array of given shape and fill value.
+#     """
+#     return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+
+# identical with `full`
+# fn array[
+#     dtype: DType = DType.float64
+# ](
+#     shape: List[Int], fill: Optional[Scalar[dtype]] = None, order: String = "C"
+# ) raises -> NDArray[dtype]:
+#     """
+#     Array creation with given shape and fill value.
+
+#     Parameters:
+#         dtype: Datatype of the NDArray elements.
+
+#     Args:
+#         shape: List of shape.
+#         fill: Set all the values to this.
+#         order: Memory order C or F.
+
+#     Example:
+#         ```mojo
+#         import numojo as nm
+#         nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
+#         ```
+
+#     Returns:
+#         An Array of given shape and fill value.
+#     """
+#     return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+
+# identical with `full`
+# fn array[
+#     dtype: DType = DType.float64
+# ](
+#     shape: VariadicList[Int],
+#     fill: Optional[Scalar[dtype]] = None,
+#     order: String = "C",
+# ) raises -> NDArray[dtype]:
+#     """
+#     Array creation with given shape and fill value.
+
+#     Parameters:
+#         dtype: Datatype of the NDArray elements.
+
+#     Args:
+#         shape: VariadicList of shape.
+#         fill: Set all the values to this.
+#         order: Memory order C or F.
+
+#     Example:
+#         ```mojo
+#         import numojo as nm
+#         nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
+#         ```
+
+#     Returns:
+#         An Array of given shape and fill value.
+#     """
+#     return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+# This is the same as `empty` or `full`.
+# fn array[
+#     dtype: DType = DType.float64
+# ](
+#     shape: NDArrayShape,
+#     fill: Optional[Scalar[dtype]] = None,
+#     order: String = "C",
+# ) raises -> NDArray[dtype]:
+#     """
+#     Array creation with given shape and fill value.
+
+#     Parameters:
+#         dtype: Datatype of the NDArray elements.
+
+#     Args:
+#         shape: NDArrayShape of the array.
+#         fill: Set all the values to this.
+#         order: Memory order C or F.
+
+#     Example:
+#         ```mojo
+#         import numojo as nm
+#         nm.array[f16](NDArrayShape(2, 3, 4), fill=Scalar[f16](10))
+#         ```
+
+#     Returns:
+#         An Array of given shape and fill value.
+#     """
+#     return NDArray[dtype](shape=shape, fill=fill, order=order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](
+    data: List[Scalar[dtype]], shape: List[Int], order: String = "C"
+) raises -> NDArray[dtype]:
+    """
+    Array creation with given data, shape and order.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        data: List of data.
+        shape: List of shape.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+        ```
+
+    Returns:
+        An Array of given data, shape and order.
+    """
+    return NDArray[dtype](data=data, shape=shape, order=order)
+
+
+fn array[
+    dtype: DType = DType.float64
+](data: PythonObject, order: String = "C") raises -> NDArray[dtype]:
+    """
+    Array creation with given data, shape and order.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        data: A Numpy array (PythonObject).
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        var np = Python.import_module("numpy")
+        var np_arr = np.array([1, 2, 3, 4])
+        nm.array[f16](data=np_arr, order="C")
+        ```
+
+    Returns:
+        An Array of given data, shape and order.
+    """
+    return NDArray[dtype](data=data, order=order)

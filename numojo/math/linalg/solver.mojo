@@ -6,6 +6,7 @@ Provides:
     - Inverse of an invertible matrix.
 """
 
+from numojo.prelude import *
 from ...core.ndarray import NDArray
 from ...core.array_creation_routines import zeros, eye
 from algorithm import parallelize
@@ -323,8 +324,8 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var m = array.shape()[0]
 
     var Y = eye[dtype](m, m)
-    var Z = zeros[dtype](NDArrayShape(m, m))
-    var X = zeros[dtype](NDArrayShape(m, m))
+    var Z = zeros[dtype](Shape(m, m))
+    var X = zeros[dtype](Shape(m, m))
 
     @parameter
     fn calculate_X(col: Int) -> None:
@@ -411,8 +412,8 @@ fn solve[
     var m = A.shape()[0]
     var n = Y.shape()[1]
 
-    var Z = zeros[dtype](NDArrayShape(m, n))
-    var X = zeros[dtype](NDArrayShape(m, n))
+    var Z = zeros[dtype](Shape(m, n))
+    var X = zeros[dtype](Shape(m, n))
 
     ####################################################################
     # Parallelization

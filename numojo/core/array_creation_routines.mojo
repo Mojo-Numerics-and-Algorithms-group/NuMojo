@@ -408,6 +408,8 @@ fn zeros[
     """
     Generate a NDArray of zeros with given shape.
 
+    It calls the function `full`.
+
     Parameters:
         dtype: Datatype of the NDArray elements.
 
@@ -420,7 +422,7 @@ fn zeros[
     TODO: The fill step should be done via this function but not via `__init__`
     of NDArray.
     """
-    return NDArray[dtype](shape=shape, fill=SIMD[dtype, 1](0))
+    return full[dtype](shape=shape, fill_value=0)
 
 
 fn zeros[
@@ -484,6 +486,8 @@ fn ones[
     """
     Generate a NDArray of ones with given shape filled with ones.
 
+    It calls the function `full`.
+
     Parameters:
         dtype: Datatype of the NDArray.
 
@@ -493,10 +497,7 @@ fn ones[
     Returns:
         A NDArray of `dtype` with given `shape`.
     """
-    var res = NDArray[dtype](shape)
-    for i in range(res.num_elements()):
-        res.store(i, SIMD[dtype, 1](1))
-    return res
+    return full[dtype](shape=shape, fill_value=1)
 
 
 fn ones[
@@ -528,11 +529,10 @@ fn full[
 
     Returns:
         A NDArray of `dtype` with given `shape`.
-
-    TODO: The fill step should be done via this function but not via `__init__`
-    of NDArray.
     """
-    return NDArray[dtype](shape=shape, fill=fill_value)
+    var A = NDArray[dtype](shape=shape)
+    fill_pointer[dtype](A.data, A.ndshape.ndsize, fill_value)
+    return A
 
 
 fn full[

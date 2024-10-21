@@ -87,7 +87,7 @@ fn matmul_parallelized[
     alias width = max(simdwidthof[dtype](), 16)
 
     var C: NDArray[dtype] = zeros[dtype](
-        A.ndshape.load_int(0), B.ndshape.load_int(1)
+        NDArrayShape(A.ndshape.load_int(0), B.ndshape.load_int(1))
     )
     var t0 = A.ndshape.load_int(0)
     var t1 = A.ndshape.load_int(1)
@@ -125,12 +125,21 @@ fn matmul_naive[
     """
     Matrix multiplication with three nested loops.
     """
-    var C: NDArray[dtype] = zeros[dtype](
-        A.ndshape.load_int(0), B.ndshape.load_int(1)
-    )
-    for m in range(C.ndshape.load_int(0)):
-        for k in range(A.ndshape.load_int(1)):
-            for n in range(C.ndshape.load_int(1)):
-                C.store(m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n))
+    var C: NDArray[dtype]
+    if B.ndim == 1:
+        C = zeros[dtype](shape(A.ndshape[0]))
+        for m in range(C.ndshape[0]):
+            for k in range(A.ndshape[1]):
+                C.store(m, val=C.load(m) + A.load(m, k) * B.load(k))
+    elif B.ndim != 1:
+        C = zeros[dtype](shape(A.ndshape[0], B.ndshape[1]))
+        for m in range(C.ndshape.load_int(0)):
+            for k in range(A.ndshape.load_int(1)):
+                for n in range(C.ndshape.load_int(1)):
+                    C.store(
+                        m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n)
+                    )
+    else:
+        raise Error("Invalid shape for B")
 
     return C^

@@ -12,7 +12,6 @@ alias Shape = NDArrayShape
 alias shape = NDArrayShape
 
 
-
 @register_passable("trivial")
 struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
     """Implements the NDArrayShape."""

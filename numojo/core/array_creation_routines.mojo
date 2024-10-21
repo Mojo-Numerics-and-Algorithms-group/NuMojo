@@ -10,6 +10,8 @@ Array creation routine.
 """
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
+2) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and 
+    reduce the number of function reloads.
 """
 
 from algorithm import parallelize
@@ -386,6 +388,20 @@ fn empty[
     return NDArray[dtype](shape=shape)
 
 
+fn empty[
+    dtype: DType = DType.float64
+](shape: List[Int]) raises -> NDArray[dtype]:
+    """Overload of function `empty` that reads a list of ints."""
+    return empty[dtype](shape=Shape(shape))
+
+
+fn empty[
+    dtype: DType = DType.float64
+](shape: VariadicList[Int]) raises -> NDArray[dtype]:
+    """Overload of function `empty` that reads a variadic of ints."""
+    return empty[dtype](shape=Shape(shape))
+
+
 fn zeros[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
@@ -405,6 +421,20 @@ fn zeros[
     of NDArray.
     """
     return NDArray[dtype](shape=shape, fill=SIMD[dtype, 1](0))
+
+
+fn zeros[
+    dtype: DType = DType.float64
+](shape: List[Int]) raises -> NDArray[dtype]:
+    """Overload of function `zeros` that reads a list of ints."""
+    return zeros[dtype](shape=Shape(shape))
+
+
+fn zeros[
+    dtype: DType = DType.float64
+](shape: VariadicList[Int]) raises -> NDArray[dtype]:
+    """Overload of function `zeros` that reads a variadic of ints."""
+    return zeros[dtype](shape=Shape(shape))
 
 
 fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
@@ -469,6 +499,20 @@ fn ones[
     return res
 
 
+fn ones[
+    dtype: DType = DType.float64
+](shape: List[Int]) raises -> NDArray[dtype]:
+    """Overload of function `ones` that reads a list of ints."""
+    return ones[dtype](shape=Shape(shape))
+
+
+fn ones[
+    dtype: DType = DType.float64
+](shape: VariadicList[Int]) raises -> NDArray[dtype]:
+    """Overload of function `ones` that reads a variadic of ints."""
+    return ones[dtype](shape=Shape(shape))
+
+
 fn full[
     dtype: DType = DType.float64
 ](shape: NDArrayShape, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
@@ -491,24 +535,18 @@ fn full[
     return NDArray[dtype](shape=shape, fill=fill_value)
 
 
-# fn full[
-#     dtype: DType = DType.float64
-# ](shape: VariadicList[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
-#     """
-#     Generate a NDArray of `fill_value` with given shape.
+fn full[
+    dtype: DType = DType.float64
+](shape: List[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+    """Overload of function `full` that reads a list of ints."""
+    return full[dtype](shape=Shape(shape), fill_value=fill_value)
 
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
 
-#     Args:
-#         shape: Shape of the NDArray.
-#         fill_value: Value to be splatted over the NDArray.
-
-#     Returns:
-#         A NDArray of `dtype` with given `shape`.
-#     """
-#     var tens_value: SIMD[dtype, 1] = SIMD[dtype, 1](fill_value)
-#     return NDArray[dtype](shape, fill=tens_value)
+fn full[
+    dtype: DType = DType.float64
+](shape: VariadicList[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+    """Overload of function `full` that reads a variadic of ints."""
+    return full[dtype](shape=Shape(shape), fill_value=fill_value)
 
 
 fn diagflat[
@@ -709,6 +747,7 @@ fn array[
     return fromstring[dtype](text, order)
 
 
+# identical with `full`
 # fn array[
 #     dtype: DType = DType.float64
 # ](
@@ -737,6 +776,7 @@ fn array[
 #     return NDArray[dtype](shape=shape, fill=fill, order=order)
 
 
+# identical with `full`
 # fn array[
 #     dtype: DType = DType.float64
 # ](
@@ -765,6 +805,7 @@ fn array[
 #     return NDArray[dtype](shape=shape, fill=fill, order=order)
 
 
+# identical with `full`
 # fn array[
 #     dtype: DType = DType.float64
 # ](

@@ -2,6 +2,13 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## 19/10/2024 (v0.3.1)
+
+### 🛠️ Fixed
+
+- Fix the `matmul` function which returns wrong results for small matrices (PR #129).
+- Correct the getter and setter functions, specifically the `_adjust_slice` (PR #130).
+
 ## 14/10/2024 (v0.3)
 
 ### ⭐️ New

@@ -345,7 +345,9 @@ fn geomspace[
     Returns:
         A NDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.
     """
-    constrained[not dtype.is_integral(), "Int type will result to precision errors."]()
+    constrained[
+        not dtype.is_integral(), "Int type will result to precision errors."
+    ]()
     var a: Scalar[dtype] = start
 
     if endpoint:
@@ -402,7 +404,9 @@ fn empty[
     return empty[dtype](shape=Shape(shape))
 
 
-fn empty_like[dtype: DType = DType.float64](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn empty_like[
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Generate an empty NDArray of the same shape as `array`.
 
@@ -513,6 +517,7 @@ fn ones_like[
         A NDArray of `dtype` with the same shape as `a` filled with ones.
     """
     return NDArray[dtype](shape=array.ndshape, fill=SIMD[dtype, 1](1))
+
 
 fn zeros[
     dtype: DType = DType.float64
@@ -632,11 +637,13 @@ fn diag[
         var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
         if k >= 0:
             for i in range(n):
-                result.data[i*(n + abs(k) +1) + k] = v.data[i]
+                result.data[i * (n + abs(k) + 1) + k] = v.data[i]
             return result^
         else:
             for i in range(n):
-                result.data[result.ndshape.ndsize - 1 - i*(result.ndshape[1]+1) + k] = v.data[n-1-i]
+                result.data[
+                    result.ndshape.ndsize - 1 - i * (result.ndshape[1] + 1) + k
+                ] = v.data[n - 1 - i]
         return result^
     elif v.ndim == 2:
         var m: Int = v.ndshape[0]
@@ -644,10 +651,12 @@ fn diag[
         var result: NDArray[dtype] = NDArray[dtype](n - abs(k))
         if k >= 0:
             for i in range(n - abs(k)):
-                result.data[i] = v.data[i*(n+1) + k]
+                result.data[i] = v.data[i * (n + 1) + k]
         else:
             for i in range(n - abs(k)):
-                result.data[m-abs(k)-1-i] = v.data[v.ndshape.ndsize - 1 - i*(v.ndshape[1]+1) + k]
+                result.data[m - abs(k) - 1 - i] = v.data[
+                    v.ndshape.ndsize - 1 - i * (v.ndshape[1] + 1) + k
+                ]
         return result^
     else:
         raise Error("Arrays bigger than 2D are not supported")
@@ -669,23 +678,18 @@ fn diagflat[
     Returns:
         A 2-D NDArray with the flattened input as the diagonal.
     """
-    v.reshape(v.ndshape.ndsize, 1)
-    var n: Int = v.ndshape.ndsize + abs(k)
-    var result: NDArray[dtype] = NDArray[dtype](n, n)
-
-    for i in range(n):
-        print(n * i + i + k)
-        result.store(n * i + i + k, v.data[i])
-    if k > 0:
+    var n: Int = v.ndshape.ndsize
+    var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
+    if k >= 0:
         for i in range(n):
-            result.store(n * i + i + k, v.data[i])
+            result.store((n + k + 1) * i + k, v.data[i])
     else:
         for i in range(n):
             result.store(
-                result.ndshape.ndsize - 1 - (n * i + i + abs(k)),
+                result.ndshape.ndsize - 1 - (n + abs(k) + 1) * i + k,
                 v.data[v.ndshape.ndsize - 1 - i],
             )
-    return result
+    return result^
 
 
 fn tri[

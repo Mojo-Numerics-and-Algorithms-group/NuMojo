@@ -557,7 +557,6 @@ struct NDArray[dtype: DType = DType.float64](
             val, self, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    @always_inline("nodebug")
     fn __setitem__(inout self, index: Idx, val: SIMD[dtype, 1]) raises:
         """
         Set the value at the index list.
@@ -821,8 +820,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
-    @always_inline("nodebug")
-    fn __getitem__(inout self, index: Idx) raises -> SIMD[dtype, 1]:
+    fn __getitem__(self, index: Idx) raises -> SIMD[dtype, 1]:
         """
         Set the value at the index list.
         """

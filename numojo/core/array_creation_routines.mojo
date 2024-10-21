@@ -398,7 +398,7 @@ fn empty[
 fn empty[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int]) raises -> NDArray[dtype]:
-    """Overload of function `empty` that reads a variadic of ints."""
+    """Overload of function `empty` that reads a variadic list of ints."""
     return empty[dtype](shape=Shape(shape))
 
 
@@ -435,7 +435,7 @@ fn zeros[
 fn zeros[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int]) raises -> NDArray[dtype]:
-    """Overload of function `zeros` that reads a variadic of ints."""
+    """Overload of function `zeros` that reads a variadic list of ints."""
     return zeros[dtype](shape=Shape(shape))
 
 
@@ -545,7 +545,7 @@ fn full[
 fn full[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
-    """Overload of function `full` that reads a variadic of ints."""
+    """Overload of function `full` that reads a variadic list of ints."""
     return full[dtype](shape=Shape(shape), fill_value=fill_value)
 
 

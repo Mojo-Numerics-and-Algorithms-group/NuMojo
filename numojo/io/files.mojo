@@ -45,4 +45,4 @@ fn savetxt[
         for i in range(array.ndshape.ndsize):
             if i % 10 == 0:
                 file.write(str("\n"))
-            file.write(str(array.data[i]) + ",")
+            file.write(str(array._buf[i]) + ",")

@@ -53,7 +53,7 @@ fn arange[
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num, size=num))
     for idx in range(num):
-        result.data[idx] = start + step * idx
+        result._buf[idx] = start + step * idx
 
     return result
 
@@ -125,12 +125,12 @@ fn _linspace_serial[
     if endpoint:
         var step: SIMD[dtype, 1] = (stop - start) / (num - 1)
         for i in range(num):
-            result.data[i] = start + step * i
+            result._buf[i] = start + step * i
 
     else:
         var step: SIMD[dtype, 1] = (stop - start) / num
         for i in range(num):
-            result.data[i] = start + step * i
+            result._buf[i] = start + step * i
 
     return result
 
@@ -164,7 +164,7 @@ fn _linspace_parallel[
 
         @parameter
         fn parallelized_linspace(idx: Int) -> None:
-            result.data[idx] = start + step * idx
+            result._buf[idx] = start + step * idx
 
         parallelize[parallelized_linspace](num)
 
@@ -173,7 +173,7 @@ fn _linspace_parallel[
 
         @parameter
         fn parallelized_linspace1(idx: Int) -> None:
-            result.data[idx] = start + step * idx
+            result._buf[idx] = start + step * idx
 
         parallelize[parallelized_linspace1](num)
 
@@ -262,11 +262,11 @@ fn _logspace_serial[
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / (num - 1)
         for i in range(num):
-            result.data[i] = base ** (start + step * i)
+            result._buf[i] = base ** (start + step * i)
     else:
         var step: Scalar[dtype] = (stop - start) / num
         for i in range(num):
-            result.data[i] = base ** (start + step * i)
+            result._buf[i] = base ** (start + step * i)
     return result
 
 
@@ -302,7 +302,7 @@ fn _logspace_parallel[
 
         @parameter
         fn parallelized_logspace(idx: Int) -> None:
-            result.data[idx] = base ** (start + step * idx)
+            result._buf[idx] = base ** (start + step * idx)
 
         parallelize[parallelized_logspace](num)
 
@@ -311,7 +311,7 @@ fn _logspace_parallel[
 
         @parameter
         fn parallelized_logspace1(idx: Int) -> None:
-            result.data[idx] = base ** (start + step * idx)
+            result._buf[idx] = base ** (start + step * idx)
 
         parallelize[parallelized_logspace1](num)
 
@@ -354,7 +354,7 @@ fn geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result.data[i] = a * r**i
+            result._buf[i] = a * r**i
         return result
 
     else:
@@ -363,7 +363,7 @@ fn geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result.data[i] = a * r**i
+            result._buf[i] = a * r**i
         return result
 
 
@@ -531,7 +531,7 @@ fn full[
         A NDArray of `dtype` with given `shape`.
     """
     var A = NDArray[dtype](shape=shape)
-    fill_pointer[dtype](A.data, A.ndshape.ndsize, fill_value)
+    fill_pointer[dtype](A._buf, A.ndshape.ndsize, fill_value)
     return A
 
 
@@ -571,15 +571,15 @@ fn diagflat[
 
     for i in range(n):
         print(n * i + i + k)
-        result.store(n * i + i + k, v.data[i])
+        result.store(n * i + i + k, v._buf[i])
     if k > 0:
         for i in range(n):
-            result.store(n * i + i + k, v.data[i])
+            result.store(n * i + i + k, v._buf[i])
     else:
         for i in range(n):
             result.store(
                 result.ndshape.ndsize - 1 - (n * i + i + abs(k)),
-                v.data[v.ndshape.ndsize - 1 - i],
+                v._buf[v.ndshape.ndsize - 1 - i],
             )
     return result
 
@@ -628,7 +628,7 @@ fn tri[
 #     for j in range(m.ndshape[-2]):
 #         var idx: Int = _get_index(index, m.ndshape)
 #         if i >= j - k:
-#             m.data[idx] = Scalar[dtype](0)
+#             m._buf[idx] = Scalar[dtype](0)
 #         index[-2] += 1
 
 # fn triu():

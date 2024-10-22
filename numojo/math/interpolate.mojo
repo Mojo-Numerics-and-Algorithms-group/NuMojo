@@ -82,20 +82,20 @@ fn _interp1d_linear_interpolate[
     """
     var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
-        if xi.data[i] <= x.data[0]:
-            result.data.store[width=1](i, y.data[0])
-        elif xi.data[i] >= x.data[x.num_elements() - 1]:
-            result.data.store[width=1](i, y.data[y.num_elements() - 1])
+        if xi._buf[i] <= x._buf[0]:
+            result._buf.store[width=1](i, y._buf[0])
+        elif xi._buf[i] >= x._buf[x.num_elements() - 1]:
+            result._buf.store[width=1](i, y._buf[y.num_elements() - 1])
         else:
             var j = 0
-            while xi.data[i] > x.data[j]:
+            while xi._buf[i] > x._buf[j]:
                 j += 1
-            var x0 = x.data[j - 1]
-            var x1 = x.data[j]
-            var y0 = y.data[j - 1]
-            var y1 = y.data[j]
-            var t = (xi.data[i] - x0) / (x1 - x0)
-            result.data.store[width=1](i, y0 + t * (y1 - y0))
+            var x0 = x._buf[j - 1]
+            var x1 = x._buf[j]
+            var y0 = y._buf[j - 1]
+            var y1 = y._buf[j]
+            var t = (xi._buf[i] - x0) / (x1 - x0)
+            result._buf.store[width=1](i, y0 + t * (y1 - y0))
     return result
 
 
@@ -117,26 +117,26 @@ fn _interp1d_linear_extrapolate[
     """
     var result = NDArray[dtype](xi.shape())
     for i in range(xi.num_elements()):
-        if xi.data.load[width=1](i) <= x.data.load[width=1](0):
-            var slope = (y.data[1] - y.data[0]) / (x.data[1] - x.data[0])
-            result.data[i] = y.data[0] + slope * (xi.data[i] - x.data[0])
-        elif xi.data[i] >= x.data[x.num_elements() - 1]:
+        if xi._buf.load[width=1](i) <= x._buf.load[width=1](0):
+            var slope = (y._buf[1] - y._buf[0]) / (x._buf[1] - x._buf[0])
+            result._buf[i] = y._buf[0] + slope * (xi._buf[i] - x._buf[0])
+        elif xi._buf[i] >= x._buf[x.num_elements() - 1]:
             var slope = (
-                y.data[y.num_elements() - 1] - y.data[y.num_elements() - 2]
-            ) / (x.data[x.num_elements() - 1] - x.data[x.num_elements() - 2])
-            result.data[i] = y.data[y.num_elements() - 1] + slope * (
-                xi.data[i] - x.data[x.num_elements() - 1]
+                y._buf[y.num_elements() - 1] - y._buf[y.num_elements() - 2]
+            ) / (x._buf[x.num_elements() - 1] - x._buf[x.num_elements() - 2])
+            result._buf[i] = y._buf[y.num_elements() - 1] + slope * (
+                xi._buf[i] - x._buf[x.num_elements() - 1]
             )
         else:
             var j = 0
-            while xi.data[i] > x.data[j]:
+            while xi._buf[i] > x._buf[j]:
                 j += 1
-            var x0 = x.data[j - 1]
-            var x1 = x.data[j]
-            var y0 = y.data[j - 1]
-            var y1 = y.data[j]
-            var t = (xi.data[i] - x0) / (x1 - x0)
-            result.data[i] = y0 + t * (y1 - y0)
+            var x0 = x._buf[j - 1]
+            var x1 = x._buf[j]
+            var y0 = y._buf[j - 1]
+            var y1 = y._buf[j]
+            var t = (xi._buf[i] - x0) / (x1 - x0)
+            result._buf[i] = y0 + t * (y1 - y0)
     return result
 
 

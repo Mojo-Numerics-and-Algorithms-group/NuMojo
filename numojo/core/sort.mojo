@@ -51,10 +51,10 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 
     for i in range(length):
         for j in range(length - i - 1):
-            if result.data.load[width=1](j) > result.data.load[width=1](j + 1):
-                var temp = result.data.load[width=1](j)
-                result.data.store[width=1](j, result.data.load[width=1](j + 1))
-                result.data.store[width=1](j + 1, temp)
+            if result._buf.load[width=1](j) > result._buf.load[width=1](j + 1):
+                var temp = result._buf.load[width=1](j)
+                result._buf.store[width=1](j, result._buf.load[width=1](j + 1))
+                result._buf.store[width=1](j + 1, temp)
 
     return result
 

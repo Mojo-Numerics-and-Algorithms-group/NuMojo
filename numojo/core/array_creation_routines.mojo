@@ -714,41 +714,85 @@ fn tri[
     )
     for i in range(N):
         for j in range(M):
-            if i >= j - k:
+            if j <= i + k:
                 result.store(i, j, val=Scalar[dtype](1))
-    return result
+    return result^
 
 
-# fn tril[dtype: DType = DType.float64](inout m: NDArray[dtype], k: Int = 0) raises:
-# """
-# Zero out elements above the k-th diagonal.
+fn tril[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
+    """
+    Zero out elements above the k-th diagonal.
 
-# Parameters:
-#     dtype: Datatype of the NDArray elements.
+    Parameters:
+        dtype: Datatype of the NDArray elements.
 
-# Args:
-#     m: NDArray to be zeroed out.
-#     k: Diagonal offset.
-# """
-# var index: List[Int] = List[Int]()
-# for _ in range(m.ndshape.ndlen):
-#     index.append(0)
+    Args:
+        m: NDArray to be zeroed out.
+        k: Diagonal offset.
 
-# for i in range(m.ndshape[-1]):
-#     for j in range(m.ndshape[-2]):
-#         var idx: Int = _get_index(index, m.ndshape)
-#         if i >= j - k:
-#             m.data[idx] = Scalar[dtype](0)
-#         index[-2] += 1
+    Returns:
+        A NDArray with elements above the k-th diagonal zeroed out.
+    """
+    var initial_offset: Int = 1
+    var final_offset: Int = 1
+    var result: NDArray[dtype] = m
+    if m.ndim == 2:
+        for i in range(m.ndshape[0]):
+            for j in range(i + 1 + k, m.ndshape[1]):
+                result.data[i * m.ndshape[1] + j] = Scalar[dtype](0)
+    elif m.ndim >= 2:
+        for i in range(m.ndim - 2):
+            initial_offset *= m.ndshape[i]
+        for i in range(m.ndim - 2, m.ndim):
+            final_offset *= m.ndshape[i]
+        for offset in range(initial_offset):
+            offset = offset * final_offset
+            for i in range(m.ndshape[-2]):
+                for j in range(i + 1 + k, m.ndshape[-1]):
+                    result.data[offset + j + i*m.ndshape[-1]] = Scalar[dtype](0)
+    else: 
+        raise Error("Arrays smaller than 2D are not supported for this operation.")
+    return result^
 
-# fn triu():
-# pass
+fn triu[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
+    """
+    Zero out elements below the k-th diagonal.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        m: NDArray to be zeroed out.
+        k: Diagonal offset.
+    
+    Returns:
+        A NDArray with elements below the k-th diagonal zeroed out.
+    """
+    var initial_offset: Int = 1
+    var final_offset: Int = 1
+    var result: NDArray[dtype] = m
+    if m.ndim == 2:
+        for i in range(m.ndshape[0]):
+            for j in range(0, i + k):
+                result.data[i * m.ndshape[1] + j] = Scalar[dtype](0)
+    elif m.ndim >= 2:
+        for i in range(m.ndim - 2):
+            initial_offset *= m.ndshape[i]
+        for i in range(m.ndim - 2, m.ndim):
+            final_offset *= m.ndshape[i]
+        for offset in range(initial_offset):
+            offset = offset * final_offset
+            for i in range(m.ndshape[-2]):
+                for j in range(0, i + k):
+                    result.data[offset + j + i*m.ndshape[-1]] = Scalar[dtype](0)
+    else: 
+        raise Error("Arrays smaller than 2D are not supported for this operation.")
+    return result^
+
 
 # ===------------------------------------------------------------------------===#
 # Construct array from string representation or txt files
 # ===------------------------------------------------------------------------===#
-
-
 fn fromstring[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
@@ -846,8 +890,6 @@ fn fromstring[
 # Construct array from various objects.
 # It can be reloaded to allow different types of input.
 # ===------------------------------------------------------------------------===#
-
-
 fn array[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
@@ -855,125 +897,6 @@ fn array[
     This reload is an alias of `fromstring`.
     """
     return fromstring[dtype](text, order)
-
-
-# identical with `full`
-# fn array[
-#     dtype: DType = DType.float64
-# ](
-#     *shape: Int, fill: Optional[Scalar[dtype]] = None, order: String = "C"
-# ) raises -> NDArray[dtype]:
-#     """
-#     Array creation with given variadic shape and fill value.
-
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
-
-#     Args:
-#         shape: Variadic shape.
-#         fill: Set all the values to this.
-#         order: Memory order C or F.
-
-#     Example:
-#         ```mojo
-#         import numojo as nm
-#         nm.array[f16](3, 2, 4, fill=Scalar[f16](10))
-#         ```
-
-#     Returns:
-#         An Array of given shape and fill value.
-#     """
-#     return NDArray[dtype](shape=shape, fill=fill, order=order)
-
-
-# identical with `full`
-# fn array[
-#     dtype: DType = DType.float64
-# ](
-#     shape: List[Int], fill: Optional[Scalar[dtype]] = None, order: String = "C"
-# ) raises -> NDArray[dtype]:
-#     """
-#     Array creation with given shape and fill value.
-
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
-
-#     Args:
-#         shape: List of shape.
-#         fill: Set all the values to this.
-#         order: Memory order C or F.
-
-#     Example:
-#         ```mojo
-#         import numojo as nm
-#         nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
-#         ```
-
-#     Returns:
-#         An Array of given shape and fill value.
-#     """
-#     return NDArray[dtype](shape=shape, fill=fill, order=order)
-
-
-# identical with `full`
-# fn array[
-#     dtype: DType = DType.float64
-# ](
-#     shape: VariadicList[Int],
-#     fill: Optional[Scalar[dtype]] = None,
-#     order: String = "C",
-# ) raises -> NDArray[dtype]:
-#     """
-#     Array creation with given shape and fill value.
-
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
-
-#     Args:
-#         shape: VariadicList of shape.
-#         fill: Set all the values to this.
-#         order: Memory order C or F.
-
-#     Example:
-#         ```mojo
-#         import numojo as nm
-#         nm.array[f16](List[Int](3, 2, 4), fill=Scalar[f16](10))
-#         ```
-
-#     Returns:
-#         An Array of given shape and fill value.
-#     """
-#     return NDArray[dtype](shape=shape, fill=fill, order=order)
-
-# This is the same as `empty` or `full`.
-# fn array[
-#     dtype: DType = DType.float64
-# ](
-#     shape: NDArrayShape,
-#     fill: Optional[Scalar[dtype]] = None,
-#     order: String = "C",
-# ) raises -> NDArray[dtype]:
-#     """
-#     Array creation with given shape and fill value.
-
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
-
-#     Args:
-#         shape: NDArrayShape of the array.
-#         fill: Set all the values to this.
-#         order: Memory order C or F.
-
-#     Example:
-#         ```mojo
-#         import numojo as nm
-#         nm.array[f16](NDArrayShape(2, 3, 4), fill=Scalar[f16](10))
-#         ```
-
-#     Returns:
-#         An Array of given shape and fill value.
-#     """
-#     return NDArray[dtype](shape=shape, fill=fill, order=order)
 
 
 fn array[

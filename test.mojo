@@ -10,17 +10,6 @@ import numojo as nm
 from numojo import *
 from time import now
 
-# alias backend = nm.VectorizedParallelizedNWorkers[8]
-# def main():
-#     var array = nm.NDArray[nm.f64](10,10, order="F")
-#     for i in range(array.size()):
-#         array[i]=i
-#     var res = array.sum(axis=1)
-#     # for i in range(10):
-#     #     for j in range(10):
-#     #         print(array[i,j])
-#     print(res)
-
 
 fn test_constructors1() raises:
     var arr1 = NDArray[f32](3, 4, 5)
@@ -218,15 +207,59 @@ fn test_bool_masks2() raises:
     print(temp3.ndshape, temp3.stride, temp3.ndshape.ndsize)
 
 
-# fn test_creation_routines() raises:
-#     var x = linspace[numojo.f32](0.0, 60.0, 60)
-#     var y = ones[numojo.f32](shape(3, 2))
-#     var z = logspace[numojo.f32](-3, 0, 60)
-#     var w = arange[f32](0.0, 24.0, step=1)
-#     print(x)
-#     print(y)
-#     print(z)
-#     print(w)
+fn test_creation_routines() raises:
+    var x = linspace[numojo.f32](0.0, 60.0, 60)
+    var y = ones[numojo.f32](shape(3, 2))
+    var z = logspace[numojo.f32](-3, 0, 60)
+    var w = arange[f32](0.0, 24.0, step=1)
+    print(x)
+    print(y)
+    print(z)
+    print(w)
+
+
+fn test_creation_routines1() raises:
+    var rand_matrix = nm.random.rand[f32](3, 3, min=0, max=100)
+    var diag_matrix = diag[f32](rand_matrix, k=0)
+    print("rand_matrix: ", rand_matrix)
+    print("diag_matrix: ", diag_matrix)
+    var diag_matrix_k1 = diag[f32](rand_matrix, k=1)
+    print("diag_matrix_k1: ", diag_matrix_k1)
+    var diag_matrix_k2 = diag[f32](rand_matrix, k=2)
+    print("diag_matrix_k2: ", diag_matrix_k2)
+    var diag_of_diag = diag[f32](diag_matrix_k1, k=0)
+    print("diag_of_diag: ", diag_of_diag)
+
+    var diagflat_matrix = diagflat[f32](rand_matrix, k=0)
+    print("diagflat_matrix: ", diagflat_matrix)
+    var diagflat_matrix_km1 = diagflat[f32](rand_matrix, k=-1)
+    print("diagflat_matrix_km1: ", diagflat_matrix_km1)
+
+    var np = Python.import_module("numpy")
+    var arange_matrix = nm.arange[nm.i64](0, 4, 1)
+    arange_matrix.reshape(2, 2)
+    var diagflat_k2 = nm.diagflat[nm.i64](arange_matrix, k=2)
+    print()
+    var diagflat_km1 = nm.diagflat[nm.i64](arange_matrix, k=-1)
+    print("diagflat_k2: ", diagflat_k2)
+    print("diagflat_km1: ", diagflat_km1)
+
+    var tri_matrix = nm.tri[f32](4, 4, k=-2)
+    print("tri_matrix: ", tri_matrix)
+    var reshaped_arange = nm.arange[nm.i64](1, 13, 1)
+    reshaped_arange.reshape(4, 3)
+    print("reshaped_arange: ", reshaped_arange)
+    var triu_matrix = nm.triu[nm.i64](reshaped_arange, k=-1)
+    print("triu_matrix: ", triu_matrix)
+    var array_input = nm.array[nm.i64](String("[1, 2, 3, 5]"))
+    var vander_matrix = nm.vander[nm.i64](array_input, N=3)
+    var vander_matrix_inc = nm.vander[nm.i64](array_input, N=3, increasing=True)
+    print(vander_matrix)
+    print(vander_matrix_inc)
+    var full_vander = nm.vander[nm.i64](array_input)
+    var full_vander_inc = nm.vander[nm.i64](array_input, increasing=True)
+    print(full_vander)
+    print(full_vander_inc)
 
 
 fn test_slicing() raises:
@@ -358,12 +391,12 @@ def test_solve():
 
 fn test_setter() raises:
     print("Testing setter")
-    var A = nm.full[i16](3, 3, 3, fill_value=1)
-    var B = nm.full[i16](3, 3, fill_value=2)
+    var A = nm.full[i16](shape(3, 3, 3), fill_value=1)
+    var B = nm.full[i16](shape(3, 3), fill_value=2)
     A[0] = B
     print(A)
 
-    var A1 = nm.full[i16](3, 4, 5, fill_value=1)
+    var A1 = nm.full[i16](shape(3, 4, 5), fill_value=1)
     print("A1: ", A1)
     var D1 = nm.random.rand[i16](3, 5, min=0, max=100)
     A1[:, 0:1, :] = D1  # sets the elements of A[:, 0:1, :] with the array `D`
@@ -381,9 +414,10 @@ fn main() raises:
     # test_bool_masks1()
     # test_bool_masks2()
     # test_creation_routines()
+    test_creation_routines1()
     # test_slicing()
     # test_inv1()
     # test_inv()
     # test_solve()
     # test_linalg()
-    test_setter()
+    # test_setter()

@@ -299,3 +299,32 @@ def test_triu():
     var x_nm_3d_km1 = nm.triu[nm.f32](nm_arr_3d, k=-1)
     var x_np_3d_km1 = np.triu(np_arr_3d, k=-1)
     check(x_nm_3d_km1, x_np_3d_km1, "Tril is broken for 3D array (k=-1)")
+
+def test_vander():
+    var np = Python.import_module("numpy")
+    var nm_arr = nm.arange[nm.f32](1, 5, 1)
+    var np_arr = np.arange(1, 5, 1, dtype=np.float32)
+
+    var x_nm = nm.vander[nm.f32](nm_arr)
+    var x_np = np.vander(np_arr)
+    check(x_nm, x_np, "Vander is broken (default)")
+
+    var x_nm_N3 = nm.vander[nm.f32](nm_arr, N=3)
+    var x_np_N3 = np.vander(np_arr, N=3)
+    check(x_nm_N3, x_np_N3, "Vander is broken (N=3)")
+
+    var x_nm_inc = nm.vander[nm.f32](nm_arr, increasing=True)
+    var x_np_inc = np.vander(np_arr, increasing=True)
+    check(x_nm_inc, x_np_inc, "Vander is broken (increasing=True)")
+
+    var x_nm_N3_inc = nm.vander[nm.f32](nm_arr, N=3, increasing=True)
+    var x_np_N3_inc = np.vander(np_arr, N=3, increasing=True)
+    check(x_nm_N3_inc, x_np_N3_inc, "Vander is broken (N=3, increasing=True)")
+
+    # Test with different dtype
+    var nm_arr_int = nm.arange[nm.i32](1, 5, 1)
+    var np_arr_int = np.arange(1, 5, 1, dtype=np.int32)
+
+    var x_nm_int = nm.vander[nm.i32](nm_arr_int)
+    var x_np_int = np.vander(np_arr_int)
+    check(x_nm_int, x_np_int, "Vander is broken (int32)")

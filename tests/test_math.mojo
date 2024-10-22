@@ -79,6 +79,7 @@ def test_matmul():
     # The only matmul that currently works is par (__matmul__)
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
 
+
 def test_matmul_1dx2d():
     var np = Python.import_module("numpy")
     var arr1 = nm.random.randn(4)
@@ -99,6 +100,7 @@ def test_matmul_2dx1d():
     check_is_close(
         arr1 @ arr2, np.matmul(nparr1, nparr2), "Dunder matmul is broken"
     )
+
 
 # ! The `inv` is broken, it outputs -INF for some values
 def test_inv():

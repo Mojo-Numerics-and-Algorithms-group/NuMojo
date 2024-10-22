@@ -220,14 +220,14 @@ fn test_creation_routines() raises:
 
 fn test_creation_routines1() raises:
     var rand_matrix = nm.random.rand[f32](3, 3, min=0, max=100)
-    var diag_matrix = diag[f32](rand_matrix, k=0)
+    var diag_matrix = nm.diag[f32](rand_matrix, k=0)
     print("rand_matrix: ", rand_matrix)
     print("diag_matrix: ", diag_matrix)
-    var diag_matrix_k1 = diag[f32](rand_matrix, k=1)
+    var diag_matrix_k1 = nm.diag[f32](rand_matrix, k=1)
     print("diag_matrix_k1: ", diag_matrix_k1)
-    var diag_matrix_k2 = diag[f32](rand_matrix, k=2)
+    var diag_matrix_k2 = nm.diag[f32](rand_matrix, k=2)
     print("diag_matrix_k2: ", diag_matrix_k2)
-    var diag_of_diag = diag[f32](diag_matrix_k1, k=0)
+    var diag_of_diag = nm.diag[f32](diag_matrix_k1, k=0)
     print("diag_of_diag: ", diag_of_diag)
 
     var diagflat_matrix = diagflat[f32](rand_matrix, k=0)

@@ -637,13 +637,13 @@ fn diag[
         var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
         if k >= 0:
             for i in range(n):
-                result.data[i * (n + abs(k) + 1) + k] = v.data[i]
+                result._buf[i * (n + abs(k) + 1) + k] = v._buf[i]
             return result^
         else:
             for i in range(n):
-                result.data[
+                result._buf[
                     result.ndshape.ndsize - 1 - i * (result.ndshape[1] + 1) + k
-                ] = v.data[n - 1 - i]
+                ] = v._buf[n - 1 - i]
         return result^
     elif v.ndim == 2:
         var m: Int = v.ndshape[0]
@@ -651,10 +651,10 @@ fn diag[
         var result: NDArray[dtype] = NDArray[dtype](n - abs(k))
         if k >= 0:
             for i in range(n - abs(k)):
-                result.data[i] = v.data[i * (n + 1) + k]
+                result._buf[i] = v._buf[i * (n + 1) + k]
         else:
             for i in range(n - abs(k)):
-                result.data[m - abs(k) - 1 - i] = v.data[
+                result._buf[m - abs(k) - 1 - i] = v._buf[
                     v.ndshape.ndsize - 1 - i * (v.ndshape[1] + 1) + k
                 ]
         return result^
@@ -682,12 +682,12 @@ fn diagflat[
     var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
     if k >= 0:
         for i in range(n):
-            result.store((n + k + 1) * i + k, v.data[i])
+            result.store((n + k + 1) * i + k, v._buf[i])
     else:
         for i in range(n):
             result.store(
                 result.ndshape.ndsize - 1 - (n + abs(k) + 1) * i + k,
-                v.data[v.ndshape.ndsize - 1 - i],
+                v._buf[v.ndshape.ndsize - 1 - i],
             )
     return result^
 
@@ -741,7 +741,7 @@ fn tril[
     if m.ndim == 2:
         for i in range(m.ndshape[0]):
             for j in range(i + 1 + k, m.ndshape[1]):
-                result.data[i * m.ndshape[1] + j] = Scalar[dtype](0)
+                result._buf[i * m.ndshape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.ndshape[i]
@@ -751,7 +751,7 @@ fn tril[
             offset = offset * final_offset
             for i in range(m.ndshape[-2]):
                 for j in range(i + 1 + k, m.ndshape[-1]):
-                    result.data[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
+                    result._buf[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
                         0
                     )
     else:
@@ -783,7 +783,7 @@ fn triu[
     if m.ndim == 2:
         for i in range(m.ndshape[0]):
             for j in range(0, i + k):
-                result.data[i * m.ndshape[1] + j] = Scalar[dtype](0)
+                result._buf[i * m.ndshape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.ndshape[i]
@@ -793,7 +793,7 @@ fn triu[
             offset = offset * final_offset
             for i in range(m.ndshape[-2]):
                 for j in range(0, i + k):
-                    result.data[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
+                    result._buf[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
                         0
                     )
     else:
@@ -831,7 +831,7 @@ fn vander[
         NDArrayShape(n_rows, n_cols), fill=SIMD[dtype, 1](1)
     )
     for i in range(n_rows):
-        var x_i = x.data[i]
+        var x_i = x._buf[i]
         if increasing:
             for j in range(n_cols):
                 result.store(i, j, val=x_i**j)

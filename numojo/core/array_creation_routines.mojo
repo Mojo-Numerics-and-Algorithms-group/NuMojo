@@ -790,6 +790,40 @@ fn triu[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> N
     return result^
 
 
+fn vander[dtype: DType = DType.float64](x: NDArray[dtype], N: Optional[Int] = None, increasing: Bool = False) raises -> NDArray[dtype]:
+    """
+    Generate a Vandermonde matrix.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        x: 1-D input array.
+        N: Number of columns in the output. If N is not specified, a square array is returned.
+        increasing: Order of the powers of the columns. If True, the powers increase from left to right, if False (the default) they are reversed.
+
+    Returns:
+        A Vandermonde matrix.
+    """
+    if x.ndim != 1:
+        raise Error("x must be a 1-D array")
+    
+    var n_rows = x.ndshape.ndsize
+    var n_cols = N.value() if N else n_rows
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(n_rows, n_cols), fill=SIMD[dtype, 1](1))
+    for i in range(n_rows):
+        var x_i = x.data[i]
+        if increasing:
+            for j in range(n_cols):
+                result.store(i, j, val=x_i ** j)
+        else:
+            for j in range(n_cols - 1, -1, -1):
+                result.store(i, n_cols - 1 - j, val=x_i ** j)
+    return result^
+
+    
+
+
 # ===------------------------------------------------------------------------===#
 # Construct array from string representation or txt files
 # ===------------------------------------------------------------------------===#

@@ -122,8 +122,8 @@ fn where[
 
     """
     for i in range(x.ndshape.ndsize):
-        if mask.data[i] == True:
-            x.data.store(i, scalar)
+        if mask._buf[i] == True:
+            x._buf.store(i, scalar)
 
 
 # TODO: do it with vectorization
@@ -148,8 +148,8 @@ fn where[
     if x.ndshape != y.ndshape:
         raise Error("Shape mismatch error: x and y must have the same shape")
     for i in range(x.ndshape.ndsize):
-        if mask.data[i] == True:
-            x.data.store(i, y.data[i])
+        if mask._buf[i] == True:
+            x._buf.store(i, y._buf[i])
 
 
 fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -172,7 +172,7 @@ fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         shape=array.ndshape, order=array.order
     )
     for i in range(array.ndshape.ndsize):
-        result.data.store(i, array.data[array.ndshape.ndsize - i - 1])
+        result._buf.store(i, array._buf[array.ndshape.ndsize - i - 1])
     return result
 
 
@@ -195,8 +195,8 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
     @parameter
     fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-        res.data.store[width=simd_width](
-            index, array.data.load[width=simd_width](index)
+        res._buf.store[width=simd_width](
+            index, array._buf.load[width=simd_width](index)
         )
 
     vectorize[vectorized_flatten, width](array.ndshape.ndsize)
@@ -238,6 +238,6 @@ fn trace[
     for i in range(diag_length):
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i
-        result.data.store(0, result.data.load(0) + array.data[row * cols + col])
+        result._buf.store(0, result._buf.load(0) + array._buf[row * cols + col])
 
     return result

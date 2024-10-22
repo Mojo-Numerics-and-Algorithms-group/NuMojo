@@ -25,3 +25,5 @@ format = "magic run mojo format ./"
 
 [dependencies]
 max = ">=24.5.0,<25"
+numpy = ">=1.19,<2.2"
+scipy = ">=1.14,<1.15"

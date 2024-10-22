@@ -139,7 +139,7 @@ struct NDArray[dtype: DType = DType.float64](
         6. The order of the array: Row vs Columns major
     """
 
-    var data: UnsafePointer[Scalar[dtype]]
+    var _buf: UnsafePointer[Scalar[dtype]]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
     """Number of Dimensions."""
@@ -188,11 +188,11 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
+            fill_pointer[dtype](self._buf, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
@@ -220,11 +220,11 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
+            fill_pointer[dtype](self._buf, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
@@ -252,11 +252,11 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
+            fill_pointer[dtype](self._buf, self.ndshape.ndsize, fill.value())
 
     @always_inline("nodebug")
     fn __init__(
@@ -284,11 +284,11 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, order=order)
         self.coefficient = NDArrayStride(shape, order=order)
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         if fill is not None:
-            fill_pointer[dtype](self.data, self.ndshape.ndsize, fill.value())
+            fill_pointer[dtype](self._buf, self.ndshape.ndsize, fill.value())
 
     fn __init__(
         inout self,
@@ -315,11 +315,11 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
         self.datatype = dtype
         self.order = order
         for i in range(self.ndshape.ndsize):
-            self.data[i] = data[i]
+            self._buf[i] = data[i]
 
     fn __init__(inout self, data: PythonObject, order: String = "C") raises:
         """
@@ -347,12 +347,12 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndshape = NDArrayShape(shape)
         self.stride = NDArrayStride(shape, offset=0, order=order)
         self.coefficient = NDArrayStride(shape, offset=0, order=order)
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
-        memset_zero(self.data, self.ndshape.ndsize)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.ndshape.ndsize)
+        memset_zero(self._buf, self.ndshape.ndsize)
         self.order = order
         self.datatype = dtype
         for i in range(self.ndshape.ndsize):
-            self.data[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
+            self._buf[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
     # Why do  these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
@@ -375,8 +375,8 @@ struct NDArray[dtype: DType = DType.float64](
         self.coefficient = NDArrayStride(stride=coefficient, offset=offset)
         self.datatype = dtype
         self.order = order
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(size)
-        memset_zero(self.data, size)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(size)
+        memset_zero(self._buf, size)
 
     # for creating views
     fn __init__(
@@ -400,7 +400,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
         self.datatype = dtype
         self.order = order
-        self.data = data + self.stride.ndoffset
+        self._buf = data + self.stride.ndoffset
 
     @always_inline("nodebug")
     fn __copyinit__(inout self, other: Self):
@@ -413,8 +413,8 @@ struct NDArray[dtype: DType = DType.float64](
         self.coefficient = other.coefficient
         self.datatype = other.datatype
         self.order = other.order
-        self.data = UnsafePointer[Scalar[dtype]]().alloc(other.ndshape.size())
-        memcpy(self.data, other.data, other.ndshape.size())
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.ndshape.size())
+        memcpy(self._buf, other._buf, other.ndshape.size())
 
     @always_inline("nodebug")
     fn __moveinit__(inout self, owned existing: Self):
@@ -427,11 +427,11 @@ struct NDArray[dtype: DType = DType.float64](
         self.coefficient = existing.coefficient
         self.datatype = existing.datatype
         self.order = existing.order
-        self.data = existing.data
+        self._buf = existing._buf
 
     @always_inline("nodebug")
     fn __del__(owned self):
-        self.data.free()
+        self._buf.free()
 
     # ===-------------------------------------------------------------------===#
     # Setter dunders
@@ -458,9 +458,9 @@ struct NDArray[dtype: DType = DType.float64](
         if index >= self.ndshape.ndsize:
             raise Error("Invalid index: index out of bound")
         if index >= 0:
-            return self.data.store[width=1](index, val)
+            return self._buf.store[width=1](index, val)
         else:
-            return self.data.store[width=1](index + self.ndshape.ndsize, val)
+            return self._buf.store[width=1](index + self.ndshape.ndsize, val)
 
     # TODO: add support for different dtypes
     fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
@@ -471,7 +471,7 @@ struct NDArray[dtype: DType = DType.float64](
             `arr[1]` returns the second row of the array.
         """
         if self.ndim == 0 and val.ndim == 0:
-            self.data.store[width=1](0, val.data.load[width=1](0))
+            self._buf.store[width=1](0, val._buf.load[width=1](0))
 
         var slice_list = List[Slice]()
         slice_list.append(Slice(idx, idx + 1))
@@ -569,7 +569,7 @@ struct NDArray[dtype: DType = DType.float64](
             if index[i] >= self.ndshape[i]:
                 raise Error("Error: Elements of `index` exceed the array shape")
         var idx: Int = _get_index(index, self.coefficient)
-        self.data.store[width=1](idx, val)
+        self._buf.store[width=1](idx, val)
 
     # compiler doesn't accept this
     # fn __setitem__(
@@ -584,9 +584,9 @@ struct NDArray[dtype: DType = DType.float64](
     #         raise Error("Mask and array must have the same shape")
 
     #     for i in range(mask.ndshape.ndsize):
-    #         if mask.data.load[width=1](i):
+    #         if mask._buf.load[width=1](i):
     #             print(value)
-    #             self.data.store[width=1](i, value)
+    #             self._buf.store[width=1](i, value)
 
     fn __setitem__(
         inout self, owned *slices: Slice, val: NDArray[dtype]
@@ -763,8 +763,8 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error("Mask and array must have the same shape")
 
         for i in range(mask.ndshape.ndsize):
-            if mask.data.load[width=1](i):
-                self.data.store[width=1](i, val.data.load[width=1](i))
+            if mask._buf.load[width=1](i):
+                self._buf.store[width=1](i, val._buf.load[width=1](i))
 
     # ===-------------------------------------------------------------------===#
     # Getter dunders
@@ -790,9 +790,9 @@ struct NDArray[dtype: DType = DType.float64](
         if index >= self.ndshape.ndsize:
             raise Error("Invalid index: index out of bound")
         if index >= 0:
-            return self.data.load[width=1](index)
+            return self._buf.load[width=1](index)
         else:
-            return self.data.load[width=1](index + self.ndshape.ndsize)
+            return self._buf.load[width=1](index + self.ndshape.ndsize)
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
@@ -832,7 +832,7 @@ struct NDArray[dtype: DType = DType.float64](
             if index[i] >= self.ndshape[i]:
                 raise Error("Error: Elements of `index` exceed the array shape")
         var idx: Int = _get_index(index, self.coefficient)
-        return self.data.load[width=1](idx)
+        return self._buf.load[width=1](idx)
 
     fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
         """
@@ -1292,7 +1292,7 @@ struct NDArray[dtype: DType = DType.float64](
         # Fill in the values
         for i in range(len(index)):
             for j in range(size_per_item):
-                result.data.store[width=1](
+                result._buf.store[width=1](
                     i * size_per_item + j, self[int(index[i])].item(j)
                 )
 
@@ -1346,12 +1346,12 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var true: List[Int] = List[Int]()
         for i in range(mask.ndshape.ndsize):
-            if mask.data.load[width=1](i):
+            if mask._buf.load[width=1](i):
                 true.append(i)
 
         var result = Self(true.__len__())
         for i in range(true.__len__()):
-            result.data.store[width=1](i, self.get(true[i]))
+            result._buf.store[width=1](i, self.get(true[i]))
 
         return result
 
@@ -1628,9 +1628,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn vectorized_pow[simd_width: Int](index: Int) -> None:
-            result.data.store[width=simd_width](
+            result._buf.store[width=simd_width](
                 index,
-                self.data.load[width=simd_width](index)
+                self._buf.load[width=simd_width](index)
                 ** p.load[width=simd_width](index),
             )
 
@@ -1645,8 +1645,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn array_scalar_vectorize[simd_width: Int](index: Int) -> None:
-            new_vec.data.store[width=simd_width](
-                index, pow(self.data.load[width=simd_width](index), p)
+            new_vec._buf.store[width=simd_width](
+                index, pow(self._buf.load[width=simd_width](index), p)
             )
 
         vectorize[array_scalar_vectorize, self.width](self.ndshape.ndsize)
@@ -1971,7 +1971,7 @@ struct NDArray[dtype: DType = DType.float64](
         var width = self.ndshape[1]
         var buffer = Self(width)
         for i in range(width):
-            buffer.set(i, self.data.load[width=1](i + id * width))
+            buffer.set(i, self._buf.load[width=1](i + id * width))
         return buffer
 
     fn col(self, id: Int) raises -> Self:
@@ -1984,7 +1984,7 @@ struct NDArray[dtype: DType = DType.float64](
         var height = self.ndshape[0]
         var buffer = Self(height)
         for i in range(height):
-            buffer.set(i, self.data.load[width=1](id + i * width))
+            buffer.set(i, self._buf.load[width=1](id + i * width))
         return buffer
 
     # # * same as mdot
@@ -2037,7 +2037,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Loads a SIMD element of size `width` at the given index `index`.
         """
-        return self.data.load[width=width](index)
+        return self._buf.load[width=width](index)
 
     # # TODO: we should add checks to make sure user don't load out of bound indices, but that will overhead, figure out later
     fn load[width: Int = 1](self, *index: Int) raises -> SIMD[dtype, width]:
@@ -2045,13 +2045,13 @@ struct NDArray[dtype: DType = DType.float64](
         Loads a SIMD element of size `width` at given variadic indices argument.
         """
         var idx: Int = _get_index(index, self.coefficient)
-        return self.data.load[width=width](idx)
+        return self._buf.load[width=width](idx)
 
     fn store[width: Int](inout self, index: Int, val: SIMD[dtype, width]):
         """
         Stores the SIMD element of size `width` at index `index`.
         """
-        self.data.store[width=width](index, val)
+        self._buf.store[width=width](index, val)
 
     fn store[
         width: Int = 1
@@ -2060,7 +2060,7 @@ struct NDArray[dtype: DType = DType.float64](
         Stores the SIMD element of size `width` at the given variadic indices argument.
         """
         var idx: Int = _get_index(index, self.coefficient)
-        self.data.store[width=width](idx, val)
+        self._buf.store[width=width](idx, val)
 
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
     # # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
@@ -2100,7 +2100,7 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         fn vectorized_all[simd_width: Int](idx: Int) -> None:
             result = result and allb(
-                (self.data + idx).strided_load[width=simd_width](1)
+                (self._buf + idx).strided_load[width=simd_width](1)
             )
 
         vectorize[vectorized_all, self.width](self.ndshape.ndsize)
@@ -2118,7 +2118,7 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         fn vectorized_any[simd_width: Int](idx: Int) -> None:
             result = result or anyb(
-                (self.data + idx).strided_load[width=simd_width](1)
+                (self._buf + idx).strided_load[width=simd_width](1)
             )
 
         vectorize[vectorized_any, self.width](self.ndshape.ndsize)
@@ -2190,7 +2190,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ](idx: Int) -> None:
                     narr.store[simd_width](
                         idx,
-                        (self.data + idx)
+                        (self._buf + idx)
                         .strided_load[width=simd_width](1)
                         .cast[type](),
                     )
@@ -2247,7 +2247,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn vectorized_fill[simd_width: Int](index: Int) -> None:
-            self.data.store[width=simd_width](index, val)
+            self._buf.store[width=simd_width](index, val)
 
         vectorize[vectorized_fill, self.width](self.ndshape.ndsize)
 
@@ -2335,11 +2335,11 @@ struct NDArray[dtype: DType = DType.float64](
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
-                    return self.data.load[width=1](
+                    return self._buf.load[width=1](
                         _get_index(c_coordinates, self.stride)
                     )
 
-                return self.data.load[width=1](index[0])
+                return self._buf.load[width=1](index[0])
             else:
                 raise Error("Error: Elements of `index` exceed the array size")
 
@@ -2349,7 +2349,7 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(index.__len__()):
             if index[i] >= self.ndshape[i]:
                 raise Error("Error: Elements of `index` exceed the array shape")
-        return self.data.load[width=1](_get_index(index, self.stride))
+        return self._buf.load[width=1](_get_index(index, self.stride))
 
     fn itemset(
         inout self, index: Variant[Int, List[Int]], item: Scalar[dtype]
@@ -2411,11 +2411,11 @@ struct NDArray[dtype: DType = DType.float64](
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
-                    self.data.store[width=1](
+                    self._buf.store[width=1](
                         _get_index(c_coordinates, self.stride), item
                     )
 
-                self.data.store[width=1](idx, item)
+                self._buf.store[width=1](idx, item)
             else:
                 raise Error("Error: Elements of `index` exceed the array size")
 
@@ -2429,7 +2429,7 @@ struct NDArray[dtype: DType = DType.float64](
                     raise Error(
                         "Error: Elements of `index` exceed the array shape"
                     )
-            self.data.store[width=1](_get_index(indices, self.stride), item)
+            self._buf.store[width=1](_get_index(indices, self.stride), item)
 
     fn max(self, axis: Int = 0) raises -> Self:
         """
@@ -2573,7 +2573,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var result: List[Scalar[dtype]] = List[Scalar[dtype]]()
         for i in range(self.ndshape.ndsize):
-            result.append(self.data[i])
+            result.append(self._buf[i])
         return result
 
     # TODO: add axis parameter
@@ -2609,7 +2609,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Retreive pointer without taking ownership.
         """
-        return self.data
+        return self._buf
 
     fn to_numpy(self) raises -> PythonObject:
         """

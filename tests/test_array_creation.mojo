@@ -214,3 +214,88 @@ def test_diagflat():
     var x_nm_km1 = nm.diagflat[nm.i64](nm_arr, k=-1)
     var x_np_km1 = np.diagflat(np_arr, k=-1)
     check(x_nm_km1, x_np_km1, "Diagflat is broken (k=-1)")
+
+def test_tri():
+    var np = Python.import_module("numpy")
+    
+    var x_nm = nm.tri[nm.f32](3, 4, k=0)
+    var x_np = np.tri(3, 4, k=0, dtype=np.float32)
+    check(x_nm, x_np, "Tri is broken (k=0)")
+
+    var x_nm_k1 = nm.tri[nm.f32](3, 4, k=1)
+    var x_np_k1 = np.tri(3, 4, k=1, dtype=np.float32)
+    check(x_nm_k1, x_np_k1, "Tri is broken (k=1)")
+
+    var x_nm_km1 = nm.tri[nm.f32](3, 4, k=-1)
+    var x_np_km1 = np.tri(3, 4, k=-1, dtype=np.float32)
+    check(x_nm_km1, x_np_km1, "Tri is broken (k=-1)")
+
+def test_tril():
+    var np = Python.import_module("numpy")
+    var nm_arr = nm.arange[nm.f32](0, 9, 1)
+    nm_arr.reshape(3, 3)
+    var np_arr = np.arange(0, 9, 1, dtype=np.float32).reshape(3, 3)
+
+    var x_nm = nm.tril[nm.f32](nm_arr, k=0)
+    var x_np = np.tril(np_arr, k=0)
+    check(x_nm, x_np, "Tril is broken (k=0)")
+
+    var x_nm_k1 = nm.tril[nm.f32](nm_arr, k=1)
+    var x_np_k1 = np.tril(np_arr, k=1)
+    check(x_nm_k1, x_np_k1, "Tril is broken (k=1)")
+
+    var x_nm_km1 = nm.tril[nm.f32](nm_arr, k=-1)
+    var x_np_km1 = np.tril(np_arr, k=-1)
+    check(x_nm_km1, x_np_km1, "Tril is broken (k=-1)")
+
+    # Test with higher dimensional array
+    var nm_arr_3d = nm.arange[nm.f32](0, 60, 1)
+    nm_arr_3d.reshape(3, 4, 5)
+    var np_arr_3d = np.arange(0, 60, 1, dtype=np.float32).reshape(3, 4, 5)
+
+    var x_nm_3d = nm.tril[nm.f32](nm_arr_3d, k=0)
+    var x_np_3d = np.tril(np_arr_3d, k=0)
+    check(x_nm_3d, x_np_3d, "Tril is broken for 3D array (k=0)")
+
+    var x_nm_3d_k1 = nm.tril[nm.f32](nm_arr_3d, k=1)
+    var x_np_3d_k1 = np.tril(np_arr_3d, k=1)
+    check(x_nm_3d_k1, x_np_3d_k1, "Tril is broken for 3D array (k=1)")
+
+    var x_nm_3d_km1 = nm.tril[nm.f32](nm_arr_3d, k=-1)
+    var x_np_3d_km1 = np.tril(np_arr_3d, k=-1)
+    check(x_nm_3d_km1, x_np_3d_km1, "Tril is broken for 3D array (k=-1)")
+
+def test_triu():
+    var np = Python.import_module("numpy")
+    var nm_arr = nm.arange[nm.f32](0, 9, 1)
+    nm_arr.reshape(3, 3)
+    var np_arr = np.arange(0, 9, 1, dtype=np.float32).reshape(3, 3)
+
+    var x_nm = nm.triu[nm.f32](nm_arr, k=0)
+    var x_np = np.triu(np_arr, k=0)
+    check(x_nm, x_np, "Triu is broken (k=0)")
+
+    var x_nm_k1 = nm.triu[nm.f32](nm_arr, k=1)
+    var x_np_k1 = np.triu(np_arr, k=1)
+    check(x_nm_k1, x_np_k1, "Triu is broken (k=1)")
+
+    var x_nm_km1 = nm.triu[nm.f32](nm_arr, k=-1)
+    var x_np_km1 = np.triu(np_arr, k=-1)
+    check(x_nm_km1, x_np_km1, "Triu is broken (k=-1)")
+
+    # Test with higher dimensional array
+    var nm_arr_3d = nm.arange[nm.f32](0, 60, 1)
+    nm_arr_3d.reshape(3, 4, 5)
+    var np_arr_3d = np.arange(0, 60, 1, dtype=np.float32).reshape(3, 4, 5)
+
+    var x_nm_3d = nm.triu[nm.f32](nm_arr_3d, k=0)
+    var x_np_3d = np.triu(np_arr_3d, k=0)
+    check(x_nm_3d, x_np_3d, "Triu is broken for 3D array (k=0)")
+
+    var x_nm_3d_k1 = nm.triu[nm.f32](nm_arr_3d, k=1)
+    var x_np_3d_k1 = np.triu(np_arr_3d, k=1)
+    check(x_nm_3d_k1, x_np_3d_k1, "Triu is broken for 3D array (k=1)")
+
+    var x_nm_3d_km1 = nm.triu[nm.f32](nm_arr_3d, k=-1)
+    var x_np_3d_km1 = np.triu(np_arr_3d, k=-1)
+    check(x_nm_3d_km1, x_np_3d_km1, "Tril is broken for 3D array (k=-1)")

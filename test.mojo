@@ -303,7 +303,7 @@ fn test_rand_funcs[
     var result: NDArray[dtype] = NDArray[dtype](shape)
     if dtype.is_integral():
         randint[dtype](
-            ptr=result._buffer,
+            ptr=result._buf,
             size=result.ndshape.ndsize,
             low=int(min),
             high=int(max),

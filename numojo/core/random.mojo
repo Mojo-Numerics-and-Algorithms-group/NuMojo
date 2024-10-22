@@ -61,7 +61,7 @@ fn int_rand_func[
         max: The maximum value of the random integers.
     """
     random.randint[dtype](
-        ptr=result._buffer,
+        ptr=result._buf,
         size=result.ndshape.ndsize,
         low=int(min),
         high=int(max),
@@ -87,7 +87,7 @@ fn float_rand_func[
         var temp: Scalar[dtype] = random.random_float64(
             min.cast[f64](), max.cast[f64]()
         ).cast[dtype]()
-        result._buffer[i] = temp
+        result._buf[i] = temp
 
 
 fn rand[
@@ -205,7 +205,7 @@ fn randn[
     random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.randn[dtype](
-        ptr=result._buffer,
+        ptr=result._buf,
         size=result.ndshape.ndsize,
         mean=mean.cast[DType.float64](),
         variance=variance.cast[DType.float64](),
@@ -241,7 +241,7 @@ fn randn[
     random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.randn[dtype](
-        ptr=result._buffer,
+        ptr=result._buf,
         size=result.ndshape.ndsize,
         mean=mean.cast[DType.float64](),
         variance=variance.cast[DType.float64](),
@@ -276,7 +276,7 @@ fn rand_exponential[
 
     for i in range(result.num_elements()):
         var u = random.random_float64().cast[dtype]()
-        result._buffer[i] = -mt.log(1 - u) / rate
+        result._buf[i] = -mt.log(1 - u) / rate
 
     return result^
 
@@ -308,6 +308,6 @@ fn rand_exponential[
 
     for i in range(result.num_elements()):
         var u = random.random_float64().cast[dtype]()
-        result._buffer[i] = -mt.log(1 - u) / rate
+        result._buf[i] = -mt.log(1 - u) / rate
 
     return result^

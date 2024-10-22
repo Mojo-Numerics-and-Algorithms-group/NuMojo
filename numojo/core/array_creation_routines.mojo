@@ -10,8 +10,24 @@ Array creation routine.
 """
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
-2) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and 
+2) Separate `array(object)` and `NDArray.__init__(shape)`.
+3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and 
     reduce the number of function reloads.
+
+---
+
+Use more uniformed way of calling functions, i.e., using one specific 
+overload for each function. This makes maintenance easier. Example:
+
+- `NDArray.__init__` takes in `ShapeLike` and initialize an `NDArray` container.
+- `full` calls `NDArray.__init__`.
+- `zeros`, `ones` calls `full`.
+- Other functions calls `zeros`, `ones`, `full`.
+
+If overloads are needed, it is better to call the default signature in other 
+overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this 
+function. So it is easy for modification.
+
 """
 
 from algorithm import parallelize
@@ -436,9 +452,7 @@ fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with size N x M and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](
-        NDArrayShape(N, M), fill=SIMD[dtype, 1](0)
-    )
+    var result: NDArray[dtype] = zeros[dtype](NDArrayShape(N, M))
     var one: Scalar[dtype] = Scalar[dtype](1)
     for i in range(min(N, M)):
         result.store[1](i, i, val=one)
@@ -458,9 +472,7 @@ fn identity[dtype: DType = DType.float64](N: Int) raises -> NDArray[dtype]:
     Returns:
         A NDArray of `dtype` with size N x N and ones on the diagonals.
     """
-    var result: NDArray[dtype] = NDArray[dtype](
-        NDArrayShape(N, N), fill=SIMD[dtype, 1](0)
-    )
+    var result: NDArray[dtype] = zeros[dtype](NDArrayShape(N, N))
     var one: Scalar[dtype] = Scalar[dtype](1)
     for i in range(N):
         result.store[1](i, i, val=one)
@@ -516,7 +528,7 @@ fn ones_like[
     Returns:
         A NDArray of `dtype` with the same shape as `a` filled with ones.
     """
-    return NDArray[dtype](shape=array.ndshape, fill=SIMD[dtype, 1](1))
+    return ones[dtype](shape=array.ndshape)
 
 
 fn zeros[
@@ -610,7 +622,7 @@ fn full_like[
     Returns:
         A NDArray of `dtype` with the same shape as `a` filled with `fill_value`.
     """
-    return NDArray[dtype](shape=array.ndshape, fill=fill_value)
+    return full[dtype](shape=array.ndshape, fill_value=fill_value)
 
 
 # ===------------------------------------------------------------------------===#
@@ -648,7 +660,7 @@ fn diag[
     elif v.ndim == 2:
         var m: Int = v.ndshape[0]
         var n: Int = v.ndshape[1]
-        var result: NDArray[dtype] = NDArray[dtype](n - abs(k))
+        var result: NDArray[dtype] = NDArray[dtype](Shape(n - abs(k)))
         if k >= 0:
             for i in range(n - abs(k)):
                 result._buf[i] = v._buf[i * (n + 1) + k]
@@ -709,9 +721,7 @@ fn tri[
     Returns:
         A 2-D NDArray with ones on and below the k-th diagonal.
     """
-    var result: NDArray[dtype] = NDArray[dtype](
-        NDArrayShape(N, M), fill=SIMD[dtype, 1](0)
-    )
+    var result: NDArray[dtype] = zeros[dtype](NDArrayShape(N, M))
     for i in range(N):
         for j in range(M):
             if j <= i + k:
@@ -827,9 +837,7 @@ fn vander[
 
     var n_rows = x.ndshape.ndsize
     var n_cols = N.value() if N else n_rows
-    var result: NDArray[dtype] = NDArray[dtype](
-        NDArrayShape(n_rows, n_cols), fill=SIMD[dtype, 1](1)
-    )
+    var result: NDArray[dtype] = ones[dtype](NDArrayShape(n_rows, n_cols))
     for i in range(n_rows):
         var x_i = x._buf[i]
         if increasing:

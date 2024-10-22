@@ -719,7 +719,9 @@ fn tri[
     return result^
 
 
-fn tril[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
+fn tril[
+    dtype: DType = DType.float64
+](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
     Zero out elements above the k-th diagonal.
 
@@ -749,12 +751,19 @@ fn tril[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> N
             offset = offset * final_offset
             for i in range(m.ndshape[-2]):
                 for j in range(i + 1 + k, m.ndshape[-1]):
-                    result.data[offset + j + i*m.ndshape[-1]] = Scalar[dtype](0)
-    else: 
-        raise Error("Arrays smaller than 2D are not supported for this operation.")
+                    result.data[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
+                        0
+                    )
+    else:
+        raise Error(
+            "Arrays smaller than 2D are not supported for this operation."
+        )
     return result^
 
-fn triu[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
+
+fn triu[
+    dtype: DType = DType.float64
+](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
     Zero out elements below the k-th diagonal.
 
@@ -764,7 +773,7 @@ fn triu[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> N
     Args:
         m: NDArray to be zeroed out.
         k: Diagonal offset.
-    
+
     Returns:
         A NDArray with elements below the k-th diagonal zeroed out.
     """
@@ -784,13 +793,21 @@ fn triu[dtype: DType = DType.float64](m: NDArray[dtype], k: Int = 0) raises -> N
             offset = offset * final_offset
             for i in range(m.ndshape[-2]):
                 for j in range(0, i + k):
-                    result.data[offset + j + i*m.ndshape[-1]] = Scalar[dtype](0)
-    else: 
-        raise Error("Arrays smaller than 2D are not supported for this operation.")
+                    result.data[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
+                        0
+                    )
+    else:
+        raise Error(
+            "Arrays smaller than 2D are not supported for this operation."
+        )
     return result^
 
 
-fn vander[dtype: DType = DType.float64](x: NDArray[dtype], N: Optional[Int] = None, increasing: Bool = False) raises -> NDArray[dtype]:
+fn vander[
+    dtype: DType = DType.float64
+](
+    x: NDArray[dtype], N: Optional[Int] = None, increasing: Bool = False
+) raises -> NDArray[dtype]:
     """
     Generate a Vandermonde matrix.
 
@@ -807,21 +824,21 @@ fn vander[dtype: DType = DType.float64](x: NDArray[dtype], N: Optional[Int] = No
     """
     if x.ndim != 1:
         raise Error("x must be a 1-D array")
-    
+
     var n_rows = x.ndshape.ndsize
     var n_cols = N.value() if N else n_rows
-    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(n_rows, n_cols), fill=SIMD[dtype, 1](1))
+    var result: NDArray[dtype] = NDArray[dtype](
+        NDArrayShape(n_rows, n_cols), fill=SIMD[dtype, 1](1)
+    )
     for i in range(n_rows):
         var x_i = x.data[i]
         if increasing:
             for j in range(n_cols):
-                result.store(i, j, val=x_i ** j)
+                result.store(i, j, val=x_i**j)
         else:
             for j in range(n_cols - 1, -1, -1):
-                result.store(i, n_cols - 1 - j, val=x_i ** j)
+                result.store(i, n_cols - 1 - j, val=x_i**j)
     return result^
-
-    
 
 
 # ===------------------------------------------------------------------------===#

@@ -4,11 +4,15 @@ Linear Algebra Solver
 Provides:
     - Solver of `Ax = y` using LU decomposition algorithm.
     - Inverse of an invertible matrix.
+
+# TODO:
+    - Partial pivot.
+    - Determinant.
 """
 
 from numojo.prelude import *
 from ...core.ndarray import NDArray
-from ...core.array_creation_routines import zeros, eye
+from ...core.array_creation_routines import zeros, eye, identity
 from algorithm import parallelize
 
 
@@ -118,6 +122,26 @@ fn lu_decomposition[
     # parallelize[calculate](n, n)
 
     return L, U
+
+
+fn partial_pivoting[
+    dtype: DType
+](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
+    """Perform partial pivoting."""
+    var A_p = A
+    var n = A.shape()[0]
+    var P = identity[dtype](n)
+    for col in range(n):
+        var max_p = abs(A[Idx(col, col)])
+        var max_p_row = col
+        for row in range(col + 1, n):
+            if abs(A[Idx(row, col)]) > max_p:
+                max_p = abs(A[Idx(row, col)])
+                max_p_row = row
+        A[col], A[max_p_row] = A[max_p_row], A[col]
+        P[col], P[max_p_row] = P[max_p_row], P[col]
+    
+    return Tuple(P^, A_p^)
 
 
 fn forward_substitution[

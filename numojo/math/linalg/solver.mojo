@@ -124,9 +124,7 @@ fn lu_decomposition[
     return L, U
 
 
-fn partial_pivoting[
-    dtype: DType
-](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
+fn partial_pivoting[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """Perform partial pivoting."""
     var A_p = A
     var n = A.shape()[0]
@@ -140,8 +138,9 @@ fn partial_pivoting[
                 max_p_row = row
         A[col], A[max_p_row] = A[max_p_row], A[col]
         P[col], P[max_p_row] = P[max_p_row], P[col]
-    
-    return Tuple(P^, A_p^)
+
+    return P^
+    # return Tuple(P^, A_p^)
 
 
 fn forward_substitution[

@@ -456,6 +456,7 @@ struct NDArray[dtype: DType = DType.float64](
         ```
         """
         if index >= self.ndshape.ndsize:
+            print("index", index, "size", self.ndshape.ndsize)
             raise Error("Invalid index: index out of bound")
         if index >= 0:
             return self._buf.store[width=1](index, val)
@@ -824,7 +825,7 @@ struct NDArray[dtype: DType = DType.float64](
         return narr
 
     @always_inline("nodebug")
-    fn __getitem__(inout self, index: Idx) raises -> SIMD[dtype, 1]:
+    fn __getitem__(self, index: Idx) raises -> SIMD[dtype, 1]:
         """
         Set the value at the index list.
         """

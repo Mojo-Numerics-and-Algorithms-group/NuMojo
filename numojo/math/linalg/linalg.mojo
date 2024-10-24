@@ -35,8 +35,8 @@ fn cross[
         The cross product of two arrays.
     """
 
-    if (array1.ndshape.ndsize == array2.ndshape.ndsize == 3) and (
-        array1.ndshape.ndlen == array2.ndshape.ndlen == 1
+    if (array1.shape.ndsize == array2.shape.ndsize == 3) and (
+        array1.shape.ndlen == array2.shape.ndlen == 1
     ):
         var array3: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
         array3.store(
@@ -55,9 +55,9 @@ fn cross[
     else:
         raise Error(
             "Cross product is not supported for arrays of shape "
-            + array1.shape().__str__()
+            + array1.shape.__str__()
             + " and "
-            + array2.shape().__str__()
+            + array2.shape.__str__()
         )
 
 
@@ -83,9 +83,9 @@ fn dot[
     """
 
     alias width = simdwidthof[dtype]()
-    if array1.ndshape.ndlen == array2.ndshape.ndlen == 1:
+    if array1.shape.ndlen == array2.shape.ndlen == 1:
         var result: NDArray[dtype] = NDArray[dtype](
-            NDArrayShape(array1.ndshape.ndsize)
+            NDArrayShape(array1.shape.ndsize)
         )
 
         @parameter
@@ -96,12 +96,12 @@ fn dot[
                 * array2.load[width=simd_width](idx),
             )
 
-        vectorize[vectorized_dot, width](array1.ndshape.ndsize)
+        vectorize[vectorized_dot, width](array1.shape.ndsize)
         return result^
     else:
         raise Error(
             "Cross product is not supported for arrays of shape "
-            + array1.shape().__str__()
+            + array1.shape.__str__()
             + " and "
-            + array2.shape().__str__()
+            + array2.shape.__str__()
         )

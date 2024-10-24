@@ -80,7 +80,7 @@ fn _interp1d_linear_interpolate[
     Returns:
         The linearly interpolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = NDArray[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape)
     for i in range(xi.num_elements()):
         if xi._buf[i] <= x._buf[0]:
             result._buf.store[width=1](i, y._buf[0])
@@ -115,7 +115,7 @@ fn _interp1d_linear_extrapolate[
     Returns:
         The linearly extrapolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = NDArray[dtype](xi.shape())
+    var result = NDArray[dtype](xi.shape)
     for i in range(xi.num_elements()):
         if xi._buf.load[width=1](i) <= x._buf.load[width=1](0):
             var slope = (y._buf[1] - y._buf[0]) / (x._buf[1] - x._buf[0])
@@ -156,7 +156,7 @@ fn _interp1d_linear_extrapolate[
 #     Returns:
 #         The quadratically interpolated values of y at the points xi as An Array of `dtype`.
 #     """
-#     var result = NDArray[dtype](xi.shape())
+#     var result = NDArray[dtype](xi.shape)
 #     for i in range(xi.num_elements()):
 #         if xi[i] <= x[0]:
 #             result[i] = y[0]
@@ -196,7 +196,7 @@ fn _interp1d_linear_extrapolate[
 #     Returns:
 #         The quadratically extrapolated values of y at the points xi as An Array of `dtype`.
 #     """
-#     var result = NDArray[dtype](xi.shape())
+#     var result = NDArray[dtype](xi.shape)
 #     for i in range(xi.num_elements()):
 #         if xi[i] <= x[0]:
 #             var slope = (y[1] - y[0]) / (x[1] - x[0])
@@ -244,7 +244,7 @@ fn _interp1d_linear_extrapolate[
 #     Returns:
 #         The cubically interpolated values of y at the points xi as An Array of `dtype`.
 #     """
-#     var result = NDArray[dtype](xi.shape())
+#     var result = NDArray[dtype](xi.shape)
 #     for i in range(xi.num_elements()):
 #         if xi[i] <= x[0]:
 #             result[i] = y[0]
@@ -296,7 +296,7 @@ fn _interp1d_linear_extrapolate[
 #     Returns:
 #         The cubically extrapolated values of y at the points xi as An Array of `dtype`.
 #     """
-#     var result = NDArray[dtype](xi.shape())
+#     var result = NDArray[dtype](xi.shape)
 #     for i in range(xi.num_elements()):
 #         if (xi[i] <= x[0]):
 #             var t = (xi[i] - x[0]) / (x[1] - x[0])

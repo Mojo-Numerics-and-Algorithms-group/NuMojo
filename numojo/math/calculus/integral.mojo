@@ -41,7 +41,7 @@ fn trapz[
         ),
     ]()
 
-    if x.shape() != y.shape():
+    if x.shape != y.shape:
         raise Error("x and y must have the same shape")
 
     var integral: Scalar[dtype] = 0.0

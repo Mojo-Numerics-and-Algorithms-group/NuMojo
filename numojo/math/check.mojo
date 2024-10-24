@@ -48,7 +48,7 @@ fn isinf[
     """
     # return backend().math_func_is[dtype, math.isinf](array)
 
-    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape())
+    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size()):
         result_array.store(i, math.isinf(array.get(i)))
     return result_array
@@ -71,7 +71,7 @@ fn isfinite[
         NDArray[DType.bool] - A array of the same shape as `array` with True for finite elements and False for others.
     """
     # return backend().math_func_is[dtype, math.isfinite](array)
-    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape())
+    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size()):
         result_array.store(i, math.isfinite(array.get(i)))
     return result_array
@@ -94,7 +94,7 @@ fn isnan[
         NDArray[DType.bool] - A array of the same shape as `array` with True for NaN elements and False for others.
     """
     # return backend().math_func_is[dtype, math.isnan](array)
-    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape())
+    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size()):
         result_array.store(i, math.isnan(array.get(i)))
     return result_array

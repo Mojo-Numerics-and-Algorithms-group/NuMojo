@@ -435,7 +435,7 @@ fn empty_like[
     Returns:
         A NDArray of `dtype` with the same shape as `array`.
     """
-    return NDArray[dtype](shape=array.ndshape)
+    return NDArray[dtype](shape=array.shape)
 
 
 fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
@@ -528,7 +528,7 @@ fn ones_like[
     Returns:
         A NDArray of `dtype` with the same shape as `a` filled with ones.
     """
-    return ones[dtype](shape=array.ndshape)
+    return ones[dtype](shape=array.shape)
 
 
 fn zeros[
@@ -582,7 +582,7 @@ fn zeros_like[
     Returns:
         A NDArray of `dtype` with the same shape as `a` filled with zeros.
     """
-    return full[dtype](shape=array.ndshape, fill_value=0)
+    return full[dtype](shape=array.shape, fill_value=0)
 
 
 fn full[
@@ -622,7 +622,7 @@ fn full_like[
     Returns:
         A NDArray of `dtype` with the same shape as `a` filled with `fill_value`.
     """
-    return full[dtype](shape=array.ndshape, fill_value=fill_value)
+    return full[dtype](shape=array.shape, fill_value=fill_value)
 
 
 # ===------------------------------------------------------------------------===#
@@ -645,7 +645,7 @@ fn diag[
         A 1-D NDArray with the diagonal of the input NDArray.
     """
     if v.ndim == 1:
-        var n: Int = v.ndshape.ndsize
+        var n: Int = v.shape.ndsize
         var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
         if k >= 0:
             for i in range(n):
@@ -654,12 +654,12 @@ fn diag[
         else:
             for i in range(n):
                 result._buf[
-                    result.ndshape.ndsize - 1 - i * (result.ndshape[1] + 1) + k
+                    result.shape.ndsize - 1 - i * (result.shape[1] + 1) + k
                 ] = v._buf[n - 1 - i]
         return result^
     elif v.ndim == 2:
-        var m: Int = v.ndshape[0]
-        var n: Int = v.ndshape[1]
+        var m: Int = v.shape[0]
+        var n: Int = v.shape[1]
         var result: NDArray[dtype] = NDArray[dtype](Shape(n - abs(k)))
         if k >= 0:
             for i in range(n - abs(k)):
@@ -667,7 +667,7 @@ fn diag[
         else:
             for i in range(n - abs(k)):
                 result._buf[m - abs(k) - 1 - i] = v._buf[
-                    v.ndshape.ndsize - 1 - i * (v.ndshape[1] + 1) + k
+                    v.shape.ndsize - 1 - i * (v.shape[1] + 1) + k
                 ]
         return result^
     else:
@@ -690,7 +690,7 @@ fn diagflat[
     Returns:
         A 2-D NDArray with the flattened input as the diagonal.
     """
-    var n: Int = v.ndshape.ndsize
+    var n: Int = v.shape.ndsize
     var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
     if k >= 0:
         for i in range(n):
@@ -698,8 +698,8 @@ fn diagflat[
     else:
         for i in range(n):
             result.store(
-                result.ndshape.ndsize - 1 - (n + abs(k) + 1) * i + k,
-                v._buf[v.ndshape.ndsize - 1 - i],
+                result.shape.ndsize - 1 - (n + abs(k) + 1) * i + k,
+                v._buf[v.shape.ndsize - 1 - i],
             )
     return result^
 
@@ -749,21 +749,19 @@ fn tril[
     var final_offset: Int = 1
     var result: NDArray[dtype] = m
     if m.ndim == 2:
-        for i in range(m.ndshape[0]):
-            for j in range(i + 1 + k, m.ndshape[1]):
-                result._buf[i * m.ndshape[1] + j] = Scalar[dtype](0)
+        for i in range(m.shape[0]):
+            for j in range(i + 1 + k, m.shape[1]):
+                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
-            initial_offset *= m.ndshape[i]
+            initial_offset *= m.shape[i]
         for i in range(m.ndim - 2, m.ndim):
-            final_offset *= m.ndshape[i]
+            final_offset *= m.shape[i]
         for offset in range(initial_offset):
             offset = offset * final_offset
-            for i in range(m.ndshape[-2]):
-                for j in range(i + 1 + k, m.ndshape[-1]):
-                    result._buf[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
-                        0
-                    )
+            for i in range(m.shape[-2]):
+                for j in range(i + 1 + k, m.shape[-1]):
+                    result._buf[offset + j + i * m.shape[-1]] = Scalar[dtype](0)
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."
@@ -791,21 +789,19 @@ fn triu[
     var final_offset: Int = 1
     var result: NDArray[dtype] = m
     if m.ndim == 2:
-        for i in range(m.ndshape[0]):
+        for i in range(m.shape[0]):
             for j in range(0, i + k):
-                result._buf[i * m.ndshape[1] + j] = Scalar[dtype](0)
+                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
-            initial_offset *= m.ndshape[i]
+            initial_offset *= m.shape[i]
         for i in range(m.ndim - 2, m.ndim):
-            final_offset *= m.ndshape[i]
+            final_offset *= m.shape[i]
         for offset in range(initial_offset):
             offset = offset * final_offset
-            for i in range(m.ndshape[-2]):
+            for i in range(m.shape[-2]):
                 for j in range(0, i + k):
-                    result._buf[offset + j + i * m.ndshape[-1]] = Scalar[dtype](
-                        0
-                    )
+                    result._buf[offset + j + i * m.shape[-1]] = Scalar[dtype](0)
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."
@@ -835,7 +831,7 @@ fn vander[
     if x.ndim != 1:
         raise Error("x must be a 1-D array")
 
-    var n_rows = x.ndshape.ndsize
+    var n_rows = x.shape.ndsize
     var n_cols = N.value() if N else n_rows
     var result: NDArray[dtype] = ones[dtype](NDArrayShape(n_rows, n_cols))
     for i in range(n_rows):

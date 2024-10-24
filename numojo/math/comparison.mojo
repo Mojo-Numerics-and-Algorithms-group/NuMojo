@@ -230,11 +230,11 @@ fn equal[
     return backend().math_func_compare_2_arrays[dtype, SIMD.__eq__](
         array1, array2
     )
-    # if array1.shape() != array2.shape():
+    # if array1.shape != array2.shape:
     #         raise Error(
     #             "Shape Mismatch error shapes must match for this function"
     #         )
-    # var result_array: NDArray[DType.bool] = NDArray[DType.bool](array1.shape())
+    # var result_array: NDArray[DType.bool] = NDArray[DType.bool](array1.shape)
     # for i in range(result_array.size()):
     #     result_array[i] = array1[i]==array2[i]
     # return result_array
@@ -286,11 +286,11 @@ fn not_equal[
     return backend().math_func_compare_2_arrays[dtype, SIMD.__ne__](
         array1, array2
     )
-    # if array1.shape() != array2.shape():
+    # if array1.shape != array2.shape:
     #         raise Error(
     #             "Shape Mismatch error shapes must match for this function"
     #         )
-    # var result_array: NDArray[DType.bool] = NDArray[DType.bool](array1.shape())
+    # var result_array: NDArray[DType.bool] = NDArray[DType.bool](array1.shape)
     # for i in range(result_array.size()):
     #     result_array[i] = array1[i]!=array2[i]
     # return result_array

@@ -9,9 +9,9 @@ from testing.testing import assert_true, assert_almost_equal
 def test_rand():
     """Test random array generation with specified shape."""
     var arr = random.rand[nm.f64](3, 5, 2)
-    assert_true(arr.ndshape[0] == 3, "Shape of random array")
-    assert_true(arr.ndshape[1] == 5, "Shape of random array")
-    assert_true(arr.ndshape[2] == 2, "Shape of random array")
+    assert_true(arr.shape[0] == 3, "Shape of random array")
+    assert_true(arr.shape[1] == 5, "Shape of random array")
+    assert_true(arr.shape[2] == 2, "Shape of random array")
 
 
 def test_randminmax():
@@ -101,7 +101,7 @@ def test_randn_list():
         List[Int](20, 20, 20), mean=3.0, variance=1.0
     )
     var arr_list_12 = random.randn[nm.f64](
-        List[Int](20, 20, 20), mean=1.0, variance=3.0
+        List[Int](20, 20, 20), mean=1.0, variance=2.0
     )
 
     var arr_list_mean01 = nm.cummean(arr_list_01)
@@ -144,7 +144,7 @@ def test_randn_list():
     )
     assert_almost_equal(
         arr_list_var12,
-        3,
+        2,
         msg="Variance of random array with mean 1 and variance 2",
         atol=0.1,
     )

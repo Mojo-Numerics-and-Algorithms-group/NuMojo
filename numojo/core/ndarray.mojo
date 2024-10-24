@@ -818,7 +818,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.ndim == 1:
             narr.ndim = 0
-            narr.shape.shape[0] = 0
+            narr.shape._buf[0] = 0
 
         return narr
 
@@ -1203,7 +1203,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if count_int == self.ndim:
             narr.ndim = 0
-            narr.shape.shape[0] = 0
+            narr.shape._buf[0] = 0
 
         return narr
 
@@ -1285,7 +1285,7 @@ struct NDArray[dtype: DType = DType.float64](
         ndshape[0] = len(index)
         ndshape.ndsize = 1
         for i in range(ndshape.ndlen):
-            ndshape.ndsize *= int(ndshape.shape[i])
+            ndshape.ndsize *= int(ndshape._buf[i])
         var result = NDArray[dtype](ndshape)
         var size_per_item = ndshape.ndsize // len(index)
 
@@ -1792,7 +1792,7 @@ struct NDArray[dtype: DType = DType.float64](
                     result = result + str(i) + str(",")
             result = result + str("), shape=List[Int](")
             for i in range(self.shape.ndlen):
-                result = result + str(self.shape.shape[i]) + ","
+                result = result + str(self.shape._buf[i]) + ","
             result = result + str("))")
             return result
         except e:
@@ -1997,7 +1997,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (self.ndim != 2) or (other.ndim != 2):
             raise Error("The array should have only two dimensions (matrix).")
-        if self.shape.shape[1] != other.shape.shape[0]:
+        if self.shape._buf[1] != other.shape._buf[0]:
             raise Error(
                 "Second dimension of A does not match first dimension of B."
             )

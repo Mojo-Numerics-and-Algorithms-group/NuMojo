@@ -33,11 +33,11 @@ fn matmul_tiled_unrolled_parallelized[
     """
     alias width = max(simdwidthof[dtype](), 16)
     var C: NDArray[dtype] = NDArray[dtype](
-        A.ndshape.load_int(0), B.ndshape.load_int(1)
+        A.shape.load_int(0), B.shape.load_int(1)
     )
-    var t0 = A.ndshape.load_int(0)
-    var t1 = A.ndshape.load_int(1)
-    var t2 = B.ndshape.load_int(1)
+    var t0 = A.shape.load_int(0)
+    var t1 = A.shape.load_int(1)
+    var t2 = B.shape.load_int(1)
 
     @parameter
     fn calculate_A_rows(m: Int):
@@ -121,23 +121,23 @@ fn matmul_parallelized[
         return matmul_1d(A, B)
     elif A.ndim == 1:
         A_reshaped = A
-        A_reshaped.reshape(1, A_reshaped.shape()[0])
+        A_reshaped.reshape(1, A_reshaped.shape[0])
         var res = A_reshaped @ B
-        res.reshape(B.shape()[1])
+        res.reshape(B.shape[1])
         return res
     elif B.ndim == 1:
         B_reshaped = B
-        B_reshaped.reshape(B_reshaped.shape()[0], 1)
+        B_reshaped.reshape(B_reshaped.shape[0], 1)
         var res = A @ B_reshaped
-        res.reshape(A.shape()[0])
+        res.reshape(A.shape[0])
         return res
 
     var C: NDArray[dtype] = zeros[dtype](
-        Shape(A.ndshape.load_int(0), B.ndshape.load_int(1))
+        Shape(A.shape.load_int(0), B.shape.load_int(1))
     )
-    var t0 = A.ndshape.load_int(0)
-    var t1 = A.ndshape.load_int(1)
-    var t2 = B.ndshape.load_int(1)
+    var t0 = A.shape.load_int(0)
+    var t1 = A.shape.load_int(1)
+    var t2 = B.shape.load_int(1)
 
     @parameter
     fn calculate_A_rows(m: Int):
@@ -173,15 +173,15 @@ fn matmul_naive[
     """
     var C: NDArray[dtype]
     if B.ndim == 1:
-        C = zeros[dtype](shape(A.ndshape[0]))
-        for m in range(C.ndshape[0]):
-            for k in range(A.ndshape[1]):
+        C = zeros[dtype](shape(A.shape[0]))
+        for m in range(C.shape[0]):
+            for k in range(A.shape[1]):
                 C.store(m, val=C.load(m) + A.load(m, k) * B.load(k))
     elif B.ndim != 1:
-        C = zeros[dtype](shape(A.ndshape[0], B.ndshape[1]))
-        for m in range(C.ndshape.load_int(0)):
-            for k in range(A.ndshape.load_int(1)):
-                for n in range(C.ndshape.load_int(1)):
+        C = zeros[dtype](shape(A.shape[0], B.shape[1]))
+        for m in range(C.shape.load_int(0)):
+            for k in range(A.shape.load_int(1)):
+                for n in range(C.shape.load_int(1)):
                     C.store(
                         m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n)
                     )

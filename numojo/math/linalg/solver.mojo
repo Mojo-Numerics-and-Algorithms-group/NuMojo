@@ -71,7 +71,7 @@ fn lu_decomposition[
         raise ("The array is not 2-dimensional!")
 
     # Check whether the matrix is square
-    var shape_of_array = A.shape()
+    var shape_of_array = A.shape
     if shape_of_array[0] != shape_of_array[1]:
         raise ("The matrix is not square!")
     var n = shape_of_array[0]
@@ -138,7 +138,7 @@ fn forward_substitution[
     """
 
     # length of L
-    var m = L.shape()[0]
+    var m = L.shape[0]
 
     # Initialize x
     var x = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
@@ -172,7 +172,7 @@ fn back_substitution[
     """
 
     # length of U
-    var m = U.shape()[0]
+    var m = U.shape[0]
     # Initialize x
     var x = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
 
@@ -206,7 +206,7 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
 
     """
 
-    var m = A.shape()[0]
+    var m = A.shape[0]
     var I = eye[dtype](m, m)
 
     return solve(A, I)
@@ -267,8 +267,8 @@ fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var L: NDArray[dtype]
     L, U = lu_decomposition[dtype](array)
 
-    var m = array.shape()[0]
-    var inversed = NDArray[dtype](shape=array.shape())
+    var m = array.shape[0]
+    var inversed = NDArray[dtype](shape=array.shape)
 
     # Initialize vectors
     var y = NDArray[dtype](m)
@@ -321,7 +321,7 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var L: NDArray[dtype]
     L, U = lu_decomposition[dtype](array)
 
-    var m = array.shape()[0]
+    var m = array.shape[0]
 
     var Y = eye[dtype](m, m)
     var Z = zeros[dtype](Shape(m, m))
@@ -409,8 +409,8 @@ fn solve[
     var L: NDArray[dtype]
     L, U = lu_decomposition[dtype](A)
 
-    var m = A.shape()[0]
-    var n = Y.shape()[1]
+    var m = A.shape[0]
+    var n = Y.shape[1]
 
     var Z = zeros[dtype](Shape(m, n))
     var X = zeros[dtype](Shape(m, n))

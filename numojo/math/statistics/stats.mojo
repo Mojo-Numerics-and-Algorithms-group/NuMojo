@@ -25,7 +25,7 @@ fn sum(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):
-        shape.append(array.ndshape[i])
+        shape.append(array.shape[i])
     if axis > ndim - 1:
         raise Error("axis cannot be greater than the rank of the array")
     var result_shape: List[Int] = List[Int]()
@@ -70,7 +70,7 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
     """
 
     var result = Scalar[array.dtype](0)
-    for i in range(array.ndshape.ndsize):
+    for i in range(array.shape.ndsize):
         result[0] += array._buf[i]
     return result
 
@@ -88,7 +88,7 @@ fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):
-        shape.append(array.ndshape[i])
+        shape.append(array.shape[i])
     if axis > ndim - 1:
         raise Error("axis cannot be greater than the rank of the array")
     var result_shape: List[Int] = List[Int]()
@@ -135,7 +135,7 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
     """
 
     var result = Scalar[array.dtype](1)
-    for i in range(array.ndshape.ndsize):
+    for i in range(array.shape.ndsize):
         result[0] *= array._buf[i]
     return result
 
@@ -150,7 +150,7 @@ fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
         An NDArray.
 
     """
-    return sum(array, axis) / Scalar[array.dtype](array.ndshape[axis])
+    return sum(array, axis) / Scalar[array.dtype](array.shape[axis])
 
 
 fn meanall(array: NDArray) raises -> Float64:
@@ -177,7 +177,7 @@ fn meanall(array: NDArray) raises -> Float64:
 
     return (
         sumall(array).cast[DType.float64]()
-        / Int32(array.ndshape.ndsize).cast[DType.float64]()
+        / Int32(array.shape.ndsize).cast[DType.float64]()
     )
 
 
@@ -196,7 +196,7 @@ fn max[
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):
-        shape.append(array.ndshape[i])
+        shape.append(array.shape[i])
     if axis > ndim - 1:
         raise Error("axis cannot be greater than the rank of the array")
     var result_shape: List[Int] = List[Int]()
@@ -243,7 +243,7 @@ fn min[
     var ndim: Int = array.ndim
     var shape: List[Int] = List[Int]()
     for i in range(ndim):
-        shape.append(array.ndshape[i])
+        shape.append(array.shape[i])
     if axis > ndim - 1:
         raise Error("axis cannot be greater than the rank of the array")
     var result_shape: List[Int] = List[Int]()

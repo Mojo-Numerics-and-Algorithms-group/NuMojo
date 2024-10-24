@@ -27,7 +27,7 @@ fn math_func_1_array_in_one_array_out[
     Returns:
         A new NDArray that is the result of applying the function to the NDArray.
     """
-    var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+    var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
     alias width = simdwidthof[dtype]()
 
     @parameter
@@ -66,10 +66,10 @@ fn math_func_2_array_in_one_array_out[
         A new NDArray that is the result of applying the function to the input NDArrays.
     """
 
-    if array1.shape() != array2.shape():
+    if array1.shape != array2.shape:
         raise Error("Shape Mismatch error shapes must match for this function")
 
-    var result_array: NDArray[dtype] = NDArray[dtype](array1.shape())
+    var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
     alias width = simdwidthof[dtype]()
 
     @parameter
@@ -106,7 +106,7 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
         A new NDArray that is the result of applying the function to the input NDArray and SIMD value.
     """
 
-    var result_array: NDArray[dtype] = NDArray[dtype](array.shape())
+    var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
     alias width = simdwidthof[dtype]()
 
     @parameter

@@ -15,45 +15,45 @@ fn test_constructors1() raises:
     var arr1 = NDArray[f32](3, 4, 5)
     print(arr1)
     print("ndim: ", arr1.ndim)
-    print("shape: ", arr1.ndshape)
+    print("shape: ", arr1.shape)
     print("strides: ", arr1.stride)
-    print("size: ", arr1.ndshape.ndsize)
+    print("size: ", arr1.shape.ndsize)
     print("offset: ", arr1.stride.ndoffset)
     print("dtype: ", arr1.dtype)
 
     var arr2 = NDArray[f32](VariadicList[Int](3, 4, 5))
     print(arr2)
     print("ndim: ", arr2.ndim)
-    print("shape: ", arr2.ndshape)
+    print("shape: ", arr2.shape)
     print("strides: ", arr2.stride)
-    print("size: ", arr2.ndshape.ndsize)
+    print("size: ", arr2.shape.ndsize)
     print("offset: ", arr2.stride.ndoffset)
     print("dtype: ", arr2.dtype)
 
     var arr3 = NDArray[f32](VariadicList[Int](3, 4, 5), fill=Scalar[f32](10.0))
     print(arr3)
     print("ndim: ", arr3.ndim)
-    print("shape: ", arr3.ndshape)
+    print("shape: ", arr3.shape)
     print("strides: ", arr3.stride)
-    print("size: ", arr3.ndshape.ndsize)
+    print("size: ", arr3.shape.ndsize)
     print("offset: ", arr3.stride.ndoffset)
     print("dtype: ", arr3.dtype)
 
     var arr4 = NDArray[f32](List[Int](3, 4, 5))
     print(arr4)
     print("ndim: ", arr4.ndim)
-    print("shape: ", arr4.ndshape)
+    print("shape: ", arr4.shape)
     print("strides: ", arr4.stride)
-    print("size: ", arr4.ndshape.ndsize)
+    print("size: ", arr4.shape.ndsize)
     print("offset: ", arr4.stride.ndoffset)
     print("dtype: ", arr4.dtype)
 
     var arr5 = NDArray[f32](NDArrayShape(3, 4, 5))
     print(arr5)
     print("ndim: ", arr5.ndim)
-    print("shape: ", arr5.ndshape)
+    print("shape: ", arr5.shape)
     print("strides: ", arr5.stride)
-    print("size: ", arr5.ndshape.ndsize)
+    print("size: ", arr5.shape.ndsize)
     print("offset: ", arr5.stride.ndoffset)
     print("dtype: ", arr5.dtype)
 
@@ -63,9 +63,9 @@ fn test_constructors1() raises:
     )
     print(arr6)
     print("ndim: ", arr6.ndim)
-    print("shape: ", arr6.ndshape)
+    print("shape: ", arr6.shape)
     print("strides: ", arr6.stride)
-    print("size: ", arr6.ndshape.ndsize)
+    print("size: ", arr6.shape.ndsize)
     print("offset: ", arr6.stride.ndoffset)
     print("dtype: ", arr6.dtype)
 
@@ -126,9 +126,9 @@ fn test_arr_manipulation() raises:
     print("x[1]", array.item(1))
     print("x[2]", array.item(2))
     # swapaxis(array, 0, -1)
-    # print(array.ndshape)
+    # print(array.shape)
     # swapaxis(array, 0, 2)
-    # print(array.ndshape)
+    # print(array.shape)
     # moveaxis(array, 0, 2)
     # array.reshape(2, 2, 3, order="C")
     # swapaxis(array, 0, 1)
@@ -141,7 +141,7 @@ fn test_arr_manipulation() raises:
 
 fn test_bool_masks1() raises:
     var A = nm.core.random.rand[i16](3, 2, 2)
-    print(A.ndshape)
+    print(A.shape)
     seed(10)
     var B = nm.core.random.rand[i16](3, 2, 2)
     print(B)
@@ -204,7 +204,7 @@ fn test_bool_masks2() raises:
     var temp3 = AA[AA % SIMD[i16, 1](2) == SIMD[i16, 1](0)]
     print(temp3)
     print(temp3.get(0))
-    print(temp3.ndshape, temp3.stride, temp3.ndshape.ndsize)
+    print(temp3.shape, temp3.stride, temp3.shape.ndsize)
 
 
 fn test_creation_routines() raises:
@@ -337,12 +337,12 @@ fn test_rand_funcs[
     if dtype.is_integral():
         randint[dtype](
             ptr=result._buf,
-            size=result.ndshape.ndsize,
+            size=result.shape.ndsize,
             low=int(min),
             high=int(max),
         )
     elif dtype.is_floating_point():
-        for i in range(result.ndshape.ndsize):
+        for i in range(result.shape.ndsize):
             var temp: Scalar[dtype] = random.random_float64(
                 min.cast[f64](), max.cast[f64]()
             ).cast[dtype]()

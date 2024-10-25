@@ -276,6 +276,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     fn T(self) -> Self:
         return transpose(self)
 
+    fn inv(self) -> Self:
+        return inv(self)
+
     fn to_ndarray(self) raises -> NDArray[dtype]:
         """Create a ndarray from a matrix.
 
@@ -402,8 +405,11 @@ fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
     ndarray as a matrix. This simplify calculation and avoid too much check.
     """
 
-    if object.ndim != 2:
-        raise Error("The original array is not 2-dimensional!")
+    try:
+        if object.ndim != 2:
+            raise Error("The original array is not 2-dimensional!")
+    except e:
+        print(e)
 
     var matrix = Matrix[dtype](shape=(object.ndshape[0], object.ndshape[1]))
     memcpy(matrix._buf, object.data, matrix.size)
@@ -522,10 +528,13 @@ fn _logic_func[
 
 fn lu_decomposition[
     dtype: DType
-](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: Matrix[dtype]) -> Tuple[Matrix[dtype], Matrix[dtype]]:
     # Check whether the matrix is square
-    if A.shape[0] != A.shape[1]:
-        raise ("The matrix is not square!")
+    try:
+        if A.shape[0] != A.shape[1]:
+            raise Error("The matrix is not square!")
+    except e:
+        print(e)
     var n = A.shape[0]
 
     # Initiate upper and lower triangular matrices
@@ -555,7 +564,7 @@ fn lu_decomposition[
 
 fn solve[
     dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
     var U: Matrix[dtype]
     var L: Matrix[dtype]
     L, U = lu_decomposition[dtype](A)
@@ -597,12 +606,15 @@ fn solve[
     return X^
 
 
-fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn inv[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """Inverse of matrix."""
 
     # Check whether the matrix is square
-    if A.shape[0] != A.shape[1]:
-        raise ("The matrix is not square!")
+    try:
+        if A.shape[0] != A.shape[1]:
+            raise Error("The matrix is not square!")
+    except e:
+        print(e)
 
     var I = identity[dtype](A.shape[0])
     var B = solve(A, I)
@@ -633,6 +645,7 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
             raise Error("The shapes of matrices do not match!")
     except e:
         print(e)
+        print("`matmul` error.")
 
     var t0 = A.shape[0]
     var t1 = A.shape[1]
@@ -663,3 +676,21 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     var _B = B
 
     return C^
+
+
+# ===-----------------------------------------------------------------------===#
+# Fucntions for statistics
+# ===-----------------------------------------------------------------------===#
+
+fn ols[dtype: DType](X: Matrix[dtype], y: Matrix[dtype]) -> Matrix[dtype]:
+    """Caclulate the OLS estimates.
+    """
+    try:
+        if X.shape[0] != y.shape[0]:
+            var message = "The row number of `X` {X.shape[0]} does not match the row number of `y` {y.shape[0]}" 
+            raise Error(message)
+    except e:
+        print(e)
+    var X_prime = X.T()
+    var b = (X_prime @ X).inv() @ X_prime @ y
+    return b^

@@ -1,5 +1,5 @@
 """
-`numojo.core.matrix` module provides:
+`numojo.core.mat` module provides:
 
 - Matrix type (2D array) with initialization and basic manipulation.
 - Auxilliary types, e.g., MatrixIter.
@@ -57,9 +57,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     """
 
     var shape: Tuple[Int, Int]
-    var _shape0: Int
-    var _shape1: Int
     """Shape of Matrix."""
+
     var order: String
     "C (C-type, row-major) or F (Fortran-type col-major)."
 
@@ -67,8 +66,6 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     var size: Int
     """Size of Matrix."""
     var strides: Tuple[Int, Int]
-    var _stride0: Int
-    var _stride1: Int
     """Strides of matrix."""
 
     # To be filled by constructing functions.
@@ -96,16 +93,11 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             order: Memory order C or F.
         """
 
-        self._shape0 = shape[0]
-        self._shape1 = shape[1]
-        self.shape = (self._shape0, self._shape1)
+        self.shape = (shape[0], shape[1])
         if order == "C":
-            self._stride0 = shape[1]
-            self._stride1 = 1
+            self.strides = (shape[1], 1)
         else:
-            self._stride0 = 1
-            self._stride1 = shape[0]
-        self.strides = (self._stride0, self._stride1)
+            self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.order = order
@@ -115,12 +107,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
         Copy other into self.
         """
-        self._shape0 = other._shape0
-        self._shape1 = other._shape1
-        self.shape = (self._shape0, self._shape1)
-        self._stride0 = other._stride0
-        self._stride1 = other._stride1
-        self.strides = (self._stride0, self._stride1)
+        self.shape = (other.shape[0], other.shape[1])
+        self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self.order = other.order
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.size)
@@ -131,12 +119,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
         Move other into self.
         """
-        self._shape0 = other._shape0
-        self._shape1 = other._shape1
-        self.shape = (self._shape0, self._shape1)
-        self._stride0 = other._stride0
-        self._stride1 = other._stride1
-        self.strides = (self._stride0, self._stride1)
+        self.shape = (other.shape[0], other.shape[1])
+        self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self.order = other.order^
         self._buf = other._buf
@@ -162,13 +146,13 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         try:
-            if (x >= self._shape0) or (y >= self._shape1):
+            if (x >= self.shape[0]) or (y >= self.shape[1]):
                 raise Error(
                     "Error: Elements of `index` exceed the array shape."
                 )
         except e:
             print(e)
-        return self._buf.load(x * self._stride0 + y * self._stride1)
+        return self._buf.load(x * self.strides[0] + y * self.strides[1])
 
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
@@ -176,7 +160,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Unsafe: No boundary check!
         """
         return self._buf.load[width=width](
-            x * self._stride0 + y * self._stride1
+            x * self.strides[0] + y * self.strides[1]
         )
 
     fn _loadc[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
@@ -184,7 +168,14 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         `__getitem__` with width for C-order.
         Unsafe: No boundary check!
         """
-        return self._buf.load[width=width](x * self._stride0 + y)
+        return self._buf.load[width=width](x * self.strides[0] + y)
+
+    fn _loadf[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
+        """
+        `__getitem__` with width for F-order.
+        Unsafe: No boundary check!
+        """
+        return self._buf.load[width=width](x + y * self.strides[1])
 
     fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]):
         """
@@ -197,11 +188,11 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         try:
-            if (x >= self._shape0) or (y >= self._shape1):
+            if (x >= self.shape[0]) or (y >= self.shape[1]):
                 raise Error("Error: Elements of `index` exceed the array shape")
         except e:
             print(e)
-        self._buf.store(x * self._stride0 + y * self._stride1, value)
+        self._buf.store(x * self.strides[0] + y * self.strides[1], value)
 
     fn _store[
         width: Int = 1
@@ -211,7 +202,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Unsafe: No boundary check!
         """
         self._buf.store[width=width](
-            x * self._stride0 + y * self._stride1, simd
+            x * self.strides[0] + y * self.strides[1], simd
         )
 
     fn _storec[
@@ -221,7 +212,16 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         `__setitem__` with width for C-order.
         Unsafe: No boundary check!
         """
-        self._buf.store[width=width](x * self._stride0 + y, simd)
+        self._buf.store[width=width](x * self.strides[0] + y, simd)
+
+    fn _storef[
+        width: Int = 1
+    ](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
+        """
+        `__setitem__` with width for F-order.
+        Unsafe: No boundary check!
+        """
+        self._buf.store[width=width](x + y * self.strides[1], simd)
 
     fn __str__(self) -> String:
         return String.format_sequence(self)
@@ -230,17 +230,17 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
             var result: String = str("[")
             var number_of_sep: Int = 1
-            if self._shape1 <= 6:
-                for j in range(self._shape1):
-                    if j == self._shape1 - 1:
+            if self.shape[1] <= 6:
+                for j in range(self.shape[1]):
+                    if j == self.shape[1] - 1:
                         number_of_sep = 0
                     result += str(self[i, j]) + sep * number_of_sep
             else:
                 for j in range(3):
                     result += str(self[i, j]) + sep
                 result += str("...") + sep
-                for j in range(self._shape1 - 3, self._shape1):
-                    if j == self._shape1 - 1:
+                for j in range(self.shape[1] - 3, self.shape[1]):
+                    if j == self.shape[1] - 1:
                         number_of_sep = 0
                     result += str(self[i, j]) + sep * number_of_sep
             result += str("]")
@@ -252,9 +252,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         var result: String = "["
 
         try:
-            if self._shape0 <= 6:
-                for i in range(self._shape0):
-                    if i == self._shape0 - 1:
+            if self.shape[0] <= 6:
+                for i in range(self.shape[0]):
+                    if i == self.shape[0] - 1:
                         number_of_newline = 0
                     result += (
                         print_row(self, i, sep) + newline * number_of_newline
@@ -263,8 +263,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 for i in range(3):
                     result += print_row(self, i, sep) + newline
                 result += str("...") + newline
-                for i in range(self._shape0 - 3, self._shape0):
-                    if i == self._shape0 - 1:
+                for i in range(self.shape[0] - 3, self.shape[0]):
+                    if i == self.shape[0] - 1:
                         number_of_newline = 0
                     result += (
                         print_row(self, i, sep) + newline * number_of_newline
@@ -275,11 +275,13 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         writer.write(
             result
             + "\nSize: "
-            + str(self._shape0)
+            + str(self.shape[0])
             + "x"
-            + str(self._shape1)
+            + str(self.shape[1])
             + "  DType: "
             + str(self.dtype)
+            + "  Order: "
+            + str(self.order)
         )
 
     fn __matmul__(self, other: Self) -> Self:
@@ -296,7 +298,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         var ndarray = NDArray[dtype](
-            shape=List[Int](self._shape0, self._shape1), order=self.order
+            shape=List[Int](self.shape[0], self.shape[1]), order=self.order
         )
         memcpy(ndarray.data, self._buf, ndarray.size())
 
@@ -390,7 +392,7 @@ fn identity[
 
     var matrix = Matrix[dtype]((len, len), order)
     for i in range(len):
-        matrix._buf.store(i * matrix._stride0 + i * matrix._stride1, 1)
+        matrix._buf.store(i * matrix.strides[0] + i * matrix.strides[1], 1)
     return matrix
 
 
@@ -460,6 +462,17 @@ fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
     return matrix
 
 
+fn reset_order[dtype: DType](mat: Matrix[dtype]) -> Matrix[dtype]:
+    """Reset the order of the matrix between "C" and "F"."""
+
+    var new_order = "F" if mat.order == "C" else "C"
+    var res = Matrix[dtype]((mat.shape[0], mat.shape[1]), order=new_order)
+    for i in range(mat.shape[0]):
+        for j in range(mat.shape[1]):
+            res[i,j] = mat[i, j]
+    return res
+
+
 # ===-----------------------------------------------------------------------===#
 # Fucntions for linear algebra
 # ===-----------------------------------------------------------------------===#
@@ -469,9 +482,9 @@ fn lu_decomposition[
     dtype: DType
 ](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     # Check whether the matrix is square
-    if A._shape0 != A._shape1:
+    if A.shape[0] != A.shape[1]:
         raise ("The matrix is not square!")
-    var n = A._shape0
+    var n = A.shape[0]
 
     # Initiate upper and lower triangular matrices
     var U = full[dtype](shape=(n, n))
@@ -505,8 +518,8 @@ fn solve[
     var L: Matrix[dtype]
     L, U = lu_decomposition[dtype](A)
 
-    var m = A._shape0
-    var n = Y._shape1
+    var m = A.shape[0]
+    var n = Y.shape[1]
 
     var Z = full[dtype]((m, n))
     var X = full[dtype]((m, n))
@@ -551,14 +564,14 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     alias width = max(simdwidthof[dtype](), 16)
 
     try:
-        if A._shape1 != B._shape0:
+        if A.shape[1] != B.shape[0]:
             raise Error("The shapes of matrices do not match!")
     except e:
         print(e)
 
-    var t0 = A._shape0
-    var t1 = A._shape1
-    var t2 = B._shape1
+    var t0 = A.shape[0]
+    var t1 = A.shape[1]
+    var t2 = B.shape[1]
     var C: Matrix[dtype] = zeros[dtype](shape=(t0, t2))
 
     if (A.order == "C") and (B.order == "C"):
@@ -579,6 +592,21 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
                 vectorize[dot, width](t2)
 
         parallelize[calculate_CC](t0, t0)
+
+    elif (A.order == "C") and (B.order == "F"):
+
+        @parameter
+        fn calculate_CF(m: Int):
+            for n in range(t2):
+                for k in range(t1):
+                    C._storec(
+                        m,
+                        n,
+                        C._loadc(m, n)
+                        + A._loadc(m, k) * B._loadf(k, n),
+                    )
+
+        parallelize[calculate_CF](t0, t0)
 
     else:
 

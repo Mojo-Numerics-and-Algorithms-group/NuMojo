@@ -69,6 +69,17 @@ def test_logic():
 # ===-----------------------------------------------------------------------===#
 
 
+def test_transpose():
+    var np = Python.import_module("numpy")
+    var a = nm.mat.rand[f64]((100, 100))
+    var ap = a.to_numpy()
+    check_is_close(
+        a.transpose(),
+        ap.transpose(),
+        "Transpose is broken",
+    )
+
+
 def test_inv():
     var np = Python.import_module("numpy")
     var arr1 = nm.mat.rand[f64]((100, 100))

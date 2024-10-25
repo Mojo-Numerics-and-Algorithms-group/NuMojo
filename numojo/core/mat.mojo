@@ -270,6 +270,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     # Other methods
     # ===-------------------------------------------------------------------===#
 
+    fn transpose(self) -> Self:
+        return transpose(self)
+
+    fn T(self) -> Self:
+        return transpose(self)
+
     fn to_ndarray(self) raises -> NDArray[dtype]:
         """Create a ndarray from a matrix.
 
@@ -512,8 +518,8 @@ fn transpose[dtype: DType](mat: Matrix[dtype]) -> Matrix[dtype]:
     """Transpose."""
 
     var res = Matrix[dtype](Tuple(mat.shape[1], mat.shape[0]))
-    for i in range(mat.shape[0]):
-        for j in range(mat.shape[1]):
+    for i in range(res.shape[0]):
+        for j in range(res.shape[1]):
             res[i, j] = mat[j, i]
     return res
 

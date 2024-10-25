@@ -562,9 +562,7 @@ fn lu_decomposition[
     return L, U
 
 
-fn solve[
-    dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
+fn solve[dtype: DType](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
     var U: Matrix[dtype]
     var L: Matrix[dtype]
     L, U = lu_decomposition[dtype](A)
@@ -682,12 +680,30 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
 # Fucntions for statistics
 # ===-----------------------------------------------------------------------===#
 
-fn ols[dtype: DType](X: Matrix[dtype], y: Matrix[dtype]) -> Matrix[dtype]:
+
+fn lstsq[dtype: DType](X: Matrix[dtype], y: Matrix[dtype]) -> Matrix[dtype]:
     """Caclulate the OLS estimates.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    X = mat.rand((1000000, 5))
+    y = mat.rand((1000000, 1))
+    print(mat.lstsq(X, y))
+    ```
+    ```console
+    [[0.18731374756029967]
+     [0.18821352688798607]
+     [0.18717162200411439]
+     [0.1867570378683612]
+     [0.18828715376701158]]
+    Size: 5x1  DType: float64
+    ```
     """
+
     try:
         if X.shape[0] != y.shape[0]:
-            var message = "The row number of `X` {X.shape[0]} does not match the row number of `y` {y.shape[0]}" 
+            var message = "The row number of `X` {X.shape[0]} does not match the row number of `y` {y.shape[0]}"
             raise Error(message)
     except e:
         print(e)

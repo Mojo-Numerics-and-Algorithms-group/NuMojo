@@ -82,17 +82,24 @@ def test_transpose():
 
 def test_solve():
     var np = Python.import_module("numpy")
-    var arr1 = nm.mat.rand[f64]((100, 100))
-    var arr2 = nm.mat.rand[f64]((100, 100))
-    var np_arr1 = arr1.to_numpy()
-    var np_arr2 = arr2.to_numpy()
+    var a1 = nm.mat.rand[f64]((100, 100))
+    var a2 = nm.mat.rand[f64]((100, 100))
+    var y = nm.mat.rand((100, 1))
+    var a1p = a1.to_numpy()
+    var a2p = a2.to_numpy()
+    var yp = y.to_numpy()
     check_is_close(
-        nm.mat.solve(arr1, arr2),
-        np.linalg.solve(np_arr1, np_arr2),
+        nm.mat.solve(a1, a2),
+        np.linalg.solve(a1p, a2p),
         "Solve is broken",
     )
     check_is_close(
-        nm.mat.inv(arr1),
-        np.linalg.inv(np_arr1),
+        nm.mat.inv(a1),
+        np.linalg.inv(a1p),
         "Inverse is broken",
+    )
+    check_is_close(
+        nm.mat.lstsq(a1, y),
+        np.linalg.lstsq(a1p, yp)[0],
+        "Least square is broken",
     )

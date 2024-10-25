@@ -4,6 +4,10 @@ from time import now
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 
+# ===-----------------------------------------------------------------------===#
+# Main functions
+# ===-----------------------------------------------------------------------===#
+
 
 fn check[
     dtype: DType
@@ -19,6 +23,11 @@ fn check_is_close[
     assert_true(np.all(np.isclose(matrix.to_numpy(), np_sol, atol=0.1)), st)
 
 
+# ===-----------------------------------------------------------------------===#
+# Creation
+# ===-----------------------------------------------------------------------===#
+
+
 def test_full():
     var np = Python.import_module("numpy")
     check(
@@ -28,13 +37,36 @@ def test_full():
     )
 
 
-def test_matmul():
+# ===-----------------------------------------------------------------------===#
+# Arithmetic
+# ===-----------------------------------------------------------------------===#
+
+
+def test_arithmetic():
     var np = Python.import_module("numpy")
-    var arr = nm.mat.rand[f64]((100, 100))
-    var np_arr = arr.to_numpy()
-    check_is_close(
-        arr @ arr, np.matmul(np_arr, np_arr), "Dunder matmul is broken"
-    )
+    var A = nm.mat.rand[f64]((100, 100))
+    var B = nm.mat.rand[f64]((100, 100))
+    var Ap = A.to_numpy()
+    var Bp = B.to_numpy()
+    check_is_close(A + B, Ap + Bp, "Add is broken")
+    check_is_close(A - B, Ap - Bp, "Sub is broken")
+    check_is_close(A * B, Ap * Bp, "Mul is broken")
+    check_is_close(A @ B, np.matmul(Ap, Bp), "Matmul is broken")
+
+
+def test_logic():
+    var np = Python.import_module("numpy")
+    var A = nm.mat.ones((5, 1))
+    var B = nm.mat.ones((5, 1))
+    var Ap = A.to_numpy()
+    var Bp = B.to_numpy()
+    check(A > B, Ap > Bp, "gt is broken")
+    check(A < B, Ap < Bp, "lt is broken")
+
+
+# ===-----------------------------------------------------------------------===#
+# Linear algebra
+# ===-----------------------------------------------------------------------===#
 
 
 def test_inv():

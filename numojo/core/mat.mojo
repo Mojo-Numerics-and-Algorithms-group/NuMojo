@@ -142,7 +142,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 )
         except e:
             print(e)
-        return self._buf.load(x * self.strides[0] + y * self.strides[1])
+        return self._buf.load(x * self.strides[0] + y)
 
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
@@ -166,7 +166,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 raise Error("Error: Elements of `index` exceed the array shape")
         except e:
             print(e)
-        self._buf.store(x * self.strides[0] + y * self.strides[1], value)
+        self._buf.store(x * self.strides[0] + y, value)
 
     fn _store[
         width: Int = 1
@@ -367,9 +367,9 @@ fn ones[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
 fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
     """Return a matrix with given shape and filled value."""
 
-    var matrix = Matrix[dtype]((len, len))
+    var matrix = zeros[dtype]((len, len))
     for i in range(len):
-        matrix._buf.store(i * matrix.strides[0] + i * matrix.strides[1], 1)
+        matrix._buf.store(i * matrix.strides[0] + i, 1)
     return matrix
 
 
@@ -430,6 +430,89 @@ fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
     matrix._buf = array.data
 
     return matrix
+
+
+# ===-----------------------------------------------------------------------===#
+# Fucntions for arithmetic
+# ===-----------------------------------------------------------------------===#
+
+
+fn _arithmetic_func[
+    dtype: DType,
+    simd_func: fn[type: DType, simd_width: Int] (
+        SIMD[type, simd_width], SIMD[type, simd_width]
+    ) -> SIMD[type, simd_width],
+](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
+    alias width = max(simdwidthof[dtype](), 16)
+    try:
+        if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
+            raise Error("The shapes of matrices do not match!")
+    except e:
+        print(e)
+
+    var t0 = A.shape[0]
+    var t1 = A.shape[1]
+    var C = Matrix[dtype](shape=A.shape)
+
+    @parameter
+    fn calculate_CC(m: Int):
+        @parameter
+        fn vec_func[simd_width: Int](n: Int):
+            C._store[simd_width](
+                m,
+                n,
+                simd_func(A._load[simd_width](m, n), B._load[simd_width](m, n)),
+            )
+
+        vectorize[vec_func, width](t1)
+
+    parallelize[calculate_CC](t0, t0)
+
+    var _t0 = t0
+    var _t1 = t1
+    var _A = A
+    var _B = B
+
+    return C^
+
+
+fn _logic_func[
+    dtype: DType,
+    simd_func: fn[type: DType, simd_width: Int] (
+        SIMD[type, simd_width], SIMD[type, simd_width]
+    ) -> SIMD[DType.bool, simd_width],
+](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[DType.bool]:
+    alias width = max(simdwidthof[dtype](), 16)
+    try:
+        if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
+            raise Error("The shapes of matrices do not match!")
+    except e:
+        print(e)
+
+    var t0 = A.shape[0]
+    var t1 = A.shape[1]
+    var C = Matrix[DType.bool](shape=A.shape)
+
+    @parameter
+    fn calculate_CC(m: Int):
+        @parameter
+        fn vec_func[simd_width: Int](n: Int):
+            C._store[simd_width](
+                m,
+                n,
+                simd_func(A._load[simd_width](m, n), B._load[simd_width](m, n)),
+            )
+
+        vectorize[vec_func, width](t1)
+
+    parallelize[calculate_CC](t0, t0)
+
+    var _t0 = t0
+    var _t1 = t1
+    var _A = A
+    var _B = B
+
+    return C^
 
 
 # ===-----------------------------------------------------------------------===#
@@ -514,92 +597,27 @@ fn solve[
     return X^
 
 
-fn transpose[dtype: DType](mat: Matrix[dtype]) -> Matrix[dtype]:
+fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+    """Inverse of matrix."""
+
+    # Check whether the matrix is square
+    if A.shape[0] != A.shape[1]:
+        raise ("The matrix is not square!")
+
+    var I = identity[dtype](A.shape[0])
+    var B = solve(A, I)
+
+    return B^
+
+
+fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """Transpose."""
 
-    var res = Matrix[dtype](Tuple(mat.shape[1], mat.shape[0]))
-    for i in range(res.shape[0]):
-        for j in range(res.shape[1]):
-            res[i, j] = mat[j, i]
-    return res
-
-
-fn _arithmetic_func[
-    dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
-        SIMD[type, simd_width], SIMD[type, simd_width]
-    ) -> SIMD[type, simd_width],
-](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
-    alias width = max(simdwidthof[dtype](), 16)
-    try:
-        if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
-            raise Error("The shapes of matrices do not match!")
-    except e:
-        print(e)
-
-    var t0 = A.shape[0]
-    var t1 = A.shape[1]
-    var C = Matrix[dtype](shape=A.shape)
-
-    @parameter
-    fn calculate_CC(m: Int):
-        @parameter
-        fn vec_func[simd_width: Int](n: Int):
-            C._store[simd_width](
-                m,
-                n,
-                simd_func(A._load[simd_width](m, n), B._load[simd_width](m, n)),
-            )
-
-        vectorize[vec_func, width](t1)
-
-    parallelize[calculate_CC](t0, t0)
-
-    var _t0 = t0
-    var _t1 = t1
-    var _A = A
-    var _B = B
-
-    return C^
-
-
-fn _logic_func[
-    dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
-        SIMD[type, simd_width], SIMD[type, simd_width]
-    ) -> SIMD[DType.bool, simd_width],
-](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[DType.bool]:
-    alias width = max(simdwidthof[dtype](), 16)
-    try:
-        if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
-            raise Error("The shapes of matrices do not match!")
-    except e:
-        print(e)
-
-    var t0 = A.shape[0]
-    var t1 = A.shape[1]
-    var C = Matrix[DType.bool](shape=A.shape)
-
-    @parameter
-    fn calculate_CC(m: Int):
-        @parameter
-        fn vec_func[simd_width: Int](n: Int):
-            C._store[simd_width](
-                m,
-                n,
-                simd_func(A._load[simd_width](m, n), B._load[simd_width](m, n)),
-            )
-
-        vectorize[vec_func, width](t1)
-
-    parallelize[calculate_CC](t0, t0)
-
-    var _t0 = t0
-    var _t1 = t1
-    var _A = A
-    var _B = B
-
-    return C^
+    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]))
+    for i in range(B.shape[0]):
+        for j in range(B.shape[1]):
+            B[i, j] = A[j, i]
+    return B
 
 
 fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:

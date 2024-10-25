@@ -80,7 +80,7 @@ def test_transpose():
     )
 
 
-def test_inv():
+def test_solve():
     var np = Python.import_module("numpy")
     var arr1 = nm.mat.rand[f64]((100, 100))
     var arr2 = nm.mat.rand[f64]((100, 100))
@@ -89,5 +89,10 @@ def test_inv():
     check_is_close(
         nm.mat.solve(arr1, arr2),
         np.linalg.solve(np_arr1, np_arr2),
-        "Dunder matmul is broken",
+        "Solve is broken",
+    )
+    check_is_close(
+        nm.mat.inv(arr1),
+        np.linalg.inv(np_arr1),
+        "Inverse is broken",
     )

@@ -37,6 +37,8 @@ from sys import simdwidthof
 struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     """A marix (2d-array).
 
+    The buffer is saved row-majored (C-type).
+
     Parameters:
         dtype: Type of item in NDArray. Default type is DType.float64.
 
@@ -51,16 +53,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         - shape
         - size
         - strides
-        - order
 
-    Default constructor: dtype(parameter), shape, order.
+    Default constructor: dtype(parameter), shape, object.
     """
 
     var shape: Tuple[Int, Int]
     """Shape of Matrix."""
-
-    var order: String
-    "C (C-type, row-major) or F (Fortran-type col-major)."
 
     # To be calculated at the initialization.
     var size: Int
@@ -83,24 +81,18 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     fn __init__(
         inout self,
         shape: Tuple[Int, Int],
-        order: String = "C",
     ):
         """
         Matrix NDArray initialization.
 
         Args:
             shape: List of shape.
-            order: Memory order C or F.
         """
 
         self.shape = (shape[0], shape[1])
-        if order == "C":
-            self.strides = (shape[1], 1)
-        else:
-            self.strides = (1, shape[0])
+        self.strides = (shape[1], 1)
         self.size = shape[0] * shape[1]
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
-        self.order = order
 
     @always_inline("nodebug")
     fn __copyinit__(inout self, other: Self):
@@ -110,7 +102,6 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
-        self.order = other.order
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.size)
         memcpy(self._buf, other._buf, other.size)
 
@@ -119,10 +110,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
         Move other into self.
         """
-        self.shape = (other.shape[0], other.shape[1])
-        self.strides = (other.strides[0], other.strides[1])
+        self.shape = other.shape^
+        self.strides = other.strides^
         self.size = other.size
-        self.order = other.order^
         self._buf = other._buf
 
     @always_inline("nodebug")
@@ -159,23 +149,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
-        return self._buf.load[width=width](
-            x * self.strides[0] + y * self.strides[1]
-        )
-
-    fn _loadc[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
-        """
-        `__getitem__` with width for C-order.
-        Unsafe: No boundary check!
-        """
         return self._buf.load[width=width](x * self.strides[0] + y)
-
-    fn _loadf[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
-        """
-        `__getitem__` with width for F-order.
-        Unsafe: No boundary check!
-        """
-        return self._buf.load[width=width](x + y * self.strides[1])
 
     fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]):
         """
@@ -201,27 +175,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.store[width=width](
-            x * self.strides[0] + y * self.strides[1], simd
-        )
-
-    fn _storec[
-        width: Int = 1
-    ](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
-        """
-        `__setitem__` with width for C-order.
-        Unsafe: No boundary check!
-        """
         self._buf.store[width=width](x * self.strides[0] + y, simd)
-
-    fn _storef[
-        width: Int = 1
-    ](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
-        """
-        `__setitem__` with width for F-order.
-        Unsafe: No boundary check!
-        """
-        self._buf.store[width=width](x + y * self.strides[1], simd)
 
     fn __str__(self) -> String:
         return String.format_sequence(self)
@@ -280,9 +234,10 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             + str(self.shape[1])
             + "  DType: "
             + str(self.dtype)
-            + "  Order: "
-            + str(self.order)
         )
+
+    fn __add__(self, other: Self) -> Self:
+        return add(self, other)
 
     fn __matmul__(self, other: Self) -> Self:
         return matmul(self, other)
@@ -298,7 +253,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
 
         var ndarray = NDArray[dtype](
-            shape=List[Int](self.shape[0], self.shape[1]), order=self.order
+            shape=List[Int](self.shape[0], self.shape[1]), order="C"
         )
         memcpy(ndarray.data, self._buf, ndarray.size())
 
@@ -357,48 +312,38 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
 
 fn full[
     dtype: DType = DType.float64
-](
-    shape: Tuple[Int, Int], fill_value: Scalar[dtype] = 0, order: String = "C"
-) -> Matrix[dtype]:
+](shape: Tuple[Int, Int], fill_value: Scalar[dtype] = 0) -> Matrix[dtype]:
     """Return a matrix with given shape and filled value."""
 
-    var matrix = Matrix[dtype](shape, order)
+    var matrix = Matrix[dtype](shape)
     for i in range(shape[0] * shape[1]):
         matrix._buf.store(i, fill_value)
 
     return matrix
 
 
-fn zeros[
-    dtype: DType = DType.float64
-](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+fn zeros[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     """Return a matrix with given shape and filled with zeros."""
 
-    return full[dtype](shape=shape, fill_value=0, order=order)
+    return full[dtype](shape=shape, fill_value=0)
 
 
-fn ones[
-    dtype: DType = DType.float64
-](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+fn ones[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     """Return a matrix with given shape and filled with ones."""
 
-    return full[dtype](shape=shape, fill_value=1, order=order)
+    return full[dtype](shape=shape, fill_value=1)
 
 
-fn identity[
-    dtype: DType = DType.float64
-](len: Int, order: String = "C") -> Matrix[dtype]:
+fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
     """Return a matrix with given shape and filled value."""
 
-    var matrix = Matrix[dtype]((len, len), order)
+    var matrix = Matrix[dtype]((len, len))
     for i in range(len):
         matrix._buf.store(i * matrix.strides[0] + i * matrix.strides[1], 1)
     return matrix
 
 
-fn rand[
-    dtype: DType = DType.float64
-](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     """Return a matrix with random values uniformed distributed between 0 and 1.
 
     Parameters:
@@ -406,9 +351,8 @@ fn rand[
 
     Args:
         shape: The shape of the Matrix.
-        order: The order of the Matrix.
     """
-    var result = Matrix[dtype](shape, order)
+    var result = Matrix[dtype](shape)
     for i in range(result.size):
         result._buf.store(i, random.random_float64(0, 1).cast[dtype]())
     return result
@@ -420,7 +364,7 @@ fn rand[
 
 
 fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
-    """Create a matrix from a ndarray. It must be 2-dimensional.
+    """Create a matrix from a row-majored ndarray. It must be 2-dimensional.
 
     It makes a copy of the buffer of the ndarray.
 
@@ -431,9 +375,7 @@ fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
     if object.ndim != 2:
         raise Error("The original array is not 2-dimensional!")
 
-    var matrix = Matrix[dtype](
-        shape=(object.ndshape[0], object.ndshape[1]), order=object.order
-    )
+    var matrix = Matrix[dtype](shape=(object.ndshape[0], object.ndshape[1]))
     memcpy(matrix._buf, object.data, matrix.size)
 
     return matrix
@@ -454,23 +396,10 @@ fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
     ndarray as a matrix. This simplify calculation and avoid too much check.
     """
 
-    var matrix = Matrix[dtype](
-        shape=(array.ndshape[0], array.ndshape[1]), order=array.order
-    )
+    var matrix = Matrix[dtype](shape=(array.ndshape[0], array.ndshape[1]))
     matrix._buf = array.data
 
     return matrix
-
-
-fn reset_order[dtype: DType](mat: Matrix[dtype]) -> Matrix[dtype]:
-    """Reset the order of the matrix between "C" and "F"."""
-
-    var new_order = "F" if mat.order == "C" else "C"
-    var res = Matrix[dtype]((mat.shape[0], mat.shape[1]), order=new_order)
-    for i in range(mat.shape[0]):
-        for j in range(mat.shape[1]):
-            res[i,j] = mat[i, j]
-    return res
 
 
 # ===-----------------------------------------------------------------------===#
@@ -555,6 +484,50 @@ fn solve[
     return X^
 
 
+fn transpose[dtype: DType](mat: Matrix[dtype]) -> Matrix[dtype]:
+    """Transpose."""
+
+    var res = Matrix[dtype](Tuple(mat.shape[1], mat.shape[0]))
+    for i in range(mat.shape[0]):
+        for j in range(mat.shape[1]):
+            res[i, j] = mat[j, i]
+    return res
+
+
+fn add[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
+    alias width = max(simdwidthof[dtype](), 16)
+    try:
+        if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
+            raise Error("The shapes of matrices do not match!")
+    except e:
+        print(e)
+
+    var t0 = A.shape[0]
+    var t1 = A.shape[1]
+    var C = Matrix[dtype](shape=A.shape)
+
+    @parameter
+    fn calculate_CC(m: Int):
+        @parameter
+        fn add_vec[simd_width: Int](n: Int):
+            C._store[simd_width](
+                m,
+                n,
+                A._load[simd_width](m, n) + B._load[simd_width](m, n),
+            )
+
+        vectorize[add_vec, width](t1)
+
+    parallelize[calculate_CC](t0, t0)
+
+    var _t0 = t0
+    var _t1 = t1
+    var _A = A
+    var _B = B
+
+    return C^
+
+
 fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     """Matrix multiplication.
 
@@ -574,51 +547,22 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     var t2 = B.shape[1]
     var C: Matrix[dtype] = zeros[dtype](shape=(t0, t2))
 
-    if (A.order == "C") and (B.order == "C"):
+    @parameter
+    fn calculate_CC(m: Int):
+        for k in range(t1):
 
-        @parameter
-        fn calculate_CC(m: Int):
-            for k in range(t1):
+            @parameter
+            fn dot[simd_width: Int](n: Int):
+                C._store[simd_width](
+                    m,
+                    n,
+                    C._load[simd_width](m, n)
+                    + A._load(m, k) * B._load[simd_width](k, n),
+                )
 
-                @parameter
-                fn dot[simd_width: Int](n: Int):
-                    C._storec[simd_width](
-                        m,
-                        n,
-                        C._loadc[simd_width](m, n)
-                        + A._loadc(m, k) * B._loadc[simd_width](k, n),
-                    )
+            vectorize[dot, width](t2)
 
-                vectorize[dot, width](t2)
-
-        parallelize[calculate_CC](t0, t0)
-
-    elif (A.order == "C") and (B.order == "F"):
-
-        @parameter
-        fn calculate_CF(m: Int):
-            for n in range(t2):
-                for k in range(t1):
-                    C._storec(
-                        m,
-                        n,
-                        C._loadc(m, n)
-                        + A._loadc(m, k) * B._loadf(k, n),
-                    )
-
-        parallelize[calculate_CF](t0, t0)
-
-    else:
-
-        @parameter
-        fn calculate_other(m: Int):
-            for k in range(t1):
-                for n in range(t2):
-                    C._store(
-                        m, n, C._load(m, n) + A._load(m, k) * B._load(k, n)
-                    )
-
-        parallelize[calculate_other](t0, t0)
+    parallelize[calculate_CC](t0, t0)
 
     var _t0 = t0
     var _t1 = t1

@@ -464,7 +464,7 @@ fn full[
     dtype: DType = DType.float64
 ](shape: Tuple[Int, Int], fill_value: Scalar[dtype] = 0) -> Matrix[dtype]:
     """Return a matrix with given shape and filled value.
-    
+
     Example:
     ```mojo
     from numojo import mat
@@ -481,7 +481,7 @@ fn full[
 
 fn zeros[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     """Return a matrix with given shape and filled with zeros.
-    
+
     Example:
     ```mojo
     from numojo import mat

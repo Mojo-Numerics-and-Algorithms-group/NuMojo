@@ -166,6 +166,45 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         memcpy(res._buf, ptr, res.size)
         return res
 
+    fn __getitem__(self, owned x: Slice, owned y: Slice) raises -> Self:
+        """
+        Retreive slices of matrix.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.zeros(shape=(10,10))
+        print(A[1:3, 2:4])
+        ```
+        """
+        return self
+
+    fn __getitem__(self, owned x: Int, owned y: Slice) raises -> Self:
+        """
+        Retreive slices of matrix.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.zeros(shape=(10,10))
+        print(A[1, 2:4])
+        ```
+        """
+        return self
+
+    fn __getitem__(self, owned x: Slice, owned y: Int) raises -> Self:
+        """
+        Retreive slices of matrix.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.zeros(shape=(10,10))
+        print(A[2:4, 1])
+        ```
+        """
+        return self
+
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
         `__getitem__` with width.

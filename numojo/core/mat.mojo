@@ -25,6 +25,7 @@ the behavior of `NDArray` type and the `Matrix` type.
 
 """
 
+from numojo.prelude import *
 from .ndarray import NDArray
 from memory import memcmp
 from sys import simdwidthof
@@ -125,7 +126,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
 
     fn __getitem__(self, x: Int, y: Int) -> Scalar[dtype]:
         """
-        Return the scalar at the coordinates.
+        Return the scalar at the index.
 
         Args:
             x: The row number.
@@ -144,6 +145,27 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             print(e)
         return self._buf.load(x * self.strides[0] + y)
 
+    fn __getitem__(self, x: Int) -> Self:
+        """
+        Return the corresponding row at the index.
+
+        Args:
+            x: The row number.
+        """
+
+        try:
+            if x >= self.shape[0]:
+                raise Error(
+                    "Error: Elements of `index` exceed the array shape."
+                )
+        except e:
+            print(e)
+
+        var res = Self(shape=(1, self.shape[1]))
+        var ptr = self._buf.offset(x * self.shape[1])
+        memcpy(res._buf, ptr, res.size)
+        return res
+
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
         `__getitem__` with width.
@@ -153,7 +175,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
 
     fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]):
         """
-        Return the scalar at the coordinates.
+        Return the scalar at the index.
 
         Args:
             x: The row number.
@@ -235,6 +257,45 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             + "  DType: "
             + str(self.dtype)
         )
+
+    fn __iter__(self) raises -> _MatrixIter[__lifetime_of(self), dtype]:
+        """Iterate over elements of the Matrix, returning copied value.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.rand((4,4))
+        for i in A:
+            print(i)
+        ```
+
+        Returns:
+            An iterator of Matrix elements.
+        """
+
+        return _MatrixIter[__lifetime_of(self), dtype](
+            matrix=self,
+            length=self.shape[0],
+        )
+
+    fn __reversed__(
+        self,
+    ) raises -> _MatrixIter[__lifetime_of(self), dtype, forward=False]:
+        """Iterate backwards over elements of the Matrix, returning
+        copied value.
+
+        Returns:
+            A reversed iterator of Matrix elements.
+        """
+
+        return _MatrixIter[__lifetime_of(self), dtype, forward=False](
+            matrix=self,
+            length=self.shape[0],
+        )
+
+    # ===-------------------------------------------------------------------===#
+    # Arithmetic dunder methods
+    # ===-------------------------------------------------------------------===#
 
     fn __add__(self, other: Self) -> Self:
         return _arithmetic_func[dtype, SIMD.__add__](self, other)
@@ -336,6 +397,62 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         except e:
             print("Error in converting to numpy", e)
             return PythonObject()
+
+
+# ===-----------------------------------------------------------------------===#
+# MatrixIter struct
+# ===-----------------------------------------------------------------------===#
+
+
+@value
+struct _MatrixIter[
+    is_mutable: Bool, //,
+    lifetime: AnyLifetime[is_mutable].type,
+    dtype: DType,
+    forward: Bool = True,
+]:
+    """Iterator for Matrix.
+
+    Parameters:
+        is_mutable: Whether the iterator is mutable.
+        lifetime: The lifetime of the underlying Matrix data.
+        dtype: The data type of the item.
+        forward: The iteration direction. `False` is backwards.
+    """
+
+    var index: Int
+    var matrix: Matrix[dtype]
+    var length: Int
+
+    fn __init__(
+        inout self,
+        matrix: Matrix[dtype],
+        length: Int,
+    ):
+        self.index = 0 if forward else length
+        self.length = length
+        self.matrix = matrix
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __next__(inout self) raises -> Matrix[dtype]:
+        @parameter
+        if forward:
+            var current_index = self.index
+            self.index += 1
+            return self.matrix[current_index]
+        else:
+            var current_index = self.index
+            self.index -= 1
+            return self.matrix[current_index]
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index
 
 
 # ===-----------------------------------------------------------------------===#

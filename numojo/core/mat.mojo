@@ -463,7 +463,14 @@ struct _MatrixIter[
 fn full[
     dtype: DType = DType.float64
 ](shape: Tuple[Int, Int], fill_value: Scalar[dtype] = 0) -> Matrix[dtype]:
-    """Return a matrix with given shape and filled value."""
+    """Return a matrix with given shape and filled value.
+    
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.full(shape=(10, 10), fill_value=100)
+    ```
+    """
 
     var matrix = Matrix[dtype](shape)
     for i in range(shape[0] * shape[1]):
@@ -473,19 +480,40 @@ fn full[
 
 
 fn zeros[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
-    """Return a matrix with given shape and filled with zeros."""
+    """Return a matrix with given shape and filled with zeros.
+    
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.zeros(shape=(10, 10))
+    ```
+    """
 
     return full[dtype](shape=shape, fill_value=0)
 
 
 fn ones[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
-    """Return a matrix with given shape and filled with ones."""
+    """Return a matrix with given shape and filled with ones.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.ones(shape=(10, 10))
+    ```
+    """
 
     return full[dtype](shape=shape, fill_value=1)
 
 
 fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
-    """Return a matrix with given shape and filled value."""
+    """Return a matrix with given shape and filled value.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.identity(12)
+    ```
+    """
 
     var matrix = zeros[dtype]((len, len))
     for i in range(len):
@@ -495,6 +523,12 @@ fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
 
 fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     """Return a matrix with random values uniformed distributed between 0 and 1.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.rand((12, 12))
+    ```
 
     Parameters:
         dtype: The data type of the NDArray elements.
@@ -751,6 +785,14 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     """Matrix multiplication.
 
     See `numojo.math.linalg.matmul.matmul_parallelized()`.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.rand(shape=(1000, 1000))
+    var B = mat.rand(shape=(1000, 1000))
+    var C = mat.matmul(A, B)
+    ```
     """
 
     alias width = max(simdwidthof[dtype](), 16)

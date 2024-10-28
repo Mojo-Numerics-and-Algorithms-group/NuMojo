@@ -145,13 +145,16 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             print(e)
         return self._buf.load(x * self.strides[0] + y)
 
-    fn __getitem__(self, x: Int) -> Self:
+    fn __getitem__(self, owned x: Int) -> Self:
         """
         Return the corresponding row at the index.
 
         Args:
             x: The row number.
         """
+
+        if x < 0:
+            x = self.shape[0] + x
 
         try:
             if x >= self.shape[0]:
@@ -166,44 +169,80 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         memcpy(res._buf, ptr, res.size)
         return res
 
-    fn __getitem__(self, owned x: Slice, owned y: Slice) raises -> Self:
+    fn __getitem__(self, x: Slice, y: Slice) -> Self:
         """
-        Retreive slices of matrix.
+        Get item from two slices.
+        """
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_x = range(start_x, end_x, step_x)
+        var range_y = range(start_y, end_y, step_y)
 
-        Example:
-        ```mojo
-        from numojo import mat
-        var A = mat.zeros(shape=(10,10))
-        print(A[1:3, 2:4])
-        ```
-        """
-        return self
+        # The new matrix with the corresponding shape
+        var B = mat.Matrix[dtype](shape=(len(range_x), len(range_y)))
 
-    fn __getitem__(self, owned x: Int, owned y: Slice) raises -> Self:
-        """
-        Retreive slices of matrix.
+        # Fill in the values at the corresponding index
+        var c = 0
+        for i in range_x:
+            for j in range_y:
+                B._buf[c] = self._load(i, j)
+                c += 1
 
-        Example:
-        ```mojo
-        from numojo import mat
-        var A = mat.zeros(shape=(10,10))
-        print(A[1, 2:4])
-        ```
-        """
-        return self
+        return B
 
-    fn __getitem__(self, owned x: Slice, owned y: Int) raises -> Self:
+    fn __getitem__(self, x: Slice, owned y: Int) -> Self:
         """
-        Retreive slices of matrix.
+        Get item from one slice and one int.
+        """
+        if y < 0:
+            y = self.shape[1] + y
 
-        Example:
-        ```mojo
-        from numojo import mat
-        var A = mat.zeros(shape=(10,10))
-        print(A[2:4, 1])
-        ```
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        var range_x = range(start_x, end_x, step_x)
+
+        # The new matrix with the corresponding shape
+        var B = mat.Matrix[dtype](shape=(len(range_x), 1))
+
+        # Fill in the values at the corresponding index
+        var c = 0
+        for i in range_x:
+            B._buf[c] = self._load(i, y)
+            c += 1
+
+        return B
+
+    fn __getitem__(self, owned x: Int, y: Slice) -> Self:
         """
-        return self
+        Get item from one int and one slice.
+        """
+        if x < 0:
+            x = self.shape[0] + x
+
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_y = range(start_y, end_y, step_y)
+
+        # The new matrix with the corresponding shape
+        var B = mat.Matrix[dtype](shape=(1, len(range_y)))
+
+        # Fill in the values at the corresponding index
+        var c = 0
+        for j in range_y:
+            B._buf[c] = self._load(x, j)
+            c += 1
+
+        return B
 
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
@@ -611,6 +650,69 @@ fn matrix[dtype: DType](owned object: Matrix[dtype]) raises -> Matrix[dtype]:
     """Create a matrix from a matrix."""
 
     return object^
+
+
+fn fromstring[
+    dtype: DType = DType.float64
+](text: String, shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+    """Matrix initialization from string representation of an matrix.
+
+    Comma, right brackets, and whitespace are treated as seperators of numbers.
+    Digits, underscores, and minus signs are treated as a part of the numbers.
+
+    Example:
+    ```mojo
+    from numojo.prelude import *
+    from numojo import mat
+    fn main() raises:
+        var A = mat.fromstring[f32](
+        "1 2 .3 4 5 6.5 7 1_323.12 9 10, 11.12, 12 13 14 15 16", (4, 4)
+    )
+    ```
+    ```console
+    [[1.0   2.0     0.30000001192092896     4.0]
+     [5.0   6.5     7.0     1323.1199951171875]
+     [9.0   10.0    11.119999885559082      12.0]
+     [13.0  14.0    15.0    16.0]]
+    Size: 4x4  DType: float32
+    ```
+
+    Args:
+        text: String representation of a matrix.
+        shape: Shape of the matrix.
+    """
+
+    var data = List[Scalar[dtype]]()
+    var bytes = text.as_bytes()
+    var number_as_str: String = ""
+    var result = Matrix[dtype](shape=shape)
+    var size = shape[0] * shape[1]
+
+    for i in range(len(bytes)):
+        var b = bytes[i]
+        if isdigit(b) or (chr(int(b)) == ".") or (chr(int(b)) == "-"):
+            number_as_str = number_as_str + chr(int(b))
+            if i == len(bytes) - 1:  # Last byte
+                var number = atof(number_as_str).cast[dtype]()
+                data.append(number)  # Add the number to the data buffer
+                number_as_str = ""  # Clean the number cache
+        if (chr(int(b)) == ",") or (chr(int(b)) == "]") or (chr(int(b)) == " "):
+            if number_as_str != "":
+                var number = atof(number_as_str).cast[dtype]()
+                data.append(number)  # Add the number to the data buffer
+                number_as_str = ""  # Clean the number cache
+
+    if size != len(data):
+        var message = String(
+            "The number of items in the string is {}, which does not match the"
+            " given shape {}x{}."
+        ).format(len(data), shape[0], shape[1])
+        raise Error(message)
+
+    result = Matrix[dtype](shape=shape)
+    for i in range(len(data)):
+        result._buf[i] = data[i]
+    return result^
 
 
 fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:

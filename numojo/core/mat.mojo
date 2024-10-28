@@ -124,7 +124,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     # Dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __getitem__(self, x: Int, y: Int) -> Scalar[dtype]:
+    fn __getitem__(self, owned x: Int, owned y: Int) -> Scalar[dtype]:
         """
         Return the scalar at the index.
 
@@ -135,6 +135,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Returns:
             A scalar matching the dtype of the array.
         """
+
+        if x < 0:
+            x = self.shape[0] + x
+
+        if y < 0:
+            y = self.shape[1] + y
 
         try:
             if (x >= self.shape[0]) or (y >= self.shape[1]):

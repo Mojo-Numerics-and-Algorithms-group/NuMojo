@@ -381,32 +381,95 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     # Arithmetic dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __add__(self, other: Self) -> Self:
-        return _arithmetic_func[dtype, SIMD.__add__](self, other)
+    fn __add__(self, other: Self) raises -> Self:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__add__](self, other)
+        else:
+            return _arithmetic_func[dtype, SIMD.__add__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __sub__(self, other: Self) -> Self:
-        return _arithmetic_func[dtype, SIMD.__sub__](self, other)
+    fn __sub__(self, other: Self) raises -> Self:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__sub__](self, other)
+        else:
+            return _arithmetic_func[dtype, SIMD.__sub__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __mul__(self, other: Self) -> Self:
-        return _arithmetic_func[dtype, SIMD.__mul__](self, other)
+    fn __mul__(self, other: Self) raises -> Self:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__mul__](self, other)
+        else:
+            return _arithmetic_func[dtype, SIMD.__mul__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __lt__(self, other: Self) -> Matrix[DType.bool]:
-        return _logic_func[dtype, SIMD.__lt__](self, other)
+    fn __lt__(self, other: Self) raises -> Matrix[DType.bool]:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__lt__](self, other)
+        else:
+            return _logic_func[dtype, SIMD.__lt__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __le__(self, other: Self) -> Matrix[DType.bool]:
-        return _logic_func[dtype, SIMD.__le__](self, other)
+    fn __le__(self, other: Self) raises -> Matrix[DType.bool]:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__le__](self, other)
+        else:
+            return _logic_func[dtype, SIMD.__le__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __gt__(self, other: Self) -> Matrix[DType.bool]:
-        return _logic_func[dtype, SIMD.__gt__](self, other)
+    fn __gt__(self, other: Self) raises -> Matrix[DType.bool]:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__gt__](self, other)
+        else:
+            return _logic_func[dtype, SIMD.__gt__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __ge__(self, other: Self) -> Matrix[DType.bool]:
-        return _logic_func[dtype, SIMD.__ge__](self, other)
+    fn __ge__(self, other: Self) raises -> Matrix[DType.bool]:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__ge__](self, other)
+        else:
+            return _logic_func[dtype, SIMD.__ge__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __eq__(self, other: Self) -> Matrix[DType.bool]:
-        return _logic_func[dtype, SIMD.__eq__](self, other)
+    fn __eq__(self, other: Self) raises -> Matrix[DType.bool]:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__eq__](self, other)
+        else:
+            return _logic_func[dtype, SIMD.__eq__](
+                self, broadcast_to(other, self.shape)
+            )
 
-    fn __ne__(self, other: Self) -> Matrix[DType.bool]:
-        return _logic_func[dtype, SIMD.__ne__](self, other)
+    fn __ne__(self, other: Self) raises -> Matrix[DType.bool]:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__ne__](self, other)
+        else:
+            return _logic_func[dtype, SIMD.__ne__](
+                self, broadcast_to(other, self.shape)
+            )
 
     fn __matmul__(self, other: Self) -> Self:
         return matmul(self, other)
@@ -1016,3 +1079,57 @@ fn lstsq[dtype: DType](X: Matrix[dtype], y: Matrix[dtype]) -> Matrix[dtype]:
     var X_prime = X.T()
     var b = (X_prime @ X).inv() @ X_prime @ y
     return b^
+
+
+fn broadcast_to[
+    dtype: DType
+](A: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+    """
+    Broadcase the vector to the given shape.
+
+    Example:
+
+    ```console
+    > from numojo import mat
+    > a = mat.fromstring("1 2 3", shape=(1, 3))
+    > print(mat.broadcast_to(a, (3, 3)))
+    [[1.0   2.0     3.0]
+     [1.0   2.0     3.0]
+     [1.0   2.0     3.0]]
+    > a = mat.fromstring("1 2 3", shape=(3, 1))
+    > print(mat.broadcast_to(a, (3, 3)))
+    [[1.0   1.0     1.0]
+     [2.0   2.0     2.0]
+     [3.0   3.0     3.0]]
+    > a = mat.fromstring("1", shape=(1, 1))
+    > print(mat.broadcast_to(a, (3, 3)))
+    [[1.0   1.0     1.0]
+     [1.0   1.0     1.0]
+     [1.0   1.0     1.0]]
+    > a = mat.fromstring("1 2", shape=(1, 2))
+    > print(mat.broadcast_to(a, (1, 2)))
+    [[1.0   2.0]]
+    > a = mat.fromstring("1 2 3 4", shape=(2, 2))
+    > print(mat.broadcast_to(a, (4, 2)))
+    Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
+    ```
+    """
+
+    var B = Matrix[dtype](shape)
+    if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
+        B = A
+    elif (A.shape[0] == 1) and (A.shape[1] == 1):
+        B = full[dtype](shape, A[0, 0])
+    elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
+        for i in range(shape[0]):
+            memcpy(dest=B._buf.offset(shape[1] * i), src=A._buf, count=shape[1])
+    elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                B._store(i, j, A._buf[i])
+    else:
+        var message = String(
+            "Cannot broadcast shape {}x{} to shape {}x{}!"
+        ).format(A.shape[0], A.shape[1], shape[0], shape[1])
+        raise Error(message)
+    return B^

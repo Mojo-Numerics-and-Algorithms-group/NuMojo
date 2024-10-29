@@ -46,12 +46,17 @@ def test_arithmetic():
     var np = Python.import_module("numpy")
     var A = nm.mat.rand[f64]((100, 100))
     var B = nm.mat.rand[f64]((100, 100))
+    var C = nm.mat.rand[f64]((100, 1))
     var Ap = A.to_numpy()
     var Bp = B.to_numpy()
+    var Cp = C.to_numpy()
     check_is_close(A + B, Ap + Bp, "Add is broken")
     check_is_close(A - B, Ap - Bp, "Sub is broken")
     check_is_close(A * B, Ap * Bp, "Mul is broken")
     check_is_close(A @ B, np.matmul(Ap, Bp), "Matmul is broken")
+    check_is_close(A + C, Ap + Cp, "Add (broadcast) is broken")
+    check_is_close(A - C, Ap - Cp, "Sub (broadcast) is broken")
+    check_is_close(A * C, Ap * Cp, "Mul (broadcast) is broken")
 
 
 def test_logic():

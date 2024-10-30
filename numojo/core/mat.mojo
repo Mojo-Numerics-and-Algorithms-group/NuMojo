@@ -386,6 +386,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func[dtype, SIMD.__add__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__add__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _arithmetic_func[dtype, SIMD.__add__](
                 self, broadcast_to(other, self.shape)
@@ -396,6 +402,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func[dtype, SIMD.__sub__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__sub__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _arithmetic_func[dtype, SIMD.__sub__](
                 self, broadcast_to(other, self.shape)
@@ -406,6 +418,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func[dtype, SIMD.__mul__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__mul__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _arithmetic_func[dtype, SIMD.__mul__](
                 self, broadcast_to(other, self.shape)
@@ -416,6 +434,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _logic_func[dtype, SIMD.__lt__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__lt__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _logic_func[dtype, SIMD.__lt__](
                 self, broadcast_to(other, self.shape)
@@ -426,6 +450,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _logic_func[dtype, SIMD.__le__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__le__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _logic_func[dtype, SIMD.__le__](
                 self, broadcast_to(other, self.shape)
@@ -436,6 +466,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _logic_func[dtype, SIMD.__gt__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__gt__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _logic_func[dtype, SIMD.__gt__](
                 self, broadcast_to(other, self.shape)
@@ -446,6 +482,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _logic_func[dtype, SIMD.__ge__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__ge__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _logic_func[dtype, SIMD.__ge__](
                 self, broadcast_to(other, self.shape)
@@ -456,6 +498,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _logic_func[dtype, SIMD.__eq__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__eq__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _logic_func[dtype, SIMD.__eq__](
                 self, broadcast_to(other, self.shape)
@@ -466,6 +514,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.shape[1] == other.shape[1]
         ):
             return _logic_func[dtype, SIMD.__ne__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _logic_func[dtype, SIMD.__ne__](
+                broadcast_to(self, other.shape), other
+            )
         else:
             return _logic_func[dtype, SIMD.__ne__](
                 self, broadcast_to(other, self.shape)

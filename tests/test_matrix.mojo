@@ -57,6 +57,9 @@ def test_arithmetic():
     check_is_close(A + C, Ap + Cp, "Add (broadcast) is broken")
     check_is_close(A - C, Ap - Cp, "Sub (broadcast) is broken")
     check_is_close(A * C, Ap * Cp, "Mul (broadcast) is broken")
+    check_is_close(A + 1, Ap + 1, "Add (to int) is broken")
+    check_is_close(A - 1, Ap - 1, "Sub (to int) is broken")
+    check_is_close(A * 1, Ap * 1, "Mul (to int) is broken")
 
 
 def test_logic():

@@ -397,6 +397,29 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 self, broadcast_to(other, self.shape)
             )
 
+    fn __add__(self, other: Scalar[dtype]) raises -> Self:
+        """Add matrix to scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A + 2)
+        ```
+        """
+        return self + broadcast_to[dtype](other, self.shape)
+
+    fn __radd__(self, other: Scalar[dtype]) raises -> Self:
+        """
+        Right-add.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(2 + A)
+        ```
+        """
+        return broadcast_to[dtype](other, self.shape) + self
+
     fn __sub__(self, other: Self) raises -> Self:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -412,6 +435,29 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             return _arithmetic_func[dtype, SIMD.__sub__](
                 self, broadcast_to(other, self.shape)
             )
+
+    fn __sub__(self, other: Scalar[dtype]) raises -> Self:
+        """Substract matrix by scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A - 2)
+        ```
+        """
+        return self - broadcast_to[dtype](other, self.shape)
+
+    fn __rsub__(self, other: Scalar[dtype]) raises -> Self:
+        """
+        Right-sub.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(2 - A)
+        ```
+        """
+        return broadcast_to[dtype](other, self.shape) - self
 
     fn __mul__(self, other: Self) raises -> Self:
         if (self.shape[0] == other.shape[0]) and (
@@ -429,6 +475,29 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 self, broadcast_to(other, self.shape)
             )
 
+    fn __mul__(self, other: Scalar[dtype]) raises -> Self:
+        """Mutiply matrix by scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A * 2)
+        ```
+        """
+        return self * broadcast_to[dtype](other, self.shape)
+
+    fn __rmul__(self, other: Scalar[dtype]) raises -> Self:
+        """
+        Right-mul.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(2 * A)
+        ```
+        """
+        return broadcast_to[dtype](other, self.shape) * self
+
     fn __lt__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -444,6 +513,17 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             return _logic_func[dtype, SIMD.__lt__](
                 self, broadcast_to(other, self.shape)
             )
+
+    fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+        """Matrix less than scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A < 2)
+        ```
+        """
+        return self < broadcast_to[dtype](other, self.shape)
 
     fn __le__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
@@ -461,6 +541,17 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 self, broadcast_to(other, self.shape)
             )
 
+    fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+        """Matrix less than and equal to scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A <= 2)
+        ```
+        """
+        return self <= broadcast_to[dtype](other, self.shape)
+
     fn __gt__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -476,6 +567,17 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             return _logic_func[dtype, SIMD.__gt__](
                 self, broadcast_to(other, self.shape)
             )
+
+    fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+        """Matrix greater than scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A > 2)
+        ```
+        """
+        return self > broadcast_to[dtype](other, self.shape)
 
     fn __ge__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
@@ -493,6 +595,17 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 self, broadcast_to(other, self.shape)
             )
 
+    fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+        """Matrix greater than and equal to scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A >= 2)
+        ```
+        """
+        return self >= broadcast_to[dtype](other, self.shape)
+
     fn __eq__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -509,6 +622,17 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 self, broadcast_to(other, self.shape)
             )
 
+    fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+        """Matrix less than and equal to scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A == 2)
+        ```
+        """
+        return self == broadcast_to[dtype](other, self.shape)
+
     fn __ne__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -524,6 +648,17 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             return _logic_func[dtype, SIMD.__ne__](
                 self, broadcast_to(other, self.shape)
             )
+
+    fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+        """Matrix less than and equal to scalar.
+
+        ```mojo
+        from numojo.mat import ones
+        A = ones(shape=(4, 4))
+        print(A != 2)
+        ```
+        """
+        return self != broadcast_to[dtype](other, self.shape)
 
     fn __matmul__(self, other: Self) -> Self:
         return matmul(self, other)
@@ -1186,4 +1321,16 @@ fn broadcast_to[
             "Cannot broadcast shape {}x{} to shape {}x{}!"
         ).format(A.shape[0], A.shape[1], shape[0], shape[1])
         raise Error(message)
+    return B^
+
+
+fn broadcast_to[
+    dtype: DType
+](A: Scalar[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+    """
+    Broadcase the scalar to the given shape.
+    """
+
+    var B = Matrix[dtype](shape)
+    B = full[dtype](shape, A)
     return B^

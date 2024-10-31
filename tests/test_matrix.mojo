@@ -79,11 +79,18 @@ def test_logic():
 
 def test_transpose():
     var np = Python.import_module("numpy")
-    var a = nm.mat.rand[f64]((100, 100))
+    var a = nm.mat.rand((100, 100))
+    var b = nm.mat.rand((1, 100))
     var ap = a.to_numpy()
+    var bp = b.to_numpy()
     check_is_close(
         a.transpose(),
         ap.transpose(),
+        "Transpose is broken",
+    )
+    check_is_close(
+        b.transpose(),
+        bp.transpose(),
         "Transpose is broken",
     )
 

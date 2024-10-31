@@ -13,10 +13,7 @@ manipulation, and it can also be more consistent with numpy.
 For example:
 
 - For `__getitem__`, inputting two `Int` returns a scalar,
-inputting one `Int` returns a vector, and inputting no `Int`
-returns a Matrix.
-- For row-major and column-major matrices, it is easier to get the
-values by the indices, as strides are only two numbers.
+inputting one `Int` or no `Int` returns a Matrix.
 - We do not need auxillary types `NDArrayShape` and `NDArrayStrides`
 as the shape and strides information is fixed in length `Tuple[Int,Int]`.
 
@@ -26,8 +23,8 @@ the behavior of `NDArray` type and the `Matrix` type.
 """
 
 from numojo.prelude import *
-from .ndarray import NDArray
-from memory import memcmp
+from numojo.core.ndarray import NDArray
+from memory import memcmp, memcpy
 from sys import simdwidthof
 
 # ===----------------------------------------------------------------------===#
@@ -685,7 +682,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         var ndarray = NDArray[dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order="C"
         )
-        memcpy(ndarray.data, self._buf, ndarray.size())
+        memcpy(ndarray._buf, self._buf, ndarray.size())
 
         return ndarray
 
@@ -899,7 +896,7 @@ fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
         print(e)
 
     var matrix = Matrix[dtype](shape=(object.ndshape[0], object.ndshape[1]))
-    memcpy(matrix._buf, object.data, matrix.size)
+    memcpy(matrix._buf, object._buf, matrix.size)
 
     return matrix
 
@@ -986,21 +983,6 @@ fn fromstring[
     for i in range(len(data)):
         result._buf[i] = data[i]
     return result^
-
-
-fn _from_2darray[dtype: DType](array: NDArray[dtype]) raises -> Matrix[dtype]:
-    """Create a matrix from an 2-darray.
-
-    [Unsafe] It simply uses the buffer of an ndarray.
-
-    It is useful when we want to solve a linear system. In this case, we treat
-    ndarray as a matrix. This simplify calculation and avoid too much check.
-    """
-
-    var matrix = Matrix[dtype](shape=(array.ndshape[0], array.ndshape[1]))
-    matrix._buf = array.data
-
-    return matrix
 
 
 # ===-----------------------------------------------------------------------===#

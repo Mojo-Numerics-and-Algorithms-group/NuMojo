@@ -71,7 +71,7 @@ fn sumall(array: NDArray) raises -> Scalar[array.dtype]:
 
     var result = Scalar[array.dtype](0)
     for i in range(array.ndshape.ndsize):
-        result[0] += array.data[i]
+        result[0] += array._buf[i]
     return result
 
 
@@ -136,7 +136,7 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
 
     var result = Scalar[array.dtype](1)
     for i in range(array.ndshape.ndsize):
-        result[0] *= array.data[i]
+        result[0] *= array._buf[i]
     return result
 
 

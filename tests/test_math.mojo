@@ -61,7 +61,7 @@ def test_sin_par():
 
 def test_matmul_small():
     var np = Python.import_module("numpy")
-    var arr = nm.ones[i8](4, 4)
+    var arr = nm.ones[i8](Shape(4, 4))
     var np_arr = np.ones((4, 4), dtype=np.int8)
     check_is_close(
         arr @ arr, np.matmul(np_arr, np_arr), "Dunder matmul is broken"

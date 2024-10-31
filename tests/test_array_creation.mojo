@@ -1,4 +1,5 @@
 import numojo as nm
+from numojo.prelude import *
 from time import now
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
@@ -78,16 +79,34 @@ def test_geomspace():
 def test_zeros():
     var np = Python.import_module("numpy")
     check(
-        nm.zeros[nm.f64](10, 10, 10, 10),
+        nm.zeros[f64](Shape(10, 10, 10, 10)),
         np.zeros((10, 10, 10, 10), dtype=np.float64),
         "Zeros is broken",
     )
 
 
-def test_ones():
+def test_ones_from_shape():
     var np = Python.import_module("numpy")
     check(
-        nm.ones[nm.f64](10, 10, 10, 10),
+        nm.ones[nm.f64](Shape(10, 10, 10, 10)),
+        np.ones((10, 10, 10, 10), dtype=np.float64),
+        "Ones is broken",
+    )
+
+
+def test_ones_from_list():
+    var np = Python.import_module("numpy")
+    check(
+        nm.ones[nm.f64](List[Int](10, 10, 10, 10)),
+        np.ones((10, 10, 10, 10), dtype=np.float64),
+        "Ones is broken",
+    )
+
+
+def test_ones_from_vlist():
+    var np = Python.import_module("numpy")
+    check(
+        nm.ones[nm.f64](VariadicList[Int](10, 10, 10, 10)),
         np.ones((10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
@@ -96,7 +115,34 @@ def test_ones():
 def test_full():
     var np = Python.import_module("numpy")
     check(
-        nm.full[nm.f64](10, 10, 10, 10, fill_value=10),
+        nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
+        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        "Full is broken",
+    )
+
+
+def test_full_from_shape():
+    var np = Python.import_module("numpy")
+    check(
+        nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
+        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        "Full is broken",
+    )
+
+
+def test_full_from_list():
+    var np = Python.import_module("numpy")
+    check(
+        nm.full[nm.f64](List[Int](10, 10, 10, 10), fill_value=10),
+        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        "Full is broken",
+    )
+
+
+def test_full_from_vlist():
+    var np = Python.import_module("numpy")
+    check(
+        nm.full[nm.f64](VariadicList[Int](10, 10, 10, 10), fill_value=10),
         np.full((10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
@@ -125,6 +171,21 @@ def test_fromstring():
     var B = nm.array[DType.int32](String("[0.1, -2.3, 41.5, 19.29145, -199]"))
     print(A)
     print(B)
+
+
+def test_fromstring_complicated():
+    var s = """
+    [[[[1,2,10],
+       [3,4,2]],
+       [[5,6,4],
+       [7,8,10]]],
+     [[[1,2,12],
+       [3,4,41]],
+       [[5,6,12],
+       [7,8,99]]]]
+    """
+    var A = nm.fromstring(s)
+    print(A)
 
 
 # def test_diagflat():

@@ -93,7 +93,7 @@ fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
 
 
 fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
-    """Create a matrix from a row-majored ndarray. It must be 2-dimensional.
+    """Create a matrix from an ndarray. It must be 2-dimensional.
 
     It makes a copy of the buffer of the ndarray.
 
@@ -108,8 +108,13 @@ fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
         print(e)
 
     var matrix = Matrix[dtype](shape=(object.ndshape[0], object.ndshape[1]))
-    memcpy(matrix._buf, object._buf, matrix.size)
 
+    if object.order == "C":
+        memcpy(matrix._buf, object._buf, matrix.size)
+    else:
+        for i in range(object.ndshape[0]):
+            for j in range(object.ndshape[1]):
+                matrix._store(i, j, object.load(i, j))
     return matrix
 
 
@@ -117,6 +122,38 @@ fn matrix[dtype: DType](owned object: Matrix[dtype]) raises -> Matrix[dtype]:
     """Create a matrix from a matrix."""
 
     return object^
+
+
+fn matrix[
+    dtype: DType
+](
+    object: List[Scalar[dtype]], shape: Tuple[Int, Int] = (0, 0)
+) raises -> Matrix[dtype]:
+    """Create a matrix from a list into given shape.
+
+    If no shape is passed, the return matrix will be a row vector.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    fn main() raises:
+        print(mat.matrix(List[Float64](1, 2, 3, 4, 5), (5, 1)))
+    ```
+    """
+
+    if (shape[0] == 0) and (shape[1] == 0):
+        var B = Matrix[dtype](shape=(1, object.size))
+        memcpy(B._buf, object.data, B.size)
+        return B^
+
+    if shape[0] * shape[1] != object.size:
+        var message = String(
+            "The input has {} elements, but the target has the shape {}x{}"
+        ).format(object.size, shape[0], shape[1])
+        raise Error(message)
+    var B = Matrix[dtype](shape=shape)
+    memcpy(B._buf, object.data, B.size)
+    return B^
 
 
 fn matrix[
@@ -136,11 +173,13 @@ fn matrix[
 
 fn fromstring[
     dtype: DType = DType.float64
-](text: String, shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+](text: String, shape: Tuple[Int, Int] = (0, 0)) raises -> Matrix[dtype]:
     """Matrix initialization from string representation of an matrix.
 
     Comma, right brackets, and whitespace are treated as seperators of numbers.
     Digits, underscores, and minus signs are treated as a part of the numbers.
+
+    If now shape is passed, the return matrix will be a row vector.
 
     Example:
     ```mojo
@@ -167,7 +206,6 @@ fn fromstring[
     var data = List[Scalar[dtype]]()
     var bytes = text.as_bytes()
     var number_as_str: String = ""
-    var result = Matrix[dtype](shape=shape)
     var size = shape[0] * shape[1]
 
     for i in range(len(bytes)):
@@ -184,6 +222,9 @@ fn fromstring[
                 data.append(number)  # Add the number to the data buffer
                 number_as_str = ""  # Clean the number cache
 
+    if (shape[0] == 0) and (shape[1] == 0):
+        return matrix(data)
+
     if size != len(data):
         var message = String(
             "The number of items in the string is {}, which does not match the"
@@ -191,7 +232,7 @@ fn fromstring[
         ).format(len(data), shape[0], shape[1])
         raise Error(message)
 
-    result = Matrix[dtype](shape=shape)
+    var result = Matrix[dtype](shape=shape)
     for i in range(len(data)):
         result._buf[i] = data[i]
     return result^

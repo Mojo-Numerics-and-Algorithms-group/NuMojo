@@ -196,7 +196,7 @@ fn _traverse_iterative[
         index: The list of indices.
         depth: The depth of the indices.
     """
-    var total_elements = narr.ndshape.ndsize
+    var total_elements = narr.shape.ndsize
 
     # # parallelized version was slower xD
     for _ in range(total_elements):
@@ -246,7 +246,7 @@ fn _traverse_iterative_setter[
         offset: The offset to the first element of the original NDArray.
         index: The list of indices.
     """
-    var total_elements = narr.ndshape.ndsize
+    var total_elements = narr.shape.ndsize
 
     for _ in range(total_elements):
         var orig_idx = offset + _get_index(index, coefficients)
@@ -285,7 +285,7 @@ fn bool_to_numeric[
         The converted NDArray of type `dtype` with 1s (True) and 0s (False).
     """
     # Can't use simd becuase of bit packing error
-    var res: NDArray[dtype] = NDArray[dtype](array.shape())
+    var res: NDArray[dtype] = NDArray[dtype](array.shape)
     for i in range(array.size()):
         var t: Bool = array.item(i)
         if t:
@@ -324,7 +324,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         var np_arr_dim = PythonObject([])
 
         for i in range(dimension):
-            np_arr_dim.append(array.ndshape[i])
+            np_arr_dim.append(array.shape[i])
 
         # Implement a dictionary for this later
         var numpyarray: PythonObject
@@ -352,7 +352,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.bool:
             np_dtype = np.bool_
 
-        numpyarray = np.empty(np_arr_dim, dtype=np_dtype)
+        numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=array.order)
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()

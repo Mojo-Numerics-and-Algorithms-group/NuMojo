@@ -80,6 +80,28 @@ def test_matmul():
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
 
 
+def test_matmul_1dx2d():
+    var np = Python.import_module("numpy")
+    var arr1 = nm.random.randn(4)
+    var arr2 = nm.random.randn(4, 8)
+    var nparr1 = arr1.to_numpy()
+    var nparr2 = arr2.to_numpy()
+    check_is_close(
+        arr1 @ arr2, np.matmul(nparr1, nparr2), "Dunder matmul is broken"
+    )
+
+
+def test_matmul_2dx1d():
+    var np = Python.import_module("numpy")
+    var arr1 = nm.random.randn(11, 4)
+    var arr2 = nm.random.randn(4)
+    var nparr1 = arr1.to_numpy()
+    var nparr2 = arr2.to_numpy()
+    check_is_close(
+        arr1 @ arr2, np.matmul(nparr1, nparr2), "Dunder matmul is broken"
+    )
+
+
 # ! The `inv` is broken, it outputs -INF for some values
 def test_inv():
     var np = Python.import_module("numpy")

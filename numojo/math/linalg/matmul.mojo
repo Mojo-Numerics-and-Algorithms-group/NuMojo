@@ -33,11 +33,11 @@ fn matmul_tiled_unrolled_parallelized[
     """
     alias width = max(simdwidthof[dtype](), 16)
     var C: NDArray[dtype] = NDArray[dtype](
-        A.ndshape.load_int(0), B.ndshape.load_int(1)
+        A.shape.load_int(0), B.shape.load_int(1)
     )
-    var t0 = A.ndshape.load_int(0)
-    var t1 = A.ndshape.load_int(1)
-    var t2 = B.ndshape.load_int(1)
+    var t0 = A.shape.load_int(0)
+    var t1 = A.shape.load_int(1)
+    var t2 = B.shape.load_int(1)
 
     @parameter
     fn calculate_A_rows(m: Int):
@@ -66,6 +66,37 @@ fn matmul_tiled_unrolled_parallelized[
     return C
 
 
+fn matmul_1d[
+    dtype: DType
+](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Array multiplication for 1-d arrays (inner dot)."""
+
+    alias width = max(simdwidthof[dtype](), 16)
+
+    try:
+        if A.ndim * B.ndim != 1:
+            raise Error("Dimension error!")
+    except e:
+        print(e)
+        print(
+            "The dimensions of the array should be 1.         A is of"
+            " {A.ndim}-dimension. B is of {B.ndim}-dimension."
+        )
+
+    try:
+        if A.size() != B.size():
+            raise Error("Size error!")
+    except e:
+        print(e)
+        print("The sizes of the array should be identical.")
+
+    var C: NDArray[dtype] = zeros[dtype](Shape(1, 1))
+
+    C.store(0, val=sumall(A * B))
+
+    return C^
+
+
 fn matmul_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -86,12 +117,27 @@ fn matmul_parallelized[
 
     alias width = max(simdwidthof[dtype](), 16)
 
+    if A.ndim * B.ndim == 1:
+        return matmul_1d(A, B)
+    elif A.ndim == 1:
+        A_reshaped = A
+        A_reshaped.reshape(1, A_reshaped.shape[0])
+        var res = A_reshaped @ B
+        res.reshape(B.shape[1])
+        return res
+    elif B.ndim == 1:
+        B_reshaped = B
+        B_reshaped.reshape(B_reshaped.shape[0], 1)
+        var res = A @ B_reshaped
+        res.reshape(A.shape[0])
+        return res
+
     var C: NDArray[dtype] = zeros[dtype](
-        Shape(A.ndshape.load_int(0), B.ndshape.load_int(1))
+        Shape(A.shape.load_int(0), B.shape.load_int(1))
     )
-    var t0 = A.ndshape.load_int(0)
-    var t1 = A.ndshape.load_int(1)
-    var t2 = B.ndshape.load_int(1)
+    var t0 = A.shape.load_int(0)
+    var t1 = A.shape.load_int(1)
+    var t2 = B.shape.load_int(1)
 
     @parameter
     fn calculate_A_rows(m: Int):
@@ -125,12 +171,21 @@ fn matmul_naive[
     """
     Matrix multiplication with three nested loops.
     """
-    var C: NDArray[dtype] = zeros[dtype](
-        Shape(A.ndshape.load_int(0), B.ndshape.load_int(1))
-    )
-    for m in range(C.ndshape.load_int(0)):
-        for k in range(A.ndshape.load_int(1)):
-            for n in range(C.ndshape.load_int(1)):
-                C.store(m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n))
+    var C: NDArray[dtype]
+    if B.ndim == 1:
+        C = zeros[dtype](shape(A.shape[0]))
+        for m in range(C.shape[0]):
+            for k in range(A.shape[1]):
+                C.store(m, val=C.load(m) + A.load(m, k) * B.load(k))
+    elif B.ndim != 1:
+        C = zeros[dtype](shape(A.shape[0], B.shape[1]))
+        for m in range(C.shape.load_int(0)):
+            for k in range(A.shape.load_int(1)):
+                for n in range(C.shape.load_int(1)):
+                    C.store(
+                        m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n)
+                    )
+    else:
+        raise Error("Invalid shape for B")
 
     return C^

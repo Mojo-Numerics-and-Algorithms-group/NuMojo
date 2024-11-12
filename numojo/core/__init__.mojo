@@ -11,3 +11,7 @@ from .array_manipulation_routines import *
 from .constants import *
 from .datatypes import *
 from .utility import *
+
+alias idx = Idx
+alias shape = NDArrayShape
+alias Shape = NDArrayShape

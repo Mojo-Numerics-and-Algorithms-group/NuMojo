@@ -434,10 +434,10 @@ fn minimum[
     Returns:
         The element wise minimum of the two arrays as a array of `dtype`.
     """
-    var result: NDArray[dtype] = NDArray[dtype](array1.shape())
+    var result: NDArray[dtype] = NDArray[dtype](array1.shape)
 
     alias width = simdwidthof[dtype]()
-    if array1.shape() != array2.shape():
+    if array1.shape != array2.shape:
         raise Error("array shapes are not the same")
 
     @parameter
@@ -470,9 +470,9 @@ fn maximum[
         The element wise maximum of the two arrays as a array of `dtype`.
     """
 
-    var result: NDArray[dtype] = NDArray[dtype](array1.shape())
+    var result: NDArray[dtype] = NDArray[dtype](array1.shape)
     alias width = simdwidthof[dtype]()
-    if array1.shape() != array2.shape():
+    if array1.shape != array2.shape:
         raise Error("array shapes are not the same")
 
     @parameter

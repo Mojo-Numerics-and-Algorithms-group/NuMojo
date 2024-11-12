@@ -123,7 +123,7 @@ fn add[
             "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
             " No arrays in arguaments"
         )
-    var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape())
+    var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape)
     for array in array_list:
         result_array = add[dtype, backend=backend](result_array, array)
     result_array = add[dtype, backend=backend](result_array, scalar_part)
@@ -432,7 +432,7 @@ fn mul[
             "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
             " No arrays in arguaments"
         )
-    var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape())
+    var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape)
     for array in array_list:
         result_array = mul[dtype, backend=backend](result_array, array)
     result_array = mul[dtype, backend=backend](result_array, scalar_part)

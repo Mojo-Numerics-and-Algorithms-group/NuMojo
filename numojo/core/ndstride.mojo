@@ -1,7 +1,7 @@
 """
 Implements NDArrayStride type.
 
-`NDArrayStride` is a series of `DType.int32` on the heap.
+`NDArrayShape` is a series of `DType.int32` on the heap.
 """
 
 from utils import Variant

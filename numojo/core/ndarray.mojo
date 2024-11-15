@@ -165,6 +165,38 @@ struct NDArray[dtype: DType = DType.float64](
     ########################
     # Use nm.array instead #
     ########################
+    # fn __init__(
+    #     inout self,
+    #     data: List[SIMD[dtype, 1]],
+    #     shape: NDArrayShape,
+    #     order: String = "C",
+    # ) raises:
+    #     """
+    #     NDArray initialization from list of data.
+    #     Args:
+    #         data: List of data.
+    #         shape: List of shape.
+    #         order: Memory order C or F.
+    #     Example:
+    #         ```mojo
+    #         import numojo as nm
+    #         nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+    #         ```
+    #     """
+
+    #     self.ndim = shape.ndlen
+    #     self.shape = NDArrayShape(shape)
+    #     self.stride = NDArrayStride(shape, offset=0, order=order)
+    #     self.coefficient = NDArrayStride(shape, offset=0, order=order)
+    #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.shape.ndsize)
+    #     self.datatype = dtype
+    #     self.order = order
+    #     for i in range(self.shape.ndsize):
+    #         self._buf[i] = data[i]
+
+    ########################
+    # Use nm.array instead #
+    ########################
     # fn __init__(inout self, data: PythonObject, order: String = "C") raises:
     #     """
     #     NDArray initialization from Numpy arrays.

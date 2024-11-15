@@ -185,8 +185,8 @@ fn binary_sort[
     if dtype != array.dtype:
         alias dtype = array.dtype
 
-    var result: NDArray[dtype] = NDArray[dtype](array.shape())
-    for i in range(array.ndshape.ndsize):
+    var result: NDArray[dtype] = NDArray[dtype](array.shape)
+    for i in range(array.shape.ndsize):
         result.store(i, array.get(i).cast[dtype]())
 
     var n = array.num_elements()

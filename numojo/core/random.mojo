@@ -39,7 +39,7 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
             "Integral values cannot be sampled between 0 and 1. Use"
             " `rand(*shape, min, max)` instead."
         )
-    for i in range(result.ndshape.ndsize):
+    for i in range(result.shape.ndsize):
         var temp: Scalar[dtype] = random.random_float64(0, 1).cast[dtype]()
         result.set(i, temp)
     return result^
@@ -62,7 +62,7 @@ fn int_rand_func[
     """
     random.randint[dtype](
         ptr=result._buf,
-        size=result.ndshape.ndsize,
+        size=result.shape.ndsize,
         low=int(min),
         high=int(max),
     )
@@ -83,7 +83,7 @@ fn float_rand_func[
         min: The minimum value of the random floating-point numbers.
         max: The maximum value of the random floating-point numbers.
     """
-    for i in range(result.ndshape.ndsize):
+    for i in range(result.shape.ndsize):
         var temp: Scalar[dtype] = random.random_float64(
             min.cast[f64](), max.cast[f64]()
         ).cast[dtype]()
@@ -206,7 +206,7 @@ fn randn[
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.randn[dtype](
         ptr=result._buf,
-        size=result.ndshape.ndsize,
+        size=result.shape.ndsize,
         mean=mean.cast[DType.float64](),
         variance=variance.cast[DType.float64](),
     )
@@ -242,7 +242,7 @@ fn randn[
     var result: NDArray[dtype] = NDArray[dtype](shape)
     random.randn[dtype](
         ptr=result._buf,
-        size=result.ndshape.ndsize,
+        size=result.shape.ndsize,
         mean=mean.cast[DType.float64](),
         variance=variance.cast[DType.float64](),
     )

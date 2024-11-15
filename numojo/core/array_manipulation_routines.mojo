@@ -34,7 +34,7 @@ fn shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
     Returns:
         The shape of the NDArray.
     """
-    return array.ndshape
+    return array.shape
 
 
 fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
@@ -48,7 +48,7 @@ fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
     Returns:
         The size of the NDArray.
     """
-    return array.ndshape[axis]
+    return array.shape[axis]
 
 
 fn reshape[
@@ -74,7 +74,7 @@ fn reshape[
         num_elements_new *= i
         ndim_new += 1
 
-    if array.ndshape.ndsize != num_elements_new:
+    if array.shape.ndsize != num_elements_new:
         raise Error("Cannot reshape: Number of elements do not match.")
 
     var shape_new: List[Int] = List[Int]()
@@ -85,7 +85,7 @@ fn reshape[
             temp *= shape[j]
 
     array.ndim = ndim_new
-    array.ndshape = NDArrayShape(shape=shape_new)
+    array.shape = NDArrayShape(shape=shape_new)
     array.stride = NDArrayStride(shape=shape_new, order=order)
     array.order = order
 
@@ -99,9 +99,9 @@ fn ravel[dtype: DType](inout array: NDArray[dtype], order: String = "C") raises:
         return
     else:
         if order == "C":
-            reshape[dtype](array, array.ndshape.ndsize, order="C")
+            reshape[dtype](array, array.shape.ndsize, order="C")
         else:
-            reshape[dtype](array, array.ndshape.ndsize, order="F")
+            reshape[dtype](array, array.shape.ndsize, order="F")
 
 
 fn where[
@@ -121,7 +121,7 @@ fn where[
         mask: A NDArray.
 
     """
-    for i in range(x.ndshape.ndsize):
+    for i in range(x.shape.ndsize):
         if mask._buf[i] == True:
             x._buf.store(i, scalar)
 
@@ -145,9 +145,9 @@ fn where[
         mask: NDArray[DType.bool].
 
     """
-    if x.ndshape != y.ndshape:
+    if x.shape != y.shape:
         raise Error("Shape mismatch error: x and y must have the same shape")
-    for i in range(x.ndshape.ndsize):
+    for i in range(x.shape.ndsize):
         if mask._buf[i] == True:
             x._buf.store(i, y._buf[i])
 
@@ -169,10 +169,10 @@ fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         raise Error("Flip is only supported for 1D arrays")
 
     var result: NDArray[dtype] = NDArray[dtype](
-        shape=array.ndshape, order=array.order
+        shape=array.shape, order=array.order
     )
-    for i in range(array.ndshape.ndsize):
-        result._buf.store(i, array._buf[array.ndshape.ndsize - i - 1])
+    for i in range(array.shape.ndsize):
+        result._buf.store(i, array._buf[array.shape.ndsize - i - 1])
     return result
 
 
@@ -190,7 +190,7 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The 1 dimensional flattened NDArray.
     """
 
-    var res: NDArray[dtype] = NDArray[dtype](array.ndshape.ndsize)
+    var res: NDArray[dtype] = NDArray[dtype](array.shape.ndsize)
     alias width: Int = simdwidthof[dtype]()
 
     @parameter
@@ -199,7 +199,7 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
             index, array._buf.load[width=simd_width](index)
         )
 
-    vectorize[vectorized_flatten, width](array.ndshape.ndsize)
+    vectorize[vectorized_flatten, width](array.shape.ndsize)
     return res
 
 
@@ -229,8 +229,8 @@ fn trace[
     if axis1 > array.ndim - 1 or axis2 > array.ndim - 1:
         raise Error("axis cannot be greater than the rank of the array")
     var result: NDArray[dtype] = NDArray[dtype](1)
-    var rows = array.ndshape[0]
-    var cols = array.ndshape[1]
+    var rows = array.shape[0]
+    var cols = array.shape[1]
     var diag_length = min(rows, cols - offset) if offset >= 0 else min(
         rows + offset, cols
     )

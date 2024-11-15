@@ -60,63 +60,6 @@ from .array_manipulation_routines import reshape
 from .ndshape import NDArrayShape
 from .ndstride import NDArrayStride
 
-
-# ===----------------------------------------------------------------------===#
-# NDArrayIterator
-# ===----------------------------------------------------------------------===#
-
-
-@value
-struct _NDArrayIter[
-    is_mutable: Bool, //,
-    lifetime: AnyLifetime[is_mutable].type,
-    dtype: DType,
-    forward: Bool = True,
-]:
-    """Iterator for NDArray.
-
-    Parameters:
-        is_mutable: Whether the iterator is mutable.
-        lifetime: The lifetime of the underlying NDArray data.
-        dtype: The data type of the item.
-        forward: The iteration direction. `False` is backwards.
-    """
-
-    var index: Int
-    var array: NDArray[dtype]
-    var length: Int
-
-    fn __init__(
-        inout self,
-        array: NDArray[dtype],
-        length: Int,
-    ):
-        self.index = 0 if forward else length
-        self.length = length
-        self.array = array
-
-    fn __iter__(self) -> Self:
-        return self
-
-    fn __next__(inout self) raises -> NDArray[dtype]:
-        @parameter
-        if forward:
-            var current_index = self.index
-            self.index += 1
-            return self.array.__getitem__(current_index)
-        else:
-            var current_index = self.index
-            self.index -= 1
-            return self.array.__getitem__(current_index)
-
-    fn __len__(self) -> Int:
-        @parameter
-        if forward:
-            return self.length - self.index
-        else:
-            return self.index
-
-
 # ===----------------------------------------------------------------------===#
 # NDArray
 # ===----------------------------------------------------------------------===#
@@ -2614,3 +2557,59 @@ struct NDArray[dtype: DType = DType.float64](
         Convert to a numpy array.
         """
         return to_numpy(self)
+
+
+# ===----------------------------------------------------------------------===#
+# NDArrayIterator
+# ===----------------------------------------------------------------------===#
+
+
+@value
+struct _NDArrayIter[
+    is_mutable: Bool, //,
+    lifetime: AnyLifetime[is_mutable].type,
+    dtype: DType,
+    forward: Bool = True,
+]:
+    """Iterator for NDArray.
+
+    Parameters:
+        is_mutable: Whether the iterator is mutable.
+        lifetime: The lifetime of the underlying NDArray data.
+        dtype: The data type of the item.
+        forward: The iteration direction. `False` is backwards.
+    """
+
+    var index: Int
+    var array: NDArray[dtype]
+    var length: Int
+
+    fn __init__(
+        inout self,
+        array: NDArray[dtype],
+        length: Int,
+    ):
+        self.index = 0 if forward else length
+        self.length = length
+        self.array = array
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __next__(inout self) raises -> NDArray[dtype]:
+        @parameter
+        if forward:
+            var current_index = self.index
+            self.index += 1
+            return self.array.__getitem__(current_index)
+        else:
+            var current_index = self.index
+            self.index -= 1
+            return self.array.__getitem__(current_index)
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index

@@ -127,7 +127,7 @@ fn lu_decomposition[
 fn partial_pivoting[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """Perform partial pivoting."""
     var A_p = A
-    var n = A.shape()[0]
+    var n = A.shape[0]
     var P = identity[dtype](n)
     for col in range(n):
         var max_p = abs(A[Idx(col, col)])

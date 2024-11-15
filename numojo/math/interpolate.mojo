@@ -61,7 +61,7 @@ fn interp1d[
 
     else:
         print("Invalid interpolation method: " + type)
-        return NDArray[dtype]()
+        return NDArray[dtype](Shape())
 
 
 fn _interp1d_linear_interpolate[

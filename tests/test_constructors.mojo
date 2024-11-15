@@ -6,7 +6,7 @@ from utils_for_test import check, check_is_close
 
 def test_constructors():
     # Test NDArray constructor with different input types
-    var arr1 = NDArray[f32](3, 4, 5)
+    var arr1 = NDArray[f32](Shape(3, 4, 5))
     assert_true(arr1.ndim == 3, "NDArray constructor: ndim")
     assert_true(arr1.shape[0] == 3, "NDArray constructor: shape element 0")
     assert_true(arr1.shape[1] == 4, "NDArray constructor: shape element 1")
@@ -28,7 +28,7 @@ def test_constructors():
         "NDArray constructor with VariadicList: shape element 2",
     )
 
-    var arr3 = NDArray[f32](VariadicList[Int](3, 4, 5), fill=Scalar[f32](10.0))
+    var arr3 = nm.full[f32](Shape(3, 4, 5), fill_value=Scalar[f32](10.0))
     # maybe it's better to return a scalar for arr[0, 0, 0]
     assert_equal(
         arr3[idx(0, 0, 0)], 10.0, "NDArray constructor with fill value"
@@ -59,7 +59,7 @@ def test_constructors():
         "NDArray constructor with NDArrayShape: shape element 2",
     )
 
-    var arr6 = NDArray[f32](
+    var arr6 = nm.array[f32](
         data=List[SIMD[f32, 1]](1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
         shape=List[Int](2, 5),
     )

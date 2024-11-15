@@ -32,8 +32,8 @@ fn matmul_tiled_unrolled_parallelized[
     Matrix multiplication vectorized, tiled, unrolled, and parallelized.
     """
     alias width = max(simdwidthof[dtype](), 16)
-    var C: NDArray[dtype] = NDArray[dtype](
-        A.shape.load_int(0), B.shape.load_int(1)
+    var C: NDArray[dtype] = zeros[dtype](
+        Shape(A.shape.load_int(0), B.shape.load_int(1))
     )
     var t0 = A.shape.load_int(0)
     var t1 = A.shape.load_int(1)

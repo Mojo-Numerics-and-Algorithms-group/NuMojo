@@ -25,7 +25,7 @@ fn loadtxt[
             if string[i].isdigit():
                 var number: String = string[i]
                 data.append(atof(number).cast[dtype]())
-        return NDArray[dtype](data=data, shape=ndshape, order="C")
+        return array[dtype](data=data, shape=ndshape, order="C")
 
 
 fn savetxt[

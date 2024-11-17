@@ -107,13 +107,13 @@ fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
     except e:
         print(e)
 
-    var matrix = Matrix[dtype](shape=(object.ndshape[0], object.ndshape[1]))
+    var matrix = Matrix[dtype](shape=(object.shape[0], object.shape[1]))
 
     if object.order == "C":
         memcpy(matrix._buf, object._buf, matrix.size)
     else:
-        for i in range(object.ndshape[0]):
-            for j in range(object.ndshape[1]):
+        for i in range(object.shape[0]):
+            for j in range(object.shape[1]):
                 matrix._store(i, j, object.load(i, j))
     return matrix
 

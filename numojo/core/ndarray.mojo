@@ -332,7 +332,12 @@ struct NDArray[dtype: DType = DType.float64](
         ```
         """
         if index >= self.shape.ndsize:
-            raise Error("Invalid index: index out of bound")
+            var message = String(
+                "Invalid index: index out of bound. \n"
+                "The index is {}. \n"
+                "The size is {}"
+            ).format(index, self.shape.ndsize)
+            raise Error(message)
         if index >= 0:
             return self._buf.store[width=1](index, val)
         else:
@@ -366,7 +371,17 @@ struct NDArray[dtype: DType = DType.float64](
                 slice_list[i].start.value() >= self.shape[i]
                 or slice_list[i].end.value() > self.shape[i]
             ):
-                raise Error("Error: Slice value exceeds the array shape")
+                var message = String(
+                    "Error: Slice value exceeds the array shape!\n"
+                    "The {}-th dimension is of size {}.\n"
+                    "The slice goes from {} to {}"
+                ).format(
+                    i,
+                    self.shape[i],
+                    slice_list[i].start.value(),
+                    slice_list[i].end.value(),
+                )
+                raise Error(message)
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
                 / slice_list[i].step
@@ -404,10 +419,13 @@ struct NDArray[dtype: DType = DType.float64](
         # We can remove this check after we have support for broadcasting
         for i in range(ndims):
             if nshape[i] != val.shape[i]:
-                raise Error(
-                    "Error: Shape mismatch, Cannot set the array values with"
-                    " given array"
-                )
+                var message = String(
+                    "Error: Shape mismatch!\n"
+                    "Cannot set the array values with given array.\n"
+                    "The {}-th dimension of the array is of shape {}.\n"
+                    "The {}-th dimension of the value is of shape {}."
+                ).format(nshape[i], val.shape[i])
+                raise Error(message)
 
         var noffset: Int = 0
         if self.order == "C":
@@ -440,10 +458,22 @@ struct NDArray[dtype: DType = DType.float64](
         Set the value at the index list.
         """
         if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
+            var message = String(
+                "Error: Length of `index` do not match the number of"
+                " dimensions!\n"
+                "Length of indices is {}.\n"
+                "The number of dimensions is {}."
+            ).format(index.__len__(), self.ndim)
+            raise Error(message)
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
+                var message = String(
+                    "Error: `index` exceeds the size!\n"
+                    "For {}-the mension:\n"
+                    "The index is {}.\n"
+                    "The size of the dimensions is {}"
+                ).format(i, index[i], self.shape[i])
+                raise Error(message)
         var idx: Int = _get_index(index, self.coefficient)
         self._buf.store[width=1](idx, val)
 
@@ -497,7 +527,17 @@ struct NDArray[dtype: DType = DType.float64](
                 slice_list[i].start.value() >= self.shape[i]
                 or slice_list[i].end.value() > self.shape[i]
             ):
-                raise Error("Error: Slice value exceeds the array shape")
+                var message = String(
+                    "Error: Slice value exceeds the array shape!\n"
+                    "The {}-th dimension is of size {}.\n"
+                    "The slice goes from {} to {}"
+                ).format(
+                    i,
+                    self.shape[i],
+                    slice_list[i].start.value(),
+                    slice_list[i].end.value(),
+                )
+                raise Error(message)
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
                 / slice_list[i].step
@@ -535,10 +575,13 @@ struct NDArray[dtype: DType = DType.float64](
         # We can remove this check after we have support for broadcasting
         for i in range(ndims):
             if nshape[i] != val.shape[i]:
-                raise Error(
-                    "Error: Shape mismatch, Cannot set the array values with"
-                    " given array"
-                )
+                var message = String(
+                    "Error: Shape mismatch!\n"
+                    "For {}-th dimension: \n"
+                    "The size of the array is {}.\n"
+                    "The size of the input value is {}."
+                ).format(i, nshape[i], val.shape[i])
+                raise Error(message)
 
         var noffset: Int = 0
         if self.order == "C":
@@ -636,7 +679,10 @@ struct NDArray[dtype: DType = DType.float64](
         if (
             mask.shape != self.shape
         ):  # this behavious could be removed potentially
-            raise Error("Mask and array must have the same shape")
+            var message = String(
+                "Shape of mask does not match the shape of array."
+            )
+            raise Error(message)
 
         for i in range(mask.shape.ndsize):
             if mask._buf.load[width=1](i):
@@ -664,7 +710,13 @@ struct NDArray[dtype: DType = DType.float64](
         ```
         """
         if index >= self.shape.ndsize:
-            raise Error("Invalid index: index out of bound")
+            raise Error(
+                String(
+                    "Invalid index: index out of bound!\n"
+                    "The index is {}."
+                    "The size of the array is {}"
+                ).format(index, self.shape.ndsize)
+            )
         if index >= 0:
             return self._buf.load[width=1](index)
         else:
@@ -703,10 +755,22 @@ struct NDArray[dtype: DType = DType.float64](
         Set the value at the index list.
         """
         if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
+            var message = String(
+                "Error: Length of `index` do not match the number of"
+                " dimensions!\n"
+                "Length of indices is {}.\n"
+                "The number of dimensions is {}."
+            ).format(index.__len__(), self.ndim)
+            raise Error(message)
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
+                var message = String(
+                    "Error: `index` exceeds the size!\n"
+                    "For {}-the mension:\n"
+                    "The index is {}.\n"
+                    "The size of the dimensions is {}"
+                ).format(i, index[i], self.shape[i])
+                raise Error(message)
         var idx: Int = _get_index(index, self.coefficient)
         return self._buf.load[width=1](idx)
 

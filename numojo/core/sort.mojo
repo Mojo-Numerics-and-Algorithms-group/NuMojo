@@ -315,7 +315,7 @@ fn argsort[
     var array: NDArray[dtype] = ndarray
     var length = array.size()
 
-    var idx_array = NDArray[DType.index](length)
+    var idx_array = NDArray[DType.index](Shape(length))
     for i in range(length):
         idx_array.set(i, SIMD[DType.index, 1](i))
 

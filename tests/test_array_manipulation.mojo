@@ -35,7 +35,7 @@ def test_arr_manipulation():
 
 def test_setitem():
     var np = Python.import_module("numpy")
-    var arr = nm.NDArray(4, 4)
+    var arr = nm.NDArray(Shape(4, 4))
     var np_arr = arr.to_numpy()
     arr.itemset(List(2, 2), 1000)
     np_arr[(2, 2)] = 1000

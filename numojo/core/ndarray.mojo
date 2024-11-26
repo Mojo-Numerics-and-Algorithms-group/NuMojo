@@ -1121,7 +1121,12 @@ struct NDArray[dtype: DType = DType.float64](
 
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
-            raise Error("Error: No of slices greater than rank of array")
+            raise Error(
+                String(
+                    "Error: number of slices {} \n"
+                    "is greater than number of dimension of array {}!"
+                ).format(n_slices, self.ndim)
+            )
         var slice_list: List[Slice] = List[Slice]()
 
         var count_int = 0  # Count the number of Int in the argument
@@ -1562,7 +1567,13 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __pow__(self, p: Self) raises -> Self:
         if self.shape.ndsize != p.shape.ndsize:
-            raise Error("Both arrays must have same number of elements")
+            raise Error(
+                String(
+                    "Both arrays must have same number of elements! \n"
+                    "Self array has {} elements. \n"
+                    "Other array has {} elements"
+                ).format(self.shape.ndsize, p.shape.ndsize)
+            )
 
         var result = Self(self.shape)
 
@@ -1886,11 +1897,22 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         if (self.ndim != 2) or (other.ndim != 2):
-            raise Error("The array should have only two dimensions (matrix).")
+            raise Error(
+                String(
+                    "The array should have only two dimensions (matrix).\n"
+                    "The self array has {} dimensions.\n"
+                    "The orther array has {} dimensions"
+                ).format(self.ndim, other.ndim)
+            )
 
         if self.shape[1] != other.shape[0]:
             raise Error(
-                "Second dimension of A does not match first dimension of B."
+                String(
+                    "Second dimension of A does not match first dimension of"
+                    " B.\nA is {}x{}. \nB is {}x{}."
+                ).format(
+                    self.shape[0], self.shape[1], other.shape[0], other.shape[1]
+                )
             )
 
         var new_matrix = Self(Shape(self.shape[0], other.shape[1]))

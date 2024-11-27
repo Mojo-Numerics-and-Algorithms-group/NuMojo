@@ -1928,7 +1928,11 @@ struct NDArray[dtype: DType = DType.float64](
         """Get the ith row of the matrix."""
 
         if self.ndim > 2:
-            raise Error("Only support 2-D array (matrix).")
+            raise Error(
+                String(
+                    "The number of dimension is {}.\nIt should be 2."
+                ).format(self.ndim)
+            )
 
         var width = self.shape[1]
         var buffer = Self(Shape(width))
@@ -1940,7 +1944,11 @@ struct NDArray[dtype: DType = DType.float64](
         """Get the ith column of the matrix."""
 
         if self.ndim > 2:
-            raise Error("Only support 2-D array (matrix).")
+            raise Error(
+                String(
+                    "The number of dimension is {}.\nIt should be 2."
+                ).format(self.ndim)
+            )
 
         var width = self.shape[1]
         var height = self.shape[0]
@@ -1958,10 +1966,19 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         if (self.ndim != 2) or (other.ndim != 2):
-            raise Error("The array should have only two dimensions (matrix).")
-        if self.shape._buf[1] != other.shape._buf[0]:
             raise Error(
-                "Second dimension of A does not match first dimension of B."
+                String(
+                    "The array should have only two dimensions (matrix)."
+                    "The self array is of {} dimensions.\n"
+                    "The other array is of {} dimensions."
+                ).format(self.ndim, other.ndim)
+            )
+        if self.shape[1] != other.shape[0]:
+            raise Error(
+                String(
+                    "Second dimension of A ({}) \n"
+                    "does not match first dimension of B ({})."
+                ).format(self.shape[1], other.shape[0])
             )
 
         var new_matrix = Self(Shape(self.shape[0], other.shape[1]))
@@ -2301,14 +2318,30 @@ struct NDArray[dtype: DType = DType.float64](
 
                 return self._buf.load[width=1](index[0])
             else:
-                raise Error("Error: Elements of `index` exceed the array size")
+                raise Error(
+                    String(
+                        "Error: Elements of `index` ({}) \n"
+                        "exceed the array size ({})"
+                    ).format(index[0], self.size())
+                )
 
         # If more than one index is given
         if index.__len__() != self.ndim:
-            raise Error("Error: Length of Indices do not match the shape")
+            raise Error(
+                String(
+                    "Error: Length of Indices ({}) \n"
+                    "do not match the shape ({})"
+                ).format(index.__len__(), self.ndim)
+            )
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
-                raise Error("Error: Elements of `index` exceed the array shape")
+                raise Error(
+                    String(
+                        "Error: Elements of `index` ({}) \n"
+                        "exceed the array shape ({}) \n"
+                        "for {}-th dimension."
+                    ).format(index[i], self.shape[i], i)
+                )
         return self._buf.load[width=1](_get_index(index, self.stride))
 
     fn itemset(
@@ -2377,7 +2410,12 @@ struct NDArray[dtype: DType = DType.float64](
 
                 self._buf.store[width=1](idx, item)
             else:
-                raise Error("Error: Elements of `index` exceed the array size")
+                raise Error(
+                    String(
+                        "Error: Elements of `index` ({}) \n"
+                        "exceed the array size ({})."
+                    ).format(idx, self.size())
+                )
 
         else:
             var indices = index._get_ptr[List[Int]]()[]
@@ -2400,7 +2438,12 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(ndim):
             shape.append(self.shape[i])
         if axis > ndim - 1:
-            raise Error("axis cannot be greater than the rank of the array")
+            raise Error(
+                String(
+                    "Axis index ({}) must be smaller than "
+                    "the rank of the array ({})."
+                ).format(axis, ndim)
+            )
         var result_shape: List[Int] = List[Int]()
         var axis_size: Int = shape[axis]
         var slices: List[Slice] = List[Slice]()
@@ -2436,7 +2479,12 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(ndim):
             shape.append(self.shape[i])
         if axis > ndim - 1:
-            raise Error("axis cannot be greater than the rank of the array")
+            raise Error(
+                String(
+                    "Axis index ({}) must be smaller than "
+                    "the rank of the array ({})."
+                ).format(axis, ndim)
+            )
         var result_shape: List[Int] = List[Int]()
         var axis_size: Int = shape[axis]
         var slices: List[Slice] = List[Slice]()

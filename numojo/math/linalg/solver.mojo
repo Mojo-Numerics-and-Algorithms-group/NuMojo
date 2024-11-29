@@ -4,6 +4,10 @@ Linear Algebra Solver
 Provides:
     - Solver of `Ax = y` using LU decomposition algorithm.
     - Inverse of an invertible matrix.
+
+# TODO:
+    - Partial pivot.
+    - Determinant.
 """
 
 from numojo.prelude import *

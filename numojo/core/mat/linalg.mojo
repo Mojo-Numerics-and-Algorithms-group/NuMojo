@@ -42,7 +42,33 @@ fn lu_decomposition[
     return L, U
 
 
-fn solve[dtype: DType](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
+fn partial_pivoting[
+    dtype: DType
+](owned A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
+    """Perform partial pivoting."""
+    var n = A.shape[0]
+    var P = identity[dtype](n)
+    var s: Int = 0  # Number of exchanges, for determinant
+    for col in range(n):
+        var max_p = abs(A[col, col])
+        var max_p_row = col
+        for row in range(col + 1, n):
+            if abs(A[row, col]) > max_p:
+                max_p = abs(A[row, col])
+                max_p_row = row
+        A[col], A[max_p_row] = A[max_p_row], A[col]
+        P[col], P[max_p_row] = P[max_p_row], P[col]
+
+        if max_p_row != col:
+            s = s + 1
+
+    return Tuple(A^, P^, s)
+
+
+fn solve_LU[dtype: DType](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Solve `AX = Y` using LU decomposition.
+    """
     var U: Matrix[dtype]
     var L: Matrix[dtype]
     L, U = lu_decomposition[dtype](A)
@@ -84,7 +110,81 @@ fn solve[dtype: DType](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
     return X^
 
 
-fn inv[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+fn solve[
+    dtype: DType
+](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Solve `AX = Y` using LUP decomposition.
+    """
+    var U: Matrix[dtype]
+    var L: Matrix[dtype]
+    A_pivoted, P, _ = partial_pivoting(A)
+    L, U = lu_decomposition[dtype](A_pivoted)
+
+    var m = A.shape[0]
+    var n = Y.shape[1]
+
+    var Z = full[dtype]((m, n))
+    var X = full[dtype]((m, n))
+
+    var PY = P @ Y
+
+    @parameter
+    fn calculate_X(col: Int) -> None:
+        # Solve `LZ = PY` for `Z` for each col
+        for i in range(m):  # row of L
+            var _temp = PY[i, col]
+            for j in range(i):  # col of L
+                _temp = _temp - L[i, j] * Z[j, col]
+            _temp = _temp / L[i, i]
+            Z[i, col] = _temp
+
+        # Solve `UZ = Z` for `X` for each col
+        for i in range(m - 1, -1, -1):
+            var _temp2 = Z[i, col]
+            for j in range(i + 1, m):
+                _temp2 = _temp2 - U[i, j] * X[j, col]
+            _temp2 = _temp2 / U[i, i]
+            X[i, col] = _temp2
+
+    parallelize[calculate_X](n, n)
+
+    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
+    # This is disadvantage of Mojo's ASAP policy
+    var _L = L^
+    var _U = U^
+    var _Z = Z^
+    var _PY = PY^
+    var _m = m
+    var _n = n
+
+    return X^
+
+
+fn det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
+    """
+    Find the determinant of A using LUP decomposition.
+    """
+    var det_L: Scalar[dtype] = 1
+    var det_U: Scalar[dtype] = 1
+    var n = A.shape[0]  # Dimension of the matrix
+
+    var U: Matrix[dtype]
+    var L: Matrix[dtype]
+    A_pivoted, _, s = partial_pivoting(A)
+    L, U = lu_decomposition[dtype](A_pivoted)
+
+    for i in range(n):
+        det_L = det_L * L[i, i]
+        det_U = det_U * U[i, i]
+
+    if s % 2 == 0:
+        return det_L * det_U
+    else:
+        return -det_L * det_U
+
+
+fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """Inverse of matrix."""
 
     # Check whether the matrix is square
@@ -168,7 +268,9 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
     return C^
 
 
-fn lstsq[dtype: DType](X: Matrix[dtype], y: Matrix[dtype]) -> Matrix[dtype]:
+fn lstsq[
+    dtype: DType
+](X: Matrix[dtype], y: Matrix[dtype]) raises -> Matrix[dtype]:
     """Caclulate the OLS estimates.
 
     Example:

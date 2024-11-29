@@ -271,6 +271,45 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             print(e)
         self._buf.store(x * self.strides[0] + y, value)
 
+    fn __setitem__(self, owned x: Int, value: Self) raises:
+        """
+        Set the corresponding row at the index with the given matrix.
+
+        Args:
+            x: The row number.
+            value: Matrix (row vector).
+        """
+
+        if x < 0:
+            x = self.shape[0] + x
+
+        if x >= self.shape[0]:
+            raise Error(
+                String(
+                    "Error: Elements of `index` ({}) \n"
+                    "exceed the array shape ({})."
+                ).format(x, self.shape[0])
+            )
+
+        if value.shape[0] != 1:
+            raise Error(
+                String(
+                    "Error: The value should has only 1 row, "
+                    "but it has {} rows."
+                ).format(value.shape[0])
+            )
+
+        if self.shape[1] != value.shape[1]:
+            raise Error(
+                String(
+                    "Error: Matrix has {} columns, "
+                    "but the value has {} columns."
+                ).format(self.shape[1], value.shape[1])
+            )
+
+        var ptr = self._buf.offset(x * self.shape[1])
+        memcpy(ptr, value._buf, value.size)
+
     fn _store[
         width: Int = 1
     ](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
@@ -670,7 +709,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     fn T(self) -> Self:
         return transpose(self)
 
-    fn inv(self) -> Self:
+    fn inv(self) raises -> Self:
         return inv(self)
 
     fn to_ndarray(self) raises -> NDArray[dtype]:

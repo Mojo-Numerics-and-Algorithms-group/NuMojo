@@ -80,38 +80,49 @@ def test_logic():
 
 def test_linalg():
     var np = Python.import_module("numpy")
-    var a1 = mat.rand[f64]((100, 100))
-    var a2 = mat.rand[f64]((100, 100))
-    var y = mat.rand((100, 1))
-    var a1p = a1.to_numpy()
-    var a2p = a2.to_numpy()
-    var yp = y.to_numpy()
+    var A = mat.rand[f64]((100, 100))
+    var B = mat.rand[f64]((100, 100))
+    var E = mat.fromstring("[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3))
+    var Y = mat.rand((100, 1))
+    var Anp = A.to_numpy()
+    var Bnp = B.to_numpy()
+    var Ynp = Y.to_numpy()
+    var Enp = E.to_numpy()
     check_is_close(
-        mat.solve(a1, a2),
-        np.linalg.solve(a1p, a2p),
+        mat.solve(A, B),
+        np.linalg.solve(Anp, Bnp),
         "Solve is broken",
     )
     check_is_close(
-        mat.inv(a1),
-        np.linalg.inv(a1p),
+        mat.inv(A),
+        np.linalg.inv(Anp),
         "Inverse is broken",
     )
     check_is_close(
-        mat.lstsq(a1, y),
-        np.linalg.lstsq(a1p, yp)[0],
+        mat.lstsq(A, Y),
+        np.linalg.lstsq(Anp, Ynp)[0],
         "Least square is broken",
     )
     check_is_close(
-        a1.transpose(),
-        a1p.transpose(),
+        A.transpose(),
+        Anp.transpose(),
         "Transpose is broken",
     )
     check_is_close(
-        y.transpose(),
-        yp.transpose(),
+        Y.transpose(),
+        Ynp.transpose(),
         "Transpose is broken",
     )
     assert_true(
-        np.all(np.isclose(mat.det(a1), np.linalg.det(a1p), atol=0.1)),
+        np.all(np.isclose(mat.det(A), np.linalg.det(Anp), atol=0.1)),
         "Determinant is broken",
     )
+    for i in range(-10, 10):
+        assert_true(
+            np.all(
+                np.isclose(
+                    mat.trace(E, offset=i), np.trace(Enp, offset=i), atol=0.1
+                )
+            ),
+            "Trace is broken",
+        )

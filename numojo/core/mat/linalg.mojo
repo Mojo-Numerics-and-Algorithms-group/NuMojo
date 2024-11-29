@@ -164,6 +164,30 @@ fn det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
         return -det_L * det_U
 
 
+fn trace[dtype: DType](A: Matrix[dtype], offset: Int = 0) -> Scalar[dtype]:
+    """
+    Return the sum along diagonals of the array.
+
+    Similar to `numpy.trace`.
+    """
+    var m = A.shape[0]
+    var n = A.shape[1]
+
+    if offset >= max(m, n):  # Offset beyond the shape of the matrix
+        return 0
+
+    var res = Scalar[dtype](0)
+
+    if offset >= 0:
+        for i in range(n - offset):
+            res = res + A[i, i + offset]
+    else:
+        for i in range(m + offset):
+            res = res + A[i - offset, i]
+
+    return res
+
+
 # ===----------------------------------------------------------------------===#
 # Solving equations and inverting matrices
 # ===----------------------------------------------------------------------===#

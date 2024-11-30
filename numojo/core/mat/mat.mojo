@@ -720,8 +720,24 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         return matmul(self, other)
 
     # ===-------------------------------------------------------------------===#
-    # Other methods
+    # Matrix manipulation routines
     # ===-------------------------------------------------------------------===#
+
+    fn flatten(self) -> Self:
+        """
+        Return a flattened copy of the matrix.
+        """
+        var res = Self(shape=(1, self.size))
+        memcpy(res._buf, self._buf, res.size)
+        return res^
+
+    fn reshape(self, shape: Tuple[Int, Int]) -> Self:
+        """
+        Change shape and size of matrix and return a new matrix.
+        """
+        var res = Self(shape=shape)
+        memcpy(res._buf, self._buf, res.size)
+        return res^
 
     fn transpose(self) -> Self:
         return transpose(self)

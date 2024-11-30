@@ -174,3 +174,18 @@ def test_statistics():
             np.sum(Anp, axis=i),
             String("Sum by axis {} is broken").format(i),
         )
+
+
+def test_sorting():
+    var np = Python.import_module("numpy")
+    var A = mat.rand[f64]((100, 100))
+    var Anp = np.matrix(A.to_numpy())
+    check_is_close(
+        mat.sort(A), np.sort(Anp, axis=None), String("Sort is broken")
+    )
+    for i in range(2):
+        check_is_close(
+            mat.sort(A, axis=i),
+            np.sort(Anp, axis=i),
+            String("Sort by axis {} is broken").format(i),
+        )

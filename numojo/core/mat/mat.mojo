@@ -793,6 +793,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                 np_dtype = np.uint8
             elif dtype == DType.bool:
                 np_dtype = np.bool_
+            elif dtype == DType.index:
+                np_dtype = np.int64
 
             numpyarray = np.empty(self.shape, dtype=np_dtype)
             var pointer_d = numpyarray.__array_interface__["data"][

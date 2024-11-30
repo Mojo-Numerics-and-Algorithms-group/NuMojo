@@ -15,41 +15,81 @@ from .linalg import transpose
 # ===-----------------------------------------------------------------------===#
 
 
-fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
     """
-    Sort the Matrix. It is first flattened before sorting.
+    Argsort the Matrix. It is first flattened before sorting.
     """
-    var B = _quick_sort(A.flatten(), 0, A.size - 1)
+    var I = Matrix[DType.index](shape=(1, A.size))
+    for i in range(I.size):
+        I._buf[i] = i
+    var B = A.flatten()
+    _sort_inplace(B, I, 0, A.size - 1)
 
-    return B^
+    return I^
 
 
-fn sort[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn argsort[
+    dtype: DType
+](owned A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
     """
-    Sort the Matrix along the given axis.
+    Argsort the Matrix along the given axis.
     """
     if axis == 1:
-        var B = A
-        for i in range(B.shape[0]):
+        var I = Matrix[DType.index](shape=A.shape)
+        for i in range(I.shape[0]):
+            for j in range(I.shape[1]):
+                I._store(i, j, j)
+
+        for i in range(A.shape[0]):
             _sort_inplace(
-                B, left=i * B.strides[0], right=(i + 1) * B.strides[0] - 1
+                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
             )
-        return B^
+        return I^
     elif axis == 0:
-        var B = transpose(sort(transpose(A), axis=1))
-        return B^
+        return transpose(argsort(transpose(A), axis=1))
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn _partition(
-    inout A: Matrix, left: Int, right: Int, pivot_index: Int
+fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Sort the Matrix. It is first flattened before sorting.
+    """
+    var I = zeros[DType.index](shape=A.shape)
+    var B = A.flatten()
+    _sort_inplace(B, I, 0, A.size - 1)
+
+    return B^
+
+
+fn sort[
+    dtype: DType
+](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+    """
+    Sort the Matrix along the given axis.
+    """
+    if axis == 1:
+        var I = zeros[DType.index](shape=A.shape)
+        for i in range(A.shape[0]):
+            _sort_inplace(
+                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
+            )
+        return A^
+    elif axis == 0:
+        return transpose(sort(transpose(A), axis=1))
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
+fn _sort_partition(
+    inout A: Matrix, inout I: Matrix, left: Int, right: Int, pivot_index: Int
 ) raises -> Int:
     """
     Do partition for the data buffer of Matrix.
 
     Args:
         A: A Matrix.
+        I: A Matrix used to store indices.
         left: Left index of the partition.
         right: Right index of the partition.
         pivot_index: Input pivot index
@@ -68,56 +108,39 @@ fn _partition(
         )
 
     var pivot_value = A._buf[pivot_index]
+
     A._buf[pivot_index], A._buf[right] = A._buf[right], A._buf[pivot_index]
+    I._buf[pivot_index], I._buf[right] = I._buf[right], I._buf[pivot_index]
 
     var store_index = left
 
     for i in range(left, right):
         if A._buf[i] < pivot_value:
             A._buf[store_index], A._buf[i] = A._buf[i], A._buf[store_index]
+            I._buf[store_index], I._buf[i] = I._buf[i], I._buf[store_index]
             store_index = store_index + 1
 
     A._buf[store_index], A._buf[right] = A._buf[right], A._buf[store_index]
+    I._buf[store_index], I._buf[right] = I._buf[right], I._buf[store_index]
 
     return store_index
 
 
-fn _sort_inplace(inout A: Matrix, left: Int, right: Int) raises:
+fn _sort_inplace(
+    inout A: Matrix, inout I: Matrix, left: Int, right: Int
+) raises:
     """
     Sort in-place of the data buffer (quick-sort). It is not guaranteed to be stable.
 
     Args:
         A: A Matrix.
+        I: A Matrix used to store indices.
         left: Left index of the partition.
         right: Right index of the partition.
     """
 
     if right > left:
         var pivot_index = left + (right - left) // 2
-        var pivot_new_index = _partition(A, left, right, pivot_index)
-        _sort_inplace(A, left, pivot_new_index - 1)
-        _sort_inplace(A, pivot_new_index + 1, right)
-
-
-fn _quick_sort[
-    dtype: DType
-](A: Matrix[dtype], start: Int, end: Int) raises -> Matrix[dtype]:
-    """
-    Quick sort the selected range of the data buffer of the Matrix.
-    Adopt in-place partition.
-    Average complexity: O(nlogn).
-    Worst-case complexity: O(n^2).
-    Worst-case space complexity: O(n).
-    Unstable.
-
-    Args:
-        A: A Matrix.
-        start: The start index.
-        end: The end index.
-
-    """
-
-    var B = A
-    _sort_inplace(B, start, end)
-
-    return B^
+        var pivot_new_index = _sort_partition(A, I, left, right, pivot_index)
+        _sort_inplace(A, I, left, pivot_new_index - 1)
+        _sort_inplace(A, I, pivot_new_index + 1, right)

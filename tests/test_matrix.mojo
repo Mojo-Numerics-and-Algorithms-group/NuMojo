@@ -189,3 +189,16 @@ def test_sorting():
             np.sort(Anp, axis=i),
             String("Sort by axis {} is broken").format(i),
         )
+    check_is_close(
+        mat.argsort(A),
+        np.argsort(Anp, axis=None),
+        String("Argsort is broken")
+        + str(mat.argsort(A))
+        + str(np.argsort(Anp, axis=None)),
+    )
+    for i in range(2):
+        check_is_close(
+            mat.argsort(A, axis=i),
+            np.argsort(Anp, axis=i),
+            String("Argsort by axis {} is broken").format(i),
+        )

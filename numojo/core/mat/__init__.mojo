@@ -7,4 +7,4 @@ from .creation import full, zeros, ones, rand, fromstring, matrix
 from .math import sum
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq
 from .stats import mean
-from .sorting import sort
+from .sorting import sort, argsort

@@ -2,6 +2,43 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## xx/xx/2024 (v0.x)
+
+### ⭐️ New
+
+- Add `convolve2d` and in the `signal` module ([PR #135](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/135)).
+- Implement more the array creation routines from numpy and expand the NuMojo array creation functionality ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+- Add `Matrix` type in `numojo.core.mat` module. `Matrix` is a special case of `NDArray` (2DArray) but has been optimized since the number of dimensions is known at the compile time. It is useful when users only want to work with 2-dimensional arrays. The indexing and slicing is also more consistent with `numpy` ([PR #138](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/138) [PR #141](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/141)). It provides:
+  - `Matrix` type (2D array) with basic dunder methods.
+  - Function to construct `Matrix` from other data objects, e.g., `List`, `NDArray`, `String`, and `numpy` array.
+  - Indexing and slicing.
+  - Arithmetic functions for item-wise calculation and broadcasting.
+  - Linear algebra: matrix mutiplication, decomposition, inverse of matrix, solve of linear system, Ordinary Least Square, etc.
+  - Auxilliary types, e.g., `_MatrixIter`.
+
+### 🦋 Changed
+
+- Rename the data buffer from `data` to `_buf` ([PR #136](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/136) [PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137))
+- To make `matmul` flexible for different shapes of input arrays ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+- Change the way to get the shape of the array: `array.shape` returns the shape of array as `NDArrayShape` ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+- The array creation functions are unified in such a way ([PR #139](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/139)).
+  - `NDAarray.__init__()` reads in shape information and initializes an empty ndarray.
+  - All other creation routines are implemented by the functions in the `array_creation_routine` module. For example, to create an array with filled value, the function `full` should be used. To create an array from a list, the function `array` should be used.
+
+### ❌ Removed
+
+- Temporarily removed negative indexing support in slices since it causes error. Will add just feature in later updates ([PR #133](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/133)).
+- Remove `inout` before `self` for `NDArray.__getitem__` ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+
+### 🛠️ Fixed
+
+- Fixed and rewrote the `adjust_slice` function that was causing errors ([PR #133](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/133)).
+- There is an error in fromstring that the negative signs are not read. It is fixed. Now a valid numeric should start with a digit, a dot, or a hyhen ([PR #134](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/134)).
+
+### 📚 Documentary and testing
+
+- Added test for slicing in getters. Complete tests for setters will be added later. This is due to python interop limitation ([PR #133](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/133)).
+
 ## 19/10/2024 (v0.3.1)
 
 ### 🛠️ Fixed

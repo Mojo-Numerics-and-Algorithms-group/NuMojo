@@ -8,8 +8,6 @@
 from .mat import Matrix
 from .creation import zeros
 
-import algorithm
-
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences
 # ===-----------------------------------------------------------------------===#
@@ -74,7 +72,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         return B^
 
-    if axis == 1:
+    elif axis == 1:
         var B = zeros[dtype](shape=(A.shape[0], 1))
 
         @parameter

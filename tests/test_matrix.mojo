@@ -60,9 +60,11 @@ def test_arithmetic():
     check_is_close(A + C, Ap + Cp, "Add (broadcast) is broken")
     check_is_close(A - C, Ap - Cp, "Sub (broadcast) is broken")
     check_is_close(A * C, Ap * Cp, "Mul (broadcast) is broken")
+    check_is_close(A / C, Ap / Cp, "Div (broadcast) is broken")
     check_is_close(A + 1, Ap + 1, "Add (to int) is broken")
     check_is_close(A - 1, Ap - 1, "Sub (to int) is broken")
     check_is_close(A * 1, Ap * 1, "Mul (to int) is broken")
+    check_is_close(A / 1, Ap / 1, "Div (to int) is broken")
 
 
 def test_logic():
@@ -156,3 +158,19 @@ def test_math():
         np.sum(Dnp, axis=1),
         "Sum by axis 1 is broken",
     )
+
+
+def test_statistics():
+    var np = Python.import_module("numpy")
+    var A = mat.rand[f64]((100, 100))
+    var Anp = np.matrix(A.to_numpy())
+    assert_true(
+        np.all(np.isclose(mat.mean(A), np.mean(Anp), atol=0.1)),
+        "Mean is broken",
+    )
+    for i in range(2):
+        check_is_close(
+            mat.sum(A, axis=i),
+            np.sum(Anp, axis=i),
+            String("Sum by axis {} is broken").format(i),
+        )

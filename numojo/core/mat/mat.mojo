@@ -534,6 +534,26 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
         return broadcast_to[dtype](other, self.shape) * self
 
+    fn __truediv__(self, other: Self) raises -> Self:
+        if (self.shape[0] == other.shape[0]) and (
+            self.shape[1] == other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__truediv__](self, other)
+        elif (self.shape[0] < other.shape[0]) or (
+            self.shape[1] < other.shape[1]
+        ):
+            return _arithmetic_func[dtype, SIMD.__truediv__](
+                broadcast_to(self, other.shape), other
+            )
+        else:
+            return _arithmetic_func[dtype, SIMD.__truediv__](
+                self, broadcast_to(other, self.shape)
+            )
+
+    fn __truediv__(self, other: Scalar[dtype]) raises -> Self:
+        """Divide matrix by scalar."""
+        return self / broadcast_to[dtype](other, self.shape)
+
     fn __lt__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]

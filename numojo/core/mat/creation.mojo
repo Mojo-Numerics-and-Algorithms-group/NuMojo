@@ -1,4 +1,4 @@
-from .mat import *
+from .mat import NDArray
 
 # ===-----------------------------------------------------------------------===#
 # Fucntions for constructing Matrix

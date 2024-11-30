@@ -43,14 +43,13 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     The matrix can be uniquely defined by the following features:
         1. The data buffer of all items.
         2. The shape of the matrix.
-        3. The strides (row-major or column-major).
-        4. The data type of the elements (compile-time known).
+        3. The data type of the elements (compile-time known).
 
     Attributes:
         - _buf
         - shape
-        - size
-        - strides
+        - size (shape[0] * shape[1])
+        - strides (shape[1], 1)
 
     Default constructor: dtype(parameter), shape, object.
     """
@@ -731,13 +730,40 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         memcpy(res._buf, self._buf, res.size)
         return res^
 
-    fn reshape(self, shape: Tuple[Int, Int]) -> Self:
+    fn reshape(self, shape: Tuple[Int, Int]) raises -> Self:
         """
         Change shape and size of matrix and return a new matrix.
         """
+        if shape[0] * shape[1] != self.size:
+            raise Error(
+                String(
+                    "Cannot reshape matrix of size {} into shape ({}, {})."
+                ).format(self.size, shape[0], shape[1])
+            )
         var res = Self(shape=shape)
         memcpy(res._buf, self._buf, res.size)
         return res^
+
+    fn resize(inout self, shape: Tuple[Int, Int]) raises:
+        """
+        Change shape and size of matrix in-place.
+        """
+        if shape[0] * shape[1] > self.size:
+            # raise Error(
+            #     String(
+            #         "Error: The new size {} is larger than the current size {}!"
+            #     ).format(shape[0] * shape[1], self.size)
+            # )
+            var other = Self(shape=shape)
+            memcpy(other._buf, self._buf, self.size)
+            for i in range(self.size, other.size):
+                other._buf[i] = 0
+            self = other
+        else:
+            self.shape[0] = shape[0]
+            self.shape[1] = shape[1]
+            self.size = shape[0] * shape[1]
+            self.strides[0] = shape[1]
 
     fn transpose(self) -> Self:
         return transpose(self)

@@ -27,7 +27,7 @@ fn check_is_close[
 
 
 # ===-----------------------------------------------------------------------===#
-# Creation
+# Creation and manipulation
 # ===-----------------------------------------------------------------------===#
 
 
@@ -37,6 +37,25 @@ def test_full():
         mat.full[f64]((10, 10), 10),
         np.full((10, 10), 10, dtype=np.float64),
         "Full is broken",
+    )
+
+
+def test_manipulation():
+    var np = Python.import_module("numpy")
+    var A = mat.rand[f64]((100, 100))
+    var Anp = np.matrix(A.to_numpy())
+    check(
+        A.reshape((1000, 10)),
+        Anp.reshape((1000, 10)),
+        "Reshape is broken",
+    )
+    var new_shape = (1000, 10)
+    _ = (A.resize(new_shape),)
+    _ = (Anp.resize(new_shape),)
+    check(
+        A,
+        Anp,
+        "Resize is broken",
     )
 
 

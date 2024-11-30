@@ -14,14 +14,16 @@ fn check[
     dtype: DType
 ](matrix: mat.Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
-    assert_true(np.all(np.equal(matrix.to_numpy(), np_sol)), st)
+    assert_true(np.all(np.equal(np.matrix(matrix.to_numpy()), np_sol)), st)
 
 
 fn check_is_close[
     dtype: DType
 ](matrix: mat.Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
-    assert_true(np.all(np.isclose(matrix.to_numpy(), np_sol, atol=0.1)), st)
+    assert_true(
+        np.all(np.isclose(np.matrix(matrix.to_numpy()), np_sol, atol=0.1)), st
+    )
 
 
 # ===-----------------------------------------------------------------------===#
@@ -126,3 +128,31 @@ def test_linalg():
             ),
             "Trace is broken",
         )
+
+
+def test_math():
+    var np = Python.import_module("numpy")
+    var A = mat.rand[f64]((100, 100))
+    var B = mat.rand[f64]((100, 100))
+    var D = mat.rand(shape=(10000, 100))
+    var E = mat.fromstring("[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3))
+    var Y = mat.rand((100, 1))
+    var Anp = np.matrix(A.to_numpy())
+    var Bnp = np.matrix(B.to_numpy())
+    var Dnp = np.matrix(D.to_numpy())
+    var Enp = np.matrix(E.to_numpy())
+    var Ynp = np.matrix(Y.to_numpy())
+    assert_true(
+        np.all(np.isclose(mat.sum(D), np.sum(Dnp), atol=0.1)),
+        "Sum is broken",
+    )
+    check_is_close(
+        mat.sum(D, axis=0),
+        np.sum(Dnp, axis=0),
+        "Sum by axis 0 is broken",
+    )
+    check_is_close(
+        mat.sum(D, axis=1),
+        np.sum(Dnp, axis=1),
+        "Sum by axis 1 is broken",
+    )

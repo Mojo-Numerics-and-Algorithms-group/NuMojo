@@ -1,25 +1,31 @@
 """
-`numojo.core.mat` module provides:
+`numojo.core.mat` sub-package provides:
 
-- Matrix type (2D array) with initialization and basic manipulation.
-- Auxilliary types, e.g., MatrixIter.
-- Functioon to construct matrix from other data objects,
-e.g., List, NDArray, String, and numpy array.
+- `Matrix` type (2DArray) with basic dunder methods and manipulation methods.
+- Auxiliary types, e.g., `_MatrixIter` for iteration.
+- Indexing and slicing.
+- Arithmetic functions for item-wise calculation and broadcasting.
+- Creation routines and functions to construct `Matrix` from other data objects, 
+e.g., `List`, `NDArray`, `String`, and `numpy` array (in `creation` module).
+- Linear algebra, e.g., matrix multiplication, decomposition, inverse of matrix, 
+solve of linear system, Ordinary Least Square, etc (in `linalg` module).
+- Mathematical functions, e.g., `sum` (in `math` module).
+- Statistical functions, e.g., `mean` (in `stats` module).
+- Sorting and searching, .e.g, `sort`, `argsort` (in `sorting` module).
 
-Because the number of dimension is known at the compile time,
-the Matrix type gains advantages in the running speed compared to
-the NDArray type when the users only want to deal with the matrices
-manipulation, and it can also be more consistent with numpy.
-For example:
+`Matrix` is a special case of `NDArray` (2DArray) but has some targeted 
+optimization since the number of dimensions is known at the compile time. 
+It gains some advantages in running speed, which is very useful when users 
+only want to work with 2-dimensional arrays. The indexing and slicing is also 
+more consistent with `numpy`. For example:
 
 - For `__getitem__`, inputting two `Int` returns a scalar,
-inputting one `Int` or no `Int` returns a Matrix.
-- We do not need auxillary types `NDArrayShape` and `NDArrayStrides`
+inputting one `Int` or no `Int` returns a `Matrix`.
+- We do not need auxiliary types `NDArrayShape` and `NDArrayStrides`
 as the shape and strides information is fixed in length `Tuple[Int,Int]`.
 
 TODO: In future, we can also make use of the trait `ArrayLike` to align
 the behavior of `NDArray` type and the `Matrix` type.
-
 """
 
 from numojo.core.ndarray import NDArray
@@ -52,6 +58,11 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         - strides (shape[1], 1)
 
     Default constructor: dtype(parameter), shape, object.
+
+    Checklist of core methods that have been implemented:
+
+    - [x]
+
     """
 
     var shape: Tuple[Int, Int]

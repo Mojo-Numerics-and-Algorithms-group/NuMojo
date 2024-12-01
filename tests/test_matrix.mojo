@@ -40,6 +40,15 @@ def test_full():
     )
 
 
+def test_zeros():
+    var np = Python.import_module("numpy")
+    check(
+        mat.zeros[f64](shape=(10, 10)),
+        np.zeros((10, 10), dtype=np.float64),
+        "Zeros is broken",
+    )
+
+
 def test_manipulation():
     var np = Python.import_module("numpy")
     var A = mat.rand[f64]((100, 100))

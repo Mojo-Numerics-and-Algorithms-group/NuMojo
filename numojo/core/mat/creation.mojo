@@ -4,7 +4,7 @@
 """
 
 from numojo.core.ndarray import NDArray
-from memory.memory import memset
+from memory.memory import memset_zero
 
 # ===-----------------------------------------------------------------------===#
 # Constructing Matrix
@@ -40,7 +40,9 @@ fn zeros[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     ```
     """
 
-    return full[dtype](shape=shape, fill_value=0)
+    var M = Matrix[dtype](shape)
+    memset_zero(M._buf, M.size)
+    return M^
 
 
 fn ones[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
@@ -121,18 +123,18 @@ fn fromlist[
     """
 
     if (shape[0] == 0) and (shape[1] == 0):
-        var B = Matrix[dtype](shape=(1, object.size))
-        memcpy(B._buf, object.data, B.size)
-        return B^
+        var M = Matrix[dtype](shape=(1, object.size))
+        memcpy(M._buf, object.data, M.size)
+        return M^
 
     if shape[0] * shape[1] != object.size:
         var message = String(
             "The input has {} elements, but the target has the shape {}x{}"
         ).format(object.size, shape[0], shape[1])
         raise Error(message)
-    var B = Matrix[dtype](shape=shape)
-    memcpy(B._buf, object.data, B.size)
-    return B^
+    var M = Matrix[dtype](shape=shape)
+    memcpy(M._buf, object.data, M.size)
+    return M^
 
 
 fn fromstring[

@@ -13,17 +13,6 @@ solve of linear system, Ordinary Least Square, etc (in `linalg` module).
 - Statistical functions, e.g., `mean` (in `stats` module).
 - Sorting and searching, .e.g, `sort`, `argsort` (in `sorting` module).
 
-`Matrix` is a special case of `NDArray` (2DArray) but has some targeted 
-optimization since the number of dimensions is known at the compile time. 
-It gains some advantages in running speed, which is very useful when users 
-only want to work with 2-dimensional arrays. The indexing and slicing is also 
-more consistent with `numpy`. For example:
-
-- For `__getitem__`, inputting two `Int` returns a scalar,
-inputting one `Int` or no `Int` returns a `Matrix`.
-- We do not need auxiliary types `NDArrayShape` and `NDArrayStrides`
-as the shape and strides information is fixed in length `Tuple[Int,Int]`.
-
 TODO: In future, we can also make use of the trait `ArrayLike` to align
 the behavior of `NDArray` type and the `Matrix` type.
 """
@@ -39,9 +28,18 @@ from sys import simdwidthof
 
 
 struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
-    """A marix (2d-array).
+    """
+    `Matrix` is a special case of `NDArray` (2DArray) but has some targeted 
+    optimization since the number of dimensions is known at the compile time. 
+    It gains some advantages in running speed, which is very useful when users 
+    only want to work with 2-dimensional arrays. 
+    The indexing and slicing is also more consistent with `numpy`.
+    For example:
 
-    The buffer is saved row-majored (C-type).
+    - For `__getitem__`, passing in two `Int` returns a scalar,
+    and passing in one `Int` or two `Slice` returns a `Matrix`.
+    - We do not need auxiliary types `NDArrayShape` and `NDArrayStrides`
+    as the shape and strides information is fixed in length `Tuple[Int,Int]`.
 
     Parameters:
         dtype: Type of item in NDArray. Default type is DType.float64.
@@ -52,16 +50,50 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         3. The data type of the elements (compile-time known).
 
     Attributes:
-        - _buf
+        - _buf (saved as row-majored, C-type)
         - shape
         - size (shape[0] * shape[1])
         - strides (shape[1], 1)
 
     Default constructor: dtype(parameter), shape, object.
 
-    Checklist of core methods that have been implemented:
+    [checklist] CORE METHODS that have been implemented:
 
-    - [x]
+    - [] `Matrix.all`
+    - [] `Matrix.any`
+    - [x] `mat.argsort(Matrix)`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
+    - [] `Matrix.`
 
     """
 

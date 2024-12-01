@@ -103,29 +103,6 @@ fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
 # ===-----------------------------------------------------------------------===#
 
 
-fn fromndarray[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
-    """Create a matrix from an ndarray. It must be 2-dimensional.
-
-    It makes a copy of the buffer of the ndarray.
-
-    It is useful when we want to solve a linear system. In this case, we treat
-    ndarray as a matrix. This simplify calculation and avoid too much check.
-    """
-
-    if object.ndim > 2:
-        raise Error(String("Shape too large to be a matrix."))
-
-    var M = Matrix[dtype](shape=(object.shape[0], object.shape[1]))
-
-    if object.order == "C":
-        memcpy(M._buf, object._buf, M.size)
-    else:
-        for i in range(object.shape[0]):
-            for j in range(object.shape[1]):
-                M._store(i, j, object.load(i, j))
-    return M^
-
-
 fn fromlist[
     dtype: DType
 ](

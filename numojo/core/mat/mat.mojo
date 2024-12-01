@@ -29,10 +29,10 @@ from sys import simdwidthof
 
 struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     """
-    `Matrix` is a special case of `NDArray` (2DArray) but has some targeted 
-    optimization since the number of dimensions is known at the compile time. 
-    It gains some advantages in running speed, which is very useful when users 
-    only want to work with 2-dimensional arrays. 
+    `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
+    optimization since the number of dimensions is known at the compile time.
+    It gains some advantages in running speed, which is very useful when users
+    only want to work with 2-dimensional arrays.
     The indexing and slicing is also more consistent with `numpy`.
     For example:
 
@@ -61,39 +61,26 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
 
     - [] `Matrix.all`
     - [] `Matrix.any`
+    - [] `Matrix.argmax`
+    - [] `Matrix.argmin`
     - [x] `mat.argsort(Matrix)`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
-    - [] `Matrix.`
+    - [] `Matrix.astype`
+    - [] `Matrix.cumprod`
+    - [] `Matrix.fill`
+    - [x] `Matrix.flatten`
+    - [] `Matrix.max`
+    - [] `mat.mean(Matrix)`
+    - [] `Matrix.min`
+    - [] `Matrix.prod`
+    - [x] `Matrix.reshape`
+    - [x] `Matrix.resize`
+    - [] `Matrix.round`
+    - [] `Matrix.std`
+    - [] `mat.sum(Matrix)`
+    - [] `Matrix.tolist`
+    - [x] `Matrix.trace` and `mat.trace(Matrix)`
+    - [x] `Matrix.transpose` and `mat.transpose(Matrix)`
+    - [] `Matrix.var`
 
     """
 

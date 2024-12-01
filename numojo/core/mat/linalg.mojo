@@ -10,7 +10,7 @@
 
 """
 
-from .mat import *
+from .matrix import *
 from .creation import *
 
 # ===----------------------------------------------------------------------===#

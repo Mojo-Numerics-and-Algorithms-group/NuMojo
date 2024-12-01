@@ -8,9 +8,9 @@
 
 """
 
-from .mat import Matrix
+from .matrix import Matrix
 from .creation import full, zeros
-from .math import sum
+from .mathematics import sum
 
 # ===-----------------------------------------------------------------------===#
 # Averages and variances

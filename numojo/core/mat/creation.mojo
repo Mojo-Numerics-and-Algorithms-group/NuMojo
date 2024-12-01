@@ -1,7 +1,13 @@
-from .mat import NDArray
+"""
+`numojo.core.mat.creation` module provides functions for creating matrix.
+
+"""
+
+from numojo.core.ndarray import NDArray
+from memory.memory import memset
 
 # ===-----------------------------------------------------------------------===#
-# Fucntions for constructing Matrix
+# Constructing Matrix
 # ===-----------------------------------------------------------------------===#
 
 
@@ -66,6 +72,11 @@ fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
     return matrix
 
 
+# ===-----------------------------------------------------------------------===#
+# Constructing random Matrix
+# ===-----------------------------------------------------------------------===#
+
+
 fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     """Return a matrix with random values uniformed distributed between 0 and 1.
 
@@ -88,11 +99,11 @@ fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
 
 
 # ===-----------------------------------------------------------------------===#
-# Fucntions for constructing Matrix from an object
+# Constructing Matrix from other type
 # ===-----------------------------------------------------------------------===#
 
 
-fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
+fn fromndarray[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
     """Create a matrix from an ndarray. It must be 2-dimensional.
 
     It makes a copy of the buffer of the ndarray.
@@ -118,18 +129,35 @@ fn matrix[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
     return matrix
 
 
-fn matrix[dtype: DType](owned object: Matrix[dtype]) raises -> Matrix[dtype]:
+fn frommatrix[
+    dtype: DType
+](owned object: Matrix[dtype]) raises -> Matrix[dtype]:
     """Create a matrix from a matrix."""
 
     return object^
 
 
-fn matrix[
+fn frommatrix[
+    dtype: DType
+](object: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+    """Create a matrix from a matrix and into certain shape."""
+
+    if shape[0] * shape[1] != object.size:
+        var message = String(
+            "The input has {} elements, but the target has the shape {}x{}"
+        ).format(object.size, shape[0], shape[1])
+        raise Error(message)
+    var B = Matrix[dtype](shape=shape)
+    memcpy(B._buf, object._buf, B.size)
+    return B^
+
+
+fn fromlist[
     dtype: DType
 ](
     object: List[Scalar[dtype]], shape: Tuple[Int, Int] = (0, 0)
 ) raises -> Matrix[dtype]:
-    """Create a matrix from a list into given shape.
+    """Create a matrix from a 1-dimensional list into given shape.
 
     If no shape is passed, the return matrix will be a row vector.
 
@@ -137,7 +165,7 @@ fn matrix[
     ```mojo
     from numojo import mat
     fn main() raises:
-        print(mat.matrix(List[Float64](1, 2, 3, 4, 5), (5, 1)))
+        print(mat.fromlist(List[Float64](1, 2, 3, 4, 5), (5, 1)))
     ```
     """
 
@@ -153,21 +181,6 @@ fn matrix[
         raise Error(message)
     var B = Matrix[dtype](shape=shape)
     memcpy(B._buf, object.data, B.size)
-    return B^
-
-
-fn matrix[
-    dtype: DType
-](object: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
-    """Create a matrix from a matrix and into certain shape."""
-
-    if shape[0] * shape[1] != object.size:
-        var message = String(
-            "The input has {} elements, but the target has the shape {}x{}"
-        ).format(object.size, shape[0], shape[1])
-        raise Error(message)
-    var B = Matrix[dtype](shape=shape)
-    memcpy(B._buf, object._buf, B.size)
     return B^
 
 
@@ -223,7 +236,7 @@ fn fromstring[
                 number_as_str = ""  # Clean the number cache
 
     if (shape[0] == 0) and (shape[1] == 0):
-        return matrix(data)
+        return fromlist(data)
 
     if size != len(data):
         var message = String(

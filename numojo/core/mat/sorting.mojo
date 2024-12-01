@@ -6,7 +6,7 @@
 
 """
 
-from .mat import Matrix
+from .matrix import Matrix
 from .creation import full, zeros
 from .linalg import transpose
 
@@ -130,7 +130,8 @@ fn _sort_inplace(
     inout A: Matrix, inout I: Matrix, left: Int, right: Int
 ) raises:
     """
-    Sort in-place of the data buffer (quick-sort). It is not guaranteed to be stable.
+    Sort in-place of the data buffer (quick-sort).
+    It is not guaranteed to be stable.
 
     Args:
         A: A Matrix.
@@ -144,3 +145,14 @@ fn _sort_inplace(
         var pivot_new_index = _sort_partition(A, I, left, right, pivot_index)
         _sort_inplace(A, I, left, pivot_new_index - 1)
         _sort_inplace(A, I, pivot_new_index + 1, right)
+
+
+# ===-----------------------------------------------------------------------===#
+# Searching
+# ===-----------------------------------------------------------------------===#
+
+
+# fn _max[dtype: DType](A: Matrix[dtype], start: Int, end: Int) -> Scalar[dtype]:
+#     """
+#     Auxiliary function that find the max value in a range of the buffer.
+#     """

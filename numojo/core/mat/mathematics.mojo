@@ -5,7 +5,7 @@
 
 """
 
-from .mat import Matrix
+from .matrix import Matrix
 from .creation import zeros
 
 # ===-----------------------------------------------------------------------===#

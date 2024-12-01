@@ -19,7 +19,7 @@ the behavior of `NDArray` type and the `Matrix` type.
 
 from numojo.core.ndarray import NDArray
 from .creation import zeros
-from memory import memcmp, memcpy
+from memory import memcpy
 from sys import simdwidthof
 
 # ===----------------------------------------------------------------------===#
@@ -34,7 +34,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     It gains some advantages in running speed, which is very useful when users
     only want to work with 2-dimensional arrays.
     The indexing and slicing is also more consistent with `numpy`.
-    For example:
+
+    For certain behaviors, `Matrix` type is more like `NDArray` with
+    fixed `ndim` than `numpy.matrix`.
 
     - For `__getitem__`, passing in two `Int` returns a scalar,
     and passing in one `Int` or two `Slice` returns a `Matrix`.
@@ -55,10 +57,11 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         - size (shape[0] * shape[1])
         - strides (shape[1], 1)
 
-    Default constructor: dtype(parameter), shape, object.
+    Default constructor:
+    - [dtype], shape
+    - [dtype], data
 
     [checklist] CORE METHODS that have been implemented:
-
     - [] `Matrix.all`
     - [] `Matrix.any`
     - [] `Matrix.argmax`
@@ -66,7 +69,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [x] `mat.argsort(Matrix)`
     - [] `Matrix.astype`
     - [] `Matrix.cumprod`
-    - [] `Matrix.fill`
+    - [] `Matrix.fill` and `mat.full(Matrix)`
     - [x] `Matrix.flatten`
     - [] `Matrix.max`
     - [] `mat.mean(Matrix)`
@@ -81,6 +84,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [x] `Matrix.trace` and `mat.trace(Matrix)`
     - [x] `Matrix.transpose` and `mat.transpose(Matrix)`
     - [] `Matrix.var`
+
+    TODO: Introduce `ArrayLike` trait for `NDArray` type and `Matrix` type.
 
     """
 
@@ -772,6 +777,15 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         var res = Self(shape=(1, self.size))
         memcpy(res._buf, self._buf, res.size)
         return res^
+
+    fn fill(self: Self, fill_value: Scalar[dtype]):
+        """
+        Fill the matrix with value.
+
+        See also function `mat.creation.full`.
+        """
+        for i in range(self.size):
+            self._buf[i] = fill_value
 
     fn reshape(self, shape: Tuple[Int, Int]) raises -> Self:
         """

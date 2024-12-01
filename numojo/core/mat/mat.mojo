@@ -22,8 +22,8 @@ the behavior of `NDArray` type and the `Matrix` type.
 
 """
 
-from numojo.prelude import *
 from numojo.core.ndarray import NDArray
+from .creation import zeros
 from memory import memcmp, memcpy
 from sys import simdwidthof
 
@@ -120,7 +120,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     # Dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __getitem__(self, owned x: Int, owned y: Int) -> Scalar[dtype]:
+    fn __getitem__(self, owned x: Int, owned y: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the index.
 
@@ -138,16 +138,16 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         if y < 0:
             y = self.shape[1] + y
 
-        try:
-            if (x >= self.shape[0]) or (y >= self.shape[1]):
-                raise Error(
-                    "Error: Elements of `index` exceed the array shape."
-                )
-        except e:
-            print(e)
+        if (x >= self.shape[0]) or (y >= self.shape[1]):
+            raise Error(
+                String(
+                    "Index ({}, {}) exceed the matrix shape ({}, {})"
+                ).format(x, y, self.shape[0], self.shape[1])
+            )
+
         return self._buf.load(x * self.strides[0] + y)
 
-    fn __getitem__(self, owned x: Int) -> Self:
+    fn __getitem__(self, owned x: Int) raises -> Self:
         """
         Return the corresponding row at the index.
 
@@ -158,13 +158,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         if x < 0:
             x = self.shape[0] + x
 
-        try:
-            if x >= self.shape[0]:
-                raise Error(
-                    "Error: Elements of `index` exceed the array shape."
+        if x >= self.shape[0]:
+            raise Error(
+                String("Index {} exceed the row number {}").format(
+                    x, self.shape[0]
                 )
-        except e:
-            print(e)
+            )
 
         var res = Self(shape=(1, self.shape[1]))
         var ptr = self._buf.offset(x * self.shape[1])
@@ -246,6 +245,18 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
 
         return B
 
+    fn __getitem__(self, indices: List[Int]) raises -> Self:
+        """
+        Get item by a list of integers.
+        """
+
+        var ncol = self.shape[1]
+        var nrow = len(indices)
+        var res = zeros[dtype](shape=(nrow, ncol))
+        for i in range(nrow):
+            res[i] = self[indices[i]]
+        return res^
+
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
         `__getitem__` with width.
@@ -253,7 +264,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
         return self._buf.load[width=width](x * self.strides[0] + y)
 
-    fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]):
+    fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]) raises:
         """
         Return the scalar at the index.
 
@@ -263,11 +274,13 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             value: The value to be set.
         """
 
-        try:
-            if (x >= self.shape[0]) or (y >= self.shape[1]):
-                raise Error("Error: Elements of `index` exceed the array shape")
-        except e:
-            print(e)
+        if (x >= self.shape[0]) or (y >= self.shape[1]):
+            raise Error(
+                String(
+                    "Index ({}, {}) exceed the matrix shape ({}, {})"
+                ).format(x, y, self.shape[0], self.shape[1])
+            )
+
         self._buf.store(x * self.strides[0] + y, value)
 
     fn __setitem__(self, owned x: Int, value: Self) raises:
@@ -286,7 +299,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             raise Error(
                 String(
                     "Error: Elements of `index` ({}) \n"
-                    "exceed the array shape ({})."
+                    "exceed the matrix shape ({})."
                 ).format(x, self.shape[0])
             )
 
@@ -749,11 +762,6 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Change shape and size of matrix in-place.
         """
         if shape[0] * shape[1] > self.size:
-            # raise Error(
-            #     String(
-            #         "Error: The new size {} is larger than the current size {}!"
-            #     ).format(shape[0] * shape[1], self.size)
-            # )
             var other = Self(shape=shape)
             memcpy(other._buf, self._buf, self.size)
             for i in range(self.size, other.size):

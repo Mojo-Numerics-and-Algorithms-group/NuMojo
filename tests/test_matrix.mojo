@@ -49,7 +49,7 @@ def test_manipulation():
         Anp.reshape((1000, 10)),
         "Reshape is broken",
     )
-    var new_shape = (1000, 10)
+    var new_shape = (1000, 100)
     _ = (A.resize(new_shape),)
     _ = (Anp.resize(new_shape),)
     check(

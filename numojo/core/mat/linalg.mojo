@@ -120,18 +120,22 @@ fn lu_decomposition[
         for j in range(i, n):
             # Fill in L
             if i == j:
-                L[i, i] = 1
+                L._store(i, i, 1)
             else:
                 var sum_of_products_for_L: Scalar[dtype] = 0
                 for k in range(0, i):
-                    sum_of_products_for_L += L[j, k] * U[k, i]
-                L[j, i] = (A[j, i] - sum_of_products_for_L) / U[i, i]
+                    sum_of_products_for_L += L._load(j, k) * U._load(k, i)
+                L._store(
+                    j,
+                    i,
+                    (A._load(j, i) - sum_of_products_for_L) / U._load(i, i),
+                )
 
             # Fill in U
             var sum_of_products_for_U: Scalar[dtype] = 0
             for k in range(0, i):
-                sum_of_products_for_U += L[i, k] * U[k, j]
-            U[i, j] = A[i, j] - sum_of_products_for_U
+                sum_of_products_for_U += L._load(i, k) * U._load(k, j)
+            U._store(i, j, A._load(i, j) - sum_of_products_for_U)
 
     return L, U
 
@@ -164,7 +168,9 @@ fn det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
         return -det_L * det_U
 
 
-fn trace[dtype: DType](A: Matrix[dtype], offset: Int = 0) -> Scalar[dtype]:
+fn trace[
+    dtype: DType
+](A: Matrix[dtype], offset: Int = 0) raises -> Scalar[dtype]:
     """
     Return the sum along diagonals of the array.
 
@@ -265,19 +271,19 @@ fn solve[
     fn calculate_X(col: Int) -> None:
         # Solve `LZ = PY` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = PY[i, col]
+            var _temp = PY._load(i, col)
             for j in range(i):  # col of L
-                _temp = _temp - L[i, j] * Z[j, col]
-            _temp = _temp / L[i, i]
-            Z[i, col] = _temp
+                _temp = _temp - L._load(i, j) * Z._load(j, col)
+            _temp = _temp / L._load(i, i)
+            Z._store(i, col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z[i, col]
+            var _temp2 = Z._load(i, col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U[i, j] * X[j, col]
-            _temp2 = _temp2 / U[i, i]
-            X[i, col] = _temp2
+                _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
+            _temp2 = _temp2 / U._load(i, i)
+            X._store(i, col, _temp2)
 
     parallelize[calculate_X](n, n)
 
@@ -311,19 +317,19 @@ fn solve_lu[dtype: DType](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
     fn calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y[i, col]
+            var _temp = Y._load(i, col)
             for j in range(i):  # col of L
-                _temp = _temp - L[i, j] * Z[j, col]
-            _temp = _temp / L[i, i]
-            Z[i, col] = _temp
+                _temp = _temp - L._load(i, j) * Z._load(j, col)
+            _temp = _temp / L._load(i, i)
+            Z._store(i, col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z[i, col]
+            var _temp2 = Z._load(i, col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U[i, j] * X[j, col]
-            _temp2 = _temp2 / U[i, i]
-            X[i, col] = _temp2
+                _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
+            _temp2 = _temp2 / U._load(i, i)
+            X._store(i, col, _temp2)
 
     parallelize[calculate_X](n, n)
 

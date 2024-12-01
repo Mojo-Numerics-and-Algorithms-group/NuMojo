@@ -10,8 +10,6 @@ from .creation import (
     rand,
     fromstring,
     fromlist,
-    fromndarray,
-    frommatrix,
 )
 from .mathematics import sum
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq

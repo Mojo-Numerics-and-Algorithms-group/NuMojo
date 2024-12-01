@@ -27,7 +27,7 @@ fn full[
     for i in range(shape[0] * shape[1]):
         matrix._buf.store(i, fill_value)
 
-    return matrix
+    return matrix^
 
 
 fn zeros[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
@@ -69,7 +69,7 @@ fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
     var matrix = zeros[dtype]((len, len))
     for i in range(len):
         matrix._buf.store(i * matrix.strides[0] + i, 1)
-    return matrix
+    return matrix^
 
 
 # ===-----------------------------------------------------------------------===#
@@ -95,7 +95,7 @@ fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     var result = Matrix[dtype](shape)
     for i in range(result.size):
         result._buf.store(i, random.random_float64(0, 1).cast[dtype]())
-    return result
+    return result^
 
 
 # ===-----------------------------------------------------------------------===#
@@ -112,44 +112,18 @@ fn fromndarray[dtype: DType](object: NDArray[dtype]) raises -> Matrix[dtype]:
     ndarray as a matrix. This simplify calculation and avoid too much check.
     """
 
-    try:
-        if object.ndim != 2:
-            raise Error("The original array is not 2-dimensional!")
-    except e:
-        print(e)
+    if object.ndim > 2:
+        raise Error(String("Shape too large to be a matrix."))
 
-    var matrix = Matrix[dtype](shape=(object.shape[0], object.shape[1]))
+    var M = Matrix[dtype](shape=(object.shape[0], object.shape[1]))
 
     if object.order == "C":
-        memcpy(matrix._buf, object._buf, matrix.size)
+        memcpy(M._buf, object._buf, M.size)
     else:
         for i in range(object.shape[0]):
             for j in range(object.shape[1]):
-                matrix._store(i, j, object.load(i, j))
-    return matrix
-
-
-fn frommatrix[
-    dtype: DType
-](owned object: Matrix[dtype]) raises -> Matrix[dtype]:
-    """Create a matrix from a matrix."""
-
-    return object^
-
-
-fn frommatrix[
-    dtype: DType
-](object: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
-    """Create a matrix from a matrix and into certain shape."""
-
-    if shape[0] * shape[1] != object.size:
-        var message = String(
-            "The input has {} elements, but the target has the shape {}x{}"
-        ).format(object.size, shape[0], shape[1])
-        raise Error(message)
-    var B = Matrix[dtype](shape=shape)
-    memcpy(B._buf, object._buf, B.size)
-    return B^
+                M._store(i, j, object.load(i, j))
+    return M^
 
 
 fn fromlist[

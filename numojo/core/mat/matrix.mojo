@@ -127,6 +127,44 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
 
     @always_inline("nodebug")
+    fn __init__(
+        inout self,
+        data: Self,
+    ):
+        """Create a matrix from a matrix."""
+
+        self = data
+
+    @always_inline("nodebug")
+    fn __init__(
+        inout self,
+        data: NDArray[dtype],
+    ) raises:
+        """
+        Create Matrix from NDArray.
+        """
+
+        if data.ndim == 1:
+            self.shape = (1, data.shape[0])
+            self.strides = (data.shape[0], 1)
+            self.size = data.shape[0]
+        elif data.ndim == 2:
+            self.shape = (data.shape[0], data.shape[1])
+            self.strides = (data.shape[1], 1)
+            self.size = data.shape[0] * data.shape[1]
+        else:
+            raise Error(String("Shape too large to be a matrix."))
+
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
+
+        if (data.order == "C") or (data.ndim == 1):
+            memcpy(self._buf, data._buf, self.size)
+        else:
+            for i in range(data.shape[0]):
+                for j in range(data.shape[1]):
+                    self._store(i, j, data.load(i, j))
+
+    @always_inline("nodebug")
     fn __copyinit__(inout self, other: Self):
         """
         Copy other into self.

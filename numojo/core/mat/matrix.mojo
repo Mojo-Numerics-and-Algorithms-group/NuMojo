@@ -451,7 +451,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
                         print_row(self, i, sep) + newline * number_of_newline
                     )
         except e:
-            print("Cannot tranfer matrix to string!", e)
+            print("Cannot transfer matrix to string!", e)
         result += str("]")
         writer.write(
             result
@@ -801,7 +801,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
         return self != broadcast_to[dtype](other, self.shape)
 
-    fn __matmul__(self, other: Self) -> Self:
+    fn __matmul__(self, other: Self) raises -> Self:
         return matmul(self, other)
 
     # ===-------------------------------------------------------------------===#
@@ -991,18 +991,20 @@ fn _arithmetic_func[
     simd_func: fn[type: DType, simd_width: Int] (
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[type, simd_width],
-](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
+](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Matrix[dtype] & Matrix[dtype] -> Matrix[dtype]
 
     For example: `__add__`, `__sub__`, etc.
     """
     alias simd_width = simdwidthof[dtype]()
-    try:
-        if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
-            raise Error("The shapes of matrices do not match!")
-    except e:
-        print(e)
+
+    if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
+        raise Error(
+            String("Shape {}x{} does not match {}x{}.").format(
+                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+            )
+        )
 
     var C = Matrix[dtype](shape=A.shape)
 
@@ -1052,16 +1054,18 @@ fn _logic_func[
     simd_func: fn[type: DType, simd_width: Int] (
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[DType.bool, simd_width],
-](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[DType.bool]:
+](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[DType.bool]:
     """
     Matrix[dtype] & Matrix[dtype] -> Matrix[bool]
     """
     alias width = simdwidthof[dtype]()
-    try:
-        if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
-            raise Error("The shapes of matrices do not match!")
-    except e:
-        print(e)
+
+    if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
+        raise Error(
+            String("Shape {}x{} does not match {}x{}.").format(
+                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+            )
+        )
 
     var t0 = A.shape[0]
     var t1 = A.shape[1]

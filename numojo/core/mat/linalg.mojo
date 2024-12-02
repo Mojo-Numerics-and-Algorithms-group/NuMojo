@@ -18,7 +18,9 @@ from .creation import *
 # ===----------------------------------------------------------------------===#
 
 
-fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
+fn matmul[
+    dtype: DType
+](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
     """Matrix multiplication.
 
     See `numojo.math.linalg.matmul.matmul_parallelized()`.
@@ -34,12 +36,12 @@ fn matmul[dtype: DType](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
 
     alias width = max(simdwidthof[dtype](), 16)
 
-    try:
-        if A.shape[1] != B.shape[0]:
-            raise Error("The shapes of matrices do not match!")
-    except e:
-        print(e)
-        print("`matmul` error.")
+    if A.shape[1] != B.shape[0]:
+        raise Error(
+            String("Cannot matmul {}x{} matrix with {}x{} matrix.").format(
+                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+            )
+        )
 
     var t0 = A.shape[0]
     var t1 = A.shape[1]
@@ -102,13 +104,13 @@ fn partial_pivoting[
 
 fn lu_decomposition[
     dtype: DType
-](A: Matrix[dtype]) -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     # Check whether the matrix is square
-    try:
-        if A.shape[0] != A.shape[1]:
-            raise Error("The matrix is not square!")
-    except e:
-        print(e)
+    if A.shape[0] != A.shape[1]:
+        raise Error(
+            String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
+        )
+
     var n = A.shape[0]
 
     # Initiate upper and lower triangular matrices
@@ -203,11 +205,10 @@ fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """Inverse of matrix."""
 
     # Check whether the matrix is square
-    try:
-        if A.shape[0] != A.shape[1]:
-            raise Error("The matrix is not square!")
-    except e:
-        print(e)
+    if A.shape[0] != A.shape[1]:
+        raise Error(
+            String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
+        )
 
     var I = identity[dtype](A.shape[0])
     var B = solve(A, I)
@@ -237,12 +238,14 @@ fn lstsq[
     ```
     """
 
-    try:
-        if X.shape[0] != y.shape[0]:
-            var message = "The row number of `X` {X.shape[0]} does not match the row number of `y` {y.shape[0]}"
-            raise Error(message)
-    except e:
-        print(e)
+    if X.shape[0] != y.shape[0]:
+        raise Error(
+            String(
+                "Row number of `X` {X.shape[0]} should equal that of `y`"
+                " {y.shape[0]}"
+            )
+        )
+
     var X_prime = X.T()
     var b = (X_prime @ X).inv() @ X_prime @ y
     return b^
@@ -299,7 +302,9 @@ fn solve[
     return X^
 
 
-fn solve_lu[dtype: DType](A: Matrix[dtype], Y: Matrix[dtype]) -> Matrix[dtype]:
+fn solve_lu[
+    dtype: DType
+](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LU decomposition.
     """

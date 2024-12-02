@@ -1,12 +1,24 @@
 """
 `numojo.core.mat.math` module provides mathematical functions for Matrix type.
 
+- Trigonometric functions
 - Sums, products, differences
 
 """
 
-from .matrix import Matrix
+import math
+
+from .matrix import Matrix, _arithmetic_func
 from .creation import zeros
+
+# ===-----------------------------------------------------------------------===#
+# Trigonometric functions
+# ===-----------------------------------------------------------------------===#
+
+
+fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.sin](A)
+
 
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences

@@ -982,7 +982,7 @@ struct _MatrixIter[
 
 
 # ===-----------------------------------------------------------------------===#
-# Fucntions for arithmetic
+# Backend fucntions using SMID functions
 # ===-----------------------------------------------------------------------===#
 
 
@@ -992,35 +992,57 @@ fn _arithmetic_func[
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[type, simd_width],
 ](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[dtype]:
-    alias width = max(simdwidthof[dtype](), 16)
+    """
+    Matrix[dtype] & Matrix[dtype] -> Matrix[dtype]
+
+    For example: `__add__`, `__sub__`, etc.
+    """
+    alias simd_width = simdwidthof[dtype]()
     try:
         if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
             raise Error("The shapes of matrices do not match!")
     except e:
         print(e)
 
-    var t0 = A.shape[0]
-    var t1 = A.shape[1]
     var C = Matrix[dtype](shape=A.shape)
 
     @parameter
-    fn calculate_CC(m: Int):
-        @parameter
-        fn vec_func[simd_width: Int](n: Int):
-            C._store[simd_width](
-                m,
-                n,
-                simd_func(A._load[simd_width](m, n), B._load[simd_width](m, n)),
-            )
+    fn vec_func[simd_width: Int](i: Int):
+        C._buf.store[width=simd_width](
+            i,
+            simd_func(
+                A._buf.load[width=simd_width](i),
+                B._buf.load[width=simd_width](i),
+            ),
+        )
 
-        vectorize[vec_func, width](t1)
+    vectorize[vec_func, simd_width](A.size)
 
-    parallelize[calculate_CC](t0, t0)
+    return C^
 
-    var _t0 = t0
-    var _t1 = t1
-    var _A = A
-    var _B = B
+
+fn _arithmetic_func[
+    dtype: DType,
+    simd_func: fn[type: DType, simd_width: Int] (
+        SIMD[type, simd_width]
+    ) -> SIMD[type, simd_width],
+](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Matrix[dtype] -> Matrix[dtype]
+
+    For example: `sin`, `cos`, etc.
+    """
+    alias simd_width = simdwidthof[dtype]()
+
+    var C = Matrix[dtype](shape=A.shape)
+
+    @parameter
+    fn vec_func[simd_width: Int](i: Int):
+        C._buf.store[width=simd_width](
+            i, simd_func(A._buf.load[width=simd_width](i))
+        )
+
+    vectorize[vec_func, simd_width](A.size)
 
     return C^
 
@@ -1031,7 +1053,10 @@ fn _logic_func[
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[DType.bool, simd_width],
 ](A: Matrix[dtype], B: Matrix[dtype]) -> Matrix[DType.bool]:
-    alias width = max(simdwidthof[dtype](), 16)
+    """
+    Matrix[dtype] & Matrix[dtype] -> Matrix[bool]
+    """
+    alias width = simdwidthof[dtype]()
     try:
         if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
             raise Error("The shapes of matrices do not match!")

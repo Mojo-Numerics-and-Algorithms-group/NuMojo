@@ -11,7 +11,7 @@ from .creation import (
     fromstring,
     fromlist,
 )
-from .mathematics import sum
+from .mathematics import sin, sum
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq
 from .statistics import mean
 from .sorting import sort, argsort

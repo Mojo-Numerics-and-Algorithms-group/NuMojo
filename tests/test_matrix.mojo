@@ -177,6 +177,11 @@ def test_math():
         "Sum is broken",
     )
     check_is_close(
+        mat.sin(A),
+        np.sin(Anp),
+        "Sin is broken",
+    )
+    check_is_close(
         mat.sum(D, axis=0),
         np.sum(Dnp, axis=0),
         "Sum by axis 0 is broken",

@@ -163,34 +163,53 @@ def test_linalg():
 def test_math():
     var np = Python.import_module("numpy")
     var A = mat.rand[f64]((100, 100))
-    var B = mat.rand[f64]((100, 100))
-    var D = mat.rand(shape=(10000, 100))
-    var E = mat.fromstring("[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3))
-    var Y = mat.rand((100, 1))
     var Anp = np.matrix(A.to_numpy())
-    var Bnp = np.matrix(B.to_numpy())
-    var Dnp = np.matrix(D.to_numpy())
-    var Enp = np.matrix(E.to_numpy())
-    var Ynp = np.matrix(Y.to_numpy())
     assert_true(
-        np.all(np.isclose(mat.sum(D), np.sum(Dnp), atol=0.1)),
+        np.all(np.isclose(mat.sum(A), np.sum(Anp), atol=0.1)),
         "Sum is broken",
     )
     check_is_close(
-        mat.sin(A),
-        np.sin(Anp),
-        "Sin is broken",
-    )
-    check_is_close(
-        mat.sum(D, axis=0),
-        np.sum(Dnp, axis=0),
+        mat.sum(A, axis=0),
+        np.sum(Anp, axis=0),
         "Sum by axis 0 is broken",
     )
     check_is_close(
-        mat.sum(D, axis=1),
-        np.sum(Dnp, axis=1),
+        mat.sum(A, axis=1),
+        np.sum(Anp, axis=1),
         "Sum by axis 1 is broken",
     )
+
+
+def test_trigonometric():
+    var np = Python.import_module("numpy")
+    var A = mat.rand[f64]((100, 100))
+    var Anp = np.matrix(A.to_numpy())
+    check_is_close(mat.sin(A), np.sin(Anp), "sin is broken")
+    check_is_close(mat.cos(A), np.cos(Anp), "cos is broken")
+    check_is_close(mat.tan(A), np.tan(Anp), "tan is broken")
+    check_is_close(mat.arcsin(A), np.arcsin(Anp), "arcsin is broken")
+    check_is_close(mat.asin(A), np.arcsin(Anp), "asin is broken")
+    check_is_close(mat.arccos(A), np.arccos(Anp), "arccos is broken")
+    check_is_close(mat.acos(A), np.arccos(Anp), "acos is broken")
+    check_is_close(mat.arctan(A), np.arctan(Anp), "arctan is broken")
+    check_is_close(mat.atan(A), np.arctan(Anp), "atan is broken")
+
+
+def test_hyperbolic():
+    var np = Python.import_module("numpy")
+    var A = mat.fromstring("[[1,2,3],[4,5,6],[7,8,9]]", shape=(3, 3))
+    var B = A / 10
+    var Anp = np.matrix(A.to_numpy())
+    var Bnp = np.matrix(B.to_numpy())
+    check_is_close(mat.sinh(A), np.sinh(Anp), "sinh is broken")
+    check_is_close(mat.cosh(A), np.cosh(Anp), "cosh is broken")
+    check_is_close(mat.tanh(A), np.tanh(Anp), "tanh is broken")
+    check_is_close(mat.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken")
+    check_is_close(mat.asinh(A), np.arcsinh(Anp), "asinh is broken")
+    check_is_close(mat.arccosh(A), np.arccosh(Anp), "arccosh is broken")
+    check_is_close(mat.acosh(A), np.arccosh(Anp), "acosh is broken")
+    check_is_close(mat.arctanh(B), np.arctanh(Bnp), "arctanh is broken")
+    check_is_close(mat.atanh(B), np.arctanh(Bnp), "atanh is broken")
 
 
 def test_statistics():

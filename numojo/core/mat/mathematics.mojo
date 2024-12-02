@@ -20,6 +20,79 @@ fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func[dtype, math.sin](A)
 
 
+fn cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.cos](A)
+
+
+fn tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.tan](A)
+
+
+fn arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.asin](A)
+
+
+fn asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.asin](A)
+
+
+fn arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.acos](A)
+
+
+fn acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.acos](A)
+
+
+fn arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.atan](A)
+
+
+fn atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.atan](A)
+
+
+# ===-----------------------------------------------------------------------===#
+# Hyperbolic functions
+# ===-----------------------------------------------------------------------===#
+
+
+fn sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.sinh](A)
+
+
+fn cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.cosh](A)
+
+
+fn tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.tanh](A)
+
+
+fn arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.asinh](A)
+
+
+fn asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.asinh](A)
+
+
+fn arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.acosh](A)
+
+
+fn acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.acosh](A)
+
+
+fn arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.atanh](A)
+
+
+fn atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return _arithmetic_func[dtype, math.atanh](A)
+
+
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences
 # ===-----------------------------------------------------------------------===#

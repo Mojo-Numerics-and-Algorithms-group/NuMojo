@@ -27,7 +27,36 @@ fn check_is_close[
 
 
 # ===-----------------------------------------------------------------------===#
-# Creation and manipulation
+# Manipulation
+# ===-----------------------------------------------------------------------===#
+
+
+def test_manipulation():
+    var np = Python.import_module("numpy")
+    var A = mat.rand[f64]((10, 10)) * 1000
+    var Anp = np.matrix(A.to_numpy())
+    check(
+        A.astype[nm.i32](),
+        Anp.astype(np.int32),
+        "`astype` is broken",
+    )
+
+    check(
+        A.reshape((50, 2)),
+        Anp.reshape((50, 2)),
+        "Reshape is broken",
+    )
+
+    _ = (A.resize((1000, 100)))
+    _ = (Anp.resize((1000, 100)))
+    check(
+        A,
+        Anp,
+        "Resize is broken",
+    )
+
+# ===-----------------------------------------------------------------------===#
+# Creation
 # ===-----------------------------------------------------------------------===#
 
 
@@ -46,25 +75,6 @@ def test_zeros():
         mat.zeros[f64](shape=(10, 10)),
         np.zeros((10, 10), dtype=np.float64),
         "Zeros is broken",
-    )
-
-
-def test_manipulation():
-    var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((100, 100))
-    var Anp = np.matrix(A.to_numpy())
-    check(
-        A.reshape((1000, 10)),
-        Anp.reshape((1000, 10)),
-        "Reshape is broken",
-    )
-    var new_shape = (1000, 100)
-    _ = (A.resize(new_shape),)
-    _ = (Anp.resize(new_shape),)
-    check(
-        A,
-        Anp,
-        "Resize is broken",
     )
 
 

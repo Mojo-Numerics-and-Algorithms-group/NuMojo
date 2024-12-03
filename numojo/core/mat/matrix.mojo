@@ -67,8 +67,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [] `Matrix.argmax`
     - [] `Matrix.argmin`
     - [x] `mat.sorting.argsort(Matrix)`
-    - [] `Matrix.astype`
+    - [x] `Matrix.astype`
     - [] `Matrix.cumprod`
+    - [] `Matrix.cumsum`
     - [] `Matrix.fill` and `mat.creation.full(Matrix)`
     - [x] `Matrix.flatten`
     - [] `Matrix.max`
@@ -851,6 +852,15 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         Test whether any array elements evaluate to True along axis.
         """
         return mat.any(self, axis=axis)
+
+    fn astype[asdtype: DType](self) -> Matrix[asdtype]:
+        """
+        Copy of the matrix, cast to a specified type.
+        """
+        var res = Matrix[asdtype](shape=(self.shape[0], self.shape[1]))
+        for i in range(self.size):
+            res._buf[i] = self._buf[i].cast[asdtype]()
+        return res^
 
     fn flatten(self) -> Self:
         """

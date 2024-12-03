@@ -35,5 +35,5 @@ from .mathematics import (
 )
 from .logic import all, any
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq
-from .statistics import mean
+from .statistics import mean, variance
 from .sorting import sort, argsort

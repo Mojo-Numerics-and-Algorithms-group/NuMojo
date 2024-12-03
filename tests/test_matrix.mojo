@@ -259,19 +259,36 @@ def test_hyperbolic():
     check_is_close(mat.atanh(B), np.arctanh(Bnp), "atanh is broken")
 
 
+# ===-----------------------------------------------------------------------===#
+# Statistics
+# ===-----------------------------------------------------------------------===#
+
+
 def test_statistics():
     var np = Python.import_module("numpy")
     var A = mat.rand[f64]((100, 100))
     var Anp = np.matrix(A.to_numpy())
+
     assert_true(
         np.all(np.isclose(mat.mean(A), np.mean(Anp), atol=0.1)),
-        "Mean is broken",
+        "`mean` is broken",
     )
     for i in range(2):
         check_is_close(
-            mat.sum(A, axis=i),
-            np.sum(Anp, axis=i),
-            String("Sum by axis {} is broken").format(i),
+            mat.mean(A, i),
+            np.mean(Anp, i),
+            String("`mean` is broken for {i}-dimension"),
+        )
+
+    assert_true(
+        np.all(np.isclose(mat.variance(A), np.`var`(Anp), atol=0.1)),
+        "`variance` is broken",
+    )
+    for i in range(2):
+        check_is_close(
+            mat.variance(A, i),
+            np.`var`(Anp, i),
+            String("`variance` is broken for {i}-dimension"),
         )
 
 

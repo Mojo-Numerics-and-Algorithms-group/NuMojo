@@ -62,29 +62,29 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [dtype], data
 
     [checklist] CORE METHODS that have been implemented:
-    - [x] `Matrix.any` and `mat.logic.all(Matrix)`
-    - [x] `Matrix.any` and `mat.logic.any(Matrix)`
+    - [x] `Matrix.any` and `mat.logic.all`
+    - [x] `Matrix.any` and `mat.logic.any`
     - [] `Matrix.argmax`
     - [] `Matrix.argmin`
-    - [x] `mat.sorting.argsort(Matrix)`
+    - [x] `mat.sorting.argsort`
     - [x] `Matrix.astype`
     - [] `Matrix.cumprod`
     - [] `Matrix.cumsum`
-    - [] `Matrix.fill` and `mat.creation.full(Matrix)`
+    - [x] `Matrix.fill` and `mat.creation.full`
     - [x] `Matrix.flatten`
     - [] `Matrix.max`
-    - [] `mat.statistics.mean(Matrix)`
+    - [x] `mat.statistics.mean`
     - [] `Matrix.min`
-    - [] `Matrix.prod`
+    - [x] `Matrix.prod`
     - [x] `Matrix.reshape`
     - [x] `Matrix.resize`
     - [] `Matrix.round`
     - [] `Matrix.std`
-    - [] `mat.mathematics.sum(Matrix)`
+    - [x] `mat.mathematics.sum`
     - [] `Matrix.tolist`
-    - [x] `Matrix.trace` and `mat.linalg.trace(Matrix)`
-    - [x] `Matrix.transpose` and `mat.linalg.transpose(Matrix)`
-    - [] `Matrix.var`
+    - [x] `Matrix.trace` and `mat.linalg.trace`
+    - [x] `Matrix.transpose` and `mat.linalg.transpose`
+    - [x] `mat.statistics.variance` (`var` is primitive)
 
     TODO: Introduce `ArrayLike` trait for `NDArray` type and `Matrix` type.
 

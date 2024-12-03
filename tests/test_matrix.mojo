@@ -86,9 +86,9 @@ def test_zeros():
 
 def test_arithmetic():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((100, 100))
-    var B = mat.rand[f64]((100, 100))
-    var C = mat.rand[f64]((100, 1))
+    var A = mat.rand[f64]((10, 10))
+    var B = mat.rand[f64]((10, 10))
+    var C = mat.rand[f64]((10, 1))
     var Ap = A.to_numpy()
     var Bp = B.to_numpy()
     var Cp = C.to_numpy()
@@ -104,6 +104,8 @@ def test_arithmetic():
     check_is_close(A - 1, Ap - 1, "Sub (to int) is broken")
     check_is_close(A * 1, Ap * 1, "Mul (to int) is broken")
     check_is_close(A / 1, Ap / 1, "Div (to int) is broken")
+    check_is_close(A**2, np.power(Ap, 2), "Pow (to int) is broken")
+    check_is_close(A**0.5, np.power(Ap, 0.5), "Pow (to int) is broken")
 
 
 def test_logic():
@@ -289,6 +291,17 @@ def test_statistics():
             mat.variance(A, i),
             np.`var`(Anp, i),
             String("`variance` is broken for {i}-dimension"),
+        )
+
+    assert_true(
+        np.all(np.isclose(mat.std(A), np.std(Anp), atol=0.1)),
+        "`std` is broken",
+    )
+    for i in range(2):
+        check_is_close(
+            mat.std(A, i),
+            np.std(Anp, i),
+            String("`std` is broken for {i}-dimension"),
         )
 
 

@@ -79,7 +79,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [x] `Matrix.reshape`
     - [x] `Matrix.resize`
     - [] `Matrix.round`
-    - [] `Matrix.std`
+    - [x] `mat.statistics.std`
     - [x] `mat.mathematics.sum`
     - [] `Matrix.tolist`
     - [x] `Matrix.trace` and `mat.linalg.trace`
@@ -647,6 +647,13 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     fn __truediv__(self, other: Scalar[dtype]) raises -> Self:
         """Divide matrix by scalar."""
         return self / broadcast_to[dtype](other, self.shape)
+
+    fn __pow__(self, rhs: Scalar[dtype]) raises -> Self:
+        """Power of items."""
+        var res = self
+        for i in range(self.size):
+            res._buf[i] = self._buf[i].__pow__(rhs)
+        return res^
 
     fn __lt__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (

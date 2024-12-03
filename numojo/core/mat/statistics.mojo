@@ -92,3 +92,33 @@ fn variance[
         )
     else:
         raise Error(String("The axis can either be 1 or 0!"))
+
+
+fn std[dtype: DType](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
+    """
+    Compute the standard deviation.
+
+    Args:
+        A: Matrix.
+        ddof: Delta degree of freedom.
+    """
+
+    if ddof >= A.size:
+        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+
+    return variance(A, ddof=ddof) ** 0.5
+
+
+fn std[
+    dtype: DType
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[dtype]:
+    """
+    Compute the standard deviation along axis.
+
+    Args:
+        A: Matrix.
+        axis: 0 or 1.
+        ddof: Delta degree of freedom.
+    """
+
+    return variance(A, axis, ddof=ddof) ** 0.5

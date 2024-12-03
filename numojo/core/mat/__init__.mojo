@@ -32,6 +32,7 @@ from .mathematics import (
     atanh,
     sum,
 )
+from .logic import all, any
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq
 from .statistics import mean
 from .sorting import sort, argsort

@@ -1,5 +1,5 @@
 """
-`numojo.core.mat.stats` module provides statistical functions for Matrix type.
+`numojo.core.mat.statistics` module provides statistical functions for Matrix type.
 
 - Order statistics
 - Averages and variances

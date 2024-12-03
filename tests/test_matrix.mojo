@@ -99,10 +99,35 @@ def test_logic():
     var np = Python.import_module("numpy")
     var A = mat.ones((5, 1))
     var B = mat.ones((5, 1))
-    var Ap = A.to_numpy()
-    var Bp = B.to_numpy()
-    check(A > B, Ap > Bp, "gt is broken")
-    check(A < B, Ap < Bp, "lt is broken")
+    var L = mat.fromstring[i8](
+        "[[0,0,0],[0,0,1],[1,1,1],[1,0,0]]", shape=(4, 3)
+    )
+    var Anp = np.matrix(A.to_numpy())
+    var Bnp = np.matrix(B.to_numpy())
+    var Lnp = np.matrix(L.to_numpy())
+
+    check(A > B, Anp > Bnp, "gt is broken")
+    check(A < B, Anp < Bnp, "lt is broken")
+    assert_true(
+        np.equal(mat.all(L), np.all(Lnp)),
+        "`all` is broken",
+    )
+    for i in range(2):
+        check_is_close(
+            mat.all(L, axis=i),
+            np.all(Lnp, axis=i),
+            String("`all` by axis {i} is broken"),
+        )
+    assert_true(
+        np.equal(mat.any(L), np.any(Lnp)),
+        "`any` is broken",
+    )
+    for i in range(2):
+        check_is_close(
+            mat.any(L, axis=i),
+            np.any(Lnp, axis=i),
+            String("`any` by axis {i} is broken"),
+        )
 
 
 # ===-----------------------------------------------------------------------===#

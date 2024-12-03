@@ -47,13 +47,14 @@ def test_manipulation():
         "Reshape is broken",
     )
 
-    _ = (A.resize((1000, 100)))
-    _ = (Anp.resize((1000, 100)))
+    _ = A.resize((1000, 100))
+    _ = Anp.resize((1000, 100))
     check(
         A,
         Anp,
         "Resize is broken",
     )
+
 
 # ===-----------------------------------------------------------------------===#
 # Creation
@@ -195,24 +196,35 @@ def test_linalg():
         )
 
 
+# ===-----------------------------------------------------------------------===#
+# Mathematics
+# ===-----------------------------------------------------------------------===#
+
+
 def test_math():
     var np = Python.import_module("numpy")
     var A = mat.rand[f64]((100, 100))
     var Anp = np.matrix(A.to_numpy())
     assert_true(
         np.all(np.isclose(mat.sum(A), np.sum(Anp), atol=0.1)),
-        "Sum is broken",
+        "`sum` is broken",
     )
-    check_is_close(
-        mat.sum(A, axis=0),
-        np.sum(Anp, axis=0),
-        "Sum by axis 0 is broken",
+    for i in range(2):
+        check_is_close(
+            mat.sum(A, axis=i),
+            np.sum(Anp, axis=i),
+            String("`sum` by axis {i} is broken"),
+        )
+    assert_true(
+        np.all(np.isclose(mat.prod(A), np.prod(Anp), atol=0.1)),
+        "`prod` is broken",
     )
-    check_is_close(
-        mat.sum(A, axis=1),
-        np.sum(Anp, axis=1),
-        "Sum by axis 1 is broken",
-    )
+    for i in range(2):
+        check_is_close(
+            mat.prod(A, axis=i),
+            np.prod(Anp, axis=i),
+            String("`prod` by axis {i} is broken"),
+        )
 
 
 def test_trigonometric():

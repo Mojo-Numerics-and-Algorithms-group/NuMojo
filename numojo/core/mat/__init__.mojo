@@ -31,6 +31,7 @@ from .mathematics import (
     arctanh,
     atanh,
     sum,
+    prod,
 )
 from .logic import all, any
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq

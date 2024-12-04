@@ -356,3 +356,13 @@ def test_searching():
             np.max(Anp, axis=i),
             String("`max` by axis {} is broken").format(i),
         )
+
+    check_values_close(
+        mat.argmax(A), np.argmax(Anp, axis=None), String("`argmax` is broken")
+    )
+    for i in range(2):
+        check_matrices_close(
+            mat.argmax(A, axis=i),
+            np.argmax(Anp, axis=i),
+            String("`argmax` by axis {} is broken").format(i),
+        )

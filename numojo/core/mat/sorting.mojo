@@ -184,14 +184,50 @@ fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
+fn argmax[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.index]:
+    """
+    Index of the max. It is first flattened before sorting.
+    """
+
+    var max_index: Scalar[DType.index]
+    _, max_index = _max(A, 0, A.size - 1)
+
+    return max_index
+
+
+fn argmax[
+    dtype: DType
+](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+    """
+    Index of the max along the given axis.
+    """
+    if axis == 1:
+        var B = mat.Matrix[DType.index](shape=(A.shape[0], 1))
+        for i in range(A.shape[0]):
+            B._store(
+                i,
+                0,
+                _max(A, start=i * A.strides[0], end=(i + 1) * A.strides[0] - 1)[
+                    1
+                ]
+                - i * A.strides[0],
+            )
+        return B^
+    elif axis == 0:
+        return transpose(argmax(transpose(A), axis=1))
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
 fn _max[
     dtype: DType
-](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[Scalar[dtype], Int]:
+](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
+    Scalar[dtype], Scalar[DType.index]
+]:
     """
     Auxiliary function that find the max value in a range of the buffer.
     Both ends are included.
     """
-
     if (end >= A.size) or (start >= A.size):
         raise Error(
             String(
@@ -199,7 +235,7 @@ fn _max[
             ).format(start, end, A.size)
         )
 
-    var max_index = start
+    var max_index: Scalar[DType.index] = start
     var max_value = A._buf[start]
 
     for i in range(start, end + 1):

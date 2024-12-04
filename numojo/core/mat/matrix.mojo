@@ -64,7 +64,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     [checklist] CORE METHODS that have been implemented:
     - [x] `Matrix.any` and `mat.logic.all`
     - [x] `Matrix.any` and `mat.logic.any`
-    - [] `Matrix.argmax`
+    - [x] `mat.sorting.argmax`
     - [] `Matrix.argmin`
     - [x] `mat.sorting.argsort`
     - [x] `Matrix.astype`
@@ -72,7 +72,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [] `Matrix.cumsum`
     - [x] `Matrix.fill` and `mat.creation.full`
     - [x] `Matrix.flatten`
-    - [] `Matrix.max`
+    - [x] `mat.sorting.max`
     - [x] `mat.statistics.mean`
     - [] `Matrix.min`
     - [x] `Matrix.prod`

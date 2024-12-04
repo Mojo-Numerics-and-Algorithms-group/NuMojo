@@ -74,7 +74,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [x] `Matrix.flatten`
     - [x] `mat.sorting.max`
     - [x] `mat.statistics.mean`
-    - [] `Matrix.min`
+    - [x] `mat.sorting.min`
     - [x] `Matrix.prod`
     - [x] `Matrix.reshape`
     - [x] `Matrix.resize`

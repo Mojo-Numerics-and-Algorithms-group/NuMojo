@@ -366,3 +366,13 @@ def test_searching():
             np.argmax(Anp, axis=i),
             String("`argmax` by axis {} is broken").format(i),
         )
+
+    check_values_close(
+        mat.min(A), np.min(Anp, axis=None), String("`min` is broken.")
+    )
+    for i in range(2):
+        check_matrices_close(
+            mat.min(A, axis=i),
+            np.min(Anp, axis=i),
+            String("`min` by axis {} is broken").format(i),
+        )

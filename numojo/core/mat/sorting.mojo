@@ -244,3 +244,62 @@ fn _max[
             max_index = i
 
     return (max_value, max_index)
+
+
+fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
+    """
+    Find min item. It is first flattened before sorting.
+    """
+
+    var min_value: Scalar[dtype]
+    min_value, _ = _min(A, 0, A.size - 1)
+
+    return min_value
+
+
+fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+    """
+    Find min item along the given axis.
+    """
+    if axis == 1:
+        var B = mat.Matrix[dtype](shape=(A.shape[0], 1))
+        for i in range(A.shape[0]):
+            B._store(
+                i,
+                0,
+                _min(A, start=i * A.strides[0], end=(i + 1) * A.strides[0] - 1)[
+                    0
+                ],
+            )
+        return B^
+    elif axis == 0:
+        return transpose(min(transpose(A), axis=1))
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
+fn _min[
+    dtype: DType
+](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
+    Scalar[dtype], Scalar[DType.index]
+]:
+    """
+    Auxiliary function that find the min value in a range of the buffer.
+    Both ends are included.
+    """
+    if (end >= A.size) or (start >= A.size):
+        raise Error(
+            String(
+                "Index out of boundary! start={}, end={}, matrix.size={}"
+            ).format(start, end, A.size)
+        )
+
+    var min_index: Scalar[DType.index] = start
+    var min_value = A._buf[start]
+
+    for i in range(start, end + 1):
+        if A._buf[i] < min_value:
+            min_value = A._buf[i]
+            min_index = i
+
+    return (min_value, min_index)

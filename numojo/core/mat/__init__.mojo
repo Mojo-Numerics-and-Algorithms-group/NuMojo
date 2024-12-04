@@ -33,6 +33,7 @@ from .mathematics import (
     sum,
     prod,
     cumsum,
+    cumprod,
 )
 from .logic import all, any
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq

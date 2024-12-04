@@ -68,7 +68,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [x] `mat.sorting.argmin`
     - [x] `mat.sorting.argsort`
     - [x] `Matrix.astype`
-    - [] `Matrix.cumprod`
+    - [x] `mat.mathematics.cumprod`
     - [x] `mat.mathematics.cumsum`
     - [x] `Matrix.fill` and `mat.creation.full`
     - [x] `Matrix.flatten`

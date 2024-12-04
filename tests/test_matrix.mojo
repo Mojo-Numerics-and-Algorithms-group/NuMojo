@@ -249,6 +249,18 @@ def test_math():
             String("`cumsum` by axis {i} is broken"),
         )
 
+    check_matrices_close(
+        mat.cumprod(A),
+        np.cumprod(Anp),
+        "`cumprod` is broken",
+    )
+    for i in range(2):
+        check_matrices_close(
+            mat.cumprod(A, axis=i),
+            np.cumprod(Anp, axis=i),
+            String("`cumprod` by axis {i} is broken"),
+        )
+
 
 def test_trigonometric():
     var np = Python.import_module("numpy")

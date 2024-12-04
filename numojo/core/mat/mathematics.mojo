@@ -7,6 +7,7 @@
 """
 
 import math
+import builtin
 
 from .matrix import Matrix, _arithmetic_func_matrix_to_matrix
 from .creation import zeros
@@ -313,6 +314,70 @@ fn cumsum[
 
     elif axis == 1:
         return transpose(cumsum(transpose(A), axis=0))
+
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
+fn cumprod[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Cumprod of flattened matrix.
+
+    Args:
+        A: Matrix.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.rand(shape=(100, 100))
+    print(mat.cumprod(A))
+    ```
+    """
+
+    A.resize(shape=(1, A.size))
+
+    for i in range(1, A.size):
+        A._buf[i] *= A._buf[i - 1]
+
+    return A^
+
+
+fn cumprod[
+    dtype: DType
+](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+    """
+    Cumprod of Matrix along the axis.
+
+    Args:
+        A: Matrix.
+        axis: 0 or 1.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.rand(shape=(100, 100))
+    print(mat.cumprod(A, axis=0))
+    print(mat.cumprod(A, axis=1))
+    ```
+    """
+
+    alias width: Int = simdwidthof[dtype]()
+
+    if axis == 0:
+        for i in range(1, A.shape[0]):
+
+            @parameter
+            fn cal_vec[width: Int](j: Int):
+                A._store[width](
+                    i, j, A._load[width](i - 1, j) * A._load[width](i, j)
+                )
+
+            vectorize[cal_vec, width](A.shape[1])
+
+        return A^
+
+    elif axis == 1:
+        return transpose(cumprod(transpose(A), axis=0))
 
     else:
         raise Error(String("The axis can either be 1 or 0!"))

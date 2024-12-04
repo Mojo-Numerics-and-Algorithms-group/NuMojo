@@ -214,6 +214,7 @@ def test_math():
     var np = Python.import_module("numpy")
     var A = mat.rand[f64]((100, 100))
     var Anp = np.matrix(A.to_numpy())
+
     assert_true(
         np.all(np.isclose(mat.sum(A), np.sum(Anp), atol=0.1)),
         "`sum` is broken",
@@ -224,6 +225,7 @@ def test_math():
             np.sum(Anp, axis=i),
             String("`sum` by axis {i} is broken"),
         )
+
     assert_true(
         np.all(np.isclose(mat.prod(A), np.prod(Anp), atol=0.1)),
         "`prod` is broken",
@@ -233,6 +235,18 @@ def test_math():
             mat.prod(A, axis=i),
             np.prod(Anp, axis=i),
             String("`prod` by axis {i} is broken"),
+        )
+
+    check_matrices_close(
+        mat.cumsum(A),
+        np.cumsum(Anp),
+        "`cumsum` is broken",
+    )
+    for i in range(2):
+        check_matrices_close(
+            mat.cumsum(A, axis=i),
+            np.cumsum(Anp, axis=i),
+            String("`cumsum` by axis {i} is broken"),
         )
 
 
@@ -375,4 +389,14 @@ def test_searching():
             mat.min(A, axis=i),
             np.min(Anp, axis=i),
             String("`min` by axis {} is broken").format(i),
+        )
+
+    check_values_close(
+        mat.argmin(A), np.argmin(Anp, axis=None), String("`argmin` is broken.")
+    )
+    for i in range(2):
+        check_matrices_close(
+            mat.argmin(A, axis=i),
+            np.argmin(Anp, axis=i),
+            String("`argmin` by axis {} is broken").format(i),
         )

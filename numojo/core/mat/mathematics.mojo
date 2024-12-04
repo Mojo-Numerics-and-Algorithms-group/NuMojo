@@ -10,6 +10,7 @@ import math
 
 from .matrix import Matrix, _arithmetic_func_matrix_to_matrix
 from .creation import zeros
+from .linalg import transpose
 
 # ===-----------------------------------------------------------------------===#
 # Trigonometric functions
@@ -248,6 +249,70 @@ fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         parallelize[cal_rows](A.shape[0], A.shape[0])
         return B^
+
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
+fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Cumsum of flattened matrix.
+
+    Args:
+        A: Matrix.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.rand(shape=(100, 100))
+    print(mat.cumsum(A))
+    ```
+    """
+
+    A.resize(shape=(1, A.size))
+
+    for i in range(1, A.size):
+        A._buf[i] += A._buf[i - 1]
+
+    return A^
+
+
+fn cumsum[
+    dtype: DType
+](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+    """
+    Cumsum of Matrix along the axis.
+
+    Args:
+        A: Matrix.
+        axis: 0 or 1.
+
+    Example:
+    ```mojo
+    from numojo import mat
+    var A = mat.rand(shape=(100, 100))
+    print(mat.cumsum(A, axis=0))
+    print(mat.cumsum(A, axis=1))
+    ```
+    """
+
+    alias width: Int = simdwidthof[dtype]()
+
+    if axis == 0:
+        for i in range(1, A.shape[0]):
+
+            @parameter
+            fn cal_vec_sum[width: Int](j: Int):
+                A._store[width](
+                    i, j, A._load[width](i - 1, j) + A._load[width](i, j)
+                )
+
+            vectorize[cal_vec_sum, width](A.shape[1])
+
+        return A^
+
+    elif axis == 1:
+        return transpose(cumsum(transpose(A), axis=0))
 
     else:
         raise Error(String("The axis can either be 1 or 0!"))

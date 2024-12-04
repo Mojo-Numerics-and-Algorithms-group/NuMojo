@@ -278,6 +278,41 @@ fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
+fn argmin[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.index]:
+    """
+    Index of the min. It is first flattened before sorting.
+    """
+
+    var min_index: Scalar[DType.index]
+    _, min_index = _min(A, 0, A.size - 1)
+
+    return min_index
+
+
+fn argmin[
+    dtype: DType
+](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+    """
+    Index of the min along the given axis.
+    """
+    if axis == 1:
+        var B = mat.Matrix[DType.index](shape=(A.shape[0], 1))
+        for i in range(A.shape[0]):
+            B._store(
+                i,
+                0,
+                _min(A, start=i * A.strides[0], end=(i + 1) * A.strides[0] - 1)[
+                    1
+                ]
+                - i * A.strides[0],
+            )
+        return B^
+    elif axis == 0:
+        return transpose(argmin(transpose(A), axis=1))
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
 fn _min[
     dtype: DType
 ](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[

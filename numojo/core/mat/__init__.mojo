@@ -32,8 +32,9 @@ from .mathematics import (
     atanh,
     sum,
     prod,
+    cumsum,
 )
 from .logic import all, any
 from .linalg import matmul, solve, inv, det, trace, transpose, lstsq
 from .statistics import mean, variance, std
-from .sorting import sort, argsort, max, argmax, min
+from .sorting import sort, argsort, max, argmax, min, argmin

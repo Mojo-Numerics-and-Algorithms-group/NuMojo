@@ -65,11 +65,11 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [x] `Matrix.any` and `mat.logic.all`
     - [x] `Matrix.any` and `mat.logic.any`
     - [x] `mat.sorting.argmax`
-    - [] `Matrix.argmin`
+    - [x] `mat.sorting.argmin`
     - [x] `mat.sorting.argsort`
     - [x] `Matrix.astype`
     - [] `Matrix.cumprod`
-    - [] `Matrix.cumsum`
+    - [x] `mat.mathematics.cumsum`
     - [x] `Matrix.fill` and `mat.creation.full`
     - [x] `Matrix.flatten`
     - [x] `mat.sorting.max`
@@ -81,7 +81,6 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [] `Matrix.round`
     - [x] `mat.statistics.std`
     - [x] `mat.mathematics.sum`
-    - [] `Matrix.tolist`
     - [x] `Matrix.trace` and `mat.linalg.trace`
     - [x] `Matrix.transpose` and `mat.linalg.transpose`
     - [x] `mat.statistics.variance` (`var` is primitive)
@@ -903,7 +902,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         memcpy(res._buf, self._buf, res.size)
         return res^
 
-    fn resize(inout self, shape: Tuple[Int, Int]) raises:
+    fn resize(inout self, shape: Tuple[Int, Int]):
         """
         Change shape and size of matrix in-place.
         """
@@ -926,7 +925,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         return transpose(self)
 
     fn to_ndarray(self) raises -> NDArray[dtype]:
-        """Create a ndarray from a matrix.
+        """Create `NDArray` from `Matrix`.
 
         It makes a copy of the buffer of the matrix.
         """

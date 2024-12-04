@@ -96,6 +96,24 @@ fn atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
 
 
 # ===-----------------------------------------------------------------------===#
+# Rounding
+# ===-----------------------------------------------------------------------===#
+
+
+fn round[
+    dtype: DType
+](owned A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
+    # FIXME
+    # The built-in `round` function is not working now.
+    # It will be fixed in future.
+
+    for i in range(A.size):
+        A._buf[i] = builtin.math.round(A._buf[i], ndigits=decimals)
+
+    return A^
+
+
+# ===-----------------------------------------------------------------------===#
 # Sums, products, differences
 # ===-----------------------------------------------------------------------===#
 

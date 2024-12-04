@@ -78,7 +78,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     - [x] `Matrix.prod`
     - [x] `Matrix.reshape`
     - [x] `Matrix.resize`
-    - [] `Matrix.round`
+    - [x] `mat.mathematics.round` (TODO: Check this after next Mojo update)
     - [x] `mat.statistics.std`
     - [x] `mat.mathematics.sum`
     - [x] `Matrix.trace` and `mat.linalg.trace`

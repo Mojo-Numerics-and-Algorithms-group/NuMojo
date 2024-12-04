@@ -30,6 +30,7 @@ from .mathematics import (
     acosh,
     arctanh,
     atanh,
+    round,
     sum,
     prod,
     cumsum,

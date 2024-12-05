@@ -1,5 +1,5 @@
 """
-`numojo.core.mat.mathematics` module provides mathematical functions for Matrix type.
+`numojo.mat.mathematics` module provides mathematical functions for Matrix type.
 
 - Trigonometric functions
 - Sums, products, differences

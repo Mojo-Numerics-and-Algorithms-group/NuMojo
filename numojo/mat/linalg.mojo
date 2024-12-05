@@ -1,5 +1,5 @@
 """
-`numojo.core.mat.linalg` module provides fucntions for linear algebra.
+`numojo.mat.linalg` module provides functions for linear algebra.
 
 - Matrix and vector products
 - Decompositions

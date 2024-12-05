@@ -1,5 +1,5 @@
 """
-`numojo.core.mat.creation` module provides functions for creating matrix.
+`numojo.mat.creation` module provides functions for creating matrix.
 
 """
 

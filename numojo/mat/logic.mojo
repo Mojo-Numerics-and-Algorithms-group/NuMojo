@@ -1,5 +1,5 @@
 """
-`numojo.core.mat.logic` module provides logic functions for Matrix type.
+`numojo.mat.logic` module provides logic functions for Matrix type.
 
 - Truth value testing
 

@@ -1,5 +1,5 @@
 """
-`numojo.core.mat.sorting` module provides sorting functions for Matrix type.
+`numojo.mat.sorting` module provides sorting functions for Matrix type.
 
 - Sorting
 - Searching

@@ -1,20 +1,10 @@
 """
-`numojo.core.mat` sub-package provides:
+`numojo.mat.matrix` provides:
 
-- `Matrix` type (2DArray) with basic dunder methods and manipulation methods.
-- Auxiliary types, e.g., `_MatrixIter` for iteration.
-- Indexing and slicing.
-- Arithmetic functions for item-wise calculation and broadcasting.
-- Creation routines and functions to construct `Matrix` from other data objects, 
-e.g., `List`, `NDArray`, `String`, and `numpy` array (in `creation` module).
-- Linear algebra, e.g., matrix multiplication, decomposition, inverse of matrix, 
-solve of linear system, Ordinary Least Square, etc (in `linalg` module).
-- Mathematical functions, e.g., `sum` (in `math` module).
-- Statistical functions, e.g., `mean` (in `stats` module).
-- Sorting and searching, .e.g, `sort`, `argsort` (in `sorting` module).
-
-TODO: In future, we can also make use of the trait `ArrayLike` to align
-the behavior of `NDArray` type and the `Matrix` type.
+- `Matrix` type (2DArray).
+- `_MatrixIter` type (for iteration).
+- Dunder methods for initialization, indexing, slicing, and arithmetics.
+- Auxiliary functions.
 """
 
 from numojo.core.ndarray import NDArray

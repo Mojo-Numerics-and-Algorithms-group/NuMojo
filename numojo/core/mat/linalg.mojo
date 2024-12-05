@@ -202,7 +202,9 @@ fn trace[
 
 
 fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
-    """Inverse of matrix."""
+    """
+    Inverse of matrix.
+    """
 
     # Check whether the matrix is square
     if A.shape[0] != A.shape[1]:
@@ -355,7 +357,9 @@ fn solve_lu[
 
 
 fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """Transpose of a matrix."""
+    """
+    Transpose of matrix.
+    """
 
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]))
 

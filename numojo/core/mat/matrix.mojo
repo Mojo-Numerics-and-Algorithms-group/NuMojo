@@ -18,7 +18,6 @@ the behavior of `NDArray` type and the `Matrix` type.
 """
 
 from numojo.core.ndarray import NDArray
-from .creation import zeros
 from memory import memcpy
 from sys import simdwidthof
 
@@ -64,26 +63,27 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
     [checklist] CORE METHODS that have been implemented:
     - [x] `Matrix.any` and `mat.logic.all`
     - [x] `Matrix.any` and `mat.logic.any`
-    - [x] `mat.sorting.argmax`
-    - [x] `mat.sorting.argmin`
-    - [x] `mat.sorting.argsort`
+    - [x] `Matrix.argmax` and `mat.sorting.argmax`
+    - [x] `Matrix.argmin` and `mat.sorting.argmin`
+    - [x] `Matrix.argsort` and `mat.sorting.argsort`
     - [x] `Matrix.astype`
-    - [x] `mat.mathematics.cumprod`
-    - [x] `mat.mathematics.cumsum`
+    - [x] `Matrix.cumprod` and `mat.mathematics.cumprod`
+    - [x] `Matrix.cumsum` and `mat.mathematics.cumsum`
     - [x] `Matrix.fill` and `mat.creation.full`
     - [x] `Matrix.flatten`
-    - [x] `mat.sorting.max`
-    - [x] `mat.statistics.mean`
-    - [x] `mat.sorting.min`
-    - [x] `Matrix.prod`
+    - [x] `Matrix.inv` and `mat.linalg.inv`
+    - [x] `Matrix.max` and `mat.sorting.max`
+    - [x] `Matrix.mean` and `mat.statistics.mean`
+    - [x] `Matrix.min` and `mat.sorting.min`
+    - [x] `Matrix.prod` and `mat.mathematics.prod`
     - [x] `Matrix.reshape`
     - [x] `Matrix.resize`
-    - [x] `mat.mathematics.round` (TODO: Check this after next Mojo update)
-    - [x] `mat.statistics.std`
-    - [x] `mat.mathematics.sum`
+    - [x] `Matrix.round` and `mat.mathematics.round` (TODO: Check this after next Mojo update)
+    - [x] `Matrix.std` and `mat.statistics.std`
+    - [x] `Matrix.sum` and `mat.mathematics.sum`
     - [x] `Matrix.trace` and `mat.linalg.trace`
-    - [x] `Matrix.transpose` and `mat.linalg.transpose`
-    - [x] `mat.statistics.variance` (`var` is primitive)
+    - [x] `Matrix.transpose` and `mat.linalg.transpose` (also `Matrix.T`)
+    - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
 
     TODO: Introduce `ArrayLike` trait for `NDArray` type and `Matrix` type.
 
@@ -325,7 +325,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
 
         var ncol = self.shape[1]
         var nrow = len(indices)
-        var res = zeros[dtype](shape=(nrow, ncol))
+        var res = mat.zeros[dtype](shape=(nrow, ncol))
         for i in range(nrow):
             res[i] = self[indices[i]]
         return res^
@@ -859,6 +859,42 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         """
         return mat.any(self, axis=axis)
 
+    fn argmax(self) raises -> Scalar[DType.index]:
+        """
+        Index of the max. It is first flattened before sorting.
+        """
+        return mat.argmax(self)
+
+    fn argmax(self, axis: Int) raises -> Matrix[DType.index]:
+        """
+        Index of the max along the given axis.
+        """
+        return mat.argmax(self, axis=axis)
+
+    fn argmin(self) raises -> Scalar[DType.index]:
+        """
+        Index of the min. It is first flattened before sorting.
+        """
+        return mat.argmin(self)
+
+    fn argmin(self, axis: Int) raises -> Matrix[DType.index]:
+        """
+        Index of the min along the given axis.
+        """
+        return mat.argmin(self, axis=axis)
+
+    fn argsort(self) raises -> Matrix[DType.index]:
+        """
+        Argsort the Matrix. It is first flattened before sorting.
+        """
+        return mat.argsort(self)
+
+    fn argsort(self, axis: Int) raises -> Matrix[DType.index]:
+        """
+        Argsort the Matrix along the given axis.
+        """
+        return mat.argsort(self, axis=axis)
+
     fn astype[asdtype: DType](self) -> Matrix[asdtype]:
         """
         Copy of the matrix, cast to a specified type.
@@ -868,13 +904,41 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             res._buf[i] = self._buf[i].cast[asdtype]()
         return res^
 
-    fn flatten(self) -> Self:
+    fn cumprod(self) -> Matrix[dtype]:
         """
-        Return a flattened copy of the matrix.
+        Cumprod of flattened matrix.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.rand(shape=(100, 100))
+        print(A.cumprod())
+        ```
         """
-        var res = Self(shape=(1, self.size))
-        memcpy(res._buf, self._buf, res.size)
-        return res^
+        return mat.cumprod(self)
+
+    fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Cumprod of Matrix along the axis.
+
+        Args:
+            axis: 0 or 1.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.rand(shape=(100, 100))
+        print(A.cumprod(axis=0))
+        print(A.cumprod(axis=1))
+        ```
+        """
+        return mat.cumprod(self, axis=axis)
+
+    fn cumsum(self) -> Matrix[dtype]:
+        return mat.cumsum(self)
+
+    fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
+        return mat.cumsum(self, axis=axis)
 
     fn fill(self: Self, fill_value: Scalar[dtype]):
         """
@@ -885,8 +949,81 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         for i in range(self.size):
             self._buf[i] = fill_value
 
+    fn flatten(self) -> Self:
+        """
+        Return a flattened copy of the matrix.
+        """
+        var res = Self(shape=(1, self.size))
+        memcpy(res._buf, self._buf, res.size)
+        return res^
+
     fn inv(self) raises -> Self:
-        return inv(self)
+        """
+        Inverse of matrix.
+        """
+        return mat.inv(self)
+
+    fn max(self) raises -> Scalar[dtype]:
+        """
+        Find max item. It is first flattened before sorting.
+        """
+        return mat.max(self)
+
+    fn max(self, axis: Int) raises -> Self:
+        """
+        Find max item along the given axis.
+        """
+        return mat.max(self, axis=axis)
+
+    fn mean(self) raises -> Scalar[dtype]:
+        """
+        Calculate the arithmetic average of all items in the Matrix.
+        """
+        return mat.mean(self)
+
+    fn mean(self, axis: Int) raises -> Self:
+        """
+        Calculate the arithmetic average of a Matrix along the axis.
+
+        Args:
+            axis: 0 or 1.
+        """
+        return mat.mean(self, axis=axis)
+
+    fn min(self) raises -> Scalar[dtype]:
+        """
+        Find min item. It is first flattened before sorting.
+        """
+        return mat.min(self)
+
+    fn min(self, axis: Int) raises -> Self:
+        """
+        Find min item along the given axis.
+        """
+        return mat.min(self, axis=axis)
+
+    fn prod(self) -> Scalar[dtype]:
+        """
+        Product of all items in the Matrix.
+        """
+        return mat.prod(self)
+
+    fn prod(self, axis: Int) raises -> Self:
+        """
+        Product of items in a Matrix along the axis.
+
+        Args:
+            axis: 0 or 1.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.rand(shape=(100, 100))
+        print(A.prod(axis=0))
+        print(A.prod(axis=1))
+        ```
+        """
+        return mat.prod(self, axis=axis)
 
     fn reshape(self, shape: Tuple[Int, Int]) raises -> Self:
         """
@@ -918,11 +1055,95 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             self.size = shape[0] * shape[1]
             self.strides[0] = shape[1]
 
+    fn round(self, decimals: Int) raises -> Self:
+        return mat.round(self, decimals=decimals)
+
+    fn std(self, ddof: Int = 0) raises -> Scalar[dtype]:
+        """
+        Compute the standard deviation.
+
+        Args:
+            ddof: Delta degree of freedom.
+        """
+        return mat.std(self, ddof=ddof)
+
+    fn std(self, axis: Int, ddof: Int = 0) raises -> Self:
+        """
+        Compute the standard deviation along axis.
+
+        Args:
+            axis: 0 or 1.
+            ddof: Delta degree of freedom.
+        """
+        return mat.std(self, axis=axis, ddof=ddof)
+
+    fn sum(self) -> Scalar[dtype]:
+        """
+        Sum up all items in the Matrix.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.rand(shape=(100, 100))
+        print(A.sum())
+        ```
+        """
+        return mat.sum(self)
+
+    fn sum(self, axis: Int) raises -> Self:
+        """
+        Sum up the items in a Matrix along the axis.
+
+        Args:
+            axis: 0 or 1.
+
+        Example:
+        ```mojo
+        from numojo import mat
+        var A = mat.rand(shape=(100, 100))
+        print(A.sum(axis=0))
+        print(A.sum(axis=1))
+        ```
+        """
+        return mat.sum(self, axis=axis)
+
+    fn trace(self) raises -> Scalar[dtype]:
+        """
+        Transpose of matrix.
+        """
+        return mat.trace(self)
+
+    fn transpose(self) -> Self:
+        """
+        Transpose of matrix.
+        """
+        return transpose(self)
+
     fn T(self) -> Self:
         return transpose(self)
 
-    fn transpose(self) -> Self:
-        return transpose(self)
+    fn variance(self, ddof: Int = 0) raises -> Scalar[dtype]:
+        """
+        Compute the variance.
+
+        Args:
+            ddof: Delta degree of freedom.
+        """
+        return mat.variance(self, ddof=ddof)
+
+    fn variance(self, axis: Int, ddof: Int = 0) raises -> Self:
+        """
+        Compute the variance along axis.
+
+        Args:
+            axis: 0 or 1.
+            ddof: Delta degree of freedom.
+        """
+        return mat.variance(self, axis=axis, ddof=ddof)
+
+    # ===-------------------------------------------------------------------===#
+    # To other data types
+    # ===-------------------------------------------------------------------===#
 
     fn to_ndarray(self) raises -> NDArray[dtype]:
         """Create `NDArray` from `Matrix`.

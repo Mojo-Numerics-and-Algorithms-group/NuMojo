@@ -229,8 +229,8 @@ fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     ```mojo
     from numojo import mat
     var A = mat.rand(shape=(100, 100))
-    print(mat.sum(A, axis=0))
-    print(mat.sum(A, axis=1))
+    print(mat.prod(A, axis=0))
+    print(mat.prod(A, axis=1))
     ```
     """
 

@@ -151,15 +151,6 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         for i in range(shape.ndlen):
             self._buf[i] = shape[i]
 
-    fn __copy__(inout self, other: Self):
-        """
-        Copy from other into self.
-        """
-        self.ndsize = other.ndsize
-        self.ndlen = other.ndlen
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.ndlen)
-        memcpy(self._buf, other._buf, other.ndlen)
-
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         """

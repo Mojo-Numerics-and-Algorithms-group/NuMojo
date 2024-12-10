@@ -66,6 +66,7 @@ fn arange[
     Returns:
         A NDArray of datatype `dtype` with elements ranging from `start` to `stop` incremented with `step`.
     """
+    # TODO: this num values come out wrong for float types like arange(0, 1, 3)
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num, size=num))
     for idx in range(num):
@@ -383,6 +384,65 @@ fn geomspace[
         for i in range(num):
             result._buf[i] = a * r**i
         return result
+
+
+fn meshgrid[
+    dtype: DType = DType.float64
+](xi: List[NDArray[dtype]]) raises -> List[NDArray[dtype]]:
+    """
+    Generate coordinate matrices from coordinate vectors.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        xi: Coordinate vectors.
+
+    Returns:
+        A list of NDArrays representing the coordinate matrices.
+    """
+    # Check if we have at least one input vector
+    var n_xi: Int = xi.__len__()
+    if n_xi < 1:
+        raise Error("At least one input array is required.")
+
+    # Verify all inputs are 1-D arrays
+    for i in range(n_xi):
+        if xi[i].ndim != 1:
+            raise Error("All input arrays must be 1-D arrays.")
+
+    # Create shape for output arrays
+    var shape_dims = List[Int]()
+    var total_elements: Int = 1
+    for i in range(n_xi):
+        shape_dims.append(xi[i].shape.ndsize)
+        total_elements *= xi[i].shape.ndsize
+
+    var result = List[NDArray[dtype]]()
+
+    # Create output arrays
+    for _ in range(n_xi):
+        result.append(NDArray[dtype](NDArrayShape(shape_dims)))
+
+    for flat_idx in range(total_elements):
+        # Convert flat index to n-dimensional indices
+        var remaining = flat_idx
+        var idxList = List[Int]()
+        for _ in range(n_xi):
+            idxList.append(0)
+
+        indices = Idx(idxList)
+        for i in range(n_xi - 1, -1, -1):
+            var idx = remaining % shape_dims[i]
+            remaining //= shape_dims[i]
+            indices.store[width=1](i, val=idx)
+
+        # Fill values in each output array
+        for i in range(n_xi):
+            var val = xi[i].load[width=1](indices[i])
+            result[i][indices] = val
+
+    return result
 
 
 # ===------------------------------------------------------------------------===#
@@ -811,9 +871,9 @@ fn triu[
 
 fn vander[
     dtype: DType = DType.float64
-](
-    x: NDArray[dtype], N: Optional[Int] = None, increasing: Bool = False
-) raises -> NDArray[dtype]:
+](x: NDArray[dtype], N: Int = -1, increasing: Bool = False) raises -> NDArray[
+    dtype
+]:
     """
     Generate a Vandermonde matrix.
 
@@ -832,7 +892,7 @@ fn vander[
         raise Error("x must be a 1-D array")
 
     var n_rows = x.shape.ndsize
-    var n_cols = N.value() if N else n_rows
+    var n_cols = N if N != -1 else n_rows
     var result: NDArray[dtype] = ones[dtype](NDArrayShape(n_rows, n_cols))
     for i in range(n_rows):
         var x_i = x._buf[i]

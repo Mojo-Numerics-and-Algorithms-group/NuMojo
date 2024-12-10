@@ -6,16 +6,6 @@ from utils_for_test import check, check_is_close
 from testing.testing import assert_raises
 
 
-def test_list_creation_methods():
-    var np = Python.import_module("numpy")
-    var fill_val: Scalar[nm.i32] = 5
-    check(
-        nm.NDArray(nm.shape(5, 5, 5), fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "*shape broken",
-    )
-
-
 def test_arange():
     var np = Python.import_module("numpy")
     check(

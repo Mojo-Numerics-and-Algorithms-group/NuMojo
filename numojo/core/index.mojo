@@ -28,6 +28,18 @@ struct Idx(CollectionElement, Formattable):
             self.storage[i] = args[i]
 
     @always_inline("nodebug")
+    fn __init__(inout self, owned *args: Int):
+        """Construct the tuple.
+
+        Args:
+            args: Initial values.
+        """
+        self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
+        self.len = args.__len__()
+        for i in range(args.__len__()):
+            self.storage[i] = args[i]
+
+    @always_inline("nodebug")
     fn __init__(
         inout self, owned args: Variant[List[Int], VariadicList[Int]]
     ) raises:

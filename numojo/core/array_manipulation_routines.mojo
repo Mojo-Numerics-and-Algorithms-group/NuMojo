@@ -190,7 +190,7 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The 1 dimensional flattened NDArray.
     """
 
-    var res: NDArray[dtype] = NDArray[dtype](array.shape.ndsize)
+    var res: NDArray[dtype] = NDArray[dtype](Shape(array.shape.ndsize))
     alias width: Int = simdwidthof[dtype]()
 
     @parameter
@@ -228,7 +228,7 @@ fn trace[
         raise Error("Trace is currently only supported for 2D arrays")
     if axis1 > array.ndim - 1 or axis2 > array.ndim - 1:
         raise Error("axis cannot be greater than the rank of the array")
-    var result: NDArray[dtype] = NDArray[dtype](1)
+    var result: NDArray[dtype] = NDArray[dtype](Shape(1))
     var rows = array.shape[0]
     var cols = array.shape[1]
     var diag_length = min(rows, cols - offset) if offset >= 0 else min(

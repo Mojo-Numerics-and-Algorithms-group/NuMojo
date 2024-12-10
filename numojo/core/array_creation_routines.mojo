@@ -647,28 +647,53 @@ fn zeros_like[
 
 fn full[
     dtype: DType = DType.float64
-](shape: NDArrayShape, fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
-    """Overload of function `full` that reads a list of ints."""
-    return NDArray[dtype](shape=shape, fill=fill_value)
+](
+    shape: NDArrayShape, fill_value: Scalar[dtype], order: String = "C"
+) raises -> NDArray[dtype]:
+    """Initialize an NDArray of certain shape fill it with a given value.
+
+    Args:
+        shape: Shape of the array.
+        fill_value: Set all the values to this.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var a = nm.full(Shape(2,3,4), fill_value=10)
+        ```
+    """
+
+    var A = NDArray[dtype](shape=shape, order=order)
+    fill_pointer[dtype](A._buf, A.shape.ndsize, fill_value)
+
+    return A
 
 
 fn full[
     dtype: DType = DType.float64
-](shape: List[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+](
+    shape: List[Int], fill_value: Scalar[dtype], order: String = "C"
+) raises -> NDArray[dtype]:
     """Overload of function `full` that reads a list of ints."""
-    return full[dtype](shape=Shape(shape), fill_value=fill_value)
+    return full[dtype](shape=Shape(shape), fill_value=fill_value, order=order)
 
 
 fn full[
     dtype: DType = DType.float64
-](shape: VariadicList[Int], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+](
+    shape: VariadicList[Int], fill_value: Scalar[dtype], order: String = "C"
+) raises -> NDArray[dtype]:
     """Overload of function `full` that reads a variadic list of ints."""
-    return full[dtype](shape=Shape(shape), fill_value=fill_value)
+    return full[dtype](shape=Shape(shape), fill_value=fill_value, order=order)
 
 
 fn full_like[
     dtype: DType = DType.float64
-](array: NDArray[dtype], fill_value: Scalar[dtype]) raises -> NDArray[dtype]:
+](
+    array: NDArray[dtype], fill_value: Scalar[dtype], order: String = "C"
+) raises -> NDArray[dtype]:
     """
     Generate a NDArray of the same shape as `a` filled with `fill_value`.
 
@@ -678,11 +703,12 @@ fn full_like[
     Args:
         array: NDArray to be used as a reference for the shape.
         fill_value: Value to fill the NDArray with.
+        order: Memory order C or F.
 
     Returns:
         A NDArray of `dtype` with the same shape as `a` filled with `fill_value`.
     """
-    return full[dtype](shape=array.shape, fill_value=fill_value)
+    return full[dtype](shape=array.shape, fill_value=fill_value, order=order)
 
 
 # ===------------------------------------------------------------------------===#
@@ -995,7 +1021,7 @@ fn fromstring[
                 raise ("Unmatched left and right brackets!")
             if level > 0:
                 shape[level - 1] = shape[level - 1] + 1
-    var result: NDArray[dtype] = NDArray[dtype](
+    var result: NDArray[dtype] = array[dtype](
         data=data, shape=shape, order=order
     )
     return result^
@@ -1039,7 +1065,11 @@ fn array[
     Returns:
         An Array of given data, shape and order.
     """
-    return NDArray[dtype](data=data, shape=shape, order=order)
+
+    A = NDArray[dtype](Shape(shape), order)
+    for i in range(A.shape.ndsize):
+        A._buf[i] = data[i]
+    return A
 
 
 fn array[
@@ -1058,12 +1088,26 @@ fn array[
     Example:
         ```mojo
         import numojo as nm
+        from numojo.prelude import *
+        from python import Python
         var np = Python.import_module("numpy")
         var np_arr = np.array([1, 2, 3, 4])
-        nm.array[f16](data=np_arr, order="C")
+        A = nm.array[f16](data=np_arr, order="C")
         ```
 
     Returns:
         An Array of given data, shape and order.
     """
-    return NDArray[dtype](data=data, order=order)
+
+    var len = int(len(data.shape))
+    var shape: List[Int] = List[Int]()
+    for i in range(len):
+        if int(data.shape[i]) == 1:
+            continue
+        shape.append(int(data.shape[i]))
+    A = NDArray[dtype](Shape(shape), order=order)
+    A._buf = UnsafePointer[Scalar[dtype]]().alloc(A.shape.ndsize)
+    memset_zero(A._buf, A.shape.ndsize)
+    for i in range(A.shape.ndsize):
+        A._buf[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
+    return A

@@ -4,6 +4,10 @@ Linear Algebra Solver
 Provides:
     - Solver of `Ax = y` using LU decomposition algorithm.
     - Inverse of an invertible matrix.
+
+# TODO:
+    - Partial pivot.
+    - Determinant.
 """
 
 from numojo.prelude import *
@@ -84,8 +88,8 @@ fn lu_decomposition[
     # var A = array.astype[dtype]()
 
     # Initiate upper and lower triangular matrices
-    var U = NDArray[dtype](shape=shape_of_array, fill=SIMD[dtype, 1](0))
-    var L = NDArray[dtype](shape=shape_of_array, fill=SIMD[dtype, 1](0))
+    var U = full[dtype](shape=shape_of_array, fill_value=SIMD[dtype, 1](0))
+    var L = full[dtype](shape=shape_of_array, fill_value=SIMD[dtype, 1](0))
 
     # Fill in L and U
     # @parameter
@@ -141,7 +145,7 @@ fn forward_substitution[
     var m = L.shape[0]
 
     # Initialize x
-    var x = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
+    var x = full[dtype](Shape(m), fill_value=SIMD[dtype, 1](0))
 
     for i in range(m):
         var value_on_hold: Scalar[dtype] = y.item(i)
@@ -174,7 +178,7 @@ fn back_substitution[
     # length of U
     var m = U.shape[0]
     # Initialize x
-    var x = NDArray[dtype](m, fill=SIMD[dtype, 1](0))
+    var x = full[dtype](Shape(m), fill_value=SIMD[dtype, 1](0))
 
     for i in range(m - 1, -1, -1):
         var value_on_hold: Scalar[dtype] = y.item(i)
@@ -271,13 +275,13 @@ fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var inversed = NDArray[dtype](shape=array.shape)
 
     # Initialize vectors
-    var y = NDArray[dtype](m)
-    var z = NDArray[dtype](m)
-    var x = NDArray[dtype](m)
+    var y = NDArray[dtype](Shape(m))
+    var z = NDArray[dtype](Shape(m))
+    var x = NDArray[dtype](Shape(m))
 
     for i in range(m):
         # Each time, one of the item is changed to 1
-        y = NDArray[dtype](m, fill=Scalar[dtype](0))
+        y = zeros[dtype](Shape(m))
         y.set(i, Scalar[dtype](1))
 
         # Solve `Lz = y` for `z`

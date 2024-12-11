@@ -58,7 +58,7 @@ from ..math.math_funcs import Vectorized
 from ..math.linalg.matmul import matmul_parallelized
 from .array_manipulation_routines import reshape
 from .ndshape import NDArrayShape
-from .ndstride import NDArrayStride
+from .ndstrides import NDArrayStrides
 
 # ===----------------------------------------------------------------------===#
 # NDArray
@@ -76,8 +76,8 @@ struct NDArray[dtype: DType = DType.float64](
     The array can be uniquely defined by the following:
         1. The data buffer of all items.
         2. The shape of the array.
-        3. The stride in each dimension
-        4. The datatype of the elements
+        3. The strides (Length of item to travel to next dimension).
+        4. The datatype of the elements.
 
     The following attributes are also helpful:
         - The number of dimensions
@@ -93,9 +93,9 @@ struct NDArray[dtype: DType = DType.float64](
     """Size and shape of NDArray."""
     var size: Int
     """Size of NDArray."""
-    var stride: NDArrayStride
+    var strides: NDArrayStrides
     """Contains offset, strides."""
-    var coefficient: NDArrayStride
+    var coefficient: NDArrayStrides
     """Contains offset, coefficients for slicing."""
     var datatype: DType
     """The datatype of memory."""
@@ -130,8 +130,8 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = shape.ndim
         self.shape = NDArrayShape(shape)
         self.size = self.shape.size
-        self.stride = NDArrayStride(shape, order=order)
-        self.coefficient = NDArrayStride(shape, order=order)
+        self.strides = NDArrayStrides(shape, order=order)
+        self.coefficient = NDArrayStrides(shape, order=order)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.datatype = dtype
         self.order = order
@@ -192,8 +192,8 @@ struct NDArray[dtype: DType = DType.float64](
 
     #     self.ndim = shape.ndim
     #     self.shape = NDArrayShape(shape)
-    #     self.stride = NDArrayStride(shape, offset=0, order=order)
-    #     self.coefficient = NDArrayStride(shape, offset=0, order=order)
+    #     self.strides = NDArrayStrides(shape, offset=0, order=order)
+    #     self.coefficient = NDArrayStrides(shape, offset=0, order=order)
     #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
     #     self.datatype = dtype
     #     self.order = order
@@ -227,8 +227,8 @@ struct NDArray[dtype: DType = DType.float64](
     #         shape.append(int(data.shape[i]))
     #     self.ndim = shape.__len__()
     #     self.shape = NDArrayShape(shape)
-    #     self.stride = NDArrayStride(shape, offset=0, order=order)
-    #     self.coefficient = NDArrayStride(shape, offset=0, order=order)
+    #     self.strides = NDArrayStrides(shape, offset=0, order=order)
+    #     self.coefficient = NDArrayStrides(shape, offset=0, order=order)
     #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
     #     memset_zero(self._buf, self.size)
     #     self.order = order
@@ -254,8 +254,8 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = ndim
         self.shape = NDArrayShape(shape)
         self.size = size
-        self.stride = NDArrayStride(stride=strides, offset=0)
-        self.coefficient = NDArrayStride(stride=coefficient, offset=offset)
+        self.strides = NDArrayStrides(strides=strides, offset=0)
+        self.coefficient = NDArrayStrides(strides=coefficient, offset=offset)
         self.datatype = dtype
         self.order = order
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(size)
@@ -278,13 +278,13 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = ndim
         self.shape = NDArrayShape(shape)
         self.size = self.shape.size
-        self.stride = NDArrayStride(strides, offset=0, order=order)
-        self.coefficient = NDArrayStride(
+        self.strides = NDArrayStrides(strides, offset=0, order=order)
+        self.coefficient = NDArrayStrides(
             coefficient, offset=offset, order=order
         )
         self.datatype = dtype
         self.order = order
-        self._buf = data + self.stride.offset
+        self._buf = data + self.strides.offset
 
     @always_inline("nodebug")
     fn __copyinit__(inout self, other: Self):
@@ -294,7 +294,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = other.ndim
         self.shape = other.shape
         self.size = other.size
-        self.stride = other.stride
+        self.strides = other.strides
         self.coefficient = other.coefficient
         self.datatype = other.datatype
         self.order = other.order
@@ -309,7 +309,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = existing.ndim
         self.shape = existing.shape
         self.size = existing.size
-        self.stride = existing.stride
+        self.strides = existing.strides
         self.coefficient = existing.coefficient
         self.datatype = existing.datatype
         self.order = existing.order^
@@ -423,7 +423,7 @@ struct NDArray[dtype: DType = DType.float64](
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            ncoefficients.append(self.strides[j] * slice_list[j].step)
             j += 1
 
         # We can remove this check after we have support for broadcasting
@@ -446,14 +446,14 @@ struct NDArray[dtype: DType = DType.float64](
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
+                noffset += slice_list[i].start.value() * self.strides[i]
         elif self.order == "F":
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
+                noffset += slice_list[i].start.value() * self.strides[i]
 
         var index = List[Int]()
         for _ in range(ndims):
@@ -579,7 +579,7 @@ struct NDArray[dtype: DType = DType.float64](
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.stride[j] * slice_list[j].step)
+            ncoefficients.append(self.strides[j] * slice_list[j].step)
             j += 1
 
         # We can remove this check after we have support for broadcasting
@@ -602,14 +602,14 @@ struct NDArray[dtype: DType = DType.float64](
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
+                noffset += slice_list[i].start.value() * self.strides[i]
         elif self.order == "F":
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.stride[i]
+                noffset += slice_list[i].start.value() * self.strides[i]
 
         var index = List[Int]()
         for _ in range(ndims):
@@ -911,7 +911,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.stride[j] * slices[j].step)
+            ncoefficients.append(self.strides[j] * slices[j].step)
             j += 1
 
         if count == slices.__len__():
@@ -928,7 +928,7 @@ struct NDArray[dtype: DType = DType.float64](
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slices.__len__()):
-                noffset += slices[i].start.value() * self.stride[i]
+                noffset += slices[i].start.value() * self.strides[i]
 
         elif self.order == "F":
             noffset = 0
@@ -936,7 +936,7 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
             for i in range(slices.__len__()):
-                noffset += slices[i].start.value() * self.stride[i]
+                noffset += slices[i].start.value() * self.strides[i]
 
         var narr = Self(
             ndims,
@@ -1805,7 +1805,7 @@ struct NDArray[dtype: DType = DType.float64](
                     result = (
                         result
                         + self.load[width=1](
-                            offset + i * self.stride[dimension]
+                            offset + i * self.strides[dimension]
                         ).__str__()
                     )
                     result = result + "\t"
@@ -1814,7 +1814,7 @@ struct NDArray[dtype: DType = DType.float64](
                     result = (
                         result
                         + self.load[width=1](
-                            offset + i * self.stride[dimension]
+                            offset + i * self.strides[dimension]
                         ).__str__()
                     )
                     result = result + "\t"
@@ -1823,7 +1823,7 @@ struct NDArray[dtype: DType = DType.float64](
                     result = (
                         result
                         + self.load[width=1](
-                            offset + i * self.stride[dimension]
+                            offset + i * self.strides[dimension]
                         ).__str__()
                     )
                     result = result + "\t"
@@ -1837,7 +1837,7 @@ struct NDArray[dtype: DType = DType.float64](
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
-                            offset + i * self.stride[dimension].__int__(),
+                            offset + i * self.strides[dimension].__int__(),
                         )
                     if i > 0:
                         result = (
@@ -1845,7 +1845,7 @@ struct NDArray[dtype: DType = DType.float64](
                             + str(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
-                                offset + i * self.stride[dimension].__int__(),
+                                offset + i * self.strides[dimension].__int__(),
                             )
                         )
                     if i < (number_of_items - 1):
@@ -1855,7 +1855,7 @@ struct NDArray[dtype: DType = DType.float64](
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
-                            offset + i * self.stride[dimension].__int__(),
+                            offset + i * self.strides[dimension].__int__(),
                         )
                     if i > 0:
                         result = (
@@ -1863,7 +1863,7 @@ struct NDArray[dtype: DType = DType.float64](
                             + str(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
-                                offset + i * self.stride[dimension].__int__(),
+                                offset + i * self.strides[dimension].__int__(),
                             )
                         )
                     if i < (number_of_items - 1):
@@ -1875,7 +1875,7 @@ struct NDArray[dtype: DType = DType.float64](
                         + str(" ") * (dimension + 1)
                         + self._array_to_string(
                             dimension + 1,
-                            offset + i * self.stride[dimension].__int__(),
+                            offset + i * self.strides[dimension].__int__(),
                         )
                     )
                     if i < (number_of_items - 1):
@@ -2239,7 +2239,7 @@ struct NDArray[dtype: DType = DType.float64](
         Convert shape of array to one dimensional.
         """
         self.shape = NDArrayShape(self.size, size=self.size)
-        self.stride = NDArrayStride(shape=self.shape, offset=0)
+        self.strides = NDArrayStrides(shape=self.shape, offset=0)
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """
@@ -2271,23 +2271,23 @@ struct NDArray[dtype: DType = DType.float64](
 
         > for i in range(A.size()):
         >    print(A.item(i))  # Return 0-d arrays
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         14
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         -4
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         -48
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         97
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         112
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         -40
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         -59
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         -94
-        c stride Stride: [3, 1]
+        c strides Stride: [3, 1]
         66
         ==============================
         ```
@@ -2307,7 +2307,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ):  # column-major should be converted to row-major
                     # The following code can be taken out as a function that
                     # convert any index to coordinates according to the order
-                    var c_stride = NDArrayStride(shape=self.shape)
+                    var c_stride = NDArrayStrides(shape=self.shape)
                     var c_coordinates = List[Int]()
                     var idx: Int = index[0]
                     for i in range(c_stride.ndim):
@@ -2315,7 +2315,7 @@ struct NDArray[dtype: DType = DType.float64](
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
                     return self._buf.load[width=1](
-                        _get_index(c_coordinates, self.stride)
+                        _get_index(c_coordinates, self.strides)
                     )
 
                 return self._buf.load[width=1](index[0])
@@ -2344,7 +2344,7 @@ struct NDArray[dtype: DType = DType.float64](
                         "for {}-th dimension."
                     ).format(index[i], self.shape[i], i)
                 )
-        return self._buf.load[width=1](_get_index(index, self.stride))
+        return self._buf.load[width=1](_get_index(index, self.strides))
 
     fn itemset(
         inout self, index: Variant[Int, List[Int]], item: Scalar[dtype]
@@ -2400,14 +2400,14 @@ struct NDArray[dtype: DType = DType.float64](
                 ):  # column-major should be converted to row-major
                     # The following code can be taken out as a function that
                     # convert any index to coordinates according to the order
-                    var c_stride = NDArrayStride(shape=self.shape)
+                    var c_stride = NDArrayStrides(shape=self.shape)
                     var c_coordinates = List[Int]()
                     for i in range(c_stride.ndim):
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
                     self._buf.store[width=1](
-                        _get_index(c_coordinates, self.stride), item
+                        _get_index(c_coordinates, self.strides), item
                     )
 
                 self._buf.store[width=1](idx, item)
@@ -2429,7 +2429,7 @@ struct NDArray[dtype: DType = DType.float64](
                     raise Error(
                         "Error: Elements of `index` exceed the array shape"
                     )
-            self._buf.store[width=1](_get_index(indices, self.stride), item)
+            self._buf.store[width=1](_get_index(indices, self.strides), item)
 
     fn max(self, axis: Int = 0) raises -> Self:
         """

@@ -10,7 +10,7 @@ from algorithm.functional import vectorize
 
 from python import Python, PythonObject
 from .ndshape import NDArrayShape
-from .ndstride import NDArrayStride
+from .ndstrides import NDArrayStrides
 from .ndarray import NDArray
 
 
@@ -77,7 +77,7 @@ fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) raises -> Int:
     return idx
 
 
-fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
+fn _get_index(indices: List[Int], weights: NDArrayStrides) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
 
@@ -94,7 +94,7 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
     return idx
 
 
-fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
+fn _get_index(indices: Idx, weights: NDArrayStrides) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
 
@@ -111,7 +111,9 @@ fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
     return index
 
 
-fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
+fn _get_index(
+    indices: VariadicList[Int], weights: NDArrayStrides
+) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
 

@@ -86,7 +86,7 @@ fn reshape[
 
     array.ndim = ndim_new
     array.shape = NDArrayShape(shape=shape_new)
-    array.stride = NDArrayStride(shape=shape_new, order=order)
+    array.strides = NDArrayStrides(shape=shape_new, order=order)
     array.order = order
 
 

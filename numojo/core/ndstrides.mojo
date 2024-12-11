@@ -1,7 +1,7 @@
 """
-Implements NDArrayStride type.
+Implements NDArrayStrides type.
 
-`NDArrayStride` is a series of `DType.int32` on the heap.
+`NDArrayStrides` is a series of `DType.int32` on the heap.
 """
 
 from utils import Variant
@@ -10,8 +10,8 @@ from memory import memset_zero, memcpy
 
 
 @register_passable("trivial")
-struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
-    """Implements the NDArrayStride."""
+struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
+    """Implements the NDArrayStrides."""
 
     # Fields
     var offset: Int
@@ -20,49 +20,49 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, *stride: Int, offset: Int = 0
+        inout self, *strides: Int, offset: Int = 0
     ):  # maybe we should add checks for offset?
         self.offset = offset
-        self.ndim = stride.__len__()
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(stride.__len__())
-        for i in range(stride.__len__()):
-            self.strides[i] = stride[i]
+        self.ndim = strides.__len__()
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(strides.__len__())
+        for i in range(strides.__len__()):
+            self.strides[i] = strides[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, stride: List[Int], offset: Int = 0):
+    fn __init__(inout self, strides: List[Int], offset: Int = 0):
         self.offset = offset
-        self.ndim = stride.__len__()
+        self.ndim = strides.__len__()
         self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
         memset_zero(self.strides, self.ndim)
         for i in range(self.ndim):
-            self.strides[i] = stride[i]
+            self.strides[i] = strides[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, stride: VariadicList[Int], offset: Int = 0):
+    fn __init__(inout self, strides: VariadicList[Int], offset: Int = 0):
         self.offset = offset
-        self.ndim = stride.__len__()
+        self.ndim = strides.__len__()
         self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
         memset_zero(self.strides, self.ndim)
         for i in range(self.ndim):
-            self.strides[i] = stride[i]
+            self.strides[i] = strides[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, stride: NDArrayStride[dtype]):
-        self.offset = stride.offset
-        self.ndim = stride.ndim
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(stride.ndim)
+    fn __init__(inout self, strides: NDArrayStrides[dtype]):
+        self.offset = strides.offset
+        self.ndim = strides.ndim
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(strides.ndim)
         for i in range(self.ndim):
-            self.strides[i] = stride.strides[i]
+            self.strides[i] = strides.strides[i]
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, stride: NDArrayStride[dtype], offset: Int = 0
+        inout self, strides: NDArrayStrides[dtype], offset: Int = 0
     ):  # separated two methods to remove if condition
         self.offset = offset
-        self.ndim = stride.ndim
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(stride.ndim)
+        self.ndim = strides.ndim
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(strides.ndim)
         for i in range(self.ndim):
-            self.strides[i] = stride.strides[i]
+            self.strides[i] = strides.strides[i]
 
     @always_inline("nodebug")
     fn __init__(

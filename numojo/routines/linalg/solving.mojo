@@ -285,9 +285,9 @@ fn solve[
     ```mojo
     import numojo as nm
     fn main() raises:
-        var A = nm.NDArray(str("[[1, 0, 1], [0, 2, 1], [1, 1, 1]]"))
-        var B = nm.NDArray(str("[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"))
-        var X = nm.routines.linalg.solving.solve(A, B)
+        var A = nm.fromstring("[[1, 0, 1], [0, 2, 1], [1, 1, 1]]")
+        var B = nm.fromstring("[[1, 0, 0], [0, 1, 0], [0, 0, 1]]")
+        var X = nm.linalg.solve(A, B)
         print(X)
     ```
     ```console

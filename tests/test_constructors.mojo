@@ -11,7 +11,7 @@ def test_constructors():
     assert_true(arr1.shape[0] == 3, "NDArray constructor: shape element 0")
     assert_true(arr1.shape[1] == 4, "NDArray constructor: shape element 1")
     assert_true(arr1.shape[2] == 5, "NDArray constructor: shape element 2")
-    assert_true(arr1.shape.ndsize == 60, "NDArray constructor: size")
+    assert_true(arr1.size == 60, "NDArray constructor: size")
     assert_true(arr1.dtype == DType.float32, "NDArray constructor: dtype")
 
     var arr2 = NDArray[f32](VariadicList[Int](3, 4, 5))

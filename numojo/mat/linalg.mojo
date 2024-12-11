@@ -43,14 +43,17 @@ fn matmul[
             )
         )
 
-    var t0 = A.shape[0]
-    var t1 = A.shape[1]
-    var t2 = B.shape[1]
-    var C: Matrix[dtype] = zeros[dtype](shape=(t0, t2))
+    # Multiplication by partitions for big matrices
+    # var cut_of_size = 200
+    # if A.shape[1] >= cut_of_size:
+    #     var block_shape = A.shape[1] // 2
+    #     return A[:, :block_shape] @ B[:block_shape, :] + A[:, block_shape: ] @ B[block_shape: ,: ]
+
+    var C: Matrix[dtype] = zeros[dtype](shape=(A.shape[0], B.shape[1]))
 
     @parameter
     fn calculate_CC(m: Int):
-        for k in range(t1):
+        for k in range(A.shape[1]):
 
             @parameter
             fn dot[simd_width: Int](n: Int):
@@ -61,13 +64,10 @@ fn matmul[
                     + A._load(m, k) * B._load[simd_width](k, n),
                 )
 
-            vectorize[dot, width](t2)
+            vectorize[dot, width](B.shape[1])
 
-    parallelize[calculate_CC](t0, t0)
+    parallelize[calculate_CC](A.shape[0], A.shape[0])
 
-    var _t0 = t0
-    var _t1 = t1
-    var _t2 = t2
     var _A = A
     var _B = B
 

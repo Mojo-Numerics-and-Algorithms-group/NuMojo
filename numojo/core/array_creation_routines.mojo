@@ -606,7 +606,7 @@ fn full[
     """
 
     var A = NDArray[dtype](shape=shape, order=order)
-    fill_pointer[dtype](A._buf, A.shape.ndsize, fill_value)
+    fill_pointer[dtype](A._buf, A.size, fill_value)
 
     return A
 
@@ -671,7 +671,7 @@ fn diag[
         A 1-D NDArray with the diagonal of the input NDArray.
     """
     if v.ndim == 1:
-        var n: Int = v.shape.ndsize
+        var n: Int = v.size
         var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
         if k >= 0:
             for i in range(n):
@@ -680,7 +680,7 @@ fn diag[
         else:
             for i in range(n):
                 result._buf[
-                    result.shape.ndsize - 1 - i * (result.shape[1] + 1) + k
+                    result.size - 1 - i * (result.shape[1] + 1) + k
                 ] = v._buf[n - 1 - i]
         return result^
     elif v.ndim == 2:
@@ -693,7 +693,7 @@ fn diag[
         else:
             for i in range(n - abs(k)):
                 result._buf[m - abs(k) - 1 - i] = v._buf[
-                    v.shape.ndsize - 1 - i * (v.shape[1] + 1) + k
+                    v.size - 1 - i * (v.shape[1] + 1) + k
                 ]
         return result^
     else:
@@ -716,7 +716,7 @@ fn diagflat[
     Returns:
         A 2-D NDArray with the flattened input as the diagonal.
     """
-    var n: Int = v.shape.ndsize
+    var n: Int = v.size
     var result: NDArray[dtype] = zeros[dtype](shape(n + abs(k), n + abs(k)))
     if k >= 0:
         for i in range(n):
@@ -724,8 +724,8 @@ fn diagflat[
     else:
         for i in range(n):
             result.store(
-                result.shape.ndsize - 1 - (n + abs(k) + 1) * i + k,
-                v._buf[v.shape.ndsize - 1 - i],
+                result.size - 1 - (n + abs(k) + 1) * i + k,
+                v._buf[v.size - 1 - i],
             )
     return result^
 
@@ -857,7 +857,7 @@ fn vander[
     if x.ndim != 1:
         raise Error("x must be a 1-D array")
 
-    var n_rows = x.shape.ndsize
+    var n_rows = x.size
     var n_cols = N.value() if N else n_rows
     var result: NDArray[dtype] = ones[dtype](NDArrayShape(n_rows, n_cols))
     for i in range(n_rows):
@@ -1007,7 +1007,7 @@ fn array[
     """
 
     A = NDArray[dtype](Shape(shape), order)
-    for i in range(A.shape.ndsize):
+    for i in range(A.size):
         A._buf[i] = data[i]
     return A
 
@@ -1046,8 +1046,8 @@ fn array[
             continue
         shape.append(int(data.shape[i]))
     A = NDArray[dtype](Shape(shape), order=order)
-    A._buf = UnsafePointer[Scalar[dtype]]().alloc(A.shape.ndsize)
-    memset_zero(A._buf, A.shape.ndsize)
-    for i in range(A.shape.ndsize):
+    A._buf = UnsafePointer[Scalar[dtype]]().alloc(A.size)
+    memset_zero(A._buf, A.size)
+    for i in range(A.size):
         A._buf[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
     return A

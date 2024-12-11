@@ -32,9 +32,9 @@ fn savetxt[
     dtype: DType = f64
 ](filename: String, array: NDArray[dtype], delimiter: String = ",") raises:
     var shape: String = "ndshape=["
-    for i in range(array.shape.ndlen):
+    for i in range(array.ndim):
         shape += str(array.shape[i])
-        if i != array.shape.ndlen - 1:
+        if i != array.ndim - 1:
             shape = shape + ", "
     shape = shape + "]"
     print(shape)
@@ -42,7 +42,7 @@ fn savetxt[
     with open(filename, "w") as file:
         file.write(shape + "\n")
         file.write("ndim=[" + str(array.ndim) + "]\n")
-        for i in range(array.shape.ndsize):
+        for i in range(array.size):
             if i % 10 == 0:
                 file.write(str("\n"))
             file.write(str(array._buf[i]) + ",")

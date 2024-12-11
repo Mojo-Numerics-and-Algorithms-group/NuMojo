@@ -28,5 +28,6 @@ alias pi = numojo.routines.constants.Constants.pi
 alias e = numojo.routines.constants.Constants.e
 alias c = numojo.routines.constants.Constants.c
 
-# TODO Make explicit imports in future
+# TODO Make explicit imports of each individual function in future
+# to avoid polluting the root namespace.
 from .routines import *

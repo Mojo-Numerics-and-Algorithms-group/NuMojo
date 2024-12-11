@@ -22,12 +22,12 @@ def test_add_array_par():
     var arr = nm.arange[nm.f64](0, 500)
 
     check(
-        nm.add[nm.f64, backend = nm.math.math_funcs.Vectorized](arr, 5.0),
+        nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, 5.0),
         np.arange(0, 500) + 5,
         "Add array + scalar",
     )
     check(
-        nm.add[nm.f64, backend = nm.math.math_funcs.Vectorized](arr, arr),
+        nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, arr),
         np.arange(0, 500) + np.arange(0, 500),
         "Add array + array",
     )
@@ -49,7 +49,7 @@ def test_sin_par():
     check_is_close(
         nm.sin[
             nm.f64,
-            backend = nm.math.math_funcs.Vectorized,
+            backend = nm.core._math_funcs.Vectorized,
         ](arr),
         np.sin(np.arange(0, 15)),
         "Add array + scalar",
@@ -120,7 +120,7 @@ def test_solve():
     var A_np = A.to_numpy()
     var B_np = B.to_numpy()
     check_is_close(
-        nm.math.linalg.solver.solve(A, B),
+        nm.solve(A, B),
         np.linalg.solve(A_np, B_np),
         "Solve is broken",
     )

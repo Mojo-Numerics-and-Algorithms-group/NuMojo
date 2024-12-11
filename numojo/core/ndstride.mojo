@@ -1,7 +1,7 @@
 """
 Implements NDArrayStride type.
 
-`NDArrayShape` is a series of `DType.int32` on the heap.
+`NDArrayStride` is a series of `DType.int32` on the heap.
 """
 
 from utils import Variant
@@ -14,74 +14,74 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
     """Implements the NDArrayStride."""
 
     # Fields
-    var ndoffset: Int
-    var ndstride: UnsafePointer[Scalar[dtype]]
-    var ndlen: Int
+    var offset: Int
+    var strides: UnsafePointer[Scalar[dtype]]
+    var ndim: Int
 
     @always_inline("nodebug")
     fn __init__(
         inout self, *stride: Int, offset: Int = 0
     ):  # maybe we should add checks for offset?
-        self.ndoffset = offset
-        self.ndlen = stride.__len__()
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(stride.__len__())
+        self.offset = offset
+        self.ndim = stride.__len__()
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(stride.__len__())
         for i in range(stride.__len__()):
-            self.ndstride[i] = stride[i]
+            self.strides[i] = stride[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, stride: List[Int], offset: Int = 0):
-        self.ndoffset = offset
-        self.ndlen = stride.__len__()
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride[i]
+        self.offset = offset
+        self.ndim = stride.__len__()
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
+        memset_zero(self.strides, self.ndim)
+        for i in range(self.ndim):
+            self.strides[i] = stride[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, stride: VariadicList[Int], offset: Int = 0):
-        self.ndoffset = offset
-        self.ndlen = stride.__len__()
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride[i]
+        self.offset = offset
+        self.ndim = stride.__len__()
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
+        memset_zero(self.strides, self.ndim)
+        for i in range(self.ndim):
+            self.strides[i] = stride[i]
 
     @always_inline("nodebug")
     fn __init__(inout self, stride: NDArrayStride[dtype]):
-        self.ndoffset = stride.ndoffset
-        self.ndlen = stride.ndlen
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(stride.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride.ndstride[i]
+        self.offset = stride.offset
+        self.ndim = stride.ndim
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(stride.ndim)
+        for i in range(self.ndim):
+            self.strides[i] = stride.strides[i]
 
     @always_inline("nodebug")
     fn __init__(
         inout self, stride: NDArrayStride[dtype], offset: Int = 0
     ):  # separated two methods to remove if condition
-        self.ndoffset = offset
-        self.ndlen = stride.ndlen
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(stride.ndlen)
-        for i in range(self.ndlen):
-            self.ndstride[i] = stride.ndstride[i]
+        self.offset = offset
+        self.ndim = stride.ndim
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(stride.ndim)
+        for i in range(self.ndim):
+            self.strides[i] = stride.strides[i]
 
     @always_inline("nodebug")
     fn __init__(
         inout self, *shape: Int, offset: Int = 0, order: String = "C"
     ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.__len__()
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
+        self.offset = offset
+        self.ndim = shape.__len__()
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
+        memset_zero(self.strides, self.ndim)
         if order == "C":
-            for i in range(self.ndlen):
+            for i in range(self.ndim):
                 var temp: Int = 1
-                for j in range(i + 1, self.ndlen):
+                for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self.ndstride[i] = temp
+                self.strides[i] = temp
         elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
+            self.strides[0] = 1
+            for i in range(0, self.ndim - 1):
+                self.strides[i + 1] = self.strides[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -92,20 +92,20 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
     fn __init__(
         inout self, shape: List[Int], offset: Int = 0, order: String = "C"
     ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.__len__()
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
+        self.offset = offset
+        self.ndim = shape.__len__()
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
+        memset_zero(self.strides, self.ndim)
         if order == "C":
-            for i in range(self.ndlen):
+            for i in range(self.ndim):
                 var temp: Int = 1
-                for j in range(i + 1, self.ndlen):
+                for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self.ndstride[i] = temp
+                self.strides[i] = temp
         elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
+            self.strides[0] = 1
+            for i in range(0, self.ndim - 1):
+                self.strides[i + 1] = self.strides[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -119,20 +119,20 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
         offset: Int = 0,
         order: String = "C",
     ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.__len__()
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(self.ndlen)
-        memset_zero(self.ndstride, self.ndlen)
+        self.offset = offset
+        self.ndim = shape.__len__()
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
+        memset_zero(self.strides, self.ndim)
         if order == "C":
-            for i in range(self.ndlen):
+            for i in range(self.ndim):
                 var temp: Int = 1
-                for j in range(i + 1, self.ndlen):
+                for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self.ndstride[i] = temp
+                self.strides[i] = temp
         elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
+            self.strides[0] = 1
+            for i in range(0, self.ndim - 1):
+                self.strides[i + 1] = self.strides[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -146,23 +146,23 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
         offset: Int = 0,
         order: String = "C",
     ) raises:
-        self.ndoffset = offset
-        self.ndlen = shape.ndlen
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(shape.ndlen)
-        memset_zero(self.ndstride, shape.ndlen)
+        self.offset = offset
+        self.ndim = shape.ndim
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(shape.ndim)
+        memset_zero(self.strides, shape.ndim)
         if order == "C":
-            if shape.ndlen == 1:
-                self.ndstride[0] = 1
+            if shape.ndim == 1:
+                self.strides[0] = 1
             else:
-                for i in range(shape.ndlen):
+                for i in range(shape.ndim):
                     var temp: Int = 1
-                    for j in range(i + 1, shape.ndlen):
+                    for j in range(i + 1, shape.ndim):
                         temp = temp * shape[j]
-                    self.ndstride[i] = temp
+                    self.strides[i] = temp
         elif order == "F":
-            self.ndstride[0] = 1
-            for i in range(0, self.ndlen - 1):
-                self.ndstride[i + 1] = self.ndstride[i] * shape[i]
+            self.strides[0] = 1
+            for i in range(0, self.ndim - 1):
+                self.strides[i + 1] = self.strides[i] * shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -170,32 +170,32 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
             )
 
     fn __copy__(inout self, other: Self):
-        self.ndoffset = other.ndoffset
-        self.ndlen = other.ndlen
-        self.ndstride = UnsafePointer[Scalar[dtype]]().alloc(other.ndlen)
-        memcpy(self.ndstride, other.ndstride, other.ndlen)
+        self.offset = other.offset
+        self.ndim = other.ndim
+        self.strides = UnsafePointer[Scalar[dtype]]().alloc(other.ndim)
+        memcpy(self.strides, other.strides, other.ndim)
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
-        if index >= self.ndlen:
+        if index >= self.ndim:
             raise Error("Index out of bound")
         if index >= 0:
-            return self.ndstride[index].__int__()
+            return self.strides[index].__int__()
         else:
-            return self.ndstride[self.ndlen + index].__int__()
+            return self.strides[self.ndim + index].__int__()
 
     @always_inline("nodebug")
     fn __setitem__(inout self, index: Int, val: Int) raises:
-        if index >= self.ndlen:
+        if index >= self.ndim:
             raise Error("Index out of bound")
         if index >= 0:
-            self.ndstride[index] = val
+            self.strides[index] = val
         else:
-            self.ndstride[self.ndlen + index] = val
+            self.strides[self.ndim + index] = val
 
     @always_inline("nodebug")
     fn len(self) -> Int:
-        return self.ndlen
+        return self.ndim
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
@@ -203,17 +203,17 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
 
     fn format_to(self, inout writer: Formatter):
         var result: String = "Stride: ["
-        for i in range(self.ndlen):
-            if i == self.ndlen - 1:
-                result += self.ndstride[i].__str__()
+        for i in range(self.ndim):
+            if i == self.ndim - 1:
+                result += self.strides[i].__str__()
             else:
-                result += self.ndstride[i].__str__() + ", "
+                result += self.strides[i].__str__() + ", "
         result = result + "]"
         writer.write(result)
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:
-        for i in range(self.ndlen):
+        for i in range(self.ndim):
             if self[i] != other[i]:
                 return False
         return True
@@ -224,31 +224,31 @@ struct NDArrayStride[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __contains__(self, val: Int) raises -> Bool:
-        for i in range(self.ndlen):
+        for i in range(self.ndim):
             if self[i] == val:
                 return True
         return False
 
     @always_inline("nodebug")
     fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        # if index >= self.ndlen:
+        # if index >= self.ndim:
         #     raise Error("Index out of bound")
-        return self.ndstride.load[width=width](index)
+        return self.strides.load[width=width](index)
 
     @always_inline("nodebug")
     fn store[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[dtype, width]) raises:
-        # if index >= self.ndlen:
+        # if index >= self.ndim:
         #     raise Error("Index out of bound")
-        self.ndstride.store[width=width](index, val)
+        self.strides.store[width=width](index, val)
 
     @always_inline("nodebug")
     fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
-        return self.ndstride.load[width=width](index).__int__()
+        return self.strides.load[width=width](index).__int__()
 
     @always_inline("nodebug")
     fn store_unsafe[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[dtype, width]):
-        self.ndstride.store[width=width](index, val)
+        self.strides.store[width=width](index, val)

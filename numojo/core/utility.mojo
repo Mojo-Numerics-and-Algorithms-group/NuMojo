@@ -55,7 +55,7 @@ fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
@@ -72,7 +72,7 @@ fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
@@ -89,7 +89,7 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
@@ -106,7 +106,7 @@ fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var index: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         index += indices[i] * weights[i]
     return index
 
@@ -123,7 +123,7 @@ fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
@@ -196,7 +196,7 @@ fn _traverse_iterative[
         index: The list of indices.
         depth: The depth of the indices.
     """
-    var total_elements = narr.shape.ndsize
+    var total_elements = narr.size
 
     # # parallelized version was slower xD
     for _ in range(total_elements):
@@ -246,7 +246,7 @@ fn _traverse_iterative_setter[
         offset: The offset to the first element of the original NDArray.
         index: The list of indices.
     """
-    var total_elements = narr.shape.ndsize
+    var total_elements = narr.size
 
     for _ in range(total_elements):
         var orig_idx = offset + _get_index(index, coefficients)
@@ -286,7 +286,7 @@ fn bool_to_numeric[
     """
     # Can't use simd becuase of bit packing error
     var res: NDArray[dtype] = NDArray[dtype](array.shape)
-    for i in range(array.size()):
+    for i in range(array.size):
         var t: Bool = array.item(i)
         if t:
             res._buf[i] = 1

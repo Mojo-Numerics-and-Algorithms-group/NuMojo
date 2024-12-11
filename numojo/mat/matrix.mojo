@@ -1144,7 +1144,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         var ndarray = NDArray[dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order="C"
         )
-        memcpy(ndarray._buf, self._buf, ndarray.size())
+        memcpy(ndarray._buf, self._buf, ndarray.size)
 
         return ndarray
 

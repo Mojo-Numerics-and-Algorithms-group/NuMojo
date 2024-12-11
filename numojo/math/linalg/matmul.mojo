@@ -84,7 +84,7 @@ fn matmul_1d[
         )
 
     try:
-        if A.size() != B.size():
+        if A.size != B.size:
             raise Error("Size error!")
     except e:
         print(e)

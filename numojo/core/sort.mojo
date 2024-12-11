@@ -47,7 +47,7 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
         The sorted NDArray.
     """
     var result: NDArray[dtype] = ndarray
-    var length = ndarray.size()
+    var length = ndarray.size
 
     for i in range(length):
         for j in range(length - i - 1):
@@ -147,7 +147,7 @@ fn quick_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     var result: NDArray[dtype] = ndarray
-    var length = ndarray.size()
+    var length = ndarray.size
     quick_sort_inplace(result, 0, length - 1)
 
     return result
@@ -186,7 +186,7 @@ fn binary_sort[
         alias dtype = array.dtype
 
     var result: NDArray[dtype] = NDArray[dtype](array.shape)
-    for i in range(array.shape.ndsize):
+    for i in range(array.size):
         result.store(i, array.get(i).cast[dtype]())
 
     var n = array.num_elements()
@@ -313,7 +313,7 @@ fn argsort[
     """
 
     var array: NDArray[dtype] = ndarray
-    var length = array.size()
+    var length = array.size
 
     var idx_array = NDArray[DType.index](Shape(length))
     for i in range(length):

@@ -49,7 +49,7 @@ fn isinf[
     # return backend().math_func_is[dtype, math.isinf](array)
 
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
-    for i in range(result_array.size()):
+    for i in range(result_array.size):
         result_array.store(i, math.isinf(array.get(i)))
     return result_array
 
@@ -72,7 +72,7 @@ fn isfinite[
     """
     # return backend().math_func_is[dtype, math.isfinite](array)
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
-    for i in range(result_array.size()):
+    for i in range(result_array.size):
         result_array.store(i, math.isfinite(array.get(i)))
     return result_array
 
@@ -95,7 +95,7 @@ fn isnan[
     """
     # return backend().math_func_is[dtype, math.isnan](array)
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
-    for i in range(result_array.size()):
+    for i in range(result_array.size):
         result_array.store(i, math.isnan(array.get(i)))
     return result_array
 
@@ -119,7 +119,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
 
     # vectorize[vectorize_sum, opt_nelts](array.num_elements())
     # return result
-    for i in range(array.size()):
+    for i in range(array.size):
         result |= array.get(i)
     return result
 
@@ -143,6 +143,6 @@ fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
 
     # vectorize[vectorize_sum, opt_nelts](array.num_elements())
     # return result
-    for i in range(array.size()):
+    for i in range(array.size):
         result &= array.get(i)
     return result

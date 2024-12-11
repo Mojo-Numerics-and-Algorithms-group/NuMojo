@@ -35,9 +35,7 @@ fn cross[
         The cross product of two arrays.
     """
 
-    if (array1.shape.ndsize == array2.shape.ndsize == 3) and (
-        array1.shape.ndlen == array2.shape.ndlen == 1
-    ):
+    if (array1.size == array2.size == 3) and (array1.ndim == array2.ndim == 1):
         var array3: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
         array3.store(
             0,
@@ -83,10 +81,8 @@ fn dot[
     """
 
     alias width = simdwidthof[dtype]()
-    if array1.shape.ndlen == array2.shape.ndlen == 1:
-        var result: NDArray[dtype] = NDArray[dtype](
-            NDArrayShape(array1.shape.ndsize)
-        )
+    if array1.ndim == array2.ndim == 1:
+        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
 
         @parameter
         fn vectorized_dot[simd_width: Int](idx: Int) -> None:
@@ -96,7 +92,7 @@ fn dot[
                 * array2.load[width=simd_width](idx),
             )
 
-        vectorize[vectorized_dot, width](array1.shape.ndsize)
+        vectorize[vectorized_dot, width](array1.size)
         return result^
     else:
         raise Error(

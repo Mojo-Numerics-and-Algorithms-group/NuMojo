@@ -77,9 +77,12 @@ struct NDArray[dtype: DType = DType.float64](
         1. The data buffer of all items.
         2. The shape of the array.
         3. The stride in each dimension
-        4. The number of dimensions
-        5. The datatype of the elements
-        6. The order of the array: Row vs Columns major
+        4. The datatype of the elements
+
+    The following attributes are also helpful:
+        - The number of dimensions
+        - Size of the array (number of items)
+        - The order of the array: Row vs Columns major
     """
 
     var _buf: UnsafePointer[Scalar[dtype]]
@@ -88,6 +91,8 @@ struct NDArray[dtype: DType = DType.float64](
     """Number of Dimensions."""
     var shape: NDArrayShape
     """Size and shape of NDArray."""
+    var size: Int
+    """Size of NDArray."""
     var stride: NDArrayStride
     """Contains offset, strides."""
     var coefficient: NDArrayStride
@@ -97,7 +102,7 @@ struct NDArray[dtype: DType = DType.float64](
     var order: String
     "Memory layout of array C (C order row major) or F (Fortran order col major)."
 
-    alias width: Int = simdwidthof[dtype]()  #
+    alias width: Int = simdwidthof[dtype]()
     """Vector size of the data type."""
 
     # ===-------------------------------------------------------------------===#
@@ -122,11 +127,12 @@ struct NDArray[dtype: DType = DType.float64](
             order: Memory order C or F.
         """
 
-        self.ndim = shape.ndlen
+        self.ndim = shape.ndim
         self.shape = NDArrayShape(shape)
+        self.size = self.shape.size
         self.stride = NDArrayStride(shape, order=order)
         self.coefficient = NDArrayStride(shape, order=order)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.shape.ndsize)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.datatype = dtype
         self.order = order
 
@@ -184,14 +190,14 @@ struct NDArray[dtype: DType = DType.float64](
     #         ```
     #     """
 
-    #     self.ndim = shape.ndlen
+    #     self.ndim = shape.ndim
     #     self.shape = NDArrayShape(shape)
     #     self.stride = NDArrayStride(shape, offset=0, order=order)
     #     self.coefficient = NDArrayStride(shape, offset=0, order=order)
-    #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.shape.ndsize)
+    #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
     #     self.datatype = dtype
     #     self.order = order
-    #     for i in range(self.shape.ndsize):
+    #     for i in range(self.size):
     #         self._buf[i] = data[i]
 
     ########################
@@ -223,11 +229,11 @@ struct NDArray[dtype: DType = DType.float64](
     #     self.shape = NDArrayShape(shape)
     #     self.stride = NDArrayStride(shape, offset=0, order=order)
     #     self.coefficient = NDArrayStride(shape, offset=0, order=order)
-    #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.shape.ndsize)
-    #     memset_zero(self._buf, self.shape.ndsize)
+    #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
+    #     memset_zero(self._buf, self.size)
     #     self.order = order
     #     self.datatype = dtype
-    #     for i in range(self.shape.ndsize):
+    #     for i in range(self.size):
     #         self._buf[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
     # Why do  these last two constructors exist?
@@ -247,6 +253,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self.ndim = ndim
         self.shape = NDArrayShape(shape)
+        self.size = size
         self.stride = NDArrayStride(stride=strides, offset=0)
         self.coefficient = NDArrayStride(stride=coefficient, offset=offset)
         self.datatype = dtype
@@ -270,13 +277,14 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self.ndim = ndim
         self.shape = NDArrayShape(shape)
+        self.size = self.shape.size
         self.stride = NDArrayStride(strides, offset=0, order=order)
         self.coefficient = NDArrayStride(
             coefficient, offset=offset, order=order
         )
         self.datatype = dtype
         self.order = order
-        self._buf = data + self.stride.ndoffset
+        self._buf = data + self.stride.offset
 
     @always_inline("nodebug")
     fn __copyinit__(inout self, other: Self):
@@ -285,12 +293,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self.ndim = other.ndim
         self.shape = other.shape
+        self.size = other.size
         self.stride = other.stride
         self.coefficient = other.coefficient
         self.datatype = other.datatype
         self.order = other.order
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.shape.size())
-        memcpy(self._buf, other._buf, other.shape.size())
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.size)
+        memcpy(self._buf, other._buf, other.size)
 
     @always_inline("nodebug")
     fn __moveinit__(inout self, owned existing: Self):
@@ -299,10 +308,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self.ndim = existing.ndim
         self.shape = existing.shape
+        self.size = existing.size
         self.stride = existing.stride
         self.coefficient = existing.coefficient
         self.datatype = existing.datatype
-        self.order = existing.order
+        self.order = existing.order^
         self._buf = existing._buf
 
     @always_inline("nodebug")
@@ -331,17 +341,17 @@ struct NDArray[dtype: DType = DType.float64](
         > A.item(3)  # Row 1, Col 0
         ```
         """
-        if index >= self.shape.ndsize:
+        if index >= self.size:
             var message = String(
                 "Invalid index: index out of bound. \n"
                 "The index is {}. \n"
                 "The size is {}"
-            ).format(index, self.shape.ndsize)
+            ).format(index, self.size)
             raise Error(message)
         if index >= 0:
             return self._buf.store[width=1](index, val)
         else:
-            return self._buf.store[width=1](index + self.shape.ndsize, val)
+            return self._buf.store[width=1](index + self.size, val)
 
     # TODO: add support for different dtypes
     fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
@@ -489,7 +499,7 @@ struct NDArray[dtype: DType = DType.float64](
     #     ):  # this behavious could be removed potentially
     #         raise Error("Mask and array must have the same shape")
 
-    #     for i in range(mask.shape.ndsize):
+    #     for i in range(mask.size):
     #         if mask._buf.load[width=1](i):
     #             print(value)
     #             self._buf.store[width=1](i, value)
@@ -684,7 +694,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
             raise Error(message)
 
-        for i in range(mask.shape.ndsize):
+        for i in range(mask.size):
             if mask._buf.load[width=1](i):
                 self._buf.store[width=1](i, val._buf.load[width=1](i))
 
@@ -709,18 +719,18 @@ struct NDArray[dtype: DType = DType.float64](
         > A.item(3)  # Row 1, Col 0
         ```
         """
-        if index >= self.shape.ndsize:
+        if index >= self.size:
             raise Error(
                 String(
                     "Invalid index: index out of bound!\n"
                     "The index is {}."
                     "The size of the array is {}"
-                ).format(index, self.shape.ndsize)
+                ).format(index, self.size)
             )
         if index >= 0:
             return self._buf.load[width=1](index)
         else:
-            return self._buf.load[width=1](index + self.shape.ndsize)
+            return self._buf.load[width=1](index + self.size)
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
@@ -1228,11 +1238,11 @@ struct NDArray[dtype: DType = DType.float64](
         # So just change the first number of the ndshape
         var ndshape = self.shape
         ndshape[0] = len(index)
-        ndshape.ndsize = 1
-        for i in range(ndshape.ndlen):
-            ndshape.ndsize *= int(ndshape._buf[i])
+        ndsize = 1
+        for i in range(ndshape.ndim):
+            ndsize *= int(ndshape._buf[i])
         var result = NDArray[dtype](ndshape)
-        var size_per_item = ndshape.ndsize // len(index)
+        var size_per_item = ndsize // len(index)
 
         # Fill in the values
         for i in range(len(index)):
@@ -1290,7 +1300,7 @@ struct NDArray[dtype: DType = DType.float64](
             NDArray with items from the mask.
         """
         var true: List[Int] = List[Int]()
-        for i in range(mask.shape.ndsize):
+        for i in range(mask.size):
             if mask._buf.load[width=1](i):
                 true.append(i)
 
@@ -1342,7 +1352,7 @@ struct NDArray[dtype: DType = DType.float64](
             Int representation of the array.
 
         """
-        if (self.size() == 1) or (self.ndim == 0):
+        if (self.size == 1) or (self.ndim == 0):
             return int(self.get(0))
         else:
             raise (
@@ -1566,13 +1576,13 @@ struct NDArray[dtype: DType = DType.float64](
         return self._elementwise_pow(p)
 
     fn __pow__(self, p: Self) raises -> Self:
-        if self.shape.ndsize != p.shape.ndsize:
+        if self.size != p.size:
             raise Error(
                 String(
                     "Both arrays must have same number of elements! \n"
                     "Self array has {} elements. \n"
                     "Other array has {} elements"
-                ).format(self.shape.ndsize, p.shape.ndsize)
+                ).format(self.size, p.size)
             )
 
         var result = Self(self.shape)
@@ -1585,7 +1595,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ** p.load[width=simd_width](index),
             )
 
-        vectorize[vectorized_pow, self.width](self.shape.ndsize)
+        vectorize[vectorized_pow, self.width](self.size)
         return result
 
     fn __ipow__(inout self, p: Int):
@@ -1600,7 +1610,7 @@ struct NDArray[dtype: DType = DType.float64](
                 index, pow(self._buf.load[width=simd_width](index), p)
             )
 
-        vectorize[array_scalar_vectorize, self.width](self.shape.ndsize)
+        vectorize[array_scalar_vectorize, self.width](self.size)
         return new_vec
 
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
@@ -1734,7 +1744,7 @@ struct NDArray[dtype: DType = DType.float64](
             var result: String = str("NDArray[DType.") + str(self.dtype) + str(
                 "](List[Scalar[DType."
             ) + str(self.dtype) + str("]](")
-            if self.size() > 6:
+            if self.size > 6:
                 for i in range(6):
                     result = result + str(self.load[width=1](i)) + str(",")
                 result = result + " ... "
@@ -1742,7 +1752,7 @@ struct NDArray[dtype: DType = DType.float64](
                 for i in self:
                     result = result + str(i) + str(",")
             result = result + str("), shape=List[Int](")
-            for i in range(self.shape.ndlen):
+            for i in range(self.shape.ndim):
                 result = result + str(self.shape._buf[i]) + ","
             result = result + str("))")
             return result
@@ -1752,7 +1762,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     # Should len be size or number of dimensions instead of the first dimension shape?
     fn __len__(self) -> Int:
-        return int(self.shape.ndsize)
+        return int(self.size)
 
     fn __iter__(self) raises -> _NDArrayIter[__lifetime_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
@@ -1881,11 +1891,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Inner product of two vectors.
         """
-        if self.shape.ndsize != other.shape.ndsize:
+        if self.size != other.size:
             raise Error("The lengths of two vectors do not match.")
 
         var sum = Scalar[dtype](0)
-        for i in range(self.shape.ndsize):
+        for i in range(self.size):
             sum = sum + self.get(i) * other.get(i)
         return sum
 
@@ -1990,17 +2000,11 @@ struct NDArray[dtype: DType = DType.float64](
                 )
         return new_matrix
 
-    fn size(self) -> Int:
-        """
-        Function to retreive size.
-        """
-        return self.shape.ndsize
-
     fn num_elements(self) -> Int:
         """
         Function to retreive size (compatability).
         """
-        return self.shape.ndsize
+        return self.size
 
     # should this return the List[Int] shape and self.shape be used instead of making it a no input function call?
     # * We fix return dtype of this array shape for the linalg solve module.
@@ -2082,7 +2086,7 @@ struct NDArray[dtype: DType = DType.float64](
                 (self._buf + idx).strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_all, self.width](self.shape.ndsize)
+        vectorize[vectorized_all, self.width](self.size)
         return result
 
     fn any(self) raises -> Bool:
@@ -2100,7 +2104,7 @@ struct NDArray[dtype: DType = DType.float64](
                 (self._buf + idx).strided_load[width=simd_width](1)
             )
 
-        vectorize[vectorized_any, self.width](self.shape.ndsize)
+        vectorize[vectorized_any, self.width](self.size)
         return result
 
     fn argmax(self) -> Int:
@@ -2109,7 +2113,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var result: Int = 0
         var max_val: SIMD[dtype, 1] = self.load[width=1](0)
-        for i in range(1, self.shape.ndsize):
+        for i in range(1, self.size):
             var temp: SIMD[dtype, 1] = self.load[width=1](i)
             if temp > max_val:
                 max_val = temp
@@ -2122,7 +2126,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var result: Int = 0
         var min_val: SIMD[dtype, 1] = self.load[width=1](0)
-        for i in range(1, self.shape.ndsize):
+        for i in range(1, self.size):
             var temp: SIMD[dtype, 1] = self.load[width=1](i)
             if temp < min_val:
                 min_val = temp
@@ -2157,7 +2161,7 @@ struct NDArray[dtype: DType = DType.float64](
                     self.load[simd_width](idx).cast[type](), 1
                 )
 
-            vectorize[vectorized_astype, self.width](self.shape.ndsize)
+            vectorize[vectorized_astype, self.width](self.size)
         else:
 
             @parameter
@@ -2174,9 +2178,7 @@ struct NDArray[dtype: DType = DType.float64](
                         .cast[type](),
                     )
 
-                vectorize[vectorized_astypenb_from_b, self.width](
-                    self.shape.ndsize
-                )
+                vectorize[vectorized_astypenb_from_b, self.width](self.size)
             else:
 
                 @parameter
@@ -2185,7 +2187,7 @@ struct NDArray[dtype: DType = DType.float64](
                         idx, self.load[simd_width](idx).cast[type]()
                     )
 
-                vectorize[vectorized_astypenb, self.width](self.shape.ndsize)
+                vectorize[vectorized_astypenb, self.width](self.size)
 
         return narr
 
@@ -2228,7 +2230,7 @@ struct NDArray[dtype: DType = DType.float64](
         fn vectorized_fill[simd_width: Int](index: Int) -> None:
             self._buf.store[width=simd_width](index, val)
 
-        vectorize[vectorized_fill, self.width](self.shape.ndsize)
+        vectorize[vectorized_fill, self.width](self.size)
 
         return self
 
@@ -2236,7 +2238,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Convert shape of array to one dimensional.
         """
-        self.shape = NDArrayShape(self.shape.ndsize, size=self.shape.ndsize)
+        self.shape = NDArrayShape(self.size, size=self.size)
         self.stride = NDArrayStride(shape=self.shape, offset=0)
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
@@ -2299,7 +2301,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # If one index is given
         if index.__len__() == 1:
-            if index[0] < self.size():
+            if index[0] < self.size:
                 if (
                     self.order == "F"
                 ):  # column-major should be converted to row-major
@@ -2308,7 +2310,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var c_stride = NDArrayStride(shape=self.shape)
                     var c_coordinates = List[Int]()
                     var idx: Int = index[0]
-                    for i in range(c_stride.ndlen):
+                    for i in range(c_stride.ndim):
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
@@ -2322,7 +2324,7 @@ struct NDArray[dtype: DType = DType.float64](
                     String(
                         "Error: Elements of `index` ({}) \n"
                         "exceed the array size ({})"
-                    ).format(index[0], self.size())
+                    ).format(index[0], self.size)
                 )
 
         # If more than one index is given
@@ -2392,7 +2394,7 @@ struct NDArray[dtype: DType = DType.float64](
         # If one index is given
         if index.isa[Int]():
             var idx = index._get_ptr[Int]()[]
-            if idx < self.size():
+            if idx < self.size:
                 if (
                     self.order == "F"
                 ):  # column-major should be converted to row-major
@@ -2400,7 +2402,7 @@ struct NDArray[dtype: DType = DType.float64](
                     # convert any index to coordinates according to the order
                     var c_stride = NDArrayStride(shape=self.shape)
                     var c_coordinates = List[Int]()
-                    for i in range(c_stride.ndlen):
+                    for i in range(c_stride.ndim):
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
@@ -2414,7 +2416,7 @@ struct NDArray[dtype: DType = DType.float64](
                     String(
                         "Error: Elements of `index` ({}) \n"
                         "exceed the array size ({})."
-                    ).format(idx, self.size())
+                    ).format(idx, self.size)
                 )
 
         else:
@@ -2560,7 +2562,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Sort the array inplace using quickstort.
         """
-        sort.quick_sort_inplace[dtype](self, 0, self.size() - 1)
+        sort.quick_sort_inplace[dtype](self, 0, self.size - 1)
 
     fn sum(self: Self, axis: Int) raises -> Self:
         """
@@ -2580,7 +2582,7 @@ struct NDArray[dtype: DType = DType.float64](
             A 1-D List.
         """
         var result: List[Scalar[dtype]] = List[Scalar[dtype]]()
-        for i in range(self.shape.ndsize):
+        for i in range(self.size):
             result.append(self._buf[i])
         return result
 

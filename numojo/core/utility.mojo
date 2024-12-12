@@ -7,8 +7,9 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 # ===----------------------------------------------------------------------=== #
 
 from algorithm.functional import vectorize
-
 from python import Python, PythonObject
+from memory import memcpy
+
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
 from .ndarray import NDArray

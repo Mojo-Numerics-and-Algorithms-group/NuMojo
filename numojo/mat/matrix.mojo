@@ -10,6 +10,8 @@
 from numojo.core.ndarray import NDArray
 from memory import memcpy
 from sys import simdwidthof
+from algorithm import parallelize, vectorize
+from python import PythonObject, Python
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct

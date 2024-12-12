@@ -30,20 +30,20 @@ from utils import Variant
 from memory import memset_zero, memcpy
 
 
-import . _array_funcs as _af
-from ..math.statistics.stats import mean, prod, sum
-from ..math.statistics.cumulative_reduce import (
-    cumsum,
-    cumprod,
-    cummean,
-    maxT,
-    minT,
-)
-import . sort as sort
-import .. math as math
+import numojo.core._array_funcs as _af
+import numojo.routines.sorting as sort
+import numojo.routines.math.arithmetic as arithmetic
+import numojo.routines.logic.comparison as comparison
+import numojo.routines.math.rounding as rounding
+import numojo.routines.bitwise as bitwise
+import numojo.routines.linalg as linalg
+
+from numojo.routines.statistics.averages import mean, cummean
+from numojo.routines.math.products import prod, cumprod
+from numojo.routines.math.sums import sum, cumsum
+from numojo.routines.math.extrema import maxT, minT
 from ..traits import Backend
-from ..math.check import any, all
-from ..math.arithmetic import abs
+from numojo.routines.logic.truth import any
 from .utility import (
     _get_index,
     _traverse_iterative,
@@ -54,11 +54,11 @@ from .utility import (
     is_inttype,
     is_booltype,
 )
-from ..math.math_funcs import Vectorized
-from ..math.linalg.matmul import matmul_parallelized
-from .array_manipulation_routines import reshape
-from .ndshape import NDArrayShape
-from .ndstrides import NDArrayStrides
+from numojo.core._math_funcs import Vectorized
+from numojo.routines.linalg.products import matmul_parallelized
+from numojo.routines.manipulation import reshape
+from numojo.core.ndshape import NDArrayShape
+from numojo.core.ndstrides import NDArrayStrides
 
 # ===----------------------------------------------------------------------===#
 # NDArray
@@ -1386,84 +1386,84 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise equivelence.
         """
-        return math.equal[dtype](self, other)
+        return comparison.equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise equivelence between scalar and Array.
         """
-        return math.equal[dtype](self, other)
+        return comparison.equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise nonequivelence.
         """
-        return math.not_equal[dtype](self, other)
+        return comparison.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ne__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise nonequivelence between scalar and Array.
         """
-        return math.not_equal[dtype](self, other)
+        return comparison.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise less than.
         """
-        return math.less[dtype](self, other)
+        return comparison.less[dtype](self, other)
 
     @always_inline("nodebug")
     fn __lt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise less than between scalar and Array.
         """
-        return math.less[dtype](self, other)
+        return comparison.less[dtype](self, other)
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise less than or equal to.
         """
-        return math.less_equal[dtype](self, other)
+        return comparison.less_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __le__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise less than or equal to between scalar and Array.
         """
-        return math.less_equal[dtype](self, other)
+        return comparison.less_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise greater than.
         """
-        return math.greater[dtype](self, other)
+        return comparison.greater[dtype](self, other)
 
     @always_inline("nodebug")
     fn __gt__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise greater than between scalar and Array.
         """
-        return math.greater[dtype](self, other)
+        return comparison.greater[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise greater than or equal to.
         """
-        return math.greater_equal[dtype](self, other)
+        return comparison.greater_equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __ge__(self, other: NDArray[dtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise less than or equal to between scalar and Array.
         """
-        return math.greater_equal[dtype](self, other)
+        return comparison.greater_equal[dtype](self, other)
 
     fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1570,7 +1570,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Elementwise inverse (~ or not), only for bools and integral types.
         """
-        return math.invert[dtype](self)
+        return bitwise.invert[dtype](self)
 
     fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)
@@ -2461,11 +2461,11 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
-            var mask1 = greater(arr_slice, result)
-            var mask2 = less(arr_slice, result)
+            var mask1 = comparison.greater(arr_slice, result)
+            var mask2 = comparison.less(arr_slice, result)
             # Wherever result is less than the new slice it is set to zero
             # Wherever arr_slice is greater than the old result it is added to fill those zeros
-            result = add(
+            result = arithmetic.add(
                 result * bool_to_numeric[dtype](mask2),
                 arr_slice * bool_to_numeric[dtype](mask1),
             )
@@ -2502,11 +2502,11 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(1, axis_size):
             slices[axis] = Slice(i, i + 1)
             var arr_slice = self[slices]
-            var mask1 = less(arr_slice, result)
-            var mask2 = greater(arr_slice, result)
+            var mask1 = comparison.less(arr_slice, result)
+            var mask2 = comparison.greater(arr_slice, result)
             # Wherever result is greater than the new slice it is set to zero
             # Wherever arr_slice is less than the old result it is added to fill those zeros
-            result = add(
+            result = arithmetic.add(
                 result * bool_to_numeric[dtype](mask2),
                 arr_slice * bool_to_numeric[dtype](mask1),
             )
@@ -2556,7 +2556,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An NDArray.
         """
-        return tround[dtype](self)
+        return rounding.tround[dtype](self)
 
     fn sort(inout self) raises:
         """
@@ -2601,7 +2601,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The trace of the ndarray.
         """
-        return trace[dtype](self, offset, axis1, axis2)
+        return linalg.norms.trace[dtype](self, offset, axis1, axis2)
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
     fn reshape(inout self, *shape: Int, order: String = "C") raises:

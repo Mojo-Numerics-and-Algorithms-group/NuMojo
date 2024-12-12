@@ -4,7 +4,8 @@
 """
 
 from numojo.core.ndarray import NDArray
-from memory.memory import memset_zero
+from memory.memory import memset_zero, memcpy
+from random import random_float64
 
 # ===-----------------------------------------------------------------------===#
 # Constructing Matrix
@@ -96,7 +97,7 @@ fn rand[dtype: DType = DType.float64](shape: Tuple[Int, Int]) -> Matrix[dtype]:
     """
     var result = Matrix[dtype](shape)
     for i in range(result.size):
-        result._buf.store(i, random.random_float64(0, 1).cast[dtype]())
+        result._buf.store(i, random_float64(0, 1).cast[dtype]())
     return result^
 
 

@@ -18,7 +18,7 @@ fn test_constructors1() raises:
     print("shape: ", arr1.shape)
     print("strides: ", arr1.stride)
     print("size: ", arr1.shape.ndsize)
-    print("offset: ", arr1.stride.ndoffset)
+    print("offset: ", arr1.stride.offset)
     print("dtype: ", arr1.dtype)
 
     var arr2 = NDArray[f32](VariadicList[Int](3, 4, 5))
@@ -27,7 +27,7 @@ fn test_constructors1() raises:
     print("shape: ", arr2.shape)
     print("strides: ", arr2.stride)
     print("size: ", arr2.shape.ndsize)
-    print("offset: ", arr2.stride.ndoffset)
+    print("offset: ", arr2.stride.offset)
     print("dtype: ", arr2.dtype)
 
     var arr3 = NDArray[f32](VariadicList[Int](3, 4, 5), fill=Scalar[f32](10.0))
@@ -36,7 +36,7 @@ fn test_constructors1() raises:
     print("shape: ", arr3.shape)
     print("strides: ", arr3.stride)
     print("size: ", arr3.shape.ndsize)
-    print("offset: ", arr3.stride.ndoffset)
+    print("offset: ", arr3.stride.offset)
     print("dtype: ", arr3.dtype)
 
     var arr4 = NDArray[f32](List[Int](3, 4, 5))
@@ -45,7 +45,7 @@ fn test_constructors1() raises:
     print("shape: ", arr4.shape)
     print("strides: ", arr4.stride)
     print("size: ", arr4.shape.ndsize)
-    print("offset: ", arr4.stride.ndoffset)
+    print("offset: ", arr4.stride.offset)
     print("dtype: ", arr4.dtype)
 
     var arr5 = NDArray[f32](NDArrayShape(3, 4, 5))
@@ -54,7 +54,7 @@ fn test_constructors1() raises:
     print("shape: ", arr5.shape)
     print("strides: ", arr5.stride)
     print("size: ", arr5.shape.ndsize)
-    print("offset: ", arr5.stride.ndoffset)
+    print("offset: ", arr5.stride.offset)
     print("dtype: ", arr5.dtype)
 
     var arr6 = NDArray[f32](
@@ -66,7 +66,7 @@ fn test_constructors1() raises:
     print("shape: ", arr6.shape)
     print("strides: ", arr6.stride)
     print("size: ", arr6.shape.ndsize)
-    print("offset: ", arr6.stride.ndoffset)
+    print("offset: ", arr6.stride.offset)
     print("dtype: ", arr6.dtype)
 
     var arr7 = nm.NDArray[nm.f32](String("[[1.0,0,1], [0,2,1], [1,1,1]]"))

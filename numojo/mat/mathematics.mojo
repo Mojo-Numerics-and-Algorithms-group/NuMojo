@@ -8,6 +8,8 @@
 
 import math
 import builtin
+from sys import simdwidthof
+from algorithm.functional import parallelize, vectorize
 
 from .matrix import Matrix, _arithmetic_func_matrix_to_matrix
 from .creation import zeros

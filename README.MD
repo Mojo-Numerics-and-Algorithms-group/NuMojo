@@ -74,7 +74,7 @@ NuMojo is not a machine learning library, it will never include back-propagation
 
 ## Goals / Roadmap
 
-For a detailed roadmap, please refer to the [Roadmap.md](Roadmap.md) file.
+For a detailed roadmap, please refer to the [docs/roadmap.md](docs/roadmap.md) file.
 
 Our main goal is to implement a fast, comprehensive numerics library in Mojo. Following are some brief long-term goals,
 
@@ -122,7 +122,7 @@ fn main() raises:
     var A_item = A.item(291, 141)
 ```
 
-Please find all the available functions [here](features.md)
+Please find all the available functions [here](docs/features.md)
 
 ## How to install
 

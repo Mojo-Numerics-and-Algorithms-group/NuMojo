@@ -103,7 +103,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         shape: Tuple[Int, Int],
     ):
         """
@@ -120,7 +120,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         data: Self,
     ):
         """Create a matrix from a matrix."""
@@ -129,7 +129,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         data: NDArray[dtype],
     ) raises:
         """
@@ -157,7 +157,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                     self._store(i, j, data.load(i, j))
 
     @always_inline("nodebug")
-    fn __copyinit__(inout self, other: Self):
+    fn __copyinit__(mut self, other: Self):
         """
         Copy other into self.
         """
@@ -168,7 +168,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         memcpy(self._buf, other._buf, other.size)
 
     @always_inline("nodebug")
-    fn __moveinit__(inout self, owned other: Self):
+    fn __moveinit__(mut self, owned other: Self):
         """
         Move other into self.
         """
@@ -389,7 +389,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
     fn _store[
         width: Int = 1
-    ](inout self, x: Int, y: Int, simd: SIMD[dtype, width]):
+    ](mut self, x: Int, y: Int, simd: SIMD[dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!
@@ -399,7 +399,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
     fn __str__(self) -> String:
         return String.write(self)
 
-    fn write_to[W: Writer](self, inout writer: W):
+    fn write_to[W: Writer](self, mut writer: W):
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
             var result: String = str("[")
             var number_of_sep: Int = 1
@@ -1031,7 +1031,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         memcpy(res._buf, self._buf, res.size)
         return res^
 
-    fn resize(inout self, shape: Tuple[Int, Int]):
+    fn resize(mut self, shape: Tuple[Int, Int]):
         """
         Change shape and size of matrix in-place.
         """
@@ -1224,7 +1224,7 @@ struct _MatrixIter[
     var length: Int
 
     fn __init__(
-        inout self,
+        mut self,
         matrix: Matrix[dtype],
         length: Int,
     ):
@@ -1235,7 +1235,7 @@ struct _MatrixIter[
     fn __iter__(self) -> Self:
         return self
 
-    fn __next__(inout self) raises -> Matrix[dtype]:
+    fn __next__(mut self) raises -> Matrix[dtype]:
         @parameter
         if forward:
             var current_index = self.index

@@ -711,7 +711,7 @@ fn diag[
 
 fn diagflat[
     dtype: DType = DType.float64
-](inout v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
+](mut v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
     Generate a 2-D NDArray with the flattened input as the diagonal.
 

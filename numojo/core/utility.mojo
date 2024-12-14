@@ -20,7 +20,7 @@ from .ndarray import NDArray
 fn fill_pointer[
     dtype: DType
 ](
-    inout array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
+    mut array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
 ) raises:
     """
     Fill a NDArray with a specific value.
@@ -174,12 +174,12 @@ fn _traverse_iterative[
     dtype: DType
 ](
     orig: NDArray[dtype],
-    inout narr: NDArray[dtype],
+    mut narr: NDArray[dtype],
     ndim: List[Int],
     coefficients: List[Int],
     strides: List[Int],
     offset: Int,
-    inout index: List[Int],
+    mut index: List[Int],
     depth: Int,
 ) raises:
     """
@@ -226,12 +226,12 @@ fn _traverse_iterative_setter[
     dtype: DType
 ](
     orig: NDArray[dtype],
-    inout narr: NDArray[dtype],
+    mut narr: NDArray[dtype],
     ndim: List[Int],
     coefficients: List[Int],
     strides: List[Int],
     offset: Int,
-    inout index: List[Int],
+    mut index: List[Int],
 ) raises:
     """
     Traverse a multi-dimensional array in a iterative manner.

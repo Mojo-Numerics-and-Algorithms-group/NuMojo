@@ -16,7 +16,7 @@ struct Idx(CollectionElement):
     var len: Int
 
     @always_inline("nodebug")
-    fn __init__(inout self, owned *args: Scalar[Self.dtype]):
+    fn __init__(mut self, owned *args: Scalar[Self.dtype]):
         """Construct the tuple.
 
         Args:
@@ -28,7 +28,7 @@ struct Idx(CollectionElement):
             self.storage[i] = args[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, owned *args: Int):
+    fn __init__(mut self, owned *args: Int):
         """Construct the tuple.
 
         Args:
@@ -41,7 +41,7 @@ struct Idx(CollectionElement):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, owned args: Variant[List[Int], VariadicList[Int]]
+        mut self, owned args: Variant[List[Int], VariadicList[Int]]
     ) raises:
         """Construct the tuple.
 
@@ -62,7 +62,7 @@ struct Idx(CollectionElement):
             raise Error("Invalid type")
 
     @always_inline("nodebug")
-    fn __copyinit__(inout self, other: Self):
+    fn __copyinit__(mut self, other: Self):
         """Copy construct the tuple.
 
         Args:
@@ -76,7 +76,7 @@ struct Idx(CollectionElement):
             self.storage[i] = other[i]
 
     @always_inline("nodebug")
-    fn __moveinit__(inout self, owned other: Self):
+    fn __moveinit__(mut self, owned other: Self):
         """Move construct the tuple.
 
         Args:
@@ -131,7 +131,7 @@ struct Idx(CollectionElement):
             length=self.len,
         )
 
-    fn write_to[W: Writer](self, inout writer: W):
+    fn write_to[W: Writer](self, mut writer: W):
         writer.write("Idx: " + self.str() + "\n" + "Length: " + str(self.len))
 
     fn str(self) -> String:
@@ -150,7 +150,7 @@ struct Idx(CollectionElement):
     @always_inline("nodebug")
     fn store[
         width: Int = 1
-    ](inout self, index: Int, val: SIMD[Self.dtype, width]) raises:
+    ](mut self, index: Int, val: SIMD[Self.dtype, width]) raises:
         self.storage.store(index, val)
 
     @always_inline("nodebug")
@@ -160,7 +160,7 @@ struct Idx(CollectionElement):
     @always_inline("nodebug")
     fn store_unsafe[
         width: Int = 1
-    ](inout self, index: Int, val: SIMD[Self.dtype, width]):
+    ](mut self, index: Int, val: SIMD[Self.dtype, width]):
         self.storage.store(index, val)
 
 
@@ -183,7 +183,7 @@ struct _IdxIter[
     var length: Int
 
     fn __init__(
-        inout self,
+        mut self,
         array: Idx,
         length: Int,
     ):
@@ -194,7 +194,7 @@ struct _IdxIter[
     fn __iter__(self) -> Self:
         return self
 
-    fn __next__(inout self) raises -> Scalar[DType.index]:
+    fn __next__(mut self) raises -> Scalar[DType.index]:
         @parameter
         if forward:
             var current_index = self.index

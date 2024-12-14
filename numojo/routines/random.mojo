@@ -48,7 +48,7 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
 @parameter
 fn int_rand_func[
     dtype: DType
-](inout result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
+](mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
     """
     Generate random integers between `min` and `max` and store them in the given NDArray.
 
@@ -71,7 +71,7 @@ fn int_rand_func[
 @parameter
 fn float_rand_func[
     dtype: DType
-](inout result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
+](mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
     """
     Generate random floating-point numbers between `min` and `max` and store them in the given NDArray.
 

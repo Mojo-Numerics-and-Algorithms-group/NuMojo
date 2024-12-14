@@ -30,7 +30,7 @@ struct Constants(AnyType):
     alias e = 2.71828182845904523536028747135266249775724609375
     alias hbar = 1.0545718176461563912626e-34
 
-    fn __init__(inout self):
+    fn __init__(mut self):
         """
         Initializes the constants.
         """

@@ -17,7 +17,7 @@ Implements N-Dimensional Array
 6) Rename some variables or methods that should not be exposed to users.
 """
 
-from builtin.type_aliases import AnyLifetime
+from builtin.type_aliases import Origin
 from random import rand, random_si64, random_float64
 from builtin.math import pow
 from builtin.bool import all as allb
@@ -50,7 +50,6 @@ from .utility import (
     _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
-    fill_pointer,
     is_inttype,
     is_booltype,
 )
@@ -66,7 +65,7 @@ from numojo.core.ndstrides import NDArrayStrides
 
 
 struct NDArray[dtype: DType = DType.float64](
-    Stringable, Representable, CollectionElement, Sized, Formattable
+    Stringable, Representable, CollectionElement, Sized, Writable
 ):
     """The N-dimensional array (NDArray).
 
@@ -349,9 +348,9 @@ struct NDArray[dtype: DType = DType.float64](
             ).format(index, self.size)
             raise Error(message)
         if index >= 0:
-            return self._buf.store[width=1](index, val)
+            return self._buf.store(index, val)
         else:
-            return self._buf.store[width=1](index + self.size, val)
+            return self._buf.store(index + self.size, val)
 
     # TODO: add support for different dtypes
     fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
@@ -362,7 +361,7 @@ struct NDArray[dtype: DType = DType.float64](
             `arr[1]` returns the second row of the array.
         """
         if self.ndim == 0 and val.ndim == 0:
-            self._buf.store[width=1](0, val._buf.load[width=1](0))
+            self._buf.store(0, val._buf.load(0))
 
         var slice_list = List[Slice]()
         slice_list.append(Slice(idx, idx + 1))
@@ -392,9 +391,11 @@ struct NDArray[dtype: DType = DType.float64](
                     slice_list[i].end.value(),
                 )
                 raise Error(message)
+            # if slice_list[i].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step
+                / slice_list[i].step.or_else(1)
             ).__int__()
             spec.append(slice_len)
             if slice_len != 1:
@@ -417,13 +418,19 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step
+                / slice_list[j].step.or_else(1)
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slice_list[j].step)
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
+            ncoefficients.append(
+                self.strides[j] * slice_list[j].step.or_else(1)
+            )
             j += 1
 
         # We can remove this check after we have support for broadcasting
@@ -485,7 +492,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
         var idx: Int = _get_index(index, self.coefficient)
-        self._buf.store[width=1](idx, val)
+        self._buf.store(idx, val)
 
     # compiler doesn't accept this
     # fn __setitem__(
@@ -548,9 +555,11 @@ struct NDArray[dtype: DType = DType.float64](
                     slice_list[i].end.value(),
                 )
                 raise Error(message)
+            # if slice_list[i].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step
+                / slice_list[i].step.or_else(1)
             ).__int__()
             spec.append(slice_len)
             if slice_len != 1:
@@ -573,13 +582,19 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step
+                / slice_list[j].step.or_else(1)
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slice_list[j].step)
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
+            ncoefficients.append(
+                self.strides[j] * slice_list[j].step.or_else(1)
+            )
             j += 1
 
         # We can remove this check after we have support for broadcasting
@@ -695,8 +710,8 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(message)
 
         for i in range(mask.size):
-            if mask._buf.load[width=1](i):
-                self._buf.store[width=1](i, val._buf.load[width=1](i))
+            if mask._buf.load(i):
+                self._buf.store(i, val._buf.load(i))
 
     # ===-------------------------------------------------------------------===#
     # Getter dunders
@@ -814,8 +829,9 @@ struct NDArray[dtype: DType = DType.float64](
                         "Error: Negative indexing in slices not supported"
                         " currently"
                     )
-
-            step = slice_list[i].step
+            # if slice_list[i].step is None:
+            #     raise Error(String("Step of slice is None."))
+            step = slice_list[i].step.or_else(1)
             if step == 0:
                 raise Error("Error: Slice step cannot be zero")
 
@@ -874,11 +890,13 @@ struct NDArray[dtype: DType = DType.float64](
                 or slices[i].end.value() > self.shape[i]
             ):
                 raise Error("Error: Slice value exceeds the array shape")
+            # if slices[i].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = len(
                 range(
                     slices[i].start.value(),
                     slices[i].end.value(),
-                    slices[i].step,
+                    slices[i].step.or_else(1),
                 )
             )
             spec.append(slice_len)
@@ -902,16 +920,18 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
+            # if slices[j].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = len(
                 range(
                     slices[j].start.value(),
                     slices[j].end.value(),
-                    slices[j].step,
+                    slices[j].step.or_else(1),
                 )
             )
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slices[j].step)
+            ncoefficients.append(self.strides[j] * slices[j].step.value())
             j += 1
 
         if count == slices.__len__():
@@ -1247,7 +1267,7 @@ struct NDArray[dtype: DType = DType.float64](
         # Fill in the values
         for i in range(len(index)):
             for j in range(size_per_item):
-                result._buf.store[width=1](
+                result._buf.store(
                     i * size_per_item + j, self[int(index[i])].item(j)
                 )
 
@@ -1306,7 +1326,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var result = Self(Shape(true.__len__()))
         for i in range(true.__len__()):
-            result._buf.store[width=1](i, self.get(true[i]))
+            result._buf.store(i, self.get(true[i]))
 
         return result
 
@@ -1589,7 +1609,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn vectorized_pow[simd_width: Int](index: Int) -> None:
-            result._buf.store[width=simd_width](
+            result._buf.store(
                 index,
                 self._buf.load[width=simd_width](index)
                 ** p.load[width=simd_width](index),
@@ -1606,7 +1626,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn array_scalar_vectorize[simd_width: Int](index: Int) -> None:
-            new_vec._buf.store[width=simd_width](
+            new_vec._buf.store(
                 index, pow(self._buf.load[width=simd_width](index), p)
             )
 
@@ -1710,9 +1730,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables str(array).
         """
-        return String.format_sequence(self)
+        return String.write(self)
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, inout writer: W):
         try:
             writer.write(
                 self._array_to_string(0, 0)
@@ -1764,7 +1784,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn __len__(self) -> Int:
         return int(self.size)
 
-    fn __iter__(self) raises -> _NDArrayIter[__lifetime_of(self), dtype]:
+    fn __iter__(self) raises -> _NDArrayIter[__origin_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -1774,14 +1794,14 @@ struct NDArray[dtype: DType = DType.float64](
             Need to add lifetimes after the new release.
         """
 
-        return _NDArrayIter[__lifetime_of(self), dtype](
+        return _NDArrayIter[__origin_of(self), dtype](
             array=self,
             length=self.shape[0],
         )
 
     fn __reversed__(
         self,
-    ) raises -> _NDArrayIter[__lifetime_of(self), dtype, forward=False]:
+    ) raises -> _NDArrayIter[__origin_of(self), dtype, forward=False]:
         """Iterate backwards over elements of the NDArray, returning
         copied value.
 
@@ -1789,7 +1809,7 @@ struct NDArray[dtype: DType = DType.float64](
             A reversed iterator of NDArray elements.
         """
 
-        return _NDArrayIter[__lifetime_of(self), dtype, forward=False](
+        return _NDArrayIter[__origin_of(self), dtype, forward=False](
             array=self,
             length=self.shape[0],
         )
@@ -2034,7 +2054,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Stores the SIMD element of size `width` at index `index`.
         """
-        self._buf.store[width=width](index, val)
+        self._buf.store(index, val)
 
     fn store[
         width: Int = 1
@@ -2043,7 +2063,7 @@ struct NDArray[dtype: DType = DType.float64](
         Stores the SIMD element of size `width` at the given variadic indices argument.
         """
         var idx: Int = _get_index(index, self.coefficient)
-        self._buf.store[width=width](idx, val)
+        self._buf.store(idx, val)
 
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
     # # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
@@ -2221,18 +2241,13 @@ struct NDArray[dtype: DType = DType.float64](
     fn diagonal(self):
         pass
 
-    fn fill(inout self, val: Scalar[dtype]) -> Self:
+    fn fill(inout self, val: Scalar[dtype]):
         """
         Fill all items of array with value.
         """
 
-        @parameter
-        fn vectorized_fill[simd_width: Int](index: Int) -> None:
-            self._buf.store[width=simd_width](index, val)
-
-        vectorize[vectorized_fill, self.width](self.size)
-
-        return self
+        for i in range(self.size):
+            self._buf[i] = val
 
     fn flatten(inout self) raises:
         """
@@ -2406,11 +2421,11 @@ struct NDArray[dtype: DType = DType.float64](
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
-                    self._buf.store[width=1](
+                    self._buf.store(
                         _get_index(c_coordinates, self.strides), item
                     )
 
-                self._buf.store[width=1](idx, item)
+                self._buf.store(idx, item)
             else:
                 raise Error(
                     String(
@@ -2429,7 +2444,7 @@ struct NDArray[dtype: DType = DType.float64](
                     raise Error(
                         "Error: Elements of `index` exceed the array shape"
                     )
-            self._buf.store[width=1](_get_index(indices, self.strides), item)
+            self._buf.store(_get_index(indices, self.strides), item)
 
     fn max(self, axis: Int = 0) raises -> Self:
         """
@@ -2636,7 +2651,7 @@ struct NDArray[dtype: DType = DType.float64](
 @value
 struct _NDArrayIter[
     is_mutable: Bool, //,
-    lifetime: AnyLifetime[is_mutable].type,
+    origin: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
 ]:
@@ -2644,7 +2659,7 @@ struct _NDArrayIter[
 
     Parameters:
         is_mutable: Whether the iterator is mutable.
-        lifetime: The lifetime of the underlying NDArray data.
+        origin: The lifetime of the underlying NDArray data.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
     """
@@ -2675,6 +2690,14 @@ struct _NDArrayIter[
             var current_index = self.index
             self.index -= 1
             return self.array.__getitem__(current_index)
+
+    @always_inline
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
 
     fn __len__(self) -> Int:
         @parameter

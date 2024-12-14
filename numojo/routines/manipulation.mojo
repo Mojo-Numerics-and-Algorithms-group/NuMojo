@@ -200,9 +200,7 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
     @parameter
     fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-        res._buf.store[width=simd_width](
-            index, array._buf.load[width=simd_width](index)
-        )
+        res._buf.store(index, array._buf.load[width=simd_width](index))
 
     vectorize[vectorized_flatten, width](array.size)
     return res

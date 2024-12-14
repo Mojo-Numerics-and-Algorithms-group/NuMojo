@@ -15,6 +15,8 @@ from .ndstrides import NDArrayStrides
 from .ndarray import NDArray
 
 
+# FIXME: No long useful from 24.6:
+# `width` is now inferred from the SIMD's width.
 fn fill_pointer[
     dtype: DType
 ](
@@ -35,7 +37,7 @@ fn fill_pointer[
 
     @parameter
     fn vectorized_fill[simd_width: Int](idx: Int):
-        array.store[width=simd_width](idx, value)
+        array.store(idx, value)
 
     vectorize[vectorized_fill, width](size)
 
@@ -211,7 +213,7 @@ fn _traverse_iterative[
         except:
             return
 
-        narr._buf.store[width=1](narr_idx, orig._buf.load[width=1](orig_idx))
+        narr._buf.store(narr_idx, orig._buf.load[width=1](orig_idx))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
@@ -260,7 +262,7 @@ fn _traverse_iterative_setter[
         except:
             return
 
-        narr._buf.store[width=1](orig_idx, orig._buf.load[width=1](narr_idx))
+        narr._buf.store(orig_idx, orig._buf.load[width=1](narr_idx))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1

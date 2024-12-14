@@ -9,7 +9,7 @@ authors = [
     "mmenendezg <>",
     "sandstromviktor <>",
 ]
-channels = ["conda-forge", "https://conda.modular.com/max"]
+channels = ["conda-forge", "https://conda.modular.com/max-nightly/"]
 platforms = ["osx-arm64", "linux-64"]
 license = "Apache-2.0"
 readme = "README.MD"
@@ -24,6 +24,7 @@ package = "magic run mojo package numojo"
 format = "magic run mojo format ./"
 
 [dependencies]
-max = ">=24.5.0,<25"
+max = "*"
+python = ">=3.9,<3.13"
 numpy = ">=1.19,<2.2"
 scipy = ">=1.14,<1.15"

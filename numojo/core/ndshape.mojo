@@ -4,16 +4,16 @@ Implements NDArrayShape type.
 `NDArrayShape` is a series of `DType.int32` on the heap.
 """
 
-from memory import memset_zero, memcpy
+from memory import UnsafePointer, memset_zero, memcpy
 from utils import Variant
-from builtin.type_aliases import AnyLifetime
+from builtin.type_aliases import Origin
 
 alias Shape = NDArrayShape
 alias shape = NDArrayShape
 
 
 @register_passable("trivial")
-struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
+struct NDArrayShape[dtype: DType = DType.int32](Stringable, Writable):
     """Implements the NDArrayShape."""
 
     # Fields
@@ -196,9 +196,9 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         """
         Return a string of the shape of the array described by arrayshape.
         """
-        return String.format_sequence(self)
+        return String.write(self)
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, inout writer: W):
         var result: String = "Shape: ["
         for i in range(self.ndim):
             if i == self.ndim - 1:
@@ -255,7 +255,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         """
         # if index >= self.ndim:
         #     raise Error("Index out of bound")
-        self._buf.store[width=width](index, val)
+        self._buf.store(index, val)
 
     @always_inline("nodebug")
     fn load_int(self, index: Int) -> Int:
@@ -269,4 +269,4 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         """
         SIMD store dimensional information.
         """
-        self._buf.store[width=1](index, val)
+        self._buf.store(index, val)

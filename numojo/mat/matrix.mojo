@@ -8,7 +8,7 @@
 """
 
 from numojo.core.ndarray import NDArray
-from memory import memcpy
+from memory import UnsafePointer, memcpy
 from sys import simdwidthof
 from algorithm import parallelize, vectorize
 from python import PythonObject, Python
@@ -18,7 +18,7 @@ from python import PythonObject, Python
 # ===----------------------------------------------------------------------===#
 
 
-struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
+struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
@@ -394,12 +394,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.store[width=width](x * self.strides[0] + y, simd)
+        self._buf.store(x * self.strides[0] + y, simd)
 
     fn __str__(self) -> String:
-        return String.format_sequence(self)
+        return String.write(self)
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, inout writer: W):
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
             var result: String = str("[")
             var number_of_sep: Int = 1
@@ -455,7 +455,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             + str(self.dtype)
         )
 
-    fn __iter__(self) raises -> _MatrixIter[__lifetime_of(self), dtype]:
+    fn __iter__(self) raises -> _MatrixIter[__origin_of(self), dtype]:
         """Iterate over elements of the Matrix, returning copied value.
 
         Example:
@@ -470,14 +470,14 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             An iterator of Matrix elements.
         """
 
-        return _MatrixIter[__lifetime_of(self), dtype](
+        return _MatrixIter[__origin_of(self), dtype](
             matrix=self,
             length=self.shape[0],
         )
 
     fn __reversed__(
         self,
-    ) raises -> _MatrixIter[__lifetime_of(self), dtype, forward=False]:
+    ) raises -> _MatrixIter[__origin_of(self), dtype, forward=False]:
         """Iterate backwards over elements of the Matrix, returning
         copied value.
 
@@ -485,7 +485,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
             A reversed iterator of Matrix elements.
         """
 
-        return _MatrixIter[__lifetime_of(self), dtype, forward=False](
+        return _MatrixIter[__origin_of(self), dtype, forward=False](
             matrix=self,
             length=self.shape[0],
         )
@@ -1206,7 +1206,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Formattable):
 @value
 struct _MatrixIter[
     is_mutable: Bool, //,
-    lifetime: AnyLifetime[is_mutable].type,
+    lifetime: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
 ]:
@@ -1283,7 +1283,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
 
     @parameter
     fn vec_func[simd_width: Int](i: Int):
-        C._buf.store[width=simd_width](
+        C._buf.store(
             i,
             simd_func(
                 A._buf.load[width=simd_width](i),
@@ -1313,9 +1313,7 @@ fn _arithmetic_func_matrix_to_matrix[
 
     @parameter
     fn vec_func[simd_width: Int](i: Int):
-        C._buf.store[width=simd_width](
-            i, simd_func(A._buf.load[width=simd_width](i))
-        )
+        C._buf.store(i, simd_func(A._buf.load[width=simd_width](i)))
 
     vectorize[vec_func, simd_width](A.size)
 

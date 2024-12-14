@@ -5,12 +5,12 @@ Implements NDArrayStrides type.
 """
 
 from utils import Variant
-from builtin.type_aliases import AnyLifetime
-from memory import memset_zero, memcpy
+from builtin.type_aliases import Origin
+from memory import UnsafePointer, memset_zero, memcpy
 
 
 @register_passable("trivial")
-struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
+struct NDArrayStrides[dtype: DType = DType.int32](Stringable):
     """Implements the NDArrayStrides."""
 
     # Fields
@@ -199,9 +199,9 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
-        return String.format_sequence(self)
+        return String.write(self)
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, inout writer: W):
         var result: String = "Stride: ["
         for i in range(self.ndim):
             if i == self.ndim - 1:
@@ -241,7 +241,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
     ](inout self, index: Int, val: SIMD[dtype, width]) raises:
         # if index >= self.ndim:
         #     raise Error("Index out of bound")
-        self.strides.store[width=width](index, val)
+        self.strides.store(index, val)
 
     @always_inline("nodebug")
     fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
@@ -251,4 +251,4 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
     fn store_unsafe[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[dtype, width]):
-        self.strides.store[width=width](index, val)
+        self.strides.store(index, val)

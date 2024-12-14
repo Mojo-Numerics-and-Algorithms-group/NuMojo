@@ -5,11 +5,11 @@ Implements Idx type.
 """
 
 from utils import Variant
-from builtin.type_aliases import AnyLifetime
-from memory import memset_zero, memcpy
+from builtin.type_aliases import Origin
+from memory import UnsafePointer, memset_zero, memcpy
 
 
-struct Idx(CollectionElement, Formattable):
+struct Idx(CollectionElement):
     alias dtype: DType = DType.index
     alias width = simdwidthof[Self.dtype]()
     var storage: UnsafePointer[Scalar[Self.dtype]]
@@ -116,7 +116,7 @@ struct Idx(CollectionElement, Formattable):
         """
         self.storage[index] = val
 
-    fn __iter__(self) raises -> _IdxIter[__lifetime_of(self)]:
+    fn __iter__(self) raises -> _IdxIter[__origin_of(self)]:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -126,12 +126,12 @@ struct Idx(CollectionElement, Formattable):
             Need to add lifetimes after the new release.
         """
 
-        return _IdxIter[__lifetime_of(self)](
+        return _IdxIter[__origin_of(self)](
             array=self,
             length=self.len,
         )
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, inout writer: W):
         writer.write("Idx: " + self.str() + "\n" + "Length: " + str(self.len))
 
     fn str(self) -> String:
@@ -151,7 +151,7 @@ struct Idx(CollectionElement, Formattable):
     fn store[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[Self.dtype, width]) raises:
-        self.storage.store[width=width](index, val)
+        self.storage.store(index, val)
 
     @always_inline("nodebug")
     fn load_unsafe[width: Int = 1](self, index: Int) -> SIMD[Self.dtype, width]:
@@ -161,13 +161,13 @@ struct Idx(CollectionElement, Formattable):
     fn store_unsafe[
         width: Int = 1
     ](inout self, index: Int, val: SIMD[Self.dtype, width]):
-        self.storage.store[width=width](index, val)
+        self.storage.store(index, val)
 
 
 @value
 struct _IdxIter[
     is_mutable: Bool, //,
-    lifetime: AnyLifetime[is_mutable].type,
+    lifetime: Origin[is_mutable],
     forward: Bool = True,
 ]:
     """Iterator for idx.

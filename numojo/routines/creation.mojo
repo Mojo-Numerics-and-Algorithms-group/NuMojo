@@ -35,11 +35,11 @@ from builtin.math import pow
 from sys import simdwidthof
 from collections.optional import Optional
 from python import PythonObject
-from memory import memset_zero
+from memory import UnsafePointer, memset_zero, memset
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.core.utility import _get_index, fill_pointer
+from numojo.core.utility import _get_index
 
 
 # ===------------------------------------------------------------------------===#
@@ -609,9 +609,9 @@ fn full[
     """
 
     var A = NDArray[dtype](shape=shape, order=order)
-    fill_pointer[dtype](A._buf, A.size, fill_value)
-
-    return A
+    for i in range(A.size):
+        A._buf[i] = fill_value
+    return A^
 
 
 fn full[
@@ -1059,7 +1059,7 @@ fn array[
         shape.append(int(data.shape[i]))
     A = NDArray[dtype](NDArrayShape(shape), order=order)
     A._buf = UnsafePointer[Scalar[dtype]]().alloc(A.size)
-    memset_zero(A._buf, A.size)
+    # memset_zero(A._buf, A.size)
     for i in range(A.size):
-        A._buf[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
+        A._buf[i] = float(data.item(PythonObject(i))).cast[dtype]()
     return A

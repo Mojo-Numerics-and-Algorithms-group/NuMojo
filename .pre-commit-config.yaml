@@ -6,4 +6,4 @@ repos:
         entry: mojo format
         language: system
         files: '\.(mojo|🔥|py)$'
-        stages: [commit]
+        stages: [pre-commit]

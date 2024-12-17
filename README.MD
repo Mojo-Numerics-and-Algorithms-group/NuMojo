@@ -45,16 +45,14 @@
         <li><a href="#what-numojo-is-not">What NuMojo is not</a></li>
       </ul>
     </li>
-    <a href="#goals-roadmap">Goals/Roadmap</a>
-      <ul>
-        <li><a href="#long-term-goals">Long term goals</a></li>
-      </ul>
+    <li><a href="#goals">Goals</a></li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#how-to-install">How to install</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#warnings">Warnings</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#Contributors">Contributors</a></li>
   </ol>
 </details>
 
@@ -62,9 +60,9 @@
 
 ### What NuMojo is
 
-NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy and Scikit.
+NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy, and Scikit.
 
-NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration(once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
+NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration (once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
 
 We intend NuMojo to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 
@@ -72,23 +70,56 @@ We intend NuMojo to be a building block for other Mojo packages that need fast m
 
 NuMojo is not a machine learning library, it will never include back-propagation in the base library.
 
-## Goals / Roadmap
+## Goals and features
+
+Our main goal is to implement a fast, comprehensive numerics library in Mojo.
+
+Following are some brief long-term goals. Some of them have already been implemented or partially implemented.
+
+Core data types:
+
+- Native n-dimensional array (`numojo.core.ndarray.NDArray`).
+- Native 2-dimensional array, i.e., matrix (`numojo.mat.matrix.Matrix`).
+- Native fixed-dimension array (to be implemented when trait parameterization is available).
+
+Routines and objects:
+
+- Array creation routines (`numojo.routines.creation`)
+- Array manipulation routines (`numojo.routines.manipulation`)
+- Bit-wise operations (`numojo.routines.bitwise`)
+- Constants (`numojo.routines.constants`)
+- Input and output (`numojo.routines.io`)
+- Text files (`numojo.routines.files`)
+- Text formatting options (`numojo.routines.formatting`)
+- Linear algebra (`numojo.routines.linalg`)
+- Decompositions (`numojo.routines.decompositions`)
+- Products of matrices and vectors (`numojo.routines.products`)
+- Solving (`numojo.routines.solving`)
+- Logic functions (`numojo.routines.logic`)
+- Comparison (`numojo.routines.comparison`)
+- Array contents (`numojo.routines.contents`)
+- Truth value testing (`numojo.routines.truth`)
+- Mathematical functions (`numojo.routines.math`)
+- Arithmetic operations (`numojo.routines.arithmetic`)
+- Exponents and logarithms (`numojo.routines.exp_log`)
+- Extrema finding (`numojo.routines.extrema`)
+- Floating point routines (`numojo.routines.floating`)
+- Hyperbolic functions (`numojo.routines.hyper`)
+- Miscellaneous (`numojo.routines.misc`)
+- Rounding (`numojo.routines.rounding`)
+- Sums, products, differences (`numojo.routines.sums`, `numojo.routines.products`, `numojo.routines.differences`)
+- Trigonometric functions (`numojo.routines.trig`)
+- Random sampling (`numojo.routines.random`)
+- Sorting, searching, and counting (`numojo.routines.sorting`, `numojo.routines.searching`)
+- Statistics (`numojo.routines.statistics`)
+- Averages and variances (`numojo.routines.averages`)
+- Calculus, Integration & Derivatives etc
+- Optimizers
+- Function approximators
+
+Please find all the available functions and objects [here](docs/features.md).
 
 For a detailed roadmap, please refer to the [docs/roadmap.md](docs/roadmap.md) file.
-
-Our main goal is to implement a fast, comprehensive numerics library in Mojo. Following are some brief long-term goals,
-
-### Long term goals
-
-* Linear Algebra
-  * Native n-dimensional array types
-  * Vectorized, Parallelized math operations
-  * Array manipulation - vstack, slicing, concat etc.
-* Calculus
-  * Integration & Derivatives etc
-* Optimizers
-* Function approximators
-* Sorting
 
 ## Usage
 
@@ -100,8 +131,8 @@ from numojo.prelude import *
 
 fn main() raises:
     # Generate two 1000x1000 matrices with random float64 values
-    var A = nm.random.randn[f64](shape=List[Int](1000, 1000))
-    var B = nm.random.randn[f64](shape=List[Int](1000, 1000))
+    var A = nm.random.randn(shape=Shape(1000, 1000))
+    var B = nm.random.randn(shape=Shape(1000, 1000))
 
     # Generate a 3x2 matrix from string representation
     var X = nm.fromstring[f32]("[[1.1, -0.32, 1], [0.1, -3, 2.124]]")
@@ -119,10 +150,8 @@ fn main() raises:
     var A_slice = A[1:3, 4:19]
 
     # Get scalar from array
-    var A_item = A.item(291, 141)
+    var A_item = A[Idx(291, 141)]
 ```
-
-Please find all the available functions [here](docs/features.md)
 
 ## How to install
 
@@ -169,4 +198,10 @@ Distributed under the Apache 2.0 License with LLVM Exceptions. See [LICENSE](htt
 
 ## Acknowledgements
 
-* Built in native [Mojo](https://github.com/modularml/mojo) which was created by [Modular](https://github.com/modularml)
+Built in native [Mojo](https://github.com/modularml/mojo) which was created by [Modular](https://github.com/modularml).
+
+## Contributors
+
+<a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Mojo-Numerics-and-Algorithms-group/NuMojo" />
+</a>

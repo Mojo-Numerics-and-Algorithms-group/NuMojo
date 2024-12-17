@@ -24,16 +24,15 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download Modular installer
+      - name: Download Magic
         run: |
-          curl -s https://get.modular.com | sh -
+          curl -ssL https://magic.modular.com/ff414efd-16ac-4bf3-8efc-50b059272ab6 | bash
 
-      - name: Set path Mojo
-        run: |
-          modular install mojo
-          echo "MODULAR_HOME=/home/runner/.modular" >> $GITHUB_ENV
-          echo "/home/runner/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+          # Add magic to PATH
+          echo "$HOME/.modular/bin" >> $GITHUB_PATH
 
+          "$HOME/.modular/bin/magic" self-update
+          
       - name: Install pre-commit
         run: |
           pip install pre-commit

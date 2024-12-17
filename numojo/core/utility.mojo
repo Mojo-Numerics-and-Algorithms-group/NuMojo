@@ -249,8 +249,8 @@ fn _traverse_iterative_setter[
         offset: The offset to the first element of the original NDArray.
         index: The list of indices.
     """
+    # # parallelized version was slower xD
     var total_elements = narr.size
-
     for _ in range(total_elements):
         var orig_idx = offset + _get_index(index, coefficients)
         var narr_idx = _get_index(index, strides)

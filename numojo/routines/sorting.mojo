@@ -51,8 +51,8 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
         for j in range(length - i - 1):
             if result._buf.load[width=1](j) > result._buf.load[width=1](j + 1):
                 var temp = result._buf.load[width=1](j)
-                result._buf.store[width=1](j, result._buf.load[width=1](j + 1))
-                result._buf.store[width=1](j + 1, temp)
+                result._buf.store(j, result._buf.load[width=1](j + 1))
+                result._buf.store(j + 1, temp)
 
     return result
 
@@ -61,7 +61,7 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 
 
 fn _partition(
-    inout ndarray: NDArray, left: Int, right: Int, pivot_index: Int
+    mut ndarray: NDArray, left: Int, right: Int, pivot_index: Int
 ) raises -> Int:
     """Do partition for the data buffer of ndarray.
 
@@ -98,7 +98,7 @@ fn _partition(
 
 fn quick_sort_inplace[
     dtype: DType
-](inout ndarray: NDArray[dtype], left: Int, right: Int,) raises:
+](mut ndarray: NDArray[dtype], left: Int, right: Int,) raises:
     """
     Quick sort (in-place) the NDArray.
 
@@ -197,8 +197,8 @@ fn binary_sort[
 
 
 fn _argsort_partition(
-    inout ndarray: NDArray,
-    inout idx_array: NDArray,
+    mut ndarray: NDArray,
+    mut idx_array: NDArray,
     left: Int,
     right: Int,
     pivot_index: Int,
@@ -254,8 +254,8 @@ fn _argsort_partition(
 fn argsort_inplace[
     dtype: DType
 ](
-    inout ndarray: NDArray[dtype],
-    inout idx_array: NDArray[DType.index],
+    mut ndarray: NDArray[dtype],
+    mut idx_array: NDArray[DType.index],
     left: Int,
     right: Int,
 ) raises:

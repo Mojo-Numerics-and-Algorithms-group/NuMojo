@@ -27,7 +27,7 @@ struct Vectorized(Backend):
     Uses defualt simdwidth.
     """
 
-    fn __init__(inout self: Self):
+    fn __init__(mut self: Self):
         pass
 
     fn math_func_fma[
@@ -370,7 +370,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     Uses defualt simdwidth.
     """
 
-    fn __init__(inout self: Self):
+    fn __init__(mut self: Self):
         pass
 
     fn math_func_fma[
@@ -701,7 +701,7 @@ struct Parallelized(Backend):
     No idea why, Not Reccomened for use at this Time.
     """
 
-    fn __init__(inout self: Self):
+    fn __init__(mut self: Self):
         pass
 
     fn math_func_fma[
@@ -1143,7 +1143,7 @@ struct VectorizedParallelized(Backend):
     No idea why, Not Reccomened for use at this Time.
     """
 
-    fn __init__(inout self: Self):
+    fn __init__(mut self: Self):
         pass
 
     fn math_func_fma[
@@ -1642,7 +1642,7 @@ struct VectorizedParallelized(Backend):
 #     this number seems to be less than `num_physical_cores()`.
 #     """
 
-#     fn __init__(inout self: Self):
+#     fn __init__(mut self: Self):
 #         pass
 
 #     fn math_func_fma[
@@ -2146,7 +2146,7 @@ struct Naive(Backend):
     Just loops for SIMD[Dtype, 1] equations
     """
 
-    fn __init__(inout self: Self):
+    fn __init__(mut self: Self):
         pass
 
     fn math_func_fma[
@@ -2416,7 +2416,7 @@ struct VectorizedVerbose(Backend):
     Uses defualt simdwidth.
     """
 
-    fn __init__(inout self: Self):
+    fn __init__(mut self: Self):
         pass
 
     fn math_func_fma[

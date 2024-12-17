@@ -82,7 +82,7 @@ fn sort[
 
 
 fn _sort_partition(
-    inout A: Matrix, inout I: Matrix, left: Int, right: Int, pivot_index: Int
+    mut A: Matrix, mut I: Matrix, left: Int, right: Int, pivot_index: Int
 ) raises -> Int:
     """
     Do partition for the data buffer of Matrix.
@@ -126,9 +126,7 @@ fn _sort_partition(
     return store_index
 
 
-fn _sort_inplace(
-    inout A: Matrix, inout I: Matrix, left: Int, right: Int
-) raises:
+fn _sort_inplace(mut A: Matrix, mut I: Matrix, left: Int, right: Int) raises:
     """
     Sort in-place of the data buffer (quick-sort).
     It is not guaranteed to be stable.

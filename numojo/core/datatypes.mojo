@@ -17,6 +17,8 @@ alias i32 = DType.int32
 """Data type alias for DType.int32"""
 alias i64 = DType.int64
 """Data type alias for DType.int64"""
+alias isize = DType.index
+"""Data type alias for DType.index"""
 alias u8 = DType.uint8
 """Data type alias for DType.uint8"""
 alias u16 = DType.uint16

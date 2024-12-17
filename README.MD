@@ -123,11 +123,12 @@ For a detailed roadmap, please refer to the [docs/roadmap.md](docs/roadmap.md) f
 
 ## Usage
 
-An example goes as follows.
+An example of n-dimensional array (`NDArray` type) goes as follows.
 
 ```mojo
 import numojo as nm
 from numojo.prelude import *
+
 
 fn main() raises:
     # Generate two 1000x1000 matrices with random float64 values
@@ -151,6 +152,57 @@ fn main() raises:
 
     # Get scalar from array
     var A_item = A[Idx(291, 141)]
+```
+
+An example of matrix (`Matrix` type) goes as follows.
+
+```mojo
+from numojo import mat
+from numojo.prelude import *
+
+
+fn main() raises:
+    # Generate two 1000x1000 matrices with random float64 values
+    var A = mat.rand(shape=(1000, 1000))
+    var B = mat.rand(shape=(1000, 1000))
+
+    # Generate 1000x1 matrix (column vector) with random float64 values
+    var C = mat.rand(shape=(1000, 1))
+
+    # Generate a 4x3 matrix from string representation
+    var F = mat.fromstring[i8](
+        "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
+    )
+
+    # Matrix slicing
+    var A_slice = A[1:3, 4:19]
+    var B_slice = B[255, 103:241:2]
+
+    # Get scalar from matrix
+    var A_item = A[291, 141]
+
+    # Flip the column vector
+    print(C[::-1, :])
+
+    # Sort and argsort along axis
+    print(mat.sort(A, axis=1))
+    print(mat.argsort(A, axis=0))
+
+    # Sum the matrix
+    print(mat.sum(B))
+    print(mat.sum(B, axis=1))
+
+    # Matrix multiplication
+    print(A @ B)
+
+    # Matrix inversion
+    print(A.inv())
+
+    # Solve linear algebra
+    print(mat.solve(A, B))
+
+    # Least square
+    print(mat.lstsq(A, C))
 ```
 
 ## How to install

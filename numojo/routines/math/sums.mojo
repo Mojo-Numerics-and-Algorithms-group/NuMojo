@@ -57,24 +57,21 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
 
     var ndim: Int = A.ndim
-    var shape: List[Int] = List[Int]()
-    for i in range(ndim):
-        shape.append(A.shape[i])
     if axis > ndim - 1:
         raise Error(
             String("axis {} greater than ndim of array {}").format(axis, ndim)
         )
     var result_shape: List[Int] = List[Int]()
-    var axis_size: Int = shape[axis]
+    var size_of_axis: Int = A.shape[axis]
     var slices: List[Slice] = List[Slice]()
     for i in range(ndim):
         if i != axis:
-            result_shape.append(shape[i])
-            slices.append(Slice(0, shape[i]))
+            result_shape.append(A.shape[i])
+            slices.append(Slice(0, A.shape[i]))
         else:
             slices.append(Slice(0, 0))
     var result = zeros[dtype](NDArrayShape(result_shape))
-    for i in range(axis_size):
+    for i in range(size_of_axis):
         slices[axis] = Slice(i, i + 1)
         var arr_slice = A[slices]
         result += arr_slice

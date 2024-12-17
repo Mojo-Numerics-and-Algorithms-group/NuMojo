@@ -5,12 +5,12 @@ Implements NDArrayStrides type.
 """
 
 from utils import Variant
-from builtin.type_aliases import AnyLifetime
-from memory import memset_zero, memcpy
+from builtin.type_aliases import Origin
+from memory import UnsafePointer, memset_zero, memcpy
 
 
 @register_passable("trivial")
-struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
+struct NDArrayStrides[dtype: DType = DType.int32](Stringable):
     """Implements the NDArrayStrides."""
 
     # Fields
@@ -20,7 +20,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, *strides: Int, offset: Int = 0
+        mut self, *strides: Int, offset: Int = 0
     ):  # maybe we should add checks for offset?
         self.offset = offset
         self.ndim = strides.__len__()
@@ -29,7 +29,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
             self.strides[i] = strides[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, strides: List[Int], offset: Int = 0):
+    fn __init__(mut self, strides: List[Int], offset: Int = 0):
         self.offset = offset
         self.ndim = strides.__len__()
         self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
@@ -38,7 +38,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
             self.strides[i] = strides[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, strides: VariadicList[Int], offset: Int = 0):
+    fn __init__(mut self, strides: VariadicList[Int], offset: Int = 0):
         self.offset = offset
         self.ndim = strides.__len__()
         self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
@@ -47,7 +47,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
             self.strides[i] = strides[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, strides: NDArrayStrides[dtype]):
+    fn __init__(mut self, strides: NDArrayStrides[dtype]):
         self.offset = strides.offset
         self.ndim = strides.ndim
         self.strides = UnsafePointer[Scalar[dtype]]().alloc(strides.ndim)
@@ -56,7 +56,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, strides: NDArrayStrides[dtype], offset: Int = 0
+        mut self, strides: NDArrayStrides[dtype], offset: Int = 0
     ):  # separated two methods to remove if condition
         self.offset = offset
         self.ndim = strides.ndim
@@ -66,7 +66,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, *shape: Int, offset: Int = 0, order: String = "C"
+        mut self, *shape: Int, offset: Int = 0, order: String = "C"
     ) raises:
         self.offset = offset
         self.ndim = shape.__len__()
@@ -90,7 +90,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self, shape: List[Int], offset: Int = 0, order: String = "C"
+        mut self, shape: List[Int], offset: Int = 0, order: String = "C"
     ) raises:
         self.offset = offset
         self.ndim = shape.__len__()
@@ -114,7 +114,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         shape: VariadicList[Int],
         offset: Int = 0,
         order: String = "C",
@@ -141,7 +141,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         owned shape: NDArrayShape,
         offset: Int = 0,
         order: String = "C",
@@ -169,7 +169,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
                 " column major `F` are supported"
             )
 
-    fn __copy__(inout self, other: Self):
+    fn __copy__(mut self, other: Self):
         self.offset = other.offset
         self.ndim = other.ndim
         self.strides = UnsafePointer[Scalar[dtype]]().alloc(other.ndim)
@@ -185,7 +185,7 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
             return self.strides[self.ndim + index].__int__()
 
     @always_inline("nodebug")
-    fn __setitem__(inout self, index: Int, val: Int) raises:
+    fn __setitem__(mut self, index: Int, val: Int) raises:
         if index >= self.ndim:
             raise Error("Index out of bound")
         if index >= 0:
@@ -199,9 +199,9 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
-        return String.format_sequence(self)
+        return String.write(self)
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, mut writer: W):
         var result: String = "Stride: ["
         for i in range(self.ndim):
             if i == self.ndim - 1:
@@ -238,10 +238,10 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
     @always_inline("nodebug")
     fn store[
         width: Int = 1
-    ](inout self, index: Int, val: SIMD[dtype, width]) raises:
+    ](mut self, index: Int, val: SIMD[dtype, width]) raises:
         # if index >= self.ndim:
         #     raise Error("Index out of bound")
-        self.strides.store[width=width](index, val)
+        self.strides.store(index, val)
 
     @always_inline("nodebug")
     fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
@@ -250,5 +250,5 @@ struct NDArrayStrides[dtype: DType = DType.int32](Stringable, Formattable):
     @always_inline("nodebug")
     fn store_unsafe[
         width: Int = 1
-    ](inout self, index: Int, val: SIMD[dtype, width]):
-        self.strides.store[width=width](index, val)
+    ](mut self, index: Int, val: SIMD[dtype, width]):
+        self.strides.store(index, val)

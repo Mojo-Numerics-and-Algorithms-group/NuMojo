@@ -24,15 +24,21 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download Modular installer
+      - name: Install magic
         run: |
-          curl -s https://get.modular.com | sh -
+          curl -ssL https://magic.modular.com/ff414efd-16ac-4bf3-8efc-50b059272ab6 | bash
+    
+      - name: Add path
+        run: |
+          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
+          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
+          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
 
-      - name: Set path Mojo
+      - name: Activate virtualenv
         run: |
-          modular install mojo
-          echo "MODULAR_HOME=/home/runner/.modular" >> $GITHUB_ENV
-          echo "/home/runner/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+          python3 -m venv $HOME/venv/
+          . $HOME/venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
 
       - name: Install pre-commit
         run: |
@@ -40,4 +46,6 @@ jobs:
           pre-commit install
       
       - name: Run pre-commit
-        run: pre-commit run --all-files
+        run: | 
+          magic install
+          pre-commit run --all-files

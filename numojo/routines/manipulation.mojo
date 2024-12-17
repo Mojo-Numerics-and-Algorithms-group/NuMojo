@@ -59,7 +59,7 @@ fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
 fn reshape[
     dtype: DType
 ](
-    inout array: NDArray[dtype], shape: VariadicList[Int], order: String = "C"
+    mut array: NDArray[dtype], shape: VariadicList[Int], order: String = "C"
 ) raises:
     """
         Reshapes the NDArray to given Shape.
@@ -95,7 +95,7 @@ fn reshape[
     array.order = order
 
 
-fn ravel[dtype: DType](inout array: NDArray[dtype], order: String = "C") raises:
+fn ravel[dtype: DType](mut array: NDArray[dtype], order: String = "C") raises:
     """
     Returns the raveled version of the NDArray.
     """
@@ -112,7 +112,7 @@ fn ravel[dtype: DType](inout array: NDArray[dtype], order: String = "C") raises:
 fn where[
     dtype: DType
 ](
-    inout x: NDArray[dtype], scalar: SIMD[dtype, 1], mask: NDArray[DType.bool]
+    mut x: NDArray[dtype], scalar: SIMD[dtype, 1], mask: NDArray[DType.bool]
 ) raises:
     """
     Replaces elements in `x` with `scalar` where `mask` is True.
@@ -134,7 +134,7 @@ fn where[
 # TODO: do it with vectorization
 fn where[
     dtype: DType
-](inout x: NDArray[dtype], y: NDArray[dtype], mask: NDArray[DType.bool]) raises:
+](mut x: NDArray[dtype], y: NDArray[dtype], mask: NDArray[DType.bool]) raises:
     """
     Replaces elements in `x` with elements from `y` where `mask` is True.
 
@@ -200,9 +200,7 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
     @parameter
     fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-        res._buf.store[width=simd_width](
-            index, array._buf.load[width=simd_width](index)
-        )
+        res._buf.store(index, array._buf.load[width=simd_width](index))
 
     vectorize[vectorized_flatten, width](array.size)
     return res

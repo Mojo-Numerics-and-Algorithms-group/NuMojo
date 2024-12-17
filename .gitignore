@@ -18,6 +18,3 @@ test_ndarray.ipynb
 
 # magic environments
 .magic
-
-.gitattributes
-.gitignore

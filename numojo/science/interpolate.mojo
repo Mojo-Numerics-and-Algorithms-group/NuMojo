@@ -83,9 +83,9 @@ fn _interp1d_linear_interpolate[
     var result = NDArray[dtype](xi.shape)
     for i in range(xi.num_elements()):
         if xi._buf[i] <= x._buf[0]:
-            result._buf.store[width=1](i, y._buf[0])
+            result._buf.store(i, y._buf[0])
         elif xi._buf[i] >= x._buf[x.num_elements() - 1]:
-            result._buf.store[width=1](i, y._buf[y.num_elements() - 1])
+            result._buf.store(i, y._buf[y.num_elements() - 1])
         else:
             var j = 0
             while xi._buf[i] > x._buf[j]:
@@ -95,7 +95,7 @@ fn _interp1d_linear_interpolate[
             var y0 = y._buf[j - 1]
             var y1 = y._buf[j]
             var t = (xi._buf[i] - x0) / (x1 - x0)
-            result._buf.store[width=1](i, y0 + t * (y1 - y0))
+            result._buf.store(i, y0 + t * (y1 - y0))
     return result
 
 

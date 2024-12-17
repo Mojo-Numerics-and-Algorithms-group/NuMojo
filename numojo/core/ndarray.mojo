@@ -17,7 +17,7 @@ Implements N-Dimensional Array
 6) Rename some variables or methods that should not be exposed to users.
 """
 
-from builtin.type_aliases import AnyLifetime
+from builtin.type_aliases import Origin
 from random import rand, random_si64, random_float64
 from builtin.math import pow
 from builtin.bool import all as allb
@@ -50,7 +50,6 @@ from .utility import (
     _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
-    fill_pointer,
     is_inttype,
     is_booltype,
 )
@@ -66,7 +65,7 @@ from numojo.core.ndstrides import NDArrayStrides
 
 
 struct NDArray[dtype: DType = DType.float64](
-    Stringable, Representable, CollectionElement, Sized, Formattable
+    Stringable, Representable, CollectionElement, Sized, Writable
 ):
     """The N-dimensional array (NDArray).
 
@@ -113,7 +112,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         shape: NDArrayShape,
         order: String = "C",
     ) raises:
@@ -138,7 +137,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         shape: List[Int],
         order: String = "C",
     ) raises:
@@ -154,7 +153,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        inout self,
+        mut self,
         shape: VariadicList[Int],
         order: String = "C",
     ) raises:
@@ -172,7 +171,7 @@ struct NDArray[dtype: DType = DType.float64](
     # Use nm.array instead #
     ########################
     # fn __init__(
-    #     inout self,
+    #     mut self,
     #     data: List[SIMD[dtype, 1]],
     #     shape: NDArrayShape,
     #     order: String = "C",
@@ -203,7 +202,7 @@ struct NDArray[dtype: DType = DType.float64](
     ########################
     # Use nm.array instead #
     ########################
-    # fn __init__(inout self, data: PythonObject, order: String = "C") raises:
+    # fn __init__(mut self, data: PythonObject, order: String = "C") raises:
     #     """
     #     NDArray initialization from Numpy arrays.
 
@@ -239,7 +238,7 @@ struct NDArray[dtype: DType = DType.float64](
     # Why do  these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
     fn __init__(
-        inout self,
+        mut self,
         ndim: Int,
         offset: Int,
         size: Int,
@@ -263,7 +262,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     # for creating views
     fn __init__(
-        inout self,
+        mut self,
         data: UnsafePointer[Scalar[dtype]],
         ndim: Int,
         offset: Int,
@@ -287,7 +286,7 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf = data + self.strides.offset
 
     @always_inline("nodebug")
-    fn __copyinit__(inout self, other: Self):
+    fn __copyinit__(mut self, other: Self):
         """
         Copy other into self.
         """
@@ -302,7 +301,7 @@ struct NDArray[dtype: DType = DType.float64](
         memcpy(self._buf, other._buf, other.size)
 
     @always_inline("nodebug")
-    fn __moveinit__(inout self, owned existing: Self):
+    fn __moveinit__(mut self, owned existing: Self):
         """
         Move other into self.
         """
@@ -349,9 +348,9 @@ struct NDArray[dtype: DType = DType.float64](
             ).format(index, self.size)
             raise Error(message)
         if index >= 0:
-            return self._buf.store[width=1](index, val)
+            return self._buf.store(index, val)
         else:
-            return self._buf.store[width=1](index + self.size, val)
+            return self._buf.store(index + self.size, val)
 
     fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
         """
@@ -399,7 +398,7 @@ struct NDArray[dtype: DType = DType.float64](
         return slices^
 
     # TODO: add support for different dtypes
-    fn __setitem__(inout self, idx: Int, val: NDArray[dtype]) raises:
+    fn __setitem__(mut self, idx: Int, val: NDArray[dtype]) raises:
         """
         Set a slice of array with given array.
 
@@ -407,7 +406,7 @@ struct NDArray[dtype: DType = DType.float64](
             `arr[1]` returns the second row of the array.
         """
         if self.ndim == 0 and val.ndim == 0:
-            self._buf.store[width=1](0, val._buf.load[width=1](0))
+            self._buf.store(0, val._buf.load(0))
 
         var slice_list = List[Slice]()
         slice_list.append(Slice(idx, idx + 1))
@@ -437,9 +436,11 @@ struct NDArray[dtype: DType = DType.float64](
                     slice_list[i].end.value(),
                 )
                 raise Error(message)
+            # if slice_list[i].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step
+                / slice_list[i].step.or_else(1)
             ).__int__()
             spec.append(slice_len)
             if slice_len != 1:
@@ -462,13 +463,19 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step
+                / slice_list[j].step.or_else(1)
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slice_list[j].step)
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
+            ncoefficients.append(
+                self.strides[j] * slice_list[j].step.or_else(1)
+            )
             j += 1
 
         # We can remove this check after we have support for broadcasting
@@ -508,7 +515,7 @@ struct NDArray[dtype: DType = DType.float64](
             val, self, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    fn __setitem__(inout self, index: Idx, val: SIMD[dtype, 1]) raises:
+    fn __setitem__(mut self, index: Idx, val: SIMD[dtype, 1]) raises:
         """
         Set the value at the index list.
         """
@@ -530,7 +537,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
         var idx: Int = _get_index(index, self.coefficient)
-        self._buf.store[width=1](idx, val)
+        self._buf.store(idx, val)
 
     # compiler doesn't accept this
     fn __setitem__(
@@ -543,15 +550,23 @@ struct NDArray[dtype: DType = DType.float64](
             mask.shape != self.shape
         ):  # this behaviour could be removed potentially
             raise Error("Mask and array must have the same shape")
+    # fn __setitem__(
+    #     mut self, mask: NDArray[DType.bool], value: Scalar[dtype]
+    # ) raises:
+    #     """
+    #     Set the value of the array at the indices where the mask is true.
+    #     """
+    #     if (
+    #         mask.shape != self.shape
+    #     ):  # this behavious could be removed potentially
+    #         raise Error("Mask and array must have the same shape")
 
         for i in range(mask.size):
             if mask._buf.load[width=1](i):
                 print(value)
                 self._buf.store[width=1](i, value)
 
-    fn __setitem__(
-        inout self, owned *slices: Slice, val: NDArray[dtype]
-    ) raises:
+    fn __setitem__(mut self, owned *slices: Slice, val: NDArray[dtype]) raises:
         """
         Retreive slices of an array from variadic slices.
 
@@ -564,7 +579,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.__setitem__(slices=slice_list, val=val)
 
     fn __setitem__(
-        inout self, owned slices: List[Slice], val: NDArray[dtype]
+        mut self, owned slices: List[Slice], val: NDArray[dtype]
     ) raises:
         """
         Sets the slices of an array from list of slices and array.
@@ -593,9 +608,11 @@ struct NDArray[dtype: DType = DType.float64](
                     slice_list[i].end.value(),
                 )
                 raise Error(message)
+            # if slice_list[i].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step
+                / slice_list[i].step.or_else(1)
             ).__int__()
             spec.append(slice_len)
             if slice_len != 1:
@@ -618,13 +635,19 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step
+                / slice_list[j].step.or_else(1)
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slice_list[j].step)
+            # if slice_list[j].step is None:
+            #     raise Error(String("Step of slice is None."))
+            ncoefficients.append(
+                self.strides[j] * slice_list[j].step.or_else(1)
+            )
             j += 1
 
         # We can remove this check after we have support for broadcasting
@@ -716,7 +739,7 @@ struct NDArray[dtype: DType = DType.float64](
             self.set(int(index.get(i)), rebind[Scalar[dtype]](val.get(i)))
 
     fn __setitem__(
-        inout self, mask: NDArray[DType.bool], val: NDArray[dtype]
+        mut self, mask: NDArray[DType.bool], val: NDArray[dtype]
     ) raises:
         """
         Set the value of the array at the indices where the mask is true.
@@ -740,8 +763,8 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(message)
 
         for i in range(mask.size):
-            if mask._buf.load[width=1](i):
-                self._buf.store[width=1](i, val._buf.load[width=1](i))
+            if mask._buf.load(i):
+                self._buf.store(i, val._buf.load(i))
 
     # ===-------------------------------------------------------------------===#
     # Getter dunders
@@ -829,6 +852,52 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = _get_index(index, self.coefficient)
         return self._buf.load[width=1](idx)
 
+    fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
+        """
+        Adjusts the slice values to lie within 0 and dim.
+        """
+        var n_slices: Int = slice_list.__len__()
+        var slices = List[Slice]()
+        for i in range(n_slices):
+            if i >= self.ndim:
+                raise Error("Error: Number of slices exceeds array dimensions")
+
+            var start: Int = 0
+            var end: Int = self.shape[i]
+            var step: Int = 1
+            if slice_list[i].start is not None:
+                start = slice_list[i].start.value()
+                if start < 0:
+                    # start += self.shape[i]
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+
+            if slice_list[i].end is not None:
+                end = slice_list[i].end.value()
+                if end < 0:
+                    # end += self.shape[i] + 1
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+            # if slice_list[i].step is None:
+            #     raise Error(String("Step of slice is None."))
+            step = slice_list[i].step.or_else(1)
+            if step == 0:
+                raise Error("Error: Slice step cannot be zero")
+
+            slices.append(
+                Slice(
+                    start=Optional(start),
+                    end=Optional(end),
+                    step=Optional(step),
+                )
+            )
+
+        return slices^
+
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
         Retreive slices of an array from variadic slices.
@@ -874,11 +943,13 @@ struct NDArray[dtype: DType = DType.float64](
                 or slices[i].end.value() > self.shape[i]
             ):
                 raise Error("Error: Slice value exceeds the array shape")
+            # if slices[i].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = len(
                 range(
                     slices[i].start.value(),
                     slices[i].end.value(),
-                    slices[i].step,
+                    slices[i].step.or_else(1),
                 )
             )
             spec.append(slice_len)
@@ -902,16 +973,18 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
+            # if slices[j].step is None:
+            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = len(
                 range(
                     slices[j].start.value(),
                     slices[j].end.value(),
-                    slices[j].step,
+                    slices[j].step.or_else(1),
                 )
             )
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slices[j].step)
+            ncoefficients.append(self.strides[j] * slices[j].step.value())
             j += 1
 
         if count == slices.__len__():
@@ -1247,7 +1320,7 @@ struct NDArray[dtype: DType = DType.float64](
         # Fill in the values
         for i in range(len(index)):
             for j in range(size_per_item):
-                result._buf.store[width=1](
+                result._buf.store(
                     i * size_per_item + j, self[int(index[i])].item(j)
                 )
 
@@ -1306,7 +1379,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var result = Self(Shape(true.__len__()))
         for i in range(true.__len__()):
-            result._buf.store[width=1](i, self.get(true[i]))
+            result._buf.store(i, self.get(true[i]))
 
         return result
 
@@ -1465,26 +1538,26 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.greater_equal[dtype](self, other)
 
-    fn __add__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __add__(mut self, other: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `array + scalar`.
         """
         return math.add[dtype](self, other)
 
-    fn __add__(inout self, other: Self) raises -> Self:
+    fn __add__(mut self, other: Self) raises -> Self:
         """
         Enables `array + array`.
         """
         return math.add[dtype](self, other)
 
-    fn __radd__(inout self, rhs: SIMD[dtype, 1]) raises -> Self:
+    fn __radd__(mut self, rhs: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `scalar + array`.
         """
         return math.add[dtype](self, rhs)
 
     # TODO make an inplace version of arithmetic functions for the i dunders
-    fn __iadd__(inout self, other: SIMD[dtype, 1]) raises:
+    fn __iadd__(mut self, other: SIMD[dtype, 1]) raises:
         """
         Enables `array += scalar`.
         """
@@ -1492,7 +1565,7 @@ struct NDArray[dtype: DType = DType.float64](
             dtype, SIMD.__add__
         ](self, other)
 
-    fn __iadd__(inout self, other: Self) raises:
+    fn __iadd__(mut self, other: Self) raises:
         """
         Enables `array *= array`.
         """
@@ -1518,13 +1591,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.sub[dtype](s, self)
 
-    fn __isub__(inout self, s: SIMD[dtype, 1]) raises:
+    fn __isub__(mut self, s: SIMD[dtype, 1]) raises:
         """
         Enables `array -= scalar`.
         """
         self = self - s
 
-    fn __isub__(inout self, s: Self) raises:
+    fn __isub__(mut self, s: Self) raises:
         """
         Enables `array -= array`.
         """
@@ -1551,13 +1624,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.mul[dtype](self, s)
 
-    fn __imul__(inout self, s: SIMD[dtype, 1]) raises:
+    fn __imul__(mut self, s: SIMD[dtype, 1]) raises:
         """
         Enables `array *= scalar`.
         """
         self = self * s
 
-    fn __imul__(inout self, s: Self) raises:
+    fn __imul__(mut self, s: Self) raises:
         """
         Enables `array *= array`.
         """
@@ -1589,7 +1662,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn vectorized_pow[simd_width: Int](index: Int) -> None:
-            result._buf.store[width=simd_width](
+            result._buf.store(
                 index,
                 self._buf.load[width=simd_width](index)
                 ** p.load[width=simd_width](index),
@@ -1598,7 +1671,7 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[vectorized_pow, self.width](self.size)
         return result
 
-    fn __ipow__(inout self, p: Int):
+    fn __ipow__(mut self, p: Int):
         self = self.__pow__(p)
 
     fn _elementwise_pow(self, p: Int) -> Self:
@@ -1606,7 +1679,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn array_scalar_vectorize[simd_width: Int](index: Int) -> None:
-            new_vec._buf.store[width=simd_width](
+            new_vec._buf.store(
                 index, pow(self._buf.load[width=simd_width](index), p)
             )
 
@@ -1625,13 +1698,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.div[dtype](self, other)
 
-    fn __itruediv__(inout self, s: SIMD[dtype, 1]) raises:
+    fn __itruediv__(mut self, s: SIMD[dtype, 1]) raises:
         """
         Enables `array /= scalar`.
         """
         self = self.__truediv__(s)
 
-    fn __itruediv__(inout self, other: Self) raises:
+    fn __itruediv__(mut self, other: Self) raises:
         """
         Enables `array /= array`.
         """
@@ -1655,13 +1728,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.floor_div[dtype](self, other)
 
-    fn __ifloordiv__(inout self, s: SIMD[dtype, 1]) raises:
+    fn __ifloordiv__(mut self, s: SIMD[dtype, 1]) raises:
         """
         Enables `array //= scalar`.
         """
         self = self.__floordiv__(s)
 
-    fn __ifloordiv__(inout self, other: Self) raises:
+    fn __ifloordiv__(mut self, other: Self) raises:
         """
         Enables `array //= array`.
         """
@@ -1673,31 +1746,31 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.floor_div[dtype](s, self)
 
-    fn __mod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __mod__(mut self, other: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `array % scalar`.
         """
         return math.mod[dtype](self, other)
 
-    fn __mod__(inout self, other: NDArray[dtype]) raises -> Self:
+    fn __mod__(mut self, other: NDArray[dtype]) raises -> Self:
         """
         Enables `array % array`.
         """
         return math.mod[dtype](self, other)
 
-    fn __imod__(inout self, other: SIMD[dtype, 1]) raises:
+    fn __imod__(mut self, other: SIMD[dtype, 1]) raises:
         """
         Enables `array %= scalar`.
         """
         self = math.mod[dtype](self, other)
 
-    fn __imod__(inout self, other: NDArray[dtype]) raises:
+    fn __imod__(mut self, other: NDArray[dtype]) raises:
         """
         Enables `array %= array`.
         """
         self = math.mod[dtype](self, other)
 
-    fn __rmod__(inout self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __rmod__(mut self, other: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `scalar % array`.
         """
@@ -1710,9 +1783,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables str(array).
         """
-        return String.format_sequence(self)
+        return String.write(self)
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, mut writer: W):
         try:
             writer.write(
                 self._array_to_string(0, 0)
@@ -1764,7 +1837,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn __len__(self) -> Int:
         return int(self.size)
 
-    fn __iter__(self) raises -> _NDArrayIter[__lifetime_of(self), dtype]:
+    fn __iter__(self) raises -> _NDArrayIter[__origin_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -1774,14 +1847,14 @@ struct NDArray[dtype: DType = DType.float64](
             Need to add lifetimes after the new release.
         """
 
-        return _NDArrayIter[__lifetime_of(self), dtype](
+        return _NDArrayIter[__origin_of(self), dtype](
             array=self,
             length=self.shape[0],
         )
 
     fn __reversed__(
         self,
-    ) raises -> _NDArrayIter[__lifetime_of(self), dtype, forward=False]:
+    ) raises -> _NDArrayIter[__origin_of(self), dtype, forward=False]:
         """Iterate backwards over elements of the NDArray, returning
         copied value.
 
@@ -1789,7 +1862,7 @@ struct NDArray[dtype: DType = DType.float64](
             A reversed iterator of NDArray elements.
         """
 
-        return _NDArrayIter[__lifetime_of(self), dtype, forward=False](
+        return _NDArrayIter[__origin_of(self), dtype, forward=False](
             array=self,
             length=self.shape[0],
         )
@@ -2030,20 +2103,20 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = _get_index(index, self.coefficient)
         return self._buf.load[width=width](idx)
 
-    fn store[width: Int](inout self, index: Int, val: SIMD[dtype, width]):
+    fn store[width: Int](mut self, index: Int, val: SIMD[dtype, width]):
         """
         Stores the SIMD element of size `width` at index `index`.
         """
-        self._buf.store[width=width](index, val)
+        self._buf.store(index, val)
 
     fn store[
         width: Int = 1
-    ](inout self, *index: Int, val: SIMD[dtype, width]) raises:
+    ](mut self, *index: Int, val: SIMD[dtype, width]) raises:
         """
         Stores the SIMD element of size `width` at the given variadic indices argument.
         """
         var idx: Int = _get_index(index, self.coefficient)
-        self._buf.store[width=width](idx, val)
+        self._buf.store(idx, val)
 
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
     # # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
@@ -2054,7 +2127,7 @@ struct NDArray[dtype: DType = DType.float64](
     # Operations along an axis
     # ===-------------------------------------------------------------------===#
     # TODO: implement for arbitrary axis1, and axis2
-    fn T(inout self) raises:
+    fn T(mut self) raises:
         """
         Transpose the array.
         """
@@ -2221,20 +2294,15 @@ struct NDArray[dtype: DType = DType.float64](
     fn diagonal(self):
         pass
 
-    fn fill(inout self, val: Scalar[dtype]) -> Self:
+    fn fill(mut self, val: Scalar[dtype]):
         """
         Fill all items of array with value.
         """
 
-        @parameter
-        fn vectorized_fill[simd_width: Int](index: Int) -> None:
-            self._buf.store[width=simd_width](index, val)
+        for i in range(self.size):
+            self._buf[i] = val
 
-        vectorize[vectorized_fill, self.width](self.size)
-
-        return self
-
-    fn flatten(inout self) raises:
+    fn flatten(mut self) raises:
         """
         Convert shape of array to one dimensional.
         """
@@ -2347,7 +2415,7 @@ struct NDArray[dtype: DType = DType.float64](
         return self._buf.load[width=1](_get_index(index, self.strides))
 
     fn itemset(
-        inout self, index: Variant[Int, List[Int]], item: Scalar[dtype]
+        mut self, index: Variant[Int, List[Int]], item: Scalar[dtype]
     ) raises:
         """Set the scalar at the coordinates.
 
@@ -2406,11 +2474,11 @@ struct NDArray[dtype: DType = DType.float64](
                         var coordinate = idx // c_stride[i]
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
-                    self._buf.store[width=1](
+                    self._buf.store(
                         _get_index(c_coordinates, self.strides), item
                     )
 
-                self._buf.store[width=1](idx, item)
+                self._buf.store(idx, item)
             else:
                 raise Error(
                     String(
@@ -2429,7 +2497,7 @@ struct NDArray[dtype: DType = DType.float64](
                     raise Error(
                         "Error: Elements of `index` exceed the array shape"
                     )
-            self._buf.store[width=1](_get_index(indices, self.strides), item)
+            self._buf.store(_get_index(indices, self.strides), item)
 
     fn max(self, axis: Int = 0) raises -> Self:
         """
@@ -2558,7 +2626,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return rounding.tround[dtype](self)
 
-    fn sort(inout self) raises:
+    fn sort(mut self) raises:
         """
         Sort the array inplace using quickstort.
         """
@@ -2604,7 +2672,7 @@ struct NDArray[dtype: DType = DType.float64](
         return linalg.norms.trace[dtype](self, offset, axis1, axis2)
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
-    fn reshape(inout self, *shape: Int, order: String = "C") raises:
+    fn reshape(mut self, *shape: Int, order: String = "C") raises:
         """
         Reshapes the NDArray to given Shape.
 
@@ -2636,7 +2704,7 @@ struct NDArray[dtype: DType = DType.float64](
 @value
 struct _NDArrayIter[
     is_mutable: Bool, //,
-    lifetime: AnyLifetime[is_mutable].type,
+    origin: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
 ]:
@@ -2644,7 +2712,7 @@ struct _NDArrayIter[
 
     Parameters:
         is_mutable: Whether the iterator is mutable.
-        lifetime: The lifetime of the underlying NDArray data.
+        origin: The lifetime of the underlying NDArray data.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
     """
@@ -2654,7 +2722,7 @@ struct _NDArrayIter[
     var length: Int
 
     fn __init__(
-        inout self,
+        mut self,
         array: NDArray[dtype],
         length: Int,
     ):
@@ -2665,7 +2733,7 @@ struct _NDArrayIter[
     fn __iter__(self) -> Self:
         return self
 
-    fn __next__(inout self) raises -> NDArray[dtype]:
+    fn __next__(mut self) raises -> NDArray[dtype]:
         @parameter
         if forward:
             var current_index = self.index
@@ -2675,6 +2743,14 @@ struct _NDArrayIter[
             var current_index = self.index
             self.index -= 1
             return self.array.__getitem__(current_index)
+
+    @always_inline
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
 
     fn __len__(self) -> Int:
         @parameter

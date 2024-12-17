@@ -7,7 +7,7 @@ Random values array generation.
 # ===----------------------------------------------------------------------=== #
 
 import math as mt
-from random import random
+from random import random as builtin_random
 from builtin.tuple import Tuple
 
 from numojo.core.ndarray import NDArray
@@ -40,7 +40,9 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
             " `rand(*shape, min, max)` instead."
         )
     for i in range(result.size):
-        var temp: Scalar[dtype] = random.random_float64(0, 1).cast[dtype]()
+        var temp: Scalar[dtype] = builtin_random.random_float64(0, 1).cast[
+            dtype
+        ]()
         result.set(i, temp)
     return result^
 
@@ -60,7 +62,7 @@ fn int_rand_func[
         min: The minimum value of the random integers.
         max: The maximum value of the random integers.
     """
-    random.randint[dtype](
+    builtin_random.randint[dtype](
         ptr=result._buf,
         size=result.size,
         low=int(min),
@@ -84,7 +86,7 @@ fn float_rand_func[
         max: The maximum value of the random floating-point numbers.
     """
     for i in range(result.size):
-        var temp: Scalar[dtype] = random.random_float64(
+        var temp: Scalar[dtype] = builtin_random.random_float64(
             min.cast[f64](), max.cast[f64]()
         ).cast[dtype]()
         result._buf[i] = temp
@@ -116,7 +118,7 @@ fn rand[
         The generated NDArray of type `dtype` filled with random values between `min` and `max`.
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
-    random.seed()
+    builtin_random.seed()
 
     @parameter
     if is_floattype[dtype]():
@@ -161,7 +163,7 @@ fn rand[
         The generated NDArray of type `dtype` filled with random values between `min` and `max`.
     """
     var result: NDArray[dtype] = NDArray[dtype](shape)
-    random.seed()
+    builtin_random.seed()
 
     @parameter
     if is_floattype[dtype]():
@@ -202,9 +204,9 @@ fn randn[
     Returns:
         The generated NDArray of type `dtype` filled with random values having a mean and variance.
     """
-    random.seed()
+    builtin_random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
-    random.randn[dtype](
+    builtin_random.randn[dtype](
         ptr=result._buf,
         size=result.size,
         mean=mean.cast[DType.float64](),
@@ -238,9 +240,9 @@ fn randn[
     Returns:
         The generated NDArray of type `dtype` filled with random values having a mean and variance.
     """
-    random.seed()
+    builtin_random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
-    random.randn[dtype](
+    builtin_random.randn[dtype](
         ptr=result._buf,
         size=result.size,
         mean=mean.cast[DType.float64](),
@@ -271,11 +273,11 @@ fn rand_exponential[
     Returns:
         The generated NDArray of type `dtype` filled with random values from an exponential distribution.
     """
-    random.seed()
+    builtin_random.seed()
     var result = NDArray[dtype](NDArrayShape(shape))
 
     for i in range(result.num_elements()):
-        var u = random.random_float64().cast[dtype]()
+        var u = builtin_random.random_float64().cast[dtype]()
         result._buf[i] = -mt.log(1 - u) / rate
 
     return result^
@@ -303,11 +305,11 @@ fn rand_exponential[
     Returns:
         The generated NDArray of type `dtype` filled with random values from an exponential distribution.
     """
-    random.seed()
+    builtin_random.seed()
     var result = NDArray[dtype](shape)
 
     for i in range(result.num_elements()):
-        var u = random.random_float64().cast[dtype]()
+        var u = builtin_random.random_float64().cast[dtype]()
         result._buf[i] = -mt.log(1 - u) / rate
 
     return result^

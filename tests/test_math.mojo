@@ -1,8 +1,29 @@
 import numojo as nm
 from numojo.prelude import *
-from time import now
 from python import Python, PythonObject
-from utils_for_test import check, check_is_close
+from utils_for_test import check, check_is_close, check_values_close
+
+# ===-----------------------------------------------------------------------===#
+# Sums, products, differences
+# ===-----------------------------------------------------------------------===#
+
+
+def test_sum():
+    var np = Python.import_module("numpy")
+    var A = nm.random.randn(6, 6, 6)
+    var Anp = A.to_numpy()
+
+    check_values_close(
+        nm.sum(A),
+        np.sum(Anp),
+        String("`sum` fails. {} vs {}."),
+    )
+    for i in range(3):
+        check_is_close(
+            nm.sum(A, axis=i),
+            np.sum(Anp, axis=i),
+            String("`sum` by axis {} fails.".format(i)),
+        )
 
 
 def test_add_array():

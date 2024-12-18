@@ -42,6 +42,5 @@ from .bitwise import *
 from .constants import Constants
 from .creation import *
 from .manipulation import *
-from .random import *
 from .sorting import *
 from .searching import argmax, argmin

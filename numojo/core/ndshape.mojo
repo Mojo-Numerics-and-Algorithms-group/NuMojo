@@ -1,7 +1,7 @@
 """
 Implements NDArrayShape type.
 
-`NDArrayShape` is a series of `DType.int32` on the heap.
+`NDArrayShape` is a series of `DType.index` on the heap.
 """
 
 from memory import UnsafePointer, memset_zero, memcpy
@@ -13,7 +13,7 @@ alias shape = NDArrayShape
 
 
 @register_passable("trivial")
-struct NDArrayShape[dtype: DType = DType.int32](Stringable, Writable):
+struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
     """Implements the NDArrayShape."""
 
     # Fields

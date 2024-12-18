@@ -1,7 +1,6 @@
 import numojo as nm
 from numojo.prelude import *
 from numojo.prelude import *
-from time import now
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
 from testing.testing import assert_raises

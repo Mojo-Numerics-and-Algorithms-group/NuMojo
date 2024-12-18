@@ -13,7 +13,7 @@ from numojo.core.utility import bool_to_numeric
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.math.arithmetic import add
 from numojo.routines.sorting import binary_sort
-from numojo.routines.math.sums import sum, sumall, cumsum
+from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
 
 
@@ -53,7 +53,7 @@ fn meanall(array: NDArray) raises -> Float64:
     """
 
     return (
-        sumall(array).cast[DType.float64]()
+        sum(array).cast[DType.float64]()
         / Int32(array.size).cast[DType.float64]()
     )
 

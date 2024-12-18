@@ -1,47 +1,47 @@
 """
 Implements NDArrayShape type.
 
-`NDArrayShape` is a series of `DType.int32` on the heap.
+`NDArrayShape` is a series of `DType.index` on the heap.
 """
 
-from memory import memset_zero, memcpy
+from memory import UnsafePointer, memset_zero, memcpy
 from utils import Variant
-from builtin.type_aliases import AnyLifetime
+from builtin.type_aliases import Origin
 
 alias Shape = NDArrayShape
 alias shape = NDArrayShape
 
 
 @register_passable("trivial")
-struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
+struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
     """Implements the NDArrayShape."""
 
     # Fields
-    var ndsize: Int
-    """Total no of elements in the corresponding array."""
+    var size: Int
+    """Total number of elements in the corresponding array."""
     var _buf: UnsafePointer[Scalar[dtype]]
     """Shape of the corresponding array."""
-    var ndlen: Int
+    var ndim: Int
     """Length of ndshape."""
 
     @always_inline("nodebug")
-    fn __init__(inout self, *shape: Int) raises:
+    fn __init__(mut self, *shape: Int) raises:
         """
         Initializes the NDArrayShape with variable shape dimensions.
 
         Args:
             shape: Variable number of integers representing the shape dimensions.
         """
-        self.ndsize = 1
-        self.ndlen = len(shape)
+        self.size = 1
+        self.ndim = len(shape)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
         memset_zero(self._buf, len(shape))
         for i in range(len(shape)):
             self._buf[i] = shape[i]
-            self.ndsize *= shape[i]
+            self.size *= shape[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, *shape: Int, size: Int) raises:
+    fn __init__(mut self, *shape: Int, size: Int) raises:
         """
         Initializes the NDArrayShape with variable shape dimensions and a specified size.
 
@@ -49,8 +49,8 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
             shape: Variable number of integers representing the shape dimensions.
             size: The total number of elements in the array.
         """
-        self.ndsize = size
-        self.ndlen = len(shape)
+        self.size = size
+        self.ndim = len(shape)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
         memset_zero(self._buf, len(shape))
         var count: Int = 1
@@ -61,23 +61,23 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(inout self, shape: List[Int]):
+    fn __init__(mut self, shape: List[Int]):
         """
         Initializes the NDArrayShape with a list of shape dimensions.
 
         Args:
             shape: A list of integers representing the shape dimensions.
         """
-        self.ndsize = 1
-        self.ndlen = len(shape)
+        self.size = 1
+        self.ndim = len(shape)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
         memset_zero(self._buf, len(shape))
         for i in range(len(shape)):
             self._buf[i] = shape[i]
-            self.ndsize *= shape[i]
+            self.size *= shape[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, shape: List[Int], size: Int) raises:
+    fn __init__(mut self, shape: List[Int], size: Int) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
@@ -85,10 +85,10 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self.ndsize = (
+        self.size = (
             size  # maybe I should add a check here to make sure it matches
         )
-        self.ndlen = len(shape)
+        self.ndim = len(shape)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
         memset_zero(self._buf, len(shape))
         var count: Int = 1
@@ -99,23 +99,23 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(inout self, shape: VariadicList[Int]):
+    fn __init__(mut self, shape: VariadicList[Int]):
         """
         Initializes the NDArrayShape with a list of shape dimensions.
 
         Args:
             shape: A list of integers representing the shape dimensions.
         """
-        self.ndsize = 1
-        self.ndlen = len(shape)
+        self.size = 1
+        self.ndim = len(shape)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
         memset_zero(self._buf, len(shape))
         for i in range(len(shape)):
             self._buf[i] = shape[i]
-            self.ndsize *= shape[i]
+            self.size *= shape[i]
 
     @always_inline("nodebug")
-    fn __init__(inout self, shape: VariadicList[Int], size: Int) raises:
+    fn __init__(mut self, shape: VariadicList[Int], size: Int) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
@@ -123,10 +123,10 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self.ndsize = (
+        self.size = (
             size  # maybe I should add a check here to make sure it matches
         )
-        self.ndlen = len(shape)
+        self.ndim = len(shape)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
         memset_zero(self._buf, len(shape))
         var count: Int = 1
@@ -137,78 +137,71 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(inout self, shape: NDArrayShape) raises:
+    fn __init__(mut self, shape: NDArrayShape) raises:
         """
         Initializes the NDArrayShape with another NDArrayShape.
 
         Args:
             shape: Another NDArrayShape to initialize from.
         """
-        self.ndsize = shape.ndsize
-        self.ndlen = shape.ndlen
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(shape.ndlen)
-        memset_zero(self._buf, shape.ndlen)
-        for i in range(shape.ndlen):
+        self.size = shape.size
+        self.ndim = shape.ndim
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(shape.ndim)
+        memset_zero(self._buf, shape.ndim)
+        for i in range(shape.ndim):
             self._buf[i] = shape[i]
 
-    fn __copy__(inout self, other: Self):
+    fn __copy__(mut self, other: Self):
         """
         Copy from other into self.
         """
-        self.ndsize = other.ndsize
-        self.ndlen = other.ndlen
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.ndlen)
-        memcpy(self._buf, other._buf, other.ndlen)
+        self.size = other.size
+        self.ndim = other.ndim
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.ndim)
+        memcpy(self._buf, other._buf, other.ndim)
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         """
         Get shape at specified index.
         """
-        if index >= self.ndlen:
+        if index >= self.ndim:
             raise Error("Index out of bound")
         if index >= 0:
             return self._buf[index].__int__()
         else:
-            return self._buf[self.ndlen + index].__int__()
+            return self._buf[self.ndim + index].__int__()
 
     @always_inline("nodebug")
-    fn __setitem__(inout self, index: Int, val: Int) raises:
+    fn __setitem__(mut self, index: Int, val: Int) raises:
         """
         Set shape at specified index.
         """
-        if index >= self.ndlen:
+        if index >= self.ndim:
             raise Error("Index out of bound")
         if index >= 0:
             self._buf[index] = val
         else:
-            self._buf[self.ndlen + index] = val
-
-    @always_inline("nodebug")
-    fn size(self) -> Int:
-        """
-        Get Size of array described by arrayshape.
-        """
-        return self.ndsize
+            self._buf[self.ndim + index] = val
 
     @always_inline("nodebug")
     fn len(self) -> Int:
         """
         Get number of dimensions of the array described by arrayshape.
         """
-        return self.ndlen
+        return self.ndim
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
         """
         Return a string of the shape of the array described by arrayshape.
         """
-        return String.format_sequence(self)
+        return String.write(self)
 
-    fn format_to(self, inout writer: Formatter):
+    fn write_to[W: Writer](self, mut writer: W):
         var result: String = "Shape: ["
-        for i in range(self.ndlen):
-            if i == self.ndlen - 1:
+        for i in range(self.ndim):
+            if i == self.ndim - 1:
                 result += self._buf[i].__str__()
             else:
                 result += self._buf[i].__str__() + ", "
@@ -220,7 +213,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         """
         Check if two arrayshapes have identical dimensions.
         """
-        for i in range(self.ndlen):
+        for i in range(self.ndim):
             if self[i] != other[i]:
                 return False
         return True
@@ -237,7 +230,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         """
         Check if any of the dimensions are equal to a value.
         """
-        for i in range(self.ndlen):
+        for i in range(self.ndim):
             if self[i] == val:
                 return True
         return False
@@ -248,7 +241,7 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         """
         SIMD load dimensional information.
         """
-        # if index >= self.ndlen:
+        # if index >= self.ndim:
         # raise Error("Index out of bound")
         return self._buf.load[width=width](index)
 
@@ -256,13 +249,13 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
     @always_inline("nodebug")
     fn store[
         width: Int = 1
-    ](inout self, index: Int, val: SIMD[dtype, width]) raises:
+    ](mut self, index: Int, val: SIMD[dtype, width]) raises:
         """
         SIMD store dimensional information.
         """
-        # if index >= self.ndlen:
+        # if index >= self.ndim:
         #     raise Error("Index out of bound")
-        self._buf.store[width=width](index, val)
+        self._buf.store(index, val)
 
     @always_inline("nodebug")
     fn load_int(self, index: Int) -> Int:
@@ -272,8 +265,8 @@ struct NDArrayShape[dtype: DType = DType.int32](Stringable, Formattable):
         return self._buf.load[width=1](index).__int__()
 
     @always_inline("nodebug")
-    fn store_int(inout self, index: Int, val: Int):
+    fn store_int(mut self, index: Int, val: Int):
         """
         SIMD store dimensional information.
         """
-        self._buf.store[width=1](index, val)
+        self._buf.store(index, val)

@@ -1,15 +1,15 @@
 [project]
 name = "NuMojo"
-version = "0.2.0"
+version = "0.4.0"
 description = "NuMojo is a library for numerical computing written in Mojo 🔥"
 authors = [
     "Shivasankar <shivasankar.ka@gmail.com>",
     "MadAlex1997 <>",
-    "Yuhao Zhu <dr.yuhao.zhu@outlook.com>",
+    "Yuhao Zhu (朱宇浩) <dr.yuhao.zhu@outlook.com>",
     "mmenendezg <>",
     "sandstromviktor <>",
 ]
-channels = ["conda-forge", "https://conda.modular.com/max"]
+channels = ["conda-forge", "https://conda.modular.com/max/"]
 platforms = ["osx-arm64", "linux-64"]
 license = "Apache-2.0"
 readme = "README.MD"
@@ -24,6 +24,7 @@ package = "magic run mojo package numojo"
 format = "magic run mojo format ./"
 
 [dependencies]
-max = ">=24.5.0,<25"
+max = "24.6.0"
+python = ">=3.9,<3.13"
 numpy = ">=1.19,<2.2"
 scipy = ">=1.14,<1.15"

@@ -1,7 +1,8 @@
 # from ..traits.NDArrayTraits import NDArrayBackend
 from algorithm.functional import parallelize, vectorize, num_physical_cores
 from sys import simdwidthof
-from .ndarray import NDArray
+
+from numojo.core.ndarray import NDArray
 
 """
 Implementing backend for array keeping it simple for now

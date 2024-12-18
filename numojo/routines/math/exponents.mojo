@@ -1,5 +1,5 @@
 # ===------------------------------------------------------------------------===#
-# Logarithms
+# Exponents and logarithms
 # ===------------------------------------------------------------------------===#
 
 
@@ -10,6 +10,73 @@ from utils import Variant
 
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+
+alias ln = log
+"""
+Natural Log equivelent to log
+"""
+
+
+fn exp[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Calculate elementwise euler's constant(e) to the power of NDArray[i].
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        A NDArray with the shape of `NDArray` with values equal to the
+        e to the power of the value in the original NDArray at each position.
+    """
+    return backend().math_func_1_array_in_one_array_out[dtype, math.exp](array)
+
+
+fn exp2[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Calculate elementwise two to the power of NDArray[i].
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        A NDArray with the shape of `NDArray` with values equal to the
+        2 to the power of the value in the original NDArray at each position.
+    """
+    return backend().math_func_1_array_in_one_array_out[dtype, math.exp2](array)
+
+
+fn expm1[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Calculate elementwise euler's constant(e) to the power of NDArray[i] minus1.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        A NDArray with the shape of `NDArray` with values equal to the negative one plus
+        e to the power of the value in the original NDArray at each position.
+    """
+    return backend().math_func_1_array_in_one_array_out[dtype, math.expm1](
+        array
+    )
 
 
 fn log[
@@ -29,12 +96,6 @@ fn log[
         A NDArray equal to ln(NDArray).
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.log](array)
-
-
-alias ln = log
-"""
-Natural Log equivelent to log
-"""
 
 
 fn log2[

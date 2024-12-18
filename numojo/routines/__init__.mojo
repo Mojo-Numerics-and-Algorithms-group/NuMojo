@@ -18,7 +18,7 @@ Implements routines by topic:
     - Truth value testing (truth.mojo)
 - Mathematical functions (math/)
     - Arithmetic operations (arithmetic.mojo)
-    - Exponents and logarithms (exp_log.mojo)
+    - Exponents and logarithms (exponents.mojo)
     - Extrema finding (extrema.mojo)
     - Floating point routines (floating.mojo)
     - Hyperbolic functions (hyper.mojo)
@@ -32,15 +32,3 @@ Implements routines by topic:
     - Averages and variances (averages.mojo)
 
 """
-
-from .io import *
-from .linalg import *
-from .logic import *
-from .math import *
-from .statistics import *
-from .bitwise import *
-from .constants import Constants
-from .creation import *
-from .manipulation import *
-from .sorting import *
-from .searching import argmax, argmin

@@ -1,4 +1,6 @@
-# from numojo.core.NDArray import NDArray
+from algorithm import vectorize
+from sys import simdwidthof
+
 from numojo.core.ndarray import NDArray
 from numojo.routines.math.arithmetic import mul
 

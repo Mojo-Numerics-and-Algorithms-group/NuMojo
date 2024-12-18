@@ -10,8 +10,12 @@
 
 """
 
-from .matrix import *
-from .creation import *
+from algorithm import vectorize, parallelize
+from sys import simdwidthof
+from memory import memcpy
+
+from numojo.mat.matrix import Matrix
+from numojo.mat.creation import zeros, ones, full, identity
 
 # ===----------------------------------------------------------------------===#
 # Matrix and vector products

@@ -4,6 +4,7 @@ Implements Idx type.
 `Idx` is a series of `Int` on the heap.
 """
 
+from sys import simdwidthof
 from utils import Variant
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy

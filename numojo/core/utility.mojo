@@ -8,7 +8,8 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 
 from algorithm.functional import vectorize
 from python import Python, PythonObject
-from memory import memcpy
+from memory import UnsafePointer, memcpy
+from sys import simdwidthof
 
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides

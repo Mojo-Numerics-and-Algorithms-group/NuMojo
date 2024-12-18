@@ -1,4 +1,5 @@
 from numojo.routines.creation import fromstring
+from collections.optional import Optional
 
 
 fn loadtxt[

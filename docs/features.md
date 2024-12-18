@@ -1,6 +1,6 @@
 # Available functions and objects by topics
 
-Available functions and objects by topics:
+Available functions and objects by topics (also see imports within `__init__` file [here](../numojo/__init__.mojo)):
 
 - Array creation routines (`numojo.routines.creation`)
   - zeros, eye, identity, ones, fill
@@ -28,10 +28,11 @@ Available functions and objects by topics:
   - Miscellaneous: cbrt, expm1, rsqrt, scalb
 - Arithmetic operations (`numojo.routines.arithmetic`)
   - pow, mod, mul, sub, add, div
-- Exponents and logarithms (`numojo.routines.exp_log`)
+- Exponents and logarithms (`numojo.routines.exponents`)
 - Extrema finding (`numojo.routines.extrema`)
 - Floating point routines (`numojo.routines.floating`)
 - Hyperbolic functions (`numojo.routines.hyper`)
+- Indexing (`numojo.routines.indexing`)
 - Miscellaneous (`numojo.routines.misc`)
 - Rounding (`numojo.routines.rounding`)
 - Sums, products, differences (`numojo.routines.sums`, `numojo.routines.products`, `numojo.routines.differences`)

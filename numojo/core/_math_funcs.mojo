@@ -10,6 +10,7 @@ Implements backend functions for mathematics
 from testing import assert_raises
 from algorithm.functional import parallelize, vectorize, num_physical_cores
 from sys import simdwidthof
+from memory import UnsafePointer
 
 from numojo.traits.backend import Backend
 from numojo.core.ndarray import NDArray

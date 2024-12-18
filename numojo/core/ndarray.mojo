@@ -27,6 +27,7 @@ from python import Python, PythonObject
 from sys import simdwidthof
 from collections.optional import Optional
 from utils import Variant
+from memory import UnsafePointer
 from memory import memset_zero, memcpy
 
 

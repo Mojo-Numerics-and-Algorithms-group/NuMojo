@@ -109,68 +109,6 @@ fn sqrt[
     return backend().math_func_1_array_in_one_array_out[dtype, math.sqrt](array)
 
 
-fn exp2[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Calculate elementwise two to the power of NDArray[i].
-
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
-
-    Args:
-        array: A NDArray.
-
-    Returns:
-        A NDArray with the shape of `NDArray` with values equal to the
-        2 to the power of the value in the original NDArray at each position.
-    """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.exp2](array)
-
-
-fn exp[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Calculate elementwise euler's constant(e) to the power of NDArray[i].
-
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
-
-    Args:
-        array: A NDArray.
-
-    Returns:
-        A NDArray with the shape of `NDArray` with values equal to the
-        e to the power of the value in the original NDArray at each position.
-    """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.exp](array)
-
-
-fn expm1[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Calculate elementwise euler's constant(e) to the power of NDArray[i] minus1.
-
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
-
-    Args:
-        array: A NDArray.
-
-    Returns:
-        A NDArray with the shape of `NDArray` with values equal to the negative one plus
-        e to the power of the value in the original NDArray at each position.
-    """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.expm1](
-        array
-    )
-
-
 # this is a temporary doc, write a more explanatory one
 fn scalb[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized

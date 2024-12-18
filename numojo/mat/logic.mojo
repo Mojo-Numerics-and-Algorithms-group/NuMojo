@@ -5,6 +5,9 @@
 
 """
 
+from sys import simdwidthof
+from algorithm import vectorize, parallelize
+
 from .matrix import Matrix
 from .creation import zeros, ones
 

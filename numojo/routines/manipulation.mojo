@@ -1,15 +1,17 @@
 """
 Array manipulation routines.
+
 """
-# ===----------------------------------------------------------------------=== #
-# ARRAY MANIPULATION ROUTINES
-# Last updated: 2024-08-03
-# ===----------------------------------------------------------------------=== #
 
 from sys import simdwidthof
 from algorithm import vectorize
+from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
+
+# ===----------------------------------------------------------------------=== #
+# Basic operations
+# ===----------------------------------------------------------------------=== #
 
 
 fn copyto():
@@ -54,6 +56,11 @@ fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
         The size of the NDArray.
     """
     return array.shape[axis]
+
+
+# ===----------------------------------------------------------------------=== #
+# Changing array shape
+# ===----------------------------------------------------------------------=== #
 
 
 fn reshape[
@@ -109,52 +116,34 @@ fn ravel[dtype: DType](mut array: NDArray[dtype], order: String = "C") raises:
             reshape[dtype](array, array.size, order="F")
 
 
-fn where[
-    dtype: DType
-](
-    mut x: NDArray[dtype], scalar: SIMD[dtype, 1], mask: NDArray[DType.bool]
-) raises:
+fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Replaces elements in `x` with `scalar` where `mask` is True.
+    Flattens the NDArray.
 
     Parameters:
-        dtype: DType.
+        dtype: Dataype of the NDArray elements.
 
     Args:
-        x: A NDArray.
-        scalar: A SIMD value.
-        mask: A NDArray.
+        array: A NDArray.
 
+    Returns:
+        The 1 dimensional flattened NDArray.
     """
-    for i in range(x.size):
-        if mask._buf[i] == True:
-            x._buf.store(i, scalar)
+
+    var res: NDArray[dtype] = NDArray[dtype](Shape(array.size))
+    alias width: Int = simdwidthof[dtype]()
+
+    @parameter
+    fn vectorized_flatten[simd_width: Int](index: Int) -> None:
+        res._buf.store(index, array._buf.load[width=simd_width](index))
+
+    vectorize[vectorized_flatten, width](array.size)
+    return res
 
 
-# TODO: do it with vectorization
-fn where[
-    dtype: DType
-](mut x: NDArray[dtype], y: NDArray[dtype], mask: NDArray[DType.bool]) raises:
-    """
-    Replaces elements in `x` with elements from `y` where `mask` is True.
-
-    Raises:
-        ShapeMismatchError: If the shapes of `x` and `y` do not match.
-
-    Parameters:
-        dtype: DType.
-
-    Args:
-        x: NDArray[dtype].
-        y: NDArray[dtype].
-        mask: NDArray[DType.bool].
-
-    """
-    if x.shape != y.shape:
-        raise Error("Shape mismatch error: x and y must have the same shape")
-    for i in range(x.size):
-        if mask._buf[i] == True:
-            x._buf.store(i, y._buf[i])
+# ===----------------------------------------------------------------------=== #
+# Rearranging elements
+# ===----------------------------------------------------------------------=== #
 
 
 fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -179,28 +168,3 @@ fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     for i in range(array.size):
         result._buf.store(i, array._buf[array.size - i - 1])
     return result
-
-
-fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Flattens the NDArray.
-
-    Parameters:
-        dtype: Dataype of the NDArray elements.
-
-    Args:
-        array: A NDArray.
-
-    Returns:
-        The 1 dimensional flattened NDArray.
-    """
-
-    var res: NDArray[dtype] = NDArray[dtype](Shape(array.size))
-    alias width: Int = simdwidthof[dtype]()
-
-    @parameter
-    fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-        res._buf.store(index, array._buf.load[width=simd_width](index))
-
-    vectorize[vectorized_flatten, width](array.size)
-    return res

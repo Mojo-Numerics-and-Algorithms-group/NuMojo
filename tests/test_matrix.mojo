@@ -1,7 +1,6 @@
 import numojo as nm
 from numojo import mat
 from numojo.prelude import *
-from time import now
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 

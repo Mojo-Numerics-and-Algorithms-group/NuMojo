@@ -7,14 +7,20 @@
 *.html
 *.css
 *.py
-mojo
-numojo.mojopkg
-bench.mojo
-test_ndarray.ipynb
-/venv# pixi environments
-.pixi
 *.egg-info
 *.pyc
 
 # magic environments
 .magic
+
+# pixi environments
+.pixi
+/venv
+
+# Miscellaneous files
+mojo
+numojo.mojopkg
+bench.mojo
+test_ndarray.ipynb
+test.mojo
+tempCodeRunnerFile.mojo

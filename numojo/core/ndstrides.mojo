@@ -1,7 +1,7 @@
 """
 Implements NDArrayStrides type.
 
-`NDArrayStrides` is a series of `DType.int32` on the heap.
+`NDArrayStrides` is a series of `DType.index` on the heap.
 """
 
 from utils import Variant
@@ -10,7 +10,7 @@ from memory import UnsafePointer, memset_zero, memcpy
 
 
 @register_passable("trivial")
-struct NDArrayStrides[dtype: DType = DType.int32](Stringable):
+struct NDArrayStrides[dtype: DType = DType.index](Stringable):
     """Implements the NDArrayStrides."""
 
     # Fields

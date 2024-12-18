@@ -1,6 +1,4 @@
 import numojo as nm
-from numojo.routines import random
-from time import now
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
 from testing.testing import assert_true, assert_almost_equal
@@ -8,7 +6,7 @@ from testing.testing import assert_true, assert_almost_equal
 
 def test_rand():
     """Test random array generation with specified shape."""
-    var arr = random.rand[nm.f64](3, 5, 2)
+    var arr = nm.random.rand[nm.f64](3, 5, 2)
     assert_true(arr.shape[0] == 3, "Shape of random array")
     assert_true(arr.shape[1] == 5, "Shape of random array")
     assert_true(arr.shape[2] == 2, "Shape of random array")
@@ -16,8 +14,8 @@ def test_rand():
 
 def test_randminmax():
     """Test random array generation with min and max values."""
-    var arr_variadic = random.rand[nm.f64](10, 10, 10, min=1, max=2)
-    var arr_list = random.rand[nm.f64](List[Int](10, 10, 10), min=3, max=4)
+    var arr_variadic = nm.random.rand[nm.f64](10, 10, 10, min=1, max=2)
+    var arr_list = nm.random.rand[nm.f64](List[Int](10, 10, 10), min=3, max=4)
     var arr_variadic_mean = nm.cummean(arr_variadic)
     var arr_list_mean = nm.cummean(arr_list)
     assert_almost_equal(
@@ -36,13 +34,13 @@ def test_randminmax():
 
 def test_randn():
     """Test random array generation with normal distribution."""
-    var arr_variadic_01 = random.randn[nm.f64](
+    var arr_variadic_01 = nm.random.randn[nm.f64](
         20, 20, 20, mean=0.0, variance=1.0
     )
-    var arr_variadic_31 = random.randn[nm.f64](
+    var arr_variadic_31 = nm.random.randn[nm.f64](
         20, 20, 20, mean=3.0, variance=1.0
     )
-    var arr_variadic_12 = random.randn[nm.f64](
+    var arr_variadic_12 = nm.random.randn[nm.f64](
         20, 20, 20, mean=1.0, variance=3.0
     )
 
@@ -94,13 +92,13 @@ def test_randn():
 
 def test_randn_list():
     """Test random array generation with normal distribution."""
-    var arr_list_01 = random.randn[nm.f64](
+    var arr_list_01 = nm.random.randn[nm.f64](
         List[Int](20, 20, 20), mean=0.0, variance=1.0
     )
-    var arr_list_31 = random.randn[nm.f64](
+    var arr_list_31 = nm.random.randn[nm.f64](
         List[Int](20, 20, 20), mean=3.0, variance=1.0
     )
-    var arr_list_12 = random.randn[nm.f64](
+    var arr_list_12 = nm.random.randn[nm.f64](
         List[Int](20, 20, 20), mean=1.0, variance=2.0
     )
 
@@ -152,8 +150,8 @@ def test_randn_list():
 
 def test_rand_exponential():
     """Test random array generation with exponential distribution."""
-    var arr_variadic = random.rand_exponential[nm.f64](20, 20, 20, rate=2.0)
-    var arr_list = random.rand_exponential[nm.f64](
+    var arr_variadic = nm.random.rand_exponential[nm.f64](20, 20, 20, rate=2.0)
+    var arr_list = nm.random.rand_exponential[nm.f64](
         List[Int](20, 20, 20), rate=0.5
     )
 

@@ -15,7 +15,7 @@ import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.routines.creation import zeros
-from numojo.routines.math.sums import sumall
+from numojo.routines.math.sums import sum
 
 
 fn cross[
@@ -182,7 +182,7 @@ fn matmul_1d[
 
     var C: NDArray[dtype] = zeros[dtype](Shape(1, 1))
 
-    C.store(0, val=sumall(A * B))
+    C.store(0, val=sum(A * B))
 
     return C^
 

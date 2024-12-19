@@ -164,6 +164,7 @@ from numojo.routines.manipulation import (
     reshape,
     ravel,
     flatten,
+    transpose,
     flip,
 )
 

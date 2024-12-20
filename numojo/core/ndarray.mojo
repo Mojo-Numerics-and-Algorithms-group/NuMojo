@@ -11,10 +11,8 @@ Implements N-Dimensional Array
 # TODO
 1) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
 2) Add vectorization for _get_index
-3) Write more explanatory Error("") statements
-4) Create NDArrayView and remove coefficients.
-5) Reduce the number of `__init__`.
-6) Rename some variables or methods that should not be exposed to users.
+3) Create NDArrayView and remove coefficients.
+4) Rename some variables or methods that should not be exposed to users.
 """
 
 from builtin.type_aliases import Origin
@@ -2127,22 +2125,26 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     # Operations along an axis
     # ===-------------------------------------------------------------------===#
-    # TODO: implement for arbitrary axis1, and axis2
-    fn T(mut self) raises:
+    fn T(self, axes: List[Int]) raises -> Self:
         """
-        Transpose the array.
-        """
-        if self.ndim != 2:
-            raise Error("Only 2-D arrays can be transposed currently.")
-        var rows = self.shape[0]
-        var cols = self.shape[1]
+        Transpose array of any number of dimensions according to
+        arbitrary permutation of the axes.
 
-        var transposed = NDArray[dtype](Shape(cols, rows))
-        for i in range(rows):
-            for j in range(cols):
-                # the setitem is not working due to the symmetry issue of getter and setter
-                transposed.__setitem__(Idx(j, i), val=self.item(i, j))
-        self = transposed
+        If `axes` is not given, it is equal to flipping the axes.
+
+        Defined in `numojo.routines.manipulation.transpose`.
+        """
+        return numojo.routines.manipulation.transpose(self, axes)
+
+    fn T(self) raises -> Self:
+        """
+        (overload) Transpose the array when `axes` is not given.
+        If `axes` is not given, it is equal to flipping the axes.
+        See docstring of `transpose`.
+
+        Defined in `numojo.routines.manipulation.transpose`.
+        """
+        return numojo.routines.manipulation.transpose(self)
 
     fn all(self) raises -> Bool:
         """

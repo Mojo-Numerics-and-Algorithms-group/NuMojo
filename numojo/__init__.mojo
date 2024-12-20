@@ -10,7 +10,7 @@ alias __version__ = "V0.2"
 # e.g., lower case can also be used for alias of structs.
 # ===----------------------------------------------------------------------=== #
 
-alias idx = core.index.Idx
+alias idx = numojo.core.index.Idx
 
 # ===----------------------------------------------------------------------=== #
 # Import core types

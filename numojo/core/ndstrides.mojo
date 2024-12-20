@@ -5,8 +5,7 @@ Implements NDArrayStrides type.
 """
 
 from utils import Variant
-from builtin.type_aliases import Origin
-from memory import UnsafePointer, memset_zero, memcpy
+from memory import UnsafePointer, memcpy
 
 
 @register_passable("trivial")
@@ -16,7 +15,9 @@ struct NDArrayStrides(Stringable):
     # Fields
     var offset: Int
     var _buf: UnsafePointer[Int]
+    """Data buffer."""
     var ndim: Int
+    """Number of dimensions of array."""
 
     @always_inline("nodebug")
     fn __init__(
@@ -25,7 +26,7 @@ struct NDArrayStrides(Stringable):
         self.offset = offset
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        for i in range(len(strides)):
+        for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
@@ -33,7 +34,7 @@ struct NDArrayStrides(Stringable):
         self.offset = offset
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        for i in range(len(strides)):
+        for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
@@ -49,8 +50,7 @@ struct NDArrayStrides(Stringable):
         self.offset = strides.offset
         self.ndim = strides.ndim
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(strides._buf[i])
+        memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
     fn __init__(
@@ -59,8 +59,7 @@ struct NDArrayStrides(Stringable):
         self.offset = offset
         self.ndim = strides.ndim
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(strides._buf[i])
+        memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
     fn __init__(
@@ -69,17 +68,16 @@ struct NDArrayStrides(Stringable):
         self.offset = offset
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        memset_zero(self._buf, self.ndim)
         if order == "C":
             for i in range(self.ndim):
                 var temp: Int = 1
                 for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self._buf[i] = temp
+                (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self._buf[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self._buf[i + 1] = self._buf[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -93,17 +91,16 @@ struct NDArrayStrides(Stringable):
         self.offset = offset
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        memset_zero(self._buf, self.ndim)
         if order == "C":
             for i in range(self.ndim):
                 var temp: Int = 1
                 for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self._buf[i] = temp
+                (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self._buf[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self._buf[i + 1] = self._buf[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -120,17 +117,16 @@ struct NDArrayStrides(Stringable):
         self.offset = offset
         self.ndim = shape.__len__()
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        memset_zero(self._buf, self.ndim)
         if order == "C":
             for i in range(self.ndim):
                 var temp: Int = 1
                 for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self._buf[i] = temp
+                (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self._buf[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self._buf[i + 1] = self._buf[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -147,20 +143,19 @@ struct NDArrayStrides(Stringable):
         self.offset = offset
         self.ndim = shape.ndim
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
-        memset_zero(self._buf, shape.ndim)
         if order == "C":
             if shape.ndim == 1:
-                self._buf[0] = 1
+                self._buf.init_pointee_copy(1)
             else:
                 for i in range(shape.ndim):
                     var temp: Int = 1
                     for j in range(i + 1, shape.ndim):
                         temp = temp * shape[j]
-                    self._buf[i] = temp
+                    (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self._buf[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self._buf[i + 1] = self._buf[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"

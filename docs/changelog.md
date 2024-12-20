@@ -2,7 +2,7 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
-## xx/xx/2024 (v0.x)
+## xx/xx/2024 (v0.4)
 
 ### ⭐️ New
 
@@ -33,6 +33,8 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Re-organize the functions and modules by topic, so that it is more consistent with `numpy` ([Issue 144](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/144), [PR #146](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/146)).
 - Rename some attributes of `NDArray` and make `size` an attribute instead of a method ([PR #145](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/145)).
 - Completely remove `import *` in __init__ files to fix namespace leak ([PR #151](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/151)).
+- Update function `sum` ([PR #149](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/149)).
+- `transpose` now allows arbitrary dimensions and permutations of axes ([PR #152](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/152)).
 
 ### ❌ Removed
 

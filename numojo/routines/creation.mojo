@@ -978,6 +978,25 @@ fn fromstring[
     return result^
 
 
+# Technically we should allow for runtime type inference here, but NDArray doesn't support it yet.
+fn astype[dtype: DType](a: NDArray) raises -> NDArray[dtype]:
+    """
+    Cast an NDArray to a different dtype.
+
+    Parameters:
+        dtype: Datatype to cast the NDArray to.
+
+    Args:
+        a: NDArray to be casted.
+
+    Returns:
+        A NDArray with the same shape as `a` but with elements casted to `dtype`.
+    """
+    var result: NDArray[dtype] = NDArray[dtype](a.shape)
+    for i in range(a.size):
+        result._buf[i] = a._buf[i].cast[dtype]()
+    return result^
+
 # ===------------------------------------------------------------------------===#
 # Construct array from various objects.
 # It can be reloaded to allow different types of input.

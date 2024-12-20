@@ -1402,7 +1402,7 @@ struct NDArray[dtype: DType = DType.float64](
             "core:ndarray:NDArray:__bool__: Bool is currently only implemented"
             " for DType.bool"
         )
-
+    
     fn __int__(self) raises -> Int:
         """Get Int representation of the array.
 

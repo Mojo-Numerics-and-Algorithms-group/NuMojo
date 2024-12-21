@@ -1,28 +1,25 @@
 """
 Implements NDArrayShape type.
 
-`NDArrayShape` is a series of `DType.index` on the heap.
+`NDArrayShape` is a series of `Int` on the heap.
 """
 
-from memory import UnsafePointer, memset_zero, memcpy
-from utils import Variant
-from builtin.type_aliases import Origin
+from memory import UnsafePointer, memcpy
 
 alias Shape = NDArrayShape
-alias shape = NDArrayShape
 
 
 @register_passable("trivial")
-struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
+struct NDArrayShape(Stringable, Writable):
     """Implements the NDArrayShape."""
 
     # Fields
     var size: Int
-    """Total number of elements in the corresponding array."""
-    var _buf: UnsafePointer[Scalar[dtype]]
-    """Shape of the corresponding array."""
+    """Total number of elements of corresponding array."""
+    var _buf: UnsafePointer[Int]
+    """Data buffer."""
     var ndim: Int
-    """Length of ndshape."""
+    """Number of dimensions of array."""
 
     @always_inline("nodebug")
     fn __init__(mut self, *shape: Int) raises:
@@ -34,10 +31,9 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
         """
         self.size = 1
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
-        memset_zero(self._buf, len(shape))
-        for i in range(len(shape)):
-            self._buf[i] = shape[i]
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(shape[i])
             self.size *= shape[i]
 
     @always_inline("nodebug")
@@ -51,11 +47,10 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
         """
         self.size = size
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
-        memset_zero(self._buf, len(shape))
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         var count: Int = 1
-        for i in range(len(shape)):
-            self._buf[i] = shape[i]
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(shape[i])
             count *= shape[i]
         if count != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
@@ -70,10 +65,9 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
         """
         self.size = 1
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
-        memset_zero(self._buf, len(shape))
-        for i in range(len(shape)):
-            self._buf[i] = shape[i]
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(shape[i])
             self.size *= shape[i]
 
     @always_inline("nodebug")
@@ -89,11 +83,10 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
             size  # maybe I should add a check here to make sure it matches
         )
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
-        memset_zero(self._buf, len(shape))
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         var count: Int = 1
-        for i in range(len(shape)):
-            self._buf[i] = shape[i]
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(shape[i])
             count *= shape[i]
         if count != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
@@ -108,10 +101,9 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
         """
         self.size = 1
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
-        memset_zero(self._buf, len(shape))
-        for i in range(len(shape)):
-            self._buf[i] = shape[i]
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(shape[i])
             self.size *= shape[i]
 
     @always_inline("nodebug")
@@ -127,11 +119,10 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
             size  # maybe I should add a check here to make sure it matches
         )
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(len(shape))
-        memset_zero(self._buf, len(shape))
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         var count: Int = 1
-        for i in range(len(shape)):
-            self._buf[i] = shape[i]
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(shape[i])
             count *= shape[i]
         if count != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
@@ -146,10 +137,8 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
         """
         self.size = shape.size
         self.ndim = shape.ndim
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(shape.ndim)
-        memset_zero(self._buf, shape.ndim)
-        for i in range(shape.ndim):
-            self._buf[i] = shape[i]
+        self._buf = UnsafePointer[Int]().alloc(shape.ndim)
+        memcpy(self._buf, shape._buf, shape.ndim)
 
     fn __copy__(mut self, other: Self):
         """
@@ -157,7 +146,7 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
         """
         self.size = other.size
         self.ndim = other.ndim
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.ndim)
+        self._buf = UnsafePointer[Int]().alloc(other.ndim)
         memcpy(self._buf, other._buf, other.ndim)
 
     @always_inline("nodebug")
@@ -235,38 +224,24 @@ struct NDArrayShape[dtype: DType = DType.index](Stringable, Writable):
                 return True
         return False
 
-    # can be used for vectorized index calculation
-    @always_inline("nodebug")
-    fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        """
-        SIMD load dimensional information.
-        """
-        # if index >= self.ndim:
-        # raise Error("Index out of bound")
-        return self._buf.load[width=width](index)
+    # # can be used for vectorized index calculation
+    # @always_inline("nodebug")
+    # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
+    #     """
+    #     SIMD load dimensional information.
+    #     """
+    #     # if index >= self.ndim:
+    #     # raise Error("Index out of bound")
+    #     return self._buf.load[width=width](index)
 
-    # can be used for vectorized index retrieval
-    @always_inline("nodebug")
-    fn store[
-        width: Int = 1
-    ](mut self, index: Int, val: SIMD[dtype, width]) raises:
-        """
-        SIMD store dimensional information.
-        """
-        # if index >= self.ndim:
-        #     raise Error("Index out of bound")
-        self._buf.store(index, val)
-
-    @always_inline("nodebug")
-    fn load_int(self, index: Int) -> Int:
-        """
-        SIMD load dimensional information.
-        """
-        return self._buf.load[width=1](index).__int__()
-
-    @always_inline("nodebug")
-    fn store_int(mut self, index: Int, val: Int):
-        """
-        SIMD store dimensional information.
-        """
-        self._buf.store(index, val)
+    # # can be used for vectorized index retrieval
+    # @always_inline("nodebug")
+    # fn store[
+    #     width: Int = 1
+    # ](mut self, index: Int, val: SIMD[dtype, width]) raises:
+    #     """
+    #     SIMD store dimensional information.
+    #     """
+    #     # if index >= self.ndim:
+    #     #     raise Error("Index out of bound")
+    #     self._buf.store(index, val)

@@ -6,7 +6,9 @@
 import math
 from algorithm import vectorize
 
-from ..core.ndarray import NDArray, NDArrayShape
+from numojo.core.ndarray import NDArray
+from numojo.core.ndshape import NDArrayShape
+from numojo.routines.manipulation import flatten, transpose
 
 """
 TODO:
@@ -57,16 +59,25 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     return result
 
 
-# Quick sort
+##############
+# Quick sort #
+##############
 
 
-fn _partition(
-    mut ndarray: NDArray, left: Int, right: Int, pivot_index: Int
+fn _partition_in_range(
+    mut A: NDArray,
+    mut I: NDArray,
+    left: Int,
+    right: Int,
+    pivot_index: Int,
 ) raises -> Int:
-    """Do partition for the data buffer of ndarray.
+    """
+    Do in-place partition for array buffer within given range.
+    Auxiliary function for `sort`, `argsort`, and `partition`.
 
     Args:
-        ndarray: An NDArray.
+        A: NDArray.
+        I: NDArray used to store indices.
         left: Left index of the partition.
         right: Right index of the partition.
         pivot_index: Input pivot index
@@ -75,81 +86,170 @@ fn _partition(
         New pivot index.
     """
 
-    var pivot_value = ndarray.get(pivot_index)
-    var _value_at_pivot = ndarray.get(pivot_index)
-    ndarray.set(pivot_index, ndarray.get(right))
-    ndarray.set(right, _value_at_pivot)
+    # (Unsafe) Boundary checks are not done for sake of speed:
+    # if (left >= A.size) or (right >= A.size) or (pivot_index >= A.size):
+
+    var pivot_value = A._buf[pivot_index]
+
+    A._buf[pivot_index], A._buf[right] = A._buf[right], A._buf[pivot_index]
+    I._buf[pivot_index], I._buf[right] = I._buf[right], I._buf[pivot_index]
 
     var store_index = left
 
     for i in range(left, right):
-        if ndarray.get(i) < pivot_value:
-            var _value_at_store = ndarray.get(store_index)
-            ndarray.set(store_index, ndarray.get(i))
-            ndarray.set(i, _value_at_store)
+        if A._buf[i] < pivot_value:
+            A._buf[store_index], A._buf[i] = A._buf[i], A._buf[store_index]
+            I._buf[store_index], I._buf[i] = I._buf[i], I._buf[store_index]
             store_index = store_index + 1
 
-    var _value_at_store = ndarray.get(store_index)
-    ndarray.set(store_index, ndarray.get(right))
-    ndarray.set(right, _value_at_store)
+    A._buf[store_index], A._buf[right] = A._buf[right], A._buf[store_index]
+    I._buf[store_index], I._buf[right] = I._buf[right], I._buf[store_index]
 
     return store_index
 
 
-fn quick_sort_inplace[
-    dtype: DType
-](mut ndarray: NDArray[dtype], left: Int, right: Int,) raises:
+fn _sort_in_range(mut A: NDArray, mut I: NDArray, left: Int, right: Int) raises:
     """
-    Quick sort (in-place) the NDArray.
-
-    Parameters:
-        dtype: The input element type.
+    Sort in-place of the data buffer (quick-sort) within give range.
+    It is not guaranteed to be stable.
 
     Args:
-        ndarray: An NDArray.
+        A: NDArray.
+        I: NDArray used to store indices.
         left: Left index of the partition.
         right: Right index of the partition.
     """
 
     if right > left:
         var pivot_index = left + (right - left) // 2
-        var pivot_new_index = _partition(ndarray, left, right, pivot_index)
-        quick_sort_inplace(ndarray, left, pivot_new_index - 1)
-        quick_sort_inplace(ndarray, pivot_new_index + 1, right)
+        var pivot_new_index = _partition_in_range(
+            A, I, left, right, pivot_index
+        )
+        _sort_in_range(A, I, left, pivot_new_index - 1)
+        _sort_in_range(A, I, pivot_new_index + 1, right)
 
 
-fn quick_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
+fn _sort_inplace[
+    dtype: DType
+](mut A: NDArray[dtype], mut I: NDArray[DType.index]) raises:
     """
-    Quick sort the NDArray.
-    Adopt in-place partition.
-    Average complexity: O(nlogn).
-    Worst-case complexity: O(n^2).
-    Worst-case space complexity: O(n).
-    Unstable.
+    Sort in-place NDArray using quick sort method.
+    It is not guaranteed to be unstable.
 
-    Example:
-        ```py
-        var arr = numojo.core.random.rand[numojo.i16](100)
-        var sorted_arr = numojo.core.sort.quick_sort(arr)
-        print(sorted_arr)
-        ```
+    When no axis is given, the array is flattened before sorting.
 
     Parameters:
         dtype: The input element type.
 
     Args:
-        ndarray: An NDArray.
+        A: NDArray.
+        I: NDArray that stores the indices.
+    """
+
+    A = flatten(A)
+    _sort_in_range(A, I, 0, A.size - 1)
+
+
+fn _sort_inplace[
+    dtype: DType
+](mut A: NDArray[dtype], mut I: NDArray[DType.index], owned axis: Int) raises:
+    """
+    Sort in-place NDArray along the given axis using quick sort method.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        A: NDArray to sort.
+        I: NDArray that stores the indices.
+        axis: The axis along which the array is sorted.
 
     """
 
-    var result: NDArray[dtype] = ndarray
-    var length = ndarray.size
-    quick_sort_inplace(result, 0, length - 1)
+    if axis < 0:
+        axis = A.ndim + axis
 
-    return result
+    if (axis >= A.ndim) or (axis < 0):
+        raise Error(
+            String("Axis {} is invalid for array of {} dimensions").format(
+                axis, A.ndim
+            )
+        )
+
+    var continous_axis = A.ndim - 1 if A.order == "C" else A.ndim - 2
+    """Continuously stored axis. -1 if row-major, -2 if col-major."""
+
+    if axis == continous_axis:  # Last axis
+        var I = zeros[DType.index](shape=A.shape)
+        for i in range(A.size // A.shape[continous_axis]):
+            _sort_in_range(
+                A,
+                I,
+                left=i * A.shape[continous_axis],
+                right=(i + 1) * A.shape[continous_axis] - 1,
+            )
+    else:
+        var transposed_axes = List[Int](capacity=A.ndim)
+        for i in range(A.ndim):
+            transposed_axes.append(i)
+        transposed_axes[axis], transposed_axes[continous_axis] = (
+            transposed_axes[continous_axis],
+            transposed_axes[axis],
+        )
+        A = transpose(A, axes=transposed_axes)
+        _sort_inplace(A, I, axis=-1)
+        A = transpose(A, axes=transposed_axes)
 
 
-# Binary sort
+fn sort[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Sort NDArray using quick sort method.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        A: NDArray.
+    """
+
+    var I = NDArray[DType.index](A.shape)
+    A = flatten(A)
+    _sort_inplace(A, I)
+    return A^
+
+
+fn sort[
+    dtype: DType
+](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+    """
+    Sort NDArray along the given axis using quick sort method.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        A: NDArray to sort.
+        axis: The axis along which the array is sorted.
+
+    """
+
+    var I = NDArray[DType.index](A.shape)
+    _sort_inplace(A, I, axis)
+    return A^
+
+
+###############
+# Binary sort #
+###############
 
 
 fn binary_sort[
@@ -193,7 +293,9 @@ fn binary_sort[
     return result
 
 
-# Argsort using quick sort algorithm
+# ===----------------------------------------------------------------------=== #
+# Searching
+# ===----------------------------------------------------------------------=== #
 
 
 fn _argsort_partition(

@@ -122,12 +122,10 @@ fn matmul_tiled_unrolled_parallelized[
     Matrix multiplication vectorized, tiled, unrolled, and parallelized.
     """
     alias width = max(simdwidthof[dtype](), 16)
-    var C: NDArray[dtype] = zeros[dtype](
-        Shape(A.shape.load_int(0), B.shape.load_int(1))
-    )
-    var t0 = A.shape.load_int(0)
-    var t1 = A.shape.load_int(1)
-    var t2 = B.shape.load_int(1)
+    var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
+    var t0 = A.shape[0]
+    var t1 = A.shape[1]
+    var t2 = B.shape[1]
 
     @parameter
     fn calculate_A_rows(m: Int):
@@ -222,12 +220,10 @@ fn matmul_parallelized[
         res.reshape(A.shape[0])
         return res
 
-    var C: NDArray[dtype] = zeros[dtype](
-        Shape(A.shape.load_int(0), B.shape.load_int(1))
-    )
-    var t0 = A.shape.load_int(0)
-    var t1 = A.shape.load_int(1)
-    var t2 = B.shape.load_int(1)
+    var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
+    var t0 = A.shape[0]
+    var t1 = A.shape[1]
+    var t2 = B.shape[1]
 
     @parameter
     fn calculate_A_rows(m: Int):
@@ -269,9 +265,9 @@ fn matmul_naive[
                 C.store(m, val=C.load(m) + A.load(m, k) * B.load(k))
     elif B.ndim != 1:
         C = zeros[dtype](NDArrayShape(A.shape[0], B.shape[1]))
-        for m in range(C.shape.load_int(0)):
-            for k in range(A.shape.load_int(1)):
-                for n in range(C.shape.load_int(1)):
+        for m in range(C.shape[0]):
+            for k in range(A.shape[1]):
+                for n in range(C.shape[1]):
                     C.store(
                         m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n)
                     )

@@ -11,10 +11,8 @@ Implements N-Dimensional Array
 # TODO
 1) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
 2) Add vectorization for _get_index
-3) Write more explanatory Error("") statements
-4) Create NDArrayView and remove coefficients.
-5) Reduce the number of `__init__`.
-6) Rename some variables or methods that should not be exposed to users.
+3) Create NDArrayView and remove coefficients.
+4) Rename some variables or methods that should not be exposed to users.
 """
 
 from builtin.type_aliases import Origin
@@ -32,7 +30,7 @@ from memory import memset_zero, memcpy
 
 
 import numojo.core._array_funcs as _af
-import numojo.routines.sorting as sort
+import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.logic.comparison as comparison
 import numojo.routines.math.rounding as rounding
@@ -167,74 +165,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         self = Self(Shape(shape), order)
-
-    ########################
-    # Use nm.array instead #
-    ########################
-    # fn __init__(
-    #     mut self,
-    #     data: List[SIMD[dtype, 1]],
-    #     shape: NDArrayShape,
-    #     order: String = "C",
-    # ) raises:
-    #     """
-    #     NDArray initialization from list of data.
-    #     Args:
-    #         data: List of data.
-    #         shape: List of shape.
-    #         order: Memory order C or F.
-    #     Example:
-    #         ```mojo
-    #         import numojo as nm
-    #         nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
-    #         ```
-    #     """
-
-    #     self.ndim = shape.ndim
-    #     self.shape = NDArrayShape(shape)
-    #     self.strides = NDArrayStrides(shape, offset=0, order=order)
-    #     self.coefficient = NDArrayStrides(shape, offset=0, order=order)
-    #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
-    #     self.datatype = dtype
-    #     self.order = order
-    #     for i in range(self.size):
-    #         self._buf[i] = data[i]
-
-    ########################
-    # Use nm.array instead #
-    ########################
-    # fn __init__(mut self, data: PythonObject, order: String = "C") raises:
-    #     """
-    #     NDArray initialization from Numpy arrays.
-
-    #     Args:
-    #         data: Numpy array.
-    #         order: Memory order C or F.
-
-    #     Example:
-    #         ```mojo
-    #         import numojo as nm
-    #         var np = Python.import_module("numpy")
-    #         var np_arr = np.array([1, 2, 3, 4])
-    #         nm.array[f16](data=np_arr, order="C")
-    #         ```
-    #     """
-    #     var len = int(len(data.shape))
-    #     var shape: List[Int] = List[Int]()
-    #     for i in range(len):
-    #         if int(data.shape[i]) == 1:
-    #             continue
-    #         shape.append(int(data.shape[i]))
-    #     self.ndim = shape.__len__()
-    #     self.shape = NDArrayShape(shape)
-    #     self.strides = NDArrayStrides(shape, offset=0, order=order)
-    #     self.coefficient = NDArrayStrides(shape, offset=0, order=order)
-    #     self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
-    #     memset_zero(self._buf, self.size)
-    #     self.order = order
-    #     self.datatype = dtype
-    #     for i in range(self.size):
-    #         self._buf[i] = data.item(PythonObject(i)).to_float64().cast[dtype]()
 
     # Why do  these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
@@ -2104,22 +2034,26 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     # Operations along an axis
     # ===-------------------------------------------------------------------===#
-    # TODO: implement for arbitrary axis1, and axis2
-    fn T(mut self) raises:
+    fn T(self, axes: List[Int]) raises -> Self:
         """
-        Transpose the array.
-        """
-        if self.ndim != 2:
-            raise Error("Only 2-D arrays can be transposed currently.")
-        var rows = self.shape[0]
-        var cols = self.shape[1]
+        Transpose array of any number of dimensions according to
+        arbitrary permutation of the axes.
 
-        var transposed = NDArray[dtype](Shape(cols, rows))
-        for i in range(rows):
-            for j in range(cols):
-                # the setitem is not working due to the symmetry issue of getter and setter
-                transposed.__setitem__(Idx(j, i), val=self.item(i, j))
-        self = transposed
+        If `axes` is not given, it is equal to flipping the axes.
+
+        Defined in `numojo.routines.manipulation.transpose`.
+        """
+        return numojo.routines.manipulation.transpose(self, axes)
+
+    fn T(self) raises -> Self:
+        """
+        (overload) Transpose the array when `axes` is not given.
+        If `axes` is not given, it is equal to flipping the axes.
+        See docstring of `transpose`.
+
+        Defined in `numojo.routines.manipulation.transpose`.
+        """
+        return numojo.routines.manipulation.transpose(self)
 
     fn all(self) raises -> Bool:
         """
@@ -2188,13 +2122,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Sort the NDArray and return the sorted indices.
 
-        See `numojo.core.sort.argsort()`.
+        See `numojo.routines.sorting.argsort()`.
 
         Returns:
             The indices of the sorted NDArray.
         """
 
-        return sort.argsort(self)
+        return sorting.argsort(self)
 
     fn astype[type: DType](self) raises -> NDArray[type]:
         """
@@ -2606,9 +2540,31 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn sort(mut self) raises:
         """
-        Sort the array inplace using quickstort.
+        Sort NDArray using quick sort method.
+        It is not guaranteed to be unstable.
+
+        When no axis is given, the array is flattened before sorting.
+
+        See `numojo.sorting.sort` for more information.
         """
-        sort.quick_sort_inplace[dtype](self, 0, self.size - 1)
+        var I = NDArray[DType.index](self.shape)
+        self = flatten(self)
+        sorting._sort_inplace(
+            self,
+            I,
+        )
+
+    fn sort(mut self, owned axis: Int) raises:
+        """
+        Sort NDArray along the given axis using quick sort method.
+        It is not guaranteed to be unstable.
+
+        When no axis is given, the array is flattened before sorting.
+
+        See `numojo.sorting.sort` for more information.
+        """
+        var I = NDArray[DType.index](self.shape)
+        sorting._sort_inplace(self, I, axis=axis)
 
     fn sum(self: Self, axis: Int) raises -> Self:
         """

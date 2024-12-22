@@ -1,87 +1,83 @@
 """
 Implements NDArrayStrides type.
 
-`NDArrayStrides` is a series of `DType.index` on the heap.
+`NDArrayStrides` is a series of `Int` on the heap.
 """
 
 from utils import Variant
-from builtin.type_aliases import Origin
-from memory import UnsafePointer, memset_zero, memcpy
+from memory import UnsafePointer, memcpy
 
 
 @register_passable("trivial")
-struct NDArrayStrides[dtype: DType = DType.index](Stringable):
+struct NDArrayStrides(Stringable):
     """Implements the NDArrayStrides."""
 
     # Fields
     var offset: Int
-    var strides: UnsafePointer[Scalar[dtype]]
+    var _buf: UnsafePointer[Int]
+    """Data buffer."""
     var ndim: Int
+    """Number of dimensions of array."""
 
     @always_inline("nodebug")
     fn __init__(
-        mut self, *strides: Int, offset: Int = 0
+        out self, *strides: Int, offset: Int = 0
     ):  # maybe we should add checks for offset?
         self.offset = offset
-        self.ndim = strides.__len__()
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(strides.__len__())
-        for i in range(strides.__len__()):
-            self.strides[i] = strides[i]
-
-    @always_inline("nodebug")
-    fn __init__(mut self, strides: List[Int], offset: Int = 0):
-        self.offset = offset
-        self.ndim = strides.__len__()
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
-        memset_zero(self.strides, self.ndim)
+        self.ndim = len(strides)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            self.strides[i] = strides[i]
+            (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
-    fn __init__(mut self, strides: VariadicList[Int], offset: Int = 0):
+    fn __init__(out self, strides: List[Int], offset: Int = 0):
         self.offset = offset
-        self.ndim = strides.__len__()
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
-        memset_zero(self.strides, self.ndim)
+        self.ndim = len(strides)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            self.strides[i] = strides[i]
+            (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
-    fn __init__(mut self, strides: NDArrayStrides[dtype]):
+    fn __init__(out self, strides: VariadicList[Int], offset: Int = 0):
+        self.offset = offset
+        self.ndim = len(strides)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(strides[i])
+
+    @always_inline("nodebug")
+    fn __init__(out self, strides: NDArrayStrides):
         self.offset = strides.offset
         self.ndim = strides.ndim
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(strides.ndim)
-        for i in range(self.ndim):
-            self.strides[i] = strides.strides[i]
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
     fn __init__(
-        mut self, strides: NDArrayStrides[dtype], offset: Int = 0
+        out self, strides: NDArrayStrides, offset: Int = 0
     ):  # separated two methods to remove if condition
         self.offset = offset
         self.ndim = strides.ndim
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(strides.ndim)
-        for i in range(self.ndim):
-            self.strides[i] = strides.strides[i]
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
     fn __init__(
-        mut self, *shape: Int, offset: Int = 0, order: String = "C"
+        out self, *shape: Int, offset: Int = 0, order: String = "C"
     ) raises:
         self.offset = offset
-        self.ndim = shape.__len__()
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
-        memset_zero(self.strides, self.ndim)
+        self.ndim = len(shape)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         if order == "C":
             for i in range(self.ndim):
                 var temp: Int = 1
                 for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self.strides[i] = temp
+                (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self.strides[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self.strides[i + 1] = self.strides[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -90,22 +86,21 @@ struct NDArrayStrides[dtype: DType = DType.index](Stringable):
 
     @always_inline("nodebug")
     fn __init__(
-        mut self, shape: List[Int], offset: Int = 0, order: String = "C"
+        out self, shape: List[Int], offset: Int = 0, order: String = "C"
     ) raises:
         self.offset = offset
-        self.ndim = shape.__len__()
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
-        memset_zero(self.strides, self.ndim)
+        self.ndim = len(shape)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         if order == "C":
             for i in range(self.ndim):
                 var temp: Int = 1
                 for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self.strides[i] = temp
+                (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self.strides[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self.strides[i + 1] = self.strides[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -114,25 +109,24 @@ struct NDArrayStrides[dtype: DType = DType.index](Stringable):
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: VariadicList[Int],
         offset: Int = 0,
         order: String = "C",
     ) raises:
         self.offset = offset
         self.ndim = shape.__len__()
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(self.ndim)
-        memset_zero(self.strides, self.ndim)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
         if order == "C":
             for i in range(self.ndim):
                 var temp: Int = 1
                 for j in range(i + 1, self.ndim):
                     temp = temp * shape[j]
-                self.strides[i] = temp
+                (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self.strides[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self.strides[i + 1] = self.strides[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -141,28 +135,27 @@ struct NDArrayStrides[dtype: DType = DType.index](Stringable):
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         owned shape: NDArrayShape,
         offset: Int = 0,
         order: String = "C",
     ) raises:
         self.offset = offset
         self.ndim = shape.ndim
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(shape.ndim)
-        memset_zero(self.strides, shape.ndim)
+        self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         if order == "C":
             if shape.ndim == 1:
-                self.strides[0] = 1
+                self._buf.init_pointee_copy(1)
             else:
                 for i in range(shape.ndim):
                     var temp: Int = 1
                     for j in range(i + 1, shape.ndim):
                         temp = temp * shape[j]
-                    self.strides[i] = temp
+                    (self._buf + i).init_pointee_copy(temp)
         elif order == "F":
-            self.strides[0] = 1
+            self._buf.init_pointee_copy(1)
             for i in range(0, self.ndim - 1):
-                self.strides[i + 1] = self.strides[i] * shape[i]
+                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -172,26 +165,26 @@ struct NDArrayStrides[dtype: DType = DType.index](Stringable):
     fn __copy__(mut self, other: Self):
         self.offset = other.offset
         self.ndim = other.ndim
-        self.strides = UnsafePointer[Scalar[dtype]]().alloc(other.ndim)
-        memcpy(self.strides, other.strides, other.ndim)
+        self._buf = UnsafePointer[Int]().alloc(other.ndim)
+        memcpy(self._buf, other._buf, other.ndim)
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         if index >= self.ndim:
             raise Error("Index out of bound")
         if index >= 0:
-            return self.strides[index].__int__()
+            return self._buf[index]
         else:
-            return self.strides[self.ndim + index].__int__()
+            return self._buf[self.ndim + index]
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:
         if index >= self.ndim:
             raise Error("Index out of bound")
         if index >= 0:
-            self.strides[index] = val
+            self._buf[index] = val
         else:
-            self.strides[self.ndim + index] = val
+            self._buf[self.ndim + index] = val
 
     @always_inline("nodebug")
     fn len(self) -> Int:
@@ -205,9 +198,9 @@ struct NDArrayStrides[dtype: DType = DType.index](Stringable):
         var result: String = "Stride: ["
         for i in range(self.ndim):
             if i == self.ndim - 1:
-                result += self.strides[i].__str__()
+                result += self._buf[i].__str__()
             else:
-                result += self.strides[i].__str__() + ", "
+                result += self._buf[i].__str__() + ", "
         result = result + "]"
         writer.write(result)
 
@@ -229,26 +222,27 @@ struct NDArrayStrides[dtype: DType = DType.index](Stringable):
                 return True
         return False
 
-    @always_inline("nodebug")
-    fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-        # if index >= self.ndim:
-        #     raise Error("Index out of bound")
-        return self.strides.load[width=width](index)
 
-    @always_inline("nodebug")
-    fn store[
-        width: Int = 1
-    ](mut self, index: Int, val: SIMD[dtype, width]) raises:
-        # if index >= self.ndim:
-        #     raise Error("Index out of bound")
-        self.strides.store(index, val)
+# @always_inline("nodebug")
+# fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
+#     # if index >= self.ndim:
+#     #     raise Error("Index out of bound")
+#     return self._buf.load[width=width](index)
 
-    @always_inline("nodebug")
-    fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
-        return self.strides.load[width=width](index).__int__()
+# @always_inline("nodebug")
+# fn store[
+#     width: Int = 1
+# ](mut self, index: Int, val: SIMD[dtype, width]) raises:
+#     # if index >= self.ndim:
+#     #     raise Error("Index out of bound")
+#     self._buf.store(index, val)
 
-    @always_inline("nodebug")
-    fn store_unsafe[
-        width: Int = 1
-    ](mut self, index: Int, val: SIMD[dtype, width]):
-        self.strides.store(index, val)
+# @always_inline("nodebug")
+# fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
+#     return self._buf.load[width=width](index).__int__()
+
+# @always_inline("nodebug")
+# fn store_unsafe[
+#     width: Int = 1
+# ](mut self, index: Int, val: SIMD[dtype, width]):
+#     self._buf.store(index, val)

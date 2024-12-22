@@ -283,50 +283,6 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             return self._buf.store(index + self.size, val)
 
-    fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
-        """
-        Adjusts the slice values to lie within 0 and dim.
-        """
-        var n_slices: Int = slice_list.__len__()
-        var slices = List[Slice]()
-        for i in range(n_slices):
-            if i >= self.ndim:
-                raise Error("Error: Number of slices exceeds array dimensions")
-
-            var start: Int = 0
-            var end: Int = self.shape[i]
-            var step: Int = 1
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    # start += self.shape[i]
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    # end += self.shape[i] + 1
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-
-            step = slice_list[i].step
-            if step == 0:
-                raise Error("Error: Slice step cannot be zero")
-
-            slices.append(
-                Slice(
-                    start=Optional(start),
-                    end=Optional(end),
-                    step=Optional(step),
-                )
-            )
-
-        return slices^
 
     # TODO: add support for different dtypes
     fn __setitem__(mut self, idx: Int, val: NDArray[dtype]) raises:
@@ -471,16 +427,16 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf.store(idx, val)
 
     # compiler doesn't accept this
-    fn __setitem__(
-        inout self, mask: NDArray[DType.bool], value: Scalar[dtype]
-    ) raises:
-        """
-        Set the value of the array at the indices where the mask is true.
-        """
-        if (
-            mask.shape != self.shape
-        ):  # this behaviour could be removed potentially
-            raise Error("Mask and array must have the same shape")
+    # fn __setitem__(
+    #     inout self, mask: NDArray[DType.bool], value: Scalar[dtype]
+    # ) raises:
+    #     """
+    #     Set the value of the array at the indices where the mask is true.
+    #     """
+    #     if (
+    #         mask.shape != self.shape
+    #     ):  # this behaviour could be removed potentially
+    #         raise Error("Mask and array must have the same shape")
     # fn __setitem__(
     #     mut self, mask: NDArray[DType.bool], value: Scalar[dtype]
     # ) raises:
@@ -492,10 +448,10 @@ struct NDArray[dtype: DType = DType.float64](
     #     ):  # this behavious could be removed potentially
     #         raise Error("Mask and array must have the same shape")
 
-        for i in range(mask.size):
-            if mask._buf.load[width=1](i):
-                print(value)
-                self._buf.store[width=1](i, value)
+        # for i in range(mask.size):
+        #     if mask._buf.load[width=1](i):
+        #         print(value)
+        #         self._buf.store(i, value)
 
     fn __setitem__(mut self, owned *slices: Slice, val: NDArray[dtype]) raises:
         """

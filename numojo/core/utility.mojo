@@ -347,6 +347,8 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             np_dtype = np.int16
         elif dtype == DType.int8:
             np_dtype = np.int8
+        elif dtype == DType.index:
+            np_dtype = np.intp
         elif dtype == DType.uint64:
             np_dtype = np.uint64
         elif dtype == DType.uint32:

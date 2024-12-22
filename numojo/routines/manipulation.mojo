@@ -119,10 +119,10 @@ fn ravel[dtype: DType](mut array: NDArray[dtype], order: String = "C") raises:
 
 fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Flattens the NDArray.
+    Returns flattened array.
 
     Parameters:
-        dtype: Dataype of the NDArray elements.
+        dtype: Data type of the NDArray elements.
 
     Args:
         array: A NDArray.

@@ -203,9 +203,9 @@ fn transpose[
     """
     if len(axes) != A.ndim:
         raise Error(
-            String("Length of axes {} does not match ndim of A {}").format(
-                len(axes), A.ndim
-            )
+            String(
+                "Length of `axes` ({}) does not match `ndim` of array ({})"
+            ).format(len(axes), A.ndim)
         )
 
     for i in range(A.ndim):

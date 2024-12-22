@@ -171,6 +171,7 @@ from numojo.routines.manipulation import (
 from numojo.routines import random
 
 from numojo.routines import sorting
+from numojo.routines.sorting import sort
 
 from numojo.routines import searching
 from numojo.routines.searching import argmax, argmin

@@ -30,7 +30,7 @@ from memory import memset_zero, memcpy
 
 
 import numojo.core._array_funcs as _af
-import numojo.routines.sorting as sort
+import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.logic.comparison as comparison
 import numojo.routines.math.rounding as rounding
@@ -2090,13 +2090,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Sort the NDArray and return the sorted indices.
 
-        See `numojo.core.sort.argsort()`.
+        See `numojo.routines.sorting.argsort()`.
 
         Returns:
             The indices of the sorted NDArray.
         """
 
-        return sort.argsort(self)
+        return sorting.argsort(self)
 
     fn astype[type: DType](self) raises -> NDArray[type]:
         """
@@ -2508,9 +2508,31 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn sort(mut self) raises:
         """
-        Sort the array inplace using quickstort.
+        Sort NDArray using quick sort method.
+        It is not guaranteed to be unstable.
+
+        When no axis is given, the array is flattened before sorting.
+
+        See `numojo.sorting.sort` for more information.
         """
-        sort.quick_sort_inplace[dtype](self, 0, self.size - 1)
+        var I = NDArray[DType.index](self.shape)
+        self = flatten(self)
+        sorting._sort_inplace(
+            self,
+            I,
+        )
+
+    fn sort(mut self, owned axis: Int) raises:
+        """
+        Sort NDArray along the given axis using quick sort method.
+        It is not guaranteed to be unstable.
+
+        When no axis is given, the array is flattened before sorting.
+
+        See `numojo.sorting.sort` for more information.
+        """
+        var I = NDArray[DType.index](self.shape)
+        sorting._sort_inplace(self, I, axis=axis)
 
     fn sum(self: Self, axis: Int) raises -> Self:
         """

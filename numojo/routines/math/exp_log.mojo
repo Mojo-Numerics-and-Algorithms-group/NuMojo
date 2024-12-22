@@ -11,6 +11,7 @@ from utils import Variant
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
+
 fn exp2[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -71,6 +72,7 @@ fn expm1[
     return backend().math_func_1_array_in_one_array_out[dtype, math.expm1](
         array
     )
+
 
 fn log[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized

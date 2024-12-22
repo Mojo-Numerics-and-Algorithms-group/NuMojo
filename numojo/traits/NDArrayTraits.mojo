@@ -8,7 +8,7 @@ from ..core.ndarray import NDArray
 #         Loads a SIMD element of size `width` at the given index `idx`.
 #         """
 #         ...
-#     fn store[width: Int](inout self, idx: Int, val: SIMD[dtype, width]):
+#     fn store[width: Int](mut self, idx: Int, val: SIMD[dtype, width]):
 #         """
 #         Stores the SIMD element of size `width` at index `idx`.
 #         """
@@ -19,7 +19,7 @@ from ..core.ndarray import NDArray
 #     A trait that defines backends for calculations in the rest of the library.
 #     """
 
-#     fn __init__(inout self: Self):
+#     fn __init__(mut self: Self):
 #         """
 #         Initialize the backend.
 #         """

@@ -33,9 +33,41 @@ def test_arr_manipulation():
     # check_is_close(raveled_B, np_raveled_B, "Ravel operation")
 
 
+def test_transpose():
+    var np = Python.import_module("numpy")
+    var A = nm.random.randn(2)
+    var Anp = A.to_numpy()
+    check_is_close(
+        nm.transpose(A), np.transpose(Anp), "1-d `transpose` is broken."
+    )
+    A = nm.random.randn(2, 3)
+    Anp = A.to_numpy()
+    check_is_close(
+        nm.transpose(A), np.transpose(Anp), "2-d `transpose` is broken."
+    )
+    A = nm.random.randn(2, 3, 4)
+    Anp = A.to_numpy()
+    check_is_close(
+        nm.transpose(A), np.transpose(Anp), "3-d `transpose` is broken."
+    )
+    A = nm.random.randn(2, 3, 4, 5)
+    Anp = A.to_numpy()
+    check_is_close(
+        nm.transpose(A), np.transpose(Anp), "4-d `transpose` is broken."
+    )
+    check_is_close(
+        A.T(), np.transpose(Anp), "4-d `transpose` with `.T` is broken."
+    )
+    check_is_close(
+        nm.transpose(A, axes=List(1, 3, 0, 2)),
+        np.transpose(Anp, [1, 3, 0, 2]),
+        "4-d `transpose` with arbitrary `axes` is broken.",
+    )
+
+
 def test_setitem():
     var np = Python.import_module("numpy")
-    var arr = nm.NDArray(4, 4)
+    var arr = nm.NDArray(Shape(4, 4))
     var np_arr = arr.to_numpy()
     arr.itemset(List(2, 2), 1000)
     np_arr[(2, 2)] = 1000

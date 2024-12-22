@@ -1,37 +1,9 @@
 import numojo as nm
-from time import now
+from numojo.prelude import *
+from numojo.prelude import *
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
 from testing.testing import assert_raises
-
-
-def test_list_creation_methods():
-    var np = Python.import_module("numpy")
-    var fill_val: Scalar[nm.i32] = 5
-    check(
-        nm.NDArray(5, 5, 5, fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "*shape broken",
-    )
-    check(
-        nm.NDArray(List[Int](5, 5, 5), fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "List[int] shape broken",
-    )
-    check(
-        nm.NDArray(VariadicList[Int](5, 5, 5), fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "VariadicList[Int] shape broken",
-    )
-    check(
-        nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=fill_val),
-        np.zeros([5, 5, 5], dtype=np.float64) + 5,
-        "NDArrayShape shape broken",
-    )
-    # with assert_raises(
-    #     contains="Error if random is true you cannot set a fill value"
-    # ):
-    #     _ = nm.NDArray(nm.NDArrayShape(5, 5, 5), fill=fill_val)
 
 
 def test_arange():
@@ -78,16 +50,34 @@ def test_geomspace():
 def test_zeros():
     var np = Python.import_module("numpy")
     check(
-        nm.zeros[nm.f64](10, 10, 10, 10),
+        nm.zeros[f64](Shape(10, 10, 10, 10)),
         np.zeros((10, 10, 10, 10), dtype=np.float64),
         "Zeros is broken",
     )
 
 
-def test_ones():
+def test_ones_from_shape():
     var np = Python.import_module("numpy")
     check(
-        nm.ones[nm.f64](10, 10, 10, 10),
+        nm.ones[nm.f64](Shape(10, 10, 10, 10)),
+        np.ones((10, 10, 10, 10), dtype=np.float64),
+        "Ones is broken",
+    )
+
+
+def test_ones_from_list():
+    var np = Python.import_module("numpy")
+    check(
+        nm.ones[nm.f64](List[Int](10, 10, 10, 10)),
+        np.ones((10, 10, 10, 10), dtype=np.float64),
+        "Ones is broken",
+    )
+
+
+def test_ones_from_vlist():
+    var np = Python.import_module("numpy")
+    check(
+        nm.ones[nm.f64](VariadicList[Int](10, 10, 10, 10)),
         np.ones((10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
@@ -96,7 +86,34 @@ def test_ones():
 def test_full():
     var np = Python.import_module("numpy")
     check(
-        nm.full[nm.f64](10, 10, 10, 10, fill_value=10),
+        nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
+        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        "Full is broken",
+    )
+
+
+def test_full_from_shape():
+    var np = Python.import_module("numpy")
+    check(
+        nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
+        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        "Full is broken",
+    )
+
+
+def test_full_from_list():
+    var np = Python.import_module("numpy")
+    check(
+        nm.full[nm.f64](List[Int](10, 10, 10, 10), fill_value=10),
+        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        "Full is broken",
+    )
+
+
+def test_full_from_vlist():
+    var np = Python.import_module("numpy")
+    check(
+        nm.full[nm.f64](VariadicList[Int](10, 10, 10, 10), fill_value=10),
         np.full((10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
@@ -127,8 +144,180 @@ def test_fromstring():
     print(B)
 
 
-# def test_diagflat():
-#     var np = Python.import_module("numpy")
-#     var temp = nm.arange[nm.i64](1, 10, 10)
-#     temp.reshape(3,3)
-#     check(nm.diagflat[nm.i64](nm), np.diagflat(np.arange(1,10,10).reshape(3,3), "Diagflat is broken")
+def test_fromstring_complicated():
+    var s = """
+    [[[[1,2,10],
+       [3,4,2]],
+       [[5,6,4],
+       [7,8,10]]],
+     [[[1,2,12],
+       [3,4,41]],
+       [[5,6,12],
+       [7,8,99]]]]
+    """
+    var A = nm.fromstring(s)
+    print(A)
+
+
+def test_diag():
+    var np = Python.import_module("numpy")
+    var x_nm = nm.arange[f32](0, 9, step=1)
+    x_nm.reshape(3, 3)
+    var x_np = np.arange(0, 9, step=1).reshape(3, 3)
+
+    x_nm_k0 = nm.diag[f32](x_nm, k=0)
+    x_np_k0 = np.diag(x_np, k=0)
+    check(x_nm_k0, x_np_k0, "Diag is broken (k=0)")
+
+    x_nm_k1 = nm.diag[f32](x_nm, k=1)
+    x_np_k1 = np.diag(x_np, k=1)
+    check(x_nm_k1, x_np_k1, "Diag is broken (k=1)")
+
+    x_nm_km1 = nm.diag[f32](x_nm, k=-1)
+    x_np_km1 = np.diag(x_np, k=-1)
+    check(x_nm_km1, x_np_km1, "Diag is broken (k=-1)")
+
+    x_nm_rev_k1 = nm.diag[f32](x_nm_k0, k=0)
+    x_np_rev_k1 = np.diag(x_np_k0, k=0)
+    check(x_nm_rev_k1, x_np_rev_k1, "Diag reverse is broken (k=0)")
+
+    x_nm_rev_km1 = nm.diag[f32](x_nm_km1, k=-1)
+    x_np_rev_km1 = np.diag(x_np_km1, k=-1)
+    check(x_nm_rev_km1, x_np_rev_km1, "Diag reverse is broken (k=-1)")
+
+
+def test_diagflat():
+    var np = Python.import_module("numpy")
+    var nm_arr = nm.arange[nm.i64](0, 9, 1)
+    nm_arr.reshape(3, 3)
+    var np_arr = np.arange(0, 9, 1).reshape(3, 3)
+
+    var x_nm = nm.diagflat[nm.i64](nm_arr, k=0)
+    var x_np = np.diagflat(np_arr, k=0)
+    check(x_nm, x_np, "Diagflat is broken (k=0)")
+
+    var x_nm_k1 = nm.diagflat[nm.i64](nm_arr, k=1)
+    var x_np_k1 = np.diagflat(np_arr, k=1)
+    check(x_nm_k1, x_np_k1, "Diagflat is broken (k=1)")
+
+    var x_nm_km1 = nm.diagflat[nm.i64](nm_arr, k=-1)
+    var x_np_km1 = np.diagflat(np_arr, k=-1)
+    check(x_nm_km1, x_np_km1, "Diagflat is broken (k=-1)")
+
+
+def test_tri():
+    var np = Python.import_module("numpy")
+
+    var x_nm = nm.tri[nm.f32](3, 4, k=0)
+    var x_np = np.tri(3, 4, k=0, dtype=np.float32)
+    check(x_nm, x_np, "Tri is broken (k=0)")
+
+    var x_nm_k1 = nm.tri[nm.f32](3, 4, k=1)
+    var x_np_k1 = np.tri(3, 4, k=1, dtype=np.float32)
+    check(x_nm_k1, x_np_k1, "Tri is broken (k=1)")
+
+    var x_nm_km1 = nm.tri[nm.f32](3, 4, k=-1)
+    var x_np_km1 = np.tri(3, 4, k=-1, dtype=np.float32)
+    check(x_nm_km1, x_np_km1, "Tri is broken (k=-1)")
+
+
+def test_tril():
+    var np = Python.import_module("numpy")
+    var nm_arr = nm.arange[nm.f32](0, 9, 1)
+    nm_arr.reshape(3, 3)
+    var np_arr = np.arange(0, 9, 1, dtype=np.float32).reshape(3, 3)
+
+    var x_nm = nm.tril[nm.f32](nm_arr, k=0)
+    var x_np = np.tril(np_arr, k=0)
+    check(x_nm, x_np, "Tril is broken (k=0)")
+
+    var x_nm_k1 = nm.tril[nm.f32](nm_arr, k=1)
+    var x_np_k1 = np.tril(np_arr, k=1)
+    check(x_nm_k1, x_np_k1, "Tril is broken (k=1)")
+
+    var x_nm_km1 = nm.tril[nm.f32](nm_arr, k=-1)
+    var x_np_km1 = np.tril(np_arr, k=-1)
+    check(x_nm_km1, x_np_km1, "Tril is broken (k=-1)")
+
+    # Test with higher dimensional array
+    var nm_arr_3d = nm.arange[nm.f32](0, 60, 1)
+    nm_arr_3d.reshape(3, 4, 5)
+    var np_arr_3d = np.arange(0, 60, 1, dtype=np.float32).reshape(3, 4, 5)
+
+    var x_nm_3d = nm.tril[nm.f32](nm_arr_3d, k=0)
+    var x_np_3d = np.tril(np_arr_3d, k=0)
+    check(x_nm_3d, x_np_3d, "Tril is broken for 3D array (k=0)")
+
+    var x_nm_3d_k1 = nm.tril[nm.f32](nm_arr_3d, k=1)
+    var x_np_3d_k1 = np.tril(np_arr_3d, k=1)
+    check(x_nm_3d_k1, x_np_3d_k1, "Tril is broken for 3D array (k=1)")
+
+    var x_nm_3d_km1 = nm.tril[nm.f32](nm_arr_3d, k=-1)
+    var x_np_3d_km1 = np.tril(np_arr_3d, k=-1)
+    check(x_nm_3d_km1, x_np_3d_km1, "Tril is broken for 3D array (k=-1)")
+
+
+def test_triu():
+    var np = Python.import_module("numpy")
+    var nm_arr = nm.arange[nm.f32](0, 9, 1)
+    nm_arr.reshape(3, 3)
+    var np_arr = np.arange(0, 9, 1, dtype=np.float32).reshape(3, 3)
+
+    var x_nm = nm.triu[nm.f32](nm_arr, k=0)
+    var x_np = np.triu(np_arr, k=0)
+    check(x_nm, x_np, "Triu is broken (k=0)")
+
+    var x_nm_k1 = nm.triu[nm.f32](nm_arr, k=1)
+    var x_np_k1 = np.triu(np_arr, k=1)
+    check(x_nm_k1, x_np_k1, "Triu is broken (k=1)")
+
+    var x_nm_km1 = nm.triu[nm.f32](nm_arr, k=-1)
+    var x_np_km1 = np.triu(np_arr, k=-1)
+    check(x_nm_km1, x_np_km1, "Triu is broken (k=-1)")
+
+    # Test with higher dimensional array
+    var nm_arr_3d = nm.arange[nm.f32](0, 60, 1)
+    nm_arr_3d.reshape(3, 4, 5)
+    var np_arr_3d = np.arange(0, 60, 1, dtype=np.float32).reshape(3, 4, 5)
+
+    var x_nm_3d = nm.triu[nm.f32](nm_arr_3d, k=0)
+    var x_np_3d = np.triu(np_arr_3d, k=0)
+    check(x_nm_3d, x_np_3d, "Triu is broken for 3D array (k=0)")
+
+    var x_nm_3d_k1 = nm.triu[nm.f32](nm_arr_3d, k=1)
+    var x_np_3d_k1 = np.triu(np_arr_3d, k=1)
+    check(x_nm_3d_k1, x_np_3d_k1, "Triu is broken for 3D array (k=1)")
+
+    var x_nm_3d_km1 = nm.triu[nm.f32](nm_arr_3d, k=-1)
+    var x_np_3d_km1 = np.triu(np_arr_3d, k=-1)
+    check(x_nm_3d_km1, x_np_3d_km1, "Tril is broken for 3D array (k=-1)")
+
+
+def test_vander():
+    var np = Python.import_module("numpy")
+    var nm_arr = nm.arange[nm.f32](1, 5, 1)
+    var np_arr = np.arange(1, 5, 1, dtype=np.float32)
+
+    var x_nm = nm.vander[nm.f32](nm_arr)
+    var x_np = np.vander(np_arr)
+    check(x_nm, x_np, "Vander is broken (default)")
+
+    var x_nm_N3 = nm.vander[nm.f32](nm_arr, N=3)
+    var x_np_N3 = np.vander(np_arr, N=3)
+    check(x_nm_N3, x_np_N3, "Vander is broken (N=3)")
+
+    var x_nm_inc = nm.vander[nm.f32](nm_arr, increasing=True)
+    var x_np_inc = np.vander(np_arr, increasing=True)
+    check(x_nm_inc, x_np_inc, "Vander is broken (increasing=True)")
+
+    var x_nm_N3_inc = nm.vander[nm.f32](nm_arr, N=3, increasing=True)
+    var x_np_N3_inc = np.vander(np_arr, N=3, increasing=True)
+    check(x_nm_N3_inc, x_np_N3_inc, "Vander is broken (N=3, increasing=True)")
+
+    # Test with different dtype
+    var nm_arr_int = nm.arange[nm.i32](1, 5, 1)
+    var np_arr_int = np.arange(1, 5, 1, dtype=np.int32)
+
+    var x_nm_int = nm.vander[nm.i32](nm_arr_int)
+    var x_np_int = np.vander(np_arr_int)
+    check(x_nm_int, x_np_int, "Vander is broken (int32)")

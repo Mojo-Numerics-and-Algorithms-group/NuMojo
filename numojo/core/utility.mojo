@@ -7,17 +7,21 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 # ===----------------------------------------------------------------------=== #
 
 from algorithm.functional import vectorize
-
 from python import Python, PythonObject
+from memory import UnsafePointer, memcpy
+from sys import simdwidthof
+
 from .ndshape import NDArrayShape
-from .ndstride import NDArrayStride
+from .ndstrides import NDArrayStrides
 from .ndarray import NDArray
 
 
+# FIXME: No long useful from 24.6:
+# `width` is now inferred from the SIMD's width.
 fn fill_pointer[
     dtype: DType
 ](
-    inout array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
+    mut array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
 ) raises:
     """
     Fill a NDArray with a specific value.
@@ -34,7 +38,7 @@ fn fill_pointer[
 
     @parameter
     fn vectorized_fill[simd_width: Int](idx: Int):
-        array.store[width=simd_width](idx, value)
+        array.store(idx, value)
 
     vectorize[vectorized_fill, width](size)
 
@@ -55,7 +59,7 @@ fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
@@ -72,12 +76,12 @@ fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
 
-fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
+fn _get_index(indices: List[Int], weights: NDArrayStrides) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
 
@@ -89,12 +93,12 @@ fn _get_index(indices: List[Int], weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
 
-fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
+fn _get_index(indices: Idx, weights: NDArrayStrides) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
 
@@ -106,12 +110,14 @@ fn _get_index(indices: Idx, weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var index: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         index += indices[i] * weights[i]
     return index
 
 
-fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
+fn _get_index(
+    indices: VariadicList[Int], weights: NDArrayStrides
+) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and weights.
 
@@ -123,7 +129,7 @@ fn _get_index(indices: VariadicList[Int], weights: NDArrayStride) raises -> Int:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndlen):
+    for i in range(weights.ndim):
         idx += indices[i] * weights[i]
     return idx
 
@@ -169,12 +175,12 @@ fn _traverse_iterative[
     dtype: DType
 ](
     orig: NDArray[dtype],
-    inout narr: NDArray[dtype],
+    mut narr: NDArray[dtype],
     ndim: List[Int],
     coefficients: List[Int],
     strides: List[Int],
     offset: Int,
-    inout index: List[Int],
+    mut index: List[Int],
     depth: Int,
 ) raises:
     """
@@ -196,7 +202,7 @@ fn _traverse_iterative[
         index: The list of indices.
         depth: The depth of the indices.
     """
-    var total_elements = narr.ndshape.ndsize
+    var total_elements = narr.size
 
     # # parallelized version was slower xD
     for _ in range(total_elements):
@@ -208,7 +214,7 @@ fn _traverse_iterative[
         except:
             return
 
-        narr.data.store[width=1](narr_idx, orig.data.load[width=1](orig_idx))
+        narr._buf.store(narr_idx, orig._buf.load[width=1](orig_idx))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
@@ -221,12 +227,12 @@ fn _traverse_iterative_setter[
     dtype: DType
 ](
     orig: NDArray[dtype],
-    inout narr: NDArray[dtype],
+    mut narr: NDArray[dtype],
     ndim: List[Int],
     coefficients: List[Int],
     strides: List[Int],
     offset: Int,
-    inout index: List[Int],
+    mut index: List[Int],
 ) raises:
     """
     Traverse a multi-dimensional array in a iterative manner.
@@ -246,7 +252,7 @@ fn _traverse_iterative_setter[
         offset: The offset to the first element of the original NDArray.
         index: The list of indices.
     """
-    var total_elements = narr.ndshape.ndsize
+    var total_elements = narr.size
 
     for _ in range(total_elements):
         var orig_idx = offset + _get_index(index, coefficients)
@@ -257,7 +263,7 @@ fn _traverse_iterative_setter[
         except:
             return
 
-        narr.data.store[width=1](orig_idx, orig.data.load[width=1](narr_idx))
+        narr._buf.store(orig_idx, orig._buf.load[width=1](narr_idx))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
@@ -285,13 +291,13 @@ fn bool_to_numeric[
         The converted NDArray of type `dtype` with 1s (True) and 0s (False).
     """
     # Can't use simd becuase of bit packing error
-    var res: NDArray[dtype] = NDArray[dtype](array.shape())
-    for i in range(array.size()):
+    var res: NDArray[dtype] = NDArray[dtype](array.shape)
+    for i in range(array.size):
         var t: Bool = array.item(i)
         if t:
-            res.data[i] = 1
+            res._buf[i] = 1
         else:
-            res.data[i] = 0
+            res._buf[i] = 0
     return res
 
 
@@ -324,7 +330,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         var np_arr_dim = PythonObject([])
 
         for i in range(dimension):
-            np_arr_dim.append(array.ndshape[i])
+            np_arr_dim.append(array.shape[i])
 
         # Implement a dictionary for this later
         var numpyarray: PythonObject
@@ -352,7 +358,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.bool:
             np_dtype = np.bool_
 
-        numpyarray = np.empty(np_arr_dim, dtype=np_dtype)
+        numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=array.order)
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()

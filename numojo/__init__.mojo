@@ -10,7 +10,7 @@ alias __version__ = "V0.2"
 # e.g., lower case can also be used for alias of structs.
 # ===----------------------------------------------------------------------=== #
 
-alias idx = core.index.Idx
+alias idx = numojo.core.index.Idx
 
 # ===----------------------------------------------------------------------=== #
 # Import core types
@@ -171,6 +171,7 @@ from numojo.routines.manipulation import (
 from numojo.routines import random
 
 from numojo.routines import sorting
+from numojo.routines.sorting import sort
 
 from numojo.routines import searching
 from numojo.routines.searching import argmax, argmin

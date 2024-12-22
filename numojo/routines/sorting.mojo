@@ -1,5 +1,5 @@
 # ===----------------------------------------------------------------------=== #
-# Sorting, searching, and counting
+# Sorting
 # ===----------------------------------------------------------------------=== #
 
 
@@ -16,11 +16,9 @@ TODO:
 2) Add axis.
 """
 
-# ===----------------------------------------------------------------------=== #
-# Sorting
-# ===----------------------------------------------------------------------=== #
-
-# Bubble sort
+###############
+# Bubble sort #
+###############
 
 
 fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -183,8 +181,10 @@ fn _sort_inplace[
     """Continuously stored axis. -1 if row-major, -2 if col-major."""
 
     if axis == continous_axis:  # Last axis
-        var I = zeros[DType.index](shape=A.shape)
+        I = NDArray[DType.index](shape=A.shape)
         for i in range(A.size // A.shape[continous_axis]):
+            for j in range(A.shape[continous_axis]):
+                I._buf[i * A.shape[continous_axis] + j] = j
             _sort_in_range(
                 A,
                 I,
@@ -202,6 +202,7 @@ fn _sort_inplace[
         A = transpose(A, axes=transposed_axes)
         _sort_inplace(A, I, axis=-1)
         A = transpose(A, axes=transposed_axes)
+        I = transpose(I, axes=transposed_axes)
 
 
 fn sort[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -218,9 +219,9 @@ fn sort[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
         A: NDArray.
     """
 
-    var I = NDArray[DType.index](A.shape)
+    var _I = NDArray[DType.index](A.shape)
     A = flatten(A)
-    _sort_inplace(A, I)
+    _sort_inplace(A, _I)
     return A^
 
 
@@ -242,8 +243,8 @@ fn sort[
 
     """
 
-    var I = NDArray[DType.index](A.shape)
-    _sort_inplace(A, I, axis)
+    var _I = NDArray[DType.index](A.shape)
+    _sort_inplace(A, _I, axis)
     return A^
 
 
@@ -298,121 +299,56 @@ fn binary_sort[
 # ===----------------------------------------------------------------------=== #
 
 
-fn _argsort_partition(
-    mut ndarray: NDArray,
-    mut idx_array: NDArray,
-    left: Int,
-    right: Int,
-    pivot_index: Int,
-) raises -> Int:
-    """Do partition for the indices of the data buffer of ndarray.
-
-    Args:
-        ndarray: An NDArray.
-        idx_array: An NDArray.
-        left: Left index of the partition.
-        right: Right index of the partition.
-        pivot_index: Input pivot index
-
-    Returns:
-        New pivot index.
-    """
-
-    var pivot_value = ndarray.get(pivot_index)
-
-    var _value_at_pivot = ndarray.get(pivot_index)
-    ndarray.set(pivot_index, ndarray.get(right))
-    ndarray.set(right, _value_at_pivot)
-
-    var _value_at_pivot_index = idx_array.get(pivot_index)
-    idx_array.set(pivot_index, idx_array.get(right))
-    idx_array.set(right, _value_at_pivot_index)
-
-    var store_index = left
-
-    for i in range(left, right):
-        if ndarray.get(i) < pivot_value:
-            var _value_at_store = ndarray.get(store_index)
-            ndarray.set(store_index, ndarray.get(i))
-            ndarray.set(i, _value_at_store)
-
-            var _value_at_store_index = idx_array.get(store_index)
-            idx_array.set(store_index, idx_array.get(i))
-            idx_array.set(i, _value_at_store_index)
-
-            store_index = store_index + 1
-
-    var _value_at_store = ndarray.get(store_index)
-    ndarray.set(store_index, ndarray.get(right))
-    ndarray.set(right, _value_at_store)
-
-    var _value_at_store_index = idx_array.get(store_index)
-    idx_array.set(store_index, idx_array.get(right))
-    idx_array.set(right, _value_at_store_index)
-
-    return store_index
-
-
-fn argsort_inplace[
+fn argsort[
     dtype: DType
-](
-    mut ndarray: NDArray[dtype],
-    mut idx_array: NDArray[DType.index],
-    left: Int,
-    right: Int,
-) raises:
+](owned A: NDArray[dtype]) raises -> NDArray[DType.index]:
     """
-    Conduct Argsort (in-place) based on the NDArray using quick sort.
+    Returns the indices that would sort an array.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
 
     Parameters:
         dtype: The input element type.
 
     Args:
-        ndarray: An NDArray.
-        idx_array: An NDArray of the indices.
-        left: Left index of the partition.
-        right: Right index of the partition.
+        A: NDArray.
+
+    Returns:
+        Indices that would sort an array.
     """
 
-    if right > left:
-        var pivot_index = left + (right - left) // 2
-        var pivot_new_index = _argsort_partition(
-            ndarray, idx_array, left, right, pivot_index
-        )
-        argsort_inplace(ndarray, idx_array, left, pivot_new_index - 1)
-        argsort_inplace(ndarray, idx_array, pivot_new_index + 1, right)
+    var I = NDArray[DType.index](A.shape)
+    for i in range(A.size):
+        (I._buf + i).init_pointee_copy(i)
+    A = flatten(A)
+    _sort_inplace(A, I)
+    return I^
 
 
 fn argsort[
     dtype: DType
-](ndarray: NDArray[dtype],) raises -> NDArray[DType.index]:
+](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[DType.index]:
     """
-    Argsort of the NDArray using quick sort algorithm.
+    Returns the indices that would sort an array.
+    It is not guaranteed to be unstable.
 
-    Example:
-        ```py
-        var arr = numojo.core.random.rand[numojo.i16](100)
-        var sorted_arr = numojo.core.sort.argsort(arr)
-        print(sorted_arr)
-        ```
+    When no axis is given, the array is flattened before sorting.
 
     Parameters:
         dtype: The input element type.
 
     Args:
-        ndarray: An NDArray.
+        A: NDArray to sort.
+        axis: The axis along which the array is sorted.
 
     Returns:
-        The indices of the sorted NDArray.
+        Indices that would sort an array.
+
     """
 
-    var array: NDArray[dtype] = ndarray
-    var length = array.size
-
-    var idx_array = NDArray[DType.index](Shape(length))
-    for i in range(length):
-        idx_array.set(i, SIMD[DType.index, 1](i))
-
-    argsort_inplace(array, idx_array, 0, length - 1)
-
-    return idx_array
+    var I = NDArray[DType.index](A.shape)
+    for i in range(A.size):
+        (I._buf + i).init_pointee_copy(i)
+    _sort_inplace(A, I, axis)
+    return I^

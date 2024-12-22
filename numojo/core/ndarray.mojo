@@ -296,7 +296,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * int(self.strides.strides[i])
+            index_of_buffer += indices[i] * self.strides[i]
         self._buf[index_of_buffer] = val
 
     # TODO: add support for different dtypes
@@ -705,7 +705,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * int(self.strides.strides[i])
+            index_of_buffer += indices[i] * self.strides[i]
         return self._buf[index_of_buffer]
 
     fn __getitem__(self, idx: Int) raises -> Self:

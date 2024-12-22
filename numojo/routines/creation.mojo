@@ -53,10 +53,12 @@ fn arange[
     step: Scalar[dtype] = Scalar[dtype](1),
 ) raises -> NDArray[dtype]:
     """
-    Function that computes a series of values starting from "start" to "stop" with given "step" size.
+    Function that computes a series of values starting from "start" to "stop"
+    with given "step" size.
 
     Raises:
-        Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.
+        Error if both dtype and dtype are integers or if dtype is a float and
+        dtype is an integer.
 
     Parameters:
         dtype: Datatype of the output array.
@@ -70,9 +72,24 @@ fn arange[
         A NDArray of datatype `dtype` with elements ranging from `start` to `stop` incremented with `step`.
     """
     var num: Int = ((stop - start) / step).__int__()
-    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num, size=num))
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
     for idx in range(num):
         result._buf[idx] = start + step * idx
+
+    return result
+
+
+fn arange[
+    dtype: DType = DType.float64
+](stop: Scalar[dtype]) raises -> NDArray[dtype]:
+    """
+    (Overload) When start is 0 and step is 1.
+    """
+
+    var size = int(stop)
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
+    for i in range(size):
+        (result._buf + i).init_pointee_copy(i)
 
     return result
 

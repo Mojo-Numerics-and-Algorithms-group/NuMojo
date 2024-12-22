@@ -184,7 +184,7 @@ fn _sort_inplace[
         I = NDArray[DType.index](shape=A.shape)
         for i in range(A.size // A.shape[continous_axis]):
             for j in range(A.shape[continous_axis]):
-                I._buf[i * A.shape[continous_axis] + j] = j
+                (I._buf + i * A.shape[continous_axis] + j).init_pointee_copy(j)
             _sort_in_range(
                 A,
                 I,
@@ -319,8 +319,6 @@ fn argsort[
     """
 
     var I = NDArray[DType.index](A.shape)
-    for i in range(A.size):
-        (I._buf + i).init_pointee_copy(i)
     A = flatten(A)
     _sort_inplace(A, I)
     return I^
@@ -348,7 +346,5 @@ fn argsort[
     """
 
     var I = NDArray[DType.index](A.shape)
-    for i in range(A.size):
-        (I._buf + i).init_pointee_copy(i)
     _sort_inplace(A, I, axis)
     return I^

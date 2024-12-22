@@ -2,6 +2,58 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## 22/12/2024 (v0.4)
+
+### ⭐️ New
+
+- Implement a static-sized 2D Array type (`Matrix` type) in `numojo.mat` sub-package. `Matrix` is a special case of `NDArray` but has been optimized since the number of dimensions is known at the compile time. It is useful when users only want to work with 2-dimensional arrays. The indexing and slicing is also more consistent with `numpy` ([PR #138](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/138), [PR #141](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/142), [PR #141](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/142)). It provides:
+  - `Matrix` type (2D array) with basic dunder methods and core methods.
+  - Function to construct `Matrix` from other data objects, e.g., `List`, `NDArray`, `String`, and `numpy` array.
+  - Arithmetic functions for item-wise calculation and broadcasting.
+  - Linear algebra: matrix mutiplication, decomposition, inverse of matrix, solve of linear system, Ordinary Least Square, etc.
+  - Auxilliary types, e.g., `_MatrixIter`.
+- Implement more the array creation routines from numpy and expand the NuMojo array creation functionality ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+- Add `convolve2d` and in the `science.signal` module ([PR #135](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/135)).
+- Add more detailed error messages for `NDArray` type ([PR #140](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/140)).
+
+### 🦋 Changed
+
+- Adapt the code to [the latest update of Mojo to V24.6](https://docs.modular.com/mojo/changelog/) ([PR #148](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/148)).
+  - `Slice.step` is now returning `Optional[int]`. Thus, it is fixed by using `Slice.step.else_to(1)`.
+  - `Formattable` is now renamed to `Writable` (same applies to `write_to` and `string.write`).
+  - `width` is now inferred from the SIMD's width. So this parameter must be removed when we call `UnSafePointer`'s `load` and `store` methods. Due to this, the function `fill_pointer`, which fill in a width of array with a scale, no longer work. It is replaced by copying with loop.
+  - `Lifetime` is renamed as `Origin` (same applies to the function `__origin_of`).
+  - `inout` is renamed as `mut`.
+- Rename the data buffer from `data` to `_buf` ([PR #136](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/136), [PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137))
+- To make `matmul` flexible for different shapes of input arrays ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+- Change the way to get the shape of the array: `array.shape` returns the shape of array as `NDArrayShape` ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+- The array creation functions are unified in such a way ([PR #139](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/139)).
+  - `NDAarray.__init__()` reads in shape information and initializes an empty ndarray.
+  - All other creation routines are implemented by the functions in the `array_creation_routine` module. For example, to create an array with filled value, the function `full` should be used. To create an array from a list, the function `array` should be used.
+- Re-organize the functions and modules by topic, so that it is more consistent with `numpy` ([Issue 144](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/144), [PR #146](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/146)).
+- Rename some attributes of `NDArray` and make `size` an attribute instead of a method ([PR #145](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/145)).
+- Completely remove `import *` in __init__ files to fix namespace leak ([PR #151](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/151)).
+- Update function `sum` ([PR #149](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/149)).
+- `transpose` now allows arbitrary dimensions and permutations of axes ([PR #152](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/152)).
+- Change buffer type of `NDArrayShape` and `NDArrayStrides` to `Int` ([PR #153](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/153)).
+- `sort` now allows sorting by any axis for high dimensional arrays ([PR #154](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/154)).
+
+### ❌ Removed
+
+- Temporarily removed negative indexing support in slices since it causes error. Will add just feature in later updates ([PR #133](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/133)).
+- Remove `inout` before `self` for `NDArray.__getitem__` ([PR #137](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/137)).
+
+### 🛠️ Fixed
+
+- Fixed and rewrote the `adjust_slice` function that was causing errors ([PR #133](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/133)).
+- There is an error in fromstring that the negative signs are not read. It is fixed. Now a valid numeric should start with a digit, a dot, or a hyhen ([PR #134](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/134)).
+
+### 📚 Documentary and testing
+
+- Added test for slicing in getters. Complete tests for setters will be added later. This is due to python interop limitation ([PR #133](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/133)).
+- Move documents from root docs. Delete unused files ([PR #147](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/147)).
+- Update the readme.md and features.md to reflect current progress ([PR #150](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/150)).
+
 ## 19/10/2024 (v0.3.1)
 
 ### 🛠️ Fixed

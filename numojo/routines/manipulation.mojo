@@ -10,7 +10,7 @@ from algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.utility import _list_of_range
+from numojo.core.utility import _list_of_flipped_range
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations
@@ -69,7 +69,7 @@ fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
 fn reshape[
     dtype: DType
 ](
-    mut A: NDArray[dtype], shape: NDArrayShape, order: String = "C"
+    owned A: NDArray[dtype], shape: NDArrayShape, order: String = "C"
 ) raises -> NDArray[dtype]:
     """
         Returns an array of the same data with a new shape.
@@ -80,7 +80,8 @@ fn reshape[
     Args:
         A: A NDArray.
         shape: New shape.
-        order: Order of the array - Row major `C` or Column major `F`.
+        order: "C" or "F". Read in this order from the original array and
+            write in this order into the new array.
 
     Returns:
         Array of the same data with a new shape.
@@ -89,55 +90,38 @@ fn reshape[
     if A.size != shape.size:
         raise Error("Cannot reshape: Number of elements do not match.")
 
+    if A.order != order:
+        # Read in this order from the original array
+        A = ravel(A, order=order)
+
+    # Write in this order into the new array
     var B = NDArray[dtype](shape=shape, order=order)
     memcpy(dest=B._buf, src=A._buf, count=A.size)
 
-    if A.order != order:
-        var l = _list_of_range(shape.ndim)
-        l[-1], l[-2] = l[-2], l[-1]
-        B = transpose(B, axes=l)
-        B.shape = shape
-        B.strides = NDArrayStrides(shape)
     return B^
 
 
-fn ravel[dtype: DType](mut array: NDArray[dtype], order: String = "C") raises:
+fn ravel[
+    dtype: DType
+](owned A: NDArray[dtype], order: String = "C") raises -> NDArray[dtype]:
     """
     Returns the raveled version of the NDArray.
-    """
-    if array.ndim == 1:
-        print("Array is already 1D")
-        return
-    else:
-        if order == "C":
-            reshape[dtype](array, array.size, order="C")
-        else:
-            reshape[dtype](array, array.size, order="F")
-
-
-fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Returns flattened array.
-
-    Parameters:
-        dtype: Data type of the NDArray elements.
 
     Args:
-        array: A NDArray.
+        A: NDArray.
+        order: The order to flatten the array.
 
-    Returns:
-        The 1 dimensional flattened NDArray.
+    Return:
+        A contiguous flattened array.
     """
-
-    var res: NDArray[dtype] = NDArray[dtype](Shape(array.size))
-    alias width: Int = simdwidthof[dtype]()
-
-    @parameter
-    fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-        res._buf.store(index, array._buf.load[width=simd_width](index))
-
-    vectorize[vectorized_flatten, width](array.size)
-    return res
+    if A.ndim == 1:
+        return A
+    else:
+        if A.order != order:
+            A = transpose(A, axes=_list_of_flipped_range(A.ndim))
+        var B = NDArray[dtype](Shape(A.size))
+        memcpy(B._buf, A._buf, A.size)
+        return B
 
 
 # ===----------------------------------------------------------------------=== #

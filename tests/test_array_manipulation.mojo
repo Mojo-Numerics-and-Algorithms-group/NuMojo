@@ -18,19 +18,26 @@ def test_arr_manipulation():
     var np_flipped_A = np.flip(np_A)
     check_is_close(flipped_A, np_flipped_A, "Flip operation")
 
-    # Test reshape
-    A = A.reshape(Shape(2, 3))
-    np_A = np_A.reshape((2, 3))
-    check_is_close(A, np_A, "Reshape operation")
+    # Test reshape and ravel
+    var B = nm.random.randn(2, 3, 4)
+    var Bnp = B.to_numpy()
+    check_is_close(
+        nm.reshape(B, Shape(4, 3, 2), "C"),
+        np.reshape(Bnp, (4, 3, 2), "C"),
+        "`reshape` by C is broken",
+    )
+    check_is_close(
+        nm.reshape(B, Shape(4, 3, 2), "F"),
+        np.reshape(Bnp, (4, 3, 2), "F"),
+        "`reshape` by F is broken",
+    )
 
-    # # Test ravel
-    # var B = nm.arange[nm.i16](0, 12, 1)
-    # var np_B = np.arange(0, 12, 1, dtype=np.int16)
-    # B.reshape(3, 2, 2, order="F")
-    # np_B = np_B.reshape((3, 2, 2), order='F')
-    # var raveled_B = nm.ravel(B, order="C")
-    # var np_raveled_B = np.ravel(np_B, order='C')
-    # check_is_close(raveled_B, np_raveled_B, "Ravel operation")
+    check_is_close(
+        nm.ravel(B, "C"), np.ravel(Bnp, "C"), "`ravel` by C is broken"
+    )
+    check_is_close(
+        nm.ravel(B, "F"), np.ravel(Bnp, "F"), "`ravel` by F is broken"
+    )
 
 
 def test_transpose():

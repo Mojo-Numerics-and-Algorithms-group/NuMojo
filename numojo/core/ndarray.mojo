@@ -54,7 +54,7 @@ from .utility import (
 )
 from numojo.core._math_funcs import Vectorized
 from numojo.routines.linalg.products import matmul_parallelized
-from numojo.routines.manipulation import reshape
+from numojo.routines.manipulation import reshape, ravel
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 
@@ -2216,12 +2216,17 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(self.size):
             self._buf[i] = val
 
-    fn flatten(mut self) raises:
+    fn flatten(self, order: String = "C") raises -> Self:
         """
-        Convert shape of array to one dimensional.
+        Return a copy of the array collapsed into one dimension.
+
+        Args:
+            order: A NDArray.
+
+        Returns:
+            The 1 dimensional flattened NDArray.
         """
-        self.shape = NDArrayShape(self.size, size=self.size)
-        self.strides = NDArrayStrides(shape=self.shape, offset=0)
+        return ravel(self, order=order)
 
     fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
         """
@@ -2550,11 +2555,8 @@ struct NDArray[dtype: DType = DType.float64](
         See `numojo.sorting.sort` for more information.
         """
         var I = NDArray[DType.index](self.shape)
-        self = flatten(self)
-        sorting._sort_inplace(
-            self,
-            I,
-        )
+        self = ravel(self)
+        sorting._sort_inplace(self, I, axis=0)
 
     fn sort(mut self, owned axis: Int) raises:
         """

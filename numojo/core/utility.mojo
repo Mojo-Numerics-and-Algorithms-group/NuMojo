@@ -503,3 +503,14 @@ fn _list_of_range(n: Int) -> List[Int]:
     for i in range(n):
         l.append(i)
     return l
+
+
+fn _list_of_flipped_range(n: Int) -> List[Int]:
+    """
+    Generate a list of integers starting from n-1 to 0 and of size n.
+    """
+
+    var l = List[Int]()
+    for i in range(n - 1, -1, -1):
+        l.append(i)
+    return l

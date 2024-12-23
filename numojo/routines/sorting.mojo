@@ -8,7 +8,7 @@ from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.routines.manipulation import flatten, transpose
+from numojo.routines.manipulation import ravel, transpose
 
 """
 TODO:
@@ -196,7 +196,7 @@ fn sort[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
         A: NDArray.
     """
 
-    A = flatten(A)
+    A = ravel(A)
     var _I = NDArray[DType.index](A.shape)
     _sort_inplace(A, _I, axis=0)
     return A^
@@ -295,7 +295,7 @@ fn argsort[
         Indices that would sort an array.
     """
 
-    A = flatten(A)
+    A = ravel(A)
     var I = NDArray[DType.index](A.shape)
     _sort_inplace(A, I, axis=0)
     return I^

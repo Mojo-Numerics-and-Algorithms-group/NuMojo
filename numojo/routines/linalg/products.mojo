@@ -209,15 +209,15 @@ fn matmul_parallelized[
         return matmul_1d(A, B)
     elif A.ndim == 1:
         A_reshaped = A
-        A_reshaped.reshape(1, A_reshaped.shape[0])
+        A_reshaped = A_reshaped.reshape(Shape(1, A_reshaped.shape[0]))
         var res = A_reshaped @ B
-        res.reshape(B.shape[1])
+        res = res.reshape(Shape(B.shape[1]))
         return res
     elif B.ndim == 1:
         B_reshaped = B
-        B_reshaped.reshape(B_reshaped.shape[0], 1)
+        B_reshaped = B_reshaped.reshape(Shape(B_reshaped.shape[0], 1))
         var res = A @ B_reshaped
-        res.reshape(A.shape[0])
+        res = res.reshape(Shape(A.shape[0]))
         return res
 
     var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))

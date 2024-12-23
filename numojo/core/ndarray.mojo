@@ -1703,6 +1703,8 @@ struct NDArray[dtype: DType = DType.float64](
                 + self.shape.__str__()
                 + "  DType: "
                 + self.dtype.__str__()
+                + "  order: "
+                + self.order
             )
         except e:
             writer.write("Cannot convert array to string")
@@ -2606,16 +2608,44 @@ struct NDArray[dtype: DType = DType.float64](
         return linalg.norms.trace[dtype](self, offset, axis1, axis2)
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
-    fn reshape(mut self, *shape: Int, order: String = "C") raises:
+    fn reshape(
+        mut self, shape: NDArrayShape, order: String = "C"
+    ) raises -> Self:
         """
-        Reshapes the NDArray to given Shape.
+        Returns an array of the same data with a new shape.
 
         Args:
-            shape: Variadic list of shape.
+            shape: Shape of returned array.
             order: Order of the array - Row major `C` or Column major `F`.
+
+        Returns:
+            Array of the same data with a new shape.
         """
-        var s: VariadicList[Int] = shape
-        reshape[dtype](self, s, order=order)
+        return reshape[dtype](self, shape=shape, order=order)
+
+    fn resize(mut self, shape: NDArrayShape) raises:
+        """
+        In-place change shape and size of array.
+
+        Notes:
+        To returns a new array, use `reshape`.
+
+        Args:
+            shape: Shape after resize.
+        """
+
+        if shape.size > self.size:
+            var other = Self(shape=shape, order=self.order)
+            memcpy(other._buf, self._buf, self.size)
+            for i in range(self.size, other.size):
+                (other._buf + i).init_pointee_copy(0)
+            self = other^
+        else:
+            self.shape = shape
+            self.ndim = shape.ndim
+            self.size = shape.size
+            self.strides = NDArrayStrides(shape, order=self.order)
+            self.coefficient = NDArrayStrides(shape, order=self.order)
 
     fn unsafe_ptr(self) -> UnsafePointer[Scalar[dtype]]:
         """

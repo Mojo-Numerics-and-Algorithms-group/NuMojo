@@ -19,7 +19,7 @@ def test_arr_manipulation():
     check_is_close(flipped_A, np_flipped_A, "Flip operation")
 
     # Test reshape
-    A.reshape(2, 3)
+    A = A.reshape(Shape(2, 3))
     np_A = np_A.reshape((2, 3))
     check_is_close(A, np_A, "Reshape operation")
 

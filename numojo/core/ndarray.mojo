@@ -53,7 +53,7 @@ from .utility import (
     is_booltype,
 )
 from numojo.core._math_funcs import Vectorized
-from numojo.routines.linalg.products import matmul_parallelized
+from numojo.routines.linalg.products import matmul
 from numojo.routines.manipulation import reshape, ravel
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
@@ -1512,7 +1512,7 @@ struct NDArray[dtype: DType = DType.float64](
         self = self - s
 
     fn __matmul__(self, other: Self) raises -> Self:
-        return matmul_parallelized(self, other)
+        return matmul(self, other)
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -2610,9 +2610,7 @@ struct NDArray[dtype: DType = DType.float64](
         return linalg.norms.trace[dtype](self, offset, axis1, axis2)
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
-    fn reshape(
-        mut self, shape: NDArrayShape, order: String = "C"
-    ) raises -> Self:
+    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
         """
         Returns an array of the same data with a new shape.
 

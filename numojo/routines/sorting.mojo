@@ -8,7 +8,7 @@ from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.routines.manipulation import flatten, transpose
+from numojo.routines.manipulation import ravel, transpose
 
 """
 TODO:
@@ -129,33 +129,10 @@ fn _sort_in_range(mut A: NDArray, mut I: NDArray, left: Int, right: Int) raises:
 
 fn _sort_inplace[
     dtype: DType
-](mut A: NDArray[dtype], mut I: NDArray[DType.index]) raises:
-    """
-    Sort in-place NDArray using quick sort method.
-    It is not guaranteed to be unstable.
-
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The input element type.
-
-    Args:
-        A: NDArray.
-        I: NDArray that stores the indices.
-    """
-
-    A = flatten(A)
-    _sort_in_range(A, I, 0, A.size - 1)
-
-
-fn _sort_inplace[
-    dtype: DType
 ](mut A: NDArray[dtype], mut I: NDArray[DType.index], owned axis: Int) raises:
     """
     Sort in-place NDArray along the given axis using quick sort method.
     It is not guaranteed to be unstable.
-
-    When no axis is given, the array is flattened before sorting.
 
     Parameters:
         dtype: The input element type.
@@ -219,9 +196,9 @@ fn sort[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
         A: NDArray.
     """
 
+    A = ravel(A)
     var _I = NDArray[DType.index](A.shape)
-    A = flatten(A)
-    _sort_inplace(A, _I)
+    _sort_inplace(A, _I, axis=0)
     return A^
 
 
@@ -318,9 +295,9 @@ fn argsort[
         Indices that would sort an array.
     """
 
+    A = ravel(A)
     var I = NDArray[DType.index](A.shape)
-    A = flatten(A)
-    _sort_inplace(A, I)
+    _sort_inplace(A, I, axis=0)
     return I^
 
 

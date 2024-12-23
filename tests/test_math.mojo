@@ -92,7 +92,7 @@ def test_matmul_small():
 def test_matmul():
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 100)
-    arr.reshape(10, 10)
+    arr.resize(Shape(10, 10))
     var np_arr = np.arange(0, 100).reshape(10, 10)
     check_is_close(
         arr @ arr, np.matmul(np_arr, np_arr), "Dunder matmul is broken"

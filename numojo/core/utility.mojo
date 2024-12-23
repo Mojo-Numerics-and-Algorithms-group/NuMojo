@@ -44,7 +44,7 @@ fn fill_pointer[
 
 
 # ===----------------------------------------------------------------------=== #
-# GET INDEX FUNCIONS FOR NDARRAY
+# GET INDEX FUNCTIONS FOR NDARRAY
 # ===----------------------------------------------------------------------=== #
 # define a ndarray internal trait and remove multiple overloads of these _get_index
 fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
@@ -492,3 +492,25 @@ fn is_booltype(dtype: DType) -> Bool:
     if dtype == DType.bool:
         return True
     return False
+
+
+fn _list_of_range(n: Int) -> List[Int]:
+    """
+    Generate a list of integers starting from 0 and of size n.
+    """
+
+    var l = List[Int]()
+    for i in range(n):
+        l.append(i)
+    return l
+
+
+fn _list_of_flipped_range(n: Int) -> List[Int]:
+    """
+    Generate a list of integers starting from n-1 to 0 and of size n.
+    """
+
+    var l = List[Int]()
+    for i in range(n - 1, -1, -1):
+        l.append(i)
+    return l

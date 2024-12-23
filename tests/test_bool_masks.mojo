@@ -10,7 +10,7 @@ def test_bool_masks_gt():
     var np = Python.import_module("numpy")
     var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
     var A = nm.arange[nm.i16](0, 24)
-    A.reshape(3, 2, 4)
+    A = A.reshape(Shape(3, 2, 4))
 
     var np_gt = np_A > 10
     var gt = A > Scalar[nm.i16](10)
@@ -28,7 +28,7 @@ def test_bool_masks_lt():
     # Create NumPy and NuMojo arrays using arange and reshape
     var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
     var A = nm.arange[nm.i16](0, 24)
-    A.reshape(3, 2, 4)
+    A = A.reshape(Shape(3, 2, 4))
 
     # Test less than
     var np_lt = np_A < 10
@@ -47,7 +47,7 @@ def test_bool_masks_eq():
     # Create NumPy and NuMojo arrays using arange and reshape
     var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
     var A = nm.arange[nm.i16](0, 24)
-    A.reshape(3, 2, 4)
+    A = A.reshape(Shape(3, 2, 4))
 
     # Test equal
     # var np_eq = np_A == 10 # has a python interop problem.

@@ -140,15 +140,6 @@ struct NDArrayShape(Stringable, Writable):
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         memcpy(self._buf, shape._buf, shape.ndim)
 
-    fn __copy__(mut self, other: Self):
-        """
-        Copy from other into self.
-        """
-        self.size = other.size
-        self.ndim = other.ndim
-        self._buf = UnsafePointer[Int]().alloc(other.ndim)
-        memcpy(self._buf, other._buf, other.ndim)
-
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         """
@@ -224,14 +215,14 @@ struct NDArrayShape(Stringable, Writable):
                 return True
         return False
 
-    # # can be used for vectorized index calculation
+    # can be used for vectorized index calculation
     # @always_inline("nodebug")
     # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
     #     """
     #     SIMD load dimensional information.
     #     """
-    #     # if index >= self.ndim:
-    #     # raise Error("Index out of bound")
+    #     if index >= self.ndim:
+    #         raise Error("Index out of bound")
     #     return self._buf.load[width=width](index)
 
     # # can be used for vectorized index retrieval

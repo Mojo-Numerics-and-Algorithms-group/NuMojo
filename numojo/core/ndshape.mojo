@@ -22,7 +22,7 @@ struct NDArrayShape(Stringable, Writable):
     """Number of dimensions of array."""
 
     @always_inline("nodebug")
-    fn __init__(mut self, *shape: Int) raises:
+    fn __init__(mut self, *shape: Int):
         """
         Initializes the NDArrayShape with variable shape dimensions.
 

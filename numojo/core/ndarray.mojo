@@ -283,6 +283,21 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             return self._buf.store(index + self.size, val)
 
+    fn _setitem(self, *indices: Int, val: Scalar[dtype]) raises:
+        """
+        (UNSAFE! for internal use only.)
+        Get item at indices and bypass all boundary checks.
+
+        ```mojo
+        import numojo
+        var A = numojo.ones(numojo.Shape(2,3,4))
+        A._setitem(1,2,3, val=10)
+        ```
+        """
+        var index_of_buffer: Int = 0
+        for i in range(self.ndim):
+            index_of_buffer += indices[i] * self.strides[i]
+        self._buf[index_of_buffer] = val
 
     # TODO: add support for different dtypes
     fn __setitem__(mut self, idx: Int, val: NDArray[dtype]) raises:
@@ -686,6 +701,22 @@ struct NDArray[dtype: DType = DType.float64](
             return self._buf.load[width=1](index)
         else:
             return self._buf.load[width=1](index + self.size)
+
+    fn _getitem(self, *indices: Int) raises -> Scalar[dtype]:
+        """
+        (UNSAFE! for internal use only.)
+        Get item at indices and bypass all boundary checks.
+
+        ```mojo
+        import numojo
+        var A = numojo.ones(numojo.Shape(2,3,4))
+        print(A._getitem(1,2,3))
+        ```
+        """
+        var index_of_buffer: Int = 0
+        for i in range(self.ndim):
+            index_of_buffer += indices[i] * self.strides[i]
+        return self._buf[index_of_buffer]
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """

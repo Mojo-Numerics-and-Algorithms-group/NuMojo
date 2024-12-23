@@ -157,50 +157,44 @@ fn matmul_tiled_unrolled_parallelized[
 fn matmul_1d[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
-    """Array multiplication for 1-d arrays (inner dot)."""
+    """
+    Array multiplication for 1-d arrays (inner dot).
+    """
 
-    alias width = max(simdwidthof[dtype](), 16)
+    if A.ndim * B.ndim != 1:
+        raise Error("The dimensions of the arrays should be 1.")
 
-    try:
-        if A.ndim * B.ndim != 1:
-            raise Error("Dimension error!")
-    except e:
-        print(e)
-        print(
-            "The dimensions of the array should be 1.         A is of"
-            " {A.ndim}-dimension. B is of {B.ndim}-dimension."
+    if A.size == B.size:
+        var C = NDArray[dtype](Shape(1, 1))
+        C._buf.init_pointee_copy(sum(A * B))
+        return C^
+
+    else:
+        raise Error(
+            String(
+                "matmul: a mismatch in core dimension 0: "
+                "size {} is different from {}".format(A.size, B.size)
+            )
         )
 
-    try:
-        if A.size != B.size:
-            raise Error("Size error!")
-    except e:
-        print(e)
-        print("The sizes of the array should be identical.")
 
-    var C: NDArray[dtype] = zeros[dtype](Shape(1, 1))
-
-    C.store(0, val=sum(A * B))
-
-    return C^
-
-
-fn matmul_parallelized[
+fn matmul_2d[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
+    Array multiplication for 2-d arrays (inner dot).
 
-    Matrix multiplication Vectorized and parallelized.
+    Notes:
+        The multiplication is vectorized and parallelized.
 
-    Conduct `matmul` using `vectorize` and `parallelize`.
-
-    Reference: https://docs.modular.com/mojo/notebooks/Matmul
-    Compared to the reference, this function increases the size of
-    the SIMD vector from the default width to 16. The purpose is to
-    increase the performance via SIMD.
-    The function reduces the execution time by ~50 percent compared to
-    matmul_parallelized and matmul_tiled_unrolled_parallelized for large
-    matrices.
+    References:
+        [1] https://docs.modular.com/mojo/notebooks/Matmul.
+        Compared to the reference, we increases the size of
+        the SIMD vector from the default width to 16. The purpose is to
+        increase the performance via SIMD.
+        This reduces the execution time by ~50 percent compared to
+        `matmul_parallelized` and `matmul_tiled_unrolled_parallelized` for large
+        matrices.
     """
 
     alias width = max(simdwidthof[dtype](), 16)
@@ -208,8 +202,7 @@ fn matmul_parallelized[
     if A.ndim * B.ndim == 1:
         return matmul_1d(A, B)
     elif A.ndim == 1:
-        A_reshaped = A
-        A_reshaped = A_reshaped.reshape(Shape(1, A_reshaped.shape[0]))
+        var A_reshaped = A.reshape(Shape(1, A.shape[0]))
         var res = A_reshaped @ B
         res = res.reshape(Shape(B.shape[1]))
         return res

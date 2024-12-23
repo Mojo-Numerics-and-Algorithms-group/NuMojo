@@ -2610,9 +2610,7 @@ struct NDArray[dtype: DType = DType.float64](
         return linalg.norms.trace[dtype](self, offset, axis1, axis2)
 
     # Technically it only changes the ArrayDescriptor and not the fundamental data
-    fn reshape(
-        mut self, shape: NDArrayShape, order: String = "C"
-    ) raises -> Self:
+    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
         """
         Returns an array of the same data with a new shape.
 

@@ -8,21 +8,32 @@ from utils_for_test import check, check_is_close, check_values_close
 # ===-----------------------------------------------------------------------===#
 
 
-def test_sum():
+def test_sum_prod():
     var np = Python.import_module("numpy")
-    var A = nm.random.randn(6, 6, 6)
+    var A = nm.random.randn(4, 4, 4)
     var Anp = A.to_numpy()
 
     check_values_close(
         nm.sum(A),
-        np.sum(Anp),
-        String("`sum` fails. {} vs {}."),
+        np.sum(Anp, axis=None),
+        String("`sum` fails."),
     )
     for i in range(3):
         check_is_close(
             nm.sum(A, axis=i),
             np.sum(Anp, axis=i),
             String("`sum` by axis {} fails.".format(i)),
+        )
+    check_values_close(
+        nm.prod(A),
+        np.prod(Anp, axis=None),
+        String("`prod` fails."),
+    )
+    for i in range(3):
+        check_is_close(
+            nm.prod(A, axis=i),
+            np.prod(Anp, axis=i),
+            String("`prod` by axis {} fails.".format(i)),
         )
 
 

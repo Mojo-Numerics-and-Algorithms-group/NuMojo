@@ -2524,17 +2524,24 @@ struct NDArray[dtype: DType = DType.float64](
     # fn nonzero(self):
     #     pass
 
+    fn prod(self: Self) raises -> Scalar[dtype]:
+        """
+        Product of all array elements.
+        Returns:
+            Scalar.
+        """
+        return sum(self)
+
     fn prod(self: Self, axis: Int) raises -> Self:
         """
         Product of array elements over a given axis.
         Args:
-            array: NDArray.
             axis: The axis along which the product is performed.
         Returns:
             An NDArray.
         """
 
-        return prod(self, axis)
+        return prod(self, axis=axis)
 
     fn round(self) raises -> Self:
         """
@@ -2570,6 +2577,14 @@ struct NDArray[dtype: DType = DType.float64](
         var I = NDArray[DType.index](self.shape)
         sorting._sort_inplace(self, I, axis=axis)
 
+    fn sum(self: Self) raises -> Scalar[dtype]:
+        """
+        Sum of all array elements.
+        Returns:
+            Scalar.
+        """
+        return sum(self)
+
     fn sum(self: Self, axis: Int) raises -> Self:
         """
         Sum of array elements over a given axis.
@@ -2578,7 +2593,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An NDArray.
         """
-        return sum(self, axis)
+        return sum(self, axis=axis)
 
     fn tolist(self) -> List[Scalar[dtype]]:
         """

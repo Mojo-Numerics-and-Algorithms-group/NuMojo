@@ -2,48 +2,12 @@ from algorithm import vectorize
 from sys import simdwidthof
 
 from numojo.core.ndarray import NDArray
-from numojo.routines.math.arithmetic import mul
+from numojo.routines.creation import ones
 
 
-fn prod(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
-    """Product of array elements over a given axis.
-
-    Args:
-        array: NDArray.
-        axis: The axis along which the product is performed.
-
-    Returns:
-        An NDArray.
+fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     """
-    var ndim: Int = array.ndim
-    var shape: List[Int] = List[Int]()
-    for i in range(ndim):
-        shape.append(array.shape[i])
-    if axis > ndim - 1:
-        raise Error("axis cannot be greater than the rank of the array")
-    var result_shape: List[Int] = List[Int]()
-    var axis_size: Int = shape[axis]
-    var slices: List[Slice] = List[Slice]()
-    for i in range(ndim):
-        if i != axis:
-            result_shape.append(shape[i])
-            slices.append(Slice(0, shape[i]))
-        else:
-            slices.append(Slice(0, 0))
-
-    slices[axis] = Slice(0, 1)
-    var result: NDArray[array.dtype] = array[slices]
-
-    for i in range(1, axis_size):
-        slices[axis] = Slice(i, i + 1)
-        var arr_slice = array[slices]
-        result = mul[array.dtype](result, arr_slice)
-
-    return result
-
-
-fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
-    """Product of all items in the array.
+    Returns products of all items in the array.
 
     Example:
     ```console
@@ -53,20 +17,63 @@ fn prodall(array: NDArray) raises -> Scalar[array.dtype]:
     [      0.034572109580039978    0.52970021963119507     0.007698186207562685    ]]
     2-D array  Shape: [3, 3]  DType: float32
 
-    > print(nm.math.stats.prodall(A))
+    > print(nm.prod(A))
     6.1377261317829834e-07
     ```
 
     Args:
-        array: NDArray.
+        A: NDArray.
 
     Returns:
         Scalar.
     """
 
-    var result = Scalar[array.dtype](1)
-    for i in range(array.size):
-        result[0] *= array._buf[i]
+    alias width: Int = simdwidthof[dtype]()
+    var res = Scalar[dtype](1)
+
+    @parameter
+    fn cal_vec[width: Int](i: Int):
+        res *= A._buf.load[width=width](i).reduce_mul()
+
+    vectorize[cal_vec, width](A.size)
+    return res
+
+
+fn prod[
+    dtype: DType
+](A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+    """
+    Returns products of array elements over a given axis.
+
+    Args:
+        A: NDArray.
+        axis: The axis along which the product is performed.
+
+    Returns:
+        An NDArray.
+    """
+    var ndim: Int = A.ndim
+    if axis < 0:
+        axis += ndim
+    if (axis < 0) or (axis >= ndim):
+        raise Error(
+            String("axis {} greater than ndim of array {}").format(axis, ndim)
+        )
+    var result_shape: List[Int] = List[Int]()
+    var size_of_axis: Int = A.shape[axis]
+    var slices: List[Slice] = List[Slice]()
+    for i in range(ndim):
+        if i != axis:
+            result_shape.append(A.shape[i])
+            slices.append(Slice(0, A.shape[i]))
+        else:
+            slices.append(Slice(0, 0))  # Temp value
+    var result = ones[dtype](NDArrayShape(result_shape))
+    for i in range(size_of_axis):
+        slices[axis] = Slice(i, i + 1)
+        var arr_slice = A[slices]
+        result *= arr_slice
+
     return result
 
 

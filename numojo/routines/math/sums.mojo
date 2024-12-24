@@ -3,11 +3,11 @@ from algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import zeros
-from numojo.routines.math.arithmetic import mul
 
 
 fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
-    """Sum of all items in the array.
+    """
+    Returns sum of all items in the array.
 
     Example:
     ```console
@@ -27,19 +27,22 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
         Scalar.
     """
 
-    var res = Scalar[dtype](0)
     alias width: Int = simdwidthof[dtype]()
+    var res = Scalar[dtype](0)
 
     @parameter
     fn cal_vec[width: Int](i: Int):
-        res = res + A._buf.load[width=width](i).reduce_add()
+        res += A._buf.load[width=width](i).reduce_add()
 
     vectorize[cal_vec, width](A.size)
     return res
 
 
-fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
-    """Sum of array elements over a given axis.
+fn sum[
+    dtype: DType
+](A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+    """
+    Returns sums of array elements over a given axis.
 
     Example:
     ```mojo
@@ -57,7 +60,9 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
 
     var ndim: Int = A.ndim
-    if axis > ndim - 1:
+    if axis < 0:
+        axis += ndim
+    if (axis < 0) or (axis >= ndim):
         raise Error(
             String("axis {} greater than ndim of array {}").format(axis, ndim)
         )
@@ -69,7 +74,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             result_shape.append(A.shape[i])
             slices.append(Slice(0, A.shape[i]))
         else:
-            slices.append(Slice(0, 0))
+            slices.append(Slice(0, 0))  # Temp value
     var result = zeros[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[axis] = Slice(i, i + 1)

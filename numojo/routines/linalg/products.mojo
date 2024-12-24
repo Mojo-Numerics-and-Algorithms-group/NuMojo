@@ -185,6 +185,19 @@ fn matmul_2darray[
     """
     Array multiplication for 2-d arrays (inner dot).
 
+    Parameter:
+        dtype: Data type.
+
+    Args:
+        A: First array.
+        B: Second array.
+
+    Return:
+        A multiplied by B.
+
+    Raises:
+        When the shape does not match.
+
     Notes:
         The multiplication is vectorized and parallelized.
 
@@ -262,13 +275,29 @@ fn matmul[
     """
     Array multiplication for any dimensions.
 
+    Parameter:
+        dtype: Data type.
+
+    Args:
+        A: First array.
+        B: Second array.
+
+    Return:
+        A multiplied by B.
+
+    Raises:
+        (1) The shapes of first n-2 dimensions do not match.
+        (2) The shape of -2 dimension of first array does not match
+        the shape of -1 dimension of the second array.
+
     Notes:\n
-    When A and B are 1darray, it is equal to dot of vectors: (i) @ (i) -> (1).
-    When A and B are 2darray, it is equal to inner products of matrices:
-    (i,j) @ (j,k) -> (i,k).\n
-    When A and B are more than 2d, it is equal to a stack of 2darrays:
-    (i,j,k) @ (i,k,l) -> (i,j,l)
-    (i,j,k,l) @ (i,j,l,m) -> (i,j,k,m)
+        When A and B are 1darray, it is equal to dot of vectors:
+        `(i) @ (i) -> (1)`.\n
+        When A and B are 2darray, it is equal to inner products of matrices:
+        `(i,j) @ (j,k) -> (i,k)`.\n
+        When A and B are more than 2d, it is equal to a stack of 2darrays:
+        `(i,j,k) @ (i,k,l) -> (i,j,l)` and
+        `(i,j,k,l) @ (i,j,l,m) -> (i,j,k,m)`.
     """
 
     if (A.ndim <= 2) and (B.ndim <= 2):

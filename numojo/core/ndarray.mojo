@@ -53,7 +53,7 @@ from .utility import (
     is_booltype,
 )
 from numojo.core._math_funcs import Vectorized
-from numojo.routines.linalg.products import matmul_parallelized
+from numojo.routines.linalg.products import matmul
 from numojo.routines.manipulation import reshape, ravel
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
@@ -1512,7 +1512,7 @@ struct NDArray[dtype: DType = DType.float64](
         self = self - s
 
     fn __matmul__(self, other: Self) raises -> Self:
-        return matmul_parallelized(self, other)
+        return matmul(self, other)
 
     fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
         """

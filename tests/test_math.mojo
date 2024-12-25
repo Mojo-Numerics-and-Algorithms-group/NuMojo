@@ -24,6 +24,19 @@ def test_sum_prod():
             np.sum(Anp, axis=i),
             String("`sum` by axis {} fails.".format(i)),
         )
+
+    check_is_close(
+        nm.cumsum(A),
+        np.cumsum(Anp, axis=None),
+        String("`cumsum` fails."),
+    )
+    for i in range(3):
+        check_is_close(
+            nm.cumsum(A, axis=i),
+            np.cumsum(Anp, axis=i),
+            String("`cumsum` by axis {} fails.".format(i)),
+        )
+
     check_values_close(
         nm.prod(A),
         np.prod(Anp, axis=None),

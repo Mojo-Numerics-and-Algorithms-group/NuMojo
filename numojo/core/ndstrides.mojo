@@ -266,6 +266,10 @@ struct NDArrayStrides(Stringable):
             axis += self.ndim
 
         var strides = NDArrayStrides(self)
+
+        if axis == self.ndim - 1:
+            return strides
+
         var value = strides[axis]
         for i in range(axis, strides.ndim - 1):
             strides._buf[i] = strides._buf[i + 1]

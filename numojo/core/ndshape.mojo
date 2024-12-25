@@ -280,6 +280,10 @@ struct NDArrayShape(Stringable, Writable):
             axis += self.ndim
 
         var shape = NDArrayShape(self)
+
+        if axis == self.ndim - 1:
+            return shape
+
         var value = shape[axis]
         for i in range(axis, shape.ndim - 1):
             shape._buf[i] = shape._buf[i + 1]

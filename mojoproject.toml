@@ -20,6 +20,7 @@ test = "magic run mojo test tests -I ./ && magic run mojo package numojo"
 t = "clear && magic run mojo test tests -I ./ && magic run mojo package numojo"
 # runs all final checks before a commit
 final = "magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo"
+f = "clear && magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo"
 # defaults tasks
 package = "magic run mojo package numojo"
 format = "magic run mojo format ./"

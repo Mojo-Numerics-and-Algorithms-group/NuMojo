@@ -163,7 +163,6 @@ from numojo.routines.manipulation import (
     size,
     reshape,
     ravel,
-    flatten,
     transpose,
     flip,
 )

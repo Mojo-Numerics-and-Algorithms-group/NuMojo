@@ -161,7 +161,7 @@ def test_fromstring_complicated():
 def test_diag():
     var np = Python.import_module("numpy")
     var x_nm = nm.arange[f32](0, 9, step=1)
-    x_nm.reshape(3, 3)
+    x_nm.resize(Shape(3, 3))
     var x_np = np.arange(0, 9, step=1).reshape(3, 3)
 
     x_nm_k0 = nm.diag[f32](x_nm, k=0)
@@ -188,7 +188,7 @@ def test_diag():
 def test_diagflat():
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.i64](0, 9, 1)
-    nm_arr.reshape(3, 3)
+    nm_arr.resize(Shape(3, 3))
     var np_arr = np.arange(0, 9, 1).reshape(3, 3)
 
     var x_nm = nm.diagflat[nm.i64](nm_arr, k=0)
@@ -223,7 +223,7 @@ def test_tri():
 def test_tril():
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.f32](0, 9, 1)
-    nm_arr.reshape(3, 3)
+    nm_arr.resize(Shape(3, 3))
     var np_arr = np.arange(0, 9, 1, dtype=np.float32).reshape(3, 3)
 
     var x_nm = nm.tril[nm.f32](nm_arr, k=0)
@@ -240,7 +240,7 @@ def test_tril():
 
     # Test with higher dimensional array
     var nm_arr_3d = nm.arange[nm.f32](0, 60, 1)
-    nm_arr_3d.reshape(3, 4, 5)
+    nm_arr_3d.resize(Shape(3, 4, 5))
     var np_arr_3d = np.arange(0, 60, 1, dtype=np.float32).reshape(3, 4, 5)
 
     var x_nm_3d = nm.tril[nm.f32](nm_arr_3d, k=0)
@@ -259,7 +259,7 @@ def test_tril():
 def test_triu():
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.f32](0, 9, 1)
-    nm_arr.reshape(3, 3)
+    nm_arr.resize(Shape(3, 3))
     var np_arr = np.arange(0, 9, 1, dtype=np.float32).reshape(3, 3)
 
     var x_nm = nm.triu[nm.f32](nm_arr, k=0)
@@ -276,7 +276,7 @@ def test_triu():
 
     # Test with higher dimensional array
     var nm_arr_3d = nm.arange[nm.f32](0, 60, 1)
-    nm_arr_3d.reshape(3, 4, 5)
+    nm_arr_3d.resize(Shape(3, 4, 5))
     var np_arr_3d = np.arange(0, 60, 1, dtype=np.float32).reshape(3, 4, 5)
 
     var x_nm_3d = nm.triu[nm.f32](nm_arr_3d, k=0)

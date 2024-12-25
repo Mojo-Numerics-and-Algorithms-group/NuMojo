@@ -10,7 +10,7 @@ def test_slicing_getter1():
 
     # Test C-order array slicing
     nm_arr = nm.arange[nm.f32](0.0, 24.0, step=1)
-    nm_arr.reshape(2, 3, 4, order="C")
+    nm_arr = nm_arr.reshape(Shape(2, 3, 4), order="C")
     np_arr = np.arange(0, 24, dtype=np.float32).reshape(2, 3, 4)
 
     # Test case 1: Slicing all dimensions
@@ -31,7 +31,7 @@ def test_slicing_getter2():
 
     # Test C-order array slicing
     nm_arr = nm.arange[nm.f32](0.0, 24.0, step=1)
-    nm_arr.reshape(2, 3, 4, order="C")
+    nm_arr = nm_arr.reshape(Shape(2, 3, 4), order="C")
     np_arr = np.arange(0, 24, dtype=np.float32).reshape(2, 3, 4)
 
     # Test case 2: Slicing with start and end indices
@@ -51,7 +51,7 @@ def test_slicing_getter3():
 
     # Test C-order array slicing
     nm_arr = nm.arange[nm.f32](0.0, 24.0, step=1)
-    nm_arr.reshape(2, 3, 4, order="C")
+    nm_arr = nm_arr.reshape(Shape(2, 3, 4), order="C")
     np_arr = np.arange(0, 24, dtype=np.float32).reshape(2, 3, 4)
 
     # Test case 3: Slicing with mixed start, end, and step values
@@ -73,7 +73,7 @@ def test_slicing_getter4():
 
     # Test C-order array slicing
     nm_arr = nm.arange[nm.f32](0.0, 24.0, step=1)
-    nm_arr.reshape(2, 3, 4, order="C")
+    nm_arr = nm_arr.reshape(Shape(2, 3, 4), order="C")
     np_arr = np.arange(0, 24, dtype=np.float32).reshape(2, 3, 4)
 
     # Test case 4: Slicing with step
@@ -95,7 +95,7 @@ def test_slicing_getter5():
 
     # Test C-order array slicing
     nm_arr = nm.arange[nm.f32](0.0, 24.0, step=1)
-    nm_arr.reshape(2, 3, 4, order="C")
+    nm_arr = nm_arr.reshape(Shape(2, 3, 4), order="C")
     np_arr = np.arange(0, 24, dtype=np.float32).reshape(2, 3, 4)
 
     # Test case 5: Slicing with combination of integer and slices

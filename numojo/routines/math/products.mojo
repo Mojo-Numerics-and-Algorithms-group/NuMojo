@@ -77,28 +77,67 @@ fn prod[
     return result
 
 
-fn cumprod[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) -> SIMD[dtype, 1]:
-    """Product of all items in an array.
+fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Returns cumprod of all items of an array.
+    The array is flattened before cumprod.
 
     Parameters:
-         dtype: The element type.
+        dtype: The element type.
 
     Args:
-        array: An NDArray.
+        A: NDArray.
 
     Returns:
-        The product of all items in the array as a SIMD Value of `dtype`.
+        Cumprod of all items of an array.
     """
 
-    var result: SIMD[dtype, 1] = SIMD[dtype, 1](1.0)
-    alias width = simdwidthof[dtype]()
+    if A.ndim == 1:
+        var B = A
+        for i in range(A.size - 1):
+            B._buf[i + 1] *= B._buf[i]
+        return B^
 
-    @parameter
-    fn vectorize_sum[simd_width: Int](idx: Int) -> None:
-        var simd_data = array.load[width=simd_width](idx)
-        result *= simd_data.reduce_mul()
+    else:
+        return cumprod(A.flatten(), axis=-1)
 
-    vectorize[vectorize_sum, width](array.num_elements())
-    return result
+
+fn cumprod[
+    dtype: DType
+](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+    """
+    Returns cumprod of array by axis.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: NDArray.
+        axis: Axis.
+
+    Returns:
+        Cumprod of array by axis.
+    """
+
+    if axis < 0:
+        axis += A.ndim
+    if (axis < 0) or (axis >= A.ndim):
+        raise Error(
+            String("axis {} greater than ndim of array {}").format(axis, A.ndim)
+        )
+
+    var I = NDArray[DType.index](Shape(A.size))
+    var ptr = I._buf
+
+    var _shape = A.shape._move_axis_to_end(axis)
+    var _strides = A.strides._move_axis_to_end(axis)
+
+    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
+        ptr, _shape, _strides
+    )
+
+    for i in range(0, A.size, A.shape[axis]):
+        for j in range(A.shape[axis] - 1):
+            A._buf[int(I._buf[i + j + 1])] *= A._buf[int(I._buf[i + j])]
+
+    return A^

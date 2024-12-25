@@ -2187,14 +2187,27 @@ struct NDArray[dtype: DType = DType.float64](
     # fn copy(self):
     #     pass
 
-    fn cumprod(self) -> Scalar[dtype]:
+    fn cumprod(self) raises -> NDArray[dtype]:
         """
-        Cumulative product of an array.
+        Returns cumprod of all items of an array.
+        The array is flattened before cumprod.
 
         Returns:
-            The cumulative product of the array as a SIMD Value of `dtype`.
+            Cumprod of all items of an array.
         """
         return cumprod[dtype](self)
+
+    fn cumprod(self, axis: Int) raises -> NDArray[dtype]:
+        """
+        Returns cumprod of array by axis.
+
+        Args:
+            axis: Axis.
+
+        Returns:
+            Cumprod of array by axis.
+        """
+        return cumprod[dtype](self, axis=axis)
 
     fn cumsum(self) raises -> NDArray[dtype]:
         """

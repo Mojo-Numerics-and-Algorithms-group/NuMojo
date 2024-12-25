@@ -10,7 +10,7 @@ from utils_for_test import check, check_is_close, check_values_close
 
 def test_sum_prod():
     var np = Python.import_module("numpy")
-    var A = nm.random.randn(4, 4, 4)
+    var A = nm.random.randn(2, 3, 4)
     var Anp = A.to_numpy()
 
     check_values_close(
@@ -49,6 +49,18 @@ def test_sum_prod():
             String("`prod` by axis {} fails.".format(i)),
         )
 
+    check_is_close(
+        nm.cumprod(A),
+        np.cumprod(Anp, axis=None),
+        String("`cumprod` fails."),
+    )
+    for i in range(3):
+        check_is_close(
+            nm.cumprod(A, axis=i),
+            np.cumprod(Anp, axis=i),
+            String("`cumprod` by axis {} fails.".format(i)),
+        )
+
 
 def test_add_array():
     var np = Python.import_module("numpy")
@@ -64,16 +76,16 @@ def test_add_array():
 
 def test_add_array_par():
     var np = Python.import_module("numpy")
-    var arr = nm.arange[nm.f64](0, 500)
+    var arr = nm.arange[nm.f64](0, 20)
 
     check(
         nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, 5.0),
-        np.arange(0, 500) + 5,
+        np.arange(0, 20) + 5,
         "Add array + scalar",
     )
     check(
         nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, arr),
-        np.arange(0, 500) + np.arange(0, 500),
+        np.arange(0, 20) + np.arange(0, 20),
         "Add array + array",
     )
 

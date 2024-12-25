@@ -283,7 +283,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             return self._buf.store(index + self.size, val)
 
-    fn _setitem(self, *indices: Int, val: Scalar[dtype]) raises:
+    fn _setitem(self, *indices: Int, val: Scalar[dtype]):
         """
         (UNSAFE! for internal use only.)
         Get item at indices and bypass all boundary checks.
@@ -296,7 +296,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides[i]
+            index_of_buffer += indices[i] * self.strides._buf[i]
         self._buf[index_of_buffer] = val
 
     # TODO: add support for different dtypes
@@ -692,7 +692,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             return self._buf.load[width=1](index + self.size)
 
-    fn _getitem(self, *indices: Int) raises -> Scalar[dtype]:
+    fn _getitem(self, *indices: Int) -> Scalar[dtype]:
         """
         (UNSAFE! for internal use only.)
         Get item at indices and bypass all boundary checks.
@@ -705,7 +705,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides[i]
+            index_of_buffer += indices[i] * self.strides._buf[i]
         return self._buf[index_of_buffer]
 
     fn __getitem__(self, idx: Int) raises -> Self:
@@ -1446,13 +1446,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.greater_equal[dtype](self, other)
 
-    fn __add__(mut self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __add__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `array + scalar`.
         """
         return math.add[dtype](self, other)
 
-    fn __add__(mut self, other: Self) raises -> Self:
+    fn __add__(self, other: Self) raises -> Self:
         """
         Enables `array + array`.
         """

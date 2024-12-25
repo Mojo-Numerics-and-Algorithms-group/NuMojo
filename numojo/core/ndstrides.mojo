@@ -54,7 +54,7 @@ struct NDArrayStrides(Stringable):
 
     @always_inline("nodebug")
     fn __init__(
-        out self, strides: NDArrayStrides, offset: Int = 0
+        out self, strides: NDArrayStrides, offset: Int
     ):  # separated two methods to remove if condition
         self.offset = offset
         self.ndim = strides.ndim
@@ -221,6 +221,56 @@ struct NDArrayStrides(Stringable):
             if self[i] == val:
                 return True
         return False
+
+    # ===-------------------------------------------------------------------===#
+    # Other private methods
+    # ===-------------------------------------------------------------------===#
+
+    fn _flip(self) raises -> Self:
+        """
+        Returns a new strides by flipping the items.
+
+        UNSAFE! No boundary check!
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var A = nm.random.randn(2, 3, 4)
+        print(A.strides)          # Stride: [12, 4, 1]
+        print(A.strides._flip())  # Stride: [1, 4, 12]
+        ```
+        """
+
+        var strides = NDArrayStrides(self)
+        for i in range(strides.ndim):
+            strides._buf[i] = self._buf[self.ndim - 1 - i]
+        return strides
+
+    fn _move_axis_to_end(self, owned axis: Int) raises -> Self:
+        """
+            Returns a new strides by moving the value of axis to the end.
+
+            UNSAFE! No boundary check!
+
+            Example:
+            ```mojo
+            import numojo as nm
+            var A = nm.random.randn(2, 3, 4)
+        print(A.strides)                       # Stride: [12, 4, 1]
+        print(A.strides._move_axis_to_end(0))  # Stride: [4, 1, 12]
+        print(A.strides._move_axis_to_end(1))  # Stride: [12, 1, 4]
+            ```
+        """
+
+        if axis < 0:
+            axis += self.ndim
+
+        var strides = NDArrayStrides(self)
+        var value = strides[axis]
+        for i in range(axis, strides.ndim - 1):
+            strides._buf[i] = strides._buf[i + 1]
+        strides._buf[strides.ndim - 1] = value
+        return strides
 
 
 # @always_inline("nodebug")

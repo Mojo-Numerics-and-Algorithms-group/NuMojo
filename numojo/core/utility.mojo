@@ -171,6 +171,59 @@ fn _get_index(indices: VariadicList[Int], weights: VariadicList[Int]) -> Int:
 # ===----------------------------------------------------------------------=== #
 # Funcitons to traverse a multi-dimensional array
 # ===----------------------------------------------------------------------=== #
+
+
+fn _traverse_buffer_according_to_shape_and_strides(
+    mut ptr: UnsafePointer[Scalar[DType.index]],
+    shape: NDArrayShape,
+    strides: NDArrayStrides,
+    current_dim: Int = 0,
+    previous_sum: Int = 0,
+) raises:
+    """
+    Traverses buffer according to new shape and strides.
+
+    UNSAFE: Raw pointer is used!
+
+    It is auxiliary functions that set values according to new shape
+    and strides for variadic number of dimensions.
+
+    Args:
+        ptr: Pointer to buffer of 1-d index array, uninitialized.
+        shape: NDArrayShape.
+        strides: NDArrayStrides.
+        current_dim: Temporarily save the current dimension.
+        previous_sum: Temporarily save the previous summed index.
+
+    Example:
+    ```console
+    var A = nm.random.randn(2, 3, 4)
+    var I = nm.NDArray[DType.index](nm.Shape(A.size))
+    var ptr = I._buf
+    _traverse_buffer_according_to_shape_and_strides(
+        ptr, A.shape._flip(), A.strides._flip()
+    )
+    print(I)
+    # This prints:
+    # [       0       12      4       ...     19      11      23      ]
+    # 1-D array  Shape: [24]  DType: index  order: C
+    ```
+    """
+    for index_of_axis in range(shape[current_dim]):
+        var current_sum = previous_sum + index_of_axis * strides[current_dim]
+        if current_dim >= shape.ndim - 1:
+            ptr.init_pointee_copy(current_sum)
+            ptr += 1
+        else:
+            _traverse_buffer_according_to_shape_and_strides(
+                ptr,
+                shape,
+                strides,
+                current_dim + 1,
+                current_sum,
+            )
+
+
 fn _traverse_iterative[
     dtype: DType
 ](

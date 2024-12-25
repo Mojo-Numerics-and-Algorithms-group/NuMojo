@@ -253,9 +253,11 @@ struct NDArray[dtype: DType = DType.float64](
     # Setter dunders
     # ===-------------------------------------------------------------------===#
 
-    fn set(self, index: Int, val: SIMD[dtype, 1]) raises:
+    fn set(self, owned index: Int, val: Scalar[dtype]) raises:
         """
-        Linearly retreive a value from the underlying Pointer.
+        Safely retrieve a value from the underlying buffer.
+
+        `A.set(i, a)` differs from `A._buf[i] = a` due to boundary check.
 
         Example:
         ```console
@@ -271,17 +273,18 @@ struct NDArray[dtype: DType = DType.float64](
         > A.item(3)  # Row 1, Col 0
         ```
         """
+
+        if index < 0:
+            index += self.size
+
         if index >= self.size:
-            var message = String(
-                "Invalid index: index out of bound. \n"
-                "The index is {}. \n"
-                "The size is {}"
-            ).format(index, self.size)
-            raise Error(message)
-        if index >= 0:
-            return self._buf.store(index, val)
-        else:
-            return self._buf.store(index + self.size, val)
+            raise Error(
+                String("Invalid index: index {} out of bound [0, {}).").format(
+                    index, self.size
+                )
+            )
+
+        self._buf[index] = val
 
     fn _setitem(self, *indices: Int, val: Scalar[dtype]) raises:
         """
@@ -661,9 +664,11 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     # Getter dunders
     # ===-------------------------------------------------------------------===#
-    fn get(self, index: Int) raises -> SIMD[dtype, 1]:
+    fn get(self, owned index: Int) raises -> Scalar[dtype]:
         """
-        Linearly retreive a value from the underlying Pointer.
+        Safely retrieve a value from the underlying buffer.
+
+        `A.get(i)` differs from `A._buf[i]` due to boundary check.
 
         Example:
         ```console
@@ -679,18 +684,18 @@ struct NDArray[dtype: DType = DType.float64](
         > A.item(3)  # Row 1, Col 0
         ```
         """
+
+        if index < 0:
+            index += self.size
+
         if index >= self.size:
             raise Error(
-                String(
-                    "Invalid index: index out of bound!\n"
-                    "The index is {}."
-                    "The size of the array is {}"
-                ).format(index, self.size)
+                String("Invalid index: index {} out of bound [0, {}).").format(
+                    index, self.size
+                )
             )
-        if index >= 0:
-            return self._buf.load[width=1](index)
-        else:
-            return self._buf.load[width=1](index + self.size)
+
+        return self._buf[index]
 
     fn _getitem(self, *indices: Int) raises -> Scalar[dtype]:
         """

@@ -2,6 +2,31 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## xx/xx/2025 (v0.x)
+
+### ⭐️ New
+
+- Add an additional dtype mapping for `NDArray.to_numpy`: `DType.index` -> `numpy.intp` ([PR #157](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/157)).
+- Add method `NDArray.resize` that reshapes the array in-place ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
+
+### 🦋 Changed
+
+- Update the following functions to allow operation by any axis:
+  - `argsort` ([PR #157](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/157)).
+  - `cumsum` and `cumprod` ([PR #160](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/160)).
+- Refine the function `reshape` so that it is working on any dimensions and is working on both row-major and col-major. This also allows us to change the order with the code ```A.reshape(A.shape, "F"))```. Also refine functions `flatten`, `ravel` ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
+- Update `matmul` to enable multiplication between two arrays of any dimensions ([PR #159](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/159)).
+
+### ❌ Removed
+
+### 🛠️ Fixed
+
+- Removes `mut` keyword before `self` from `NDArray.__add__`.
+
+### 📚 Documentatory and testing
+
+- Add `magic run t` and `magic run f` for magic CLI that clear the terminal before running `test` or `final`.
+
 ## 22/12/2024 (v0.4)
 
 ### ⭐️ New

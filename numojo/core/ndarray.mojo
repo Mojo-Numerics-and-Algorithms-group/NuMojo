@@ -299,18 +299,34 @@ struct NDArray[dtype: DType = DType.float64](
             index_of_buffer += indices[i] * self.strides[i]
         self._buf[index_of_buffer] = val
 
-    # TODO: add support for different dtypes
     fn __setitem__(mut self, idx: Int, val: NDArray[dtype]) raises:
         """
         Set a slice of array with given array.
 
         Example:
-            `arr[1]` returns the second row of the array.
+        ```mojo
+        import numojo as nm
+        var A = nm.random.rand[nm.i16](3, 2)
+        var B = nm.random.rand[nm.i16](3)
+        A[1:4] = B
+        ```
         """
         if self.ndim == 0 and val.ndim == 0:
             self._buf.store(0, val._buf.load(0))
 
         var slice_list = List[Slice]()
+        if idx >= self.shape[0]:
+            var message = String(
+                    "Error: Slice value exceeds the array shape!\n"
+                    "The {}-th dimension is of size {}.\n"
+                    "The slice goes from {} to {}"
+                ).format(
+                    0,
+                    self.shape[0],
+                    idx,
+                    idx + 1,
+                )
+            raise Error(message)
         slice_list.append(Slice(idx, idx + 1))
         if self.ndim > 1:
             for i in range(1, self.ndim):
@@ -322,22 +338,6 @@ struct NDArray[dtype: DType = DType.float64](
         var count: Int = 0
         var spec: List[Int] = List[Int]()
         for i in range(n_slices):
-            # self._adjust_slice_(slice_list[i], self.shape[i])
-            if (
-                slice_list[i].start.value() >= self.shape[i]
-                or slice_list[i].end.value() > self.shape[i]
-            ):
-                var message = String(
-                    "Error: Slice value exceeds the array shape!\n"
-                    "The {}-th dimension is of size {}.\n"
-                    "The slice goes from {} to {}"
-                ).format(
-                    i,
-                    self.shape[i],
-                    slice_list[i].start.value(),
-                    slice_list[i].end.value(),
-                )
-                raise Error(message)
             # if slice_list[i].step is None:
             #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
@@ -365,16 +365,12 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
-            # if slice_list[j].step is None:
-            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[j].end.value() - slice_list[j].start.value())
                 / slice_list[j].step.or_else(1)
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            # if slice_list[j].step is None:
-            #     raise Error(String("Step of slice is None."))
             ncoefficients.append(
                 self.strides[j] * slice_list[j].step.or_else(1)
             )
@@ -396,7 +392,7 @@ struct NDArray[dtype: DType = DType.float64](
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
+                for j in range(i + 1, ndims):  
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
@@ -441,32 +437,21 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = _get_index(index, self.coefficient)
         self._buf.store(idx, val)
 
-    # compiler doesn't accept this
-    # fn __setitem__(
-    #     inout self, mask: NDArray[DType.bool], value: Scalar[dtype]
-    # ) raises:
-    #     """
-    #     Set the value of the array at the indices where the mask is true.
-    #     """
-    #     if (
-    #         mask.shape != self.shape
-    #     ):  # this behaviour could be removed potentially
-    #         raise Error("Mask and array must have the same shape")
-    # fn __setitem__(
-    #     mut self, mask: NDArray[DType.bool], value: Scalar[dtype]
-    # ) raises:
-    #     """
-    #     Set the value of the array at the indices where the mask is true.
-    #     """
-    #     if (
-    #         mask.shape != self.shape
-    #     ):  # this behavious could be removed potentially
-    #         raise Error("Mask and array must have the same shape")
+    # only works if array is called as array.__setitem__(), mojo compiler doesn't parse it implicitly
+    fn __setitem__(
+        mut self, mask: NDArray[DType.bool], value: Scalar[dtype]
+    ) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+        """
+        if (
+            mask.shape != self.shape
+        ):  # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
 
-        # for i in range(mask.size):
-        #     if mask._buf.load[width=1](i):
-        #         print(value)
-        #         self._buf.store(i, value)
+        for i in range(mask.size):
+            if mask._buf.load[width=1](i):
+                self._buf.store(i, value)
 
     fn __setitem__(mut self, owned *slices: Slice, val: NDArray[dtype]) raises:
         """

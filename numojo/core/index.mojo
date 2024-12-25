@@ -146,12 +146,16 @@ struct Idx(CollectionElement):
 
     @always_inline("nodebug")
     fn load[width: Int = 1](self, index: Int) raises -> SIMD[Self.dtype, width]:
+        if index + width - 1 > self.len:
+            raise Error("Index out of bounds")
         return self.storage.load[width=width](index)
 
     @always_inline("nodebug")
     fn store[
         width: Int = 1
     ](mut self, index: Int, val: SIMD[Self.dtype, width]) raises:
+        if index + width - 1 > self.len:
+            raise Error("Index out of bounds")
         self.storage.store(index, val)
 
     @always_inline("nodebug")

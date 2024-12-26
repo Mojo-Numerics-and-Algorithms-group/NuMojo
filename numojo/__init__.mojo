@@ -86,7 +86,7 @@ from numojo.routines.math import maxT, minT, amin, amax, mimimum, maximum
 from numojo.routines.math import copysign
 from numojo.routines.math import acosh, asinh, atanh, cosh, sinh, tanh
 from numojo.routines.math import cbrt, rsqrt, sqrt, scalb
-from numojo.routines.math import prod, prodall, cumprod
+from numojo.routines.math import prod, cumprod
 from numojo.routines.math import (
     tabs,
     tfloor,

@@ -252,25 +252,64 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn flip[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Flips the NDArray along the given axis.
+    Returns flipped array and keep the shape.
 
     Parameters:
         dtype: DType.
 
     Args:
-        array: A NDArray.
+        A: A NDArray.
 
     Returns:
-        The flipped NDArray.
+        Flipped array.
     """
-    if array.ndim != 1:
-        raise Error("Flip is only supported for 1D arrays")
 
-    var result: NDArray[dtype] = NDArray[dtype](
-        shape=array.shape, order=array.order
+    for i in range(A.size // 2):
+        var temp = A._buf[i]
+        A._buf[i] = A._buf[A.size - 1 - i]
+        A._buf[A.size - 1 - i] = temp
+
+    return A^
+
+
+fn flip[
+    dtype: DType
+](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+    """
+    Returns flipped array along the given axis.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        axis: Axis along which to flip.
+
+    Returns:
+        Flipped array along the given axis.
+    """
+
+    if axis < 0:
+        axis += A.ndim
+    if (axis < 0) or (axis >= A.ndim):
+        raise Error(
+            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+        )
+
+    var I = NDArray[DType.index](Shape(A.size))
+    var ptr = I._buf
+
+    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
+        ptr, A.shape._move_axis_to_end(axis), A.strides._move_axis_to_end(axis)
     )
-    for i in range(array.size):
-        result._buf.store(i, array._buf[array.size - i - 1])
-    return result
+
+    print(A.size, A.shape[axis])
+    for i in range(0, A.size, A.shape[axis]):
+        for j in range(A.shape[axis] // 2):
+            var temp = A._buf[I._buf[i + j]]
+            A._buf[I._buf[i + j]] = A._buf[I._buf[i + A.shape[axis] - 1 - j]]
+            A._buf[I._buf[i + A.shape[axis] - 1 - j]] = temp
+
+    return A^

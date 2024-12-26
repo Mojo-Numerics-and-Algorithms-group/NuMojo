@@ -165,7 +165,7 @@ fn cummean[
     Returns:
         The mean of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return cumsum[dtype](array) / (array.num_elements())
+    return sum[dtype](array) / (array.num_elements())
 
 
 fn mode[

@@ -3,7 +3,7 @@ Array manipulation routines.
 
 """
 
-from memory import memcpy
+from memory import UnsafePointer, memcpy
 from sys import simdwidthof
 from algorithm import vectorize
 
@@ -129,7 +129,9 @@ fn ravel[
 # ===----------------------------------------------------------------------=== #
 
 
-fn _set_values_according_to_new_shape_and_strides(
+# TODO: Remove this one if the following function is working well:
+# `numojo.core.utility._traverse_buffer_according_to_shape_and_strides`
+fn _set_values_according_to_shape_and_strides(
     mut I: NDArray[DType.index],
     mut index: Int,
     current_dim: Int,
@@ -138,7 +140,7 @@ fn _set_values_according_to_new_shape_and_strides(
     new_strides: NDArrayStrides,
 ) raises:
     """
-    Auxiliary function for `transpose` that set values according to new shape
+    Auxiliary function for `transpose` that set values according to new shape'
     and strides for variadic number of dimensions.
     """
     for index_of_axis in range(new_shape[current_dim]):
@@ -149,7 +151,7 @@ fn _set_values_according_to_new_shape_and_strides(
             I._buf[index] = current_sum
             index = index + 1
         else:
-            _set_values_according_to_new_shape_and_strides(
+            _set_values_according_to_shape_and_strides(
                 I,
                 index,
                 current_dim + 1,
@@ -199,25 +201,21 @@ fn transpose[
                 ).format(i)
             )
 
-    var _shape = List[Int]()
-    var _strides = List[Int]()
-
+    var new_shape = NDArrayShape(shape=A.shape)
     for i in range(A.ndim):
-        _shape.append(A.shape[axes[i]])
-    var new_shape = NDArrayShape(shape=_shape)
+        new_shape._buf[i] = A.shape[axes[i]]
 
+    var new_strides = NDArrayStrides(strides=A.strides)
     for i in range(A.ndim):
-        _strides.append(A.strides[axes[i]])
-    var new_strides = NDArrayStrides(strides=_strides)
+        new_strides._buf[i] = A.strides[axes[i]]
 
-    var _index = 0
-    var I = NDArray[DType.index](shape=new_shape, order=A.order)
-
-    _set_values_according_to_new_shape_and_strides(
-        I, _index, 0, 0, new_shape, new_strides
+    var I = NDArray[DType.index](Shape(A.size), order=A.order)
+    var ptr = I._buf
+    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
+        ptr, new_shape, new_strides
     )
 
-    var B = NDArray[dtype](I.shape, order=A.order)
+    var B = NDArray[dtype](new_shape, order=A.order)
     for i in range(B.size):
         B._buf[i] = A._buf[I._buf[i]]
     return B^

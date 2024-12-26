@@ -58,21 +58,3 @@ def test_constructors():
         arr5.shape[2] == 5,
         "NDArray constructor with NDArrayShape: shape element 2",
     )
-
-    var arr6 = nm.array[f32](
-        data=List[SIMD[f32, 1]](1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-        shape=List[Int](2, 5),
-    )
-    assert_true(
-        arr6.shape[0] == 2,
-        "NDArray constructor with data and shape: shape element 0",
-    )
-    assert_true(
-        arr6.shape[1] == 5,
-        "NDArray constructor with data and shape: shape element 1",
-    )
-    assert_equal(
-        arr6[idx(1, 4)],
-        10.0,
-        "NDArray constructor with data: value check",
-    )

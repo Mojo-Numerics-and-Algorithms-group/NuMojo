@@ -250,12 +250,12 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf.free()
 
     # ===-------------------------------------------------------------------===#
-    # Setter dunders
+    # Setter dunders and other getter methods
     # ===-------------------------------------------------------------------===#
 
     fn set(self, owned index: Int, val: Scalar[dtype]) raises:
         """
-        Safely retrieve a value from the underlying buffer.
+        Safely retrieve i-th item from the underlying buffer.
 
         `A.set(i, a)` differs from `A._buf[i] = a` due to boundary check.
 
@@ -277,10 +277,10 @@ struct NDArray[dtype: DType = DType.float64](
         if index < 0:
             index += self.size
 
-        if index >= self.size:
+        if (index >= self.size) or (index < 0):
             raise Error(
-                String("Invalid index: index {} out of bound [0, {}).").format(
-                    index, self.size
+                String("Invalid index: index out of bound [0, {}).").format(
+                    self.size
                 )
             )
 
@@ -662,11 +662,11 @@ struct NDArray[dtype: DType = DType.float64](
                 self._buf.store(i, val._buf.load(i))
 
     # ===-------------------------------------------------------------------===#
-    # Getter dunders
+    # Getter dunders and other getter methods
     # ===-------------------------------------------------------------------===#
     fn get(self, owned index: Int) raises -> Scalar[dtype]:
         """
-        Safely retrieve a value from the underlying buffer.
+        Safely retrieve i-th item from the underlying buffer.
 
         `A.get(i)` differs from `A._buf[i]` due to boundary check.
 
@@ -688,10 +688,10 @@ struct NDArray[dtype: DType = DType.float64](
         if index < 0:
             index += self.size
 
-        if index >= self.size:
+        if (index >= self.size) or (index < 0):
             raise Error(
-                String("Invalid index: index {} out of bound [0, {}).").format(
-                    index, self.size
+                String("Invalid index: index out of bound [0, {}).").format(
+                    self.size
                 )
             )
 

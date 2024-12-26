@@ -5,6 +5,13 @@ from utils_for_test import check, check_is_close
 from python import Python
 
 
+def test_getitem_scalar():
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange(8)
+    assert_true(A.get(0) == 0, msg=String("`get` fails"))
+
+
 def test_slicing_getter1():
     var np = Python.import_module("numpy")
 

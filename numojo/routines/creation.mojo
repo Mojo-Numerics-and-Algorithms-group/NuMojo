@@ -1014,6 +1014,7 @@ fn astype[dtype: DType](a: NDArray) raises -> NDArray[dtype]:
         result._buf[i] = a._buf[i].cast[dtype]()
     return result^
 
+
 # ===------------------------------------------------------------------------===#
 # Construct array from various objects.
 # It can be reloaded to allow different types of input.

@@ -63,6 +63,7 @@ struct TypeCoercion:
             return Self.int_ranks.index(dtype)
         except ValueError:
             return 7
+
     @parameter
     @staticmethod
     fn get_floattype_rank[dtype: DType]() -> Int:

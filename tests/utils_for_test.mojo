@@ -14,7 +14,7 @@ fn check_with_dtype[
     dtype: DType
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
-    assert_true(str(array.dtype)==str(np_sol.dtype), "DType mismatch")
+    assert_true(str(array.dtype) == str(np_sol.dtype), "DType mismatch")
     assert_true(np.all(np.equal(array.to_numpy(), np_sol)), st)
 
 

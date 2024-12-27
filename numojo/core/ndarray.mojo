@@ -1702,7 +1702,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array / scalar`.
         """
-        return math.div[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return math.div[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     fn __truediv__[
         OtherDType: DType,
@@ -1711,7 +1713,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array / array`.
         """
-        return math.div[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
+        return math.div[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1744,7 +1748,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `scalar / array`.
         """
-        return math.div[ResultDType](s.cast[ResultDType](), self.astype[ResultDType]())
+        return math.div[ResultDType](
+            s.cast[ResultDType](), self.astype[ResultDType]()
+        )
 
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1759,7 +1765,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array // scalar`.
         """
-        return math.floor_div[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return math.floor_div[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     fn __floordiv__[
         OtherDType: DType,
@@ -1768,7 +1776,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array // array`.
         """
-        return math.floor_div[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
+        return math.floor_div[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     fn __floordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1801,7 +1811,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `scalar // array`.
         """
-        return math.floor_div[ResultDType](other.cast[ResultDType](), self.astype[ResultDType]())
+        return math.floor_div[ResultDType](
+            other.cast[ResultDType](), self.astype[ResultDType]()
+        )
 
     fn __rfloordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1816,7 +1828,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array % scalar`.
         """
-        return math.mod[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return math.mod[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     fn __mod__[
         OtherDType: DType,
@@ -1825,7 +1839,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array % array`.
         """
-        return math.mod[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
+        return math.mod[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     fn __mod__(mut self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1864,7 +1880,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `scalar % array`.
         """
-        return math.mod[ResultDType](other.cast[ResultDType](), self.astype[ResultDType]())
+        return math.mod[ResultDType](
+            other.cast[ResultDType](), self.astype[ResultDType]()
+        )
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations

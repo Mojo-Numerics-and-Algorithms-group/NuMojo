@@ -1337,23 +1337,23 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __pos__(self) raises -> Self:
         """
-        Unary positve returens self unless boolean type.
+        Unary positve returns self unless boolean type.
         """
         if self.dtype is DType.bool:
             raise Error(
-                "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
+                "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
             )
         return self
 
     fn __neg__(self) raises -> Self:
         """
-        Unary negative returens self unless boolean type.
+        Unary negative returns self unless boolean type.
 
         For bolean use `__invert__`(~)
         """
         if self.dtype is DType.bool:
             raise Error(
-                "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
+                "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
             )
         return self * -1.0
 

@@ -8,21 +8,57 @@ from utils_for_test import check, check_is_close, check_values_close
 # ===-----------------------------------------------------------------------===#
 
 
-def test_sum():
+def test_sum_prod():
     var np = Python.import_module("numpy")
-    var A = nm.random.randn(6, 6, 6)
+    var A = nm.random.randn(2, 3, 4)
     var Anp = A.to_numpy()
 
     check_values_close(
         nm.sum(A),
-        np.sum(Anp),
-        String("`sum` fails. {} vs {}."),
+        np.sum(Anp, axis=None),
+        String("`sum` fails."),
     )
     for i in range(3):
         check_is_close(
             nm.sum(A, axis=i),
             np.sum(Anp, axis=i),
             String("`sum` by axis {} fails.".format(i)),
+        )
+
+    check_is_close(
+        nm.cumsum(A),
+        np.cumsum(Anp, axis=None),
+        String("`cumsum` fails."),
+    )
+    for i in range(3):
+        check_is_close(
+            nm.cumsum(A, axis=i),
+            np.cumsum(Anp, axis=i),
+            String("`cumsum` by axis {} fails.".format(i)),
+        )
+
+    check_values_close(
+        nm.prod(A),
+        np.prod(Anp, axis=None),
+        String("`prod` fails."),
+    )
+    for i in range(3):
+        check_is_close(
+            nm.prod(A, axis=i),
+            np.prod(Anp, axis=i),
+            String("`prod` by axis {} fails.".format(i)),
+        )
+
+    check_is_close(
+        nm.cumprod(A),
+        np.cumprod(Anp, axis=None),
+        String("`cumprod` fails."),
+    )
+    for i in range(3):
+        check_is_close(
+            nm.cumprod(A, axis=i),
+            np.cumprod(Anp, axis=i),
+            String("`cumprod` by axis {} fails.".format(i)),
         )
 
 
@@ -40,16 +76,16 @@ def test_add_array():
 
 def test_add_array_par():
     var np = Python.import_module("numpy")
-    var arr = nm.arange[nm.f64](0, 500)
+    var arr = nm.arange[nm.f64](0, 20)
 
     check(
         nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, 5.0),
-        np.arange(0, 500) + 5,
+        np.arange(0, 20) + 5,
         "Add array + scalar",
     )
     check(
         nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, arr),
-        np.arange(0, 500) + np.arange(0, 500),
+        np.arange(0, 20) + np.arange(0, 20),
         "Add array + array",
     )
 

@@ -250,12 +250,14 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf.free()
 
     # ===-------------------------------------------------------------------===#
-    # Setter dunders
+    # Setter dunders and other getter methods
     # ===-------------------------------------------------------------------===#
 
-    fn set(self, index: Int, val: SIMD[dtype, 1]) raises:
+    fn set(self, owned index: Int, val: Scalar[dtype]) raises:
         """
-        Linearly retreive a value from the underlying Pointer.
+        Safely retrieve i-th item from the underlying buffer.
+
+        `A.set(i, a)` differs from `A._buf[i] = a` due to boundary check.
 
         Example:
         ```console
@@ -271,19 +273,20 @@ struct NDArray[dtype: DType = DType.float64](
         > A.item(3)  # Row 1, Col 0
         ```
         """
-        if index >= self.size:
-            var message = String(
-                "Invalid index: index out of bound. \n"
-                "The index is {}. \n"
-                "The size is {}"
-            ).format(index, self.size)
-            raise Error(message)
-        if index >= 0:
-            return self._buf.store(index, val)
-        else:
-            return self._buf.store(index + self.size, val)
 
-    fn _setitem(self, *indices: Int, val: Scalar[dtype]) raises:
+        if index < 0:
+            index += self.size
+
+        if (index >= self.size) or (index < 0):
+            raise Error(
+                String("Invalid index: index out of bound [0, {}).").format(
+                    self.size
+                )
+            )
+
+        self._buf[index] = val
+
+    fn _setitem(self, *indices: Int, val: Scalar[dtype]):
         """
         (UNSAFE! for internal use only.)
         Get item at indices and bypass all boundary checks.
@@ -296,7 +299,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides[i]
+            index_of_buffer += indices[i] * self.strides._buf[i]
         self._buf[index_of_buffer] = val
 
     fn __setitem__(mut self, idx: Int, val: NDArray[dtype]) raises:
@@ -654,11 +657,13 @@ struct NDArray[dtype: DType = DType.float64](
                 self._buf.store(i, val._buf.load(i))
 
     # ===-------------------------------------------------------------------===#
-    # Getter dunders
+    # Getter dunders and other getter methods
     # ===-------------------------------------------------------------------===#
-    fn get(self, index: Int) raises -> SIMD[dtype, 1]:
+    fn get(self, owned index: Int) raises -> Scalar[dtype]:
         """
-        Linearly retreive a value from the underlying Pointer.
+        Safely retrieve i-th item from the underlying buffer.
+
+        `A.get(i)` differs from `A._buf[i]` due to boundary check.
 
         Example:
         ```console
@@ -674,20 +679,20 @@ struct NDArray[dtype: DType = DType.float64](
         > A.item(3)  # Row 1, Col 0
         ```
         """
-        if index >= self.size:
-            raise Error(
-                String(
-                    "Invalid index: index out of bound!\n"
-                    "The index is {}."
-                    "The size of the array is {}"
-                ).format(index, self.size)
-            )
-        if index >= 0:
-            return self._buf.load[width=1](index)
-        else:
-            return self._buf.load[width=1](index + self.size)
 
-    fn _getitem(self, *indices: Int) raises -> Scalar[dtype]:
+        if index < 0:
+            index += self.size
+
+        if (index >= self.size) or (index < 0):
+            raise Error(
+                String("Invalid index: index out of bound [0, {}).").format(
+                    self.size
+                )
+            )
+
+        return self._buf[index]
+
+    fn _getitem(self, *indices: Int) -> Scalar[dtype]:
         """
         (UNSAFE! for internal use only.)
         Get item at indices and bypass all boundary checks.
@@ -700,7 +705,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides[i]
+            index_of_buffer += indices[i] * self.strides._buf[i]
         return self._buf[index_of_buffer]
 
     fn __getitem__(self, idx: Int) raises -> Self:
@@ -1441,13 +1446,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.greater_equal[dtype](self, other)
 
-    fn __add__(mut self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __add__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `array + scalar`.
         """
         return math.add[dtype](self, other)
 
-    fn __add__(mut self, other: Self) raises -> Self:
+    fn __add__(self, other: Self) raises -> Self:
         """
         Enables `array + array`.
         """
@@ -2182,23 +2187,49 @@ struct NDArray[dtype: DType = DType.float64](
     # fn copy(self):
     #     pass
 
-    fn cumprod(self) -> Scalar[dtype]:
+    fn cumprod(self) raises -> NDArray[dtype]:
         """
-        Cumulative product of a array.
+        Returns cumprod of all items of an array.
+        The array is flattened before cumprod.
 
         Returns:
-            The cumulative product of the array as a SIMD Value of `dtype`.
+            Cumprod of all items of an array.
         """
         return cumprod[dtype](self)
 
-    fn cumsum(self) -> Scalar[dtype]:
+    fn cumprod(self, axis: Int) raises -> NDArray[dtype]:
         """
-        Cumulative Sum of a array.
+        Returns cumprod of array by axis.
+
+        Args:
+            axis: Axis.
 
         Returns:
-            The cumulative sum of the array as a SIMD Value of `dtype`.
+            Cumprod of array by axis.
+        """
+        return cumprod[dtype](self, axis=axis)
+
+    fn cumsum(self) raises -> NDArray[dtype]:
+        """
+        Returns cumsum of all items of an array.
+        The array is flattened before cumsum.
+
+        Returns:
+            Cumsum of all items of an array.
         """
         return cumsum[dtype](self)
+
+    fn cumsum(self, axis: Int) raises -> NDArray[dtype]:
+        """
+        Returns cumsum of array by axis.
+
+        Args:
+            axis: Axis.
+
+        Returns:
+            Cumsum of array by axis.
+        """
+        return cumsum[dtype](self, axis=axis)
 
     fn diagonal(self):
         pass
@@ -2519,17 +2550,24 @@ struct NDArray[dtype: DType = DType.float64](
     # fn nonzero(self):
     #     pass
 
+    fn prod(self: Self) raises -> Scalar[dtype]:
+        """
+        Product of all array elements.
+        Returns:
+            Scalar.
+        """
+        return sum(self)
+
     fn prod(self: Self, axis: Int) raises -> Self:
         """
         Product of array elements over a given axis.
         Args:
-            array: NDArray.
             axis: The axis along which the product is performed.
         Returns:
             An NDArray.
         """
 
-        return prod(self, axis)
+        return prod(self, axis=axis)
 
     fn round(self) raises -> Self:
         """
@@ -2565,6 +2603,14 @@ struct NDArray[dtype: DType = DType.float64](
         var I = NDArray[DType.index](self.shape)
         sorting._sort_inplace(self, I, axis=axis)
 
+    fn sum(self: Self) raises -> Scalar[dtype]:
+        """
+        Sum of all array elements.
+        Returns:
+            Scalar.
+        """
+        return sum(self)
+
     fn sum(self: Self, axis: Int) raises -> Self:
         """
         Sum of array elements over a given axis.
@@ -2573,7 +2619,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An NDArray.
         """
-        return sum(self, axis)
+        return sum(self, axis=axis)
 
     fn tolist(self) -> List[Scalar[dtype]]:
         """

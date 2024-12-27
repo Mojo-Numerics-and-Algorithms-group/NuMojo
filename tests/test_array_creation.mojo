@@ -1,8 +1,14 @@
 import numojo as nm
 from numojo.prelude import *
+from numojo.prelude import *
+from testing.testing import (
+    assert_true,
+    assert_almost_equal,
+    assert_equal,
+    assert_raises,
+)
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
-from testing.testing import assert_raises
 
 
 def test_arange():
@@ -320,3 +326,24 @@ def test_vander():
     var x_nm_int = nm.vander[nm.i32](nm_arr_int)
     var x_np_int = np.vander(np_arr_int)
     check(x_nm_int, x_np_int, "Vander is broken (int32)")
+
+
+def test_arr_manipulation():
+    var np = Python.import_module("numpy")
+    var arr6 = nm.array[f32](
+        data=List[SIMD[f32, 1]](1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+        shape=List[Int](2, 5),
+    )
+    assert_true(
+        arr6.shape[0] == 2,
+        "NDArray constructor with data and shape: shape element 0",
+    )
+    assert_true(
+        arr6.shape[1] == 5,
+        "NDArray constructor with data and shape: shape element 1",
+    )
+    assert_equal(
+        arr6[idx(1, 4)],
+        10.0,
+        "NDArray constructor with data: value check",
+    )

@@ -22,6 +22,19 @@ struct NDArrayShape(Stringable, Writable):
     """Number of dimensions of array."""
 
     @always_inline("nodebug")
+    fn __init__(mut self, shape: Int):
+        """
+        Initializes the NDArrayShape with one dimension.
+
+        Args:
+            shape: Size of the array.
+        """
+        self.ndim = 1
+        self.size = shape
+        self._buf = UnsafePointer[Int]().alloc(shape)
+        self._buf.init_pointee_copy(shape)
+
+    @always_inline("nodebug")
     fn __init__(mut self, *shape: Int):
         """
         Initializes the NDArrayShape with variable shape dimensions.
@@ -215,7 +228,60 @@ struct NDArrayShape(Stringable, Writable):
                 return True
         return False
 
-    # can be used for vectorized index calculation
+    # ===-------------------------------------------------------------------===#
+    # Other private methods
+    # ===-------------------------------------------------------------------===#
+
+    fn _flip(self) raises -> Self:
+        """
+        Returns a new shape by flipping the items.
+
+        UNSAFE! No boundary check!
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var A = nm.random.randn(2, 3, 4)
+        print(A.shape)          # Shape: [2, 3, 4]
+        print(A.shape._flip())  # Shape: [4, 3, 2]
+        ```
+        """
+
+        var shape = NDArrayShape(self)
+        for i in range(shape.ndim):
+            shape._buf[i] = self._buf[self.ndim - 1 - i]
+        return shape
+
+    fn _move_axis_to_end(self, owned axis: Int) raises -> Self:
+        """
+        Returns a new shape by moving the value of axis to the end.
+
+        UNSAFE! No boundary check!
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var A = nm.random.randn(2, 3, 4)
+        print(A.shape._move_axis_to_end(0))  # Shape: [3, 4, 2]
+        print(A.shape._move_axis_to_end(1))  # Shape: [2, 4, 3]
+        ```
+        """
+
+        if axis < 0:
+            axis += self.ndim
+
+        var shape = NDArrayShape(self)
+
+        if axis == self.ndim - 1:
+            return shape
+
+        var value = shape[axis]
+        for i in range(axis, shape.ndim - 1):
+            shape._buf[i] = shape._buf[i + 1]
+        shape._buf[shape.ndim - 1] = value
+        return shape
+
+    # # can be used for vectorized index calculation
     # @always_inline("nodebug")
     # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
     #     """

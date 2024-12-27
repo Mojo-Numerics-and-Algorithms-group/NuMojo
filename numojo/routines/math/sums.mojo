@@ -59,17 +59,17 @@ fn sum[
         An NDArray.
     """
 
-    var ndim: Int = A.ndim
     if axis < 0:
-        axis += ndim
-    if (axis < 0) or (axis >= ndim):
+        axis += A.ndim
+    if (axis < 0) or (axis >= A.ndim):
         raise Error(
-            String("axis {} greater than ndim of array {}").format(axis, ndim)
+            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
         )
+
     var result_shape: List[Int] = List[Int]()
     var size_of_axis: Int = A.shape[axis]
     var slices: List[Slice] = List[Slice]()
-    for i in range(ndim):
+    for i in range(A.ndim):
         if i != axis:
             result_shape.append(A.shape[i])
             slices.append(Slice(0, A.shape[i]))
@@ -130,7 +130,7 @@ fn cumsum[
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
         raise Error(
-            String("axis {} greater than ndim of array {}").format(axis, A.ndim)
+            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
         )
 
     var I = NDArray[DType.index](Shape(A.size))

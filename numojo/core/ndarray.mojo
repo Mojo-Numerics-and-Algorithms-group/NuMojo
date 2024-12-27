@@ -1458,6 +1458,8 @@ struct NDArray[dtype: DType = DType.float64](
             self.astype[ResultDType](), other.cast[ResultDType]()
         )
 
+    """ ARITHMETIC OPERATORS """
+
     fn __add__[
         OtherDType: DType,
         ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),

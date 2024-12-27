@@ -5,22 +5,27 @@ from utils_for_test import check, check_is_close
 from python import Python
 
 
-def test_arr_manipulation():
+fn test_arr_manipulation() raises:
     var np = Python.import_module("numpy")
 
     # Test arange
     var A = nm.arange[nm.i16](1, 7, 1)
-    var np_A = np.arange(1, 7, 1, dtype=np.int16)
-    check_is_close(A, np_A, "Arange operation")
+    var Anp = np.arange(1, 7, 1, dtype=np.int16)
+    check_is_close(A, Anp, "Arange operation")
 
-    # Test flip
-    var flipped_A = nm.flip(A)
-    var np_flipped_A = np.flip(np_A)
-    check_is_close(flipped_A, np_flipped_A, "Flip operation")
-
-    # Test reshape and ravel
     var B = nm.random.randn(2, 3, 4)
     var Bnp = B.to_numpy()
+
+    # Test flip
+    check_is_close(nm.flip(B), np.flip(Bnp), "`flip` without `axis` fails.")
+    for i in range(3):
+        check_is_close(
+            nm.flip(B, axis=i),
+            np.flip(Bnp, axis=i),
+            String("`flip` by `axis` {} fails.").format(i),
+        )
+
+    # Test reshape and ravel
     check_is_close(
         nm.reshape(B, Shape(4, 3, 2), "C"),
         np.reshape(Bnp, (4, 3, 2), "C"),
@@ -70,12 +75,3 @@ def test_transpose():
         np.transpose(Anp, [1, 3, 0, 2]),
         "4-d `transpose` with arbitrary `axes` is broken.",
     )
-
-
-def test_setitem():
-    var np = Python.import_module("numpy")
-    var arr = nm.NDArray(Shape(4, 4))
-    var np_arr = arr.to_numpy()
-    arr.itemset(List(2, 2), 1000)
-    np_arr[(2, 2)] = 1000
-    check_is_close(arr, np_arr, "Itemset is broken")

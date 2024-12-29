@@ -195,7 +195,7 @@ struct ComplexNDArray[
     # Setter dunders and other getter methods
     # ===-------------------------------------------------------------------===#
 
-    fn set(self, owned index: Int, val: ComplexSIMD[cdtype, dtype, 1]) raises:
+    fn set(self, owned index: Int, val: ComplexSIMD[cdtype, dtype]) raises:
         """
         Safely retrieve i-th item from the underlying buffer.
 
@@ -229,7 +229,7 @@ struct ComplexNDArray[
         self.re._buf[index] = val.re
         self.im._buf[index] = val.im
 
-    fn _setitem(self, *indices: Int, val: ComplexSIMD[cdtype, dtype, 1]):
+    fn _setitem(self, *indices: Int, val: ComplexSIMD[cdtype, dtype]):
         """
         (UNSAFE! for internal use only.)
         Get item at indices and bypass all boundary checks.
@@ -250,7 +250,7 @@ struct ComplexNDArray[
     # ===-------------------------------------------------------------------===#
     # Getter dunders and other getter methods
     # ===-------------------------------------------------------------------===#
-    fn get(self, owned index: Int) raises -> ComplexSIMD[cdtype, dtype, 1]:
+    fn get(self, owned index: Int) raises -> ComplexSIMD[cdtype, dtype]:
         """
         Safely retrieve i-th item from the underlying buffer.
 
@@ -281,7 +281,7 @@ struct ComplexNDArray[
                 )
             )
 
-        return ComplexSIMD[cdtype, dtype, 1](
+        return ComplexSIMD[cdtype, dtype](
             self.re._buf[index], self.im._buf[index]
         )
 
@@ -318,7 +318,7 @@ struct ComplexNDArray[
 
     @always_inline("nodebug")
     fn __eq__(
-        self, other: ComplexSIMD[cdtype, dtype, 1]
+        self, other: ComplexSIMD[cdtype, dtype]
     ) raises -> NDArray[DType.bool]:
         """
         Itemwise equivelence between scalar and Array.
@@ -338,7 +338,7 @@ struct ComplexNDArray[
 
     @always_inline("nodebug")
     fn __ne__(
-        self, other: ComplexSIMD[cdtype, dtype, 1]
+        self, other: ComplexSIMD[cdtype, dtype]
     ) raises -> NDArray[DType.bool]:
         """
         Itemwise non-equivalence between scalar and Array.
@@ -347,7 +347,7 @@ struct ComplexNDArray[
             self.re, other.re
         ) and comparison.not_equal[dtype](self.im, other.im)
 
-    fn __add__(self, other: ComplexSIMD[cdtype, dtype, 1]) raises -> Self:
+    fn __add__(self, other: ComplexSIMD[cdtype, dtype]) raises -> Self:
         """
         Enables `array + scalar`.
         """
@@ -363,7 +363,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.add[dtype](self.im, other.im)
         return Self(real, imag)
 
-    fn __radd__(mut self, other: ComplexSIMD[cdtype, dtype, 1]) raises -> Self:
+    fn __radd__(mut self, other: ComplexSIMD[cdtype, dtype]) raises -> Self:
         """
         Enables `scalar + array`.
         """
@@ -371,7 +371,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.add[dtype](self.im, other.im)
         return Self(real, imag)
 
-    fn __iadd__(mut self, other: ComplexSIMD[cdtype, dtype, 1]) raises:
+    fn __iadd__(mut self, other: ComplexSIMD[cdtype, dtype]) raises:
         """
         Enables `array += scalar`.
         """
@@ -385,7 +385,7 @@ struct ComplexNDArray[
         self.re += other.re
         self.im += other.im
 
-    fn __sub__(self, other: ComplexSIMD[cdtype, dtype, 1]) raises -> Self:
+    fn __sub__(self, other: ComplexSIMD[cdtype, dtype]) raises -> Self:
         """
         Enables `array + scalar`.
         """
@@ -401,7 +401,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.sub[dtype](self.im, other.im)
         return Self(real, imag)
 
-    fn __rsub__(mut self, other: ComplexSIMD[cdtype, dtype, 1]) raises -> Self:
+    fn __rsub__(mut self, other: ComplexSIMD[cdtype, dtype]) raises -> Self:
         """
         Enables `scalar + array`.
         """
@@ -409,7 +409,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.sub[dtype](self.im, other.im)
         return Self(real, imag)
 
-    fn __isub__(mut self, other: ComplexSIMD[cdtype, dtype, 1]) raises:
+    fn __isub__(mut self, other: ComplexSIMD[cdtype, dtype]) raises:
         """
         Enables `array += scalar`.
         """
@@ -430,7 +430,7 @@ struct ComplexNDArray[
         var im_re: NDArray[dtype] = linalg.matmul[dtype](self.im, other.re)
         return Self(re_re - im_im, re_im + im_re)
 
-    fn __mul__(self, other: ComplexSIMD[cdtype, dtype, 1]) raises -> Self:
+    fn __mul__(self, other: ComplexSIMD[cdtype, dtype]) raises -> Self:
         """
         Enables `array * scalar`.
         """
@@ -719,7 +719,7 @@ struct ComplexNDArrayy[
         - The order of the array: Row vs Columns major
     """
 
-    var _buf: UnsafePointer[ComplexSIMD[cdtype, dtype, 1]]
+    var _buf: UnsafePointer[ComplexSIMD[cdtype, dtype]]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
     """Number of Dimensions."""

@@ -1,7 +1,9 @@
 from math import sqrt
 
 from ._complex_dtype import CDType
+
 # alias ComplexScalar = ComplexSIMD[_, CDType.to_dtype[_](), 1]
+
 
 @register_passable("trivial")
 struct ComplexSIMD[

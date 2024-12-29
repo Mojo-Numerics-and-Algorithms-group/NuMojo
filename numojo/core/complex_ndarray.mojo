@@ -90,7 +90,7 @@ struct ComplexNDArray[
         Args:
             shape: Variadic shape.
             order: Memory order C or F.
-        
+
         Example:
         ```mojo
         import numojo as nm

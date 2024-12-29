@@ -18,7 +18,8 @@ alias idx = numojo.core.index.Idx
 
 from numojo.core.ndarray import NDArray
 from numojo.core.complex_ndarray import ComplexNDArray
-from numojo.core._complex_dtype import CDType, ComplexSIMD
+from numojo.core._complex_dtype import CDType
+from numojo.core.complex_simd import ComplexSIMD
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.index import Idx
 from numojo.core.datatypes import (

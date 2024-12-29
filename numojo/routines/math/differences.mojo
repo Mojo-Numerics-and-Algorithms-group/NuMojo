@@ -41,27 +41,28 @@ fn gradient[
     var space: NDArray[dtype] = arange[dtype](
         1, x.num_elements() + 1, step=spacing
     )
-    var hu: Scalar[dtype] = space.get(1)
-    var hd: Scalar[dtype] = space.get(0)
+    var hu: Scalar[dtype] = space.load(1)
+    var hd: Scalar[dtype] = space.load(0)
     result.store(
         0,
-        (x.get(1) - x.get(0)) / (hu - hd),
+        (x.load(1) - x.load(0)) / (hu - hd),
     )
 
-    hu = space.get(x.num_elements() - 1)
-    hd = space.get(x.num_elements() - 2)
+    hu = space.load(x.num_elements() - 1)
+    hd = space.load(x.num_elements() - 2)
     result.store(
         x.num_elements() - 1,
-        (x.get(x.num_elements() - 1) - x.get(x.num_elements() - 2)) / (hu - hd),
+        (x.load(x.num_elements() - 1) - x.load(x.num_elements() - 2))
+        / (hu - hd),
     )
 
     for i in range(1, x.num_elements() - 1):
-        var hu: Scalar[dtype] = space.get(i + 1) - space.get(i)
-        var hd: Scalar[dtype] = space.get(i) - space.get(i - 1)
+        var hu: Scalar[dtype] = space.load(i + 1) - space.load(i)
+        var hd: Scalar[dtype] = space.load(i) - space.load(i - 1)
         var fi: Scalar[dtype] = (
-            hd**2 * x.get(i + 1)
-            + (hu**2 - hd**2) * x.get(i)
-            - hu**2 * x.get(i - 1)
+            hd**2 * x.load(i + 1)
+            + (hu**2 - hd**2) * x.load(i)
+            - hu**2 * x.load(i - 1)
         ) / (hu * hd * (hu + hd))
         result.store(i, fi)
 
@@ -102,6 +103,8 @@ fn trapz[
 
     var integral: Scalar[dtype] = 0.0
     for i in range(x.num_elements() - 1):
-        var temp = (x.get(i + 1) - x.get(i)) * (y.get(i) + y.get(i + 1)) / 2.0
+        var temp = (x.load(i + 1) - x.load(i)) * (
+            y.load(i) + y.load(i + 1)
+        ) / 2.0
         integral += temp
     return integral

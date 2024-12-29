@@ -45,7 +45,7 @@ fn forward_substitution[
             value_on_hold = value_on_hold - L.item(i, j) * x.item(j)
         value_on_hold = value_on_hold / L.item(i, i)
 
-        x.set(i, value_on_hold)
+        x.store(i, value_on_hold)
 
     return x
 
@@ -77,7 +77,7 @@ fn back_substitution[
         for j in range(i + 1, m):
             value_on_hold = value_on_hold - U.item(i, j) * x.item(j)
         value_on_hold = value_on_hold / U.item(i, i)
-        x.set(i, value_on_hold)
+        x.store(i, value_on_hold)
 
     return x
 
@@ -174,7 +174,7 @@ fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     for i in range(m):
         # Each time, one of the item is changed to 1
         y = zeros[dtype](Shape(m))
-        y.set(i, Scalar[dtype](1))
+        y.store(i, Scalar[dtype](1))
 
         # Solve `Lz = y` for `z`
         z = forward_substitution(L, y)

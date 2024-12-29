@@ -1245,7 +1245,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         """
         if (self.size == 1) or (self.ndim == 0):
-            return int(self.get(0))
+            return int(self.load(0))
         else:
             raise (
                 "Only 0-D arrays or length-1 arrays can be converted to scalars"
@@ -1792,7 +1792,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var sum = Scalar[dtype](0)
         for i in range(self.size):
-            sum = sum + self.get(i) * other.get(i)
+            sum = sum + self.load(i) * other.load(i)
         return sum
 
     fn mdot(self, other: Self) raises -> Self:
@@ -1843,7 +1843,7 @@ struct NDArray[dtype: DType = DType.float64](
         var width = self.shape[1]
         var buffer = Self(Shape(width))
         for i in range(width):
-            buffer.set(i, self._buf.load[width=1](i + id * width))
+            buffer.store(i, self._buf.load[width=1](i + id * width))
         return buffer
 
     fn col(self, id: Int) raises -> Self:
@@ -1860,7 +1860,7 @@ struct NDArray[dtype: DType = DType.float64](
         var height = self.shape[0]
         var buffer = Self(Shape(height))
         for i in range(height):
-            buffer.set(i, self._buf.load[width=1](id + i * width))
+            buffer.store(i, self._buf.load[width=1](id + i * width))
         return buffer
 
     # # * same as mdot
@@ -1890,7 +1890,7 @@ struct NDArray[dtype: DType = DType.float64](
         var new_matrix = Self(Shape(self.shape[0], other.shape[1]))
         for row in range(self.shape[0]):
             for col in range(other.shape[1]):
-                new_matrix.set(
+                new_matrix.store(
                     col + row * other.shape[1],
                     self.row(row).vdot(other.col(col)),
                 )

@@ -43,15 +43,15 @@ fn cross[
         var array3: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
         array3.store(
             0,
-            (array1.get(1) * array2.get(2) - array1.get(2) * array2.get(1)),
+            (array1.load(1) * array2.load(2) - array1.load(2) * array2.load(1)),
         )
         array3.store(
             1,
-            (array1.get(2) * array2.get(0) - array1.get(0) * array2.get(2)),
+            (array1.load(2) * array2.load(0) - array1.load(0) * array2.load(2)),
         )
         array3.store(
             2,
-            (array1.get(0) * array2.get(1) - array1.get(1) * array2.get(0)),
+            (array1.load(0) * array2.load(1) - array1.load(1) * array2.load(0)),
         )
         return array3
     else:

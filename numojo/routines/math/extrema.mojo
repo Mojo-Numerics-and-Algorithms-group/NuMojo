@@ -53,10 +53,10 @@ fn maxT[
 
     vectorize[vectorized_max, width](array.num_elements())
 
-    var result: Scalar[dtype] = Scalar[dtype](max_value.get(0))
+    var result: Scalar[dtype] = Scalar[dtype](max_value.load(0))
     for i in range(max_value.__len__()):
-        if max_value.get(i) > result:
-            result = max_value.get(i)
+        if max_value.load(i) > result:
+            result = max_value.load(i)
     return result
 
 
@@ -92,10 +92,10 @@ fn minT[
 
     vectorize[vectorized_min, width](array.num_elements())
 
-    var result: Scalar[dtype] = Scalar[dtype](min_value.get(0))
+    var result: Scalar[dtype] = Scalar[dtype](min_value.load(0))
     for i in range(min_value.__len__()):
-        if min_value.get(i) < result:
-            result = min_value.get(i)
+        if min_value.load(i) < result:
+            result = min_value.load(i)
 
     return result
 

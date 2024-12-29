@@ -283,7 +283,7 @@ fn cumvariance[
 
     var result = Scalar[dtype]()
     for i in range(array.num_elements()):
-        result += (array.get(i) - mean_value) ** 2
+        result += (array.load(i) - mean_value) ** 2
 
     return sqrt(result / (array.num_elements() - 1))
 

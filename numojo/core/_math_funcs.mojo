@@ -67,10 +67,10 @@ struct Vectorized(Backend):
         # var op_count:Int =0
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
-            var simd_data3 = array3.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
+            var simd_data3 = array3._buf.load[width=simdwidth](i)
+            result_array._buf.store(
                 i, SIMD.fma(simd_data1, simd_data2, simd_data3)
             )
             # op_count+=1
@@ -114,12 +114,10 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
-            # var simd_data3 = array3.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
-                i, SIMD.fma(simd_data1, simd_data2, simd)
-            )
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
+            # var simd_data3 = array3._buf.load[width=simdwidth](i)
+            result_array._buf.store(i, SIMD.fma(simd_data1, simd_data2, simd))
 
         vectorize[closure, width](array1.num_elements())
         return result_array
@@ -148,10 +146,8 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
-                i, func[dtype, simdwidth](simd_data)
-            )
+            var simd_data = array._buf.load[width=simdwidth](i)
+            result_array._buf.store(i, func[dtype, simdwidth](simd_data))
 
         vectorize[closure, width](array.num_elements())
 
@@ -193,9 +189,9 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data1, simd_data2)
             )
 
@@ -230,9 +226,9 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array.load[width=simdwidth](i)
+            var simd_data1 = array._buf.load[width=simdwidth](i)
             var simd_data2 = scalar
-            result_array.store[width=simdwidth](
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data1, simd_data2)
             )
 
@@ -258,9 +254,9 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
-            # result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
+            # result_array._buf.store(
             #     i, func[dtype, simdwidth](simd_data1, simd_data2)
             # )
             bool_simd_store[simdwidth](
@@ -288,7 +284,7 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
             var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
@@ -310,10 +306,8 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
-                i, func[dtype, simdwidth](simd_data)
-            )
+            var simd_data = array._buf.load[width=simdwidth](i)
+            result_array._buf.store(i, func[dtype, simdwidth](simd_data))
 
         vectorize[closure, width](array.num_elements())
         return result_array
@@ -329,9 +323,9 @@ struct Vectorized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
+            var simd_data = array._buf.load[width=simdwidth](i)
 
-            result_array.store[width=simdwidth](
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data, intval)
             )
 
@@ -409,10 +403,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
-            var simd_data3 = array3.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
+            var simd_data3 = array3._buf.load[width=simdwidth](i)
+            result_array._buf.store(
                 i, SIMD.fma(simd_data1, simd_data2, simd_data3)
             )
 
@@ -455,12 +449,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
 
-            result_array.store[width=simdwidth](
-                i, SIMD.fma(simd_data1, simd_data2, simd)
-            )
+            result_array._buf.store(i, SIMD.fma(simd_data1, simd_data2, simd))
 
         vectorize[closure, width, unroll_factor=unroll_factor](
             array1.num_elements()
@@ -491,10 +483,8 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
-                i, func[dtype, simdwidth](simd_data)
-            )
+            var simd_data = array._buf.load[width=simdwidth](i)
+            result_array._buf.store(i, func[dtype, simdwidth](simd_data))
 
         vectorize[closure, width, unroll_factor=unroll_factor](
             array.num_elements()
@@ -537,9 +527,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data1, simd_data2)
             )
 
@@ -576,9 +566,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array.load[width=simdwidth](i)
+            var simd_data1 = array._buf.load[width=simdwidth](i)
             var simd_data2 = scalar
-            result_array.store[width=simdwidth](
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data1, simd_data2)
             )
 
@@ -606,9 +596,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
-            var simd_data2 = array2.load[width=simdwidth](i)
-            # result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.load[width=simdwidth](i)
+            # result_array._buf.store(
             #     i, func[dtype, simdwidth](simd_data1, simd_data2)
             # )
             bool_simd_store[simdwidth](
@@ -637,7 +627,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i)
+            var simd_data1 = array1._buf.load[width=simdwidth](i)
             var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
@@ -661,10 +651,8 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
-            result_array.store[width=simdwidth](
-                i, func[dtype, simdwidth](simd_data)
-            )
+            var simd_data = array._buf.load[width=simdwidth](i)
+            result_array._buf.store(i, func[dtype, simdwidth](simd_data))
 
         vectorize[closure, width, unroll_factor=unroll_factor](
             array.num_elements()
@@ -682,9 +670,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
+            var simd_data = array._buf.load[width=simdwidth](i)
 
-            result_array.store[width=simdwidth](
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data, intval)
             )
 
@@ -744,16 +732,16 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data3 = array3.load[width=simdwidth](
+                var simd_data3 = array3._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd_data3),
                 )
@@ -763,10 +751,10 @@ struct Parallelized(Backend):
         parallelize[par_closure](num_cores)
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
-        #     var simd_data3 = array3.load[width=simdwidth](i+remainder_offset)
-        #     result_array.store[width=simdwidth](
+        #     var simd_data1 = array1._buf.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2._buf.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data3 = array3._buf.load[width=simdwidth](i+remainder_offset)
+        #     result_array._buf.store(
         #         i+remainder_offset, SIMD.fma(simd_data1,simd_data2,simd_data3)
         #     )
         # vectorize[remainder_closure, width](comps_remainder)
@@ -810,14 +798,14 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
 
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd),
                 )
@@ -827,9 +815,9 @@ struct Parallelized(Backend):
         parallelize[par_closure](num_cores)
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
-        #     result_array.store[width=simdwidth](
+        #     var simd_data1 = array1._buf.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2._buf.load[width=simdwidth](i+remainder_offset)
+        #     result_array._buf.store(
         #         i+remainder_offset, SIMD.fma(simd_data1,simd_data2,simd)
         #     )
         # vectorize[remainder_closure, width](comps_remainder)
@@ -863,10 +851,10 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=simdwidth](
+                var simd_data = array._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
@@ -875,8 +863,8 @@ struct Parallelized(Backend):
         parallelize[par_closure](num_cores)
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data = array.load[width=simdwidth](i+remainder_offset)
-        #     result_array.store[width=simdwidth](
+        #     var simd_data = array._buf.load[width=simdwidth](i+remainder_offset)
+        #     result_array._buf.store(
         #         i+remainder_offset, func[dtype, simdwidth](simd_data)
         #     )
         # vectorize[remainder_closure, width](comps_remainder)
@@ -921,13 +909,13 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     func[dtype, simdwidth](simd_data1, simd_data2),
                 )
@@ -937,9 +925,9 @@ struct Parallelized(Backend):
         parallelize[par_closure](num_cores)
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
-        #     result_array.store[width=simdwidth](
+        #     var simd_data1 = array1._buf.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2._buf.load[width=simdwidth](i+remainder_offset)
+        #     result_array._buf.store(
         #         i+remainder_offset, func[dtype, simdwidth](simd_data1, simd_data2)
         #     )
         # vectorize[remainder_closure, width](comps_remainder)
@@ -977,11 +965,11 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array.load[width=simdwidth](
+                var simd_data1 = array._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
                 var simd_data2 = scalar
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     func[dtype, simdwidth](simd_data1, simd_data2),
                 )
@@ -1014,13 +1002,13 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                # result_array.store[width=simdwidth](
+                # result_array._buf.store(
                 #     i + comps_per_core * j,
                 #     func[dtype, simdwidth](simd_data1, simd_data2),
                 # )
@@ -1035,9 +1023,9 @@ struct Parallelized(Backend):
         parallelize[par_closure](num_cores)
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data1 = array1.load[width=simdwidth](i+remainder_offset)
-        #     var simd_data2 = array2.load[width=simdwidth](i+remainder_offset)
-        #     result_array.store[width=simdwidth](
+        #     var simd_data1 = array1._buf.load[width=simdwidth](i+remainder_offset)
+        #     var simd_data2 = array2._buf.load[width=simdwidth](i+remainder_offset)
+        #     result_array._buf.store(
         #         i+remainder_offset, func[dtype, simdwidth](simd_data1, simd_data2)
         #     )
         # vectorize[remainder_closure, width](comps_remainder)
@@ -1062,11 +1050,11 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
                 var simd_data2 = SIMD[dtype, simdwidth](scalar)
-                # result_array.store[width=simdwidth](
+                # result_array._buf.store(
                 #     i + comps_per_core * j,
                 #     func[dtype, simdwidth](simd_data1, simd_data2),
                 # )
@@ -1096,10 +1084,10 @@ struct Parallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=simdwidth](
+                var simd_data = array._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
@@ -1108,8 +1096,8 @@ struct Parallelized(Backend):
         parallelize[par_closure](num_cores)
         # @parameter
         # fn remainder_closure[simdwidth: Int](i: Int):
-        #     var simd_data = array.load[width=simdwidth](i+remainder_offset)
-        #     result_array.store[width=simdwidth](
+        #     var simd_data = array._buf.load[width=simdwidth](i+remainder_offset)
+        #     result_array._buf.store(
         #         i+remainder_offset, func[dtype, simdwidth](simd_data)
         #     )
         # vectorize[remainder_closure, width](comps_remainder)
@@ -1126,9 +1114,9 @@ struct Parallelized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
+            var simd_data = array._buf.load[width=simdwidth](i)
 
-            result_array.store[width=simdwidth](
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data, intval)
             )
 
@@ -1188,16 +1176,16 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data3 = array3.load[width=simdwidth](
+                var simd_data3 = array3._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd_data3),
                 )
@@ -1208,10 +1196,16 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-            var simd_data3 = array3.load[width=simdwidth](i + remainder_offset)
-            result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            var simd_data2 = array2._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            var simd_data3 = array3._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            result_array._buf.store(
                 i + remainder_offset,
                 SIMD.fma(simd_data1, simd_data2, simd_data3),
             )
@@ -1259,14 +1253,14 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
 
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     SIMD.fma(simd_data1, simd_data2, simd),
                 )
@@ -1277,9 +1271,13 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-            result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            var simd_data2 = array2._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            result_array._buf.store(
                 i + remainder_offset, SIMD.fma(simd_data1, simd_data2, simd)
             )
 
@@ -1316,10 +1314,10 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=simdwidth](
+                var simd_data = array._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
@@ -1329,8 +1327,10 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i + remainder_offset)
-            result_array.store[width=simdwidth](
+            var simd_data = array._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            result_array._buf.store(
                 i + remainder_offset, func[dtype, simdwidth](simd_data)
             )
 
@@ -1378,13 +1378,13 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     func[dtype, simdwidth](simd_data1, simd_data2),
                 )
@@ -1395,9 +1395,13 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-            result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            var simd_data2 = array2._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            result_array._buf.store(
                 i + remainder_offset,
                 func[dtype, simdwidth](simd_data1, simd_data2),
             )
@@ -1439,11 +1443,11 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array.load[width=simdwidth](
+                var simd_data1 = array._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
                 var simd_data2 = scalar
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j,
                     func[dtype, simdwidth](simd_data1, simd_data2),
                 )
@@ -1454,9 +1458,11 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array.load[width=simdwidth](i + remainder_offset)
+            var simd_data1 = array._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
             var simd_data2 = scalar
-            result_array.store[width=simdwidth](
+            result_array._buf.store(
                 i + remainder_offset,
                 func[dtype, simdwidth](simd_data1, simd_data2),
             )
@@ -1489,13 +1495,13 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                var simd_data2 = array2.load[width=simdwidth](
+                var simd_data2 = array2._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                # result_array.store[width=simdwidth](
+                # result_array._buf.store(
                 #     i + comps_per_core * j,
                 #     func[dtype, simdwidth](simd_data1, simd_data2),
                 # )
@@ -1511,9 +1517,13 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-            var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-            # result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            var simd_data2 = array2._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            # result_array._buf.store(
             #     i + remainder_offset,
             #     func[dtype, simdwidth](simd_data1, simd_data2),
             # )
@@ -1547,7 +1557,7 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data1 = array1.load[width=simdwidth](
+                var simd_data1 = array1._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
                 var simd_data2 = SIMD[dtype, simdwidth](scalar)
@@ -1563,7 +1573,9 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+            var simd_data1 = array1._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
             var simd_data2 = SIMD[dtype, simdwidth](scalar)
             bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
@@ -1591,10 +1603,10 @@ struct VectorizedParallelized(Backend):
         fn par_closure(j: Int):
             @parameter
             fn closure[simdwidth: Int](i: Int):
-                var simd_data = array.load[width=simdwidth](
+                var simd_data = array._buf.load[width=simdwidth](
                     i + comps_per_core * j
                 )
-                result_array.store[width=simdwidth](
+                result_array._buf.store(
                     i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
@@ -1604,8 +1616,10 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn remainder_closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i + remainder_offset)
-            result_array.store[width=simdwidth](
+            var simd_data = array._buf.load[width=simdwidth](
+                i + remainder_offset
+            )
+            result_array._buf.store(
                 i + remainder_offset, func[dtype, simdwidth](simd_data)
             )
 
@@ -1623,9 +1637,9 @@ struct VectorizedParallelized(Backend):
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
-            var simd_data = array.load[width=simdwidth](i)
+            var simd_data = array._buf.load[width=simdwidth](i)
 
-            result_array.store[width=simdwidth](
+            result_array._buf.store(
                 i, func[dtype, simdwidth](simd_data, intval)
             )
 
@@ -1692,16 +1706,16 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data1 = array1.load[width=simdwidth](
+#                 var simd_data1 = array1._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 var simd_data2 = array2.load[width=simdwidth](
+#                 var simd_data2 = array2._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 var simd_data3 = array3.load[width=simdwidth](
+#                 var simd_data3 = array3._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 result_array.store[width=simdwidth](
+#                 result_array._buf.store(
 #                     i + comps_per_core * j,
 #                     SIMD.fma(simd_data1, simd_data2, simd_data3),
 #                 )
@@ -1713,10 +1727,10 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-#             var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-#             var simd_data3 = array3.load[width=simdwidth](i + remainder_offset)
-#             result_array.store[width=simdwidth](
+#             var simd_data1 = array1._buf.load[width=simdwidth](i + remainder_offset)
+#             var simd_data2 = array2._buf.load[width=simdwidth](i + remainder_offset)
+#             var simd_data3 = array3._buf.load[width=simdwidth](i + remainder_offset)
+#             result_array._buf.store(
 #                 i + remainder_offset,
 #                 SIMD.fma(simd_data1, simd_data2, simd_data3),
 #             )
@@ -1766,14 +1780,14 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data1 = array1.load[width=simdwidth](
+#                 var simd_data1 = array1._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 var simd_data2 = array2.load[width=simdwidth](
+#                 var simd_data2 = array2._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
 
-#                 result_array.store[width=simdwidth](
+#                 result_array._buf.store(
 #                     i + comps_per_core * j,
 #                     SIMD.fma(simd_data1, simd_data2, simd),
 #                 )
@@ -1784,9 +1798,9 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-#             var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-#             result_array.store[width=simdwidth](
+#             var simd_data1 = array1._buf.load[width=simdwidth](i + remainder_offset)
+#             var simd_data2 = array2._buf.load[width=simdwidth](i + remainder_offset)
+#             result_array._buf.store(
 #                 i + remainder_offset, SIMD.fma(simd_data1, simd_data2, simd)
 #             )
 
@@ -1823,10 +1837,10 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data = array.load[width=simdwidth](
+#                 var simd_data = array._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 result_array.store[width=simdwidth](
+#                 result_array._buf.store(
 #                     i + comps_per_core * j, func[dtype, simdwidth](simd_data)
 #                 )
 
@@ -1836,8 +1850,8 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data = array.load[width=simdwidth](i + remainder_offset)
-#             result_array.store[width=simdwidth](
+#             var simd_data = array._buf.load[width=simdwidth](i + remainder_offset)
+#             result_array._buf.store(
 #                 i + remainder_offset, func[dtype, simdwidth](simd_data)
 #             )
 
@@ -1885,13 +1899,13 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data1 = array1.load[width=simdwidth](
+#                 var simd_data1 = array1._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 var simd_data2 = array2.load[width=simdwidth](
+#                 var simd_data2 = array2._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 result_array.store[width=simdwidth](
+#                 result_array._buf.store(
 #                     i + comps_per_core * j,
 #                     func[dtype, simdwidth](simd_data1, simd_data2),
 #                 )
@@ -1902,9 +1916,9 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-#             var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-#             result_array.store[width=simdwidth](
+#             var simd_data1 = array1._buf.load[width=simdwidth](i + remainder_offset)
+#             var simd_data2 = array2._buf.load[width=simdwidth](i + remainder_offset)
+#             result_array._buf.store(
 #                 i + remainder_offset,
 #                 func[dtype, simdwidth](simd_data1, simd_data2),
 #             )
@@ -1944,11 +1958,11 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data1 = array.load[width=simdwidth](
+#                 var simd_data1 = array._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
 #                 var simd_data2 = scalar
-#                 result_array.store[width=simdwidth](
+#                 result_array._buf.store(
 #                     i + comps_per_core * j,
 #                     func[dtype, simdwidth](simd_data1, simd_data2),
 #                 )
@@ -1959,9 +1973,9 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data1 = array.load[width=simdwidth](i + remainder_offset)
+#             var simd_data1 = array._buf.load[width=simdwidth](i + remainder_offset)
 #             var simd_data2 = scalar
-#             result_array.store[width=simdwidth](
+#             result_array._buf.store(
 #                 i + remainder_offset,
 #                 func[dtype, simdwidth](simd_data1, simd_data2),
 #             )
@@ -1994,13 +2008,13 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data1 = array1.load[width=simdwidth](
+#                 var simd_data1 = array1._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 var simd_data2 = array2.load[width=simdwidth](
+#                 var simd_data2 = array2._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 # result_array.store[width=simdwidth](
+#                 # result_array._buf.store(
 #                 #     i + comps_per_core * j,
 #                 #     func[dtype, simdwidth](simd_data1, simd_data2),
 #                 # )
@@ -2016,9 +2030,9 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
-#             var simd_data2 = array2.load[width=simdwidth](i + remainder_offset)
-#             # result_array.store[width=simdwidth](
+#             var simd_data1 = array1._buf.load[width=simdwidth](i + remainder_offset)
+#             var simd_data2 = array2._buf.load[width=simdwidth](i + remainder_offset)
+#             # result_array._buf.store(
 #             #     i + remainder_offset,
 #             #     func[dtype, simdwidth](simd_data1, simd_data2),
 #             # )
@@ -2052,7 +2066,7 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data1 = array1.load[width=simdwidth](
+#                 var simd_data1 = array1._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
 #                 var simd_data2 = SIMD[dtype, simdwidth](scalar)
@@ -2068,7 +2082,7 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data1 = array1.load[width=simdwidth](i + remainder_offset)
+#             var simd_data1 = array1._buf.load[width=simdwidth](i + remainder_offset)
 #             var simd_data2 = SIMD[dtype, simdwidth](scalar)
 #             bool_simd_store[simdwidth](
 #                 result_array.unsafe_ptr(),
@@ -2098,10 +2112,10 @@ struct VectorizedParallelized(Backend):
 #         fn par_closure(j: Int):
 #             @parameter
 #             fn closure[simdwidth: Int](i: Int):
-#                 var simd_data = array.load[width=simdwidth](
+#                 var simd_data = array._buf.load[width=simdwidth](
 #                     i + comps_per_core * j
 #                 )
-#                 result_array.store[width=simdwidth](
+#                 result_array._buf.store(
 #                     i + comps_per_core * j, func[dtype, simdwidth](simd_data)
 #                 )
 
@@ -2111,8 +2125,8 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn remainder_closure[simdwidth: Int](i: Int):
-#             var simd_data = array.load[width=simdwidth](i + remainder_offset)
-#             result_array.store[width=simdwidth](
+#             var simd_data = array._buf.load[width=simdwidth](i + remainder_offset)
+#             result_array._buf.store(
 #                 i + remainder_offset, func[dtype, simdwidth](simd_data)
 #             )
 
@@ -2130,9 +2144,9 @@ struct VectorizedParallelized(Backend):
 
 #         @parameter
 #         fn closure[simdwidth: Int](i: Int):
-#             var simd_data = array.load[width=simdwidth](i)
+#             var simd_data = array._buf.load[width=simdwidth](i)
 
-#             result_array.store[width=simdwidth](
+#             result_array._buf.store(
 #                 i, func[dtype, simdwidth](simd_data, intval)
 #             )
 
@@ -2184,9 +2198,9 @@ struct Naive(Backend):
         alias width = simdwidthof[dtype]()
 
         for i in range(array1.num_elements()):
-            var simd_data1 = array1.load[width=1](i)
-            var simd_data2 = array2.load[width=1](i)
-            var simd_data3 = array3.load[width=1](i)
+            var simd_data1 = array1._buf.load[width=1](i)
+            var simd_data2 = array2._buf.load[width=1](i)
+            var simd_data3 = array3._buf.load[width=1](i)
             result_array.store[width=1](
                 i, SIMD.fma(simd_data1, simd_data2, simd_data3)
             )
@@ -2225,8 +2239,8 @@ struct Naive(Backend):
         alias width = simdwidthof[dtype]()
 
         for i in range(array1.num_elements()):
-            var simd_data1 = array1.load[width=1](i)
-            var simd_data2 = array2.load[width=1](i)
+            var simd_data1 = array1._buf.load[width=1](i)
+            var simd_data2 = array2._buf.load[width=1](i)
 
             result_array.store[width=1](
                 i, SIMD.fma(simd_data1, simd_data2, simd)
@@ -2255,7 +2269,7 @@ struct Naive(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
 
         for i in range(array.num_elements()):
-            var simd_data = func[dtype, 1](array.load[width=1](i))
+            var simd_data = func[dtype, 1](array._buf.load[width=1](i))
             result_array.store[width=1](i, simd_data)
         return result_array
 
@@ -2292,8 +2306,8 @@ struct Naive(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
 
         for i in range(array1.num_elements()):
-            var simd_data1 = array1.load[width=1](i)
-            var simd_data2 = array2.load[width=1](i)
+            var simd_data1 = array1._buf.load[width=1](i)
+            var simd_data2 = array2._buf.load[width=1](i)
             result_array.store[width=1](
                 i, func[dtype, 1](simd_data1, simd_data2)
             )
@@ -2324,7 +2338,7 @@ struct Naive(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
 
         for i in range(array.num_elements()):
-            var simd_data1 = array.load[width=1](i)
+            var simd_data1 = array._buf.load[width=1](i)
             var simd_data2 = scalar
             result_array.store[width=1](
                 i, func[dtype, 1](simd_data1, simd_data2)
@@ -2348,8 +2362,8 @@ struct Naive(Backend):
         )
 
         for i in range(array1.num_elements()):
-            var simd_data1 = array1.load[width=1](i)
-            var simd_data2 = array2.load[width=1](i)
+            var simd_data1 = array1._buf.load[width=1](i)
+            var simd_data2 = array2._buf.load[width=1](i)
             # result_array.store[width=1](
             #     i, func[dtype, 1](simd_data1, simd_data2)
             # )
@@ -2373,7 +2387,7 @@ struct Naive(Backend):
         )
 
         for i in range(array1.num_elements()):
-            var simd_data1 = array1.load[width=1](i)
+            var simd_data1 = array1._buf.load[width=1](i)
             var simd_data2 = scalar
             bool_simd_store[1](
                 result_array.unsafe_ptr(),
@@ -2391,7 +2405,7 @@ struct Naive(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
 
         for i in range(array.num_elements()):
-            var simd_data = func[dtype, 1](array.load[width=1](i))
+            var simd_data = func[dtype, 1](array._buf.load[width=1](i))
             result_array.store[width=1](i, simd_data)
         return result_array
 
@@ -2404,7 +2418,7 @@ struct Naive(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
 
         for i in range(array.num_elements()):
-            var simd_data1 = array.load[width=1](i)
+            var simd_data1 = array._buf.load[width=1](i)
             result_array.store[width=1](i, func[dtype, 1](simd_data1, intval))
         return result_array
 
@@ -2453,9 +2467,9 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array1.num_elements() // width), width):
-            var simd_data1 = array1.load[width=width](i)
-            var simd_data2 = array2.load[width=width](i)
-            var simd_data3 = array3.load[width=width](i)
+            var simd_data1 = array1._buf.load[width=width](i)
+            var simd_data2 = array2._buf.load[width=width](i)
+            var simd_data3 = array3._buf.load[width=width](i)
             result_array.store[width=width](
                 i, SIMD.fma(simd_data1, simd_data2, simd_data3)
             )
@@ -2465,9 +2479,9 @@ struct VectorizedVerbose(Backend):
                 width * (array1.num_elements() // width),
                 array1.num_elements(),
             ):
-                var simd_data1 = array1.load[width=1](i)
-                var simd_data2 = array2.load[width=1](i)
-                var simd_data3 = array3.load[width=1](i)
+                var simd_data1 = array1._buf.load[width=1](i)
+                var simd_data2 = array2._buf.load[width=1](i)
+                var simd_data3 = array3._buf.load[width=1](i)
                 result_array.store[width=1](
                     i, SIMD.fma(simd_data1, simd_data2, simd_data3)
                 )
@@ -2505,8 +2519,8 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array1.num_elements() // width), width):
-            var simd_data1 = array1.load[width=width](i)
-            var simd_data2 = array2.load[width=width](i)
+            var simd_data1 = array1._buf.load[width=width](i)
+            var simd_data2 = array2._buf.load[width=width](i)
 
             result_array.store[width=width](
                 i, SIMD.fma(simd_data1, simd_data2, simd)
@@ -2517,8 +2531,8 @@ struct VectorizedVerbose(Backend):
                 width * (array1.num_elements() // width),
                 array1.num_elements(),
             ):
-                var simd_data1 = array1.load[width=1](i)
-                var simd_data2 = array2.load[width=1](i)
+                var simd_data1 = array1._buf.load[width=1](i)
+                var simd_data2 = array2._buf.load[width=1](i)
 
                 result_array.store[width=1](
                     i, SIMD.fma(simd_data1, simd_data2, simd)
@@ -2547,7 +2561,7 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array.num_elements() // width), width):
-            var simd_data = array.load[width=width](i)
+            var simd_data = array._buf.load[width=width](i)
             result_array.store[width=width](i, func[dtype, width](simd_data))
 
         if array.num_elements() % width != 0:
@@ -2555,7 +2569,7 @@ struct VectorizedVerbose(Backend):
                 width * (array.num_elements() // width),
                 array.num_elements(),
             ):
-                var simd_data = func[dtype, 1](array.load[width=1](i))
+                var simd_data = func[dtype, 1](array._buf.load[width=1](i))
                 result_array.store[width=1](i, simd_data)
         return result_array
 
@@ -2592,8 +2606,8 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array1.num_elements() // width), width):
-            var simd_data1 = array1.load[width=width](i)
-            var simd_data2 = array2.load[width=width](i)
+            var simd_data1 = array1._buf.load[width=width](i)
+            var simd_data2 = array2._buf.load[width=width](i)
             result_array.store[width=width](
                 i, func[dtype, width](simd_data1, simd_data2)
             )
@@ -2603,8 +2617,8 @@ struct VectorizedVerbose(Backend):
                 width * (array1.num_elements() // width),
                 array1.num_elements(),
             ):
-                var simd_data1 = array1.load[width=1](i)
-                var simd_data2 = array2.load[width=1](i)
+                var simd_data1 = array1._buf.load[width=1](i)
+                var simd_data2 = array2._buf.load[width=1](i)
                 result_array.store[width=1](
                     i, func[dtype, 1](simd_data1, simd_data2)
                 )
@@ -2635,7 +2649,7 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array.num_elements() // width), width):
-            var simd_data1 = array.load[width=width](i)
+            var simd_data1 = array._buf.load[width=width](i)
             var simd_data2 = scalar
             result_array.store[width=width](
                 i, func[dtype, width](simd_data1, simd_data2)
@@ -2646,7 +2660,7 @@ struct VectorizedVerbose(Backend):
                 width * (array.num_elements() // width),
                 array.num_elements(),
             ):
-                var simd_data1 = array.load[width=1](i)
+                var simd_data1 = array._buf.load[width=1](i)
                 var simd_data2 = scalar
                 result_array.store[width=1](
                     i, func[dtype, 1](simd_data1, simd_data2)
@@ -2670,9 +2684,9 @@ struct VectorizedVerbose(Backend):
         )
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array1.num_elements() // width), width):
-            var simd_data1 = array1.load[width=width](i)
-            var simd_data2 = array2.load[width=width](i)
-            # result_array.store[width=simdwidth](
+            var simd_data1 = array1._buf.load[width=width](i)
+            var simd_data2 = array2._buf.load[width=width](i)
+            # result_array._buf.store(
             #     i, func[dtype, width](simd_data1, simd_data2)
             # )
             bool_simd_store[width](
@@ -2685,8 +2699,8 @@ struct VectorizedVerbose(Backend):
                 width * (array1.num_elements() // width),
                 array1.num_elements(),
             ):
-                var simd_data1 = array1.load[width=1](i)
-                var simd_data2 = array2.load[width=1](i)
+                var simd_data1 = array1._buf.load[width=1](i)
+                var simd_data2 = array2._buf.load[width=1](i)
                 # result_array.store[width=1](
                 #     i, func[dtype, 1](simd_data1, simd_data2)
                 # )
@@ -2710,7 +2724,7 @@ struct VectorizedVerbose(Backend):
         )
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array1.num_elements() // width), width):
-            var simd_data1 = array1.load[width=width](i)
+            var simd_data1 = array1._buf.load[width=width](i)
             var simd_data2 = SIMD[dtype, width](scalar)
             bool_simd_store[width](
                 result_array.unsafe_ptr(),
@@ -2722,7 +2736,7 @@ struct VectorizedVerbose(Backend):
                 width * (array1.num_elements() // width),
                 array1.num_elements(),
             ):
-                var simd_data1 = array1.load[width=1](i)
+                var simd_data1 = array1._buf.load[width=1](i)
                 var simd_data2 = SIMD[dtype, 1](scalar)
                 bool_simd_store[1](
                     result_array.unsafe_ptr(),
@@ -2740,7 +2754,7 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array.num_elements() // width), width):
-            var simd_data = array.load[width=width](i)
+            var simd_data = array._buf.load[width=width](i)
             result_array.store[width=width](i, func[dtype, width](simd_data))
 
         if array.num_elements() % width != 0:
@@ -2748,7 +2762,7 @@ struct VectorizedVerbose(Backend):
                 width * (array.num_elements() // width),
                 array.num_elements(),
             ):
-                var simd_data = func[dtype, 1](array.load[width=1](i))
+                var simd_data = func[dtype, 1](array._buf.load[width=1](i))
                 result_array.store[width=1](i, simd_data)
         return result_array
 
@@ -2761,7 +2775,7 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array1.num_elements() // width), width):
-            var simd_data1 = array1.load[width=width](i)
+            var simd_data1 = array1._buf.load[width=width](i)
 
             result_array.store[width=width](
                 i, func[dtype, width](simd_data1, intval)
@@ -2772,7 +2786,7 @@ struct VectorizedVerbose(Backend):
                 width * (array1.num_elements() // width),
                 array1.num_elements(),
             ):
-                var simd_data1 = array1.load[width=1](i)
+                var simd_data1 = array1._buf.load[width=1](i)
                 result_array.store[width=1](
                     i, func[dtype, 1](simd_data1, intval)
                 )

@@ -1,35 +1,35 @@
-"""
-Implements N-Dimensional Array
-"""
 # ===----------------------------------------------------------------------=== #
-# Implements ROW MAJOR N-DIMENSIONAL ARRAYS
-# Last updated: 2024-10-14
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-
-
 """
-# TODO
-1) Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and matmul it into IxJx..xKxMx...xNxP array.
-2) Add vectorization for _get_index
-3) Create NDArrayView and remove coefficients.
-4) Rename some variables or methods that should not be exposed to users.
+Implements basic object methods for working with N-Dimensional Array.
 """
 
+import builtin.math as builtin_math
+import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from random import rand, random_si64, random_float64
-from builtin.math import pow
-from builtin.bool import all as allb
-from builtin.bool import any as anyb
 from algorithm import parallelize, vectorize
 from python import Python, PythonObject
 from sys import simdwidthof
 from collections.optional import Optional
 from utils import Variant
-from memory import UnsafePointer
-from memory import memset_zero, memcpy
+from memory import UnsafePointer, memset_zero, memcpy
 
-
+from numojo.core.ndshape import NDArrayShape
+from numojo.core.ndstrides import NDArrayStrides
 import numojo.core._array_funcs as _af
+from numojo.core._math_funcs import Vectorized
+from numojo.core.utility import (
+    _get_index,
+    _traverse_iterative,
+    _traverse_iterative_setter,
+    to_numpy,
+    bool_to_numeric,
+)
+
 import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.logic.comparison as comparison
@@ -40,26 +40,23 @@ import numojo.routines.linalg as linalg
 from numojo.routines.statistics.averages import mean, cummean
 from numojo.routines.math.products import prod, cumprod
 from numojo.routines.math.sums import sum, cumsum
-from numojo.routines.math.extrema import maxT, minT
-from ..traits import Backend
 from numojo.routines.logic.truth import any
-from .utility import (
-    _get_index,
-    _traverse_iterative,
-    _traverse_iterative_setter,
-    to_numpy,
-    bool_to_numeric,
-    is_inttype,
-    is_booltype,
-)
-from numojo.core._math_funcs import Vectorized
 from numojo.routines.linalg.products import matmul
 from numojo.routines.manipulation import reshape, ravel
-from numojo.core.ndshape import NDArrayShape
-from numojo.core.ndstrides import NDArrayStrides
 
 # ===----------------------------------------------------------------------===#
 # NDArray
+
+# TODO
+# - Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
+#   matmul it into IxJx..xKxMx...xNxP array.
+# - Add vectorization for _get_index.
+# - Create NDArrayView that points to the buffer of the raw array.
+#   This requires enhancement of functionalities of traits from Mojo's side.
+#   The data buffer can implement an ArrayData trait (RawData or RefData)
+#   RawData type is just a wrapper of `UnsafePointer`.
+#   RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
+# - Rename some variables or methods that should not be exposed to users.
 # ===----------------------------------------------------------------------===#
 
 
@@ -1499,7 +1496,8 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         fn array_scalar_vectorize[simd_width: Int](index: Int) -> None:
             new_vec._buf.store(
-                index, pow(self._buf.load[width=simd_width](index), p)
+                index,
+                builtin_math.pow(self._buf.load[width=simd_width](index), p),
             )
 
         vectorize[array_scalar_vectorize, self.width](self.size)
@@ -2110,7 +2108,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn vectorized_all[simd_width: Int](idx: Int) -> None:
-            result = result and allb(
+            result = result and builtin_bool.all(
                 (self._buf + idx).strided_load[width=simd_width](1)
             )
 
@@ -2128,7 +2126,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         @parameter
         fn vectorized_any[simd_width: Int](idx: Int) -> None:
-            result = result or anyb(
+            result = result or builtin_bool.any(
                 (self._buf + idx).strided_load[width=simd_width](1)
             )
 

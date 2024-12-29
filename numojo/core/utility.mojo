@@ -181,15 +181,16 @@ fn _traverse_buffer_according_to_shape_and_strides(
     previous_sum: Int = 0,
 ) raises:
     """
-    Traverses buffer according to new shape and strides.
+    Store sequence of indices according to shape and strides into the pointer
+    given in the arguments.
+
+    It is auxiliary functions that get or set values according to new shape
+    and strides for variadic number of dimensions.
 
     UNSAFE: Raw pointer is used!
 
-    It is auxiliary functions that set values according to new shape
-    and strides for variadic number of dimensions.
-
     Args:
-        ptr: Pointer to buffer of 1-d index array, uninitialized.
+        ptr: Pointer to buffer of uninitialized 1-d index array.
         shape: NDArrayShape.
         strides: NDArrayStrides.
         current_dim: Temporarily save the current dimension.
@@ -197,17 +198,15 @@ fn _traverse_buffer_according_to_shape_and_strides(
 
     Example:
     ```console
-    var A = nm.random.randn(2, 3, 4)
+    # A is a 2x3x4 array
     var I = nm.NDArray[DType.index](nm.Shape(A.size))
     var ptr = I._buf
     _traverse_buffer_according_to_shape_and_strides(
         ptr, A.shape._flip(), A.strides._flip()
     )
-    print(I)
-    # This prints:
-    # [       0       12      4       ...     19      11      23      ]
-    # 1-D array  Shape: [24]  DType: index  order: C
+    # I = [       0       12      4       ...     19      11      23      ]
     ```
+
     """
     for index_of_axis in range(shape[current_dim]):
         var current_sum = previous_sum + index_of_axis * strides[current_dim]

@@ -93,8 +93,6 @@ struct NDArray[dtype: DType = DType.float64](
     """Size of NDArray."""
     var strides: NDArrayStrides
     """Contains offset, strides."""
-    var coefficient: NDArrayStrides
-    """Contains offset, coefficients for slicing."""
     var datatype: DType
     """The datatype of memory."""
     var order: String
@@ -129,7 +127,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = NDArrayShape(shape)
         self.size = self.shape.size
         self.strides = NDArrayStrides(shape, order=order)
-        self.coefficient = NDArrayStrides(shape, order=order)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         self.datatype = dtype
         self.order = order
@@ -175,7 +172,6 @@ struct NDArray[dtype: DType = DType.float64](
         size: Int,
         shape: List[Int],
         strides: List[Int],
-        coefficient: List[Int],
         order: String = "C",
     ) raises:
         """
@@ -185,7 +181,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = NDArrayShape(shape)
         self.size = size
         self.strides = NDArrayStrides(strides=strides, offset=0)
-        self.coefficient = NDArrayStrides(strides=coefficient, offset=offset)
         self.datatype = dtype
         self.order = order
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(size)
@@ -199,7 +194,6 @@ struct NDArray[dtype: DType = DType.float64](
         offset: Int,
         shape: List[Int],
         strides: List[Int],
-        coefficient: List[Int],
         order: String = "C",
     ) raises:
         """
@@ -209,9 +203,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = NDArrayShape(shape)
         self.size = self.shape.size
         self.strides = NDArrayStrides(strides, offset=0, order=order)
-        self.coefficient = NDArrayStrides(
-            coefficient, offset=offset, order=order
-        )
         self.datatype = dtype
         self.order = order
         self._buf = data + self.strides.offset
@@ -225,7 +216,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = other.shape
         self.size = other.size
         self.strides = other.strides
-        self.coefficient = other.coefficient
         self.datatype = other.datatype
         self.order = other.order
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.size)
@@ -240,7 +230,6 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = existing.shape
         self.size = existing.size
         self.strides = existing.strides
-        self.coefficient = existing.coefficient
         self.datatype = existing.datatype
         self.order = existing.order^
         self._buf = existing._buf
@@ -325,7 +314,6 @@ struct NDArray[dtype: DType = DType.float64](
         var count: Int = 0
         var spec: List[Int] = List[Int]()
         for i in range(n_slices):
-            # self._adjust_slice_(slice_list[i], self.shape[i])
             if (
                 slice_list[i].start.value() >= self.shape[i]
                 or slice_list[i].end.value() > self.shape[i]
@@ -341,8 +329,6 @@ struct NDArray[dtype: DType = DType.float64](
                     slice_list[i].end.value(),
                 )
                 raise Error(message)
-            # if slice_list[i].step is None:
-            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
                 / slice_list[i].step.or_else(1)
@@ -368,22 +354,18 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
-            # if slice_list[j].step is None:
-            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[j].end.value() - slice_list[j].start.value())
                 / slice_list[j].step.or_else(1)
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            # if slice_list[j].step is None:
-            #     raise Error(String("Step of slice is None."))
             ncoefficients.append(
                 self.strides[j] * slice_list[j].step.or_else(1)
             )
             j += 1
 
-        # We can remove this check after we have support for broadcasting
+        # TODO: We can remove this check after we have support for broadcasting
         for i in range(ndims):
             if nshape[i] != val.shape[i]:
                 var message = String(
@@ -441,7 +423,7 @@ struct NDArray[dtype: DType = DType.float64](
                     "The size of the dimensions is {}"
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
-        var idx: Int = _get_index(index, self.coefficient)
+        var idx: Int = _get_index(index, self.strides)
         self._buf.store(idx, val)
 
     # compiler doesn't accept this
@@ -530,22 +512,18 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
-            # if slice_list[j].step is None:
-            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[j].end.value() - slice_list[j].start.value())
                 / slice_list[j].step.or_else(1)
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            # if slice_list[j].step is None:
-            #     raise Error(String("Step of slice is None."))
             ncoefficients.append(
                 self.strides[j] * slice_list[j].step.or_else(1)
             )
             j += 1
 
-        # We can remove this check after we have support for broadcasting
+        # TODO: We can remove this check after we have support for broadcasting
         for i in range(ndims):
             if nshape[i] != val.shape[i]:
                 var message = String(
@@ -762,7 +740,7 @@ struct NDArray[dtype: DType = DType.float64](
                     "The size of the dimensions is {}"
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
-        var idx: Int = _get_index(index, self.coefficient)
+        var idx: Int = _get_index(index, self.strides)
         return self._buf.load[width=1](idx)
 
     fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
@@ -795,8 +773,6 @@ struct NDArray[dtype: DType = DType.float64](
                         "Error: Negative indexing in slices not supported"
                         " currently"
                     )
-            # if slice_list[i].step is None:
-            #     raise Error(String("Step of slice is None."))
             step = slice_list[i].step.or_else(1)
             if step == 0:
                 raise Error("Error: Slice step cannot be zero")
@@ -856,8 +832,6 @@ struct NDArray[dtype: DType = DType.float64](
                 or slices[i].end.value() > self.shape[i]
             ):
                 raise Error("Error: Slice value exceeds the array shape")
-            # if slices[i].step is None:
-            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = len(
                 range(
                     slices[i].start.value(),
@@ -886,8 +860,6 @@ struct NDArray[dtype: DType = DType.float64](
                 j += 1
             if j >= self.ndim:
                 break
-            # if slices[j].step is None:
-            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = len(
                 range(
                     slices[j].start.value(),
@@ -930,7 +902,6 @@ struct NDArray[dtype: DType = DType.float64](
             nnum_elements,
             nshape,
             nstrides,
-            ncoefficients,
             order=self.order,
         )
 
@@ -1300,7 +1271,7 @@ struct NDArray[dtype: DType = DType.float64](
     # Operator dunders
     # ===-------------------------------------------------------------------===#
 
-    # We should make a version that checks nonzero/not_nan
+    # TODO: We should make a version that checks nonzero/not_nan
     fn __bool__(self) raises -> Bool:
         """
         If all true return true.
@@ -2015,7 +1986,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Loads a SIMD element of size `width` at given variadic indices argument.
         """
-        var idx: Int = _get_index(index, self.coefficient)
+        var idx: Int = _get_index(index, self.strides)
         return self._buf.load[width=width](idx)
 
     fn store[width: Int](mut self, index: Int, val: SIMD[dtype, width]):
@@ -2030,7 +2001,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Stores the SIMD element of size `width` at the given variadic indices argument.
         """
-        var idx: Int = _get_index(index, self.coefficient)
+        var idx: Int = _get_index(index, self.strides)
         self._buf.store(idx, val)
 
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
@@ -2691,7 +2662,6 @@ struct NDArray[dtype: DType = DType.float64](
             self.ndim = shape.ndim
             self.size = shape.size
             self.strides = NDArrayStrides(shape, order=self.order)
-            self.coefficient = NDArrayStrides(shape, order=self.order)
 
     fn unsafe_ptr(self) -> UnsafePointer[Scalar[dtype]]:
         """

@@ -1719,9 +1719,11 @@ struct NDArray[dtype: DType = DType.float64](
             print("Cannot convert array to string", e)
             return ""
 
-    # Should len be size or number of dimensions instead of the first dimension shape?
-    fn __len__(self) -> Int:
-        return int(self.size)
+    fn __len__(self) raises -> Int:
+        """
+        Returns length of 0-th dimension.
+        """
+        return self.shape[0]
 
     fn __iter__(self) raises -> _NDArrayIter[__origin_of(self), dtype]:
         """Iterate over elements of the NDArray, returning copied value.

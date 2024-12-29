@@ -214,7 +214,7 @@ fn diff[
         NDArrayShape(array.num_elements())
     )
     for i in range(array.num_elements()):
-        array1.store(i, array.get(i))
+        array1.store(i, array.load(i))
 
     for num in range(n):
         var result: NDArray[dtype] = NDArray[dtype](

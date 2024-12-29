@@ -30,10 +30,10 @@ fn argmax[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var max_val: Scalar[dtype] = array.get(0)
+    var max_val: Scalar[dtype] = array.load(0)
     for i in range(1, array.num_elements()):
-        if array.get(i) > max_val:
-            max_val = array.get(i)
+        if array.load(i) > max_val:
+            max_val = array.load(i)
             idx = i
     return idx
 
@@ -53,10 +53,10 @@ fn argmin[dtype: DType](array: NDArray[dtype]) raises -> Int:
         raise Error("array is empty")
 
     var idx: Int = 0
-    var min_val: Scalar[dtype] = array.get(0)
+    var min_val: Scalar[dtype] = array.load(0)
 
     for i in range(1, array.num_elements()):
-        if array.get(i) < min_val:
-            min_val = array.get(i)
+        if array.load(i) < min_val:
+            min_val = array.load(i)
             idx = i
     return idx

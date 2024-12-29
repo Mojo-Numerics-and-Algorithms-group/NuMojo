@@ -43,15 +43,15 @@ fn cross[
         var array3: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
         array3.store(
             0,
-            (array1.get(1) * array2.get(2) - array1.get(2) * array2.get(1)),
+            (array1.load(1) * array2.load(2) - array1.load(2) * array2.load(1)),
         )
         array3.store(
             1,
-            (array1.get(2) * array2.get(0) - array1.get(0) * array2.get(2)),
+            (array1.load(2) * array2.load(0) - array1.load(0) * array2.load(2)),
         )
         array3.store(
             2,
-            (array1.get(0) * array2.get(1) - array1.get(1) * array2.get(0)),
+            (array1.load(0) * array2.load(1) - array1.load(1) * array2.load(0)),
         )
         return array3
     else:
@@ -90,10 +90,10 @@ fn dot[
 
         @parameter
         fn vectorized_dot[simd_width: Int](idx: Int) -> None:
-            result.store[width=simd_width](
+            result._buf.store(
                 idx,
-                array1.load[width=simd_width](idx)
-                * array2.load[width=simd_width](idx),
+                array1._buf.load[width=simd_width](idx)
+                * array2._buf.load[width=simd_width](idx),
             )
 
         vectorize[vectorized_dot, width](array1.size)
@@ -136,11 +136,11 @@ fn matmul_tiled_unrolled_parallelized[
 
                 @parameter
                 fn dot[simd_width: Int](n: Int):
-                    C.store(
+                    C._buf.store(
                         m * t2 + (n + x),
-                        val=C.load[simd_width](m * t2 + (n + x))
-                        + A.load(m * t1 + k)
-                        * B.load[simd_width](k * t2 + (n + x)),
+                        val=C._buf.load[width=simd_width](m * t2 + (n + x))
+                        + A._buf.load(m * t1 + k)
+                        * B._buf.load[width=simd_width](k * t2 + (n + x)),
                     )
 
                 alias unroll_factor = tile_x // width

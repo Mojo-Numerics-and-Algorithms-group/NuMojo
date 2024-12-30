@@ -342,8 +342,8 @@ struct NDArray[dtype: DType = DType.float64](
         var count: Int = 0
         var spec: List[Int] = List[Int]()
         for i in range(n_slices):
-            # if slice_list[i].step is None:
-            #     raise Error(String("Step of slice is None."))
+            if slice_list[i].step is None:
+                raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
                 / slice_list[i].step.or_else(1)

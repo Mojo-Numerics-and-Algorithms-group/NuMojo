@@ -30,6 +30,7 @@ from numojo.core.utility import (
     bool_to_numeric,
 )
 
+import numojo.routines.creation as creation
 import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.logic.comparison as comparison
@@ -2373,51 +2374,11 @@ struct NDArray[dtype: DType = DType.float64](
 
         return sorting.argsort(self)
 
-    fn astype[type: DType](self) raises -> NDArray[type]:
+    fn astype[target: DType](self) raises -> NDArray[target]:
         """
         Convert type of array.
         """
-        # I wonder if we can do this operation inplace instead of allocating memory.
-        var narr: NDArray[type] = NDArray[type](self.shape, order=self.order)
-
-        @parameter
-        if type == DType.bool:
-
-            @parameter
-            fn vectorized_astype[simd_width: Int](idx: Int) -> None:
-                (narr.unsafe_ptr() + idx).strided_store[width=simd_width](
-                    self._buf.load[width=simd_width](idx).cast[type](), 1
-                )
-
-            vectorize[vectorized_astype, self.width](self.size)
-        else:
-
-            @parameter
-            if self.dtype == DType.bool:
-
-                @parameter
-                fn vectorized_astypenb_from_b[
-                    simd_width: Int
-                ](idx: Int) -> None:
-                    narr._buf.store(
-                        idx,
-                        (self._buf + idx)
-                        .strided_load[width=simd_width](1)
-                        .cast[type](),
-                    )
-
-                vectorize[vectorized_astypenb_from_b, self.width](self.size)
-            else:
-
-                @parameter
-                fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                    narr._buf.store(
-                        idx, self._buf.load[width=simd_width](idx).cast[type]()
-                    )
-
-                vectorize[vectorized_astypenb, self.width](self.size)
-
-        return narr
+        return creation.astype[target](self)
 
     # fn clip(self):
     #     pass

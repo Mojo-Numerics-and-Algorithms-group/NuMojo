@@ -45,7 +45,7 @@ fn forward_substitution[
             value_on_hold = value_on_hold - L.item(i, j) * x.item(j)
         value_on_hold = value_on_hold / L.item(i, i)
 
-        x.set(i, value_on_hold)
+        x.store(i, value_on_hold)
 
     return x
 
@@ -77,7 +77,7 @@ fn back_substitution[
         for j in range(i + 1, m):
             value_on_hold = value_on_hold - U.item(i, j) * x.item(j)
         value_on_hold = value_on_hold / U.item(i, i)
-        x.set(i, value_on_hold)
+        x.store(i, value_on_hold)
 
     return x
 
@@ -174,7 +174,7 @@ fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     for i in range(m):
         # Each time, one of the item is changed to 1
         y = zeros[dtype](Shape(m))
-        y.set(i, Scalar[dtype](1))
+        y.store(i, Scalar[dtype](1))
 
         # Solve `Lz = y` for `z`
         z = forward_substitution(L, y)
@@ -227,19 +227,23 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     fn calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y.load(i * m + col)
+            var _temp = Y._buf.load(i * m + col)
             for j in range(i):  # col of L
-                _temp = _temp - L.load(i * m + j) * Z.load(j * m + col)
-            _temp = _temp / L.load(i * m + i)
-            Z.store(i * m + col, _temp)
+                _temp = _temp - L._buf.load(i * m + j) * Z._buf.load(
+                    j * m + col
+                )
+            _temp = _temp / L._buf.load(i * m + i)
+            Z._buf.store(i * m + col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z.load(i * m + col)
+            var _temp2 = Z._buf.load(i * m + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U.load(i * m + j) * X.load(j * m + col)
-            _temp2 = _temp2 / U.load(i * m + i)
-            X.store(i * m + col, _temp2)
+                _temp2 = _temp2 - U._buf.load(i * m + j) * X._buf.load(
+                    j * m + col
+                )
+            _temp2 = _temp2 / U._buf.load(i * m + i)
+            X._buf.store(i * m + col, _temp2)
 
     parallelize[calculate_X](m, m)
 
@@ -324,19 +328,23 @@ fn solve[
     fn calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y.load(i * n + col)
+            var _temp = Y._buf.load(i * n + col)
             for j in range(i):  # col of L
-                _temp = _temp - L.load(i * m + j) * Z.load(j * n + col)
-            _temp = _temp / L.load(i * m + i)
-            Z.store(i * n + col, _temp)
+                _temp = _temp - L._buf.load(i * m + j) * Z._buf.load(
+                    j * n + col
+                )
+            _temp = _temp / L._buf.load(i * m + i)
+            Z._buf.store(i * n + col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z.load(i * n + col)
+            var _temp2 = Z._buf.load(i * n + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U.load(i * m + j) * X.load(j * n + col)
-            _temp2 = _temp2 / U.load(i * m + i)
-            X.store(i * n + col, _temp2)
+                _temp2 = _temp2 - U._buf.load(i * m + j) * X._buf.load(
+                    j * n + col
+                )
+            _temp2 = _temp2 / U._buf.load(i * m + i)
+            X._buf.store(i * n + col, _temp2)
 
     parallelize[calculate_X](n, n)
 
@@ -359,18 +367,18 @@ fn solve[
     # for col in range(n):
     #     # Solve `LZ = Y` for `Z` for each col
     #     for i in range(m):  # row of L
-    #         var _temp = Y.load(i * n + col)
+    #         var _temp = Y._buf.load(i * n + col)
     #         for j in range(i):  # col of L
-    #             _temp = _temp - L.load(i * m + j) * Z.load(j * n + col)
-    #         _temp = _temp / L.load(i * m + i)
-    #         Z.store(i * n + col, _temp)
+    #             _temp = _temp - L._buf.load(i * m + j) * Z._buf.load(j * n + col)
+    #         _temp = _temp / L._buf.load(i * m + i)
+    #         Z._buf.store(i * n + col, _temp)
 
     #     # Solve `UZ = Z` for `X` for each col
     #     for i in range(m - 1, -1, -1):
-    #         var _temp2 = Z.load(i * n + col)
+    #         var _temp2 = Z._buf.load(i * n + col)
     #         for j in range(i + 1, m):
-    #             _temp2 = _temp2 - U.load(i * m + j) * X.load(j * n + col)
-    #         _temp2 = _temp2 / U.load(i * m + i)
-    #         X.store(i * n + col, _temp2)
+    #             _temp2 = _temp2 - U._buf.load(i * m + j) * X._buf.load(j * n + col)
+    #         _temp2 = _temp2 / U._buf.load(i * m + i)
+    #         X._buf.store(i * n + col, _temp2)
 
     # return X

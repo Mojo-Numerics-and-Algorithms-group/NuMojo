@@ -9,7 +9,7 @@ def test_getitem_scalar():
     var np = Python.import_module("numpy")
 
     var A = nm.arange(8)
-    assert_true(A.get(0) == 0, msg=String("`get` fails"))
+    assert_true(A.load(0) == 0, msg=String("`get` fails"))
 
 
 def test_setitem():

@@ -40,37 +40,37 @@ alias f64 = DType.float64
 struct TypeCoercion:
     """Handles type coercion using a promotion matrix approach."""
 
-    alias ranks: List[DType] = List[DType](
+    alias ranks: VariadicList[DType] = VariadicList[DType](
         i8, u8, f16, i16, u16, f32, i32, u32, i64, u64, f64
     )
-    alias int_ranks: List[DType] = List[DType](
+    alias int_ranks: VariadicList[DType] = VariadicList[DType](
         i8, u8, i16, u16, i32, u32, i64, u64
     )
-    alias float_ranks: List[DType] = List[DType](f16, f32, f64)
+    alias float_ranks: VariadicList[DType] = VariadicList[DType](f16, f32, f64)
+
+    @staticmethod
+    @parameter
+    fn calc_type_index[dtype: DType, list: VariadicList[DType]]() -> Int:
+        @parameter
+        for i in range(len(list)):
+            if Self.ranks[i] == dtype:
+                return i
+        return 0
 
     @parameter
     @staticmethod
     fn get_type_rank[dtype: DType]() -> Int:
-        try:
-            return Self.ranks.index(dtype)
-        except ValueError:
-            return 10
+        return Self.calc_type_index[dtype, Self.ranks]()
 
     @parameter
     @staticmethod
     fn get_inttype_rank[dtype: DType]() -> Int:
-        try:
-            return Self.int_ranks.index(dtype)
-        except ValueError:
-            return 7
+        return Self.calc_type_index[dtype, Self.int_ranks]()
 
     @parameter
     @staticmethod
     fn get_floattype_rank[dtype: DType]() -> Int:
-        try:
-            return Self.float_ranks.index(dtype)
-        except ValueError:
-            return 2
+        return Self.calc_type_index[dtype, Self.float_ranks]()
 
     @parameter
     @staticmethod

@@ -48,17 +48,16 @@ from numojo.routines.manipulation import reshape, ravel
 
 # ===----------------------------------------------------------------------===#
 # NDArray
-
-# TODO
-# - Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
-#   matmul it into IxJx..xKxMx...xNxP array.
-# - Add vectorization for _get_index.
-# - Create NDArrayView that points to the buffer of the raw array.
-#   This requires enhancement of functionalities of traits from Mojo's side.
-#   The data buffer can implement an ArrayData trait (RawData or RefData)
-#   RawData type is just a wrapper of `UnsafePointer`.
-#   RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
-# - Rename some variables or methods that should not be exposed to users.
+#
+# TODO: Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
+#       matmul it into IxJx..xKxMx...xNxP array.
+# TODO: Add vectorization for _get_index.
+# TODO: Create NDArrayView that points to the buffer of the raw array.
+#       This requires enhancement of functionalities of traits from Mojo's side.
+#       The data buffer can implement an ArrayData trait (RawData or RefData)
+#       RawData type is just a wrapper of `UnsafePointer`.
+#       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
+# TODO: Rename some variables or methods that should not be exposed to users.
 # ===----------------------------------------------------------------------===#
 
 

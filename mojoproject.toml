@@ -21,8 +21,10 @@ t = "clear && magic run mojo test tests -I ./ && magic run mojo package numojo"
 # runs all final checks before a commit
 final = "magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo"
 f = "clear && magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo"
-# defaults tasks
+# compile the package
 package = "magic run mojo package numojo"
+p = "clear && magic run mojo package numojo"
+# format the package
 format = "magic run mojo format ./"
 
 [dependencies]

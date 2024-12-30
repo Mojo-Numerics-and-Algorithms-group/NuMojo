@@ -236,7 +236,8 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf.free()
 
     # ===-------------------------------------------------------------------===#
-    # Setter dunders and other getter methods
+    # Indexing and slicing
+    # Getter and setter dunders and other methods
     # ===-------------------------------------------------------------------===#
 
     fn _setitem(self, *indices: Int, val: Scalar[dtype]):
@@ -1594,6 +1595,7 @@ struct NDArray[dtype: DType = DType.float64](
         return math.mod[dtype](other, self)
 
     # ===-------------------------------------------------------------------===#
+    # IO dunders and other methods
     # Trait implementations
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:

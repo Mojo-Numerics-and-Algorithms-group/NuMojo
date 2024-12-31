@@ -1,7 +1,4 @@
 import matrix16
-from python import Python
-from memory import UnsafePointer
-from math import ceil
 
 
 fn main() raises:

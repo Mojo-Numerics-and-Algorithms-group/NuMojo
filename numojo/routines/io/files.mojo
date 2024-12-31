@@ -2,6 +2,10 @@ from numojo.routines.creation import fromstring
 from collections.optional import Optional
 
 
+# contains a custom basic implementation of loadtxt and savetxt to be used temporarily
+# until the official implementation is ready
+# one could use numpy backend, but it might add a dependency to numpy
+# better load files through numpy and then pass it to Numojo through array() function
 fn loadtxt[
     dtype: DType = f64
 ](

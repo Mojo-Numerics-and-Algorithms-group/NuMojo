@@ -30,6 +30,7 @@ from numojo.core.utility import (
     bool_to_numeric,
 )
 
+import numojo.routines.creation as creation
 import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.logic.comparison as comparison
@@ -37,6 +38,7 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.bitwise as bitwise
 import numojo.routines.linalg as linalg
 
+from numojo.core.datatypes import TypeCoercion
 from numojo.routines.statistics.averages import mean, cummean
 from numojo.routines.math.products import prod, cumprod
 from numojo.routines.math.sums import sum, cumsum
@@ -46,17 +48,16 @@ from numojo.routines.manipulation import reshape, ravel
 
 # ===----------------------------------------------------------------------===#
 # NDArray
-
-# TODO
-# - Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
-#   matmul it into IxJx..xKxMx...xNxP array.
-# - Add vectorization for _get_index.
-# - Create NDArrayView that points to the buffer of the raw array.
-#   This requires enhancement of functionalities of traits from Mojo's side.
-#   The data buffer can implement an ArrayData trait (RawData or RefData)
-#   RawData type is just a wrapper of `UnsafePointer`.
-#   RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
-# - Rename some variables or methods that should not be exposed to users.
+#
+# TODO: Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
+#       matmul it into IxJx..xKxMx...xNxP array.
+# TODO: Add vectorization for _get_index.
+# TODO: Create NDArrayView that points to the buffer of the raw array.
+#       This requires enhancement of functionalities of traits from Mojo's side.
+#       The data buffer can implement an ArrayData trait (RawData or RefData)
+#       RawData type is just a wrapper of `UnsafePointer`.
+#       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
+# TODO: Rename some variables or methods that should not be exposed to users.
 # ===----------------------------------------------------------------------===#
 
 
@@ -255,18 +256,34 @@ struct NDArray[dtype: DType = DType.float64](
             index_of_buffer += indices[i] * self.strides._buf[i]
         self._buf[index_of_buffer] = val
 
-    # TODO: add support for different dtypes
     fn __setitem__(mut self, idx: Int, val: NDArray[dtype]) raises:
         """
         Set a slice of array with given array.
 
         Example:
-            `arr[1]` returns the second row of the array.
+        ```mojo
+        import numojo as nm
+        var A = nm.random.rand[nm.i16](3, 2)
+        var B = nm.random.rand[nm.i16](3)
+        A[1:4] = B
+        ```
         """
         if self.ndim == 0 and val.ndim == 0:
             self._buf.store(0, val._buf.load(0))
 
         var slice_list = List[Slice]()
+        if idx >= self.shape[0]:
+            var message = String(
+                "Error: Slice value exceeds the array shape!\n"
+                "The {}-th dimension is of size {}.\n"
+                "The slice goes from {} to {}"
+            ).format(
+                0,
+                self.shape[0],
+                idx,
+                idx + 1,
+            )
+            raise Error(message)
         slice_list.append(Slice(idx, idx + 1))
         if self.ndim > 1:
             for i in range(1, self.ndim):
@@ -278,21 +295,8 @@ struct NDArray[dtype: DType = DType.float64](
         var count: Int = 0
         var spec: List[Int] = List[Int]()
         for i in range(n_slices):
-            if (
-                slice_list[i].start.value() >= self.shape[i]
-                or slice_list[i].end.value() > self.shape[i]
-            ):
-                var message = String(
-                    "Error: Slice value exceeds the array shape!\n"
-                    "The {}-th dimension is of size {}.\n"
-                    "The slice goes from {} to {}"
-                ).format(
-                    i,
-                    self.shape[i],
-                    slice_list[i].start.value(),
-                    slice_list[i].end.value(),
-                )
-                raise Error(message)
+            if slice_list[i].step is None:
+                raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
                 / slice_list[i].step.or_else(1)
@@ -345,7 +349,7 @@ struct NDArray[dtype: DType = DType.float64](
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
+                for j in range(i + 1, ndims):
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
@@ -372,40 +376,39 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if index.__len__() != self.ndim:
             var message = String(
-                "Error: Length of `index` do not match the number of"
+                "Error: Length of `index` does not match the number of"
                 " dimensions!\n"
                 "Length of indices is {}.\n"
-                "The number of dimensions is {}."
+                "The array dimension is {}."
             ).format(index.__len__(), self.ndim)
             raise Error(message)
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
                 var message = String(
                     "Error: `index` exceeds the size!\n"
-                    "For {}-the mension:\n"
-                    "The index is {}.\n"
-                    "The size of the dimensions is {}"
+                    "For {}-th dimension:\n"
+                    "The index value is {}.\n"
+                    "The size of the corresponding dimension is {}"
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
         var idx: Int = _get_index(index, self.strides)
         self._buf.store(idx, val)
 
-    # compiler doesn't accept this
-    # fn __setitem__(
-    #     mut self, mask: NDArray[DType.bool], value: Scalar[dtype]
-    # ) raises:
-    #     """
-    #     Set the value of the array at the indices where the mask is true.
-    #     """
-    #     if (
-    #         mask.shape != self.shape
-    #     ):  # this behavious could be removed potentially
-    #         raise Error("Mask and array must have the same shape")
+    # only works if array is called as array.__setitem__(), mojo compiler doesn't parse it implicitly
+    fn __setitem__(
+        mut self, mask: NDArray[DType.bool], value: Scalar[dtype]
+    ) raises:
+        """
+        Set the value of the array at the indices where the mask is true.
+        """
+        if (
+            mask.shape != self.shape
+        ):  # this behavious could be removed potentially
+            raise Error("Mask and array must have the same shape")
 
-    #     for i in range(mask.size):
-    #         if mask._buf.load[width=1](i):
-    #             print(value)
-    #             self._buf.store[width=1](i, value)
+        for i in range(mask.size):
+            if mask._buf.load[width=1](i):
+                self._buf.store(i, value)
 
     fn __setitem__(mut self, owned *slices: Slice, val: NDArray[dtype]) raises:
         """
@@ -1250,25 +1253,25 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __pos__(self) raises -> Self:
         """
-        Unary positve returens self unless boolean type.
+        Unary positve returns self unless boolean type.
         """
         if self.dtype is DType.bool:
             raise Error(
-                "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
+                "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
             )
         return self
 
     fn __neg__(self) raises -> Self:
         """
-        Unary negative returens self unless boolean type.
+        Unary negative returns self unless boolean type.
 
         For bolean use `__invert__`(~)
         """
         if self.dtype is DType.bool:
             raise Error(
-                "ndarray:NDArrray:__pos__: pos does not except bool type arrays"
+                "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
             )
-        return self * -1.0
+        return self * Scalar[dtype](-1.0)
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
@@ -1354,7 +1357,29 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.greater_equal[dtype](self, other)
 
-    fn __add__(self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __add__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array + scalar`.
+        """
+        return math.add[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    fn __add__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array + array`.
+        """
+        return math.add[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
+    fn __add__(self, other: Scalar[dtype]) raises -> Self:
         """
         Enables `array + scalar`.
         """
@@ -1366,13 +1391,25 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.add[dtype](self, other)
 
-    fn __radd__(mut self, rhs: SIMD[dtype, 1]) raises -> Self:
+    fn __radd__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar + array`.
         """
-        return math.add[dtype](self, rhs)
+        return math.add[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    fn __radd__(mut self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar + array`.
+        """
+        return math.add[dtype](self, other)
 
     # TODO make an inplace version of arithmetic functions for the i dunders
+    # Cannot do type coercion for iadd
     fn __iadd__(mut self, other: SIMD[dtype, 1]) raises:
         """
         Enables `array += scalar`.
@@ -1389,7 +1426,29 @@ struct NDArray[dtype: DType = DType.float64](
             self, other
         )
 
-    fn __sub__(self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __sub__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array - scalar`.
+        """
+        return math.sub[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    fn __sub__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array - array`.
+        """
+        return math.sub[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
+    fn __sub__(self, other: Scalar[dtype]) raises -> Self:
         """
         Enables `array - scalar`.
         """
@@ -1401,28 +1460,61 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.sub[dtype](self, other)
 
-    fn __rsub__(self, s: SIMD[dtype, 1]) raises -> Self:
+    fn __rsub__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar - array`.
         """
-        return math.sub[dtype](s, self)
+        return math.sub[ResultDType](
+            other.cast[ResultDType](), self.astype[ResultDType]()
+        )
 
-    fn __isub__(mut self, s: SIMD[dtype, 1]) raises:
+    fn __rsub__(mut self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar - array`.
+        """
+        return math.sub[dtype](other, self)
+
+    fn __isub__(mut self, other: SIMD[dtype, 1]) raises:
         """
         Enables `array -= scalar`.
         """
-        self = self - s
+        self = self - other
 
-    fn __isub__(mut self, s: Self) raises:
+    fn __isub__(mut self, other: Self) raises:
         """
         Enables `array -= array`.
         """
-        self = self - s
+        self = self - other
 
     fn __matmul__(self, other: Self) raises -> Self:
         return matmul(self, other)
 
-    fn __mul__(self, other: SIMD[dtype, 1]) raises -> Self:
+    fn __mul__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array * scalar`.
+        """
+        return math.mul[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    fn __mul__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array * array`.
+        """
+        return math.mul[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
+    fn __mul__(self, other: Scalar[dtype]) raises -> Self:
         """
         Enables `array * scalar`.
         """
@@ -1434,23 +1526,34 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.mul[dtype](self, other)
 
-    fn __rmul__(self, s: SIMD[dtype, 1]) raises -> Self:
+    fn __rmul__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar * array`.
         """
-        return math.mul[dtype](self, s)
+        return math.mul[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
-    fn __imul__(mut self, s: SIMD[dtype, 1]) raises:
+    fn __rmul__(mut self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar * array`.
+        """
+        return math.mul[dtype](self, other)
+
+    fn __imul__(mut self, other: SIMD[dtype, 1]) raises:
         """
         Enables `array *= scalar`.
         """
-        self = self * s
+        self = self * other
 
-    fn __imul__(mut self, s: Self) raises:
+    fn __imul__(mut self, other: Self) raises:
         """
         Enables `array *= array`.
         """
-        self = self * s
+        self = self * other
 
     fn __abs__(self) -> Self:
         return abs(self)
@@ -1503,6 +1606,28 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[array_scalar_vectorize, self.width](self.size)
         return new_vec
 
+    fn __truediv__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array / scalar`.
+        """
+        return math.div[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    fn __truediv__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array / array`.
+        """
+        return math.div[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
     fn __truediv__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `array / scalar`.
@@ -1527,11 +1652,44 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self = self.__truediv__(other)
 
+    fn __rtruediv__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, s: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `scalar / array`.
+        """
+        return math.div[ResultDType](
+            s.cast[ResultDType](), self.astype[ResultDType]()
+        )
+
     fn __rtruediv__(self, s: SIMD[dtype, 1]) raises -> Self:
         """
         Enables `scalar / array`.
         """
         return math.div[dtype](s, self)
+
+    fn __floordiv__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array // scalar`.
+        """
+        return math.floor_div[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    fn __floordiv__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array // array`.
+        """
+        return math.floor_div[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     fn __floordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1557,11 +1715,44 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self = self.__floordiv__(other)
 
-    fn __rfloordiv__(self, s: SIMD[dtype, 1]) raises -> Self:
+    fn __rfloordiv__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar // array`.
         """
-        return math.floor_div[dtype](s, self)
+        return math.floor_div[ResultDType](
+            other.cast[ResultDType](), self.astype[ResultDType]()
+        )
+
+    fn __rfloordiv__(self, other: SIMD[dtype, 1]) raises -> Self:
+        """
+        Enables `scalar // array`.
+        """
+        return math.floor_div[dtype](other, self)
+
+    fn __mod__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array % scalar`.
+        """
+        return math.mod[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    fn __mod__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `array % array`.
+        """
+        return math.mod[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     fn __mod__(mut self, other: SIMD[dtype, 1]) raises -> Self:
         """
@@ -1592,6 +1783,17 @@ struct NDArray[dtype: DType = DType.float64](
         Enables `scalar % array`.
         """
         return math.mod[dtype](other, self)
+
+    fn __rmod__[
+        OtherDType: DType,
+        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+    ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
+        """
+        Enables `scalar % array`.
+        """
+        return math.mod[ResultDType](
+            other.cast[ResultDType](), self.astype[ResultDType]()
+        )
 
     # ===-------------------------------------------------------------------===#
     # Trait implementations
@@ -2171,51 +2373,11 @@ struct NDArray[dtype: DType = DType.float64](
 
         return sorting.argsort(self)
 
-    fn astype[type: DType](self) raises -> NDArray[type]:
+    fn astype[target: DType](self) raises -> NDArray[target]:
         """
         Convert type of array.
         """
-        # I wonder if we can do this operation inplace instead of allocating memory.
-        var narr: NDArray[type] = NDArray[type](self.shape, order=self.order)
-
-        @parameter
-        if type == DType.bool:
-
-            @parameter
-            fn vectorized_astype[simd_width: Int](idx: Int) -> None:
-                (narr.unsafe_ptr() + idx).strided_store[width=simd_width](
-                    self._buf.load[width=simd_width](idx).cast[type](), 1
-                )
-
-            vectorize[vectorized_astype, self.width](self.size)
-        else:
-
-            @parameter
-            if self.dtype == DType.bool:
-
-                @parameter
-                fn vectorized_astypenb_from_b[
-                    simd_width: Int
-                ](idx: Int) -> None:
-                    narr._buf.store(
-                        idx,
-                        (self._buf + idx)
-                        .strided_load[width=simd_width](1)
-                        .cast[type](),
-                    )
-
-                vectorize[vectorized_astypenb_from_b, self.width](self.size)
-            else:
-
-                @parameter
-                fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                    narr._buf.store(
-                        idx, self._buf.load[width=simd_width](idx).cast[type]()
-                    )
-
-                vectorize[vectorized_astypenb, self.width](self.size)
-
-        return narr
+        return creation.astype[target](self)
 
     # fn clip(self):
     #     pass

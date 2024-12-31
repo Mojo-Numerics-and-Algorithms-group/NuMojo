@@ -30,7 +30,7 @@ function. So it is easy for modification.
 
 """
 
-from algorithm import parallelize
+from algorithm import parallelize, vectorize
 from builtin.math import pow
 from sys import simdwidthof
 from collections.optional import Optional
@@ -993,6 +993,68 @@ fn fromstring[
         data=data, shape=shape, order=order
     )
     return result^
+
+
+# TODO: Technically we should allow for runtime type inference here,
+# but NDArray doesn't support it yet.
+# TODO: Check whether inplace cast is needed.
+fn astype[
+    dtype: DType, //, target: DType
+](a: NDArray[dtype]) raises -> NDArray[target]:
+    """
+    Cast an NDArray to a different dtype.
+
+    Parameters:
+        dtype: Data type of the input array, always inferred.
+        target: Data type to cast the NDArray to.
+
+    Args:
+        a: NDArray to be casted.
+
+    Returns:
+        A NDArray with the same shape and strides as `a`
+        but with elements casted to `target`.
+    """
+    var res = NDArray[target](a.shape, order=a.order)
+
+    @parameter
+    if target == DType.bool:
+
+        @parameter
+        fn vectorized_astype[simd_width: Int](idx: Int) -> None:
+            (res.unsafe_ptr() + idx).strided_store[width=simd_width](
+                a._buf.load[width=simd_width](idx).cast[target](), 1
+            )
+
+        vectorize[vectorized_astype, a.width](a.size)
+
+    else:
+
+        @parameter
+        if target == DType.bool:
+
+            @parameter
+            fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
+                res._buf.store(
+                    idx,
+                    (a._buf + idx)
+                    .strided_load[width=simd_width](1)
+                    .cast[target](),
+                )
+
+            vectorize[vectorized_astypenb_from_b, a.width](a.size)
+
+        else:
+
+            @parameter
+            fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
+                res._buf.store(
+                    idx, a._buf.load[width=simd_width](idx).cast[target]()
+                )
+
+            vectorize[vectorized_astypenb, a.width](a.size)
+
+    return res
 
 
 # ===------------------------------------------------------------------------===#

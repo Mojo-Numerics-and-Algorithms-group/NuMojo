@@ -1,7 +1,12 @@
 import numojo as nm
 from numojo.prelude import *
 from python import Python, PythonObject
-from utils_for_test import check, check_is_close, check_values_close
+from utils_for_test import (
+    check,
+    check_is_close,
+    check_values_close,
+    check_with_dtype,
+)
 
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences
@@ -71,6 +76,278 @@ def test_add_array():
         nm.add[nm.f64](arr, arr),
         np.arange(0, 15) + np.arange(0, 15),
         "Add array + array",
+    )
+
+
+def test_dunder_add_array():
+    var np = Python.import_module("numpy")
+
+    # Test float + float
+    var arr_f64 = nm.arange[nm.f64](0, 15)
+    var arr_f32 = nm.arange[nm.f32](0, 15)
+    var scalarf64: Scalar[nm.f64] = 5.0
+    var scalarf32: Scalar[nm.f32] = 5.0
+    check_with_dtype(
+        arr_f64 + scalarf64,
+        np.arange(0, 15, dtype=np.float64) + 5.0,
+        "Add f64 array + f64 scalar",
+    )
+    check_with_dtype(
+        arr_f32 + scalarf32,
+        np.arange(0, 15, dtype=np.float32) + 5.0,
+        "Add f32 array + f32 scalar",
+    )
+    check_with_dtype(
+        arr_f64 + arr_f64,
+        np.arange(0, 15, dtype=np.float64) + np.arange(0, 15, dtype=np.float64),
+        "Add f64 array + f64 array",
+    )
+
+    # Test float + int
+    var arr_i32 = nm.arange[nm.i32](0, 15)
+    check_with_dtype(
+        arr_f64 + 5,
+        np.arange(0, 15, dtype=np.float64) + 5,
+        "Add f64 array + int scalar",
+    )
+    check_with_dtype(
+        arr_f64 + arr_i32,
+        np.arange(0, 15, dtype=np.float64) + np.arange(0, 15, dtype=np.int32),
+        "Add f64 array + i32 array",
+    )
+
+    # Test uint + int
+    var arr_u32 = nm.arange[nm.u32](0, 15)
+    check_with_dtype(
+        arr_u32 + 5,
+        np.arange(0, 15, dtype=np.uint32) + 5,
+        "Add u32 array + int scalar",
+    )
+    check_with_dtype(
+        arr_u32 + arr_i32,
+        np.arange(0, 15, dtype=np.uint32) + np.arange(0, 15, dtype=np.int32),
+        "Add u32 array + i32 array",
+    )
+
+
+def test_dunder_sub_array():
+    var np = Python.import_module("numpy")
+
+    # Test float - float
+    var arr_f64 = nm.arange[nm.f64](0, 15)
+    var arr_f32 = nm.arange[nm.f32](0, 15)
+    var scalarf64: Scalar[nm.f64] = 5.0
+    var scalarf32: Scalar[nm.f32] = 5.0
+    check_with_dtype(
+        arr_f64 - scalarf64,
+        np.arange(0, 15, dtype=np.float64) - 5.0,
+        "Sub f64 array - f64 scalar",
+    )
+    check_with_dtype(
+        arr_f32 - scalarf32,
+        np.arange(0, 15, dtype=np.float32) - 5.0,
+        "Sub f32 array - f32 scalar",
+    )
+    check_with_dtype(
+        arr_f64 - arr_f64,
+        np.arange(0, 15, dtype=np.float64) - np.arange(0, 15, dtype=np.float64),
+        "Sub f64 array - f64 array",
+    )
+
+    # Test float - int
+    var arr_i32 = nm.arange[nm.i32](0, 15)
+    check_with_dtype(
+        arr_f64 - 5,
+        np.arange(0, 15, dtype=np.float64) - 5,
+        "Sub f64 array - int scalar",
+    )
+    check_with_dtype(
+        arr_f64 - arr_i32,
+        np.arange(0, 15, dtype=np.float64) - np.arange(0, 15, dtype=np.int32),
+        "Sub f64 array - i32 array",
+    )
+
+    # Test uint - int
+    var arr_u32 = nm.arange[nm.u32](0, 15)
+    check_with_dtype(
+        arr_u32 - 5,
+        np.arange(0, 15, dtype=np.uint32) - 5,
+        "Sub u32 array - int scalar",
+    )
+    check_with_dtype(
+        arr_u32 - arr_i32,
+        np.arange(0, 15, dtype=np.uint32) - np.arange(0, 15, dtype=np.int32),
+        "Sub u32 array - i32 array",
+    )
+
+
+def test_dunder_mul_array():
+    var np = Python.import_module("numpy")
+
+    # Test float * float
+    var arr_f64 = nm.arange[nm.f64](0, 15)
+    var arr_f32 = nm.arange[nm.f32](0, 15)
+    var scalarf64: Scalar[nm.f64] = 5.0
+    var scalarf32: Scalar[nm.f32] = 5.0
+    check_with_dtype(
+        arr_f64 * scalarf64,
+        np.arange(0, 15, dtype=np.float64) * 5.0,
+        "Mul f64 array * f64 scalar",
+    )
+    check_with_dtype(
+        arr_f32 * scalarf32,
+        np.arange(0, 15, dtype=np.float32) * 5.0,
+        "Mul f32 array * f32 scalar",
+    )
+    check_with_dtype(
+        arr_f64 * arr_f64,
+        np.arange(0, 15, dtype=np.float64) * np.arange(0, 15, dtype=np.float64),
+        "Mul f64 array * f64 array",
+    )
+
+    # Test float * int
+    var arr_i32 = nm.arange[nm.i32](0, 15)
+    check_with_dtype(
+        arr_f64 * 5,
+        np.arange(0, 15, dtype=np.float64) * 5,
+        "Mul f64 array * int scalar",
+    )
+    check_with_dtype(
+        arr_f64 * arr_i32,
+        np.arange(0, 15, dtype=np.float64) * np.arange(0, 15, dtype=np.int32),
+        "Mul f64 array * i32 array",
+    )
+
+    # Test uint * int
+    var arr_u32 = nm.arange[nm.u32](0, 15)
+    check_with_dtype(
+        arr_u32 * 5,
+        np.arange(0, 15, dtype=np.uint32) * 5,
+        "Mul u32 array * int scalar",
+    )
+    check_with_dtype(
+        arr_u32 * arr_i32,
+        np.arange(0, 15, dtype=np.uint32) * np.arange(0, 15, dtype=np.int32),
+        "Mul u32 array * i32 array",
+    )
+
+
+def test_dunder_div_array():
+    var np = Python.import_module("numpy")
+
+    # Test float / float
+    var arr_f64 = nm.arange[nm.f64](
+        1, 16
+    )  # Start from 1 to avoid division by 0
+    var arr_f32 = nm.arange[nm.f32](1, 16)
+    var scalarf64: Scalar[nm.f64] = 5.0
+    var scalarf32: Scalar[nm.f32] = 5.0
+    check_with_dtype(
+        arr_f64 / scalarf64,
+        np.arange(1, 16, dtype=np.float64) / 5.0,
+        "Div f64 array / f64 scalar",
+    )
+    check_with_dtype(
+        arr_f32 / scalarf32,
+        np.arange(1, 16, dtype=np.float32) / 5.0,
+        "Div f32 array / f32 scalar",
+    )
+    check_with_dtype(
+        arr_f64 / arr_f64,
+        np.arange(1, 16, dtype=np.float64) / np.arange(1, 16, dtype=np.float64),
+        "Div f64 array / f64 array",
+    )
+
+    # Test float / int
+    var arr_i32 = nm.arange[nm.i32](1, 16)
+    check_with_dtype(
+        arr_f64 / 5,
+        np.arange(1, 16, dtype=np.float64) / 5,
+        "Div f64 array / int scalar",
+    )
+    check_with_dtype(
+        arr_f64 / arr_i32,
+        np.arange(1, 16, dtype=np.float64) / np.arange(1, 16, dtype=np.int32),
+        "Div f64 array / i32 array",
+    )
+
+
+def test_dunder_floordiv_array():
+    var np = Python.import_module("numpy")
+
+    # Test float // float
+    var arr_f64 = nm.arange[nm.f64](1, 16)
+    var arr_f32 = nm.arange[nm.f32](1, 16)
+    var scalarf64: Scalar[nm.f64] = 5.0
+    var scalarf32: Scalar[nm.f32] = 5.0
+    check_with_dtype(
+        arr_f64 // scalarf64,
+        np.arange(1, 16, dtype=np.float64) // 5.0,
+        "Floordiv f64 array // f64 scalar",
+    )
+    check_with_dtype(
+        arr_f32 // scalarf32,
+        np.arange(1, 16, dtype=np.float32) // 5.0,
+        "Floordiv f32 array // f32 scalar",
+    )
+    check_with_dtype(
+        arr_f64 // arr_f64,
+        np.arange(1, 16, dtype=np.float64)
+        // np.arange(1, 16, dtype=np.float64),
+        "Floordiv f64 array // f64 array",
+    )
+
+    # Test float // int
+    var arr_i32 = nm.arange[nm.i32](1, 16)
+    check_with_dtype(
+        arr_f64 // 5,
+        np.arange(1, 16, dtype=np.float64) // 5,
+        "Floordiv f64 array // int scalar",
+    )
+    check_with_dtype(
+        arr_f64 // arr_i32,
+        np.arange(1, 16, dtype=np.float64) // np.arange(1, 16, dtype=np.int32),
+        "Floordiv f64 array // i32 array",
+    )
+
+
+def test_dunder_mod_array():
+    var np = Python.import_module("numpy")
+
+    # Test float % float
+    var arr_f64 = nm.arange[nm.f64](1, 15)
+    var arr_f32 = nm.arange[nm.f32](1, 15)
+    var arr_f321 = nm.arange[nm.f32](1, 15)
+    var scalarf64: Scalar[nm.f64] = 5.0
+    var scalarf32: Scalar[nm.f32] = 5.0
+    check_with_dtype(
+        arr_f64 % scalarf64,
+        np.arange(1, 15, dtype=np.float64) % 5.0,
+        "Mod f64 array % f64 scalar",
+    )
+    check_with_dtype(
+        arr_f32 % scalarf32,
+        np.arange(1, 15, dtype=np.float32) % 5.0,
+        "Mod f32 array % f32 scalar",
+    )
+    check_with_dtype(
+        arr_f321 % arr_f32,
+        np.arange(1, 15, dtype=np.float32) % np.arange(1, 15, dtype=np.float32),
+        "Mod f32 array % f32 array",
+    )
+
+    # Test float % int
+    var arr_i32 = nm.arange[nm.i32](1, 15)
+    var arr_i321 = nm.arange[nm.i32](1, 15)
+    check_with_dtype(
+        arr_f64 % 5,
+        np.arange(1, 15, dtype=np.float64) % 5,
+        "Mod f64 array % int scalar",
+    )
+    check_with_dtype(
+        arr_i321 % arr_i32,
+        np.arange(1, 15, dtype=np.int32) % np.arange(1, 15, dtype=np.int32),
+        "Mod f64 array % i32 array",
     )
 
 

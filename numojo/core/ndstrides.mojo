@@ -162,12 +162,6 @@ struct NDArrayStrides(Stringable):
                 " column major `F` are supported"
             )
 
-    fn __copy__(mut self, other: Self):
-        self.offset = other.offset
-        self.ndim = other.ndim
-        self._buf = UnsafePointer[Int]().alloc(other.ndim)
-        memcpy(self._buf, other._buf, other.ndim)
-
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         if index >= self.ndim:

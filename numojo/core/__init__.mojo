@@ -2,12 +2,13 @@
 
 # Structs
 from .ndarray import NDArray
-from ._complex_dtype import CDType
-from .complex_simd import ComplexSIMD
-from .complex_ndarray import ComplexNDArray
 from .index import Idx
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
+
+from ._complex_dtype import CDType
+from .complex_simd import ComplexSIMD
+from .complex_ndarray import ComplexNDArray
 
 from .datatypes import (
     i8,

@@ -253,6 +253,57 @@ struct CDType(
             return CDType.invalid
 
     @staticmethod
+    fn _from_dtype(dtype: DType) -> CDType:
+        """Construct a CDType from a DType.
+
+        Arguments:
+            dtype: The DType to convert.
+        """
+
+        if dtype == DType.bool:
+            return CDType.bool
+        if dtype == DType.int8:
+            return CDType.int8
+        if dtype == DType.uint8:
+            return CDType.uint8
+        if dtype == DType.int16:
+            return CDType.int16
+        if dtype == DType.uint16:
+            return CDType.uint16
+        if dtype == DType.int32:
+            return CDType.int32
+        if dtype == DType.uint32:
+            return CDType.uint32
+        if dtype == DType.int64:
+            return CDType.int64
+        if dtype == DType.uint64:
+            return CDType.uint64
+        if dtype == DType.index:
+            return CDType.index
+        if dtype == DType.float8e5m2:
+            return CDType.float8e5m2
+        if dtype == DType.float8e5m2fnuz:
+            return CDType.float8e5m2fnuz
+        if dtype == DType.float8e4m3:
+            return CDType.float8e4m3
+        if dtype == DType.float8e4m3fnuz:
+            return CDType.float8e4m3fnuz
+        if dtype == DType.bfloat16:
+            return CDType.bfloat16
+        if dtype == DType.float16:
+            return CDType.float16
+        if dtype == DType.float32:
+            return CDType.float32
+        if dtype == DType.tensor_float32:
+            return CDType.tensor_float32
+        if dtype == DType.float64:
+            return CDType.float64
+        if dtype == DType.invalid:
+            return CDType.invalid
+        else:
+            return CDType.invalid
+
+    @staticmethod
     fn _from_str(str: String) -> CDType:
         """Construct a CDType from a string.
 
@@ -915,7 +966,7 @@ fn _unsigned_integral_type_of[type: CDType]() -> CDType:
 
     @parameter
     if type.is_integral():
-        return _uint_type_of_width[bitwidthof[CDType.eq[type]()]()]()
+        return _uint_type_of_width[bitwidthof[CDType.to_dtype[type]()]()]()
 
     @parameter
     if type.is_float8():

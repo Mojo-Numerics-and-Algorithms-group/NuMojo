@@ -14,6 +14,7 @@ from builtin.type_aliases import Origin
 from algorithm import parallelize, vectorize
 from python import Python, PythonObject
 from sys import simdwidthof
+from collections import Dict
 from collections.optional import Optional
 from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
@@ -81,6 +82,9 @@ struct NDArray[dtype: DType = DType.float64](
         - The order of the array: Row vs Columns major
     """
 
+    alias width: Int = simdwidthof[dtype]()
+    """Vector size of the data type."""
+
     var _buf: UnsafePointer[Scalar[dtype]]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
@@ -91,13 +95,8 @@ struct NDArray[dtype: DType = DType.float64](
     """Size of NDArray."""
     var strides: NDArrayStrides
     """Contains offset, strides."""
-    var datatype: DType
-    """The datatype of memory."""
-    var order: String
-    "Memory layout of array C (C order row major) or F (Fortran order col major)."
-
-    alias width: Int = simdwidthof[dtype]()
-    """Vector size of the data type."""
+    var flags: Dict[String, Bool]
+    "Information about the memory layout of the array."
 
     # ===-------------------------------------------------------------------===#
     # Life cycle methods
@@ -126,8 +125,13 @@ struct NDArray[dtype: DType = DType.float64](
         self.size = self.shape.size
         self.strides = NDArrayStrides(shape, order=order)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
-        self.datatype = dtype
-        self.order = order
+        # Initialize information on memory layout
+        self.flags = Dict[String, Bool]()
+        self.flags["C_CONTIGUOUS"] = (
+            True if self.strides[self.ndim - 1] == 1 else False
+        )
+        self.flags["F_CONTIGUOUS"] = True if self.strides[0] == 1 else False
+        self.flags["OWNDATA"] = True
 
     @always_inline("nodebug")
     fn __init__(
@@ -161,7 +165,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         self = Self(Shape(shape), order)
 
-    # Why do  these last two constructors exist?
+    # Why do these last two constructors exist?
     # constructor when rank, ndim, weights, first_index(offset) are known
     fn __init__(
         mut self,
@@ -170,7 +174,6 @@ struct NDArray[dtype: DType = DType.float64](
         size: Int,
         shape: List[Int],
         strides: List[Int],
-        order: String = "C",
     ) raises:
         """
         Extremely specific NDArray initializer.
@@ -179,10 +182,15 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = NDArrayShape(shape)
         self.size = size
         self.strides = NDArrayStrides(strides=strides, offset=0)
-        self.datatype = dtype
-        self.order = order
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(size)
         memset_zero(self._buf, size)
+        # Initialize information on memory layout
+        self.flags = Dict[String, Bool]()
+        self.flags["C_CONTIGUOUS"] = (
+            True if self.strides[self.ndim - 1] == 1 else False
+        )
+        self.flags["F_CONTIGUOUS"] = True if self.strides[0] == 1 else False
+        self.flags["OWNDATA"] = True
 
     # for creating views
     fn __init__(
@@ -192,7 +200,6 @@ struct NDArray[dtype: DType = DType.float64](
         offset: Int,
         shape: List[Int],
         strides: List[Int],
-        order: String = "C",
     ) raises:
         """
         Extremely specific NDArray initializer.
@@ -200,10 +207,15 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = ndim
         self.shape = NDArrayShape(shape)
         self.size = self.shape.size
-        self.strides = NDArrayStrides(strides, offset=0, order=order)
-        self.datatype = dtype
-        self.order = order
+        self.strides = NDArrayStrides(strides=strides, offset=0)
         self._buf = data + self.strides.offset
+        # Initialize information on memory layout
+        self.flags = Dict[String, Bool]()
+        self.flags["C_CONTIGUOUS"] = (
+            True if self.strides[self.ndim - 1] == 1 else False
+        )
+        self.flags["F_CONTIGUOUS"] = True if self.strides[0] == 1 else False
+        self.flags["OWNDATA"] = False
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -214,8 +226,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = other.shape
         self.size = other.size
         self.strides = other.strides
-        self.datatype = other.datatype
-        self.order = other.order
+        self.flags = other.flags
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.size)
         memcpy(self._buf, other._buf, other.size)
 
@@ -228,8 +239,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = existing.shape
         self.size = existing.size
         self.strides = existing.strides
-        self.datatype = existing.datatype
-        self.order = existing.order^
+        self.flags = existing.flags^
         self._buf = existing._buf
 
     @always_inline("nodebug")
@@ -346,7 +356,7 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error(message)
 
         var noffset: Int = 0
-        if self.order == "C":
+        if self.flags["C_CONTIGUOUS"]:
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
@@ -355,7 +365,7 @@ struct NDArray[dtype: DType = DType.float64](
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
                 noffset += slice_list[i].start.value() * self.strides[i]
-        elif self.order == "F":
+        elif self.flags["F_CONTIGUOUS"]:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
@@ -503,7 +513,7 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error(message)
 
         var noffset: Int = 0
-        if self.order == "C":
+        if self.flags["C_CONTIGUOUS"]:
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
@@ -512,7 +522,7 @@ struct NDArray[dtype: DType = DType.float64](
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
                 noffset += slice_list[i].start.value() * self.strides[i]
-        elif self.order == "F":
+        elif self.flags["F_CONTIGUOUS"]:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
@@ -814,7 +824,7 @@ struct NDArray[dtype: DType = DType.float64](
             ncoefficients.append(1)
 
         var noffset: Int = 0
-        if self.order == "C":
+        if self.flags["C_CONTIGUOUS"]:
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
@@ -824,7 +834,7 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(slices.__len__()):
                 noffset += slices[i].start.value() * self.strides[i]
 
-        elif self.order == "F":
+        elif self.flags["F_CONTIGUOUS"]:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
@@ -833,12 +843,11 @@ struct NDArray[dtype: DType = DType.float64](
                 noffset += slices[i].start.value() * self.strides[i]
 
         var narr = Self(
-            ndims,
-            noffset,
-            nnum_elements,
-            nshape,
-            nstrides,
-            order=self.order,
+            ndim=ndims,
+            offset=noffset,
+            size=nnum_elements,
+            shape=nshape,
+            strides=nstrides,
         )
 
         var index = List[Int]()
@@ -1816,8 +1825,12 @@ struct NDArray[dtype: DType = DType.float64](
                 + self.shape.__str__()
                 + "  DType: "
                 + self.dtype.__str__()
-                + "  order: "
-                + self.order
+                + "  C-cont: "
+                + str(self.flags["C_CONTIGUOUS"])
+                + "  F-cont: "
+                + str(self.flags["F_CONTIGUOUS"])
+                + "  own data: "
+                + str(self.flags["OWNDATA"])
             )
         except e:
             writer.write("Cannot convert array to string")
@@ -2509,7 +2522,7 @@ struct NDArray[dtype: DType = DType.float64](
                 String("`index` exceeds array size ({})").format(self.size)
             )
 
-        if self.order == "F":
+        if self.flags["F_CONTIGUOUS"]:
             # column-major should be converted to row-major
             # The following code can be taken out as a function that
             # convert any index to coordinates according to the order
@@ -2630,9 +2643,9 @@ struct NDArray[dtype: DType = DType.float64](
         if index.isa[Int]():
             var idx = index._get_ptr[Int]()[]
             if idx < self.size:
-                if (
-                    self.order == "F"
-                ):  # column-major should be converted to row-major
+                if self.flags[
+                    "F_CONTIGUOUS"
+                ]:  # column-major should be converted to row-major
                     # The following code can be taken out as a function that
                     # convert any index to coordinates according to the order
                     var c_stride = NDArrayStrides(shape=self.shape)
@@ -2815,8 +2828,10 @@ struct NDArray[dtype: DType = DType.float64](
             shape: Shape after resize.
         """
 
+        var order = "C" if self.flags["C_CONTIGUOUS"] else "F"
+
         if shape.size > self.size:
-            var other = Self(shape=shape, order=self.order)
+            var other = Self(shape=shape, order=order)
             memcpy(other._buf, self._buf, self.size)
             for i in range(self.size, other.size):
                 (other._buf + i).init_pointee_copy(0)
@@ -2825,7 +2840,7 @@ struct NDArray[dtype: DType = DType.float64](
             self.shape = shape
             self.ndim = shape.ndim
             self.size = shape.size
-            self.strides = NDArrayStrides(shape, order=self.order)
+            self.strides = NDArrayStrides(shape, order=order)
 
     fn round(self) raises -> Self:
         """

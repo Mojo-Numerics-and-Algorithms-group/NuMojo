@@ -13,6 +13,7 @@
 from algorithm import vectorize, parallelize
 from sys import simdwidthof
 from memory import memcpy
+import math
 
 from numojo.mat.matrix import Matrix
 from numojo.mat.creation import zeros, ones, full, identity
@@ -144,6 +145,92 @@ fn lu_decomposition[
             U._store(i, j, A._load(i, j) - sum_of_products_for_U)
 
     return L, U
+
+
+fn qr[
+    dtype: DType
+](owned A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+    var m = A.shape[0]
+    var n = A.shape[1]
+
+    var Q = mat.full[dtype](shape=(m, m))
+    for i in range(m):
+        Q._store(i, i, 1.0)
+
+    var min_n = min(m, n)
+
+    var H = mat.full[dtype](shape=(m, min_n))
+
+    for i in range(min_n):
+        compute_householder(H, A, i, i)
+        compute_qr(H, i, A, i, i + 1)
+
+    for i in range(min_n - 1, -1, -1):
+        compute_qr(H, i, Q, i, i)
+
+    return Q, A
+
+
+fn compute_householder[
+    dtype: DType
+](
+    inout H: Matrix[dtype], inout R: Matrix[dtype], row: Int, column: Int
+) raises -> None:
+    var sqrt2: SIMD[dtype, 1] = 1.4142135623730951
+    var rRows = R.shape[0]
+
+    for i in range(row, rRows):
+        var val = R._load(i, column)
+        H._store(i, column, val)
+        R._store(i, column, 0.0)
+
+    var norm: Scalar[dtype] = 0.0
+    for i in range(rRows):
+        norm += H._load(i, column) ** 2
+    norm = math.sqrt(norm)
+    if row == rRows - 1 or norm == 0:
+        first_element = H._load(row, column)
+        R._store(row, column, -first_element)
+        H._store(row, column, sqrt2)
+        return
+
+    scale = 1.0 / norm
+    if H._load(row, column) < 0:
+        scale = -scale
+
+    R._store(row, column, -1 / scale)
+
+    for i in range(row, rRows):
+        H._store(i, column, H._load(i, column) * scale)
+
+    increment = H._load(row, column) + 1.0
+    H._store(row, column, increment)
+
+    s = math.sqrt(1.0 / increment)
+
+    for i in range(row, rRows):
+        H._store(i, column, H._load(i, column) * s)
+
+
+fn compute_qr[
+    dtype: DType
+](
+    inout H: Matrix[dtype],
+    work_index: Int,
+    inout A: Matrix[dtype],
+    row_start: Int,
+    column_start: Int,
+) raises -> None:
+    var aRows = A.shape[0]
+    var aCols = A.shape[1]
+
+    for j in range(column_start, aCols):
+        var dot: SIMD[dtype, 1] = 0.0
+        for i in range(row_start, aRows):
+            dot += H._load(i, work_index) * A._load(i, j)
+        for i in range(row_start, aRows):
+            val = A._load(i, j) - H._load(i, work_index) * dot
+            A._store(i, j, val)
 
 
 # ===----------------------------------------------------------------------===#

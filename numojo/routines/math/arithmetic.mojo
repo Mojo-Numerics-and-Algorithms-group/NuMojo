@@ -13,7 +13,7 @@ from utils import Variant
 
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
-
+from numojo.core.datatypes import TypeCoercion
 
 fn add[
     dtype: DType,
@@ -39,6 +39,38 @@ fn add[
     return backend().math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
         array1, array2
     )
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+](array1: NDArray[dtype], array2: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform addition on two arrays.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return backend().math_func_2_array_in_one_array_out[
+        ResultDType, SIMD.__add__
+    ](array1.astype[ResultDType](), array2.astype[ResultDType]())
 
 
 fn add[
@@ -67,6 +99,39 @@ fn add[
 fn add[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+](array: NDArray[dtype], scalar: Scalar[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform addition on two arrays.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array: A NDArray.
+        scalar: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        ResultDType, SIMD.__add__
+    ](array.astype[ResultDType](), scalar.cast[ResultDType]())
+
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Perform addition on between an array and a scalar.
@@ -83,6 +148,32 @@ fn add[
         The elementwise sum of `array1` and`array2`.
     """
     return add[dtype, backend=backend](array, scalar)
+
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+](scalar: Scalar[dtype], array: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+    """
+    Perform addition on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        scalar: A NDArray.
+        array: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return add[ResultDType, backend=backend](array.astype[ResultDType](), scalar.cast[ResultDType]())
 
 
 fn add[
@@ -146,6 +237,37 @@ fn sub[
     """
     return backend().math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
         array1, array2
+    )
+
+
+fn sub[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+](array1: NDArray[dtype], array2: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
+    """
+    Perform subtraction on two arrays.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        The elementwise difference of `array1` and`array2`.
+    """
+    return backend().math_func_2_array_in_one_array_out[ResultDType, SIMD.__sub__](
+        array1.astype[ResultDType](), array2.astype[ResultDType]()
     )
 
 

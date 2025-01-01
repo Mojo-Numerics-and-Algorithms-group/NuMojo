@@ -239,7 +239,7 @@ def test_qr_decomposition():
     Q, R = numojo.mat.linalg.qr(A)
 
     # Check if Q^T Q is close to the identity matrix, i.e Q is orthogonal
-    assert_true(are_close(Q.transpose() @ Matrix(mat.identity(A.shape[0])), Matrix(mat.identity(A.shape[0]))), "Q^T Q is not close to identity matrix")
+    assert_true(are_close(Q.transpose() @ Q, mat.Matrix(mat.identity(A.shape[0]))), "Q^T Q is not close to identity matrix")
 
     # Check if R is upper triangular
     assert_true(is_upper_triangular(R), "R is not upper triangular")

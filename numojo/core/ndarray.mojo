@@ -237,7 +237,8 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf.free()
 
     # ===-------------------------------------------------------------------===#
-    # Setter dunders and other getter methods
+    # Indexing and slicing
+    # Getter and setter dunders and other methods
     # ===-------------------------------------------------------------------===#
 
     fn _setitem(self, *indices: Int, val: Scalar[dtype]):
@@ -1796,6 +1797,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     # ===-------------------------------------------------------------------===#
+    # IO dunders and other methods
     # Trait implementations
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:
@@ -2455,110 +2457,129 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return ravel(self, order=order)
 
-    fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
+    fn item(self, owned index: Int) raises -> SIMD[dtype, 1]:
         """
         Return the scalar at the coordinates.
 
-        If one index is given, get the i-th item of the array.
+        If one index is given, get the i-th item of the array (not buffer).
         It first scans over the first row, even it is a colume-major array.
 
         If more than one index is given, the length of the indices must match
         the number of dimensions of the array.
 
+        Args:
+            index: Index of item, counted in row-major way.
+
+        Returns:
+            A scalar matching the dtype of the array.
+
+        Raises:
+            Index is equal or larger than array size.
+
         Example:
         ```console
-        > var A = nm.NDArray[dtype](3, 3, random=True, order="F")
-        > print(A)
-        [[      14      -4      -48     ]
-        [      97      112     -40     ]
-        [      -59     -94     66      ]]
-        2-D array  Shape: [3, 3]  DType: int8
+        >>> var A = nm.random.randn[nm.f16](2, 2, 2)
+        >>> A = A.reshape(A.shape, order="F")
+        >>> print(A)
+        [[[     0.2446289       0.5419922       ]
+          [     0.09643555      -0.90722656     ]]
+         [[     1.1806641       0.24389648      ]
+          [     0.5234375       1.0390625       ]]]
+        3-D array  Shape: [2, 2, 2]  DType: float16  order: F
+        >>> for i in range(A.size):
+        ...     print(A.item(i))
+        0.2446289
+        0.5419922
+        0.09643555
+        -0.90722656
+        1.1806641
+        0.24389648
+        0.5234375
+        1.0390625
+        >>> print(A.item(0, 1, 1))
+        -0.90722656
+        ```.
+        """
 
-        > for i in A:
-        >     print(i)  # Return rows
-        [       14      -4      -48     ]
-        1-D array  Shape: [3]  DType: int8
-        [       97      112     -40     ]
-        1-D array  Shape: [3]  DType: int8
-        [       -59     -94     66      ]
-        1-D array  Shape: [3]  DType: int8
+        if index < 0:
+            index += self.size
 
-        > for i in range(A.size()):
-        >    print(A.item(i))  # Return 0-d arrays
-        c strides Stride: [3, 1]
-        14
-        c strides Stride: [3, 1]
-        -4
-        c strides Stride: [3, 1]
-        -48
-        c strides Stride: [3, 1]
-        97
-        c strides Stride: [3, 1]
-        112
-        c strides Stride: [3, 1]
-        -40
-        c strides Stride: [3, 1]
-        -59
-        c strides Stride: [3, 1]
-        -94
-        c strides Stride: [3, 1]
-        66
-        ==============================
-        ```
+        if (index < 0) or (index >= self.size):
+            raise Error(
+                String("`index` exceeds array size ({})").format(self.size)
+            )
+
+        if self.order == "F":
+            # column-major should be converted to row-major
+            # The following code can be taken out as a function that
+            # convert any index to coordinates according to the order
+            var c_stride = NDArrayStrides(shape=self.shape)
+            var c_coordinates = List[Int]()
+            var idx: Int = index
+            for i in range(c_stride.ndim):
+                var coordinate = idx // c_stride[i]
+                idx = idx - c_stride[i] * coordinate
+                c_coordinates.append(coordinate)
+
+            # Get the value by coordinates and the strides
+            return self._buf[_get_index(c_coordinates, self.strides)]
+
+        else:
+            return self._buf[index]
+
+    fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
+        """
+        Return the scalar at the coordinates.
+
+        If one index is given, get the i-th item of the array (not buffer).
+        It first scans over the first row, even it is a colume-major array.
+
+        If more than one index is given, the length of the indices must match
+        the number of dimensions of the array.
 
         Args:
             index: The coordinates of the item.
 
         Returns:
             A scalar matching the dtype of the array.
+
+        Raises:
+            Index is equal or larger than size of dimension.
+
+        Example:
+        ```
+        >>> var A = nm.random.randn[nm.f16](2, 2, 2)
+        >>> A = A.reshape(A.shape, order="F")
+        >>> print(A)
+        [[[     0.2446289       0.5419922       ]
+          [     0.09643555      -0.90722656     ]]
+         [[     1.1806641       0.24389648      ]
+          [     0.5234375       1.0390625       ]]]
+        3-D array  Shape: [2, 2, 2]  DType: float16  order: F
+        >>> print(A.item(0, 1, 1))
+        -0.90722656
+        ```.
         """
 
-        # If one index is given
-        if index.__len__() == 1:
-            if index[0] < self.size:
-                if (
-                    self.order == "F"
-                ):  # column-major should be converted to row-major
-                    # The following code can be taken out as a function that
-                    # convert any index to coordinates according to the order
-                    var c_stride = NDArrayStrides(shape=self.shape)
-                    var c_coordinates = List[Int]()
-                    var idx: Int = index[0]
-                    for i in range(c_stride.ndim):
-                        var coordinate = idx // c_stride[i]
-                        idx = idx - c_stride[i] * coordinate
-                        c_coordinates.append(coordinate)
-                    return self._buf.load[width=1](
-                        _get_index(c_coordinates, self.strides)
-                    )
-
-                return self._buf.load[width=1](index[0])
-            else:
-                raise Error(
-                    String(
-                        "Error: Elements of `index` ({}) \n"
-                        "exceed the array size ({})"
-                    ).format(index[0], self.size)
-                )
-
-        # If more than one index is given
-        if index.__len__() != self.ndim:
+        if len(index) != self.ndim:
             raise Error(
-                String(
-                    "Error: Length of Indices ({}) \n"
-                    "do not match the shape ({})"
-                ).format(index.__len__(), self.ndim)
-            )
-        for i in range(index.__len__()):
-            if index[i] >= self.shape[i]:
-                raise Error(
-                    String(
-                        "Error: Elements of `index` ({}) \n"
-                        "exceed the array shape ({}) \n"
-                        "for {}-th dimension."
-                    ).format(index[i], self.shape[i], i)
+                String("Number of indices ({}) do not match ndim ({})").format(
+                    len(index), self.ndim
                 )
-        return self._buf.load[width=1](_get_index(index, self.strides))
+            )
+        var list_index = List[Int]()
+        for i in range(len(index)):
+            if index[i] < 0:
+                list_index.append(index[i] + self.shape[i])
+            else:
+                list_index.append(index[i])
+            if (list_index[i] < 0) or (list_index[i] >= self.shape[i]):
+                raise Error(
+                    String("{}-th index exceeds shape size {}").format(
+                        i, self.shape[i]
+                    )
+                )
+        return self._buf[_get_index(index, self.strides)]
 
     fn itemset(
         mut self, index: Variant[Int, List[Int]], item: Scalar[dtype]
@@ -2770,6 +2791,42 @@ struct NDArray[dtype: DType = DType.float64](
 
         return prod(self, axis=axis)
 
+    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
+        """
+        Returns an array of the same data with a new shape.
+
+        Args:
+            shape: Shape of returned array.
+            order: Order of the array - Row major `C` or Column major `F`.
+
+        Returns:
+            Array of the same data with a new shape.
+        """
+        return reshape[dtype](self, shape=shape, order=order)
+
+    fn resize(mut self, shape: NDArrayShape) raises:
+        """
+        In-place change shape and size of array.
+
+        Notes:
+        To returns a new array, use `reshape`.
+
+        Args:
+            shape: Shape after resize.
+        """
+
+        if shape.size > self.size:
+            var other = Self(shape=shape, order=self.order)
+            memcpy(other._buf, self._buf, self.size)
+            for i in range(self.size, other.size):
+                (other._buf + i).init_pointee_copy(0)
+            self = other^
+        else:
+            self.shape = shape
+            self.ndim = shape.ndim
+            self.size = shape.size
+            self.strides = NDArrayStrides(shape, order=self.order)
+
     fn round(self) raises -> Self:
         """
         Rounds the elements of the array to a whole number.
@@ -2834,6 +2891,12 @@ struct NDArray[dtype: DType = DType.float64](
             result.append(self._buf[i])
         return result
 
+    fn to_numpy(self) raises -> PythonObject:
+        """
+        Convert to a numpy array.
+        """
+        return to_numpy(self)
+
     # TODO: add axis parameter
     fn trace(
         self, offset: Int = 0, axis1: Int = 0, axis2: Int = 1
@@ -2851,54 +2914,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return linalg.norms.trace[dtype](self, offset, axis1, axis2)
 
-    # Technically it only changes the ArrayDescriptor and not the fundamental data
-    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
-        """
-        Returns an array of the same data with a new shape.
-
-        Args:
-            shape: Shape of returned array.
-            order: Order of the array - Row major `C` or Column major `F`.
-
-        Returns:
-            Array of the same data with a new shape.
-        """
-        return reshape[dtype](self, shape=shape, order=order)
-
-    fn resize(mut self, shape: NDArrayShape) raises:
-        """
-        In-place change shape and size of array.
-
-        Notes:
-        To returns a new array, use `reshape`.
-
-        Args:
-            shape: Shape after resize.
-        """
-
-        if shape.size > self.size:
-            var other = Self(shape=shape, order=self.order)
-            memcpy(other._buf, self._buf, self.size)
-            for i in range(self.size, other.size):
-                (other._buf + i).init_pointee_copy(0)
-            self = other^
-        else:
-            self.shape = shape
-            self.ndim = shape.ndim
-            self.size = shape.size
-            self.strides = NDArrayStrides(shape, order=self.order)
-
     fn unsafe_ptr(self) -> UnsafePointer[Scalar[dtype]]:
         """
         Retreive pointer without taking ownership.
         """
         return self._buf
-
-    fn to_numpy(self) raises -> PythonObject:
-        """
-        Convert to a numpy array.
-        """
-        return to_numpy(self)
 
 
 # ===----------------------------------------------------------------------===#

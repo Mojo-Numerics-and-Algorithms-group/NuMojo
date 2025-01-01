@@ -165,25 +165,22 @@ struct NDArray[dtype: DType = DType.float64](
 
         self = Self(Shape(shape), order)
 
-    # Why do these last two constructors exist?
-    # constructor when rank, ndim, weights, first_index(offset) are known
+    # constructor when offset is known
     fn __init__(
         mut self,
-        ndim: Int,
-        offset: Int,
-        size: Int,
         shape: List[Int],
+        offset: Int,
         strides: List[Int],
     ) raises:
         """
         Extremely specific NDArray initializer.
         """
-        self.ndim = ndim
         self.shape = NDArrayShape(shape)
-        self.size = size
+        self.ndim = self.shape.ndim
+        self.size = self.shape.size
         self.strides = NDArrayStrides(strides=strides, offset=0)
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(size)
-        memset_zero(self._buf, size)
+        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
+        memset_zero(self._buf, self.size)
         # Initialize information on memory layout
         self.flags = Dict[String, Bool]()
         self.flags["C_CONTIGUOUS"] = (
@@ -192,23 +189,19 @@ struct NDArray[dtype: DType = DType.float64](
         self.flags["F_CONTIGUOUS"] = True if self.strides[0] == 1 else False
         self.flags["OWNDATA"] = True
 
-    # for creating views
+    # for creating views (unsafe!)
     fn __init__(
         mut self,
-        data: UnsafePointer[Scalar[dtype]],
-        ndim: Int,
+        shape: NDArrayShape,
+        ref buffer: UnsafePointer[Scalar[dtype]],
         offset: Int,
-        shape: List[Int],
-        strides: List[Int],
+        strides: NDArrayStrides,
     ) raises:
-        """
-        Extremely specific NDArray initializer.
-        """
-        self.ndim = ndim
-        self.shape = NDArrayShape(shape)
+        self.shape = shape
+        self.strides = strides
+        self.ndim = self.shape.ndim
         self.size = self.shape.size
-        self.strides = NDArrayStrides(strides=strides, offset=0)
-        self._buf = data + self.strides.offset
+        self._buf = buffer.offset(offset)
         # Initialize information on memory layout
         self.flags = Dict[String, Bool]()
         self.flags["C_CONTIGUOUS"] = (
@@ -244,7 +237,13 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __del__(owned self):
-        self._buf.free()
+        var owndata = True
+        try:
+            owndata = self.flags["OWNDATA"]
+        except:
+            print("Invalid `OWNDATA` flag. Treat as `True`.")
+        if owndata:
+            self._buf.free()
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
@@ -843,9 +842,7 @@ struct NDArray[dtype: DType = DType.float64](
                 noffset += slices[i].start.value() * self.strides[i]
 
         var narr = Self(
-            ndim=ndims,
             offset=noffset,
-            size=nnum_elements,
             shape=nshape,
             strides=nstrides,
         )
@@ -2928,6 +2925,19 @@ struct NDArray[dtype: DType = DType.float64](
             The trace of the ndarray.
         """
         return linalg.norms.trace[dtype](self, offset, axis1, axis2)
+
+    fn _transpose(self) raises -> Self:
+        """
+        Returns a view of transposed array.
+
+        It is unsafe!
+        """
+        return Self(
+            shape=self.shape._flip(),
+            buffer=self._buf,
+            offset=0,
+            strides=self.strides._flip(),
+        )
 
     fn unsafe_ptr(self) -> UnsafePointer[Scalar[dtype]]:
         """

@@ -28,7 +28,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     # vectorize[vectorize_sum, opt_nelts](array.num_elements())
     # return result
     for i in range(array.size):
-        result |= array.get(i)
+        result |= array.load(i)
     return result
 
 
@@ -52,5 +52,5 @@ fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     # vectorize[vectorize_sum, opt_nelts](array.num_elements())
     # return result
     for i in range(array.size):
-        result &= array.get(i)
+        result &= array.load(i)
     return result

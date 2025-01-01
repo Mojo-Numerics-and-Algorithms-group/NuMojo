@@ -259,14 +259,14 @@ fn binary_sort[
 
     var result: NDArray[dtype] = NDArray[dtype](array.shape)
     for i in range(array.size):
-        result.store(i, array.get(i).cast[dtype]())
+        result.store(i, array.load(i).cast[dtype]())
 
     var n = array.num_elements()
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:
-                var temp: Scalar[dtype] = result.get(i - 1)
-                result.set(i - 1, result.get(i))
+                var temp: Scalar[dtype] = result.load(i - 1)
+                result.store(i - 1, result.load(i))
                 result.store(i, temp)
     return result
 

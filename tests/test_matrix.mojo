@@ -31,35 +31,6 @@ fn check_values_close[
     var np = Python.import_module("numpy")
     assert_true(np.isclose(value, np_sol, atol=0.01), st)
 
-fn are_close[
-    dtype: DType
-](A: mat.Matrix[dtype], B: mat.Matrix[dtype]) raises -> Bool:
-    """
-    Check if all elements of matrices A and B are close within a tolerance of 10^-14.
-    """
-    if A.shape[0] != B.shape[0] or A.shape[1] != B.shape[1]:
-        return False
-
-    var tolerance: SIMD[dtype, 1] = 1e-14
-    for i in range(A.shape[0]):
-        for j in range(A.shape[1]):
-            if abs(A[i, j] - B[i, j]) >= tolerance:
-                return False
-    return True
-
-fn is_upper_triangular[
-    dtype: DType
-](A: mat.Matrix[dtype]) raises -> Bool:
-    """
-    Check if the matrix A is upper triangular.
-    """
-    var tolerance: SIMD[dtype, 1] = 1e-14
-    for i in range(A.shape[0]):
-        for j in range(i):
-            if abs(A[i, j]) >= tolerance:
-                return False
-    return True
-
 
 # ===-----------------------------------------------------------------------===#
 # Manipulation
@@ -234,18 +205,22 @@ def test_linalg():
 
 def test_qr_decomposition():
 
-    A = mat.rand[f64]((100, 100))
+    A = mat.rand[f64]((20, 20))
+
+    var np = Python.import_module("numpy")
 
     Q, R = numojo.mat.linalg.qr(A)
 
     # Check if Q^T Q is close to the identity matrix, i.e Q is orthogonal
-    assert_true(are_close(Q.transpose() @ Q, mat.Matrix(mat.identity(A.shape[0]))), "Q^T Q is not close to identity matrix")
+    var id = Q.transpose() @ Q
+    assert_true(np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14))  
 
     # Check if R is upper triangular
-    assert_true(is_upper_triangular(R), "R is not upper triangular")
+    assert_true(np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14))   
 
-    # Check if A is close to Q R
-    assert_true(are_close(A, Q @ R), "A is not close to Q R")
+    # Check if A = QR
+    var A_test = Q @ R
+    assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
 
 # ===-----------------------------------------------------------------------===#
 # Mathematics

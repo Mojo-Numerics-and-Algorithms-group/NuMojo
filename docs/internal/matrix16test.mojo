@@ -33,3 +33,7 @@ fn main() raises:
     # Flip by axis
     print(matrix16.flip(a, axis=0))  # Flip by axis 0
     print(matrix16.flip(a, axis=1))  # Flip by axis 1
+
+    # Iterate
+    for i in matrix16.flip(a, axis=1):
+        print(i)

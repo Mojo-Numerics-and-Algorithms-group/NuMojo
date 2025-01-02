@@ -507,17 +507,20 @@ struct _Matrix16Iter[
         if forward:
             var current_index = self.index
             self.index += 1
-            print("address of data:", self.ptr)
             return Matrix16[RefData[origin]](
                 shape=(1, self.shape1),
-                ptr=self.ptr.offset(current_index * self.shape1),
+                strides=(self.shape1, 1),
+                offset=current_index * self.shape1,
+                ptr=self.ptr,
             )
         else:
             var current_index = self.index
             self.index -= 1
             return Matrix16[RefData[origin]](
                 shape=(1, self.shape1),
-                ptr=self.ptr.offset(current_index * self.shape1),
+                strides=(self.shape1, 1),
+                offset=current_index * self.shape1,
+                ptr=self.ptr,
             )
 
     fn __len__(self) -> Int:

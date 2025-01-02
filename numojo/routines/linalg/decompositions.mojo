@@ -16,7 +16,7 @@ fn lu_decomposition[
         dtype: Data type of the upper and upper triangular matrices.
 
     Args:
-        A: Input matrix for decoposition. It should be a row-major matrix.
+        A: Input matrix for decomposition. It should be a row-major matrix.
 
     Returns:
         A tuple of the upper and lower triangular matrices.
@@ -31,7 +31,7 @@ fn lu_decomposition[
         var arr = nm.NDArray[nm.f64]("[[1,2,3], [4,5,6], [7,8,9]]")
         var U: nm.NDArray
         var L: nm.NDArray
-        L, U = nm.math.linalg.solver.lu_decomposition(arr)
+        L, U = nm.linalg.lu_decomposition(arr)
         print(arr)
         print(L)
         print(U)
@@ -51,14 +51,11 @@ fn lu_decomposition[
     2-D array  Shape: [3, 3]  DType: float64
     ```
 
-    Further reading:
-        Linear Algebra And Its Applications, fourth edition, Gilbert Strang
-        https://en.wikipedia.org/wiki/LU_decomposition
-        https://www.scicoding.com/how-to-calculate-lu-decomposition-in-python/
-        https://courses.physics.illinois.edu/cs357/sp2020/notes/ref-9-linsys.html
-
-    TODO: Optimize the speed.
-
+    Further readings:
+    - Linear Algebra And Its Applications, fourth edition, Gilbert Strang
+    - https://en.wikipedia.org/wiki/LU_decomposition
+    - https://www.scicoding.com/how-to-calculate-lu-decomposition-in-python/
+    - https://courses.physics.illinois.edu/cs357/sp2020/notes/ref-9-linsys.html.
     """
 
     # Check whether the dimension is 2
@@ -113,3 +110,52 @@ fn lu_decomposition[
     # parallelize[calculate](n, n)
 
     return L, U
+
+
+fn partial_pivoting[
+    dtype: DType
+](owned A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype], Int]:
+    """
+    Perform partial pivoting for a square matrix.
+
+    Args:
+        A: 2-d square array.
+
+    Returns:
+        Pivoted array.
+        The permutation matrix.
+        The number of exchanges.
+    """
+
+    if A.ndim != 2:
+        raise Error(String("Array must be 2d."))
+    if A.shape[0] != A.shape[1]:
+        raise Error(String("Matrix is not square."))
+
+    var n = A.shape[0]
+    var P = identity[dtype](n)
+    var s: Int = 0  # Number of exchanges, for determinant
+
+    for col in range(n):
+        var max_p = abs(A.item(col, col))
+        var max_p_row = col
+        for row in range(col + 1, n):
+            if abs(A.item(row, col)) > max_p:
+                max_p = abs(A.item(row, col))
+                max_p_row = row
+
+        for i in range(n):
+            # A[col], A[max_p_row] = A[max_p_row], A[col]
+            # P[col], P[max_p_row] = P[max_p_row], P[col]
+            var temp = A.item(max_p_row, i)
+            A[Idx(max_p_row, i)] = A.item(col, i)
+            A[Idx(col, i)] = temp
+
+            temp = P.item(max_p_row, i)
+            P[Idx(max_p_row, i)] = P.item(col, i)
+            P[Idx(col, i)] = temp
+
+        if max_p_row != col:
+            s = s + 1
+
+    return Tuple(A^, P^, s)

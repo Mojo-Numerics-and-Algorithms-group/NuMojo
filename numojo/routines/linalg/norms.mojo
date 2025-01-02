@@ -2,6 +2,40 @@
 # Norms and other numbers
 # ===----------------------------------------------------------------------=== #
 
+from numojo.core.ndarray import NDArray
+from numojo.routines.linalg.decompositions import partial_pivoting
+
+
+fn det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Find the determinant of A using LUP decomposition.
+    """
+
+    if A.ndim != 2:
+        raise Error(String("Array must be 2d."))
+    if A.shape[0] != A.shape[1]:
+        raise Error(String("Matrix is not square."))
+
+    var det_L: Scalar[dtype] = 1
+    var det_U: Scalar[dtype] = 1
+    var n = A.shape[0]  # Dimension of the matrix
+
+    var A_pivoted: NDArray[dtype]
+    var U: NDArray[dtype]
+    var L: NDArray[dtype]
+    var s: Int
+    A_pivoted, _, s = partial_pivoting(A)
+    L, U = lu_decomposition[dtype](A_pivoted)
+
+    for i in range(n):
+        det_L = det_L * L.item(i, i)
+        det_U = det_U * U.item(i, i)
+
+    if s % 2 == 0:
+        return det_L * det_U
+    else:
+        return -det_L * det_U
+
 
 # TODO: implement for arbitrary axis
 fn trace[

@@ -150,6 +150,18 @@ fn lu_decomposition[
 fn qr[
     dtype: DType
 ](owned A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+    """
+    Compute the QR decomposition of a matrix.
+
+    Decompose the matrix `A` as `QR`, where `Q` is orthonormal and `R` is upper-triangular.
+    This function is similar to `numpy.linalg.qr`.
+
+    Args:
+        A (Matrix[dtype]): The input matrix to be factorized.
+
+    Returns:
+        Tuple[Matrix[dtype], Matrix[dtype]]: A tuple containing the orthonormal matrix `Q` and the upper-triangular matrix `R`.
+    """
     var m = A.shape[0]
     var n = A.shape[1]
 

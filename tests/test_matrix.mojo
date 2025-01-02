@@ -211,7 +211,7 @@ def test_qr_decomposition():
 
     Q, R = numojo.mat.linalg.qr(A)
 
-    # Check if Q^T Q is close to the identity matrix, i.e Q is orthogonal
+    # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
     var id = Q.transpose() @ Q
     assert_true(np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14))  
 

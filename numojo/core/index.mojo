@@ -13,7 +13,7 @@ from memory import UnsafePointer, memset_zero, memcpy
 struct Idx(CollectionElement):
     alias dtype: DType = DType.index
     alias width = simdwidthof[Self.dtype]()
-    var storage: UnsafePointer[Scalar[Self.dtype]]
+    var _buf: UnsafePointer[Scalar[Self.dtype]]
     var len: Int
 
     @always_inline("nodebug")
@@ -23,10 +23,10 @@ struct Idx(CollectionElement):
         Args:
             args: Initial values.
         """
-        self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
+        self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
         self.len = args.__len__()
         for i in range(args.__len__()):
-            self.storage[i] = args[i]
+            self._buf[i] = args[i]
 
     @always_inline("nodebug")
     fn __init__(mut self, owned *args: Int):
@@ -35,10 +35,10 @@ struct Idx(CollectionElement):
         Args:
             args: Initial values.
         """
-        self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
+        self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
         self.len = args.__len__()
         for i in range(args.__len__()):
-            self.storage[i] = args[i]
+            self._buf[i] = args[i]
 
     @always_inline("nodebug")
     fn __init__(
@@ -51,14 +51,14 @@ struct Idx(CollectionElement):
         """
         if args.isa[List[Int]]():
             self.len = args[List[Int]].__len__()
-            self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
+            self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
             for i in range(self.len):
-                self.storage[i] = args[List[Int]][i]
+                self._buf[i] = args[List[Int]][i]
         elif args.isa[VariadicList[Int]]():
             self.len = args[VariadicList[Int]].__len__()
-            self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
+            self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
             for i in range(self.len):
-                self.storage[i] = args[VariadicList[Int]][i]
+                self._buf[i] = args[VariadicList[Int]][i]
         else:
             raise Error("Invalid type")
 
@@ -69,12 +69,10 @@ struct Idx(CollectionElement):
         Args:
             other: The tuple to copy.
         """
-        self.storage = UnsafePointer[Scalar[Self.dtype]]().alloc(
-            other.__len__()
-        )
+        self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(other.__len__())
         self.len = other.len
         for i in range(other.__len__()):
-            self.storage[i] = other[i]
+            self._buf[i] = other[i]
 
     @always_inline("nodebug")
     fn __moveinit__(mut self, owned other: Self):
@@ -83,7 +81,7 @@ struct Idx(CollectionElement):
         Args:
             other: The tuple to move.
         """
-        self.storage = other.storage
+        self._buf = other._buf
         self.len = other.len
 
     @always_inline("nodebug")
@@ -105,7 +103,7 @@ struct Idx(CollectionElement):
         Returns:
             The value at the specified index.
         """
-        return int(self.storage[index])
+        return int(self._buf[index])
 
     @always_inline("nodebug")
     fn __setitem__(self, index: Int, val: Int):
@@ -115,7 +113,7 @@ struct Idx(CollectionElement):
             index: The index of the value to set.
             val: The value to set.
         """
-        self.storage[index] = val
+        self._buf[index] = val
 
     fn __iter__(self) raises -> _IdxIter[__origin_of(self)]:
         """Iterate over elements of the NDArray, returning copied value.
@@ -138,7 +136,7 @@ struct Idx(CollectionElement):
     fn str(self) -> String:
         var result: String = "["
         for i in range(self.len):
-            result += str(self.storage[i])
+            result += str(self._buf[i])
             if i < self.len - 1:
                 result += ", "
         result += "]"
@@ -148,7 +146,7 @@ struct Idx(CollectionElement):
     fn load[width: Int = 1](self, index: Int) raises -> SIMD[Self.dtype, width]:
         if index + width - 1 > self.len:
             raise Error("Index out of bounds")
-        return self.storage.load[width=width](index)
+        return self._buf.load[width=width](index)
 
     @always_inline("nodebug")
     fn store[
@@ -156,17 +154,17 @@ struct Idx(CollectionElement):
     ](mut self, index: Int, val: SIMD[Self.dtype, width]) raises:
         if index + width - 1 > self.len:
             raise Error("Index out of bounds")
-        self.storage.store(index, val)
+        self._buf.store(index, val)
 
     @always_inline("nodebug")
     fn load_unsafe[width: Int = 1](self, index: Int) -> SIMD[Self.dtype, width]:
-        return self.storage.load[width=width](index)
+        return self._buf.load[width=width](index)
 
     @always_inline("nodebug")
     fn store_unsafe[
         width: Int = 1
     ](mut self, index: Int, val: SIMD[Self.dtype, width]):
-        self.storage.store(index, val)
+        self._buf.store(index, val)
 
 
 @value

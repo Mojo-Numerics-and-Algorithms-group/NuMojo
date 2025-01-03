@@ -46,7 +46,7 @@ struct NDArrayStrides(Stringable):
         memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
-    fn __init__(out self, *shape: Int, order: String = "C") raises:
+    fn __init__(out self, *shape: Int, order: String) raises:
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         if order == "C":

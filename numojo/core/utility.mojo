@@ -412,7 +412,8 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.bool:
             np_dtype = np.bool_
 
-        numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=array.order)
+        var order = "C" if array.flags["C_CONTIGUOUS"] else "F"
+        numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()

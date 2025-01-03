@@ -154,7 +154,8 @@ fn _sort_inplace[
             )
         )
 
-    var continous_axis = A.ndim - 1 if A.order == "C" else A.ndim - 2
+    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+    var continous_axis = A.ndim - 1 if array_order == "C" else A.ndim - 2
     """Continuously stored axis. -1 if row-major, -2 if col-major."""
 
     if axis == continous_axis:  # Last axis

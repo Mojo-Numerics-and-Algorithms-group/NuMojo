@@ -24,7 +24,7 @@ from numojo.core.ndstrides import NDArrayStrides
 import numojo.core._array_funcs as _af
 from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
-    _get_index,
+    _get_offset,
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
@@ -52,7 +52,7 @@ from numojo.routines.manipulation import reshape, ravel
 #
 # TODO: Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
 #       matmul it into IxJx..xKxMx...xNxP array.
-# TODO: Add vectorization for _get_index.
+# TODO: Add vectorization for _get_offset.
 # TODO: Create NDArrayView that points to the buffer of the raw array.
 #       This requires enhancement of functionalities of traits from Mojo's side.
 #       The data buffer can implement an ArrayData trait (RawData or RefData)
@@ -401,7 +401,7 @@ struct NDArray[dtype: DType = DType.float64](
                     "The size of the corresponding dimension is {}"
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
-        var idx: Int = _get_index(index, self.strides)
+        var idx: Int = _get_offset(index, self.strides)
         self._buf.store(idx, val)
 
     # only works if array is called as array.__setitem__(), mojo compiler doesn't parse it implicitly
@@ -685,7 +685,7 @@ struct NDArray[dtype: DType = DType.float64](
                     "The size of the dimensions is {}"
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
-        var idx: Int = _get_index(index, self.strides)
+        var idx: Int = _get_offset(index, self.strides)
         return self._buf.load[width=1](idx)
 
     fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
@@ -2195,7 +2195,7 @@ struct NDArray[dtype: DType = DType.float64](
                     ).format(i, self.shape[i])
                 )
 
-        var idx: Int = _get_index(indices, self.strides)
+        var idx: Int = _get_offset(indices, self.strides)
         return self._buf.load[width=width](idx)
 
     fn store(self, owned index: Int, val: Scalar[dtype]) raises:
@@ -2279,7 +2279,7 @@ struct NDArray[dtype: DType = DType.float64](
                     ).format(i, self.shape[i])
                 )
 
-        var idx: Int = _get_index(indices, self.strides)
+        var idx: Int = _get_offset(indices, self.strides)
         self._buf.store(idx, val)
 
     # ===-------------------------------------------------------------------===#
@@ -2532,7 +2532,7 @@ struct NDArray[dtype: DType = DType.float64](
                 c_coordinates.append(coordinate)
 
             # Get the value by coordinates and the strides
-            return self._buf[_get_index(c_coordinates, self.strides)]
+            return self._buf[_get_offset(c_coordinates, self.strides)]
 
         else:
             return self._buf[index]
@@ -2589,7 +2589,7 @@ struct NDArray[dtype: DType = DType.float64](
                         i, self.shape[i]
                     )
                 )
-        return self._buf[_get_index(index, self.strides)]
+        return self._buf[_get_offset(index, self.strides)]
 
     fn itemset(
         mut self, index: Variant[Int, List[Int]], item: Scalar[dtype]
@@ -2652,7 +2652,7 @@ struct NDArray[dtype: DType = DType.float64](
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
                     self._buf.store(
-                        _get_index(c_coordinates, self.strides), item
+                        _get_offset(c_coordinates, self.strides), item
                     )
 
                 self._buf.store(idx, item)
@@ -2674,7 +2674,7 @@ struct NDArray[dtype: DType = DType.float64](
                     raise Error(
                         "Error: Elements of `index` exceed the array shape"
                     )
-            self._buf.store(_get_index(indices, self.strides), item)
+            self._buf.store(_get_offset(indices, self.strides), item)
 
     fn max(self, axis: Int = 0) raises -> Self:
         """

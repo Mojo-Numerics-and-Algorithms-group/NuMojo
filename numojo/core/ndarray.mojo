@@ -178,7 +178,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = NDArrayShape(shape)
         self.ndim = self.shape.ndim
         self.size = self.shape.size
-        self.strides = NDArrayStrides(strides=strides, offset=0)
+        self.strides = NDArrayStrides(strides=strides)
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
         memset_zero(self._buf, self.size)
         # Initialize information on memory layout

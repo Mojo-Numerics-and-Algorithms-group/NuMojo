@@ -96,3 +96,12 @@ def test_solve():
         np.linalg.solve(A_np, B_np),
         "Solve is broken",
     )
+
+
+def norms():
+    var np = Python.import_module("numpy")
+    var arr = nm.core.random.rand(20, 20)
+    var np_arr = arr.to_numpy()
+    check_values_close(
+        nm.math.linalg.det(arr), np.linalg.det(np_arr), "`det` is broken"
+    )

@@ -8,7 +8,9 @@ from ._complex_dtype import CDType
 @register_passable("trivial")
 struct ComplexSIMD[
     ctype: CDType,
+    *,
     type: DType = CDType.to_dtype[ctype](),
+    size: Int = 1
 ]():
     """
     Represents a SIMD[dtype, 1] Complex number with real and imaginary parts.
@@ -16,8 +18,8 @@ struct ComplexSIMD[
 
     # FIELDS
     """The underlying data type of the complex number."""
-    var re: SIMD[type, 1]
-    var im: SIMD[type, 1]
+    var re: SIMD[type, size]
+    var im: SIMD[type, size]
 
     @always_inline
     fn __init__(out self, other: Self):
@@ -30,7 +32,7 @@ struct ComplexSIMD[
         self = other
 
     @always_inline
-    fn __init__(out self, re: SIMD[type, 1], im: SIMD[type, 1]):
+    fn __init__(out self, re: SIMD[type, size], im: SIMD[type, size]):
         """
         Initializes a ComplexSIMD instance with specified real and imaginary parts.
 
@@ -40,8 +42,8 @@ struct ComplexSIMD[
 
         Example:
         ```mojo
-        var A = ComplexSIMD[cf32, f32](SIMD[f32, 1](1.0), SIMD[f32, 1](2.0))
-        var B = ComplexSIMD[cf32, f32](SIMD[f32, 1](3.0), SIMD[f32, 1](4.0))
+        var A = ComplexSIMD[cf32](SIMD[f32, 1](1.0), SIMD[f32, 1](2.0))
+        var B = ComplexSIMD[cf32](SIMD[f32, 1](3.0), SIMD[f32, 1](4.0))
         var C = A + B
         print(C)
         ```
@@ -51,7 +53,7 @@ struct ComplexSIMD[
         self.im = im
 
     @always_inline
-    fn __init__(out self, val: SIMD[type, 1]):
+    fn __init__(out self, val: SIMD[type, size]):
         """
         Initializes a ComplexSIMD instance with specified real and imaginary parts.
 
@@ -251,7 +253,7 @@ struct ComplexSIMD[
         """
         return "ComplexSIMD[{}]({}, {})".format(str(type), self.re, self.im)
 
-    fn __getitem__(self, idx: Int) raises -> SIMD[type, 1]:
+    fn __getitem__(self, idx: Int) raises -> SIMD[type, size]:
         """
         Gets the real or imaginary part of the ComplexSIMD instance.
 
@@ -285,9 +287,7 @@ struct ComplexSIMD[
         else:
             raise Error("Index out of range")
 
-    fn __setitem__(
-        mut self, idx: Int, re: SIMD[type, 1], im: SIMD[type, 1]
-    ):
+    fn __setitem__(mut self, idx: Int, re: SIMD[type, size], im: SIMD[type, size]):
         """
         Sets the real and imaginary parts of the ComplexSIMD instance.
 
@@ -300,13 +300,13 @@ struct ComplexSIMD[
         self.re = re
         self.im = im
 
-    fn __abs__(self) -> SIMD[type, 1]:
+    fn __abs__(self) -> SIMD[type, size]:
         """
         Returns the magnitude of the ComplexSIMD instance.
         """
         return sqrt(self.re * self.re + self.im * self.im)
 
-    fn norm(self) -> SIMD[type, 1]:
+    fn norm(self) -> SIMD[type, size]:
         """
         Returns the squared magnitude of the ComplexSIMD instance.
         """
@@ -318,13 +318,13 @@ struct ComplexSIMD[
         """
         return Self(self.re, -self.im)
 
-    fn real(self) -> SIMD[type, 1]:
+    fn real(self) -> SIMD[type, size]:
         """
         Returns the real part of the ComplexSIMD instance.
         """
         return self.re
 
-    fn imag(self) -> SIMD[type, 1]:
+    fn imag(self) -> SIMD[type, size]:
         """
         Returns the imaginary part of the ComplexSIMD instance.
         """

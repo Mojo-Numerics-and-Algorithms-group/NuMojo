@@ -6,8 +6,6 @@ Datatypes Module - Implements datatypes aliases, conversions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 
-from ._complex_dtype import ComplexSIMD
-
 # Rust-like data type alias
 """alias for `DType.int8`"""
 alias i8 = DType.int8

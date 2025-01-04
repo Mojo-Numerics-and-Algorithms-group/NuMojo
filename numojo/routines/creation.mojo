@@ -39,7 +39,7 @@ from memory import UnsafePointer, memset_zero, memset
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.core.utility import _get_index
+from numojo.core.utility import _get_offset
 
 
 # ===------------------------------------------------------------------------===#

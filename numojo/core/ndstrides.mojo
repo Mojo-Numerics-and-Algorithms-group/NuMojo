@@ -155,7 +155,7 @@ struct NDArrayStrides(Stringable):
             self._buf[self.ndim + index] = val
 
     @always_inline("nodebug")
-    fn len(self) -> Int:
+    fn __len__(self) -> Int:
         return self.ndim
 
     @always_inline("nodebug")
@@ -243,6 +243,22 @@ struct NDArrayStrides(Stringable):
             strides._buf[i] = strides._buf[i + 1]
         strides._buf[strides.ndim - 1] = value
         return strides
+
+    fn _pop(self, axis: Int) -> Self:
+        """
+        drop information of certain axis.
+        """
+        var res = Self()
+        var buffer = UnsafePointer[Int].alloc(self.ndim - 1)
+        memcpy(dest=buffer, src=self._buf, count=axis)
+        memcpy(
+            dest=buffer + axis,
+            src=self._buf.offset(axis + 1),
+            count=self.ndim - axis - 1,
+        )
+        res.ndim = self.ndim - 1
+        res._buf = buffer
+        return res
 
 
 # @always_inline("nodebug")

@@ -1873,18 +1873,34 @@ struct NDArray[dtype: DType = DType.float64](
         return self.shape._buf[0]
 
     fn __iter__(self) raises -> _NDArrayIter[__origin_of(self), dtype]:
-        """Iterate over elements of the NDArray, returning copied value.
+        """
+        Iterate over elements of the NDArray and return sub-arrays as view.
 
         Returns:
             An iterator of NDArray elements.
 
-        Notes:
-            Need to add lifetimes after the new release.
+        Example:
+        ```
+        >>> var a = nm.random.arange[nm.i8](2 * 3 * 4).reshape(nm.Shape(2, 3, 4))
+        >>> for i in a:
+        ...     print(i)
+        [[      0       1       2       3       ]
+         [      4       5       6       7       ]
+         [      8       9       10      11      ]]
+        2-D array  Shape: [3, 4]  DType: int8  C-cont: True  F-cont: False  own data: False
+        [[      12      13      14      15      ]
+         [      16      17      18      19      ]
+         [      20      21      22      23      ]]
+        2-D array  Shape: [3, 4]  DType: int8  C-cont: True  F-cont: False  own data: False
+        ```.
         """
 
         return _NDArrayIter[__origin_of(self), dtype](
-            array=self,
+            ptr=self._buf,
             length=self.shape[0],
+            stride_of_axis=self.strides[0],
+            shape=self.shape._pop(axis=0),
+            strides=self.strides._pop(axis=0),
         )
 
     fn __reversed__(
@@ -1898,8 +1914,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         return _NDArrayIter[__origin_of(self), dtype, forward=False](
-            array=self,
+            ptr=self._buf,
             length=self.shape[0],
+            stride_of_axis=self.strides[0],
+            shape=self.shape._pop(axis=0),
+            strides=self.strides._pop(axis=0),
         )
 
     fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
@@ -2968,17 +2987,26 @@ struct _NDArrayIter[
     """
 
     var index: Int
-    var array: NDArray[dtype]
+    var ptr: UnsafePointer[Scalar[dtype]]
     var length: Int
+    var stride_of_axis: Int
+    var shape: NDArrayShape
+    var strides: NDArrayStrides
 
     fn __init__(
         mut self,
-        array: NDArray[dtype],
+        ptr: UnsafePointer[Scalar[dtype]],
         length: Int,
+        stride_of_axis: Int,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
     ):
         self.index = 0 if forward else length
         self.length = length
-        self.array = array
+        self.ptr = ptr
+        self.stride_of_axis = stride_of_axis
+        self.shape = shape
+        self.strides = strides
 
     fn __iter__(self) -> Self:
         return self
@@ -2988,11 +3016,21 @@ struct _NDArrayIter[
         if forward:
             var current_index = self.index
             self.index += 1
-            return self.array.__getitem__(current_index)
+            return NDArray(
+                shape=self.shape,
+                buffer=self.ptr,
+                offset=current_index * self.stride_of_axis,
+                strides=self.strides,
+            )
         else:
             var current_index = self.index
             self.index -= 1
-            return self.array.__getitem__(current_index)
+            return NDArray(
+                shape=self.shape,
+                buffer=self.ptr,
+                offset=current_index * self.stride_of_axis,
+                strides=self.strides,
+            )
 
     @always_inline
     fn __has_next__(self) -> Bool:

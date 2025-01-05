@@ -233,7 +233,7 @@ fn _traverse_iterative[
         except:
             return
 
-        narr._buf.store(narr_idx, orig._buf.load[width=1](orig_idx))
+        narr._buf.ptr.store(narr_idx, orig._buf.ptr.load[width=1](orig_idx))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
@@ -282,7 +282,7 @@ fn _traverse_iterative_setter[
         except:
             return
 
-        narr._buf.store(orig_idx, orig._buf.load[width=1](narr_idx))
+        narr._buf.ptr.store(orig_idx, orig._buf.ptr.load[width=1](narr_idx))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
@@ -314,9 +314,9 @@ fn bool_to_numeric[
     for i in range(array.size):
         var t: Bool = array.item(i)
         if t:
-            res._buf[i] = 1
+            res._buf.ptr[i] = 1
         else:
-            res._buf[i] = 0
+            res._buf.ptr[i] = 0
     return res
 
 

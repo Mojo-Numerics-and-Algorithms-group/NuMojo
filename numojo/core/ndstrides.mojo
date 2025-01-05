@@ -265,7 +265,7 @@ struct NDArrayStrides(Stringable):
 # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
 #     # if index >= self.ndim:
 #     #     raise Error("Index out of bound")
-#     return self._buf.load[width=width](index)
+#     return self._buf.ptr.load[width=width](index)
 
 # @always_inline("nodebug")
 # fn store[
@@ -273,14 +273,14 @@ struct NDArrayStrides(Stringable):
 # ](mut self, index: Int, val: SIMD[dtype, width]) raises:
 #     # if index >= self.ndim:
 #     #     raise Error("Index out of bound")
-#     self._buf.store(index, val)
+#     self._buf.ptr.store(index, val)
 
 # @always_inline("nodebug")
 # fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
-#     return self._buf.load[width=width](index).__int__()
+#     return self._buf.ptr.load[width=width](index).__int__()
 
 # @always_inline("nodebug")
 # fn store_unsafe[
 #     width: Int = 1
 # ](mut self, index: Int, val: SIMD[dtype, width]):
-#     self._buf.store(index, val)
+#     self._buf.ptr.store(index, val)

@@ -318,4 +318,4 @@ struct NDArrayShape(Stringable, Writable):
     #     """
     #     # if index >= self.ndim:
     #     #     raise Error("Index out of bound")
-    #     self._buf.store(index, val)
+    #     self._buf.ptr.store(index, val)

@@ -30,8 +30,8 @@ fn where[
 
     """
     for i in range(x.size):
-        if mask._buf[i] == True:
-            x._buf.store(i, scalar)
+        if mask._buf.ptr[i] == True:
+            x._buf.ptr.store(i, scalar)
 
 
 # TODO: do it with vectorization
@@ -56,5 +56,5 @@ fn where[
     if x.shape != y.shape:
         raise Error("Shape mismatch error: x and y must have the same shape")
     for i in range(x.size):
-        if mask._buf[i] == True:
-            x._buf.store(i, y._buf[i])
+        if mask._buf.ptr[i] == True:
+            x._buf.ptr.store(i, y._buf.ptr[i])

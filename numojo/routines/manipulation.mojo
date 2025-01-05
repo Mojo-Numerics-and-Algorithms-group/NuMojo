@@ -98,7 +98,7 @@ fn reshape[
 
     # Write in this order into the new array
     var B = NDArray[dtype](shape=shape, order=order)
-    memcpy(dest=B._buf, src=A._buf, count=A.size)
+    memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
 
     return B^
 
@@ -125,7 +125,7 @@ fn ravel[
         if array_order != order:
             A = transpose(A, axes=_list_of_flipped_range(A.ndim))
         var B = NDArray[dtype](Shape(A.size))
-        memcpy(B._buf, A._buf, A.size)
+        memcpy(B._buf.ptr, A._buf.ptr, A.size)
         return B
 
 
@@ -153,7 +153,7 @@ fn _set_values_according_to_shape_and_strides(
             current_dim
         ]
         if current_dim >= new_shape.ndim - 1:
-            I._buf[index] = current_sum
+            I._buf.ptr[index] = current_sum
             index = index + 1
         else:
             _set_values_according_to_shape_and_strides(
@@ -216,14 +216,14 @@ fn transpose[
 
     var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
     var I = NDArray[DType.index](Shape(A.size), order=array_order)
-    var ptr = I._buf
+    var ptr = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B._buf[i] = A._buf[I._buf[i]]
+        B._buf.ptr[i] = A._buf.ptr[I._buf.ptr[i]]
     return B^
 
 
@@ -240,7 +240,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
-            memcpy(B._buf, A._buf, A.size)
+            memcpy(B._buf.ptr, A._buf.ptr, A.size)
         else:
             for i in range(B.shape[0]):
                 for j in range(B.shape[1]):
@@ -274,9 +274,9 @@ fn flip[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     for i in range(A.size // 2):
-        var temp = A._buf[i]
-        A._buf[i] = A._buf[A.size - 1 - i]
-        A._buf[A.size - 1 - i] = temp
+        var temp = A._buf.ptr[i]
+        A._buf.ptr[i] = A._buf.ptr[A.size - 1 - i]
+        A._buf.ptr[A.size - 1 - i] = temp
 
     return A^
 
@@ -306,7 +306,7 @@ fn flip[
         )
 
     var I = NDArray[DType.index](Shape(A.size))
-    var ptr = I._buf
+    var ptr = I._buf.ptr
 
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, A.shape._move_axis_to_end(axis), A.strides._move_axis_to_end(axis)
@@ -315,8 +315,10 @@ fn flip[
     print(A.size, A.shape[axis])
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] // 2):
-            var temp = A._buf[I._buf[i + j]]
-            A._buf[I._buf[i + j]] = A._buf[I._buf[i + A.shape[axis] - 1 - j]]
-            A._buf[I._buf[i + A.shape[axis] - 1 - j]] = temp
+            var temp = A._buf.ptr[I._buf.ptr[i + j]]
+            A._buf.ptr[I._buf.ptr[i + j]] = A._buf.ptr[
+                I._buf.ptr[i + A.shape[axis] - 1 - j]
+            ]
+            A._buf.ptr[I._buf.ptr[i + A.shape[axis] - 1 - j]] = temp
 
     return A^

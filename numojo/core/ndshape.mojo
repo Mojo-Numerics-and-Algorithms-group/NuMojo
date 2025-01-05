@@ -22,7 +22,7 @@ struct NDArrayShape(Stringable, Writable):
     """Number of dimensions of array."""
 
     @always_inline("nodebug")
-    fn __init__(mut self, shape: Int):
+    fn __init__(out self, shape: Int):
         """
         Initializes the NDArrayShape with one dimension.
 
@@ -35,7 +35,7 @@ struct NDArrayShape(Stringable, Writable):
         self._buf.init_pointee_copy(shape)
 
     @always_inline("nodebug")
-    fn __init__(mut self, *shape: Int):
+    fn __init__(out self, *shape: Int):
         """
         Initializes the NDArrayShape with variable shape dimensions.
 
@@ -50,7 +50,7 @@ struct NDArrayShape(Stringable, Writable):
             self.size *= shape[i]
 
     @always_inline("nodebug")
-    fn __init__(mut self, *shape: Int, size: Int) raises:
+    fn __init__(out self, *shape: Int, size: Int) raises:
         """
         Initializes the NDArrayShape with variable shape dimensions and a specified size.
 
@@ -69,7 +69,7 @@ struct NDArrayShape(Stringable, Writable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(mut self, shape: List[Int]):
+    fn __init__(out self, shape: List[Int]):
         """
         Initializes the NDArrayShape with a list of shape dimensions.
 
@@ -84,7 +84,7 @@ struct NDArrayShape(Stringable, Writable):
             self.size *= shape[i]
 
     @always_inline("nodebug")
-    fn __init__(mut self, shape: List[Int], size: Int) raises:
+    fn __init__(out self, shape: List[Int], size: Int) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
@@ -105,7 +105,7 @@ struct NDArrayShape(Stringable, Writable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(mut self, shape: VariadicList[Int]):
+    fn __init__(out self, shape: VariadicList[Int]):
         """
         Initializes the NDArrayShape with a list of shape dimensions.
 
@@ -120,7 +120,7 @@ struct NDArrayShape(Stringable, Writable):
             self.size *= shape[i]
 
     @always_inline("nodebug")
-    fn __init__(mut self, shape: VariadicList[Int], size: Int) raises:
+    fn __init__(out self, shape: VariadicList[Int], size: Int) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
@@ -141,7 +141,7 @@ struct NDArrayShape(Stringable, Writable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(mut self, shape: NDArrayShape) raises:
+    fn __init__(out self, shape: NDArrayShape) raises:
         """
         Initializes the NDArrayShape with another NDArrayShape.
 
@@ -178,7 +178,7 @@ struct NDArrayShape(Stringable, Writable):
             self._buf[self.ndim + index] = val
 
     @always_inline("nodebug")
-    fn len(self) -> Int:
+    fn __len__(self) -> Int:
         """
         Get number of dimensions of the array described by arrayshape.
         """
@@ -281,6 +281,23 @@ struct NDArrayShape(Stringable, Writable):
         shape._buf[shape.ndim - 1] = value
         return shape
 
+    fn _pop(self, axis: Int) -> Self:
+        """
+        drop information of certain axis.
+        """
+        var res = Self()
+        var buffer = UnsafePointer[Int].alloc(self.ndim - 1)
+        memcpy(dest=buffer, src=self._buf, count=axis)
+        memcpy(
+            dest=buffer + axis,
+            src=self._buf.offset(axis + 1),
+            count=self.ndim - axis - 1,
+        )
+        res.ndim = self.ndim - 1
+        res.size = self.size // self._buf[axis]
+        res._buf = buffer
+        return res
+
     # # can be used for vectorized index calculation
     # @always_inline("nodebug")
     # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
@@ -295,7 +312,7 @@ struct NDArrayShape(Stringable, Writable):
     # @always_inline("nodebug")
     # fn store[
     #     width: Int = 1
-    # ](mut self, index: Int, val: SIMD[dtype, width]) raises:
+    # ](out self, index: Int, val: SIMD[dtype, width]) raises:
     #     """
     #     SIMD store dimensional information.
     #     """

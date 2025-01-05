@@ -149,7 +149,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
 
-        if (data.order == "C") or (data.ndim == 1):
+        if (data.flags["C_CONTIGUOUS"]) or (data.ndim == 1):
             memcpy(self._buf, data._buf, self.size)
         else:
             for i in range(data.shape[0]):

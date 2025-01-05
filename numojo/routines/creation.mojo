@@ -39,7 +39,7 @@ from memory import UnsafePointer, memset_zero, memset
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.core.utility import _get_index
+from numojo.core.utility import _get_offset
 
 
 # ===------------------------------------------------------------------------===#
@@ -1015,7 +1015,8 @@ fn astype[
         A NDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    var res = NDArray[target](a.shape, order=a.order)
+    var array_order = "C" if a.flags["C_CONTIGUOUS"] else "F"
+    var res = NDArray[target](a.shape, order=array_order)
 
     @parameter
     if target == DType.bool:

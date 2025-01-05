@@ -44,127 +44,94 @@ fn fill_pointer[
 
 
 # ===----------------------------------------------------------------------=== #
-# GET INDEX FUNCTIONS FOR NDARRAY
+# GET OFFSET FUNCTIONS FOR NDARRAY
 # ===----------------------------------------------------------------------=== #
-# define a ndarray internal trait and remove multiple overloads of these _get_index
-fn _get_index(indices: List[Int], weights: NDArrayShape) raises -> Int:
+
+
+fn _get_offset(indices: List[Int], strides: NDArrayStrides) raises -> Int:
     """
-    Get the index of a multi-dimensional array from a list of indices and weights.
+    Get the index of a multi-dimensional array from a list of indices and strides.
 
     Args:
         indices: The list of indices.
-        weights: The weights of the indices.
+        strides: The strides of the indices.
 
     Returns:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndim):
-        idx += indices[i] * weights[i]
+    for i in range(strides.ndim):
+        idx += indices[i] * strides[i]
     return idx
 
 
-fn _get_index(indices: VariadicList[Int], weights: NDArrayShape) raises -> Int:
+fn _get_offset(indices: Idx, strides: NDArrayStrides) raises -> Int:
     """
-    Get the index of a multi-dimensional array from a list of indices and weights.
+    Get the index of a multi-dimensional array from a list of indices and strides.
 
     Args:
         indices: The list of indices.
-        weights: The weights of the indices.
-
-    Returns:
-        The scalar index of the multi-dimensional array.
-    """
-    var idx: Int = 0
-    for i in range(weights.ndim):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _get_index(indices: List[Int], weights: NDArrayStrides) raises -> Int:
-    """
-    Get the index of a multi-dimensional array from a list of indices and weights.
-
-    Args:
-        indices: The list of indices.
-        weights: The weights of the indices.
-
-    Returns:
-        The scalar index of the multi-dimensional array.
-    """
-    var idx: Int = 0
-    for i in range(weights.ndim):
-        idx += indices[i] * weights[i]
-    return idx
-
-
-fn _get_index(indices: Idx, weights: NDArrayStrides) raises -> Int:
-    """
-    Get the index of a multi-dimensional array from a list of indices and weights.
-
-    Args:
-        indices: The list of indices.
-        weights: The weights of the indices.
+        strides: The strides of the indices.
 
     Returns:
         The scalar index of the multi-dimensional array.
     """
     var index: Int = 0
-    for i in range(weights.ndim):
-        index += indices[i] * weights[i]
+    for i in range(strides.ndim):
+        index += indices[i] * strides[i]
     return index
 
 
-fn _get_index(
-    indices: VariadicList[Int], weights: NDArrayStrides
+fn _get_offset(
+    indices: VariadicList[Int], strides: NDArrayStrides
 ) raises -> Int:
     """
-    Get the index of a multi-dimensional array from a list of indices and weights.
+    Get the index of a multi-dimensional array from a list of indices and strides.
 
     Args:
         indices: The list of indices.
-        weights: The weights of the indices.
+        strides: The strides of the indices.
 
     Returns:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.ndim):
-        idx += indices[i] * weights[i]
+    for i in range(strides.ndim):
+        idx += indices[i] * strides[i]
     return idx
 
 
-fn _get_index(indices: List[Int], weights: List[Int]) -> Int:
+fn _get_offset(indices: List[Int], strides: List[Int]) -> Int:
     """
-    Get the index of a multi-dimensional array from a list of indices and weights.
+    Get the index of a multi-dimensional array from a list of indices and strides.
 
     Args:
         indices: The list of indices.
-        weights: The weights of the indices.
+        strides: The strides of the indices.
 
     Returns:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
+    for i in range(strides.__len__()):
+        idx += indices[i] * strides[i]
     return idx
 
 
-fn _get_index(indices: VariadicList[Int], weights: VariadicList[Int]) -> Int:
+fn _get_offset(indices: VariadicList[Int], strides: VariadicList[Int]) -> Int:
     """
-    Get the index of a multi-dimensional array from a list of indices and weights.
+    Get the index of a multi-dimensional array from a list of indices and strides.
 
     Args:
         indices: The list of indices.
-        weights: The weights of the indices.
+        strides: The strides of the indices.
 
     Returns:
         The scalar index of the multi-dimensional array.
     """
     var idx: Int = 0
-    for i in range(weights.__len__()):
-        idx += indices[i] * weights[i]
+    for i in range(strides.__len__()):
+        idx += indices[i] * strides[i]
     return idx
 
 
@@ -258,8 +225,8 @@ fn _traverse_iterative[
 
     # # parallelized version was slower xD
     for _ in range(total_elements):
-        var orig_idx = offset + _get_index(index, coefficients)
-        var narr_idx = _get_index(index, strides)
+        var orig_idx = offset + _get_offset(index, coefficients)
+        var narr_idx = _get_offset(index, strides)
         try:
             if narr_idx >= total_elements:
                 raise Error("Invalid index: index out of bound")
@@ -307,8 +274,8 @@ fn _traverse_iterative_setter[
     # # parallelized version was slower xD
     var total_elements = narr.size
     for _ in range(total_elements):
-        var orig_idx = offset + _get_index(index, coefficients)
-        var narr_idx = _get_index(index, strides)
+        var orig_idx = offset + _get_offset(index, coefficients)
+        var narr_idx = _get_offset(index, strides)
         try:
             if narr_idx >= total_elements:
                 raise Error("Invalid index: index out of bound")
@@ -412,7 +379,8 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.bool:
             np_dtype = np.bool_
 
-        numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=array.order)
+        var order = "C" if array.flags["C_CONTIGUOUS"] else "F"
+        numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()

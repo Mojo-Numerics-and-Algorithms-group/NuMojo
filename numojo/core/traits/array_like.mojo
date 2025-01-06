@@ -1,4 +1,4 @@
-from ..core.ndarray import NDArray
+from numojo.core.ndarray import NDArray
 
 # Blocked by lack of trait paramaterization
 

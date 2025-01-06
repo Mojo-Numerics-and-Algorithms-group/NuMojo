@@ -33,7 +33,7 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
 
     @parameter
     fn cal_vec[width: Int](i: Int):
-        res *= A._buf.load[width=width](i).reduce_mul()
+        res *= A._buf.ptr.load[width=width](i).reduce_mul()
 
     vectorize[cal_vec, width](A.size)
     return res
@@ -96,7 +96,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A
         for i in range(A.size - 1):
-            B._buf[i + 1] *= B._buf[i]
+            B._buf.ptr[i + 1] *= B._buf.ptr[i]
         return B^
 
     else:
@@ -128,7 +128,7 @@ fn cumprod[
         )
 
     var I = NDArray[DType.index](Shape(A.size))
-    var ptr = I._buf
+    var ptr = I._buf.ptr
 
     var _shape = A.shape._move_axis_to_end(axis)
     var _strides = A.strides._move_axis_to_end(axis)
@@ -139,6 +139,6 @@ fn cumprod[
 
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] - 1):
-            A._buf[I._buf[i + j + 1]] *= A._buf[I._buf[i + j]]
+            A._buf.ptr[I._buf.ptr[i + j + 1]] *= A._buf.ptr[I._buf.ptr[i + j]]
 
     return A^

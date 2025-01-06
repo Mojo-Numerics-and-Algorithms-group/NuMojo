@@ -39,7 +39,8 @@ from memory import UnsafePointer, memset_zero, memset
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.core.utility import _get_index
+from numojo.core.utility import _get_offset
+from numojo.core.own_data import OwnData
 
 
 # ===------------------------------------------------------------------------===#
@@ -74,7 +75,7 @@ fn arange[
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
     for idx in range(num):
-        result._buf[idx] = start + step * idx
+        result._buf.ptr[idx] = start + step * idx
 
     return result
 
@@ -89,7 +90,7 @@ fn arange[
     var size = int(stop)
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
-        (result._buf + i).init_pointee_copy(i)
+        (result._buf.ptr + i).init_pointee_copy(i)
 
     return result
 
@@ -161,12 +162,12 @@ fn _linspace_serial[
     if endpoint:
         var step: SIMD[dtype, 1] = (stop - start) / (num - 1)
         for i in range(num):
-            result._buf[i] = start + step * i
+            result._buf.ptr[i] = start + step * i
 
     else:
         var step: SIMD[dtype, 1] = (stop - start) / num
         for i in range(num):
-            result._buf[i] = start + step * i
+            result._buf.ptr[i] = start + step * i
 
     return result
 
@@ -200,7 +201,7 @@ fn _linspace_parallel[
 
         @parameter
         fn parallelized_linspace(idx: Int) -> None:
-            result._buf[idx] = start + step * idx
+            result._buf.ptr[idx] = start + step * idx
 
         parallelize[parallelized_linspace](num)
 
@@ -209,7 +210,7 @@ fn _linspace_parallel[
 
         @parameter
         fn parallelized_linspace1(idx: Int) -> None:
-            result._buf[idx] = start + step * idx
+            result._buf.ptr[idx] = start + step * idx
 
         parallelize[parallelized_linspace1](num)
 
@@ -298,11 +299,11 @@ fn _logspace_serial[
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / (num - 1)
         for i in range(num):
-            result._buf[i] = base ** (start + step * i)
+            result._buf.ptr[i] = base ** (start + step * i)
     else:
         var step: Scalar[dtype] = (stop - start) / num
         for i in range(num):
-            result._buf[i] = base ** (start + step * i)
+            result._buf.ptr[i] = base ** (start + step * i)
     return result
 
 
@@ -338,7 +339,7 @@ fn _logspace_parallel[
 
         @parameter
         fn parallelized_logspace(idx: Int) -> None:
-            result._buf[idx] = base ** (start + step * idx)
+            result._buf.ptr[idx] = base ** (start + step * idx)
 
         parallelize[parallelized_logspace](num)
 
@@ -347,7 +348,7 @@ fn _logspace_parallel[
 
         @parameter
         fn parallelized_logspace1(idx: Int) -> None:
-            result._buf[idx] = base ** (start + step * idx)
+            result._buf.ptr[idx] = base ** (start + step * idx)
 
         parallelize[parallelized_logspace1](num)
 
@@ -392,7 +393,7 @@ fn geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result._buf[i] = a * r**i
+            result._buf.ptr[i] = a * r**i
         return result
 
     else:
@@ -401,7 +402,7 @@ fn geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result._buf[i] = a * r**i
+            result._buf.ptr[i] = a * r**i
         return result
 
 
@@ -627,7 +628,7 @@ fn full[
 
     var A = NDArray[dtype](shape=shape, order=order)
     for i in range(A.size):
-        A._buf[i] = fill_value
+        A._buf.ptr[i] = fill_value
     return A^
 
 
@@ -701,13 +702,13 @@ fn diag[
         )
         if k >= 0:
             for i in range(n):
-                result._buf[i * (n + abs(k) + 1) + k] = v._buf[i]
+                result._buf.ptr[i * (n + abs(k) + 1) + k] = v._buf.ptr[i]
             return result^
         else:
             for i in range(n):
-                result._buf[
+                result._buf.ptr[
                     result.size - 1 - i * (result.shape[1] + 1) + k
-                ] = v._buf[n - 1 - i]
+                ] = v._buf.ptr[n - 1 - i]
         return result^
     elif v.ndim == 2:
         var m: Int = v.shape[0]
@@ -715,10 +716,10 @@ fn diag[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(n - abs(k)))
         if k >= 0:
             for i in range(n - abs(k)):
-                result._buf[i] = v._buf[i * (n + 1) + k]
+                result._buf.ptr[i] = v._buf.ptr[i * (n + 1) + k]
         else:
             for i in range(n - abs(k)):
-                result._buf[m - abs(k) - 1 - i] = v._buf[
+                result._buf.ptr[m - abs(k) - 1 - i] = v._buf.ptr[
                     v.size - 1 - i * (v.shape[1] + 1) + k
                 ]
         return result^
@@ -748,12 +749,12 @@ fn diagflat[
     )
     if k >= 0:
         for i in range(n):
-            result.store((n + k + 1) * i + k, v._buf[i])
+            result.store((n + k + 1) * i + k, v._buf.ptr[i])
     else:
         for i in range(n):
             result.store(
                 result.size - 1 - (n + abs(k) + 1) * i + k,
-                v._buf[v.size - 1 - i],
+                v._buf.ptr[v.size - 1 - i],
             )
     return result^
 
@@ -805,7 +806,7 @@ fn tril[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
-                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
+                result._buf.ptr[i * m.shape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -815,7 +816,9 @@ fn tril[
             offset = offset * final_offset
             for i in range(m.shape[-2]):
                 for j in range(i + 1 + k, m.shape[-1]):
-                    result._buf[offset + j + i * m.shape[-1]] = Scalar[dtype](0)
+                    result._buf.ptr[offset + j + i * m.shape[-1]] = Scalar[
+                        dtype
+                    ](0)
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."
@@ -845,7 +848,7 @@ fn triu[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
-                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
+                result._buf.ptr[i * m.shape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -855,7 +858,9 @@ fn triu[
             offset = offset * final_offset
             for i in range(m.shape[-2]):
                 for j in range(0, i + k):
-                    result._buf[offset + j + i * m.shape[-1]] = Scalar[dtype](0)
+                    result._buf.ptr[offset + j + i * m.shape[-1]] = Scalar[
+                        dtype
+                    ](0)
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."
@@ -889,7 +894,7 @@ fn vander[
     var n_cols = N.value() if N else n_rows
     var result: NDArray[dtype] = ones[dtype](NDArrayShape(n_rows, n_cols))
     for i in range(n_rows):
-        var x_i = x._buf[i]
+        var x_i = x._buf.ptr[i]
         if increasing:
             for j in range(n_cols):
                 result.store(i, j, val=x_i**j)
@@ -1024,7 +1029,7 @@ fn astype[
         @parameter
         fn vectorized_astype[simd_width: Int](idx: Int) -> None:
             (res.unsafe_ptr() + idx).strided_store[width=simd_width](
-                a._buf.load[width=simd_width](idx).cast[target](), 1
+                a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
             )
 
         vectorize[vectorized_astype, a.width](a.size)
@@ -1036,9 +1041,9 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
-                res._buf.store(
+                res._buf.ptr.store(
                     idx,
-                    (a._buf + idx)
+                    (a._buf.ptr + idx)
                     .strided_load[width=simd_width](1)
                     .cast[target](),
                 )
@@ -1049,8 +1054,8 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                res._buf.store(
-                    idx, a._buf.load[width=simd_width](idx).cast[target]()
+                res._buf.ptr.store(
+                    idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )
 
             vectorize[vectorized_astypenb, a.width](a.size)
@@ -1100,7 +1105,7 @@ fn array[
 
     A = NDArray[dtype](NDArrayShape(shape), order)
     for i in range(A.size):
-        A._buf[i] = data[i]
+        A._buf.ptr[i] = data[i]
     return A
 
 
@@ -1138,8 +1143,8 @@ fn array[
             continue
         shape.append(int(data.shape[i]))
     A = NDArray[dtype](NDArrayShape(shape), order=order)
-    A._buf = UnsafePointer[Scalar[dtype]]().alloc(A.size)
+    A._buf = OwnData[dtype](A.size)
     # memset_zero(A._buf, A.size)
     for i in range(A.size):
-        A._buf[i] = float(data.item(PythonObject(i))).cast[dtype]()
+        A._buf.ptr[i] = float(data.item(PythonObject(i))).cast[dtype]()
     return A

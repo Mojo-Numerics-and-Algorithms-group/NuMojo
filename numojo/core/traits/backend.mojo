@@ -3,7 +3,7 @@
 # ===----------------------------------------------------------------------=== #
 
 
-from ..core.ndarray import NDArray
+from numojo.core.ndarray import NDArray
 
 
 trait Backend:

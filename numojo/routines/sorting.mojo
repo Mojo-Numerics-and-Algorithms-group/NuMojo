@@ -49,10 +49,12 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 
     for i in range(length):
         for j in range(length - i - 1):
-            if result._buf.load[width=1](j) > result._buf.load[width=1](j + 1):
-                var temp = result._buf.load[width=1](j)
-                result._buf.store(j, result._buf.load[width=1](j + 1))
-                result._buf.store(j + 1, temp)
+            if result._buf.ptr.load[width=1](j) > result._buf.ptr.load[width=1](
+                j + 1
+            ):
+                var temp = result._buf.ptr.load[width=1](j)
+                result._buf.ptr.store(j, result._buf.ptr.load[width=1](j + 1))
+                result._buf.ptr.store(j + 1, temp)
 
     return result
 
@@ -87,21 +89,39 @@ fn _partition_in_range(
     # (Unsafe) Boundary checks are not done for sake of speed:
     # if (left >= A.size) or (right >= A.size) or (pivot_index >= A.size):
 
-    var pivot_value = A._buf[pivot_index]
+    var pivot_value = A._buf.ptr[pivot_index]
 
-    A._buf[pivot_index], A._buf[right] = A._buf[right], A._buf[pivot_index]
-    I._buf[pivot_index], I._buf[right] = I._buf[right], I._buf[pivot_index]
+    A._buf.ptr[pivot_index], A._buf.ptr[right] = (
+        A._buf.ptr[right],
+        A._buf.ptr[pivot_index],
+    )
+    I._buf.ptr[pivot_index], I._buf.ptr[right] = (
+        I._buf.ptr[right],
+        I._buf.ptr[pivot_index],
+    )
 
     var store_index = left
 
     for i in range(left, right):
-        if A._buf[i] < pivot_value:
-            A._buf[store_index], A._buf[i] = A._buf[i], A._buf[store_index]
-            I._buf[store_index], I._buf[i] = I._buf[i], I._buf[store_index]
+        if A._buf.ptr[i] < pivot_value:
+            A._buf.ptr[store_index], A._buf.ptr[i] = (
+                A._buf.ptr[i],
+                A._buf.ptr[store_index],
+            )
+            I._buf.ptr[store_index], I._buf.ptr[i] = (
+                I._buf.ptr[i],
+                I._buf.ptr[store_index],
+            )
             store_index = store_index + 1
 
-    A._buf[store_index], A._buf[right] = A._buf[right], A._buf[store_index]
-    I._buf[store_index], I._buf[right] = I._buf[right], I._buf[store_index]
+    A._buf.ptr[store_index], A._buf.ptr[right] = (
+        A._buf.ptr[right],
+        A._buf.ptr[store_index],
+    )
+    I._buf.ptr[store_index], I._buf.ptr[right] = (
+        I._buf.ptr[right],
+        I._buf.ptr[store_index],
+    )
 
     return store_index
 
@@ -162,7 +182,9 @@ fn _sort_inplace[
         I = NDArray[DType.index](shape=A.shape)
         for i in range(A.size // A.shape[continous_axis]):
             for j in range(A.shape[continous_axis]):
-                (I._buf + i * A.shape[continous_axis] + j).init_pointee_copy(j)
+                (
+                    I._buf.ptr + i * A.shape[continous_axis] + j
+                ).init_pointee_copy(j)
             _sort_in_range(
                 A,
                 I,

@@ -13,33 +13,27 @@ struct NDArrayStrides(Stringable):
     """Implements the NDArrayStrides."""
 
     # Fields
-    var offset: Int
     var _buf: UnsafePointer[Int]
     """Data buffer."""
     var ndim: Int
     """Number of dimensions of array."""
 
     @always_inline("nodebug")
-    fn __init__(
-        out self, *strides: Int, offset: Int = 0
-    ):  # maybe we should add checks for offset?
-        self.offset = offset
+    fn __init__(out self, *strides: Int):
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: List[Int], offset: Int = 0):
-        self.offset = offset
+    fn __init__(out self, strides: List[Int]):
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: VariadicList[Int], offset: Int = 0):
-        self.offset = offset
+    fn __init__(out self, strides: VariadicList[Int]):
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -47,25 +41,12 @@ struct NDArrayStrides(Stringable):
 
     @always_inline("nodebug")
     fn __init__(out self, strides: NDArrayStrides):
-        self.offset = strides.offset
         self.ndim = strides.ndim
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
-    fn __init__(
-        out self, strides: NDArrayStrides, offset: Int
-    ):  # separated two methods to remove if condition
-        self.offset = offset
-        self.ndim = strides.ndim
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        memcpy(self._buf, strides._buf, strides.ndim)
-
-    @always_inline("nodebug")
-    fn __init__(
-        out self, *shape: Int, offset: Int = 0, order: String = "C"
-    ) raises:
-        self.offset = offset
+    fn __init__(out self, *shape: Int, order: String) raises:
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         if order == "C":
@@ -85,10 +66,7 @@ struct NDArrayStrides(Stringable):
             )
 
     @always_inline("nodebug")
-    fn __init__(
-        out self, shape: List[Int], offset: Int = 0, order: String = "C"
-    ) raises:
-        self.offset = offset
+    fn __init__(out self, shape: List[Int], order: String = "C") raises:
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         if order == "C":
@@ -111,10 +89,8 @@ struct NDArrayStrides(Stringable):
     fn __init__(
         out self,
         shape: VariadicList[Int],
-        offset: Int = 0,
         order: String = "C",
     ) raises:
-        self.offset = offset
         self.ndim = shape.__len__()
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         if order == "C":
@@ -137,10 +113,8 @@ struct NDArrayStrides(Stringable):
     fn __init__(
         out self,
         owned shape: NDArrayShape,
-        offset: Int = 0,
         order: String = "C",
     ) raises:
-        self.offset = offset
         self.ndim = shape.ndim
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         if order == "C":
@@ -181,7 +155,7 @@ struct NDArrayStrides(Stringable):
             self._buf[self.ndim + index] = val
 
     @always_inline("nodebug")
-    fn len(self) -> Int:
+    fn __len__(self) -> Int:
         return self.ndim
 
     @always_inline("nodebug")
@@ -270,12 +244,28 @@ struct NDArrayStrides(Stringable):
         strides._buf[strides.ndim - 1] = value
         return strides
 
+    fn _pop(self, axis: Int) -> Self:
+        """
+        drop information of certain axis.
+        """
+        var res = Self()
+        var buffer = UnsafePointer[Int].alloc(self.ndim - 1)
+        memcpy(dest=buffer, src=self._buf, count=axis)
+        memcpy(
+            dest=buffer + axis,
+            src=self._buf.offset(axis + 1),
+            count=self.ndim - axis - 1,
+        )
+        res.ndim = self.ndim - 1
+        res._buf = buffer
+        return res
+
 
 # @always_inline("nodebug")
 # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
 #     # if index >= self.ndim:
 #     #     raise Error("Index out of bound")
-#     return self._buf.load[width=width](index)
+#     return self._buf.ptr.load[width=width](index)
 
 # @always_inline("nodebug")
 # fn store[
@@ -283,14 +273,14 @@ struct NDArrayStrides(Stringable):
 # ](mut self, index: Int, val: SIMD[dtype, width]) raises:
 #     # if index >= self.ndim:
 #     #     raise Error("Index out of bound")
-#     self._buf.store(index, val)
+#     self._buf.ptr.store(index, val)
 
 # @always_inline("nodebug")
 # fn load_unsafe[width: Int = 1](self, index: Int) -> Int:
-#     return self._buf.load[width=width](index).__int__()
+#     return self._buf.ptr.load[width=width](index).__int__()
 
 # @always_inline("nodebug")
 # fn store_unsafe[
 #     width: Int = 1
 # ](mut self, index: Int, val: SIMD[dtype, width]):
-#     self._buf.store(index, val)
+#     self._buf.ptr.store(index, val)

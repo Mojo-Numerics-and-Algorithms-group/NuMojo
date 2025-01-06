@@ -7,7 +7,7 @@ Interpolate Module - Implements interpolation functions
 # ===----------------------------------------------------------------------=== #
 
 
-from ..core.ndarray import NDArray, NDArrayShape
+from numojo.core.ndarray import NDArray, NDArrayShape
 
 """
 # TODO:
@@ -82,20 +82,20 @@ fn _interp1d_linear_interpolate[
     """
     var result = NDArray[dtype](xi.shape)
     for i in range(xi.num_elements()):
-        if xi._buf[i] <= x._buf[0]:
-            result._buf.store(i, y._buf[0])
-        elif xi._buf[i] >= x._buf[x.num_elements() - 1]:
-            result._buf.store(i, y._buf[y.num_elements() - 1])
+        if xi._buf.ptr[i] <= x._buf.ptr[0]:
+            result._buf.ptr.store(i, y._buf.ptr[0])
+        elif xi._buf.ptr[i] >= x._buf.ptr[x.num_elements() - 1]:
+            result._buf.ptr.store(i, y._buf.ptr[y.num_elements() - 1])
         else:
             var j = 0
-            while xi._buf[i] > x._buf[j]:
+            while xi._buf.ptr[i] > x._buf.ptr[j]:
                 j += 1
-            var x0 = x._buf[j - 1]
-            var x1 = x._buf[j]
-            var y0 = y._buf[j - 1]
-            var y1 = y._buf[j]
-            var t = (xi._buf[i] - x0) / (x1 - x0)
-            result._buf.store(i, y0 + t * (y1 - y0))
+            var x0 = x._buf.ptr[j - 1]
+            var x1 = x._buf.ptr[j]
+            var y0 = y._buf.ptr[j - 1]
+            var y1 = y._buf.ptr[j]
+            var t = (xi._buf.ptr[i] - x0) / (x1 - x0)
+            result._buf.ptr.store(i, y0 + t * (y1 - y0))
     return result
 
 
@@ -117,26 +117,34 @@ fn _interp1d_linear_extrapolate[
     """
     var result = NDArray[dtype](xi.shape)
     for i in range(xi.num_elements()):
-        if xi._buf.load[width=1](i) <= x._buf.load[width=1](0):
-            var slope = (y._buf[1] - y._buf[0]) / (x._buf[1] - x._buf[0])
-            result._buf[i] = y._buf[0] + slope * (xi._buf[i] - x._buf[0])
-        elif xi._buf[i] >= x._buf[x.num_elements() - 1]:
+        if xi._buf.ptr.load[width=1](i) <= x._buf.ptr.load[width=1](0):
+            var slope = (y._buf.ptr[1] - y._buf.ptr[0]) / (
+                x._buf.ptr[1] - x._buf.ptr[0]
+            )
+            result._buf.ptr[i] = y._buf.ptr[0] + slope * (
+                xi._buf.ptr[i] - x._buf.ptr[0]
+            )
+        elif xi._buf.ptr[i] >= x._buf.ptr[x.num_elements() - 1]:
             var slope = (
-                y._buf[y.num_elements() - 1] - y._buf[y.num_elements() - 2]
-            ) / (x._buf[x.num_elements() - 1] - x._buf[x.num_elements() - 2])
-            result._buf[i] = y._buf[y.num_elements() - 1] + slope * (
-                xi._buf[i] - x._buf[x.num_elements() - 1]
+                y._buf.ptr[y.num_elements() - 1]
+                - y._buf.ptr[y.num_elements() - 2]
+            ) / (
+                x._buf.ptr[x.num_elements() - 1]
+                - x._buf.ptr[x.num_elements() - 2]
+            )
+            result._buf.ptr[i] = y._buf.ptr[y.num_elements() - 1] + slope * (
+                xi._buf.ptr[i] - x._buf.ptr[x.num_elements() - 1]
             )
         else:
             var j = 0
-            while xi._buf[i] > x._buf[j]:
+            while xi._buf.ptr[i] > x._buf.ptr[j]:
                 j += 1
-            var x0 = x._buf[j - 1]
-            var x1 = x._buf[j]
-            var y0 = y._buf[j - 1]
-            var y1 = y._buf[j]
-            var t = (xi._buf[i] - x0) / (x1 - x0)
-            result._buf[i] = y0 + t * (y1 - y0)
+            var x0 = x._buf.ptr[j - 1]
+            var x1 = x._buf.ptr[j]
+            var y0 = y._buf.ptr[j - 1]
+            var y1 = y._buf.ptr[j]
+            var t = (xi._buf.ptr[i] - x0) / (x1 - x0)
+            result._buf.ptr[i] = y0 + t * (y1 - y0)
     return result
 
 

@@ -19,10 +19,11 @@ from collections.optional import Optional
 from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
 
+import numojo.core._array_funcs as _af
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
+from numojo.core.item import Item
 from numojo.core.own_data import OwnData
-import numojo.core._array_funcs as _af
 from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
@@ -39,7 +40,6 @@ import numojo.routines.logic.comparison as comparison
 import numojo.routines.math.rounding as rounding
 import numojo.routines.bitwise as bitwise
 import numojo.routines.linalg as linalg
-
 from numojo.core.datatypes import TypeCoercion
 from numojo.routines.statistics.averages import mean, cummean
 from numojo.routines.math.products import prod, cumprod

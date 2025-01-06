@@ -38,4 +38,4 @@ from numojo.core.datatypes import (
     f64,
 )
 
-alias idx = Item
+alias item = Item

@@ -1,6 +1,6 @@
 from math import sqrt
 
-from ._complex_dtype import CDType
+from .complex_dtype import CDType
 
 alias ComplexScalar = ComplexSIMD[_,]
 

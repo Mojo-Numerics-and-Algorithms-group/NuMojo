@@ -24,7 +24,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.index import Idx
 from numojo.core.ndshape import Shape, NDArrayShape
 
-from numojo.core._complex_dtype import CDType
+from numojo.core.complex_dtype import CDType
 from numojo.core.complex_simd import ComplexSIMD, ComplexScalar
 from numojo.core.complex_ndarray import ComplexNDArray
 

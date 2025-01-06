@@ -1,5 +1,8 @@
-# Code for CDType is adapted from the Mojo Standard Library (https://github.com/modularml/mojo),
-# licensed under the Apache License, Version 2.0. Modifications were made for the purposes of this project to support a Complex SIMD type.
+# Code for CDType is adapted from the Mojo Standard Library
+# (https://github.com/modularml/mojo)
+# licensed under the Apache License, Version 2.0.
+# Modifications were made for the purposes of this project to
+# support a Complex SIMD type.
 
 from collections import KeyElement
 from hashlib._hasher import _HashableWithHasher, _Hasher

@@ -6,7 +6,7 @@ from .index import Idx
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
 
-from ._complex_dtype import CDType
+from .complex_dtype import CDType
 from .complex_simd import ComplexSIMD, ComplexScalar
 from .complex_ndarray import ComplexNDArray
 

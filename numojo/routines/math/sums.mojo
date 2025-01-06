@@ -32,7 +32,7 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
 
     @parameter
     fn cal_vec[width: Int](i: Int):
-        res += A._buf.load[width=width](i).reduce_add()
+        res += A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[cal_vec, width](A.size)
     return res
@@ -102,7 +102,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A
         for i in range(A.size - 1):
-            B._buf[i + 1] += B._buf[i]
+            B._buf.ptr[i + 1] += B._buf.ptr[i]
         return B^
 
     else:
@@ -134,7 +134,7 @@ fn cumsum[
         )
 
     var I = NDArray[DType.index](Shape(A.size))
-    var ptr = I._buf
+    var ptr = I._buf.ptr
 
     var _shape = A.shape._move_axis_to_end(axis)
     var _strides = A.strides._move_axis_to_end(axis)
@@ -145,6 +145,8 @@ fn cumsum[
 
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] - 1):
-            A._buf[int(I._buf[i + j + 1])] += A._buf[int(I._buf[i + j])]
+            A._buf.ptr[int(I._buf.ptr[i + j + 1])] += A._buf.ptr[
+                int(I._buf.ptr[i + j])
+            ]
 
     return A^

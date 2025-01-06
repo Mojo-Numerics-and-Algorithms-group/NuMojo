@@ -152,7 +152,8 @@ fn main() raises:
     var A_slice = A[1:3, 4:19]
 
     # Get scalar from array
-    var A_item = A[Idx(291, 141)]
+    var A_item = A[item(291, 141)]
+    var A_item_2 = A.item(291, 141)
 ```
 
 An example of matrix (`Matrix` type) goes as follows.

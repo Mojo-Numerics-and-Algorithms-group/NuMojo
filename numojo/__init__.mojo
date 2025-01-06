@@ -10,7 +10,7 @@ alias __version__ = "V0.2"
 # e.g., lower case can also be used for alias of structs.
 # ===----------------------------------------------------------------------=== #
 
-alias idx = numojo.core.index.Idx
+alias idx = numojo.core.item.Item
 
 # ===----------------------------------------------------------------------=== #
 # Import core types
@@ -18,7 +18,7 @@ alias idx = numojo.core.index.Idx
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
-from numojo.core.index import Idx
+from numojo.core.item import Item
 from numojo.core.datatypes import (
     i8,
     i16,

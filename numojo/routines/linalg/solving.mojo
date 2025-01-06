@@ -11,7 +11,7 @@ Provides:
 """
 
 from numojo.core.ndarray import NDArray
-from numojo.core.index import Idx
+from numojo.core.item import Item
 from numojo.routines.creation import zeros, eye, full
 from algorithm import parallelize
 
@@ -186,7 +186,7 @@ fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         # print("x2", x)
 
         for j in range(m):
-            inversed.__setitem__(Idx(j, i), x.item(j))
+            inversed.__setitem__(Item(j, i), x.item(j))
 
     return inversed
 

@@ -383,7 +383,7 @@ struct NDArray[dtype: DType = DType.float64](
             val, self, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    fn __setitem__(mut self, index: Idx, val: SIMD[dtype, 1]) raises:
+    fn __setitem__(mut self, index: Item, val: SIMD[dtype, 1]) raises:
         """
         Set the value at the index list.
         """
@@ -667,7 +667,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
-    fn __getitem__(self, index: Idx) raises -> SIMD[dtype, 1]:
+    fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]:
         """
         Set the value at the index list.
         """
@@ -2061,7 +2061,7 @@ struct NDArray[dtype: DType = DType.float64](
         for row in range(self.shape[0]):
             for col in range(other.shape[1]):
                 new_matrix.__setitem__(
-                    Idx(row, col),
+                    Item(row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
         return new_matrix

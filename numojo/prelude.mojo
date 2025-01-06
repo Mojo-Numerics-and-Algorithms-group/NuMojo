@@ -21,7 +21,7 @@ from numojo.prelude import *
 """
 
 from numojo.core.ndarray import NDArray
-from numojo.core.index import Idx
+from numojo.core.item import Item
 from numojo.core.ndshape import Shape, NDArrayShape
 from numojo.core.datatypes import (
     i8,
@@ -38,4 +38,4 @@ from numojo.core.datatypes import (
     f64,
 )
 
-alias idx = Idx
+alias idx = Item

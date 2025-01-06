@@ -31,7 +31,7 @@ def test_constructors():
     var arr3 = nm.full[f32](Shape(3, 4, 5), fill_value=Scalar[f32](10.0))
     # maybe it's better to return a scalar for arr[0, 0, 0]
     assert_equal(
-        arr3[idx(0, 0, 0)], 10.0, "NDArray constructor with fill value"
+        arr3[Item(0, 0, 0)], 10.0, "NDArray constructor with fill value"
     )
 
     var arr4 = NDArray[f32](List[Int](3, 4, 5))

@@ -148,12 +148,12 @@ fn partial_pivoting[
             # A[col], A[max_p_row] = A[max_p_row], A[col]
             # P[col], P[max_p_row] = P[max_p_row], P[col]
             var temp = A.item(max_p_row, i)
-            A[Idx(max_p_row, i)] = A.item(col, i)
-            A[Idx(col, i)] = temp
+            A[Item(max_p_row, i)] = A.item(col, i)
+            A[Item(col, i)] = temp
 
             temp = P.item(max_p_row, i)
-            P[Idx(max_p_row, i)] = P.item(col, i)
-            P[Idx(col, i)] = temp
+            P[Item(max_p_row, i)] = P.item(col, i)
+            P[Item(col, i)] = temp
 
         if max_p_row != col:
             s = s + 1

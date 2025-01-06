@@ -2,24 +2,20 @@ from math import sqrt
 
 from ._complex_dtype import CDType
 
-# alias ComplexScalar = ComplexSIMD[_, CDType.to_dtype[_](), 1]
-
+alias ComplexScalar = ComplexSIMD[_, ]
 
 @register_passable("trivial")
 struct ComplexSIMD[
-    ctype: CDType,
-    *,
-    type: DType = CDType.to_dtype[ctype](),
-    size: Int = 1
+    cdtype: CDType, *, dtype: DType = CDType.to_dtype[cdtype](), size: Int = 1
 ]():
     """
     Represents a SIMD[dtype, 1] Complex number with real and imaginary parts.
     """
 
     # FIELDS
-    """The underlying data type of the complex number."""
-    var re: SIMD[type, size]
-    var im: SIMD[type, size]
+    """The underlying data real and imaginary parts of the complex number."""
+    var re: SIMD[dtype, size]
+    var im: SIMD[dtype, size]
 
     @always_inline
     fn __init__(out self, other: Self):
@@ -32,7 +28,7 @@ struct ComplexSIMD[
         self = other
 
     @always_inline
-    fn __init__(out self, re: SIMD[type, size], im: SIMD[type, size]):
+    fn __init__(out self, re: SIMD[dtype, size], im: SIMD[dtype, size]):
         """
         Initializes a ComplexSIMD instance with specified real and imaginary parts.
 
@@ -53,7 +49,7 @@ struct ComplexSIMD[
         self.im = im
 
     @always_inline
-    fn __init__(out self, val: SIMD[type, size]):
+    fn __init__(out self, val: SIMD[dtype, size]):
         """
         Initializes a ComplexSIMD instance with specified real and imaginary parts.
 
@@ -61,8 +57,8 @@ struct ComplexSIMD[
             re: The real part of the complex number.
             im: The imaginary part of the complex number.
         """
-        self.re = rebind[Scalar[type]](val)
-        self.im = rebind[Scalar[type]](val)
+        self.re = rebind[Scalar[dtype]](val)
+        self.im = rebind[Scalar[dtype]](val)
 
     fn __add__(self, other: Self) -> Self:
         """
@@ -75,18 +71,6 @@ struct ComplexSIMD[
             Self: A new ComplexSIMD instance representing the sum.
         """
         return Self(self.re + other.re, self.im + other.im)
-
-    # fn __add__(self, other: ComplexSIMD[ctype, type]) -> ComplexSIMD[ctype, type]:
-    #     """
-    #     Adds two ComplexSIMD instances.
-
-    #     Arguments:
-    #         other: The ComplexSIMD instance to add.
-
-    #     Returns:
-    #         Self: A new ComplexSIMD instance representing the sum.
-    #     """
-    #     return ComplexSIMD[ctype, type](rebind[Scalar[CDType.to_dtype[ctype]()]](self.re) + other.re, rebind[Scalar[CDType.to_dtype[ctype]()]](self.im) + other.im)
 
     fn __iadd__(mut self, other: Self):
         """
@@ -251,9 +235,9 @@ struct ComplexSIMD[
         Returns:
             String: The string representation of the ComplexSIMD instance.
         """
-        return "ComplexSIMD[{}]({}, {})".format(str(type), self.re, self.im)
+        return "ComplexSIMD[{}]({}, {})".format(str(dtype), self.re, self.im)
 
-    fn __getitem__(self, idx: Int) raises -> SIMD[type, size]:
+    fn __getitem__(self, idx: Int) raises -> SIMD[dtype, size]:
         """
         Gets the real or imaginary part of the ComplexSIMD instance.
 
@@ -287,7 +271,9 @@ struct ComplexSIMD[
         else:
             raise Error("Index out of range")
 
-    fn __setitem__(mut self, idx: Int, re: SIMD[type, size], im: SIMD[type, size]):
+    fn __setitem__(
+        mut self, idx: Int, re: SIMD[dtype, size], im: SIMD[dtype, size]
+    ):
         """
         Sets the real and imaginary parts of the ComplexSIMD instance.
 
@@ -300,31 +286,31 @@ struct ComplexSIMD[
         self.re = re
         self.im = im
 
-    fn __abs__(self) -> SIMD[type, size]:
+    fn __abs__(self) -> SIMD[dtype, size]:
         """
         Returns the magnitude of the ComplexSIMD instance.
         """
         return sqrt(self.re * self.re + self.im * self.im)
 
-    fn norm(self) -> SIMD[type, size]:
+    fn norm(self) -> SIMD[dtype, size]:
         """
         Returns the squared magnitude of the ComplexSIMD instance.
         """
         return sqrt(self.re * self.re + self.im * self.im)
 
-    fn conj(self) -> Self:
+    fn conj(mut self):
         """
         Returns the complex conjugate of the ComplexSIMD instance.
         """
-        return Self(self.re, -self.im)
+        self.im = -self.im
 
-    fn real(self) -> SIMD[type, size]:
+    fn real(self) -> SIMD[dtype, size]:
         """
         Returns the real part of the ComplexSIMD instance.
         """
         return self.re
 
-    fn imag(self) -> SIMD[type, size]:
+    fn imag(self) -> SIMD[dtype, size]:
         """
         Returns the imaginary part of the ComplexSIMD instance.
         """

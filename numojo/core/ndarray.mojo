@@ -2491,7 +2491,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return ravel(self, order=order)
 
-    fn item(self, owned index: Int) raises -> SIMD[dtype, 1]:
+    fn item(
+        self, owned index: Int
+    ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
+        dtype
+    ]:
         """
         Return the scalar at the coordinates.
 
@@ -2556,12 +2560,16 @@ struct NDArray[dtype: DType = DType.float64](
                 c_coordinates.append(coordinate)
 
             # Get the value by coordinates and the strides
-            return self._buf.ptr[_get_offset(c_coordinates, self.strides)]
+            return (self._buf.ptr + _get_offset(c_coordinates, self.strides))[]
 
         else:
-            return self._buf.ptr[index]
+            return (self._buf.ptr + index)[]
 
-    fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
+    fn item(
+        self, *index: Int
+    ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
+        dtype
+    ]:
         """
         Return the scalar at the coordinates.
 
@@ -2613,7 +2621,7 @@ struct NDArray[dtype: DType = DType.float64](
                         i, self.shape[i]
                     )
                 )
-        return self._buf.ptr[_get_offset(index, self.strides)]
+        return (self._buf.ptr + _get_offset(index, self.strides))[]
 
     fn itemset(
         mut self, index: Variant[Int, List[Int]], item: Scalar[dtype]

@@ -1003,9 +1003,9 @@ struct ComplexNDArray[
         """
         Itemwise equivalence.
         """
-        return comparison.equal[dtype](self._re, other._re) and comparison.equal[
-            dtype
-        ](self._im, other._im)
+        return comparison.equal[dtype](
+            self._re, other._re
+        ) and comparison.equal[dtype](self._im, other._im)
 
     @always_inline("nodebug")
     fn __eq__(

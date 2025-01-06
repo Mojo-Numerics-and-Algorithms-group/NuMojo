@@ -37,7 +37,7 @@ fn convolve2d[
     var in2_mirrored = in2
     var length = in2.size
     for i in range(length):
-        in2_mirrored._buf[i] = in2._buf[length - i - 1]
+        in2_mirrored._buf.ptr[i] = in2._buf.ptr[length - i - 1]
 
     var in1_height = in1.shape[0]
     var in1_width = in1.shape[1]

@@ -192,12 +192,12 @@ def test_rand_exponential():
     # Test that all values are non-negative
     for i in range(arr_variadic.num_elements()):
         assert_true(
-            arr_variadic._buf[i] >= 0,
+            arr_variadic._buf.ptr[i] >= 0,
             "Exponential distribution should only produce non-negative values",
         )
 
     for i in range(arr_list.num_elements()):
         assert_true(
-            arr_list._buf[i] >= 0,
+            arr_list._buf.ptr[i] >= 0,
             "Exponential distribution should only produce non-negative values",
         )

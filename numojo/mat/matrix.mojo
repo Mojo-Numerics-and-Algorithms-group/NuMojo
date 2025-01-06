@@ -150,7 +150,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
 
         if (data.flags["C_CONTIGUOUS"]) or (data.ndim == 1):
-            memcpy(self._buf, data._buf, self.size)
+            memcpy(self._buf, data._buf.ptr, self.size)
         else:
             for i in range(data.shape[0]):
                 for j in range(data.shape[1]):
@@ -1146,7 +1146,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         var ndarray = NDArray[dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order="C"
         )
-        memcpy(ndarray._buf, self._buf, ndarray.size)
+        memcpy(ndarray._buf.ptr, self._buf, ndarray.size)
 
         return ndarray
 

@@ -43,11 +43,11 @@ fn maxT[
 
     @parameter
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
-        max_value._buf.store(
+        max_value._buf.ptr.store(
             0,
             max(
-                max_value._buf.load[width=simd_width](0),
-                array._buf.load[width=simd_width](idx),
+                max_value._buf.ptr.load[width=simd_width](0),
+                array._buf.ptr.load[width=simd_width](idx),
             ),
         )
 
@@ -82,11 +82,11 @@ fn minT[
 
     @parameter
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
-        min_value._buf.store(
+        min_value._buf.ptr.store(
             0,
             min(
-                min_value._buf.load[width=simd_width](0),
-                array._buf.load[width=simd_width](idx),
+                min_value._buf.ptr.load[width=simd_width](0),
+                array._buf.ptr.load[width=simd_width](idx),
             ),
         )
 
@@ -195,11 +195,11 @@ fn minimum[
 
     @parameter
     fn vectorized_min[simd_width: Int](idx: Int) -> None:
-        result._buf.store(
+        result._buf.ptr.store(
             idx,
             min(
-                array1._buf.load[width=simd_width](idx),
-                array2._buf.load[width=simd_width](idx),
+                array1._buf.ptr.load[width=simd_width](idx),
+                array2._buf.ptr.load[width=simd_width](idx),
             ),
         )
 
@@ -230,11 +230,11 @@ fn maximum[
 
     @parameter
     fn vectorized_max[simd_width: Int](idx: Int) -> None:
-        result._buf.store(
+        result._buf.ptr.store(
             idx,
             max(
-                array1._buf.load[width=simd_width](idx),
-                array2._buf.load[width=simd_width](idx),
+                array1._buf.ptr.load[width=simd_width](idx),
+                array2._buf.ptr.load[width=simd_width](idx),
             ),
         )
 

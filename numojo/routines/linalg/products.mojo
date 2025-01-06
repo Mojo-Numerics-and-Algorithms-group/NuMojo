@@ -90,10 +90,10 @@ fn dot[
 
         @parameter
         fn vectorized_dot[simd_width: Int](idx: Int) -> None:
-            result._buf.store(
+            result._buf.ptr.store(
                 idx,
-                array1._buf.load[width=simd_width](idx)
-                * array2._buf.load[width=simd_width](idx),
+                array1._buf.ptr.load[width=simd_width](idx)
+                * array2._buf.ptr.load[width=simd_width](idx),
             )
 
         vectorize[vectorized_dot, width](array1.size)
@@ -136,11 +136,11 @@ fn matmul_tiled_unrolled_parallelized[
 
                 @parameter
                 fn dot[simd_width: Int](n: Int):
-                    C._buf.store(
+                    C._buf.ptr.store(
                         m * t2 + (n + x),
-                        val=C._buf.load[width=simd_width](m * t2 + (n + x))
-                        + A._buf.load(m * t1 + k)
-                        * B._buf.load[width=simd_width](k * t2 + (n + x)),
+                        val=C._buf.ptr.load[width=simd_width](m * t2 + (n + x))
+                        + A._buf.ptr.load(m * t1 + k)
+                        * B._buf.ptr.load[width=simd_width](k * t2 + (n + x)),
                     )
 
                 alias unroll_factor = tile_x // width
@@ -174,7 +174,7 @@ fn matmul_1darray[
             )
         )
     else:
-        C._buf.init_pointee_copy(sum(A * B))
+        C._buf.ptr.init_pointee_copy(sum(A * B))
 
     return C^
 
@@ -255,11 +255,11 @@ fn matmul_2darray[
 
             @parameter
             fn dot[simd_width: Int](n: Int):
-                C._buf.store(
+                C._buf.ptr.store(
                     m * t2 + n,
-                    val=C._buf.load[width=simd_width](m * t2 + n)
-                    + A._buf.load[width=simd_width](m * t1 + k)
-                    * B._buf.load[width=simd_width](k * t2 + n),
+                    val=C._buf.ptr.load[width=simd_width](m * t2 + n)
+                    + A._buf.ptr.load[width=simd_width](m * t1 + k)
+                    * B._buf.ptr.load[width=simd_width](k * t2 + n),
                 )
 
             vectorize[dot, width](t2)
@@ -338,19 +338,19 @@ fn matmul[
 
     for i in range(C.size // C_sub_matrix.size):
         memcpy(
-            A_sub_matrix._buf,
-            A._buf + (i * A_sub_matrix.size),
+            A_sub_matrix._buf.ptr,
+            A._buf.ptr + (i * A_sub_matrix.size),
             A_sub_matrix.size,
         )
         memcpy(
-            B_sub_matrix._buf,
-            B._buf + (i * B_sub_matrix.size),
+            B_sub_matrix._buf.ptr,
+            B._buf.ptr + (i * B_sub_matrix.size),
             B_sub_matrix.size,
         )
         C_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
         memcpy(
-            C._buf + (i * C_sub_matrix.size),
-            C_sub_matrix._buf,
+            C._buf.ptr + (i * C_sub_matrix.size),
+            C_sub_matrix._buf.ptr,
             C_sub_matrix.size,
         )
     return C^

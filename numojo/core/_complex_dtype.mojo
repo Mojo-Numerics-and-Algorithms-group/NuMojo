@@ -431,46 +431,45 @@ struct CDType(
         """
 
         if self == CDType.bool:
-            return writer.write("bool")
+            return writer.write("cbool")
         if self == CDType.int8:
-            return writer.write("int8")
+            return writer.write("cint8")
         if self == CDType.uint8:
-            return writer.write("uint8")
+            return writer.write("cuint8")
         if self == CDType.int16:
-            return writer.write("int16")
+            return writer.write("cint16")
         if self == CDType.uint16:
-            return writer.write("uint16")
+            return writer.write("cuint16")
         if self == CDType.int32:
-            return writer.write("int32")
+            return writer.write("cint32")
         if self == CDType.uint32:
-            return writer.write("uint32")
+            return writer.write("cuint32")
         if self == CDType.int64:
-            return writer.write("int64")
+            return writer.write("cint64")
         if self == CDType.uint64:
-            return writer.write("uint64")
+            return writer.write("cuint64")
         if self == CDType.index:
-            return writer.write("index")
+            return writer.write("cindex")
         if self == CDType.float8e5m2:
-            return writer.write("float8e5m2")
+            return writer.write("cfloat8e5m2")
         if self == CDType.float8e5m2fnuz:
-            return writer.write("float8e5m2fnuz")
+            return writer.write("cfloat8e5m2fnuz")
         if self == CDType.float8e4m3:
-            return writer.write("float8e4m3")
+            return writer.write("cfloat8e4m3")
         if self == CDType.float8e4m3fnuz:
-            return writer.write("float8e4m3fnuz")
+            return writer.write("cfloat8e4m3fnuz")
         if self == CDType.bfloat16:
-            return writer.write("bfloat16")
+            return writer.write("cbfloat16")
         if self == CDType.float16:
-            return writer.write("float16")
+            return writer.write("cfloat16")
         if self == CDType.float32:
-            return writer.write("float32")
+            return writer.write("cfloat32")
         if self == CDType.tensor_float32:
-            return writer.write("tensor_float32")
+            return writer.write("ctensor_float32")
         if self == CDType.float64:
-            return writer.write("float64")
+            return writer.write("cfloat64")
         if self == CDType.invalid:
-            return writer.write("invalid")
-
+            return writer.write("cinvalid")
         return writer.write("<<unknown>>")
 
     @always_inline("nodebug")

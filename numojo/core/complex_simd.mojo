@@ -298,11 +298,11 @@ struct ComplexSIMD[
         """
         return sqrt(self.re * self.re + self.im * self.im)
 
-    fn conj(mut self):
+    fn conj(self) -> Self:
         """
         Returns the complex conjugate of the ComplexSIMD instance.
         """
-        self.im = -self.im
+        return Self(self.re, -self.im)
 
     fn real(self) -> SIMD[dtype, size]:
         """

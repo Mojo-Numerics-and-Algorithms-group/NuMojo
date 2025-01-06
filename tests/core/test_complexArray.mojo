@@ -1,6 +1,7 @@
 from testing import assert_equal, assert_almost_equal
 from numojo import *
 
+
 fn test_complex_array_init() raises:
     """Test initialization of ComplexArray."""
     var c1 = ComplexNDArray[cf32](Shape(2, 2))
@@ -10,6 +11,7 @@ fn test_complex_array_init() raises:
     c1.itemset(3, ComplexSIMD[cf32](7.0, 8.0))
     assert_almost_equal(c1.item(0).re, 1.0, "init failed")
     assert_almost_equal(c1.item(0).im, 2.0, "init failed")
+
 
 fn test_complex_array_add() raises:
     """Test addition of ComplexArray numbers."""
@@ -35,6 +37,7 @@ fn test_complex_array_add() raises:
     assert_almost_equal(sum.item(3).re, 14.0, "add failed")
     assert_almost_equal(sum.item(3).im, 16.0, "add failed")
 
+
 fn test_complex_array_sub() raises:
     """Test subtraction of ComplexArray numbers."""
     var c1 = ComplexNDArray[cf32](Shape(2, 2))
@@ -59,6 +62,7 @@ fn test_complex_array_sub() raises:
     assert_almost_equal(diff.item(2).im, -2.0, "sub failed")
     assert_almost_equal(diff.item(3).re, -2.0, "sub failed")
     assert_almost_equal(diff.item(3).im, -2.0, "sub failed")
+
 
 fn test_complex_array_mul() raises:
     """Test multiplication of ComplexArray numbers."""
@@ -98,5 +102,3 @@ fn test_complex_array_div() raises:
 
     assert_almost_equal(quot.item(0).re, 0.44, "div failed")
     assert_almost_equal(quot.item(0).im, 0.08, "div failed")
-
-

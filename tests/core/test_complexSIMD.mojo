@@ -12,6 +12,7 @@ fn test_complex_init() raises:
     assert_equal(c2.re, c1.re)
     assert_equal(c2.im, c1.im)
 
+
 fn test_complex_add() raises:
     """Test addition of ComplexSIMD numbers."""
     var c1 = ComplexSIMD[cf32](1.0, 2.0)

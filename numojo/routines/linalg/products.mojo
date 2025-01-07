@@ -15,6 +15,7 @@ from memory import memcpy
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
+from numojo.core.matrix import Matrix
 from numojo.routines.creation import zeros
 from numojo.routines.math.sums import sum
 
@@ -353,6 +354,55 @@ fn matmul[
             C_sub_matrix._buf.ptr,
             C_sub_matrix.size,
         )
+    return C^
+
+
+fn matmul[
+    dtype: DType
+](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Matrix multiplication.
+
+    Example:
+    ```mojo
+    from numojo import Matrix
+    var A = Matrix.rand(shape=(1000, 1000))
+    var B = Matrix.rand(shape=(1000, 1000))
+    var C = mat.matmul(A, B)
+    ```
+    """
+
+    alias width = max(simdwidthof[dtype](), 16)
+
+    if A.shape[1] != B.shape[0]:
+        raise Error(
+            String("Cannot matmul {}x{} matrix with {}x{} matrix.").format(
+                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+            )
+        )
+
+    var C: Matrix[dtype] = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]))
+
+    @parameter
+    fn calculate_CC(m: Int):
+        for k in range(A.shape[1]):
+
+            @parameter
+            fn dot[simd_width: Int](n: Int):
+                C._store[simd_width](
+                    m,
+                    n,
+                    C._load[simd_width](m, n)
+                    + A._load(m, k) * B._load[simd_width](k, n),
+                )
+
+            vectorize[dot, width](B.shape[1])
+
+    parallelize[calculate_CC](A.shape[0], A.shape[0])
+
+    var _A = A
+    var _B = B
+
     return C^
 
 

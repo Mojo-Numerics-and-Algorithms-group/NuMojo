@@ -1,5 +1,5 @@
 """
-`numojo.mat.matrix` provides:
+`numojo.Matrix` provides:
 
 - `Matrix` type (2DArray).
 - `_MatrixIter` type (for iteration).
@@ -8,7 +8,8 @@
 """
 
 from numojo.core.ndarray import NDArray
-from memory import UnsafePointer, memcpy
+from memory import UnsafePointer, memcpy, memset_zero
+from random import random_float64
 from sys import simdwidthof
 from algorithm import parallelize, vectorize
 from python import PythonObject, Python
@@ -22,12 +23,11 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
-    It gains some advantages in running speed, which is very useful when users
+    It has simpler indexing and slicing methods, which is very useful when users
     only want to work with 2-dimensional arrays.
-    The indexing and slicing is also more consistent with `numpy`.
 
-    For certain behaviors, `Matrix` type is more like `NDArray` with
-    fixed `ndim` than `numpy.matrix`.
+    NuMojo's `Matrix` is `NDArray` with fixed `ndim` known at compile time.
+    It may be different in some behaviors compared to `numpy.matrix`.
 
     - For `__getitem__`, passing in two `Int` returns a scalar,
     and passing in one `Int` or two `Slice` returns a `Matrix`.
@@ -76,9 +76,6 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
     - [x] `Matrix.trace` and `mat.linalg.trace`
     - [x] `Matrix.transpose` and `mat.linalg.transpose` (also `Matrix.T`)
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
-
-    TODO: Introduce `ArrayLike` trait for `NDArray` type and `Matrix` type.
-
     """
 
     var shape: Tuple[Int, Int]
@@ -251,7 +248,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         var range_y = range(start_y, end_y, step_y)
 
         # The new matrix with the corresponding shape
-        var B = mat.Matrix[dtype](shape=(len(range_x), len(range_y)))
+        var B = Matrix[dtype](shape=(len(range_x), len(range_y)))
 
         # Fill in the values at the corresponding index
         var c = 0
@@ -276,7 +273,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         var range_x = range(start_x, end_x, step_x)
 
         # The new matrix with the corresponding shape
-        var B = mat.Matrix[dtype](shape=(len(range_x), 1))
+        var B = Matrix[dtype](shape=(len(range_x), 1))
 
         # Fill in the values at the corresponding index
         var c = 0
@@ -300,7 +297,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         var range_y = range(start_y, end_y, step_y)
 
         # The new matrix with the corresponding shape
-        var B = mat.Matrix[dtype](shape=(1, len(range_y)))
+        var B = Matrix[dtype](shape=(1, len(range_y)))
 
         # Fill in the values at the corresponding index
         var c = 0
@@ -317,7 +314,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         var ncol = self.shape[1]
         var nrow = len(indices)
-        var res = mat.zeros[dtype](shape=(nrow, ncol))
+        var res = Matrix.zeros[dtype](shape=(nrow, ncol))
         for i in range(nrow):
             res[i] = self[indices[i]]
         return res^
@@ -460,8 +457,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         Example:
         ```mojo
-        from numojo import mat
-        var A = mat.rand((4,4))
+        from numojo import Matrix
+        var A = Matrix.rand((4,4))
         for i in A:
             print(i)
         ```
@@ -516,8 +513,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Add matrix to scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        var A = Matrix.ones(shape=(4, 4))
         print(A + 2)
         ```
         """
@@ -528,8 +525,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         Right-add.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(2 + A)
         ```
         """
@@ -554,11 +551,11 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             ](self, broadcast_to(other, self.shape))
 
     fn __sub__(self, other: Scalar[dtype]) raises -> Self:
-        """Substract matrix by scalar.
+        """Subtract matrix by scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix(shape=(4, 4))
         print(A - 2)
         ```
         """
@@ -569,8 +566,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         Right-sub.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(2 - A)
         ```
         """
@@ -598,8 +595,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Mutiply matrix by scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(A * 2)
         ```
         """
@@ -610,8 +607,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         Right-mul.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(2 * A)
         ```
         """
@@ -668,8 +665,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Matrix less than scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(A < 2)
         ```
         """
@@ -697,8 +694,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Matrix less than and equal to scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(A <= 2)
         ```
         """
@@ -726,8 +723,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Matrix greater than scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(A > 2)
         ```
         """
@@ -755,8 +752,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Matrix greater than and equal to scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(A >= 2)
         ```
         """
@@ -784,8 +781,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Matrix less than and equal to scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(A == 2)
         ```
         """
@@ -813,15 +810,15 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Matrix less than and equal to scalar.
 
         ```mojo
-        from numojo.mat import ones
-        A = ones(shape=(4, 4))
+        from numojo import Matrix
+        A = Matrix.ones(shape=(4, 4))
         print(A != 2)
         ```
         """
         return self != broadcast_to[dtype](other, self.shape)
 
     fn __matmul__(self, other: Self) raises -> Self:
-        return matmul(self, other)
+        return numojo.linalg.matmul(self, other)
 
     # ===-------------------------------------------------------------------===#
     # Core methods
@@ -831,61 +828,61 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """
         Test whether all array elements evaluate to True.
         """
-        return mat.all(self)
+        return numojo.logic.all(self)
 
     fn all(self, axis: Int) raises -> Self:
         """
         Test whether all array elements evaluate to True along axis.
         """
-        return mat.all(self, axis=axis)
+        return numojo.logic.all(self, axis=axis)
 
     fn any(self) -> Scalar[dtype]:
         """
         Test whether any array elements evaluate to True.
         """
-        return mat.any(self)
+        return numojo.logic.any(self)
 
     fn any(self, axis: Int) raises -> Self:
         """
         Test whether any array elements evaluate to True along axis.
         """
-        return mat.any(self, axis=axis)
+        return numojo.logic.any(self, axis=axis)
 
     fn argmax(self) raises -> Scalar[DType.index]:
         """
         Index of the max. It is first flattened before sorting.
         """
-        return mat.argmax(self)
+        return numojo.math.argmax(self)
 
     fn argmax(self, axis: Int) raises -> Matrix[DType.index]:
         """
         Index of the max along the given axis.
         """
-        return mat.argmax(self, axis=axis)
+        return numojo.math.argmax(self, axis=axis)
 
     fn argmin(self) raises -> Scalar[DType.index]:
         """
         Index of the min. It is first flattened before sorting.
         """
-        return mat.argmin(self)
+        return numojo.math.argmin(self)
 
     fn argmin(self, axis: Int) raises -> Matrix[DType.index]:
         """
         Index of the min along the given axis.
         """
-        return mat.argmin(self, axis=axis)
+        return numojo.math.argmin(self, axis=axis)
 
     fn argsort(self) raises -> Matrix[DType.index]:
         """
         Argsort the Matrix. It is first flattened before sorting.
         """
-        return mat.argsort(self)
+        return numojo.math.argsort(self)
 
     fn argsort(self, axis: Int) raises -> Matrix[DType.index]:
         """
         Argsort the Matrix along the given axis.
         """
-        return mat.argsort(self, axis=axis)
+        return numojo.math.argsort(self, axis=axis)
 
     fn astype[asdtype: DType](self) -> Matrix[asdtype]:
         """
@@ -902,12 +899,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         Example:
         ```mojo
-        from numojo import mat
-        var A = mat.rand(shape=(100, 100))
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
         print(A.cumprod())
         ```
         """
-        return mat.cumprod(self)
+        return numojo.math.cumprod(self)
 
     fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
         """
@@ -918,19 +915,19 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         Example:
         ```mojo
-        from numojo import mat
-        var A = mat.rand(shape=(100, 100))
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
         print(A.cumprod(axis=0))
         print(A.cumprod(axis=1))
         ```
         """
-        return mat.cumprod(self, axis=axis)
+        return numojo.math.cumprod(self, axis=axis)
 
     fn cumsum(self) -> Matrix[dtype]:
-        return mat.cumsum(self)
+        return numojo.math.cumsum(self)
 
     fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
-        return mat.cumsum(self, axis=axis)
+        return numojo.math.cumsum(self, axis=axis)
 
     fn fill(self: Self, fill_value: Scalar[dtype]):
         """
@@ -953,25 +950,25 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """
         Inverse of matrix.
         """
-        return mat.inv(self)
+        return numojo.linalg.inv(self)
 
     fn max(self) raises -> Scalar[dtype]:
         """
         Find max item. It is first flattened before sorting.
         """
-        return mat.max(self)
+        return numojo.math.extrema.max(self)
 
     fn max(self, axis: Int) raises -> Self:
         """
         Find max item along the given axis.
         """
-        return mat.max(self, axis=axis)
+        return numojo.math.extrema.max(self, axis=axis)
 
     fn mean(self) raises -> Scalar[dtype]:
         """
         Calculate the arithmetic average of all items in the Matrix.
         """
-        return mat.mean(self)
+        return numojo.statistics.mean(self)
 
     fn mean(self, axis: Int) raises -> Self:
         """
@@ -980,25 +977,25 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         Args:
             axis: 0 or 1.
         """
-        return mat.mean(self, axis=axis)
+        return numojo.statistics.mean(self, axis=axis)
 
     fn min(self) raises -> Scalar[dtype]:
         """
         Find min item. It is first flattened before sorting.
         """
-        return mat.min(self)
+        return numojo.math.extrema.min(self)
 
     fn min(self, axis: Int) raises -> Self:
         """
         Find min item along the given axis.
         """
-        return mat.min(self, axis=axis)
+        return numojo.math.extrema.min(self, axis=axis)
 
     fn prod(self) -> Scalar[dtype]:
         """
         Product of all items in the Matrix.
         """
-        return mat.prod(self)
+        return numojo.math.prod(self)
 
     fn prod(self, axis: Int) raises -> Self:
         """
@@ -1009,13 +1006,13 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         Example:
         ```mojo
-        from numojo import mat
-        var A = mat.rand(shape=(100, 100))
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
         print(A.prod(axis=0))
         print(A.prod(axis=1))
         ```
         """
-        return mat.prod(self, axis=axis)
+        return numojo.math.prod(self, axis=axis)
 
     fn reshape(self, shape: Tuple[Int, Int]) raises -> Self:
         """
@@ -1048,7 +1045,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             self.strides[0] = shape[1]
 
     fn round(self, decimals: Int) raises -> Self:
-        return mat.round(self, decimals=decimals)
+        return numojo.math.rounding.round(self, decimals=decimals)
 
     fn std(self, ddof: Int = 0) raises -> Scalar[dtype]:
         """
@@ -1057,7 +1054,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         Args:
             ddof: Delta degree of freedom.
         """
-        return mat.std(self, ddof=ddof)
+        return numojo.statistics.std(self, ddof=ddof)
 
     fn std(self, axis: Int, ddof: Int = 0) raises -> Self:
         """
@@ -1067,7 +1064,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             axis: 0 or 1.
             ddof: Delta degree of freedom.
         """
-        return mat.std(self, axis=axis, ddof=ddof)
+        return numojo.statistics.std(self, axis=axis, ddof=ddof)
 
     fn sum(self) -> Scalar[dtype]:
         """
@@ -1075,12 +1072,12 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         Example:
         ```mojo
-        from numojo import mat
-        var A = mat.rand(shape=(100, 100))
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
         print(A.sum())
         ```
         """
-        return mat.sum(self)
+        return numojo.math.sum(self)
 
     fn sum(self, axis: Int) raises -> Self:
         """
@@ -1091,19 +1088,19 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         Example:
         ```mojo
-        from numojo import mat
-        var A = mat.rand(shape=(100, 100))
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
         print(A.sum(axis=0))
         print(A.sum(axis=1))
         ```
         """
-        return mat.sum(self, axis=axis)
+        return numojo.math.sum(self, axis=axis)
 
     fn trace(self) raises -> Scalar[dtype]:
         """
         Transpose of matrix.
         """
-        return mat.trace(self)
+        return numojo.linalg.trace(self)
 
     fn transpose(self) -> Self:
         """
@@ -1121,7 +1118,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         Args:
             ddof: Delta degree of freedom.
         """
-        return mat.variance(self, ddof=ddof)
+        return numojo.statistics.variance(self, ddof=ddof)
 
     fn variance(self, axis: Int, ddof: Int = 0) raises -> Self:
         """
@@ -1131,7 +1128,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             axis: 0 or 1.
             ddof: Delta degree of freedom.
         """
-        return mat.variance(self, axis=axis, ddof=ddof)
+        return numojo.statistics.variance(self, axis=axis, ddof=ddof)
 
     # ===-------------------------------------------------------------------===#
     # To other data types
@@ -1196,6 +1193,202 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         except e:
             print("Error in converting to numpy", e)
             return PythonObject()
+
+    # ===-----------------------------------------------------------------------===#
+    # Static methods to construct matrix
+    # ===-----------------------------------------------------------------------===#
+
+    @staticmethod
+    fn full[
+        dtype: DType = DType.float64
+    ](shape: Tuple[Int, Int], fill_value: Scalar[dtype] = 0) -> Matrix[dtype]:
+        """Return a matrix with given shape and filled value.
+
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.full(shape=(10, 10), fill_value=100)
+        ```
+        """
+
+        var matrix = Matrix[dtype](shape)
+        for i in range(shape[0] * shape[1]):
+            matrix._buf.store(i, fill_value)
+
+        return matrix^
+
+    @staticmethod
+    fn zeros[
+        dtype: DType = DType.float64
+    ](shape: Tuple[Int, Int]) -> Matrix[dtype]:
+        """Return a matrix with given shape and filled with zeros.
+
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.ones(shape=(10, 10))
+        ```
+        """
+
+        var M = Matrix[dtype](shape)
+        memset_zero(M._buf, M.size)
+        return M^
+
+    @staticmethod
+    fn ones[
+        dtype: DType = DType.float64
+    ](shape: Tuple[Int, Int]) -> Matrix[dtype]:
+        """Return a matrix with given shape and filled with ones.
+
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.ones(shape=(10, 10))
+        ```
+        """
+
+        return Matrix.full[dtype](shape=shape, fill_value=1)
+
+    @staticmethod
+    fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
+        """Return a matrix with given shape and filled value.
+
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.identity(12)
+        ```
+        """
+
+        var matrix = Matrix.zeros[dtype]((len, len))
+        for i in range(len):
+            matrix._buf.store(i * matrix.strides[0] + i, 1)
+        return matrix^
+
+    @staticmethod
+    fn rand[
+        dtype: DType = DType.float64
+    ](shape: Tuple[Int, Int]) -> Matrix[dtype]:
+        """Return a matrix with random values uniformed distributed between 0 and 1.
+
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand((12, 12))
+        ```
+
+        Parameters:
+            dtype: The data type of the NDArray elements.
+
+        Args:
+            shape: The shape of the Matrix.
+        """
+        var result = Matrix[dtype](shape)
+        for i in range(result.size):
+            result._buf.store(i, random_float64(0, 1).cast[dtype]())
+        return result^
+
+    @staticmethod
+    fn fromlist[
+        dtype: DType
+    ](
+        object: List[Scalar[dtype]], shape: Tuple[Int, Int] = (0, 0)
+    ) raises -> Matrix[dtype]:
+        """Create a matrix from a 1-dimensional list into given shape.
+
+        If no shape is passed, the return matrix will be a row vector.
+
+        Example:
+        ```mojo
+        from numojo import Matrix
+        fn main() raises:
+            print(Matrix.fromlist(List[Float64](1, 2, 3, 4, 5), (5, 1)))
+        ```
+        """
+
+        if (shape[0] == 0) and (shape[1] == 0):
+            var M = Matrix[dtype](shape=(1, object.size))
+            memcpy(M._buf, object.data, M.size)
+            return M^
+
+        if shape[0] * shape[1] != object.size:
+            var message = String(
+                "The input has {} elements, but the target has the shape {}x{}"
+            ).format(object.size, shape[0], shape[1])
+            raise Error(message)
+        var M = Matrix[dtype](shape=shape)
+        memcpy(M._buf, object.data, M.size)
+        return M^
+
+    @staticmethod
+    fn fromstring[
+        dtype: DType = DType.float64
+    ](text: String, shape: Tuple[Int, Int] = (0, 0)) raises -> Matrix[dtype]:
+        """Matrix initialization from string representation of an matrix.
+
+        Comma, right brackets, and whitespace are treated as seperators of numbers.
+        Digits, underscores, and minus signs are treated as a part of the numbers.
+
+        If now shape is passed, the return matrix will be a row vector.
+
+        Example:
+        ```mojo
+        from numojo.prelude import *
+        from numojo import Matrix
+        fn main() raises:
+            var A = Matrix.fromstring[f32](
+            "1 2 .3 4 5 6.5 7 1_323.12 9 10, 11.12, 12 13 14 15 16", (4, 4))
+        ```
+        ```console
+        [[1.0   2.0     0.30000001192092896     4.0]
+        [5.0   6.5     7.0     1323.1199951171875]
+        [9.0   10.0    11.119999885559082      12.0]
+        [13.0  14.0    15.0    16.0]]
+        Size: 4x4  DType: float32
+        ```
+
+        Args:
+            text: String representation of a matrix.
+            shape: Shape of the matrix.
+        """
+
+        var data = List[Scalar[dtype]]()
+        var bytes = text.as_bytes()
+        var number_as_str: String = ""
+        var size = shape[0] * shape[1]
+
+        for i in range(len(bytes)):
+            var b = bytes[i]
+            if isdigit(b) or (chr(int(b)) == ".") or (chr(int(b)) == "-"):
+                number_as_str = number_as_str + chr(int(b))
+                if i == len(bytes) - 1:  # Last byte
+                    var number = atof(number_as_str).cast[dtype]()
+                    data.append(number)  # Add the number to the data buffer
+                    number_as_str = ""  # Clean the number cache
+            if (
+                (chr(int(b)) == ",")
+                or (chr(int(b)) == "]")
+                or (chr(int(b)) == " ")
+            ):
+                if number_as_str != "":
+                    var number = atof(number_as_str).cast[dtype]()
+                    data.append(number)  # Add the number to the data buffer
+                    number_as_str = ""  # Clean the number cache
+
+        if (shape[0] == 0) and (shape[1] == 0):
+            return Matrix.fromlist(data)
+
+        if size != len(data):
+            var message = String(
+                "The number of items in the string is {}, which does not match"
+                " the given shape {}x{}."
+            ).format(len(data), shape[0], shape[1])
+            raise Error(message)
+
+        var result = Matrix[dtype](shape=shape)
+        for i in range(len(data)):
+            result._buf[i] = data[i]
+        return result^
 
 
 # ===-----------------------------------------------------------------------===#
@@ -1373,26 +1566,26 @@ fn broadcast_to[
     Example:
 
     ```console
-    > from numojo import mat
-    > a = mat.fromstring("1 2 3", shape=(1, 3))
+    > from numojo import Matrix
+    > a = Matrix.fromstring("1 2 3", shape=(1, 3))
     > print(mat.broadcast_to(a, (3, 3)))
     [[1.0   2.0     3.0]
      [1.0   2.0     3.0]
      [1.0   2.0     3.0]]
-    > a = mat.fromstring("1 2 3", shape=(3, 1))
+    > a = Matrix.fromstring("1 2 3", shape=(3, 1))
     > print(mat.broadcast_to(a, (3, 3)))
     [[1.0   1.0     1.0]
      [2.0   2.0     2.0]
      [3.0   3.0     3.0]]
-    > a = mat.fromstring("1", shape=(1, 1))
+    > a = Matrix.fromstring("1", shape=(1, 1))
     > print(mat.broadcast_to(a, (3, 3)))
     [[1.0   1.0     1.0]
      [1.0   1.0     1.0]
      [1.0   1.0     1.0]]
-    > a = mat.fromstring("1 2", shape=(1, 2))
+    > a = Matrix.fromstring("1 2", shape=(1, 2))
     > print(mat.broadcast_to(a, (1, 2)))
     [[1.0   2.0]]
-    > a = mat.fromstring("1 2 3 4", shape=(2, 2))
+    > a = Matrix.fromstring("1 2 3 4", shape=(2, 2))
     > print(mat.broadcast_to(a, (4, 2)))
     Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
     ```
@@ -1402,7 +1595,7 @@ fn broadcast_to[
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
         B = A
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = full[dtype](shape, A[0, 0])
+        B = Matrix.full[dtype](shape, A[0, 0])
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(dest=B._buf.offset(shape[1] * i), src=A._buf, count=shape[1])
@@ -1426,5 +1619,5 @@ fn broadcast_to[
     """
 
     var B = Matrix[dtype](shape)
-    B = full[dtype](shape, A)
+    B = Matrix.full[dtype](shape, A)
     return B^

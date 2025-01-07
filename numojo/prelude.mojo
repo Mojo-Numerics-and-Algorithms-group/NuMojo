@@ -21,7 +21,8 @@ from numojo.prelude import *
 """
 
 from numojo.core.ndarray import NDArray
-from numojo.core.item import Item
+from numojo.core.matrix import Matrix
+from numojo.core.item import Item, item
 from numojo.core.ndshape import Shape, NDArrayShape
 
 from numojo.core.complex_dtype import CDType
@@ -53,5 +54,3 @@ from numojo.core.datatypes import (
     cf32,
     cf64,
 )
-
-alias item = Item

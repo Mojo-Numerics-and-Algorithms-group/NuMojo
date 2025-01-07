@@ -1,16 +1,9 @@
 """
-NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python.
+NuMojo is a library for numerical computing in Mojo 🔥
+similar to NumPy, SciPy in Python.
 """
 
-alias __version__ = "V0.2"
-
-# ===----------------------------------------------------------------------=== #
-# Alias for users
-# For ease of use, the name of the types may not follow the Mojo convention,
-# e.g., lower case can also be used for alias of structs.
-# ===----------------------------------------------------------------------=== #
-
-alias idx = numojo.core.item.Item
+alias __version__ = "V0.5"
 
 # ===----------------------------------------------------------------------=== #
 # Import core types
@@ -18,10 +11,11 @@ alias idx = numojo.core.item.Item
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
-from numojo.core.item import Item
+from numojo.core.item import Item, item
 from numojo.core.complex_dtype import CDType
 from numojo.core.complex_simd import ComplexSIMD, ComplexScalar
 from numojo.core.complex_ndarray import ComplexNDArray
+from numojo.core.matrix import Matrix
 from numojo.core.datatypes import (
     i8,
     i16,
@@ -96,9 +90,28 @@ from numojo.routines.math import (
 )
 from numojo.routines.math import gradient, trapz
 from numojo.routines.math import exp, exp2, expm1, log, ln, log2, log10, log1p
-from numojo.routines.math import maxT, minT, amin, amax, mimimum, maximum
+from numojo.routines.math import (
+    max,
+    maxT,
+    min,
+    minT,
+    amin,
+    amax,
+    mimimum,
+    maximum,
+)
 from numojo.routines.math import copysign
-from numojo.routines.math import acosh, asinh, atanh, cosh, sinh, tanh
+from numojo.routines.math import (
+    arccosh,
+    acosh,
+    arcsinh,
+    asinh,
+    arctanh,
+    atanh,
+    cosh,
+    sinh,
+    tanh,
+)
 from numojo.routines.math import cbrt, rsqrt, sqrt, scalb
 from numojo.routines.math import prod, cumprod
 from numojo.routines.math import (
@@ -112,8 +125,11 @@ from numojo.routines.math import (
 )
 from numojo.routines.math import sum, cumsum
 from numojo.routines.math import (
+    arccos,
     acos,
+    arcsin,
     asin,
+    arctan,
     atan,
     atan2,
     cos,
@@ -127,11 +143,11 @@ from numojo.routines import statistics
 from numojo.routines.statistics import (
     mean,
     meanall,
-    max,
-    min,
     cummean,
     mode,
     median,
+    variance,
+    std,
     cumpvariance,
     cumvariance,
     cumpstdev,
@@ -188,3 +204,9 @@ from numojo.routines.sorting import sort, argsort
 
 from numojo.routines import searching
 from numojo.routines.searching import argmax, argmin
+
+# ===----------------------------------------------------------------------=== #
+# Alias for users
+# For ease of use, the name of the types may not follow the Mojo convention,
+# e.g., lower case can also be used for alias of structs.
+# ===----------------------------------------------------------------------=== #

@@ -343,7 +343,7 @@ def test_arr_manipulation():
         "NDArray constructor with data and shape: shape element 1",
     )
     assert_equal(
-        arr6[idx(1, 4)],
+        arr6[Item(1, 4)],
         10.0,
         "NDArray constructor with data: value check",
     )

@@ -1,7 +1,7 @@
 """
-Implements Idx type.
+Implements Item type.
 
-`Idx` is a series of `Int` on the heap.
+`Item` is a series of `Int` on the heap.
 """
 
 from sys import simdwidthof
@@ -10,7 +10,7 @@ from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
 
 
-struct Idx(CollectionElement):
+struct Item(CollectionElement):
     alias dtype: DType = DType.index
     alias width = simdwidthof[Self.dtype]()
     var _buf: UnsafePointer[Scalar[Self.dtype]]
@@ -115,7 +115,7 @@ struct Idx(CollectionElement):
         """
         self._buf[index] = val
 
-    fn __iter__(self) raises -> _IdxIter[__origin_of(self)]:
+    fn __iter__(self) raises -> _ItemIter[__origin_of(self)]:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -125,13 +125,13 @@ struct Idx(CollectionElement):
             Need to add lifetimes after the new release.
         """
 
-        return _IdxIter[__origin_of(self)](
+        return _ItemIter[__origin_of(self)](
             array=self,
             length=self.len,
         )
 
     fn write_to[W: Writer](self, mut writer: W):
-        writer.write("Idx: " + self.str() + "\n" + "Length: " + str(self.len))
+        writer.write("Item: " + self.str() + "\n" + "Length: " + str(self.len))
 
     fn str(self) -> String:
         var result: String = "["
@@ -168,26 +168,26 @@ struct Idx(CollectionElement):
 
 
 @value
-struct _IdxIter[
+struct _ItemIter[
     is_mutable: Bool, //,
     lifetime: Origin[is_mutable],
     forward: Bool = True,
 ]:
-    """Iterator for idx.
+    """Iterator for Item.
 
     Parameters:
         is_mutable: Whether the iterator is mutable.
-        lifetime: The lifetime of the underlying idx data.
+        lifetime: The lifetime of the underlying Item data.
         forward: The iteration direction. `False` is backwards.
     """
 
     var index: Int
-    var array: Idx
+    var array: Item
     var length: Int
 
     fn __init__(
         mut self,
-        array: Idx,
+        array: Item,
         length: Int,
     ):
         self.index = 0 if forward else length

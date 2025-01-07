@@ -2,7 +2,7 @@
 
 # Structs
 from .ndarray import NDArray
-from .index import Idx
+from .item import Item
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
 
@@ -37,6 +37,6 @@ from .datatypes import (
 
 # from .utility import
 
-alias idx = Idx
+alias idx = Item
 alias shape = NDArrayShape
 alias Shape = NDArrayShape

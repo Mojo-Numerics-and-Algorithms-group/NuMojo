@@ -1602,7 +1602,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __invert__(self) raises -> Self:
         """
-        Elementwise inverse (~ or not), only for bools and integral types.
+        Element-wise inverse (~ or not), only for bools and integral types.
         """
         return bitwise.invert[dtype](self)
 

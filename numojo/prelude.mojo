@@ -21,6 +21,7 @@ from numojo.prelude import *
 """
 
 from numojo.core.ndarray import NDArray
+from numojo.core.matrix import Matrix
 from numojo.core.item import Item, item
 from numojo.core.ndshape import Shape, NDArrayShape
 

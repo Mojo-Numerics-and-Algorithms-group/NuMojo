@@ -1,16 +1,9 @@
 """
-NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python.
+NuMojo is a library for numerical computing in Mojo 🔥
+similar to NumPy, SciPy in Python.
 """
 
-alias __version__ = "V0.2"
-
-# ===----------------------------------------------------------------------=== #
-# Alias for users
-# For ease of use, the name of the types may not follow the Mojo convention,
-# e.g., lower case can also be used for alias of structs.
-# ===----------------------------------------------------------------------=== #
-
-alias idx = numojo.core.item.Item
+alias __version__ = "V0.5"
 
 # ===----------------------------------------------------------------------=== #
 # Import core types
@@ -18,7 +11,7 @@ alias idx = numojo.core.item.Item
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
-from numojo.core.item import Item
+from numojo.core.item import Item, item
 from numojo.core.complex_dtype import CDType
 from numojo.core.complex_simd import ComplexSIMD, ComplexScalar
 from numojo.core.complex_ndarray import ComplexNDArray
@@ -188,3 +181,9 @@ from numojo.routines.sorting import sort, argsort
 
 from numojo.routines import searching
 from numojo.routines.searching import argmax, argmin
+
+# ===----------------------------------------------------------------------=== #
+# Alias for users
+# For ease of use, the name of the types may not follow the Mojo convention,
+# e.g., lower case can also be used for alias of structs.
+# ===----------------------------------------------------------------------=== #

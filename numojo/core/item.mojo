@@ -9,6 +9,8 @@ from utils import Variant
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
 
+alias item = Item
+
 
 struct Item(CollectionElement):
     alias dtype: DType = DType.index

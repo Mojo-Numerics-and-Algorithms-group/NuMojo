@@ -15,13 +15,27 @@ from collections.optional import Optional
 from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
 
-import numojo.core._array_funcs as _af
 import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.logic.comparison as comparison
 import numojo.routines.math.rounding as rounding
 import numojo.routines.bitwise as bitwise
 import numojo.routines.linalg as linalg
+from numojo.routines.statistics.averages import mean, cummean
+from numojo.routines.math.products import prod, cumprod
+from numojo.routines.math.sums import sum, cumsum
+from numojo.routines.math.extrema import maxT, minT
+from numojo.routines.logic.truth import any
+from numojo.routines.linalg.products import matmul
+from numojo.routines.manipulation import reshape, ravel
+
+import numojo.core._array_funcs as _af
+from numojo.core.datatypes import TypeCoercion
+from numojo.core.item import Item
+from numojo.core.ndshape import NDArrayShape
+from numojo.core.ndstrides import NDArrayStrides
+from numojo.core.complex_simd import ComplexSIMD
+from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
     _traverse_iterative,
@@ -29,20 +43,6 @@ from numojo.core.utility import (
     to_numpy,
     bool_to_numeric,
 )
-
-from numojo.core.datatypes import TypeCoercion
-from numojo.routines.statistics.averages import mean, cummean
-from numojo.routines.math.products import prod, cumprod
-from numojo.routines.math.sums import sum, cumsum
-from numojo.routines.math.extrema import maxT, minT
-from numojo.routines.logic.truth import any
-
-from numojo.core._math_funcs import Vectorized
-from numojo.routines.linalg.products import matmul
-from numojo.routines.manipulation import reshape, ravel
-from numojo.core.ndshape import NDArrayShape
-from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.complex_simd import ComplexSIMD
 
 
 # ===----------------------------------------------------------------------===#
@@ -365,7 +365,7 @@ struct ComplexNDArray[
         )
 
     fn __setitem__(
-        mut self, index: Idx, val: ComplexSIMD[cdtype, dtype=dtype]
+        mut self, index: Item, val: ComplexSIMD[cdtype, dtype=dtype]
     ) raises:
         """
         Set the value at the index list.
@@ -636,7 +636,9 @@ struct ComplexNDArray[
 
         return narr
 
-    fn __getitem__(self, index: Idx) raises -> ComplexSIMD[cdtype, dtype=dtype]:
+    fn __getitem__(
+        self, index: Item
+    ) raises -> ComplexSIMD[cdtype, dtype=dtype]:
         """
         Get the value at the index list.
         """
@@ -1003,9 +1005,9 @@ struct ComplexNDArray[
         """
         Itemwise equivalence.
         """
-        return comparison.equal[dtype](self._re, other._re) and comparison.equal[
-            dtype
-        ](self._im, other._im)
+        return comparison.equal[dtype](
+            self._re, other._re
+        ) and comparison.equal[dtype](self._im, other._im)
 
     @always_inline("nodebug")
     fn __eq__(

@@ -27,14 +27,14 @@ fn add[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
         array2: A NDArray.
 
     Returns:
-        The elementwise sum of `array1` and`array2`.
+        The element-wise sum of `array1` and`array2`.
     """
     return backend().math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
         array1, array2
@@ -50,14 +50,14 @@ fn add[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
         scalar: A NDArray.
 
     Returns:
-        The elementwise sum of `array1` and`array2`.
+        The element-wise sum of `array1` and`array2`.
     """
     return backend().math_func_1_array_1_scalar_in_one_array_out[
         dtype, SIMD.__add__
@@ -73,14 +73,14 @@ fn add[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         scalar: A NDArray.
         array: A NDArray.
 
     Returns:
-        The elementwise sum of `array1` and`array2`.
+        The element-wise sum of `array1` and`array2`.
     """
     return add[dtype, backend=backend](array, scalar)
 
@@ -96,13 +96,13 @@ fn add[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         values: A list of arrays or Scalars to be added.
 
     Returns:
-        The elementwise sum of `array1` and`array2`.
+        The element-wise sum of `array1` and`array2`.
     """
     var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
     var scalar_part: Scalar[dtype] = 0
@@ -135,14 +135,14 @@ fn sub[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
         array2: A NDArray.
 
     Returns:
-        The elementwise difference of `array1` and`array2`.
+        The element-wise difference of `array1` and`array2`.
     """
     return backend().math_func_2_array_in_one_array_out[dtype, SIMD.__sub__](
         array1, array2
@@ -158,14 +158,14 @@ fn sub[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
         scalar: A NDArray.
 
     Returns:
-        The elementwise difference of `array1` and`array2`.
+        The element-wise difference of `array1` and`array2`.
     """
     return backend().math_func_1_array_1_scalar_in_one_array_out[
         dtype, SIMD.__sub__
@@ -181,14 +181,14 @@ fn sub[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         scalar: A NDArray.
         array: A NDArray.
 
     Returns:
-        The elementwise difference of `array1` and`array2`.
+        The element-wise difference of `array1` and`array2`.
     """
     return sub[dtype, backend=backend](array, scalar)
 
@@ -230,14 +230,14 @@ fn mod[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise modulo of array1 and array2.
+    Element-wise modulo of array1 and array2.
 
     Constraints:
         Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
@@ -260,14 +260,14 @@ fn mod[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
         scalar: A NDArray.
 
     Returns:
-        The elementwise difference of `array1` and`array2`.
+        The element-wise difference of `array1` and`array2`.
     """
     return backend().math_func_1_array_1_scalar_in_one_array_out[
         dtype, SIMD.__mod__
@@ -283,14 +283,14 @@ fn mod[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         scalar: A NDArray.
         array: A NDArray.
 
     Returns:
-        The elementwise difference of `array1` and`array2`.
+        The element-wise difference of `array1` and`array2`.
     """
     return mod[dtype, backend=backend](array, scalar)
 
@@ -299,14 +299,14 @@ fn mul[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise product of array1 and array2.
+    Element-wise product of array1 and array2.
 
     Constraints:
         Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
@@ -329,14 +329,14 @@ fn mul[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
         scalar: A NDArray.
 
     Returns:
-        The elementwise product of `array1` and`array2`.
+        The element-wise product of `array1` and`array2`.
     """
     return backend().math_func_1_array_1_scalar_in_one_array_out[
         dtype, SIMD.__mul__
@@ -352,14 +352,14 @@ fn mul[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         scalar: A NDArray.
         array: A NDArray.
 
     Returns:
-        The elementwise product of `array1` and`array2`.
+        The element-wise product of `array1` and`array2`.
     """
     return mul[dtype, backend=backend](array, scalar)
 
@@ -375,13 +375,13 @@ fn mul[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         values: A list of arrays or Scalars to be added.
 
     Returns:
-        The elementwise product of `array1` and`array2`.
+        The element-wise product of `array1` and`array2`.
     """
     var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
     var scalar_part: Scalar[dtype] = 0
@@ -407,14 +407,14 @@ fn div[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise quotent of array1 and array2.
+    Element-wise quotent of array1 and array2.
 
     Constraints:
         Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
@@ -437,14 +437,14 @@ fn div[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
         scalar: A NDArray.
 
     Returns:
-        The elementwise quotient of `array1` and`array2`.
+        The element-wise quotient of `array1` and`array2`.
     """
     return backend().math_func_1_array_1_scalar_in_one_array_out[
         dtype, SIMD.__truediv__
@@ -460,14 +460,14 @@ fn div[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         scalar: A NDArray.
         array: A NDArray.
 
     Returns:
-        The elementwise quotient of `array1` and`array2`.
+        The element-wise quotient of `array1` and`array2`.
     """
     return div[dtype, backend=backend](array, scalar)
 
@@ -476,14 +476,14 @@ fn floor_div[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise quotent of array1 and array2.
+    Element-wise quotent of array1 and array2.
 
     Constraints:
         Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
@@ -506,14 +506,14 @@ fn floor_div[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
         scalar: A NDArray.
 
     Returns:
-        The elementwise quotient of `array1` and`array2`.
+        The element-wise quotient of `array1` and`array2`.
     """
     return backend().math_func_1_array_1_scalar_in_one_array_out[
         dtype, SIMD.__floordiv__
@@ -529,14 +529,14 @@ fn floor_div[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         scalar: A NDArray.
         array: A NDArray.
 
     Returns:
-        The elementwise quotient of `array1` and`array2`.
+        The element-wise quotient of `array1` and`array2`.
     """
     return floor_div[dtype, backend=backend](array, scalar)
 
@@ -554,7 +554,7 @@ fn fma[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
@@ -580,7 +580,7 @@ fn fma[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
@@ -597,14 +597,14 @@ fn remainder[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise remainders of NDArray.
+    Element-wise remainders of NDArray.
 
     Constraints:
         Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
@@ -622,14 +622,14 @@ fn remainder[
 #     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 # ](NDArray: NDArray[dtype]) -> NDArray[dtype]:
 #     """
-#     Elementwise reciprocals of array1 and array2.
+#     Element-wise reciprocals of array1 and array2.
 
 #     Constraints:
 #         Both arrays must have the same shapes.
 
 #     Parameters:
 #         dtype: The element type.
-#         backend: Sets utility function origin, defualts to `Vectorized`.
+#         backend: Sets utility function origin, defaults to `Vectorized`.
 
 #     Args:
 #         NDArray: A NDArray.

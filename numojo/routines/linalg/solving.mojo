@@ -10,10 +10,14 @@ Provides:
     - Determinant.
 """
 
-from numojo.core.ndarray import NDArray
-from numojo.core.index import Idx
-from numojo.routines.creation import zeros, eye, full
 from algorithm import parallelize
+
+from numojo.core.ndarray import NDArray
+from numojo.core.item import Item
+import numojo.core.matrix as matrix
+from numojo.core.matrix import Matrix
+from numojo.routines.creation import zeros, eye, full
+from numojo.routines.linalg.decompositions import partial_pivoting
 
 
 fn forward_substitution[
@@ -83,7 +87,8 @@ fn back_substitution[
 
 
 fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
-    """Find the inverse of a non-singular, row-major matrix.
+    """
+    Find the inverse of a non-singular, row-major matrix.
 
     It uses the function `solve()` to solve `AB = I` for B, where I is
     an identity matrix.
@@ -92,7 +97,7 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     and is slower for larger matrices.
 
     Parameters:
-        dtype: Data type of the inversed matrix.
+        dtype: Data type of the inverse matrix.
 
     Args:
         A: Input matrix. It should be non-singular, square, and row-major.
@@ -108,87 +113,21 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     return solve(A, I)
 
 
-fn inv_raw[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """Find the inverse of a non-singular, square matrix.
-
-    WARNING: This function is slower than `inv`.
-    as it does not adopt parallelization by using raw methods.
-
-    Parameters:
-        dtype: Data type of the inversed matrix.
-
-    Args:
-        array: Input matrix. It should be non-singular and square.
-
-    Returns:
-        The reversed matrix of the original matrix.
-
-    An example goes as follows:
-
-    ```
-    import numojo as nm
-    fn main() raises:
-        var A = nm.NDArray("[[1,0,1], [0,2,1], [1,1,1]]")
-        var B = nm.math.linalg.solver.inv_raw(A)
-        print("Original matrix:")
-        print(A)
-        print("Reversed matrix:")
-        print(B)
-        print("Verify whether AB = I:")
-        print(A @ B)
-    ```
-    ```console
-    Original matrix:
-    [[      1.0     0.0     1.0     ]
-     [      0.0     2.0     1.0     ]
-     [      1.0     1.0     1.0     ]]
-    2-D array  Shape: [3, 3]  DType: float64
-    Reversed matrix:
-    [[      -1.0    -1.0    2.0     ]
-     [      -1.0    0.0     1.0     ]
-     [      2.0     1.0     -2.0    ]]
-    2-D array  Shape: [3, 3]  DType: float64
-    Verify whether AB = I:
-    [[      1.0     0.0     0.0     ]
-     [      0.0     1.0     0.0     ]
-     [      0.0     0.0     1.0     ]]
-    2-D array  Shape: [3, 3]  DType: float64
-    ```
-
-    TODO: Optimize the speed.
-
+fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Inverse of matrix.
     """
 
-    var U: NDArray[dtype]
-    var L: NDArray[dtype]
-    L, U = lu_decomposition[dtype](array)
+    # Check whether the matrix is square
+    if A.shape[0] != A.shape[1]:
+        raise Error(
+            String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
+        )
 
-    var m = array.shape[0]
-    var inversed = NDArray[dtype](shape=array.shape)
+    var I = Matrix.identity[dtype](A.shape[0])
+    var B = solve(A, I)
 
-    # Initialize vectors
-    var y = NDArray[dtype](Shape(m))
-    var z = NDArray[dtype](Shape(m))
-    var x = NDArray[dtype](Shape(m))
-
-    for i in range(m):
-        # Each time, one of the item is changed to 1
-        y = zeros[dtype](Shape(m))
-        y.store(i, Scalar[dtype](1))
-
-        # Solve `Lz = y` for `z`
-        z = forward_substitution(L, y)
-
-        # Solve `Ux = z` for `x`
-        x = back_substitution(U, z)
-
-        # print("z2", z)
-        # print("x2", x)
-
-        for j in range(m):
-            inversed.__setitem__(Idx(j, i), x.item(j))
-
-    return inversed
+    return B^
 
 
 fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -203,7 +142,7 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     `AX = I` where `I` is an identity matrix.
 
     Parameters:
-        dtype: Data type of the inversed matrix.
+        dtype: Data type of the inverse matrix.
 
     Args:
         array: Input matrix. It should be non-singular, square, and row-major.
@@ -254,6 +193,41 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var _U = U^
 
     return X
+
+
+fn lstsq[
+    dtype: DType
+](X: Matrix[dtype], y: Matrix[dtype]) raises -> Matrix[dtype]:
+    """Caclulate the OLS estimates.
+
+    Example:
+    ```mojo
+    from numojo import Matrix
+    X = Matrix.rand((1000000, 5))
+    y = Matrix.rand((1000000, 1))
+    print(mat.lstsq(X, y))
+    ```
+    ```console
+    [[0.18731374756029967]
+     [0.18821352688798607]
+     [0.18717162200411439]
+     [0.1867570378683612]
+     [0.18828715376701158]]
+    Size: 5x1  DType: float64
+    ```
+    """
+
+    if X.shape[0] != y.shape[0]:
+        raise Error(
+            String(
+                "Row number of `X` {X.shape[0]} should equal that of `y`"
+                " {y.shape[0]}"
+            )
+        )
+
+    var X_prime = X.T()
+    var b = (X_prime @ X).inv() @ X_prime @ y
+    return b^
 
 
 fn solve[
@@ -382,3 +356,101 @@ fn solve[
     #         X._buf.ptr.store(i * n + col, _temp2)
 
     # return X
+
+
+fn solve[
+    dtype: DType
+](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Solve `AX = Y` using LUP decomposition.
+    """
+    var U: Matrix[dtype]
+    var L: Matrix[dtype]
+    A_pivoted, P, _ = partial_pivoting(A)
+    L, U = lu_decomposition[dtype](A_pivoted)
+
+    var m = A.shape[0]
+    var n = Y.shape[1]
+
+    var Z = Matrix.full[dtype]((m, n))
+    var X = Matrix.full[dtype]((m, n))
+
+    var PY = P @ Y
+
+    @parameter
+    fn calculate_X(col: Int) -> None:
+        # Solve `LZ = PY` for `Z` for each col
+        for i in range(m):  # row of L
+            var _temp = PY._load(i, col)
+            for j in range(i):  # col of L
+                _temp = _temp - L._load(i, j) * Z._load(j, col)
+            _temp = _temp / L._load(i, i)
+            Z._store(i, col, _temp)
+
+        # Solve `UZ = Z` for `X` for each col
+        for i in range(m - 1, -1, -1):
+            var _temp2 = Z._load(i, col)
+            for j in range(i + 1, m):
+                _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
+            _temp2 = _temp2 / U._load(i, i)
+            X._store(i, col, _temp2)
+
+    parallelize[calculate_X](n, n)
+
+    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
+    # This is disadvantage of Mojo's ASAP policy
+    var _L = L^
+    var _U = U^
+    var _Z = Z^
+    var _PY = PY^
+    var _m = m
+    var _n = n
+
+    return X^
+
+
+fn solve_lu[
+    dtype: DType
+](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Solve `AX = Y` using LU decomposition.
+    """
+    var U: Matrix[dtype]
+    var L: Matrix[dtype]
+    L, U = lu_decomposition[dtype](A)
+
+    var m = A.shape[0]
+    var n = Y.shape[1]
+
+    var Z = Matrix.full[dtype]((m, n))
+    var X = Matrix.full[dtype]((m, n))
+
+    @parameter
+    fn calculate_X(col: Int) -> None:
+        # Solve `LZ = Y` for `Z` for each col
+        for i in range(m):  # row of L
+            var _temp = Y._load(i, col)
+            for j in range(i):  # col of L
+                _temp = _temp - L._load(i, j) * Z._load(j, col)
+            _temp = _temp / L._load(i, i)
+            Z._store(i, col, _temp)
+
+        # Solve `UZ = Z` for `X` for each col
+        for i in range(m - 1, -1, -1):
+            var _temp2 = Z._load(i, col)
+            for j in range(i + 1, m):
+                _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
+            _temp2 = _temp2 / U._load(i, i)
+            X._store(i, col, _temp2)
+
+    parallelize[calculate_X](n, n)
+
+    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
+    # This is disadvantage of Mojo's ASAP policy
+    var _L = L^
+    var _U = U^
+    var _Z = Z^
+    var _m = m
+    var _n = n
+
+    return X^

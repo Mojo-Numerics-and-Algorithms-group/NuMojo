@@ -15,14 +15,14 @@ fn cbrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise cuberoot of NDArray.
+    Element-wise cuberoot of NDArray.
 
     Constraints:
         Both arrays must have the same shapes.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -36,14 +36,14 @@ fn cbrt[
 # fn pow[dtype: DType,
 #     backend: _mf.Backend = _mf.Vectorized](array1: NDArray[dtype], intval: Int) -> NDArray[dtype]:
 #     """
-#     Elementwise NDArray to the power of intval.
+#     Element-wise NDArray to the power of intval.
 
 #     Constraints:
 #         Both arrays must have the same shapes.
 
 #     Parameters:
 #         dtype: The element type.
-#         backend: Sets utility function origin, defualts to `Vectorized`.
+#         backend: Sets utility function origin, defaults to `Vectorized`.
 
 #     Args:
 #         array1: A NDArray.
@@ -59,7 +59,7 @@ fn _mt_rsqrt[
     dtype: DType, simd_width: Int
 ](value: SIMD[dtype, simd_width]) -> SIMD[dtype, simd_width]:
     """
-    Elementwise reciprocal squareroot of SIMD.
+    Element-wise reciprocal squareroot of SIMD.
     Parameters:
         dtype: The element type.
         simd_width: The SIMD width.
@@ -75,11 +75,11 @@ fn rsqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise reciprocal squareroot of NDArray.
+    Element-wise reciprocal squareroot of NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -94,11 +94,11 @@ fn sqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise squareroot of NDArray.
+    Element-wise squareroot of NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -118,7 +118,7 @@ fn scalb[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.

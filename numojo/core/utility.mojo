@@ -65,7 +65,7 @@ fn _get_offset(indices: List[Int], strides: NDArrayStrides) raises -> Int:
     return idx
 
 
-fn _get_offset(indices: Idx, strides: NDArrayStrides) raises -> Int:
+fn _get_offset(indices: Item, strides: NDArrayStrides) raises -> Int:
     """
     Get the index of a multi-dimensional array from a list of indices and strides.
 

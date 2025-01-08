@@ -152,26 +152,27 @@ fn main() raises:
     var A_slice = A[1:3, 4:19]
 
     # Get scalar from array
-    var A_item = A[Idx(291, 141)]
+    var A_item = A[item(291, 141)]
+    var A_item_2 = A.item(291, 141)
 ```
 
 An example of matrix (`Matrix` type) goes as follows.
 
 ```mojo
-from numojo import mat
+from numojo import Matrix
 from numojo.prelude import *
 
 
 fn main() raises:
     # Generate two 1000x1000 matrices with random float64 values
-    var A = mat.rand(shape=(1000, 1000))
-    var B = mat.rand(shape=(1000, 1000))
+    var A = Matrix.rand(shape=(1000, 1000))
+    var B = Matrix.rand(shape=(1000, 1000))
 
     # Generate 1000x1 matrix (column vector) with random float64 values
-    var C = mat.rand(shape=(1000, 1))
+    var C = Matrix.rand(shape=(1000, 1))
 
     # Generate a 4x3 matrix from string representation
-    var F = mat.fromstring[i8](
+    var F = Matrix.fromstring[i8](
         "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
     )
 
@@ -186,12 +187,12 @@ fn main() raises:
     print(C[::-1, :])
 
     # Sort and argsort along axis
-    print(mat.sort(A, axis=1))
-    print(mat.argsort(A, axis=0))
+    print(nm.sort(A, axis=1))
+    print(nm.argsort(A, axis=0))
 
     # Sum the matrix
-    print(mat.sum(B))
-    print(mat.sum(B, axis=1))
+    print(nm.sum(B))
+    print(nm.sum(B, axis=1))
 
     # Matrix multiplication
     print(A @ B)
@@ -200,10 +201,10 @@ fn main() raises:
     print(A.inv())
 
     # Solve linear algebra
-    print(mat.solve(A, B))
+    print(nm.solve(A, B))
 
     # Least square
-    print(mat.lstsq(A, C))
+    print(nm.lstsq(A, C))
 ```
 
 ## How to install
@@ -248,6 +249,8 @@ This library is still very much a work in progress and may change at any time.
 ## License
 
 Distributed under the Apache 2.0 License with LLVM Exceptions. See [LICENSE](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE) and the LLVM [License](https://llvm.org/LICENSE.txt) for more information.
+
+This project includes code from [Mojo Standard Library](https://github.com/modularml/mojo), licensed under the Apache License v2.0 with LLVM Exceptions (see the LLVM [License](https://llvm.org/LICENSE.txt)). MAX and Mojo usage and distribution are licensed under the [MAX & Mojo Community License](https://www.modular.com/legal/max-mojo-license).
 
 ## Acknowledgements
 

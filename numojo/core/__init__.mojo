@@ -2,11 +2,11 @@
 
 # Structs
 from .ndarray import NDArray
-from .index import Idx
+from .item import Item
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
 
-from ._complex_dtype import CDType
+from .complex_dtype import CDType
 from .complex_simd import ComplexSIMD, ComplexScalar
 from .complex_ndarray import ComplexNDArray
 
@@ -37,6 +37,6 @@ from .datatypes import (
 
 # from .utility import
 
-alias idx = Idx
+alias idx = Item
 alias shape = NDArrayShape
 alias Shape = NDArrayShape

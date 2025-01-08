@@ -9,12 +9,18 @@ import math
 
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+from numojo.core.matrix import Matrix
+import numojo.core.matrix as matrix
 
 # TODO: add  dtype in backends and pass it here.
 
 # ===------------------------------------------------------------------------===#
 # Inverse Hyperbolic Trig
 # ===------------------------------------------------------------------------===#
+
+
+fn arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
 
 
 fn acosh[
@@ -31,11 +37,19 @@ fn acosh[
         array: An Array.
 
     Returns:
-        The elementwise acosh of `array` in radians.
+        The element-wise acosh of `array` in radians.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.acosh](
         array
     )
+
+
+fn acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
+
+
+fn arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
 
 
 fn asinh[
@@ -46,17 +60,25 @@ fn asinh[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array.
 
     Returns:
-        The elementwise asinh of `array` in radians.
+        The element-wise asinh of `array` in radians.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.asinh](
         array
     )
+
+
+fn asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
+
+
+fn arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
 
 
 fn atanh[
@@ -67,17 +89,21 @@ fn atanh[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array.
 
     Returns:
-        The elementwise atanh of `array` in radians.
+        The element-wise atanh of `array` in radians.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.atanh](
         array
     )
+
+
+fn atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
 
 
 # ===------------------------------------------------------------------------===#
@@ -93,15 +119,19 @@ fn cosh[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise cosh of `array`.
+        The element-wise cosh of `array`.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.cosh](array)
+
+
+fn cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.cosh](A)
 
 
 fn sinh[
@@ -112,15 +142,19 @@ fn sinh[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise sinh of `array`.
+        The element-wise sinh of `array`.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.sinh](array)
+
+
+fn sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.sinh](A)
 
 
 fn tanh[
@@ -131,12 +165,16 @@ fn tanh[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise tanh of `array`.
+        The element-wise tanh of `array`.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.tanh](array)
+
+
+fn tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.tanh](A)

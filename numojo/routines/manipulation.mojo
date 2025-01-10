@@ -10,6 +10,8 @@ from algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
+import numojo.core.matrix as matrix
+from numojo.core.matrix import Matrix
 from numojo.core.utility import _list_of_flipped_range
 
 # ===----------------------------------------------------------------------=== #
@@ -252,6 +254,22 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
             flipped_axes.append(i)
 
         return transpose(A, axes=flipped_axes)
+
+
+fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Transpose of matrix.
+    """
+
+    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]))
+
+    if A.shape[0] == 1 or A.shape[1] == 1:
+        memcpy(B._buf, A._buf, A.size)
+    else:
+        for i in range(B.shape[0]):
+            for j in range(B.shape[1]):
+                B._store(i, j, A._load(j, i))
+    return B^
 
 
 # ===----------------------------------------------------------------------=== #

@@ -6,7 +6,6 @@ Datatypes Module - Implements datatypes aliases, conversions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 
-
 # Rust-like data type alias
 """alias for `DType.int8`"""
 alias i8 = DType.int8
@@ -34,43 +33,71 @@ alias f32 = DType.float32
 alias f64 = DType.float64
 """Data type alias for DType.float64"""
 
+# ===----------------------------------------------------------------------=== #
+
+# Complex SIMD data type aliases
+""" Data type alias for ComplexSIMD[DType.int8, 1] """
+alias ci8 = CDType.int8
+""" Data type alias for ComplexSIMD[DType.int16, 1] """
+alias ci16 = CDType.int16
+""" Data type alias for ComplexSIMD[DType.int32, 1] """
+alias ci32 = CDType.int32
+""" Data type alias for ComplexSIMD[DType.int64, 1] """
+alias ci64 = CDType.int64
+""" Data type alias for ComplexSIMD[DType.uint8, 1] """
+alias cu8 = CDType.uint8
+""" Data type alias for ComplexSIMD[DType.uint16, 1] """
+alias cu16 = CDType.uint16
+""" Data type alias for ComplexSIMD[DType.uint32, 1] """
+alias cu32 = CDType.uint32
+""" Data type alias for ComplexSIMD[DType.uint64, 1] """
+alias cu64 = CDType.uint64
+""" Data type alias for ComplexSIMD[DType.float16, 1] """
+alias cf16 = CDType.float16
+""" Data type alias for ComplexSIMD[DType.float32, 1] """
+alias cf32 = CDType.float32
+""" Data type alias for ComplexSIMD[DType.float64, 1] """
+alias cf64 = CDType.float64
+
+# ===----------------------------------------------------------------------=== #
+
 
 # TODO: Optimize the conditions with dict and move it to compile time
 # Dict can't be created at compile time rn
 struct TypeCoercion:
     """Handles type coercion using a promotion matrix approach."""
 
-    alias ranks: VariadicList[DType] = VariadicList[DType](
+    alias ranks: List[DType] = List[DType](
         i8, u8, f16, i16, u16, f32, i32, u32, i64, u64, f64
     )
-    alias int_ranks: VariadicList[DType] = VariadicList[DType](
+    alias int_ranks: List[DType] = List[DType](
         i8, u8, i16, u16, i32, u32, i64, u64
     )
-    alias float_ranks: VariadicList[DType] = VariadicList[DType](f16, f32, f64)
-
-    @staticmethod
-    @parameter
-    fn calc_type_index[dtype: DType, list: VariadicList[DType]]() -> Int:
-        @parameter
-        for i in range(len(list)):
-            if Self.ranks[i] == dtype:
-                return i
-        return 0
+    alias float_ranks: List[DType] = List[DType](f16, f32, f64)
 
     @parameter
     @staticmethod
     fn get_type_rank[dtype: DType]() -> Int:
-        return Self.calc_type_index[dtype, Self.ranks]()
+        try:
+            return Self.ranks.index(dtype)
+        except ValueError:
+            return 10
 
     @parameter
     @staticmethod
     fn get_inttype_rank[dtype: DType]() -> Int:
-        return Self.calc_type_index[dtype, Self.int_ranks]()
+        try:
+            return Self.int_ranks.index(dtype)
+        except ValueError:
+            return 7
 
     @parameter
     @staticmethod
     fn get_floattype_rank[dtype: DType]() -> Int:
-        return Self.calc_type_index[dtype, Self.float_ranks]()
+        try:
+            return Self.float_ranks.index(dtype)
+        except ValueError:
+            return 2
 
     @parameter
     @staticmethod

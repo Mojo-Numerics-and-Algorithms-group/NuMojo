@@ -19,10 +19,11 @@ from collections.optional import Optional
 from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
 
+import numojo.core._array_funcs as _af
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
+from numojo.core.item import Item
 from numojo.core.own_data import OwnData
-import numojo.core._array_funcs as _af
 from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
@@ -39,7 +40,6 @@ import numojo.routines.logic.comparison as comparison
 import numojo.routines.math.rounding as rounding
 import numojo.routines.bitwise as bitwise
 import numojo.routines.linalg as linalg
-
 from numojo.core.datatypes import TypeCoercion
 from numojo.routines.statistics.averages import mean, cummean
 from numojo.routines.math.products import prod, cumprod
@@ -269,7 +269,7 @@ struct NDArray[dtype: DType = DType.float64](
             index_of_buffer += indices[i] * self.strides._buf[i]
         self._buf.ptr[index_of_buffer] = val
 
-    fn __setitem__(mut self, idx: Int, val: NDArray[dtype]) raises:
+    fn __setitem__(mut self, idx: Int, val: Self) raises:
         """
         Set a slice of array with given array.
 
@@ -297,11 +297,11 @@ struct NDArray[dtype: DType = DType.float64](
                 idx + 1,
             )
             raise Error(message)
-        slice_list.append(Slice(idx, idx + 1))
+        slice_list.append(Slice(idx, idx + 1, 1))
         if self.ndim > 1:
             for i in range(1, self.ndim):
                 var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
+                slice_list.append(Slice(0, size_at_dim, 1))
 
         var n_slices: Int = len(slice_list)
         var ndims: Int = 0
@@ -383,7 +383,7 @@ struct NDArray[dtype: DType = DType.float64](
             val, self, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    fn __setitem__(mut self, index: Idx, val: SIMD[dtype, 1]) raises:
+    fn __setitem__(mut self, index: Item, val: Scalar[dtype]) raises:
         """
         Set the value at the index list.
         """
@@ -423,7 +423,7 @@ struct NDArray[dtype: DType = DType.float64](
             if mask._buf.ptr.load[width=1](i):
                 self._buf.ptr.store(i, value)
 
-    fn __setitem__(mut self, owned *slices: Slice, val: NDArray[dtype]) raises:
+    fn __setitem__(mut self, *slices: Slice, val: Self) raises:
         """
         Retreive slices of an array from variadic slices.
 
@@ -435,14 +435,27 @@ struct NDArray[dtype: DType = DType.float64](
             slice_list.append(slices[i])
         self.__setitem__(slices=slice_list, val=val)
 
-    fn __setitem__(
-        mut self, owned slices: List[Slice], val: NDArray[dtype]
-    ) raises:
+    fn __setitem__(mut self, slices: List[Slice], val: Self) raises:
         """
         Sets the slices of an array from list of slices and array.
 
         Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        ```console
+        >>> var a = nm.arange[i8](16).reshape(Shape(4, 4))
+        print(a)
+        [[      0       1       2       3       ]
+         [      4       5       6       7       ]
+         [      8       9       10      11      ]
+         [      12      13      14      15      ]]
+        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
+        >>> a[2:4, 2:4] = a[0:2, 0:2]
+        print(a)
+        [[      0       1       2       3       ]
+         [      4       5       6       7       ]
+         [      8       9       0       1       ]
+         [      12      13      4       5       ]]
+        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
+        ```
         """
         var n_slices: Int = len(slices)
         var ndims: Int = 0
@@ -540,31 +553,48 @@ struct NDArray[dtype: DType = DType.float64](
             val, self, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    ### compiler doesn't accept this.
-    # fn __setitem__(self, owned *slices: Variant[Slice, Int], val: NDArray[dtype]) raises:
-    #     """
-    #     Get items by a series of either slices or integers.
-    #     """
-    #     var n_slices: Int = slices.__len__()
-    #     if n_slices > self.ndim:
-    #         raise Error("Error: No of slices greater than rank of array")
-    #     var slice_list: List[Slice] = List[Slice]()
+    fn __setitem__(mut self, *slices: Variant[Slice, Int], val: Self) raises:
+        """
+        Get items by a series of either slices or integers.
 
-    #     var count_int = 0
-    #     for i in range(len(slices)):
-    #         if slices[i].isa[Slice]():
-    #             slice_list.append(slices[i]._get_ptr[Slice]()[0])
-    #         elif slices[i].isa[Int]():
-    #             count_int += 1
-    #             var int: Int = slices[i]._get_ptr[Int]()[0]
-    #             slice_list.append(Slice(int, int + 1))
+        Example:
+        ```console
+        >>> var a = nm.arange[i8](16).reshape(Shape(4, 4))
+        print(a)
+        [[      0       1       2       3       ]
+         [      4       5       6       7       ]
+         [      8       9       10      11      ]
+         [      12      13      14      15      ]]
+        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
+        >>> a[0, Slice(2, 4)] = a[3, Slice(0, 2)]
+        print(a)
+        [[      0       1       12      13      ]
+         [      4       5       6       7       ]
+         [      8       9       10      11      ]
+         [      12      13      14      15      ]]
+        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
+        ```
+        """
+        var n_slices: Int = slices.__len__()
+        if n_slices > self.ndim:
+            raise Error("Error: No of slices greater than rank of array")
+        var slice_list: List[Slice] = List[Slice]()
 
-    #     if n_slices < self.ndim:
-    #         for i in range(n_slices, self.ndim):
-    #             var size_at_dim: Int = self.shape[i]
-    #             slice_list.append(Slice(0, size_at_dim))
+        var count_int = 0
+        for i in range(len(slices)):
+            if slices[i].isa[Slice]():
+                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+            elif slices[i].isa[Int]():
+                count_int += 1
+                var int: Int = slices[i]._get_ptr[Int]()[0]
+                slice_list.append(Slice(int, int + 1, 1))
 
-    #     self.__setitem__(slices=slice_list, val=val)
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                var size_at_dim: Int = self.shape[i]
+                slice_list.append(Slice(0, size_at_dim, 1))
+
+        self.__setitem__(slices=slice_list, val=val)
 
     # TODO: fix this setter, add bound checks. Not sure about it's use case.
     fn __setitem__(self, index: NDArray[DType.index], val: NDArray) raises:
@@ -648,7 +678,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         var slice_list = List[Slice]()
-        slice_list.append(Slice(idx, idx + 1))
+        slice_list.append(Slice(idx, idx + 1, 1))
 
         # 0-d array always return itself
         if self.ndim == 0:
@@ -657,7 +687,7 @@ struct NDArray[dtype: DType = DType.float64](
         if self.ndim > 1:
             for i in range(1, self.ndim):
                 var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
+                slice_list.append(Slice(0, size_at_dim, 1))
 
         var narr: Self = self.__getitem__(slice_list)
 
@@ -667,7 +697,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
-    fn __getitem__(self, index: Idx) raises -> SIMD[dtype, 1]:
+    fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]:
         """
         Set the value at the index list.
         """
@@ -752,7 +782,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                slice_list.append(Slice(0, self.shape[i]))
+                slice_list.append(Slice(0, self.shape[i], 1))
 
         var narr: Self = self[slice_list]
         return narr
@@ -1049,12 +1079,12 @@ struct NDArray[dtype: DType = DType.float64](
             elif slices[i].isa[Int]():
                 count_int += 1
                 var int: Int = slices[i]._get_ptr[Int]()[0]
-                slice_list.append(Slice(int, int + 1))
+                slice_list.append(Slice(int, int + 1, 1))
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
+                slice_list.append(Slice(0, size_at_dim, 1))
 
         var narr: Self = self.__getitem__(slice_list)
 
@@ -1378,6 +1408,8 @@ struct NDArray[dtype: DType = DType.float64](
             self.astype[ResultDType](), other.cast[ResultDType]()
         )
 
+    """ ARITHMETIC OPERATORS """
+
     fn __add__[
         OtherDType: DType,
         ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
@@ -1570,7 +1602,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __invert__(self) raises -> Self:
         """
-        Elementwise inverse (~ or not), only for bools and integral types.
+        Element-wise inverse (~ or not), only for bools and integral types.
         """
         return bitwise.invert[dtype](self)
 
@@ -2061,7 +2093,7 @@ struct NDArray[dtype: DType = DType.float64](
         for row in range(self.shape[0]):
             for col in range(other.shape[1]):
                 new_matrix.__setitem__(
-                    Idx(row, col),
+                    Item(row, col),
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
         return new_matrix
@@ -2491,7 +2523,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return ravel(self, order=order)
 
-    fn item(self, owned index: Int) raises -> SIMD[dtype, 1]:
+    fn item(
+        self, owned index: Int
+    ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
+        dtype
+    ]:
         """
         Return the scalar at the coordinates.
 
@@ -2556,12 +2592,16 @@ struct NDArray[dtype: DType = DType.float64](
                 c_coordinates.append(coordinate)
 
             # Get the value by coordinates and the strides
-            return self._buf.ptr[_get_offset(c_coordinates, self.strides)]
+            return (self._buf.ptr + _get_offset(c_coordinates, self.strides))[]
 
         else:
-            return self._buf.ptr[index]
+            return (self._buf.ptr + index)[]
 
-    fn item(self, *index: Int) raises -> SIMD[dtype, 1]:
+    fn item(
+        self, *index: Int
+    ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
+        dtype
+    ]:
         """
         Return the scalar at the coordinates.
 
@@ -2613,7 +2653,7 @@ struct NDArray[dtype: DType = DType.float64](
                         i, self.shape[i]
                     )
                 )
-        return self._buf.ptr[_get_offset(index, self.strides)]
+        return (self._buf.ptr + _get_offset(index, self.strides))[]
 
     fn itemset(
         mut self, index: Variant[Int, List[Int]], item: Scalar[dtype]
@@ -2721,14 +2761,14 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(ndim):
             if i != axis:
                 result_shape.append(shape[i])
-                slices.append(Slice(0, shape[i]))
+                slices.append(Slice(0, shape[i], 1))
             else:
-                slices.append(Slice(0, 0))
+                slices.append(Slice(0, 0, 1))
 
-        slices[axis] = Slice(0, 1)
+        slices[axis] = Slice(0, 1, 1)
         var result: NDArray[dtype] = self[slices]
         for i in range(1, axis_size):
-            slices[axis] = Slice(i, i + 1)
+            slices[axis] = Slice(i, i + 1, 1)
             var arr_slice = self[slices]
             var mask1 = comparison.greater(arr_slice, result)
             var mask2 = comparison.less(arr_slice, result)
@@ -2762,14 +2802,14 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(ndim):
             if i != axis:
                 result_shape.append(shape[i])
-                slices.append(Slice(0, shape[i]))
+                slices.append(Slice(0, shape[i], 1))
             else:
-                slices.append(Slice(0, 0))
+                slices.append(Slice(0, 0, 1))
 
-        slices[axis] = Slice(0, 1)
+        slices[axis] = Slice(0, 1, 1)
         var result: NDArray[dtype] = self[slices]
         for i in range(1, axis_size):
-            slices[axis] = Slice(i, i + 1)
+            slices[axis] = Slice(i, i + 1, 1)
             var arr_slice = self[slices]
             var mask1 = comparison.less(arr_slice, result)
             var mask2 = comparison.greater(arr_slice, result)

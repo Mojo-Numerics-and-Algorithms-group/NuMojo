@@ -8,6 +8,7 @@ authors = [
     "Yuhao Zhu (朱宇浩) <dr.yuhao.zhu@outlook.com>",
     "mmenendezg <>",
     "sandstromviktor <>",
+    "durnwalder <>"
 ]
 channels = ["conda-forge", "https://conda.modular.com/max/"]
 platforms = ["osx-arm64", "linux-64"]
@@ -16,11 +17,13 @@ readme = "README.MD"
 
 [tasks]
 # test whether tests pass and the package can be built
-test = "magic run mojo test tests -I ./ && magic run mojo package numojo"
-t = "clear && magic run mojo test tests -I ./ && magic run mojo package numojo"
+test = "magic run mojo test tests -I ./ -I ./tests/ && magic run mojo package numojo"
+t = "clear && magic run mojo test tests -I ./ -I ./tests/ && magic run mojo package numojo"
+
 # runs all final checks before a commit
-final = "magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo"
-f = "clear && magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo"
+final = "magic run mojo test tests -I ./ -I ./tests/ && magic run mojo format ./ && magic run mojo package numojo"
+f = "clear && magic run mojo test tests -I ./ -I ./tests/ && magic run mojo format ./ && magic run mojo package numojo"
+
 # compile the package
 package = "magic run mojo package numojo"
 p = "clear && magic run mojo package numojo"

@@ -1,6 +1,6 @@
 import numojo as nm
-from numojo import mat
 from numojo.prelude import *
+from numojo.core.matrix import Matrix
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 
@@ -11,14 +11,14 @@ from testing.testing import assert_raises, assert_true
 
 fn check_matrices_equal[
     dtype: DType
-](matrix: mat.Matrix[dtype], np_sol: PythonObject, st: String) raises:
+](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.all(np.equal(np.matrix(matrix.to_numpy()), np_sol)), st)
 
 
 fn check_matrices_close[
     dtype: DType
-](matrix: mat.Matrix[dtype], np_sol: PythonObject, st: String) raises:
+](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(
         np.all(np.isclose(np.matrix(matrix.to_numpy()), np_sol, atol=0.01)), st
@@ -39,7 +39,7 @@ fn check_values_close[
 
 def test_manipulation():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((10, 10)) * 1000
+    var A = Matrix.rand[f64]((10, 10)) * 1000
     var Anp = np.matrix(A.to_numpy())
     check_matrices_equal(
         A.astype[nm.i32](),
@@ -70,7 +70,7 @@ def test_manipulation():
 def test_full():
     var np = Python.import_module("numpy")
     check_matrices_equal(
-        mat.full[f64]((10, 10), 10),
+        Matrix.full[f64]((10, 10), 10),
         np.full((10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
@@ -79,7 +79,7 @@ def test_full():
 def test_zeros():
     var np = Python.import_module("numpy")
     check_matrices_equal(
-        mat.zeros[f64](shape=(10, 10)),
+        Matrix.zeros[f64](shape=(10, 10)),
         np.zeros((10, 10), dtype=np.float64),
         "Zeros is broken",
     )
@@ -92,9 +92,9 @@ def test_zeros():
 
 def test_arithmetic():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((10, 10))
-    var B = mat.rand[f64]((10, 10))
-    var C = mat.rand[f64]((10, 1))
+    var A = Matrix.rand[f64]((10, 10))
+    var B = Matrix.rand[f64]((10, 10))
+    var C = Matrix.rand[f64]((10, 1))
     var Ap = A.to_numpy()
     var Bp = B.to_numpy()
     var Cp = C.to_numpy()
@@ -116,9 +116,9 @@ def test_arithmetic():
 
 def test_logic():
     var np = Python.import_module("numpy")
-    var A = mat.ones((5, 1))
-    var B = mat.ones((5, 1))
-    var L = mat.fromstring[i8](
+    var A = Matrix.ones((5, 1))
+    var B = Matrix.ones((5, 1))
+    var L = Matrix.fromstring[i8](
         "[[0,0,0],[0,0,1],[1,1,1],[1,0,0]]", shape=(4, 3)
     )
     var Anp = np.matrix(A.to_numpy())
@@ -128,22 +128,22 @@ def test_logic():
     check_matrices_equal(A > B, Anp > Bnp, "gt is broken")
     check_matrices_equal(A < B, Anp < Bnp, "lt is broken")
     assert_true(
-        np.equal(mat.all(L), np.all(Lnp)),
+        np.equal(nm.all(L), np.all(Lnp)),
         "`all` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.all(L, axis=i),
+            Matrix.all(L, axis=i),
             np.all(Lnp, axis=i),
             String("`all` by axis {i} is broken"),
         )
     assert_true(
-        np.equal(mat.any(L), np.any(Lnp)),
+        np.equal(Matrix.any(L), np.any(Lnp)),
         "`any` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.any(L, axis=i),
+            Matrix.any(L, axis=i),
             np.any(Lnp, axis=i),
             String("`any` by axis {i} is broken"),
         )
@@ -156,26 +156,28 @@ def test_logic():
 
 def test_linalg():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((100, 100))
-    var B = mat.rand[f64]((100, 100))
-    var E = mat.fromstring("[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3))
-    var Y = mat.rand((100, 1))
+    var A = Matrix.rand[f64]((100, 100))
+    var B = Matrix.rand[f64]((100, 100))
+    var E = Matrix.fromstring(
+        "[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3)
+    )
+    var Y = Matrix.rand((100, 1))
     var Anp = A.to_numpy()
     var Bnp = B.to_numpy()
     var Ynp = Y.to_numpy()
     var Enp = E.to_numpy()
     check_matrices_close(
-        mat.solve(A, B),
+        nm.linalg.solve(A, B),
         np.linalg.solve(Anp, Bnp),
         "Solve is broken",
     )
     check_matrices_close(
-        mat.inv(A),
+        nm.linalg.inv(A),
         np.linalg.inv(Anp),
         "Inverse is broken",
     )
     check_matrices_close(
-        mat.lstsq(A, Y),
+        nm.linalg.lstsq(A, Y),
         np.linalg.lstsq(Anp, Ynp)[0],
         "Least square is broken",
     )
@@ -190,14 +192,16 @@ def test_linalg():
         "Transpose is broken",
     )
     assert_true(
-        np.all(np.isclose(mat.det(A), np.linalg.det(Anp), atol=0.1)),
+        np.all(np.isclose(nm.linalg.det(A), np.linalg.det(Anp), atol=0.1)),
         "Determinant is broken",
     )
     for i in range(-10, 10):
         assert_true(
             np.all(
                 np.isclose(
-                    mat.trace(E, offset=i), np.trace(Enp, offset=i), atol=0.1
+                    nm.linalg.trace(E, offset=i),
+                    np.trace(Enp, offset=i),
+                    atol=0.1,
                 )
             ),
             "Trace is broken",
@@ -205,11 +209,11 @@ def test_linalg():
 
 
 def test_qr_decomposition():
-    A = mat.rand[f64]((20, 20))
+    A = Matrix.rand[f64]((20, 20))
 
     var np = Python.import_module("numpy")
 
-    Q, R = numojo.mat.linalg.qr(A)
+    Q, R = nm.linalg.qr(A)
 
     # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
     var id = Q.transpose() @ Q
@@ -230,51 +234,51 @@ def test_qr_decomposition():
 
 def test_math():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((100, 100))
+    var A = Matrix.rand[f64]((100, 100))
     var Anp = np.matrix(A.to_numpy())
 
     assert_true(
-        np.all(np.isclose(mat.sum(A), np.sum(Anp), atol=0.1)),
+        np.all(np.isclose(nm.sum(A), np.sum(Anp), atol=0.1)),
         "`sum` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.sum(A, axis=i),
+            nm.sum(A, axis=i),
             np.sum(Anp, axis=i),
             String("`sum` by axis {i} is broken"),
         )
 
     assert_true(
-        np.all(np.isclose(mat.prod(A), np.prod(Anp), atol=0.1)),
+        np.all(np.isclose(nm.prod(A), np.prod(Anp), atol=0.1)),
         "`prod` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.prod(A, axis=i),
+            nm.prod(A, axis=i),
             np.prod(Anp, axis=i),
             String("`prod` by axis {i} is broken"),
         )
 
     check_matrices_close(
-        mat.cumsum(A),
+        nm.cumsum(A),
         np.cumsum(Anp),
         "`cumsum` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.cumsum(A, axis=i),
+            nm.cumsum(A, axis=i),
             np.cumsum(Anp, axis=i),
             String("`cumsum` by axis {i} is broken"),
         )
 
     check_matrices_close(
-        mat.cumprod(A),
+        nm.cumprod(A),
         np.cumprod(Anp),
         "`cumprod` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.cumprod(A, axis=i),
+            nm.cumprod(A, axis=i),
             np.cumprod(Anp, axis=i),
             String("`cumprod` by axis {i} is broken"),
         )
@@ -282,34 +286,34 @@ def test_math():
 
 def test_trigonometric():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((100, 100))
+    var A = Matrix.rand[f64]((100, 100))
     var Anp = np.matrix(A.to_numpy())
-    check_matrices_close(mat.sin(A), np.sin(Anp), "sin is broken")
-    check_matrices_close(mat.cos(A), np.cos(Anp), "cos is broken")
-    check_matrices_close(mat.tan(A), np.tan(Anp), "tan is broken")
-    check_matrices_close(mat.arcsin(A), np.arcsin(Anp), "arcsin is broken")
-    check_matrices_close(mat.asin(A), np.arcsin(Anp), "asin is broken")
-    check_matrices_close(mat.arccos(A), np.arccos(Anp), "arccos is broken")
-    check_matrices_close(mat.acos(A), np.arccos(Anp), "acos is broken")
-    check_matrices_close(mat.arctan(A), np.arctan(Anp), "arctan is broken")
-    check_matrices_close(mat.atan(A), np.arctan(Anp), "atan is broken")
+    check_matrices_close(nm.sin(A), np.sin(Anp), "sin is broken")
+    check_matrices_close(nm.cos(A), np.cos(Anp), "cos is broken")
+    check_matrices_close(nm.tan(A), np.tan(Anp), "tan is broken")
+    check_matrices_close(nm.arcsin(A), np.arcsin(Anp), "arcsin is broken")
+    check_matrices_close(nm.asin(A), np.arcsin(Anp), "asin is broken")
+    check_matrices_close(nm.arccos(A), np.arccos(Anp), "arccos is broken")
+    check_matrices_close(nm.acos(A), np.arccos(Anp), "acos is broken")
+    check_matrices_close(nm.arctan(A), np.arctan(Anp), "arctan is broken")
+    check_matrices_close(nm.atan(A), np.arctan(Anp), "atan is broken")
 
 
 def test_hyperbolic():
     var np = Python.import_module("numpy")
-    var A = mat.fromstring("[[1,2,3],[4,5,6],[7,8,9]]", shape=(3, 3))
+    var A = Matrix.fromstring("[[1,2,3],[4,5,6],[7,8,9]]", shape=(3, 3))
     var B = A / 10
     var Anp = np.matrix(A.to_numpy())
     var Bnp = np.matrix(B.to_numpy())
-    check_matrices_close(mat.sinh(A), np.sinh(Anp), "sinh is broken")
-    check_matrices_close(mat.cosh(A), np.cosh(Anp), "cosh is broken")
-    check_matrices_close(mat.tanh(A), np.tanh(Anp), "tanh is broken")
-    check_matrices_close(mat.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken")
-    check_matrices_close(mat.asinh(A), np.arcsinh(Anp), "asinh is broken")
-    check_matrices_close(mat.arccosh(A), np.arccosh(Anp), "arccosh is broken")
-    check_matrices_close(mat.acosh(A), np.arccosh(Anp), "acosh is broken")
-    check_matrices_close(mat.arctanh(B), np.arctanh(Bnp), "arctanh is broken")
-    check_matrices_close(mat.atanh(B), np.arctanh(Bnp), "atanh is broken")
+    check_matrices_close(nm.sinh(A), np.sinh(Anp), "sinh is broken")
+    check_matrices_close(nm.cosh(A), np.cosh(Anp), "cosh is broken")
+    check_matrices_close(nm.tanh(A), np.tanh(Anp), "tanh is broken")
+    check_matrices_close(nm.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken")
+    check_matrices_close(nm.asinh(A), np.arcsinh(Anp), "asinh is broken")
+    check_matrices_close(nm.arccosh(A), np.arccosh(Anp), "arccosh is broken")
+    check_matrices_close(nm.acosh(A), np.arccosh(Anp), "acosh is broken")
+    check_matrices_close(nm.arctanh(B), np.arctanh(Bnp), "arctanh is broken")
+    check_matrices_close(nm.atanh(B), np.arctanh(Bnp), "atanh is broken")
 
 
 # ===-----------------------------------------------------------------------===#
@@ -319,38 +323,38 @@ def test_hyperbolic():
 
 def test_statistics():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((100, 100))
+    var A = Matrix.rand[f64]((100, 100))
     var Anp = np.matrix(A.to_numpy())
 
     assert_true(
-        np.all(np.isclose(mat.mean(A), np.mean(Anp), atol=0.1)),
+        np.all(np.isclose(nm.mean(A), np.mean(Anp), atol=0.1)),
         "`mean` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.mean(A, i),
+            nm.mean(A, i),
             np.mean(Anp, i),
             String("`mean` is broken for {i}-dimension"),
         )
 
     assert_true(
-        np.all(np.isclose(mat.variance(A), np.`var`(Anp), atol=0.1)),
+        np.all(np.isclose(nm.variance(A), np.`var`(Anp), atol=0.1)),
         "`variance` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.variance(A, i),
+            nm.variance(A, i),
             np.`var`(Anp, i),
             String("`variance` is broken for {i}-dimension"),
         )
 
     assert_true(
-        np.all(np.isclose(mat.std(A), np.std(Anp), atol=0.1)),
+        np.all(np.isclose(nm.std(A), np.std(Anp), atol=0.1)),
         "`std` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            mat.std(A, i),
+            nm.std(A, i),
             np.std(Anp, i),
             String("`std` is broken for {i}-dimension"),
         )
@@ -358,29 +362,29 @@ def test_statistics():
 
 def test_sorting():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((10, 10))
+    var A = Matrix.rand[f64]((10, 10))
     var Anp = np.matrix(A.to_numpy())
 
     check_matrices_close(
-        mat.sort(A), np.sort(Anp, axis=None), String("Sort is broken")
+        nm.sort(A), np.sort(Anp, axis=None), String("Sort is broken")
     )
     for i in range(2):
         check_matrices_close(
-            mat.sort(A, axis=i),
+            nm.sort(A, axis=i),
             np.sort(Anp, axis=i),
             String("Sort by axis {} is broken").format(i),
         )
 
     check_matrices_close(
-        mat.argsort(A),
+        nm.argsort(A),
         np.argsort(Anp, axis=None),
         String("Argsort is broken")
-        + str(mat.argsort(A))
+        + str(nm.argsort(A))
         + str(np.argsort(Anp, axis=None)),
     )
     for i in range(2):
         check_matrices_close(
-            mat.argsort(A, axis=i),
+            nm.argsort(A, axis=i),
             np.argsort(Anp, axis=i),
             String("Argsort by axis {} is broken").format(i),
         )
@@ -388,45 +392,45 @@ def test_sorting():
 
 def test_searching():
     var np = Python.import_module("numpy")
-    var A = mat.rand[f64]((10, 10))
+    var A = Matrix.rand[f64]((10, 10))
     var Anp = np.matrix(A.to_numpy())
 
     check_values_close(
-        mat.max(A), np.max(Anp, axis=None), String("`max` is broken")
+        nm.max(A), np.max(Anp, axis=None), String("`max` is broken")
     )
     for i in range(2):
         check_matrices_close(
-            mat.max(A, axis=i),
+            nm.max(A, axis=i),
             np.max(Anp, axis=i),
             String("`max` by axis {} is broken").format(i),
         )
 
     check_values_close(
-        mat.argmax(A), np.argmax(Anp, axis=None), String("`argmax` is broken")
+        nm.argmax(A), np.argmax(Anp, axis=None), String("`argmax` is broken")
     )
     for i in range(2):
         check_matrices_close(
-            mat.argmax(A, axis=i),
+            nm.argmax(A, axis=i),
             np.argmax(Anp, axis=i),
             String("`argmax` by axis {} is broken").format(i),
         )
 
     check_values_close(
-        mat.min(A), np.min(Anp, axis=None), String("`min` is broken.")
+        nm.min(A), np.min(Anp, axis=None), String("`min` is broken.")
     )
     for i in range(2):
         check_matrices_close(
-            mat.min(A, axis=i),
+            nm.min(A, axis=i),
             np.min(Anp, axis=i),
             String("`min` by axis {} is broken").format(i),
         )
 
     check_values_close(
-        mat.argmin(A), np.argmin(Anp, axis=None), String("`argmin` is broken.")
+        nm.argmin(A), np.argmin(Anp, axis=None), String("`argmin` is broken.")
     )
     for i in range(2):
         check_matrices_close(
-            mat.argmin(A, axis=i),
+            nm.argmin(A, axis=i),
             np.argmin(Anp, axis=i),
             String("`argmin` by axis {} is broken").format(i),
         )

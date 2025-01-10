@@ -14,17 +14,17 @@ from numojo.core.ndarray import NDArray
 
 
 # ===-------------------------------------a-----------------------------------===#
-# Simple Elementwise Comparisons
+# Simple Element-wise Comparisons
 # ===------------------------------------------------------------------------===#
 fn greater[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are greater than values in y.
+    Performs element-wise check of whether values in x are greater than values in y.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -44,11 +44,11 @@ fn greater[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are greater than a scalar.
+    Performs element-wise check of whether values in x are greater than a scalar.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -68,11 +68,11 @@ fn greater_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are greater than or equal to values in y.
+    Performs element-wise check of whether values in x are greater than or equal to values in y.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -92,11 +92,11 @@ fn greater_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are greater than or equal to a scalar.
+    Performs element-wise check of whether values in x are greater than or equal to a scalar.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -116,11 +116,11 @@ fn less[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are to values in y.
+    Performs element-wise check of whether values in x are to values in y.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -140,11 +140,11 @@ fn less[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are to a scalar.
+    Performs element-wise check of whether values in x are to a scalar.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -164,11 +164,11 @@ fn less_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are less than or equal to values in y.
+    Performs element-wise check of whether values in x are less than or equal to values in y.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -188,11 +188,11 @@ fn less_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are less than or equal to a scalar.
+    Performs element-wise check of whether values in x are less than or equal to a scalar.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -212,11 +212,11 @@ fn equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are equal to values in y.
+    Performs element-wise check of whether values in x are equal to values in y.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -244,11 +244,11 @@ fn equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are equal to a scalar.
+    Performs element-wise check of whether values in x are equal to a scalar.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -268,11 +268,11 @@ fn not_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are not equal to values in y.
+    Performs element-wise check of whether values in x are not equal to values in y.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.
@@ -300,11 +300,11 @@ fn not_equal[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
-    Performs elementwise check of whether values in x are not equal to values in y.
+    Performs element-wise check of whether values in x are not equal to values in y.
 
     Parameters:
         dtype: The dtype of the input NDArray.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: First NDArray to compare.

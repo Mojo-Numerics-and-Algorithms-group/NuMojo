@@ -114,7 +114,7 @@ struct Matrix[dtype: DType = DType.float64](
         shape: Tuple[Int, Int],
     ):
         """
-        Matrix NDArray initialization.
+        Construct a matrix without initializing data.
 
         Args:
             shape: List of shape.
@@ -134,7 +134,9 @@ struct Matrix[dtype: DType = DType.float64](
         mut self,
         data: Self,
     ):
-        """Create a matrix from a matrix."""
+        """
+        Construct a matrix from matrix.
+        """
 
         self = data
 
@@ -144,7 +146,7 @@ struct Matrix[dtype: DType = DType.float64](
         data: NDArray[dtype],
     ) raises:
         """
-        Create Matrix from NDArray.
+        Construct a matrix from array.
         """
 
         if data.ndim == 1:
@@ -166,11 +168,16 @@ struct Matrix[dtype: DType = DType.float64](
         self.flags["OWNDATA"] = True
 
         if data.flags["C_CONTIGUOUS"]:
-            memcpy(self._buf.ptr, data._buf.ptr, self.size)
+            for i in range(data.shape[0]):
+                memcpy(
+                    self._buf.ptr.offset(i * self.shape[0]),
+                    data._buf.ptr.offset(i * data.shape[0]),
+                    self.shape[0],
+                )
         else:
             for i in range(data.shape[0]):
                 for j in range(data.shape[1]):
-                    self._store(i, j, data.load(i, j))
+                    self._store(i, j, data._getitem(i, j))
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):

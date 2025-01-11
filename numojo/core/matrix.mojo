@@ -16,7 +16,7 @@ from python import PythonObject, Python
 
 from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
-from numojo.core.utility import _update_flags
+from numojo.core.utility import _get_offset, _update_flags
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct
@@ -234,7 +234,7 @@ struct Matrix[dtype: DType = DType.float64](
                 ).format(x, y, self.shape[0], self.shape[1])
             )
 
-        return self._buf.ptr.load(x * self.strides[0] + y)
+        return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
     fn __getitem__(self, owned x: Int) raises -> Self:
         """
@@ -351,7 +351,9 @@ struct Matrix[dtype: DType = DType.float64](
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
-        return self._buf.ptr.load[width=width](x * self.strides[0] + y)
+        return self._buf.ptr.load[width=width](
+            x * self.strides[0] + y * self.strides[1]
+        )
 
     fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]) raises:
         """
@@ -370,7 +372,7 @@ struct Matrix[dtype: DType = DType.float64](
                 ).format(x, y, self.shape[0], self.shape[1])
             )
 
-        self._buf.ptr.store(x * self.strides[0] + y, value)
+        self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], value)
 
     fn __setitem__(self, owned x: Int, value: Self) raises:
         """
@@ -418,7 +420,7 @@ struct Matrix[dtype: DType = DType.float64](
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.ptr.store(x * self.strides[0] + y, simd)
+        self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], simd)
 
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
@@ -511,18 +513,28 @@ struct Matrix[dtype: DType = DType.float64](
                     result += (
                         print_row(self, i, sep) + newline * number_of_newline
                     )
+            result += str("]")
+            writer.write(
+                result
+                + "\nDType: "
+                + str(self.dtype)
+                + "  Shape: "
+                + str(self.shape[0])
+                + "x"
+                + str(self.shape[1])
+                + "  Strides: "
+                + str(self.strides[0])
+                + ","
+                + str(self.strides[1])
+                + "  C: "
+                + str(self.flags["C_CONTIGUOUS"])
+                + "  F: "
+                + str(self.flags["F_CONTIGUOUS"])
+                + "  Own: "
+                + str(self.flags["OWNDATA"])
+            )
         except e:
             print("Cannot transfer matrix to string!", e)
-        result += str("]")
-        writer.write(
-            result
-            + "\nSize: "
-            + str(self.shape[0])
-            + "x"
-            + str(self.shape[1])
-            + "  DType: "
-            + str(self.dtype)
-        )
 
     # ===-------------------------------------------------------------------===#
     # Arithmetic dunder methods

@@ -154,21 +154,39 @@ fn _sort_partition(
             ).format(left, right, pivot_index, A.size)
         )
 
-    var pivot_value = A._buf[pivot_index]
+    var pivot_value = A._buf.ptr[pivot_index]
 
-    A._buf[pivot_index], A._buf[right] = A._buf[right], A._buf[pivot_index]
-    I._buf[pivot_index], I._buf[right] = I._buf[right], I._buf[pivot_index]
+    A._buf.ptr[pivot_index], A._buf.ptr[right] = (
+        A._buf.ptr[right],
+        A._buf.ptr[pivot_index],
+    )
+    I._buf.ptr[pivot_index], I._buf.ptr[right] = (
+        I._buf.ptr[right],
+        I._buf.ptr[pivot_index],
+    )
 
     var store_index = left
 
     for i in range(left, right):
-        if A._buf[i] < pivot_value:
-            A._buf[store_index], A._buf[i] = A._buf[i], A._buf[store_index]
-            I._buf[store_index], I._buf[i] = I._buf[i], I._buf[store_index]
+        if A._buf.ptr[i] < pivot_value:
+            A._buf.ptr[store_index], A._buf.ptr[i] = (
+                A._buf.ptr[i],
+                A._buf.ptr[store_index],
+            )
+            I._buf.ptr[store_index], I._buf.ptr[i] = (
+                I._buf.ptr[i],
+                I._buf.ptr[store_index],
+            )
             store_index = store_index + 1
 
-    A._buf[store_index], A._buf[right] = A._buf[right], A._buf[store_index]
-    I._buf[store_index], I._buf[right] = I._buf[right], I._buf[store_index]
+    A._buf.ptr[store_index], A._buf.ptr[right] = (
+        A._buf.ptr[right],
+        A._buf.ptr[store_index],
+    )
+    I._buf.ptr[store_index], I._buf.ptr[right] = (
+        I._buf.ptr[right],
+        I._buf.ptr[store_index],
+    )
 
     return store_index
 
@@ -452,7 +470,7 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
     """
     var I = Matrix[DType.index](shape=(1, A.size))
     for i in range(I.size):
-        I._buf[i] = i
+        I._buf.ptr[i] = i
     var B = A.flatten()
     _sort_inplace(B, I, 0, A.size - 1)
 

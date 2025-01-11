@@ -27,6 +27,7 @@ from numojo.core.own_data import OwnData
 from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
+    _update_flags,
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
@@ -186,6 +187,12 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self._buf.ptr, self.size)
         # Initialize information on memory layout
         self.flags = Dict[String, Bool]()
+        # FIXME: Create a function that updates flags
+        # according to strides and shape.
+        # flags["C_CONTIGUOUS"] = (
+        #    True if (self.strides[self.ndim - 1] == 1)
+        #    or (self.shape[self.ndim - 1] == 1)
+        #    else False)
         self.flags["C_CONTIGUOUS"] = (
             True if self.strides[self.ndim - 1] == 1 else False
         )

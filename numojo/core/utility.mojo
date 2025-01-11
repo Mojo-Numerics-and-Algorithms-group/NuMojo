@@ -7,6 +7,7 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 # ===----------------------------------------------------------------------=== #
 
 from algorithm.functional import vectorize
+from collections import Dict
 from python import Python, PythonObject
 from memory import UnsafePointer, memcpy
 from sys import simdwidthof
@@ -135,8 +136,22 @@ fn _get_offset(indices: VariadicList[Int], strides: VariadicList[Int]) -> Int:
     return idx
 
 
+fn _get_offset(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
+    """
+    Get the index of matrix from a list of indices and strides.
+
+    Args:
+        indices: The list of indices.
+        strides: The strides of the indices.
+
+    Returns:
+        Offset of continuous memory layout.
+    """
+    return indices[0] * strides[0] + indices[1] * strides[1]
+
+
 # ===----------------------------------------------------------------------=== #
-# Funcitons to traverse a multi-dimensional array
+# Functions to traverse a multi-dimensional array
 # ===----------------------------------------------------------------------=== #
 
 
@@ -534,3 +549,38 @@ fn _list_of_flipped_range(n: Int) -> List[Int]:
     for i in range(n - 1, -1, -1):
         l.append(i)
     return l
+
+
+fn _update_flags(
+    mut flags: Dict[String, Bool],
+    shape: NDArrayShape,
+    strides: NDArrayStrides,
+    ndim: Int,
+) raises:
+    """
+    Update C_CONTIGUOUS and F_CONTIGUOUS of flags
+    according the shape and strides information.
+    """
+    flags["C_CONTIGUOUS"] = (
+        True if (strides[ndim - 1] == 1) or (shape[ndim - 1] == 1) else False
+    )
+    flags["F_CONTIGUOUS"] = (
+        True if (strides[0] == 1) or (shape[0] == 1) else False
+    )
+
+
+fn _update_flags(
+    mut flags: Dict[String, Bool],
+    shape: Tuple[Int, Int],
+    strides: Tuple[Int, Int],
+):
+    """
+    Update C_CONTIGUOUS and F_CONTIGUOUS of flags
+    according the shape and strides information.
+    """
+    flags["C_CONTIGUOUS"] = (
+        True if (strides[1] == 1) or (shape[1] == 1) else False
+    )
+    flags["F_CONTIGUOUS"] = (
+        True if (strides[0] == 1) or (shape[0] == 1) else False
+    )

@@ -104,7 +104,7 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
 
     @parameter
     fn cal_vec[width: Int](i: Int):
-        res = res + A._buf.load[width=width](i).reduce_add()
+        res = res + A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[cal_vec, width](A.size)
     return res
@@ -252,7 +252,7 @@ fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
     A.resize(shape=(1, A.size))
 
     for i in range(1, A.size):
-        A._buf[i] += A._buf[i - 1]
+        A._buf.ptr[i] += A._buf.ptr[i - 1]
 
     return A^
 

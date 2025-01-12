@@ -131,10 +131,9 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf = OwnData[dtype](self.size)
         # Initialize information on memory layout
         self.flags = Dict[String, Bool]()
-        self.flags["C_CONTIGUOUS"] = (
-            True if self.strides[self.ndim - 1] == 1 else False
+        _update_flags(
+            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
         )
-        self.flags["F_CONTIGUOUS"] = True if self.strides[0] == 1 else False
         self.flags["OWNDATA"] = True
 
     @always_inline("nodebug")
@@ -187,16 +186,9 @@ struct NDArray[dtype: DType = DType.float64](
         memset_zero(self._buf.ptr, self.size)
         # Initialize information on memory layout
         self.flags = Dict[String, Bool]()
-        # FIXME: Create a function that updates flags
-        # according to strides and shape.
-        # flags["C_CONTIGUOUS"] = (
-        #    True if (self.strides[self.ndim - 1] == 1)
-        #    or (self.shape[self.ndim - 1] == 1)
-        #    else False)
-        self.flags["C_CONTIGUOUS"] = (
-            True if self.strides[self.ndim - 1] == 1 else False
+        _update_flags(
+            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
         )
-        self.flags["F_CONTIGUOUS"] = True if self.strides[0] == 1 else False
         self.flags["OWNDATA"] = True
 
     # for creating views (unsafe!)
@@ -214,10 +206,9 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf = OwnData(ptr=buffer.offset(offset))
         # Initialize information on memory layout
         self.flags = Dict[String, Bool]()
-        self.flags["C_CONTIGUOUS"] = (
-            True if self.strides[self.ndim - 1] == 1 else False
+        _update_flags(
+            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
         )
-        self.flags["F_CONTIGUOUS"] = True if self.strides[0] == 1 else False
         self.flags["OWNDATA"] = False
 
     @always_inline("nodebug")

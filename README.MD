@@ -24,15 +24,15 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 
 ***What NuMojo is***
 
-NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy, and Scikit.
+NuMojo aims to encompass the extensive numerics capabilities found in Python packages such as NumPy, SciPy, and Scikit-learn.
 
-NuMojo intends to try and get the most out of the capabilities of Mojo including vectorization, parallelization, and GPU acceleration (once available). Currently, NuMojo extends (most of) the standard library math functions to work on array inputs.
+We seek to harness the full potential of Mojo, including vectorization, parallelization, and GPU acceleration (when available). Currently, NuMojo extends most (if not all) standard library math functions to support array inputs.
 
-We intend NuMojo to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
+Our vision for NuMojo is to serve as an essential building block for other Mojo packages needing fast math operations, without the additional weight of a machine learning back-propagation system.
 
 ***What NuMojo is not***
 
-NuMojo is not a machine learning library, it will never include back-propagation in the base library.
+NuMojo is not a machine learning library and will never include back-propagation as part of the base library.
 
 ## Features and goals
 
@@ -157,15 +157,15 @@ There are two approach to install and use the Numojo package.
 
 ### Build package
 
-This approach invovles building a standalone package file `mojopkg`.
+This approach involves building a standalone package file `mojopkg`.
 
 1. Clone the repository.
-2. Build the package using `mojo package numojo`
-3. Move the numojo.mojopkg into the directory containing the your code.
+2. Build the package using `magic run package`.
+3. Move the `numojo.mojopkg` into the directory containing the your code.
 
 ### Include NuMojo's path for compiler and LSP
 
-This approach does not require buiding a package file. Instead, when you compile your code, you can include the path of NuMojo reporsitory with the following command:
+This approach does not require building a package file. Instead, when you compile your code, you can include the path of NuMojo reporsitory with the following command:
 
 ```console
 mojo run -I "../NuMojo" example.mojo

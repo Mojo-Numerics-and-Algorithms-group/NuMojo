@@ -34,53 +34,33 @@ We intend NuMojo to be a building block for other Mojo packages that need fast m
 
 NuMojo is not a machine learning library, it will never include back-propagation in the base library.
 
-## Goals and features
+## Features and goals
 
-Our main goal is to implement a fast, comprehensive numerics library in Mojo.
-
-Following are some brief long-term goals. Some of them have already been implemented or partially implemented.
+Our primary objective is to develop a fast, comprehensive numerics library in Mojo. Below are some features and long-term goals. Some have already been implemented, either fully or partially.
 
 Core data types:
 
 - Native n-dimensional array (`numojo.core.ndarray.NDArray`).
-- Native 2-dimensional array, i.e., matrix (`numojo.mat.matrix.Matrix`).
+- Native 2-dimensional array, i.e., matrix (`numojo.core.matrix.Matrix`).
+- Native n-dimensional complex array (`numojo.core.complex_ndarray.ComplexNDArray`)
 - Native fixed-dimension array (to be implemented when trait parameterization is available).
 
 Routines and objects:
 
 - Array creation routines (`numojo.routines.creation`)
 - Array manipulation routines (`numojo.routines.manipulation`)
-- Bit-wise operations (`numojo.routines.bitwise`)
-- Constants (`numojo.routines.constants`)
 - Input and output (`numojo.routines.io`)
-- Text files (`numojo.routines.files`)
-- Text formatting options (`numojo.routines.formatting`)
 - Linear algebra (`numojo.routines.linalg`)
-- Decompositions (`numojo.routines.decompositions`)
-- Products of matrices and vectors (`numojo.routines.products`)
-- Solving (`numojo.routines.solving`)
 - Logic functions (`numojo.routines.logic`)
-- Comparison (`numojo.routines.comparison`)
-- Array contents (`numojo.routines.contents`)
-- Truth value testing (`numojo.routines.truth`)
 - Mathematical functions (`numojo.routines.math`)
-- Arithmetic operations (`numojo.routines.arithmetic`)
 - Exponents and logarithms (`numojo.routines.exponents`)
 - Extrema finding (`numojo.routines.extrema`)
-- Floating point routines (`numojo.routines.floating`)
-- Hyperbolic functions (`numojo.routines.hyper`)
-- Indexing (`numojo.routines.indexing`)
-- Miscellaneous (`numojo.routines.misc`)
 - Rounding (`numojo.routines.rounding`)
-- Sums, products, differences (`numojo.routines.sums`, `numojo.routines.products`, `numojo.routines.differences`)
 - Trigonometric functions (`numojo.routines.trig`)
 - Random sampling (`numojo.routines.random`)
 - Sorting, searching, and counting (`numojo.routines.sorting`, `numojo.routines.searching`)
 - Statistics (`numojo.routines.statistics`)
-- Averages and variances (`numojo.routines.averages`)
-- Calculus, Integration & Derivatives etc
-- Optimizers
-- Function approximators
+- etc...
 
 Please find all the available functions and objects [here](docs/features.md).
 

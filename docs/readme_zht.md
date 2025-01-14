@@ -15,7 +15,7 @@
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
         <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>閲讀文檔» </strong></a> &nbsp; &nbsp; 
         <a href="./changelog.md"><strong>更新日誌» </strong></a> &nbsp; &nbsp;
-        <a href="https://discord.com/channels/1149778565756366939/1149778566603620455" ><strong>加入 Discord 討論頻道» </strong></a>
+        <a href="https://discord.gg/NcnSH5n26F" ><strong>加入 Discord 討論頻道» </strong></a>
     </div>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">

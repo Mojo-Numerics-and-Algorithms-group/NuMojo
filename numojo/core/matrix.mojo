@@ -7,19 +7,27 @@
 - Auxiliary functions.
 """
 
-from numojo.core.ndarray import NDArray
+from algorithm import parallelize, vectorize
+from collections import Dict
 from memory import UnsafePointer, memcpy, memset_zero
 from random import random_float64
 from sys import simdwidthof
-from algorithm import parallelize, vectorize
 from python import PythonObject, Python
+
+from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
+from numojo.core.utility import _get_offset, _update_flags
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct
 # ===----------------------------------------------------------------------===#
 
 
-struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
+struct Matrix[dtype: DType = DType.float64](
+    CollectionElement, Sized, Stringable, Writable
+):
+    # TODO: Matrix[dtype: DType = DType.float64,
+    #               Buffer: Bufferable[dtype] = OwnData[dtype]]
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
@@ -78,21 +86,23 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
+    alias width: Int = simdwidthof[dtype]()  #
+    """Vector size of the data type."""
+
+    var _buf: OwnData[dtype]
+    """Data buffer of the items in the NDArray."""
+
     var shape: Tuple[Int, Int]
     """Shape of Matrix."""
 
-    # To be calculated at the initialization.
     var size: Int
     """Size of Matrix."""
+
     var strides: Tuple[Int, Int]
     """Strides of matrix."""
 
-    # To be filled by constructing functions.
-    var _buf: UnsafePointer[Scalar[dtype]]
-    """Data buffer of the items in the NDArray."""
-
-    alias width: Int = simdwidthof[dtype]()  #
-    """Vector size of the data type."""
+    var flags: Dict[String, Bool]
+    "Information about the memory layout of the array."
 
     # ===-------------------------------------------------------------------===#
     # Life cycle methods
@@ -104,7 +114,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         shape: Tuple[Int, Int],
     ):
         """
-        Matrix NDArray initialization.
+        Construct a matrix without initializing data.
 
         Args:
             shape: List of shape.
@@ -113,14 +123,20 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         self.shape = (shape[0], shape[1])
         self.strides = (shape[1], 1)
         self.size = shape[0] * shape[1]
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
+        self._buf = OwnData[dtype](size=self.size)
+        # Initialize information on memory layout
+        self.flags = Dict[String, Bool]()
+        _update_flags(self.flags, self.shape, self.strides)
+        self.flags["OWNDATA"] = True
 
     @always_inline("nodebug")
     fn __init__(
         mut self,
         data: Self,
     ):
-        """Create a matrix from a matrix."""
+        """
+        Construct a matrix from matrix.
+        """
 
         self = data
 
@@ -130,7 +146,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         data: NDArray[dtype],
     ) raises:
         """
-        Create Matrix from NDArray.
+        Construct a matrix from array.
         """
 
         if data.ndim == 1:
@@ -144,14 +160,24 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         else:
             raise Error(String("Shape too large to be a matrix."))
 
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(self.size)
+        self._buf = OwnData[dtype](self.size)
 
-        if (data.flags["C_CONTIGUOUS"]) or (data.ndim == 1):
-            memcpy(self._buf, data._buf.ptr, self.size)
+        # Initialize information on memory layout
+        self.flags = Dict[String, Bool]()
+        _update_flags(self.flags, self.shape, self.strides)
+        self.flags["OWNDATA"] = True
+
+        if data.flags["C_CONTIGUOUS"]:
+            for i in range(data.shape[0]):
+                memcpy(
+                    self._buf.ptr.offset(i * self.shape[0]),
+                    data._buf.ptr.offset(i * data.shape[0]),
+                    self.shape[0],
+                )
         else:
             for i in range(data.shape[0]):
                 for j in range(data.shape[1]):
-                    self._store(i, j, data.load(i, j))
+                    self._store(i, j, data._getitem(i, j))
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -161,8 +187,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
-        self._buf = UnsafePointer[Scalar[dtype]]().alloc(other.size)
-        memcpy(self._buf, other._buf, other.size)
+        self._buf = OwnData[dtype](other.size)
+        memcpy(self._buf.ptr, other._buf.ptr, other.size)
+        self.flags = other.flags
 
     @always_inline("nodebug")
     fn __moveinit__(mut self, owned other: Self):
@@ -172,14 +199,21 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         self.shape = other.shape^
         self.strides = other.strides^
         self.size = other.size
-        self._buf = other._buf
+        self._buf = other._buf^
+        self.flags = other.flags^
 
     @always_inline("nodebug")
     fn __del__(owned self):
-        self._buf.free()
+        var owndata = True
+        try:
+            owndata = self.flags["OWNDATA"]
+        except:
+            print("Invalid `OWNDATA` flag. Treat as `True`.")
+        if owndata:
+            self._buf.ptr.free()
 
     # ===-------------------------------------------------------------------===#
-    # Dunder methods
+    # Slicing and indexing methods
     # ===-------------------------------------------------------------------===#
 
     fn __getitem__(self, owned x: Int, owned y: Int) raises -> Scalar[dtype]:
@@ -207,7 +241,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                 ).format(x, y, self.shape[0], self.shape[1])
             )
 
-        return self._buf.load(x * self.strides[0] + y)
+        return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
     fn __getitem__(self, owned x: Int) raises -> Self:
         """
@@ -228,8 +262,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             )
 
         var res = Self(shape=(1, self.shape[1]))
-        var ptr = self._buf.offset(x * self.shape[1])
-        memcpy(res._buf, ptr, res.size)
+        var ptr = self._buf.ptr.offset(x * self.shape[1])
+        memcpy(res._buf.ptr, ptr, res.size)
         return res
 
     fn __getitem__(self, x: Slice, y: Slice) -> Self:
@@ -254,7 +288,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         var c = 0
         for i in range_x:
             for j in range_y:
-                B._buf[c] = self._load(i, j)
+                B._buf.ptr[c] = self._load(i, j)
                 c += 1
 
         return B
@@ -278,7 +312,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         # Fill in the values at the corresponding index
         var c = 0
         for i in range_x:
-            B._buf[c] = self._load(i, y)
+            B._buf.ptr[c] = self._load(i, y)
             c += 1
 
         return B
@@ -302,7 +336,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         # Fill in the values at the corresponding index
         var c = 0
         for j in range_y:
-            B._buf[c] = self._load(x, j)
+            B._buf.ptr[c] = self._load(x, j)
             c += 1
 
         return B
@@ -324,7 +358,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
-        return self._buf.load[width=width](x * self.strides[0] + y)
+        return self._buf.ptr.load[width=width](
+            x * self.strides[0] + y * self.strides[1]
+        )
 
     fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]) raises:
         """
@@ -343,7 +379,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                 ).format(x, y, self.shape[0], self.shape[1])
             )
 
-        self._buf.store(x * self.strides[0] + y, value)
+        self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], value)
 
     fn __setitem__(self, owned x: Int, value: Self) raises:
         """
@@ -381,8 +417,8 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                 ).format(self.shape[1], value.shape[1])
             )
 
-        var ptr = self._buf.offset(x * self.shape[1])
-        memcpy(ptr, value._buf, value.size)
+        var ptr = self._buf.ptr.offset(x * self.shape[1])
+        memcpy(ptr, value._buf.ptr, value.size)
 
     fn _store[
         width: Int = 1
@@ -391,7 +427,52 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.store(x * self.strides[0] + y, simd)
+        self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], simd)
+
+    # ===-------------------------------------------------------------------===#
+    # Other dunders and auxiliary methods
+    # ===-------------------------------------------------------------------===#
+
+    fn __iter__(self) raises -> _MatrixIter[__origin_of(self), dtype]:
+        """Iterate over elements of the Matrix, returning copied value.
+
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand((4,4))
+        for i in A:
+            print(i)
+        ```
+
+        Returns:
+            An iterator of Matrix elements.
+        """
+
+        return _MatrixIter[__origin_of(self), dtype](
+            matrix=self,
+            length=self.shape[0],
+        )
+
+    fn __len__(self) -> Int:
+        """
+        Returns length of 0-th dimension.
+        """
+        return self.shape[0]
+
+    fn __reversed__(
+        self,
+    ) raises -> _MatrixIter[__origin_of(self), dtype, forward=False]:
+        """Iterate backwards over elements of the Matrix, returning
+        copied value.
+
+        Returns:
+            A reversed iterator of Matrix elements.
+        """
+
+        return _MatrixIter[__origin_of(self), dtype, forward=False](
+            matrix=self,
+            length=self.shape[0],
+        )
 
     fn __str__(self) -> String:
         return String.write(self)
@@ -439,53 +520,28 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                     result += (
                         print_row(self, i, sep) + newline * number_of_newline
                     )
+            result += str("]")
+            writer.write(
+                result
+                + "\nDType: "
+                + str(self.dtype)
+                + "  Shape: "
+                + str(self.shape[0])
+                + "x"
+                + str(self.shape[1])
+                + "  Strides: "
+                + str(self.strides[0])
+                + ","
+                + str(self.strides[1])
+                + "  C: "
+                + str(self.flags["C_CONTIGUOUS"])
+                + "  F: "
+                + str(self.flags["F_CONTIGUOUS"])
+                + "  Own: "
+                + str(self.flags["OWNDATA"])
+            )
         except e:
             print("Cannot transfer matrix to string!", e)
-        result += str("]")
-        writer.write(
-            result
-            + "\nSize: "
-            + str(self.shape[0])
-            + "x"
-            + str(self.shape[1])
-            + "  DType: "
-            + str(self.dtype)
-        )
-
-    fn __iter__(self) raises -> _MatrixIter[__origin_of(self), dtype]:
-        """Iterate over elements of the Matrix, returning copied value.
-
-        Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand((4,4))
-        for i in A:
-            print(i)
-        ```
-
-        Returns:
-            An iterator of Matrix elements.
-        """
-
-        return _MatrixIter[__origin_of(self), dtype](
-            matrix=self,
-            length=self.shape[0],
-        )
-
-    fn __reversed__(
-        self,
-    ) raises -> _MatrixIter[__origin_of(self), dtype, forward=False]:
-        """Iterate backwards over elements of the Matrix, returning
-        copied value.
-
-        Returns:
-            A reversed iterator of Matrix elements.
-        """
-
-        return _MatrixIter[__origin_of(self), dtype, forward=False](
-            matrix=self,
-            length=self.shape[0],
-        )
 
     # ===-------------------------------------------------------------------===#
     # Arithmetic dunder methods
@@ -640,7 +696,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """Power of items."""
         var res = self
         for i in range(self.size):
-            res._buf[i] = self._buf[i].__pow__(rhs)
+            res._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
         return res^
 
     fn __lt__(self, other: Self) raises -> Matrix[DType.bool]:
@@ -890,7 +946,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """
         var res = Matrix[asdtype](shape=(self.shape[0], self.shape[1]))
         for i in range(self.size):
-            res._buf[i] = self._buf[i].cast[asdtype]()
+            res._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
         return res^
 
     fn cumprod(self) -> Matrix[dtype]:
@@ -936,14 +992,14 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         See also function `mat.creation.full`.
         """
         for i in range(self.size):
-            self._buf[i] = fill_value
+            self._buf.ptr[i] = fill_value
 
     fn flatten(self) -> Self:
         """
         Return a flattened copy of the matrix.
         """
         var res = Self(shape=(1, self.size))
-        memcpy(res._buf, self._buf, res.size)
+        memcpy(res._buf.ptr, self._buf.ptr, res.size)
         return res^
 
     fn inv(self) raises -> Self:
@@ -1025,7 +1081,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                 ).format(self.size, shape[0], shape[1])
             )
         var res = Self(shape=shape)
-        memcpy(res._buf, self._buf, res.size)
+        memcpy(res._buf.ptr, self._buf.ptr, res.size)
         return res^
 
     fn resize(mut self, shape: Tuple[Int, Int]):
@@ -1034,9 +1090,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """
         if shape[0] * shape[1] > self.size:
             var other = Self(shape=shape)
-            memcpy(other._buf, self._buf, self.size)
+            memcpy(other._buf.ptr, self._buf.ptr, self.size)
             for i in range(self.size, other.size):
-                other._buf[i] = 0
+                other._buf.ptr[i] = 0
             self = other
         else:
             self.shape[0] = shape[0]
@@ -1143,7 +1199,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         var ndarray = NDArray[dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order="C"
         )
-        memcpy(ndarray._buf.ptr, self._buf, ndarray.size)
+        memcpy(ndarray._buf.ptr, self._buf.ptr, ndarray.size)
 
         return ndarray
 
@@ -1186,7 +1242,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             var pointer_d = numpyarray.__array_interface__["data"][
                 0
             ].unsafe_get_as_pointer[dtype]()
-            memcpy(pointer_d, self._buf, self.size)
+            memcpy(pointer_d, self._buf.ptr, self.size)
 
             return numpyarray^
 
@@ -1213,7 +1269,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         var matrix = Matrix[dtype](shape)
         for i in range(shape[0] * shape[1]):
-            matrix._buf.store(i, fill_value)
+            matrix._buf.ptr.store(i, fill_value)
 
         return matrix^
 
@@ -1231,7 +1287,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """
 
         var M = Matrix[dtype](shape)
-        memset_zero(M._buf, M.size)
+        memset_zero(M._buf.ptr, M.size)
         return M^
 
     @staticmethod
@@ -1262,7 +1318,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         var matrix = Matrix.zeros[dtype]((len, len))
         for i in range(len):
-            matrix._buf.store(i * matrix.strides[0] + i, 1)
+            matrix._buf.ptr.store(i * matrix.strides[0] + i, 1)
         return matrix^
 
     @staticmethod
@@ -1285,7 +1341,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         """
         var result = Matrix[dtype](shape)
         for i in range(result.size):
-            result._buf.store(i, random_float64(0, 1).cast[dtype]())
+            result._buf.ptr.store(i, random_float64(0, 1).cast[dtype]())
         return result^
 
     @staticmethod
@@ -1308,7 +1364,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         if (shape[0] == 0) and (shape[1] == 0):
             var M = Matrix[dtype](shape=(1, object.size))
-            memcpy(M._buf, object.data, M.size)
+            memcpy(M._buf.ptr, object.data, M.size)
             return M^
 
         if shape[0] * shape[1] != object.size:
@@ -1317,7 +1373,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             ).format(object.size, shape[0], shape[1])
             raise Error(message)
         var M = Matrix[dtype](shape=shape)
-        memcpy(M._buf, object.data, M.size)
+        memcpy(M._buf.ptr, object.data, M.size)
         return M^
 
     @staticmethod
@@ -1387,7 +1443,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
 
         var result = Matrix[dtype](shape=shape)
         for i in range(len(data)):
-            result._buf[i] = data[i]
+            result._buf.ptr[i] = data[i]
         return result^
 
 
@@ -1439,6 +1495,14 @@ struct _MatrixIter[
             self.index -= 1
             return self.matrix[current_index]
 
+    @always_inline
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
+
     fn __len__(self) -> Int:
         @parameter
         if forward:
@@ -1476,11 +1540,11 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
 
     @parameter
     fn vec_func[simd_width: Int](i: Int):
-        C._buf.store(
+        C._buf.ptr.store(
             i,
             simd_func(
-                A._buf.load[width=simd_width](i),
-                B._buf.load[width=simd_width](i),
+                A._buf.ptr.load[width=simd_width](i),
+                B._buf.ptr.load[width=simd_width](i),
             ),
         )
 
@@ -1506,7 +1570,7 @@ fn _arithmetic_func_matrix_to_matrix[
 
     @parameter
     fn vec_func[simd_width: Int](i: Int):
-        C._buf.store(i, simd_func(A._buf.load[width=simd_width](i)))
+        C._buf.ptr.store(i, simd_func(A._buf.ptr.load[width=simd_width](i)))
 
     vectorize[vec_func, simd_width](A.size)
 
@@ -1598,11 +1662,15 @@ fn broadcast_to[
         B = Matrix.full[dtype](shape, A[0, 0])
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
-            memcpy(dest=B._buf.offset(shape[1] * i), src=A._buf, count=shape[1])
+            memcpy(
+                dest=B._buf.ptr.offset(shape[1] * i),
+                src=A._buf.ptr,
+                count=shape[1],
+            )
     elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
         for i in range(shape[0]):
             for j in range(shape[1]):
-                B._store(i, j, A._buf[i])
+                B._store(i, j, A._buf.ptr[i])
     else:
         var message = String(
             "Cannot broadcast shape {}x{} to shape {}x{}!"

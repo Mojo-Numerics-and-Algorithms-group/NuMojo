@@ -120,11 +120,11 @@ fn _max[
         )
 
     var max_index: Scalar[DType.index] = start
-    var max_value = A._buf[start]
+    var max_value = A._buf.ptr[start]
 
     for i in range(start, end + 1):
-        if A._buf[i] > max_value:
-            max_value = A._buf[i]
+        if A._buf.ptr[i] > max_value:
+            max_value = A._buf.ptr[i]
             max_index = i
 
     return (max_value, max_index)
@@ -266,11 +266,11 @@ fn _min[
         )
 
     var min_index: Scalar[DType.index] = start
-    var min_value = A._buf[start]
+    var min_value = A._buf.ptr[start]
 
     for i in range(start, end + 1):
-        if A._buf[i] < min_value:
-            min_value = A._buf[i]
+        if A._buf.ptr[i] < min_value:
+            min_value = A._buf.ptr[i]
             min_index = i
 
     return (min_value, min_index)

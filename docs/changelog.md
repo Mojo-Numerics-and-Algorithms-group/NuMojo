@@ -6,26 +6,49 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### ⭐️ New
 
-- Add an additional dtype mapping for `NDArray.to_numpy`: `DType.index` -> `numpy.intp` ([PR #157](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/157)).
+- Add support for complex arrays `ComplexNDArray`, `ComplexSIMD`, `CDType` ([PR #165](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/165)).
+- Add `TypeCoercion` struct that calculates the resultant type based on two initial data types according to numpy rules ([PR #164](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/164)).
+- Add `OwnData` type as container of data buffer for `NDArray` and `Matrix`. The property `_buf` is changed from `UnsafePointer` to `OwnData`. Introduced `RefData` struct and `Bufferable` trait. This step prepares for future support of array views and facilitates an easy transition once parameterized traits are integrated into Mojo ([PR #175](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/175), [PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170), [PR #178](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/178)).
+- Add an additional data type mapping for `NDArray.to_numpy`, i.e., `DType.index` is mapped to `numpy.intp` ([PR #157](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/157)).
 - Add method `NDArray.resize` that reshapes the array in-place ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
+- Add a new property `flags` for `NDArray` and `Matrix` to store memory layout of the array, e.g., c-continuous, f-continuous, own data. The memory layout is determined by both strides and shape of the array ([PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170), [PR #178](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/178)).
+- Add `det` function calculating the determinant of array ([PR #171](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/171)).
+- Add Householder-based QR decomposition for matrix ([PR #172](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/172)).
 
 ### 🦋 Changed
 
+- Update several methods of `NDArray` type:
+  - Make `load` and `store` methods safer by imposing boundary checks. Rename `get` as `load` and rename `set` as `store` ([PR #166](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/166)).
+  - Update `item` method to allow negative index and conduct boundary checks on that ([PR #167](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/167)).
+  - Update `item` function so that it allows both setting and getting values, e.g., `a.item(1,2)` and `a.item(1,2) = 10` ([PR #176](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/176)).
+  - Refine the `__init__` overloads ([PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170)).
+- Rename the underlying buffer of `Idx` type to `_buf` ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
+- Rename `Idx` struct as `Item`.You can get scalar from array using `a[item(1,2)]` ([PR #176](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/176)).
+- Integrate `mat` sub-package into `core` and `routines` modules, so that users can use a uniformed way to call functions for both `Matrix` and `NDArray` types ([PR #177](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/177))..
 - Update the following functions to allow operation by any axis:
   - `argsort` ([PR #157](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/157)).
   - `cumsum` and `cumprod` ([PR #160](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/160)).
-- Refine the function `reshape` so that it is working on any dimensions and is working on both row-major and col-major. This also allows us to change the order with the code ```A.reshape(A.shape, "F"))```. Also refine functions `flatten`, `ravel` ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
+  - `flip` ([PR #163](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/163)).
 - Update `matmul` to enable multiplication between two arrays of any dimensions ([PR #159](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/159)).
+- Refine the function `reshape` so that it is working on any dimensions and is working on both row-major and col-major. This also allows us to change the order with the code ```A.reshape(A.shape, "F"))```. Also refine functions `flatten`, `ravel` ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
+- Rename the auxiliary function `_get_index` as `_get_offset` ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
+- Return a view instead of copy for iterator of `NDArray` ([PR #174](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/174)).
 
 ### ❌ Removed
+
+- Remove `order` property and `datatype` property from `NDArray`. You can use `a.flags` and `a.dtype` instead ([PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170)).
+- Remove the property `coefficient` of `NDArray` type ([PR #166](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/166)).
+- Remove `offset` property from the `NDArrayStrides` type ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
 
 ### 🛠️ Fixed
 
 - Removes `mut` keyword before `self` from `NDArray.__add__`.
+- The methods `get` and `set` of `NDArray` does not check against big negative index values and this leads to overflows. This is fixed ([PR #162](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/162)).
+- Fix `__setitem__` method so that it can read in variant of int and slices, e.g., `a[0, Slice(2, 4)] = a[3, Slice(0, 2)]` ([PR #176](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/176)).
 
 ### 📚 Documentatory and testing
 
-- Add `magic run t` and `magic run f` for magic CLI that clear the terminal before running `test` or `final`.
+- Add `magic run t`, `magic run f`, and `magic run p` for the magic CLI. They first clear the terminal before running `test`,`final`, and `package`.
 
 ## 22/12/2024 (v0.4)
 

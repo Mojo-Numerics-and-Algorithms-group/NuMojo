@@ -112,9 +112,9 @@ struct NDArrayShape(Stringable, Writable):
         Args:
             shape: A list of integers representing the shape dimensions.
         """
-        self.size = 1
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self.size = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
             self.size *= shape[i]
@@ -148,10 +148,13 @@ struct NDArrayShape(Stringable, Writable):
         Args:
             shape: Another NDArrayShape to initialize from.
         """
-        self.size = shape.size
         self.ndim = shape.ndim
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         memcpy(self._buf, shape._buf, shape.ndim)
+        self.size = 1
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(shape[i])
+            self.size *= shape[i]
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:

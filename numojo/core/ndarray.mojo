@@ -8,16 +8,16 @@
 Implements basic object methods for working with N-Dimensional Array.
 """
 
+from algorithm import parallelize, vectorize
 import builtin.math as builtin_math
 import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from algorithm import parallelize, vectorize
-from python import Python, PythonObject
-from sys import simdwidthof
 from collections import Dict
 from collections.optional import Optional
-from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
+from python import Python, PythonObject
+from sys import simdwidthof
+from utils import Variant
 
 import numojo.core._array_funcs as _af
 from numojo.core.ndshape import NDArrayShape
@@ -663,6 +663,7 @@ struct NDArray[dtype: DType = DType.float64](
     # SLICING: to get a slice of array from index or mask.
     # fn __getitem__(self, index: List[Int]) raises -> Self
     # fn __getitem__(self, index: NDArray[index]) raises -> Self
+    # fn __getitem__(self, mask: List[Bool]) raises -> Self
     # fn __getitem__(self, mask: NDArray[bool]) raises -> Self
     # ===-------------------------------------------------------------------===#
 
@@ -1063,13 +1064,10 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
-    fn __getitem__[
-        I: Intable,
-    ](self, indices: List[I]) raises -> Self:
+    fn __getitem__(self, indices: List[Int]) raises -> Self:
+        # TODO: Use trait IntLike when it is supported by Mojo.
         """
-        Get items of array from a list of indices.
-
-        It always gets the first dimension.
+        Get items from 0-th dimension of an array.
 
         Example:
         ```console
@@ -1106,7 +1104,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         # Change the first number of the ndshape
-        var shape = self.shape
+        var shape = NDArrayShape(self.shape)
         shape._buf[0] = len(indices)
 
         var result = NDArray[dtype](shape)
@@ -1114,7 +1112,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # Fill in the values
         for i in range(len(indices)):
-            if int(indices[i]) >= self.shape[0]:
+            if indices[i] >= self.shape[0]:
                 raise Error(
                     String(
                         "value at index {} is out of boundary [0, {})"
@@ -1122,7 +1120,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             memcpy(
                 result._buf.ptr + i * size_per_item,
-                self._buf.ptr + int(indices[i]) * size_per_item,
+                self._buf.ptr + indices[i] * size_per_item,
                 size_per_item,
             )
 
@@ -1154,6 +1152,74 @@ struct NDArray[dtype: DType = DType.float64](
             new_index.append(int(i.item(0)))
 
         return self.__getitem__(new_index)
+
+    fn __getitem__(self, mask: List[Bool]) raises -> Self:
+        """
+        Get items from 0-th dimension of an array according to mask.
+
+        Example:
+        ```console
+        >>>var a = nm.arange[i8](6)
+        >>>print(a)
+        [       0       1       2       3       4       5       ]
+        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+        >>>print(a[List[Bool](True, False, True, True, False, True)])
+        [       0       2       3       5       ]
+        1-D array  Shape: [4]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+        var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+        print(b)
+        [[[     0       1       2       ]
+          [     3       4       5       ]]
+         [[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+        >>>print(b[List[Bool](False, True)])
+        [[[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [1, 2, 3]  DType: int8  C-cont: True  F-cont: True  own data: True
+        ```
+
+        Args:
+            mask: A list of boolean values.
+
+        Returns:
+            NDArray with items from the mask.
+        """
+
+        if len(mask) != self.shape[0]:
+            raise Error(
+                String(
+                    "length of mask {} does not match length of array {}."
+                ).format(len(mask), self.shape[0])
+            )
+
+        var len_of_result = 0
+
+        # Count number of True
+        for i in mask:
+            if i[]:
+                len_of_result += 1
+
+        # Change the first number of the ndshape
+        var shape = NDArrayShape(self.shape)
+        shape._buf[0] = len_of_result
+
+        var result = NDArray[dtype](shape)
+        var size_per_item = result.size // len_of_result
+
+        # Fill in the values
+        var offset = 0
+        for i in range(len(mask)):
+            if mask[i]:
+                memcpy(
+                    result._buf.ptr + offset * size_per_item,
+                    self._buf.ptr + i * size_per_item,
+                    size_per_item,
+                )
+                offset += 1
+
+        return result
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """

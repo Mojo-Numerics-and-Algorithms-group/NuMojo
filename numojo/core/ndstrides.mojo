@@ -8,7 +8,7 @@ from utils import Variant
 from memory import UnsafePointer, memcpy
 
 
-@register_passable("trivial")
+@register_passable
 struct NDArrayStrides(Stringable):
     """Implements the NDArrayStrides."""
 
@@ -135,6 +135,12 @@ struct NDArrayStrides(Stringable):
                 "Invalid order: Only C style row major `C` & Fortran style"
                 " column major `F` are supported"
             )
+
+    @always_inline("nodebug")
+    fn __copyinit__(out self, other: Self):
+        self.ndim = other.ndim
+        self._buf = UnsafePointer[Int]().alloc(other.ndim)
+        memcpy(self._buf, other._buf, other.ndim)
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:

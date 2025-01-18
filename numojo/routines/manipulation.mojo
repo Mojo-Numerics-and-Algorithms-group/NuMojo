@@ -89,7 +89,7 @@ fn reshape[
         Array of the same data with a new shape.
     """
 
-    if A.size != shape.size:
+    if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
     var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"

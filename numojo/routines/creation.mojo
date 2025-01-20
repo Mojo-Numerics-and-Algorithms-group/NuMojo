@@ -31,6 +31,7 @@ function. So it is easy for modification.
 """
 
 from algorithm import parallelize, vectorize
+from algorithm import parallelize, vectorize
 from builtin.math import pow
 from sys import simdwidthof
 from collections.optional import Optional

@@ -15,6 +15,7 @@ import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.datatypes import TypeCoercion
 
+
 fn add[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -39,6 +40,7 @@ fn add[
     return backend().math_func_2_array_in_one_array_out[dtype, SIMD.__add__](
         array1, array2
     )
+
 
 fn add[
     dtype: DType,
@@ -299,6 +301,7 @@ fn sub[
         dtype, SIMD.__sub__
     ](array, scalar)
 
+
 fn sub[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -349,6 +352,7 @@ fn sub[
     """
     return sub[dtype, backend=backend](array, scalar)
 
+
 fn sub[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -377,6 +381,7 @@ fn sub[
     return sub[ResultDType, backend=backend](
         array.astype[ResultDType](), scalar.cast[ResultDType]()
     )
+
 
 fn diff[
     dtype: DType = DType.float64
@@ -504,6 +509,7 @@ fn mul[
         array1, array2
     )
 
+
 fn mul[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
@@ -606,6 +612,7 @@ fn mul[
         The element-wise product of `array1` and`array2`.
     """
     return mul[dtype, backend=backend](array, scalar)
+
 
 fn mul[
     dtype: DType,
@@ -803,6 +810,7 @@ fn div[
         The element-wise quotient of `array1` and`array2`.
     """
     return div[dtype, backend=backend](array, scalar)
+
 
 fn div[
     dtype: DType,

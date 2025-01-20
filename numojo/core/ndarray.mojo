@@ -1323,7 +1323,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
         return self * Scalar[dtype](-1.0)
 
-    # maybe they don't need conversion with astype. 
+    # maybe they don't need conversion with astype.
     @always_inline("nodebug")
     fn __eq__[
         OtherDtype: DType,
@@ -1370,7 +1370,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise nonequivelence.
         """
-        return comparison.not_equal[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
+        return comparison.not_equal[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __ne__[
@@ -1380,7 +1382,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise nonequivelence between scalar and Array.
         """
-        return comparison.not_equal[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return comparison.not_equal[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -1404,7 +1408,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise less than.
         """
-        return comparison.less[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return comparison.less[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __lt__[
@@ -1414,8 +1420,10 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise less than between scalar and Array.
         """
-        return comparison.less[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
-        
+        return comparison.less[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
@@ -1438,7 +1446,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise less than or equal to.
         """
-        return comparison.less_equal[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return comparison.less_equal[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __le__[
@@ -1448,7 +1458,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise less than or equal to between scalar and Array.
         """
-        return comparison.less_equal[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
+        return comparison.less_equal[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -1472,7 +1484,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise greater than.
         """
-        return comparison.greater[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return comparison.greater[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __gt__[
@@ -1482,7 +1496,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise greater than between scalar and Array.
         """
-        return comparison.greater[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
+        return comparison.greater[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -1503,11 +1519,12 @@ struct NDArray[dtype: DType = DType.float64](
         OtherDtype: DType,
         ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
     ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
-
         """
         Itemwise greater than or equal to.
         """
-        return comparison.greater_equal[ResultDType](self.astype[ResultDType](), other.cast[ResultDType]())
+        return comparison.greater_equal[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __ge__[
@@ -1517,7 +1534,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Itemwise less than or equal to between scalar and Array.
         """
-        return comparison.greater_equal[ResultDType](self.astype[ResultDType](), other.astype[ResultDType]())
+        return comparison.greater_equal[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:

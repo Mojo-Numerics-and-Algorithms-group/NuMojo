@@ -1126,32 +1126,36 @@ struct NDArray[dtype: DType = DType.float64](
 
         return result
 
-    fn __getitem__(self, index: NDArray[DType.index]) raises -> Self:
+    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
         """
-        Get items of array from an array of indices.
+        Get items from 0-th dimension of an ndarray of indices.
 
-        Refer to `__getitem__(self, index: List[Int])`.
-
-        Example:
-        ```console
-        > var X = nm.NDArray[nm.i8](3,random=True)
-        > print(X)
-        [       32      21      53      ]
-        1-D array  Shape: [3]  DType: int8
-        > print(X.argsort())
-        [       1       0       2       ]
-        1-D array  Shape: [3]  DType: index
-        > print(X[X.argsort()])
-        [       21      32      53      ]
-        1-D array  Shape: [3]  DType: int8
-        ```
+        If the original array is of shape (i,j,k) and
+        the indices array is of shape (l,m,n), then the output array
+        will be of shape (l,m,n,j,k).
         """
 
-        var new_index = List[Int]()
-        for i in index:
-            new_index.append(int(i.item(0)))
+        # Get the shape of resulted array
+        var shape = NDArrayShape.join(indices.shape, self.shape._pop(0))
 
-        return self.__getitem__(new_index)
+        var result = NDArray[dtype](shape)
+        var size_per_item = self.size // self.shape[0]
+
+        # Fill in the values
+        for i in range(indices.size):
+            if indices.item(i) >= self.shape[0]:
+                raise Error(
+                    String(
+                        "index {} with value {} is out of boundary [0, {})"
+                    ).format(i, indices.item(i), self.shape[0])
+                )
+            memcpy(
+                result._buf.ptr + i * size_per_item,
+                self._buf.ptr + indices.item(i) * size_per_item,
+                size_per_item,
+            )
+
+        return result
 
     fn __getitem__(self, mask: List[Bool]) raises -> Self:
         """
@@ -1222,17 +1226,9 @@ struct NDArray[dtype: DType = DType.float64](
         return result
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
+        # TODO: Extend the mask into multiple dimensions.
         """
-        Get items of array corresponding to a mask.
-
-        Example:
-            ```
-            var A = numojo.core.NDArray[numojo.i16](6, random=True)
-            var mask = A > 0
-            print(A)
-            print(mask)
-            print(A[mask])
-            ```
+        Get items from 0-th dimension of an array according to an array of mask.
 
         Args:
             mask: NDArray with Dtype.bool.
@@ -1240,14 +1236,69 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             NDArray with items from the mask.
         """
-        var true: List[Int] = List[Int]()
-        for i in range(mask.size):
-            if mask._buf.ptr.load[width=1](i):
-                true.append(i)
 
-        var result = Self(Shape(true.__len__()))
-        for i in range(true.__len__()):
-            result._buf.ptr.store(i, self.load(true[i]))
+        # CASE 1:
+        # if array shape is equal to mask shape,
+        # return a flattened array of the values where mask is True
+        if mask.shape == self.shape:
+            var len_of_result = 0
+
+            # Count number of True
+            for i in range(mask.size):
+                if mask.item(i):
+                    len_of_result += 1
+
+            # Change the first number of the ndshape
+            var result = NDArray[dtype](shape=NDArrayShape(len_of_result))
+
+            # Fill in the values
+            var offset = 0
+            for i in range(mask.size):
+                if mask.item(i):
+                    (result._buf.ptr + offset).init_pointee_copy(
+                        self._buf.ptr[i]
+                    )
+                    offset += 1
+
+            return result
+
+        # CASE 2:
+        # if array shape is not equal to mask shape,
+        # return items from the 0-th dimension of the array where mask is True
+        if mask.ndim > 1:
+            raise Error(String("Currently we only support 1-d mask array."))
+
+        if mask.shape[0] != self.shape[0]:
+            raise Error(
+                String(
+                    "Shape 0 of mask ({}) does not match that of array ({})."
+                ).format(mask.shape[0], self.shape[0])
+            )
+
+        var len_of_result = 0
+
+        # Count number of True
+        for i in range(mask.size):
+            if mask.item(i):
+                len_of_result += 1
+
+        # Change the first number of the ndshape
+        var shape = self.shape
+        shape._buf[0] = len_of_result
+
+        var result = NDArray[dtype](shape)
+        var size_per_item = self.size // self.shape[0]
+
+        # Fill in the values
+        var offset = 0
+        for i in range(mask.size):
+            if mask.item(i):
+                memcpy(
+                    result._buf.ptr + offset * size_per_item,
+                    self._buf.ptr + i * size_per_item,
+                    size_per_item,
+                )
+                offset += 1
 
         return result
 

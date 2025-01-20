@@ -8,16 +8,16 @@
 Implements basic object methods for working with N-Dimensional Array.
 """
 
+from algorithm import parallelize, vectorize
 import builtin.math as builtin_math
 import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from algorithm import parallelize, vectorize
-from python import Python, PythonObject
-from sys import simdwidthof
 from collections import Dict
 from collections.optional import Optional
-from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
+from python import Python, PythonObject
+from sys import simdwidthof
+from utils import Variant
 
 import numojo.core._array_funcs as _af
 from numojo.core.ndshape import NDArrayShape
@@ -459,7 +459,7 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var count: Int = 0
         var spec: List[Int] = List[Int]()
-        var slice_list: List[Slice] = self._adjust_slice_(slices)
+        var slice_list: List[Slice] = self._adjust_slice(slices)
         for i in range(n_slices):
             if (
                 slice_list[i].start.value() >= self.shape[i]
@@ -649,6 +649,22 @@ struct NDArray[dtype: DType = DType.float64](
 
     # ===-------------------------------------------------------------------===#
     # Getter dunders and other getter methods
+    #
+    # INDEXING: to get a scalar from array.
+    # fn _getitem(self, *indices: Int) -> Scalar[dtype]
+    # fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]
+    #
+    # SLICING: to get a slice of array.
+    # fn __getitem__(self, idx: Int) raises -> Self
+    # fn __getitem__(self, *slices: Slice) raises -> Self
+    # fn __getitem__(self, slice_list: List[Slice]) raises -> Self
+    # fn __getitem__(self, *slices: Variant[Slice, Int]) raises -> Self
+    #
+    # SLICING: to get a slice of array from index or mask.
+    # fn __getitem__(self, index: List[Int]) raises -> Self
+    # fn __getitem__(self, index: NDArray[index]) raises -> Self
+    # fn __getitem__(self, mask: List[Bool]) raises -> Self
+    # fn __getitem__(self, mask: NDArray[bool]) raises -> Self
     # ===-------------------------------------------------------------------===#
 
     fn _getitem(self, *indices: Int) -> Scalar[dtype]:
@@ -666,6 +682,30 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(self.ndim):
             index_of_buffer += indices[i] * self.strides._buf[i]
         return self._buf.ptr[index_of_buffer]
+
+    fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]:
+        """
+        Set the value at the index list.
+        """
+        if index.__len__() != self.ndim:
+            var message = String(
+                "Error: Length of `index` do not match the number of"
+                " dimensions!\n"
+                "Length of indices is {}.\n"
+                "The number of dimensions is {}."
+            ).format(index.__len__(), self.ndim)
+            raise Error(message)
+        for i in range(index.__len__()):
+            if index[i] >= self.shape[i]:
+                var message = String(
+                    "Error: `index` exceeds the size!\n"
+                    "For {}-the mension:\n"
+                    "The index is {}.\n"
+                    "The size of the dimensions is {}"
+                ).format(i, index[i], self.shape[i])
+                raise Error(message)
+        var idx: Int = _get_offset(index, self.strides)
+        return self._buf.ptr.load[width=1](idx)
 
     fn __getitem__(self, idx: Int) raises -> Self:
         """
@@ -694,74 +734,6 @@ struct NDArray[dtype: DType = DType.float64](
             narr.shape._buf[0] = 0
 
         return narr
-
-    fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]:
-        """
-        Set the value at the index list.
-        """
-        if index.__len__() != self.ndim:
-            var message = String(
-                "Error: Length of `index` do not match the number of"
-                " dimensions!\n"
-                "Length of indices is {}.\n"
-                "The number of dimensions is {}."
-            ).format(index.__len__(), self.ndim)
-            raise Error(message)
-        for i in range(index.__len__()):
-            if index[i] >= self.shape[i]:
-                var message = String(
-                    "Error: `index` exceeds the size!\n"
-                    "For {}-the mension:\n"
-                    "The index is {}.\n"
-                    "The size of the dimensions is {}"
-                ).format(i, index[i], self.shape[i])
-                raise Error(message)
-        var idx: Int = _get_offset(index, self.strides)
-        return self._buf.ptr.load[width=1](idx)
-
-    fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
-        """
-        Adjusts the slice values to lie within 0 and dim.
-        """
-        var n_slices: Int = slice_list.__len__()
-        var slices = List[Slice]()
-        for i in range(n_slices):
-            if i >= self.ndim:
-                raise Error("Error: Number of slices exceeds array dimensions")
-
-            var start: Int = 0
-            var end: Int = self.shape[i]
-            var step: Int = 1
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    # start += self.shape[i]
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    # end += self.shape[i] + 1
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-            step = slice_list[i].step.or_else(1)
-            if step == 0:
-                raise Error("Error: Slice step cannot be zero")
-
-            slices.append(
-                Slice(
-                    start=Optional(start),
-                    end=Optional(end),
-                    step=Optional(step),
-                )
-            )
-
-        return slices^
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
@@ -801,7 +773,7 @@ struct NDArray[dtype: DType = DType.float64](
         var spec: List[Int] = List[Int]()
         var count: Int = 0
 
-        var slices: List[Slice] = self._adjust_slice_(slice_list)
+        var slices: List[Slice] = self._adjust_slice(slice_list)
         for i in range(slices.__len__()):
             if (
                 slices[i].start.value() >= self.shape[i]
@@ -1092,94 +1064,65 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr
 
-    fn __getitem__(self, index: List[Int]) raises -> Self:
+    fn __getitem__(self, indices: List[Int]) raises -> Self:
+        # TODO: Use trait IntLike when it is supported by Mojo.
         """
-        Get items of array from a list of indices.
-
-        It always gets the first dimension.
+        Get items from 0-th dimension of an array.
 
         Example:
         ```console
-        > var A = nm.NDArray[nm.i8](3,random=True)
-        > print(A)
-        [       14      97      -59     ]
-        1-D array  Shape: [3]  DType: int8
-        >
-        > print(A[List[Int](2,1,0,1,2)])
-        [       -59     97      14      97      -59     ]
-        1-D array  Shape: [5]  DType: int8
-        >
-        > var B = nm.NDArray[nm.i8](3, 3,random=True)
-        > print(B)
-        [[      -4      112     -94     ]
-        [      -48     -40     66      ]
-        [      -2      -94     -18     ]]
-        2-D array  Shape: [3, 3]  DType: int8
-        >
-        > print(B[List[Int](2,1,0,1,2)])
-        [[      -2      -94     -18     ]
-        [      -48     -40     66      ]
-        [      -4      112     -94     ]
-        [      -48     -40     66      ]
-        [      -2      -94     -18     ]]
-        2-D array  Shape: [5, 3]  DType: int8
-        >
-        > var C = nm.NDArray[nm.i8](3, 3, 3, random=True)
-        > print(C)
-        [[[     -126    -88     -79     ]
-        [     14      78      99      ]
-        [     -32     3       -42     ]]
-        [[     56      -45     -71     ]
-        [     -13     18      -102    ]
-        [     4       83      26      ]]
-        [[     61      -73     86      ]
-        [     -125    -84     66      ]
-        [     32      21      53      ]]]
-        3-D array  Shape: [3, 3, 3]  DType: int8
-        >
-        > print(C[List[Int](2,1,0,1,2)])
-        [[[     61      -73     86      ]
-        [     -125    -84     66      ]
-        [     32      21      53      ]]
-        [[     56      -45     -71     ]
-        [     -13     18      -102    ]
-        [     4       83      26      ]]
-        [[     -126    -88     -79     ]
-        [     14      78      99      ]
-        [     -32     3       -42     ]]
-        [[     56      -45     -71     ]
-        [     -13     18      -102    ]
-        [     4       83      26      ]]
-        [[     61      -73     86      ]
-        [     -125    -84     66      ]
-        [     32      21      53      ]]]
-        3-D array  Shape: [5, 3, 3]  DType: int8
+        >>>var a = nm.arange[i8](6)
+        >>>print(a)
+        [       0       1       2       3       4       5       ]
+        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+        >>>print(a[List[Scalar[DType.index]](4, 2, 5, 1, 0, 2)])
+        [       4       2       5       1       0       2       ]
+        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+        var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+        print(b)
+        [[[     0       1       2       ]
+          [     3       4       5       ]]
+         [[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+        print(b[List[Scalar[DType.index]](2, 0, 1)])
+        [[[     0       0       0       ]
+          [     0       67      95      ]]
+         [[     0       1       2       ]
+          [     3       4       5       ]]
+         [[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [3, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
         ```
 
         Args:
-            index: List[Int].
+            indices: A list of intable values.
 
         Returns:
             NDArray with items from the list of indices.
         """
 
-        # Shape of the result should be
-        # Number of indice * shape from dim-1
-        # So just change the first number of the ndshape
-        var ndshape = self.shape
-        ndshape[0] = len(index)
-        ndsize = 1
-        for i in range(ndshape.ndim):
-            ndsize *= int(ndshape._buf[i])
-        var result = NDArray[dtype](ndshape)
-        var size_per_item = ndsize // len(index)
+        # Change the first number of the ndshape
+        var shape = NDArrayShape(self.shape)
+        shape._buf[0] = len(indices)
+
+        var result = NDArray[dtype](shape)
+        var size_per_item = result.size // len(indices)
 
         # Fill in the values
-        for i in range(len(index)):
-            for j in range(size_per_item):
-                result._buf.ptr.store(
-                    i * size_per_item + j, self[int(index[i])].item(j)
+        for i in range(len(indices)):
+            if indices[i] >= self.shape[0]:
+                raise Error(
+                    String(
+                        "value at index {} is out of boundary [0, {})"
+                    ).format(i, self.shape[0])
                 )
+            memcpy(
+                result._buf.ptr + i * size_per_item,
+                self._buf.ptr + indices[i] * size_per_item,
+                size_per_item,
+            )
 
         return result
 
@@ -1209,6 +1152,74 @@ struct NDArray[dtype: DType = DType.float64](
             new_index.append(int(i.item(0)))
 
         return self.__getitem__(new_index)
+
+    fn __getitem__(self, mask: List[Bool]) raises -> Self:
+        """
+        Get items from 0-th dimension of an array according to mask.
+
+        Example:
+        ```console
+        >>>var a = nm.arange[i8](6)
+        >>>print(a)
+        [       0       1       2       3       4       5       ]
+        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+        >>>print(a[List[Bool](True, False, True, True, False, True)])
+        [       0       2       3       5       ]
+        1-D array  Shape: [4]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+        var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+        print(b)
+        [[[     0       1       2       ]
+          [     3       4       5       ]]
+         [[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+        >>>print(b[List[Bool](False, True)])
+        [[[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [1, 2, 3]  DType: int8  C-cont: True  F-cont: True  own data: True
+        ```
+
+        Args:
+            mask: A list of boolean values.
+
+        Returns:
+            NDArray with items from the mask.
+        """
+
+        if len(mask) != self.shape[0]:
+            raise Error(
+                String(
+                    "length of mask {} does not match length of array {}."
+                ).format(len(mask), self.shape[0])
+            )
+
+        var len_of_result = 0
+
+        # Count number of True
+        for i in mask:
+            if i[]:
+                len_of_result += 1
+
+        # Change the first number of the ndshape
+        var shape = NDArrayShape(self.shape)
+        shape._buf[0] = len_of_result
+
+        var result = NDArray[dtype](shape)
+        var size_per_item = result.size // len_of_result
+
+        # Fill in the values
+        var offset = 0
+        for i in range(len(mask)):
+            if mask[i]:
+                memcpy(
+                    result._buf.ptr + offset * size_per_item,
+                    self._buf.ptr + i * size_per_item,
+                    size_per_item,
+                )
+                offset += 1
+
+        return result
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """
@@ -1955,6 +1966,50 @@ struct NDArray[dtype: DType = DType.float64](
             shape=self.shape._pop(axis=0),
             strides=self.strides._pop(axis=0),
         )
+
+    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
+        """
+        Adjusts the slice values to lie within 0 and dim.
+        """
+        var n_slices: Int = slice_list.__len__()
+        var slices = List[Slice]()
+        for i in range(n_slices):
+            if i >= self.ndim:
+                raise Error("Error: Number of slices exceeds array dimensions")
+
+            var start: Int = 0
+            var end: Int = self.shape[i]
+            var step: Int = 1
+            if slice_list[i].start is not None:
+                start = slice_list[i].start.value()
+                if start < 0:
+                    # start += self.shape[i]
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+
+            if slice_list[i].end is not None:
+                end = slice_list[i].end.value()
+                if end < 0:
+                    # end += self.shape[i] + 1
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+            step = slice_list[i].step.or_else(1)
+            if step == 0:
+                raise Error("Error: Slice step cannot be zero")
+
+            slices.append(
+                Slice(
+                    start=Optional(start),
+                    end=Optional(end),
+                    step=Optional(step),
+                )
+            )
+
+        return slices^
 
     fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
         if self.ndim == 0:

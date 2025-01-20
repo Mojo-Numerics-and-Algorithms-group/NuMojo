@@ -100,7 +100,6 @@ struct NDArrayShape(Stringable, Writable):
         """
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        self.size = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
 
@@ -132,10 +131,34 @@ struct NDArrayShape(Stringable, Writable):
         self.ndim = shape.ndim
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         memcpy(self._buf, shape._buf, shape.ndim)
-        self.size = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            self.size *= shape[i]
+
+    @always_inline("nodebug")
+    fn __init__(
+        out self,
+        ndim: Int,
+        initialized: Bool,
+    ) raises:
+        """
+        Construct NDArrayShape with number of dimensions.
+
+        This method is useful when you want to create a shape with given ndim
+        without knowing the shape values.
+
+        Args:
+            ndim: Number of dimensions.
+            initialized: Whether the shape is initialized.
+                If yes, the values will be set to 1.
+                If no, the values will be uninitialized.
+        """
+        if ndim <= 0:
+            raise Error("Number of dimensions must be positive.")
+        self.ndim = ndim
+        self._buf = UnsafePointer[Int]().alloc(ndim)
+        if initialized:
+            for i in range(ndim):
+                (self._buf + i).init_pointee_copy(1)
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):

@@ -154,8 +154,8 @@ struct NDArrayShape(Stringable, Writable):
                 If yes, the values will be set to 1.
                 If no, the values will be uninitialized.
         """
-        if ndim <= 0:
-            raise Error("Number of dimensions must be positive.")
+        if ndim < 0:
+            raise Error("Number of dimensions must be non-negative.")
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
         if initialized:

@@ -135,32 +135,6 @@ struct NDArrayShape(Stringable, Writable):
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
-    fn __init__(
-        out self,
-        ndim: Int,
-        initialized: Bool,
-    ) raises:
-        """
-        Construct NDArrayShape with number of dimensions.
-
-        This method is useful when you want to create a shape with given ndim
-        without knowing the shape values.
-
-        Args:
-            ndim: Number of dimensions.
-            initialized: Whether the shape is initialized.
-                If yes, the values will be set to 1.
-                If no, the values will be uninitialized.
-        """
-        if ndim <= 0:
-            raise Error("Number of dimensions must be positive.")
-        self.ndim = ndim
-        self._buf = UnsafePointer[Int]().alloc(ndim)
-        if initialized:
-            for i in range(ndim):
-                (self._buf + i).init_pointee_copy(1)
-
-    @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """
         Initializes the NDArrayShape from another NDArrayShape.
@@ -259,6 +233,33 @@ struct NDArrayShape(Stringable, Writable):
         for i in range(self.ndim):
             size *= self._buf[i]
         return size
+
+    @staticmethod
+    fn join(*shapes: Self) raises -> Self:
+        """
+        Join multiple shapes into a single shape.
+
+        Args:
+            shapes: Variable number of NDArrayShape objects.
+
+        Returns:
+            A new NDArrayShape object.
+        """
+        var total_dims = 0
+        for shape in shapes:
+            total_dims += shape[].ndim
+
+        var new_shape = Self()
+        new_shape.ndim = total_dims
+        new_shape._buf = UnsafePointer[Int]().alloc(total_dims)
+
+        var index = 0
+        for shape in shapes:
+            for i in range(shape[].ndim):
+                (new_shape._buf + index).init_pointee_copy(shape[][i])
+                index += 1
+
+        return new_shape
 
     # ===-------------------------------------------------------------------===#
     # Other private methods

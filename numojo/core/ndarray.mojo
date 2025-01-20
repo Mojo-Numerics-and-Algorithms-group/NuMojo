@@ -126,7 +126,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         self.ndim = shape.ndim
         self.shape = NDArrayShape(shape)
-        self.size = self.shape.size
+        self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(shape, order=order)
         self._buf = OwnData[dtype](self.size)
         # Initialize information on memory layout
@@ -180,7 +180,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self.shape = NDArrayShape(shape)
         self.ndim = self.shape.ndim
-        self.size = self.shape.size
+        self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(strides=strides)
         self._buf = OwnData[dtype](self.size)
         memset_zero(self._buf.ptr, self.size)
@@ -202,7 +202,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = shape
         self.strides = strides
         self.ndim = self.shape.ndim
-        self.size = self.shape.size
+        self.size = self.shape.size_of_array()
         self._buf = OwnData(ptr=buffer.offset(offset))
         # Initialize information on memory layout
         self.flags = Dict[String, Bool]()
@@ -2944,7 +2944,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var order = "C" if self.flags["C_CONTIGUOUS"] else "F"
 
-        if shape.size > self.size:
+        if shape.size_of_array() > self.size:
             var other = Self(shape=shape, order=order)
             memcpy(other._buf.ptr, self._buf.ptr, self.size)
             for i in range(self.size, other.size):
@@ -2953,7 +2953,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             self.shape = shape
             self.ndim = shape.ndim
-            self.size = shape.size
+            self.size = shape.size_of_array()
             self.strides = NDArrayStrides(shape, order=order)
 
     fn round(self) raises -> Self:

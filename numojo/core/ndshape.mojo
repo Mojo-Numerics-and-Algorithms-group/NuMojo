@@ -9,13 +9,11 @@ from memory import UnsafePointer, memcpy
 alias Shape = NDArrayShape
 
 
-@register_passable("trivial")
+@register_passable
 struct NDArrayShape(Stringable, Writable):
     """Implements the NDArrayShape."""
 
     # Fields
-    var size: Int
-    """Total number of elements of corresponding array."""
     var _buf: UnsafePointer[Int]
     """Data buffer."""
     var ndim: Int
@@ -30,7 +28,6 @@ struct NDArrayShape(Stringable, Writable):
             shape: Size of the array.
         """
         self.ndim = 1
-        self.size = shape
         self._buf = UnsafePointer[Int]().alloc(shape)
         self._buf.init_pointee_copy(shape)
 
@@ -42,12 +39,10 @@ struct NDArrayShape(Stringable, Writable):
         Args:
             shape: Variable number of integers representing the shape dimensions.
         """
-        self.size = 1
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            self.size *= shape[i]
 
     @always_inline("nodebug")
     fn __init__(out self, *shape: Int, size: Int) raises:
@@ -58,14 +53,11 @@ struct NDArrayShape(Stringable, Writable):
             shape: Variable number of integers representing the shape dimensions.
             size: The total number of elements in the array.
         """
-        self.size = size
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        var count: Int = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            count *= shape[i]
-        if count != size:
+        if self.size_of_array() != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
@@ -76,12 +68,10 @@ struct NDArrayShape(Stringable, Writable):
         Args:
             shape: A list of integers representing the shape dimensions.
         """
-        self.size = 1
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            self.size *= shape[i]
 
     @always_inline("nodebug")
     fn __init__(out self, shape: List[Int], size: Int) raises:
@@ -92,16 +82,12 @@ struct NDArrayShape(Stringable, Writable):
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self.size = (
-            size  # maybe I should add a check here to make sure it matches
-        )
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        var count: Int = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            count *= shape[i]
-        if count != size:
+        if self.size_of_array() != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
@@ -117,7 +103,6 @@ struct NDArrayShape(Stringable, Writable):
         self.size = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            self.size *= shape[i]
 
     @always_inline("nodebug")
     fn __init__(out self, shape: VariadicList[Int], size: Int) raises:
@@ -128,16 +113,12 @@ struct NDArrayShape(Stringable, Writable):
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
-        self.size = (
-            size  # maybe I should add a check here to make sure it matches
-        )
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        var count: Int = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            count *= shape[i]
-        if count != size:
+        if self.size_of_array() != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
@@ -155,6 +136,18 @@ struct NDArrayShape(Stringable, Writable):
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
             self.size *= shape[i]
+
+    @always_inline("nodebug")
+    fn __copyinit__(out self, other: Self):
+        """
+        Initializes the NDArrayShape from another NDArrayShape.
+
+        Args:
+            other: Another NDArrayShape to initialize from.
+        """
+        self.ndim = other.ndim
+        self._buf = UnsafePointer[Int]().alloc(other.ndim)
+        memcpy(self._buf, other._buf, other.ndim)
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
@@ -232,6 +225,19 @@ struct NDArrayShape(Stringable, Writable):
         return False
 
     # ===-------------------------------------------------------------------===#
+    # Other methods
+    # ===-------------------------------------------------------------------===#
+
+    fn size_of_array(self) -> Int:
+        """
+        Returns the total number of elements in the array.
+        """
+        var size = 1
+        for i in range(self.ndim):
+            size *= self._buf[i]
+        return size
+
+    # ===-------------------------------------------------------------------===#
     # Other private methods
     # ===-------------------------------------------------------------------===#
 
@@ -297,7 +303,6 @@ struct NDArrayShape(Stringable, Writable):
             count=self.ndim - axis - 1,
         )
         res.ndim = self.ndim - 1
-        res.size = self.size // self._buf[axis]
         res._buf = buffer
         return res
 

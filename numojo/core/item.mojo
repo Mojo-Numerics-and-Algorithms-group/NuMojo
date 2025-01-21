@@ -26,8 +26,7 @@ struct Item(CollectionElement):
         """Construct the tuple.
 
         Parameter:
-            T: The type of the initial values. It can be converted to `Int`
-                with `index()` function.
+            T: Type of values. It can be converted to `Int` with `index()`.
 
         Args:
             args: Initial values.
@@ -40,6 +39,9 @@ struct Item(CollectionElement):
     @always_inline("nodebug")
     fn __init__[T: IndexerCollectionElement](out self, args: List[T]) raises:
         """Construct the tuple.
+
+        Parameter:
+            T: Type of values. It can be converted to `Int` with `index()`.
 
         Args:
             args: Initial values.
@@ -70,8 +72,11 @@ struct Item(CollectionElement):
         """
         self.len = other.len
         self._buf = UnsafePointer[Int]().alloc(self.len)
-        for i in range(other.len):
-            self._buf[i] = other._buf[i]
+        memcpy(self._buf, other._buf, self.len)
+
+    @always_inline("nodebug")
+    fn __del__(owned self):
+        self._buf.free()
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:
@@ -83,8 +88,11 @@ struct Item(CollectionElement):
         return self.len
 
     @always_inline("nodebug")
-    fn __getitem__[T: Indexer](self, idx: T) -> Int:
+    fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
         """Get the value at the specified index.
+
+        Parameter:
+            T: Type of values. It can be converted to `Int` with `index()`.
 
         Args:
             idx: The index of the value to get.
@@ -92,17 +100,45 @@ struct Item(CollectionElement):
         Returns:
             The value at the specified index.
         """
-        return self._buf[index(idx)]
+
+        var normalized_idx: Int = index(idx)
+        if normalized_idx < 0:
+            normalized_idx = idx + self.len
+
+        if normalized_idx < 0 or normalized_idx >= self.len:
+            raise Error(
+                String("Index ({}) out of range [{}, {})").format(
+                    index(idx), -self.len, self.len - 1
+                )
+            )
+
+        return self._buf[normalized_idx]
 
     @always_inline("nodebug")
-    fn __setitem__[T: Indexer, U: Indexer](self, idx: T, val: U):
+    fn __setitem__[T: Indexer, U: Indexer](self, idx: T, val: U) raises:
         """Set the value at the specified index.
+
+        Parameter:
+            T: Type of values. It can be converted to `Int` with `index()`.
+            U: Type of values. It can be converted to `Int` with `index()`.
 
         Args:
             idx: The index of the value to set.
             val: The value to set.
         """
-        self._buf[index(idx)] = index(val)
+
+        var normalized_idx: Int = index(idx)
+        if normalized_idx < 0:
+            normalized_idx = idx + self.len
+
+        if normalized_idx < 0 or normalized_idx >= self.len:
+            raise Error(
+                String("Index ({}) out of range [{}, {})").format(
+                    index(idx), -self.len, self.len - 1
+                )
+            )
+
+        self._buf[normalized_idx] = index(val)
 
     fn __iter__(self) raises -> _ItemIter:
         """Iterate over elements of the NDArray, returning copied value.

@@ -178,21 +178,27 @@ struct NDArrayShape(Stringable, Writable):
         return self.ndim
 
     @always_inline("nodebug")
-    fn __str__(self) -> String:
+    fn __repr__(self) -> String:
         """
         Return a string of the shape of the array described by arrayshape.
         """
-        return String.write(self)
+        return "Shape" + str(self)
+
+    @always_inline("nodebug")
+    fn __str__(self) -> String:
+        """
+        Return a string of the shape of the array.
+        """
+        var result: String = "("
+        for i in range(self.ndim):
+            result += str(self._buf[i])
+            if i < self.ndim - 1:
+                result += ","
+        result += ")"
+        return result
 
     fn write_to[W: Writer](self, mut writer: W):
-        var result: String = "Shape: ["
-        for i in range(self.ndim):
-            if i == self.ndim - 1:
-                result += self._buf[i].__str__()
-            else:
-                result += self._buf[i].__str__() + ", "
-        result = result + "]"
-        writer.write(result)
+        writer.write("Shape: " + str(self) + "  " + "ndim: " + str(self.ndim))
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:

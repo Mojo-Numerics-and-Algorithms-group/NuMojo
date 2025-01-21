@@ -218,7 +218,7 @@ struct NDArrayShape(Stringable, Writable):
             if i == self.ndim - 1:
                 result += self._buf[i].__str__()
             else:
-                result += self._buf[i].__str__() + ", "
+                result += self._buf[i].__str__() + ","
         result = result + "]"
         writer.write(result)
 

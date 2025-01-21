@@ -1,5 +1,5 @@
 import numojo as nm
-from numojo import *
+from numojo.prelude import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
 from python import Python
@@ -122,6 +122,21 @@ def test_slicing_getter5():
         axis=1,
     )
     check(nm_slice5, np_sliced5, "3D array slicing (C-order) [1, :, 1:3]")
+
+
+def test_slicing_getter6():
+    var np = Python.import_module("numpy")
+
+    var b = nm.arange[i8](60).reshape(Shape(3, 4, 5))
+    var ind = nm.array[isize]("[[2,0,1], [1,0,1]]")
+    var mask = nm.array[boolean]("[1,0,1]")
+
+    var bnp = b.to_numpy()
+    var indnp = ind.to_numpy()
+    var masknp = mask.to_numpy()
+
+    check(b[ind], bnp[indnp], "Get by indices array fails")
+    check(b[mask], bnp[masknp], "Get by mask array fails")
 
 
 # def test_slicing_setter1():

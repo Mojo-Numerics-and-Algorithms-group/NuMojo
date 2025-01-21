@@ -8,13 +8,14 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 
 from algorithm.functional import vectorize
 from collections import Dict
-from python import Python, PythonObject
 from memory import UnsafePointer, memcpy
+from python import Python, PythonObject
 from sys import simdwidthof
+from tensor import Tensor, TensorShape
 
+from .ndarray import NDArray
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
-from .ndarray import NDArray
 
 
 # FIXME: No long useful from 24.6:
@@ -407,6 +408,21 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     except e:
         print("Error in converting to numpy", e)
         return PythonObject()
+
+
+fn to_tensor[dtype: DType](a: NDArray[dtype]) raises -> Tensor[dtype]:
+    """
+    Convert to a tensor.
+    """
+    pass
+
+    var shape = List[Int]()
+    for i in range(a.ndim):
+        shape.append(a.shape[i])
+    var t = Tensor[dtype](TensorShape(shape))
+    memcpy(t._ptr, a._buf.ptr, a.size)
+
+    return t
 
 
 # ===----------------------------------------------------------------------=== #

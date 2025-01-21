@@ -156,7 +156,9 @@ struct Item(CollectionElement):
         )
 
     fn write_to[W: Writer](self, mut writer: W):
-        writer.write("Item: " + self.str() + "  " + "Length: " + str(self.len))
+        writer.write(
+            "Index of item: " + self.str() + "  " + "Length: " + str(self.len)
+        )
 
     fn str(self) -> String:
         var result: String = "("

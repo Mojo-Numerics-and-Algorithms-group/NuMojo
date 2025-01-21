@@ -155,12 +155,16 @@ struct Item(CollectionElement):
             length=self.len,
         )
 
-    fn write_to[W: Writer](self, mut writer: W):
-        writer.write(
-            "Index of item: " + self.str() + "  " + "Length: " + str(self.len)
-        )
+    fn __repr__(self) -> String:
+        var result: String = "Item("
+        for i in range(self.len):
+            result += str(self._buf[i])
+            if i < self.len - 1:
+                result += ","
+        result += ")"
+        return result
 
-    fn str(self) -> String:
+    fn __str__(self) -> String:
         var result: String = "("
         for i in range(self.len):
             result += str(self._buf[i])
@@ -168,6 +172,11 @@ struct Item(CollectionElement):
                 result += ","
         result += ")"
         return result
+
+    fn write_to[W: Writer](self, mut writer: W):
+        writer.write(
+            "Index of item: " + str(self) + "  " + "Length: " + str(self.len)
+        )
 
 
 @value

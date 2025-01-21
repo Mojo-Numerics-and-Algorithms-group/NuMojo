@@ -100,7 +100,6 @@ struct NDArrayShape(Stringable, Writable):
         """
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        self.size = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
 
@@ -132,10 +131,8 @@ struct NDArrayShape(Stringable, Writable):
         self.ndim = shape.ndim
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         memcpy(self._buf, shape._buf, shape.ndim)
-        self.size = 1
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
-            self.size *= shape[i]
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):

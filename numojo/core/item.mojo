@@ -115,7 +115,7 @@ struct Item(CollectionElement):
         """
 
         return _ItemIter(
-            array=self,
+            item=self,
             length=self.len,
         )
 
@@ -143,31 +143,38 @@ struct _ItemIter[
     """
 
     var index: Int
-    var array: Item
+    var item: Item
     var length: Int
 
     fn __init__(
         mut self,
-        array: Item,
+        item: Item,
         length: Int,
     ):
         self.index = 0 if forward else length
         self.length = length
-        self.array = array
+        self.item = item
 
     fn __iter__(self) -> Self:
         return self
+
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
 
     fn __next__(mut self) raises -> Scalar[DType.index]:
         @parameter
         if forward:
             var current_index = self.index
             self.index += 1
-            return self.array.__getitem__(current_index)
+            return self.item.__getitem__(current_index)
         else:
             var current_index = self.index
             self.index -= 1
-            return self.array.__getitem__(current_index)
+            return self.item.__getitem__(current_index)
 
     fn __len__(self) -> Int:
         @parameter

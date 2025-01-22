@@ -10,9 +10,7 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 
 **Table of Contents**
 
-1. [About The Project](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#about-the-project)  
-• [What NuMojo is](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#what-numojo-is)  
-• [What NuMojo is not](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#what-numojo-is-not)  
+1. [About The Project](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#about-the-project)
 2. [Goals](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#goals)
 3. [Usage](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#usage)
 4. [How to install](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#how-to-install)
@@ -24,7 +22,7 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 
 ## About the project
 
-### What NuMojo is
+***What NuMojo is***
 
 NuMojo intends to capture a wide swath of numerics capability present in the Python packages NumPy, SciPy, and Scikit.
 
@@ -32,7 +30,7 @@ NuMojo intends to try and get the most out of the capabilities of Mojo including
 
 We intend NuMojo to be a building block for other Mojo packages that need fast math under the hood without the added weight of a ML back and forward propagation system
 
-### What NuMojo is not
+***What NuMojo is not***
 
 NuMojo is not a machine learning library, it will never include back-propagation in the base library.
 

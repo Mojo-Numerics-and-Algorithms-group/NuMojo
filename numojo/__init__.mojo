@@ -180,6 +180,7 @@ from numojo.routines.creation import (
     triu,
     vander,
     fromstring,
+    from_tensor,
     array,
 )
 

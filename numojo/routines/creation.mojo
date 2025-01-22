@@ -33,10 +33,11 @@ function. So it is easy for modification.
 from algorithm import parallelize, vectorize
 from algorithm import parallelize, vectorize
 from builtin.math import pow
-from sys import simdwidthof
 from collections.optional import Optional
+from memory import UnsafePointer, memset_zero, memset, memcpy
 from python import PythonObject
-from memory import UnsafePointer, memset_zero, memset
+from sys import simdwidthof
+from tensor import Tensor, TensorShape
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
@@ -906,8 +907,78 @@ fn vander[
 
 
 # ===------------------------------------------------------------------------===#
-# Construct array from string representation or txt files
+# Construct array by changing the data type
 # ===------------------------------------------------------------------------===#
+
+
+# TODO: Technically we should allow for runtime type inference here,
+# but NDArray doesn't support it yet.
+# TODO: Check whether inplace cast is needed.
+fn astype[
+    dtype: DType, //, target: DType
+](a: NDArray[dtype]) raises -> NDArray[target]:
+    """
+    Cast an NDArray to a different dtype.
+
+    Parameters:
+        dtype: Data type of the input array, always inferred.
+        target: Data type to cast the NDArray to.
+
+    Args:
+        a: NDArray to be casted.
+
+    Returns:
+        A NDArray with the same shape and strides as `a`
+        but with elements casted to `target`.
+    """
+    var array_order = "C" if a.flags["C_CONTIGUOUS"] else "F"
+    var res = NDArray[target](a.shape, order=array_order)
+
+    @parameter
+    if target == DType.bool:
+
+        @parameter
+        fn vectorized_astype[simd_width: Int](idx: Int) -> None:
+            (res.unsafe_ptr() + idx).strided_store[width=simd_width](
+                a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
+            )
+
+        vectorize[vectorized_astype, a.width](a.size)
+
+    else:
+
+        @parameter
+        if target == DType.bool:
+
+            @parameter
+            fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
+                res._buf.ptr.store(
+                    idx,
+                    (a._buf.ptr + idx)
+                    .strided_load[width=simd_width](1)
+                    .cast[target](),
+                )
+
+            vectorize[vectorized_astypenb_from_b, a.width](a.size)
+
+        else:
+
+            @parameter
+            fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
+                res._buf.ptr.store(
+                    idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
+                )
+
+            vectorize[vectorized_astypenb, a.width](a.size)
+
+    return res
+
+
+# ===------------------------------------------------------------------------===#
+# Construct array from other objects
+# ===------------------------------------------------------------------------===#
+
+
 fn fromstring[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
@@ -1001,73 +1072,44 @@ fn fromstring[
     return result^
 
 
-# TODO: Technically we should allow for runtime type inference here,
-# but NDArray doesn't support it yet.
-# TODO: Check whether inplace cast is needed.
-fn astype[
-    dtype: DType, //, target: DType
-](a: NDArray[dtype]) raises -> NDArray[target]:
+fn from_tensor[
+    dtype: DType = DType.float64
+](data: Tensor[dtype]) raises -> NDArray[dtype]:
     """
-    Cast an NDArray to a different dtype.
+    Create array from tensor.
 
     Parameters:
-        dtype: Data type of the input array, always inferred.
-        target: Data type to cast the NDArray to.
+        dtype: Datatype of the NDArray elements.
 
     Args:
-        a: NDArray to be casted.
+        data: Tensor.
 
     Returns:
-        A NDArray with the same shape and strides as `a`
-        but with elements casted to `target`.
+        NDArray.
     """
-    var array_order = "C" if a.flags["C_CONTIGUOUS"] else "F"
-    var res = NDArray[target](a.shape, order=array_order)
 
-    @parameter
-    if target == DType.bool:
+    var ndim = data.shape().rank()
+    var shape = NDArrayShape(ndim=ndim, initialized=False)
+    for i in range(ndim):
+        (shape._buf + i).init_pointee_copy(data.shape()[i])
 
-        @parameter
-        fn vectorized_astype[simd_width: Int](idx: Int) -> None:
-            (res.unsafe_ptr() + idx).strided_store[width=simd_width](
-                a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
-            )
+    var a = NDArray[dtype](shape=shape)
 
-        vectorize[vectorized_astype, a.width](a.size)
+    memcpy(a._buf.ptr, data._ptr, a.size)
 
-    else:
-
-        @parameter
-        if target == DType.bool:
-
-            @parameter
-            fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
-                    idx,
-                    (a._buf.ptr + idx)
-                    .strided_load[width=simd_width](1)
-                    .cast[target](),
-                )
-
-            vectorize[vectorized_astypenb_from_b, a.width](a.size)
-
-        else:
-
-            @parameter
-            fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
-                    idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
-                )
-
-            vectorize[vectorized_astypenb, a.width](a.size)
-
-    return res
+    return a
 
 
 # ===------------------------------------------------------------------------===#
+# Overloads of `array` function
 # Construct array from various objects.
-# It can be reloaded to allow different types of input.
+# - String
+# - List of Scalars
+# - Numpy array
+# - Tensor
 # ===------------------------------------------------------------------------===#
+
+
 fn array[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
@@ -1116,22 +1158,22 @@ fn array[
     """
     Array creation with given data, shape and order.
 
+    Example:
+    ```mojo
+    import numojo as nm
+    from numojo.prelude import *
+    from python import Python
+    var np = Python.import_module("numpy")
+    var np_arr = np.array([1, 2, 3, 4])
+    A = nm.array[f16](data=np_arr, order="C")
+    ```
+
     Parameters:
         dtype: Datatype of the NDArray elements.
 
     Args:
         data: A Numpy array (PythonObject).
         order: Memory order C or F.
-
-    Example:
-        ```mojo
-        import numojo as nm
-        from numojo.prelude import *
-        from python import Python
-        var np = Python.import_module("numpy")
-        var np_arr = np.array([1, 2, 3, 4])
-        A = nm.array[f16](data=np_arr, order="C")
-        ```
 
     Returns:
         An Array of given data, shape and order.
@@ -1149,3 +1191,37 @@ fn array[
     for i in range(A.size):
         A._buf.ptr[i] = float(data.item(PythonObject(i))).cast[dtype]()
     return A
+
+
+fn array[
+    dtype: DType = DType.float64
+](data: Tensor[dtype]) raises -> NDArray[dtype]:
+    """
+    Create array from tensor.
+
+    Example:
+    ```mojo
+    import numojo as nm
+    from tensor import Tensor, TensorShape
+    from numojo.prelude import *
+
+    fn main() raises:
+        height = 256
+        width = 256
+        channels = 3
+        image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
+        print(image)
+        print(nm.array(image))
+    ```
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        data: Tensor.
+
+    Returns:
+        NDArray.
+    """
+
+    return from_tensor(data)

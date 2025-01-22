@@ -8,6 +8,7 @@ from testing.testing import (
     assert_raises,
 )
 from python import Python, PythonObject
+from tensor import Tensor, TensorShape
 from utils_for_test import check, check_is_close
 
 
@@ -346,4 +347,12 @@ def test_arr_manipulation():
         arr6[Item(1, 4)],
         10.0,
         "NDArray constructor with data: value check",
+    )
+
+
+def test_tensor_conversion():
+    var image = Tensor[DType.float32].rand(TensorShape(256, 256, 3))
+    var image_converted_via_array = nm.array(image).to_tensor()
+    assert_equal(
+        image == image_converted_via_array, True, "Tensor conversion is broken"
     )

@@ -17,6 +17,7 @@ from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memcpy
 from python import Python, PythonObject
 from sys import simdwidthof
+from tensor import Tensor
 from utils import Variant
 
 import numojo.core._array_funcs as _af
@@ -31,6 +32,7 @@ from numojo.core.utility import (
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
+    to_tensor,
     bool_to_numeric,
 )
 
@@ -3095,6 +3097,31 @@ struct NDArray[dtype: DType = DType.float64](
         Convert to a numpy array.
         """
         return to_numpy(self)
+
+    fn to_tensor(self) raises -> Tensor[dtype]:
+        """
+        Convert array to tensor of the same dtype.
+
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        fn main() raises:
+            var a = nm.random.randn[f16](2, 3, 4)
+            print(a)
+            print(a.to_tensor())
+
+            var b = nm.array[i8]("[[1, 2, 3], [4, 5, 6]]")
+            print(b)
+            print(b.to_tensor())
+
+            var c = nm.array[boolean]("[[1,0], [0,1]]")
+            print(c)
+            print(c.to_tensor())
+        ```
+        """
+
+        return to_tensor(self)
 
     # TODO: add axis parameter
     fn trace(

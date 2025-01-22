@@ -217,6 +217,8 @@ struct NDArray[dtype: DType = DType.float64](
     fn __copyinit__(mut self, other: Self):
         """
         Copy other into self.
+
+        It is a deep copy. So the new array owns the data.
         """
         self.ndim = other.ndim
         self.shape = other.shape
@@ -225,6 +227,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.flags = other.flags
         self._buf = OwnData[dtype](self.size)
         memcpy(self._buf.ptr, other._buf.ptr, other.size)
+        self.flags["OWNDATA"] = True
 
     @always_inline("nodebug")
     fn __moveinit__(mut self, owned existing: Self):
@@ -2464,8 +2467,11 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf.ptr.store(idx, val)
 
     # ===-------------------------------------------------------------------===#
-    # Operations along an axis
-    # TODO: Implement axis parameter for all
+    # OTHER METHODS
+    # (Sorted alphabetically)
+    #
+    # TODO: Implement axis parameter for all operations that are along an axis
+    #
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
     # # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
     # # tobyets, tofile, view
@@ -2578,8 +2584,40 @@ struct NDArray[dtype: DType = DType.float64](
     # fn compress(self):
     #     pass
 
-    # fn copy(self):
-    #     pass
+    fn copy(self) raises -> Self:
+        # TODO: Add logics for non-contiguous arrays when views are implemented.
+        """
+        Returns a copy of the array that owns the data.
+        The returned array will be continuous in memory.
+        """
+
+        if (self.strides == NDArrayStrides(shape=self.shape)) or (
+            self.strides == NDArrayStrides(shape=self.shape, order="F")
+        ):
+            # The strides and shape are matched.
+            # It either owns the data or it is a continuous view of another array.
+            # The array is continuous in memory. Nothing needs to be changed.
+            var result = self
+            return result
+        else:
+            # The strides and shape are not matched.
+            # It is a view of another array with different shape and strides.
+            if self.flags["C_CONTIGUOUS"]:
+                # The array is C-continuous in memory.
+                # Can be copied by the last dimension.
+                var result = self
+                return result
+
+            elif self.flags["F_CONTIGUOUS"]:
+                # The array is F-continuous in memory.
+                # Can be copied by the first dimension.
+                var result = self
+                return result
+            else:
+                # The array is not continuous in memory.
+                # Can be copied by item.
+                var result = self
+                return result
 
     fn cumprod(self) raises -> NDArray[dtype]:
         """
@@ -2971,6 +3009,31 @@ struct NDArray[dtype: DType = DType.float64](
     # fn nonzero(self):
     #     pass
 
+    fn nditer(self) raises -> _NDIter[__origin_of(self), dtype]:
+        """
+        Return an iterator yielding the array elements, travelling in C-order.
+
+        ```console
+        >>>var a = nm.random.rand[i8](2, 3, min=0, max=100)
+        >>>print(a)
+        [[      37      8       25      ]
+         [      25      2       57      ]]
+        2-D array  (2,3)  DType: int8  C-cont: True  F-cont: False  own data: True
+        >>>for i in a.nditer():
+        ...    print(i, end=" ")
+        37 8 25 25 2 57
+        ```
+        """
+
+        return _NDIter[__origin_of(self), dtype](
+            ptr=self._buf.ptr,
+            length=self.size,
+            ndim=self.ndim,
+            strides=self.strides,
+            shape=self.shape,
+            strides_from_shape=NDArrayStrides(self.shape),
+        )
+
     fn prod(self: Self) raises -> Scalar[dtype]:
         """
         Product of all array elements.
@@ -3241,3 +3304,55 @@ struct _NDArrayIter[
             return self.length - self.index
         else:
             return self.index
+
+
+@value
+struct _NDIter[
+    is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType
+]():
+    var ptr: UnsafePointer[Scalar[dtype]]
+    var length: Int
+    var ndim: Int
+    var shape: NDArrayShape
+    var strides: NDArrayStrides
+    var strides_from_shape: NDArrayStrides
+    var index: Int
+
+    fn __init__(
+        out self,
+        ptr: UnsafePointer[Scalar[dtype]],
+        length: Int,
+        ndim: Int,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
+        strides_from_shape: NDArrayStrides,
+    ):
+        self.length = length
+        self.ptr = ptr
+        self.ndim = ndim
+        self.shape = shape
+        self.strides = strides
+        self.strides_from_shape = strides_from_shape
+        self.index = 0
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __has_next__(self) -> Bool:
+        if self.index < self.length:
+            return True
+        else:
+            return False
+
+    fn __next__(mut self) raises -> Scalar[dtype]:
+        var current_index = self.index
+        self.index += 1
+
+        var remainder = current_index
+        var indices = Item(ndim=self.ndim, initialized=False)
+        for i in range(self.ndim):
+            indices[i], remainder = divmod(
+                remainder, self.strides_from_shape[i]
+            )
+
+        return self.ptr[_get_offset(indices, self.strides)]

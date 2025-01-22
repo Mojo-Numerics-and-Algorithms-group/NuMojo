@@ -7,6 +7,8 @@ Implements NDArrayStrides type.
 from utils import Variant
 from memory import UnsafePointer, memcpy
 
+alias Strides = NDArrayStrides
+
 
 @register_passable
 struct NDArrayStrides(Stringable):
@@ -169,7 +171,7 @@ struct NDArrayStrides(Stringable):
         """
         Return a string of the strides of the array.
         """
-        return "NDArrayStrides" + str(self)
+        return "numojo.Strides" + str(self)
 
     @always_inline("nodebug")
     fn __str__(self) -> String:

@@ -11,6 +11,7 @@ alias __version__ = "V0.5"
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
+from numojo.core.ndstrides import NDArrayStrides, Strides
 from numojo.core.item import Item, item
 from numojo.core.complex_dtype import CDType
 from numojo.core.complex_simd import ComplexSIMD, ComplexScalar

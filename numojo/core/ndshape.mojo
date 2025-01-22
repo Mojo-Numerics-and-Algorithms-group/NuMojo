@@ -210,7 +210,7 @@ struct NDArrayShape(Stringable, Writable):
         """
         Return a string of the shape of the array described by arrayshape.
         """
-        return "Shape" + str(self)
+        return "numojo.Shape" + str(self)
 
     @always_inline("nodebug")
     fn __str__(self) -> String:

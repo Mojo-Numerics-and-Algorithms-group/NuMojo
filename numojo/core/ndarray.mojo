@@ -3011,7 +3011,33 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn nditer(self) raises -> _NDIter[__origin_of(self), dtype]:
         """
-        Return an iterator yielding the array elements, travelling in C-order.
+        (Overload) Return an iterator yielding the array elements according
+        to the memory layout of the array.
+
+        ```console
+        >>>var a = nm.random.rand[i8](2, 3, min=0, max=100)
+        >>>print(a)
+        [[      37      8       25      ]
+         [      25      2       57      ]]
+        2-D array  (2,3)  DType: int8  C-cont: True  F-cont: False  own data: True
+        >>>for i in a.nditer():
+        ...    print(i, end=" ")
+        37 8 25 25 2 57
+        ```
+        """
+
+        var order: String
+
+        if self.flags["F_CONTIGUOUS"]:
+            order = "F"
+        else:
+            order = "C"
+
+        return self.nditer(order=order)
+
+    fn nditer(self, order: String) raises -> _NDIter[__origin_of(self), dtype]:
+        """
+        Return an iterator yielding the array elements according to the order.
 
         ```console
         >>>var a = nm.random.rand[i8](2, 3, min=0, max=100)
@@ -3031,7 +3057,7 @@ struct NDArray[dtype: DType = DType.float64](
             ndim=self.ndim,
             strides=self.strides,
             shape=self.shape,
-            strides_from_shape=NDArrayStrides(self.shape),
+            order=order,
         )
 
     fn prod(self: Self) raises -> Scalar[dtype]:
@@ -3315,8 +3341,8 @@ struct _NDIter[
     var ndim: Int
     var shape: NDArrayShape
     var strides: NDArrayStrides
-    var strides_from_shape: NDArrayStrides
     var index: Int
+    var order: String
 
     fn __init__(
         out self,
@@ -3325,14 +3351,14 @@ struct _NDIter[
         ndim: Int,
         shape: NDArrayShape,
         strides: NDArrayStrides,
-        strides_from_shape: NDArrayStrides,
+        order: String,
     ):
         self.length = length
         self.ptr = ptr
         self.ndim = ndim
         self.shape = shape
         self.strides = strides
-        self.strides_from_shape = strides_from_shape
+        self.order = order
         self.index = 0
 
     fn __iter__(self) -> Self:
@@ -3350,9 +3376,16 @@ struct _NDIter[
 
         var remainder = current_index
         var indices = Item(ndim=self.ndim, initialized=False)
-        for i in range(self.ndim):
-            indices[i], remainder = divmod(
-                remainder, self.strides_from_shape[i]
-            )
+
+        if self.order == "C":
+            for i in range(self.ndim):
+                indices[i], remainder = divmod(
+                    remainder, NDArrayStrides(self.shape, order="C")[i]
+                )
+        else:
+            for i in range(self.ndim - 1, -1, -1):
+                indices[i], remainder = divmod(
+                    remainder, NDArrayStrides(self.shape, order="F")[i]
+                )
 
         return self.ptr[_get_offset(indices, self.strides)]

@@ -156,12 +156,7 @@ struct Item(CollectionElement):
         )
 
     fn __repr__(self) -> String:
-        var result: String = "Item("
-        for i in range(self.len):
-            result += str(self._buf[i])
-            if i < self.len - 1:
-                result += ","
-        result += ")"
+        var result: String = "numojo.Item" + str(self)
         return result
 
     fn __str__(self) -> String:
@@ -175,7 +170,7 @@ struct Item(CollectionElement):
 
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(
-            "Index of item: " + str(self) + "  " + "Length: " + str(self.len)
+            "Item at index: " + str(self) + "  " + "Length: " + str(self.len)
         )
 
 

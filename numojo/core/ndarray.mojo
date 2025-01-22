@@ -2100,6 +2100,7 @@ struct NDArray[dtype: DType = DType.float64](
         offset: Int,
         seperator: String = "\t",
         padding: String = "\t",
+        items_to_display: Int = 6,
     ) raises -> String:
         """
         Convert the array to a string.
@@ -2109,13 +2110,14 @@ struct NDArray[dtype: DType = DType.float64](
             offset: The offset of the current dimension.
             seperator: The seperator between elements.
             padding: The padding between elements and brackets.
+            items_to_display: The number of items to display.
         """
         if self.ndim == 0:
             return str(self.item(0))
         if dimension == self.ndim - 1:
             var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+            if number_of_items <= items_to_display:  # Print all items
                 for i in range(number_of_items):
                     result = (
                         result
@@ -2127,17 +2129,19 @@ struct NDArray[dtype: DType = DType.float64](
                         result = result + seperator
                 result = result + padding
             else:  # Print first 3 and last 3 items
-                for i in range(3):
+                for i in range(items_to_display // 2):
                     result = (
                         result
                         + self.load[width=1](
                             offset + i * self.strides[dimension]
                         ).__str__()
                     )
-                    if i < (3 - 1):
+                    if i < (items_to_display // 2 - 1):
                         result = result + seperator
-                result = result + padding + "..." + padding
-                for i in range(number_of_items - 3, number_of_items):
+                result = result + seperator + "..." + seperator
+                for i in range(
+                    number_of_items - items_to_display // 2, number_of_items
+                ):
                     result = (
                         result
                         + self.load[width=1](
@@ -2152,7 +2156,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             var result: String = str("[")
             var number_of_items = self.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+            if number_of_items <= items_to_display:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
                         result = result + self._array_to_string(
@@ -2160,6 +2164,7 @@ struct NDArray[dtype: DType = DType.float64](
                             offset + i * self.strides[dimension].__int__(),
                             seperator,
                             padding,
+                            items_to_display,
                         )
                     if i > 0:
                         result = (
@@ -2170,18 +2175,20 @@ struct NDArray[dtype: DType = DType.float64](
                                 offset + i * self.strides[dimension].__int__(),
                                 seperator,
                                 padding,
+                                items_to_display,
                             )
                         )
                     if i < (number_of_items - 1):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
-                for i in range(3):
+                for i in range(items_to_display // 2):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
                             seperator,
                             padding,
+                            items_to_display,
                         )
                     if i > 0:
                         result = (
@@ -2192,12 +2199,15 @@ struct NDArray[dtype: DType = DType.float64](
                                 offset + i * self.strides[dimension].__int__(),
                                 seperator,
                                 padding,
+                                items_to_display,
                             )
                         )
                     if i < (number_of_items - 1):
                         result += "\n"
                 result = result + "...\n"
-                for i in range(number_of_items - 3, number_of_items):
+                for i in range(
+                    number_of_items - items_to_display // 2, number_of_items
+                ):
                     result = (
                         result
                         + str(" ") * (dimension + 1)
@@ -2206,6 +2216,7 @@ struct NDArray[dtype: DType = DType.float64](
                             offset + i * self.strides[dimension].__int__(),
                             seperator,
                             padding,
+                            items_to_display,
                         )
                     )
                     if i < (number_of_items - 1):

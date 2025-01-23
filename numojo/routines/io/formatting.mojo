@@ -1,5 +1,6 @@
 import math as mt
 from builtin.math import pow
+from numojo.core.utility import is_inttype
 
 alias DEFAULT_PRECISION = 4
 alias DEFAULT_SUPPRESS_SMALL = False
@@ -201,7 +202,8 @@ fn format_floating_scientific[
     Raises:
         Error: If the dtype is not a floating-point type or if precision is negative.
     """
-    if dtype.is_integral():
+    @parameter
+    if is_inttype[dtype]():
         raise Error(
             "Invalid type provided. dtype must be a floating-point type."
         )
@@ -209,9 +211,13 @@ fn format_floating_scientific[
         raise Error("Precision must be a non-negative integer.")
 
     try:
+        var suppress_scientific = GLOBAL_PRINT_OPTIONS.suppress_scientific
+        var exponent_threshold = GLOBAL_PRINT_OPTIONS.exponent_threshold
+        var formatted_width = GLOBAL_PRINT_OPTIONS.formatted_width
+
         if x == 0.0:
             var result: String = "0." + "0" * precision
-            return String("{0}e+00").format(result)
+            return result.rjust(formatted_width)
 
         var power: Int = int(mt.log10(abs(x)))
         var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
@@ -224,6 +230,9 @@ fn format_floating_scientific[
             else:
                 result += m_string[i]
 
+        if suppress_scientific and abs(power) <= exponent_threshold:
+            return format_floating_precision(x, precision, sign).rjust(formatted_width)
+
         var exponent_str: String
         if power < 0:
             exponent_str = String("e{0}").format(power)
@@ -231,10 +240,10 @@ fn format_floating_scientific[
             exponent_str = String("e+{0}").format(power)
 
         if x < 0:
-            return String("-{0}{1}").format(result, exponent_str)
+            return String("-{0}{1}").format(result, exponent_str).rjust(formatted_width)
         if sign:
-            return String("+{0}{1}").format(result, exponent_str)
-        return String("{0}{1}").format(result, exponent_str)
+            return String("+{0}{1}").format(result, exponent_str).rjust(formatted_width)
+        return String("{0}{1}").format(result, exponent_str).rjust(formatted_width)
     except:
         raise Error("Failed to format float in scientific notation.")
 
@@ -256,6 +265,10 @@ fn format_floating_precision[
     Raises:
         Error: If precision is negative or if the value cannot be formatted.
     """
+    @parameter
+    if is_inttype[dtype]():
+        raise Error("Invalid type provided. dtype must be a floating-point type.")
+
     if precision < 0:
         raise Error("Precision must be a non-negative integer.")
 

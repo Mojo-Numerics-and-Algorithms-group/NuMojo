@@ -35,6 +35,7 @@ from numojo.core.utility import (
     to_numpy,
     to_tensor,
     bool_to_numeric,
+    is_floattype,
 )
 
 from numojo.routines.io.formatting import (
@@ -2391,19 +2392,16 @@ struct NDArray[dtype: DType = DType.float64](
         var inf_string = print_options.inf_string
         var formatted_width = print_options.formatted_width
 
-        if dtype.is_floating_point():
+        @parameter
+        if is_floattype[dtype]():
             if isnan(value):
-                return nan_string
+                return nan_string.rjust(formatted_width)
             if isinf(value):
-                return inf_string
+                return inf_string.rjust(formatted_width)
             if float_format == "scientific":
-                return format_floating_scientific(
-                    value, print_options.precision, sign
-                )
+                return format_floating_scientific(value, print_options.precision, sign)
             else:
-                return format_floating_precision(
-                    value, print_options.precision, sign
-                )
+                return format_floating_precision(value, print_options.precision, sign).rjust(formatted_width)
         else:
             var formatted = str(value)
             if sign and value > 0:

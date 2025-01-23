@@ -44,7 +44,6 @@ from numojo.core.utility import (
     bool_to_numeric,
 )
 
-
 # ===----------------------------------------------------------------------===#
 # ComplexNDArray
 # ===----------------------------------------------------------------------===#
@@ -1624,12 +1623,12 @@ struct ComplexNDArray[
     # fn __iter__(self) raises -> _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype]:
     #     """Iterate over elements of the NDArray, returning copied value.
 
-        Returns:
-            An iterator of NDArray elements.
+    #     Returns:
+    #         An iterator of NDArray elements.
 
-        Notes:
-            Need to add lifetimes after the new release.
-        """
+    #     Notes:
+    #         Need to add lifetimes after the new release.
+    #     """
 
     #     return _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype](
     #         array=self,
@@ -1642,14 +1641,14 @@ struct ComplexNDArray[
     #     """Iterate backwards over elements of the NDArray, returning
     #     copied value.
 
-        Returns:
-            A reversed iterator of NDArray elements.
-        """
+    #     Returns:
+    #         A reversed iterator of NDArray elements.
+    #     """
 
-    #     return _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype, forward=False](
-    #         array=self,
-    #         length=self.shape[0],
-    #     )
+    # #     return _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype, forward=False](
+    # #         array=self,
+    # #         length=self.shape[0],
+    # #     )
 
     fn item(self, owned index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
         """
@@ -1807,71 +1806,76 @@ struct ComplexNDArray[
         """
         return Self(self._re, -self._im)
 
-    fn to_ndarray(self, type: String) raises -> NDArray[dtype=dtype]:
+    fn to_ndarray(self, type: String = "re") raises -> NDArray[dtype=dtype]:
         if type == "re":
-            var result = self._re
+            var result: NDArray[dtype=dtype] = NDArray[dtype=dtype](self.shape)
+            memcpy(result._buf.ptr, self._re._buf.ptr, self.size)
             return result^
         elif type == "im":
-            var result = self._im
+            var result: NDArray[dtype=dtype] = NDArray[dtype=dtype](self.shape)
+            memcpy(result._buf.ptr, self._im._buf.ptr, self.size)
             return result^
         else:
-            raise Error("Invalid type")
-@value
-struct _ComplexNDArrayIter[
-    is_mutable: Bool, //,
-    origin: Origin[is_mutable],
-    cdtype: CDType,
-    dtype: DType,
-    forward: Bool = True,
-]:
-    """Iterator for NDArray.
+            raise Error("Invalid type: " + type + ", must be 're' or 'im'")
 
-    Parameters:
-        is_mutable: Whether the iterator is mutable.
-        origin: The lifetime of the underlying NDArray data.
-        cdtype: The complex data type of the item.
-        dtype: The data type of the item.
-        forward: The iteration direction. `False` is backwards.
-    """
 
-    var index: Int
-    var array: ComplexNDArray[cdtype, dtype=dtype]
-    var length: Int
+# @value
+# struct _ComplexNDArrayIter[
+#     is_mutable: Bool, //,
+#     origin: Origin[is_mutable],
+#     cdtype: CDType,
+#     dtype: DType,
+#     forward: Bool = True,
+# ]:
+#     """
+#     Iterator for NDArray.
 
-    fn __init__(
-        mut self,
-        array: ComplexNDArray[cdtype, dtype=dtype],
-        length: Int,
-    ):
-        self.index = 0 if forward else length
-        self.length = length
-        self.array = array
+#     Parameters:
+#         is_mutable: Whether the iterator is mutable.
+#         origin: The lifetime of the underlying NDArray data.
+#         cdtype: The complex data type of the item.
+#         dtype: The data type of the item.
+#         forward: The iteration direction. `False` is backwards.
+#     """
 
-    fn __iter__(self) -> Self:
-        return self
+#     var index: Int
+#     var array: ComplexNDArray[cdtype, dtype=dtype]
+#     var length: Int
 
-    fn __next__(mut self) raises -> ComplexNDArray[cdtype, dtype=dtype]:
-        @parameter
-        if forward:
-            var current_index = self.index
-            self.index += 1
-            return self.array.__getitem__(current_index)
-        else:
-            var current_index = self.index
-            self.index -= 1
-            return self.array.__getitem__(current_index)
+#     fn __init__(
+#         mut self,
+#         array: ComplexNDArray[cdtype, dtype=dtype],
+#         length: Int,
+#     ):
+#         self.index = 0 if forward else length
+#         self.length = length
+#         self.array = array
 
-    @always_inline
-    fn __has_next__(self) -> Bool:
-        @parameter
-        if forward:
-            return self.index < self.length
-        else:
-            return self.index > 0
+#     fn __iter__(self) -> Self:
+#         return self
 
-    fn __len__(self) -> Int:
-        @parameter
-        if forward:
-            return self.length - self.index
-        else:
-            return self.index
+#     fn __next__(mut self) raises -> ComplexNDArray[cdtype, dtype=dtype]:
+#         @parameter
+#         if forward:
+#             var current_index = self.index
+#             self.index += 1
+#             return self.array.__getitem__(current_index)
+#         else:
+#             var current_index = self.index
+#             self.index -= 1
+#             return self.array.__getitem__(current_index)
+
+#     @always_inline
+#     fn __has_next__(self) -> Bool:
+#         @parameter
+#         if forward:
+#             return self.index < self.length
+#         else:
+#             return self.index > 0
+
+#     fn __len__(self) -> Int:
+#         @parameter
+#         if forward:
+#             return self.length - self.index
+#         else:
+#             return self.index

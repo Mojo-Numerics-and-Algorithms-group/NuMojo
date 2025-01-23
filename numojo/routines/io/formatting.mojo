@@ -6,8 +6,8 @@ from numojo.core.utility import is_inttype, is_floattype
 
 alias DEFAULT_PRECISION = 4
 alias DEFAULT_SUPPRESS_SMALL = False
-alias DEFAULT_SEPARATOR = "\t"
-alias DEFAULT_PADDING = "\t"
+alias DEFAULT_SEPARATOR = " "
+alias DEFAULT_PADDING = ""
 alias DEFAULT_EDGE_ITEMS = 6
 alias DEFAULT_THRESHOLD = 10
 alias DEFAULT_LINE_WIDTH = 75

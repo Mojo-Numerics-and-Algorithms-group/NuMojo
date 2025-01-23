@@ -59,6 +59,7 @@ alias c = numojo.routines.constants.Constants.c
 # to avoid polluting the root namespace.
 from numojo.routines import io
 from numojo.routines.io import loadtxt, savetxt, format_float_scientific
+from numojo.routines.io import printoptions, set_printoptions
 
 from numojo.routines import linalg
 

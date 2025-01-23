@@ -14,6 +14,7 @@ from collections import Dict
 from collections.optional import Optional
 from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
+from utils.numerics import isnan, isinf
 
 import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
@@ -30,7 +31,7 @@ from numojo.routines.linalg.products import matmul
 from numojo.routines.manipulation import reshape, ravel
 
 import numojo.core._array_funcs as _af
-from numojo.core.datatypes import TypeCoercion
+from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
@@ -42,6 +43,13 @@ from numojo.core.utility import (
     _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
+)
+
+from numojo.routines.io.formatting import (
+    format_floating_precision,
+    PrintOptions,
+    printoptions,
+    GLOBAL_PRINT_OPTIONS,
 )
 
 
@@ -1421,20 +1429,28 @@ struct ComplexNDArray[
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:
         """
-        Enables str(ComplexNDArray).
+        Enables str(array).
         """
-        return String.write(self)
+        var res: String
+        try:
+            res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
+        except e:
+            res = String("Cannot convert array to string") + str(e)
+
+        return res
 
     fn write_to[W: Writer](self, mut writer: W):
         try:
             writer.write(
-                self._array_to_string(0, 0)
+                self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
                 + "\n"
                 + str(self.ndim)
-                + "-D array  "
-                + self.shape.__str__()
-                + "  C-DType: "
-                + Self.cdtype.__str__()
+                + "D-array  Shape"
+                + str(self.shape)
+                + "  Strides"
+                + str(self.strides)
+                + "  DType: "
+                + _concise_dtype_str(self.dtype)
                 + "  C-cont: "
                 + str(self.flags["C_CONTIGUOUS"])
                 + "  F-cont: "
@@ -1443,7 +1459,7 @@ struct ComplexNDArray[
                 + str(self.flags["OWNDATA"])
             )
         except e:
-            writer.write("Cannot convert array to string")
+            writer.write("Cannot convert array to string" + str(e))
 
     fn __repr__(self) -> String:
         """
@@ -1481,50 +1497,78 @@ struct ComplexNDArray[
             print("Cannot convert array to string", e)
             return ""
 
-    fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
+    fn _array_to_string(
+        self,
+        dimension: Int,
+        offset: Int,
+        print_options: PrintOptions,
+    ) raises -> String:
+        """
+        Convert the array to a string.
+
+        Args:
+            dimension: The current dimension.
+            offset: The offset of the current dimension.
+            print_options: The print options.
+        """
+        var seperator = print_options.separator
+        var padding = print_options.padding
+        var edge_items = print_options.edge_items
+
         if self.ndim == 0:
             return str(self.item(0))
         if dimension == self.ndim - 1:
-            var result: String = str("[\t")
+            var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.strides[dimension]
-                        ).__str__()
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
+                    var formatted_value = self._format_value(
+                        value, print_options
+                    )
+                    result = result + formatted_value
+                    if i < (number_of_items - 1):
+                        result = result + seperator
+                result = result + padding
             else:  # Print first 3 and last 3 items
-                for i in range(3):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.strides[dimension]
-                        ).__str__()
+                for i in range(edge_items // 2):
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
-                result = result + "...\t"
-                for i in range(number_of_items - 3, number_of_items):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.strides[dimension]
-                        ).__str__()
+                    var formatted_value = self._format_value(
+                        value, print_options
                     )
-                    result = result + "\t"
+                    result = result + formatted_value
+                    if i < (edge_items // 2 - 1):
+                        result = result + seperator
+                result = result + seperator + "..." + seperator
+                for i in range(
+                    number_of_items - edge_items // 2, number_of_items
+                ):
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
+                    )
+                    var formatted_value = self._format_value(
+                        value, print_options
+                    )
+                    result = result + formatted_value
+                    if i < (number_of_items - 1):
+                        result = result + seperator
+                result = result + padding
             result = result + "]"
             return result
         else:
             var result: String = str("[")
             var number_of_items = self.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     if i > 0:
                         result = (
@@ -1533,16 +1577,18 @@ struct ComplexNDArray[
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
+                                print_options,
                             )
                         )
                     if i < (number_of_items - 1):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
-                for i in range(3):
+                for i in range(edge_items // 2):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     if i > 0:
                         result = (
@@ -1551,24 +1597,106 @@ struct ComplexNDArray[
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
+                                print_options,
                             )
                         )
                     if i < (number_of_items - 1):
                         result += "\n"
                 result = result + "...\n"
-                for i in range(number_of_items - 3, number_of_items):
+                for i in range(
+                    number_of_items - edge_items // 2, number_of_items
+                ):
                     result = (
                         result
                         + str(" ") * (dimension + 1)
                         + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     )
                     if i < (number_of_items - 1):
                         result = result + "\n"
             result = result + "]"
             return result
+
+    fn _format_value(
+        self,
+        value: ComplexSIMD[cdtype, dtype=dtype],
+        print_options: PrintOptions,
+    ) raises -> String:
+        """
+        Format a complex value based on the print options.
+
+        Args:
+            value: The complex value to format.
+            print_options: The print options.
+
+        Returns:
+            The formatted value as a string.
+        """
+        var sign = print_options.sign
+        var float_format = print_options.float_format
+        var nan_string = print_options.nan_string
+        var inf_string = print_options.inf_string
+        var formatted_width = print_options.formatted_width
+        var complex_format = print_options.complex_format
+
+        var re_str: String
+        var im_str: String
+
+        if dtype.is_floating_point():
+            if isnan(value.re):
+                re_str = nan_string
+            elif isinf(value.re):
+                re_str = inf_string
+            else:
+                if float_format == "scientific":
+                    re_str = format_float_scientific(
+                        value.re, print_options.precision, sign
+                    )
+                else:
+                    re_str = format_floating_precision(
+                        value.re, print_options.precision, sign
+                    )
+
+            if isnan(value.im):
+                im_str = nan_string
+            elif isinf(value.im):
+                im_str = inf_string
+            else:
+                if float_format == "scientific":
+                    im_str = format_float_scientific(
+                        value.im, print_options.precision, sign
+                    )
+                else:
+                    im_str = format_floating_precision(
+                        value.im, print_options.precision, sign
+                    )
+
+            if value.re == 0 and value.im == 0:
+                im_str = "+" + im_str
+        else:
+            re_str = str(value.re)
+            im_str = str(value.im)
+            if sign:
+                if value.re >= 0:
+                    re_str = "+" + re_str
+                if value.im >= 0:
+                    im_str = "+" + im_str
+                elif value.im <= 0:
+                    im_str = "-" + im_str.replace("-", "")
+            else:
+                if value.im <= 0:
+                    im_str = "-" + im_str.replace("-", "")
+
+        re_str = re_str.rjust(formatted_width)
+        im_str = im_str.rjust(formatted_width)
+
+        if complex_format == "parentheses":
+            return String("({0} {1}j)").format(re_str, im_str)
+        else:
+            return String("{0} {1}j").format(re_str, im_str)
 
     fn __len__(self) -> Int:
         return int(self._re.size)

@@ -6,9 +6,12 @@ from .item import Item
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
 
-from .complex_dtype import CDType
-from .complex_simd import ComplexSIMD, ComplexScalar
-from .complex_ndarray import ComplexNDArray
+from .complex import (
+    CDType,
+    ComplexSIMD,
+    ComplexScalar,
+    ComplexNDArray,
+)
 
 from .datatypes import (
     i8,

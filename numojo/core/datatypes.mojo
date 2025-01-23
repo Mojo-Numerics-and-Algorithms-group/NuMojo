@@ -189,7 +189,7 @@ struct TypeCoercion:
 
     @parameter
     @staticmethod
-    fn result_type[T1: DType, T2: DType]() -> DType:
+    fn result[T1: DType, T2: DType]() -> DType:
         """Returns the coerced output type for two input types."""
         if T1 == T2:
             return T1

@@ -1397,19 +1397,68 @@ struct NDArray[dtype: DType = DType.float64](
             )
         return self * Scalar[dtype](-1.0)
 
+    # maybe they don't need conversion with astype.
+    @always_inline("nodebug")
+    fn __eq__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise equivalence.
+        """
+        return comparison.equal[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
+    @always_inline("nodebug")
+    fn __eq__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise equivalence.
+        """
+        return comparison.equal[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
         """
-        Itemwise equivelence.
+        Itemwise equivalence.
         """
         return comparison.equal[dtype](self, other)
 
     @always_inline("nodebug")
     fn __eq__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
-        Itemwise equivelence between scalar and Array.
+        Itemwise equivalence between scalar and Array.
         """
         return comparison.equal[dtype](self, other)
+
+    @always_inline("nodebug")
+    fn __ne__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise nonequivelence.
+        """
+        return comparison.not_equal[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
+    @always_inline("nodebug")
+    fn __ne__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise nonequivelence between scalar and Array.
+        """
+        return comparison.not_equal[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -1426,6 +1475,30 @@ struct NDArray[dtype: DType = DType.float64](
         return comparison.not_equal[dtype](self, other)
 
     @always_inline("nodebug")
+    fn __lt__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than.
+        """
+        return comparison.less[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    @always_inline("nodebug")
+    fn __lt__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than between scalar and Array.
+        """
+        return comparison.less[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
+    @always_inline("nodebug")
     fn __lt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise less than.
@@ -1438,6 +1511,30 @@ struct NDArray[dtype: DType = DType.float64](
         Itemwise less than between scalar and Array.
         """
         return comparison.less[dtype](self, other)
+
+    @always_inline("nodebug")
+    fn __le__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal to.
+        """
+        return comparison.less_equal[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    @always_inline("nodebug")
+    fn __le__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal to between scalar and Array.
+        """
+        return comparison.less_equal[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -1454,6 +1551,30 @@ struct NDArray[dtype: DType = DType.float64](
         return comparison.less_equal[dtype](self, other)
 
     @always_inline("nodebug")
+    fn __gt__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than.
+        """
+        return comparison.greater[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    @always_inline("nodebug")
+    fn __gt__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than between scalar and Array.
+        """
+        return comparison.greater[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
+
+    @always_inline("nodebug")
     fn __gt__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
         """
         Itemwise greater than.
@@ -1466,6 +1587,30 @@ struct NDArray[dtype: DType = DType.float64](
         Itemwise greater than between scalar and Array.
         """
         return comparison.greater[dtype](self, other)
+
+    @always_inline("nodebug")
+    fn __ge__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than or equal to.
+        """
+        return comparison.greater_equal[ResultDType](
+            self.astype[ResultDType](), other.cast[ResultDType]()
+        )
+
+    @always_inline("nodebug")
+    fn __ge__[
+        OtherDtype: DType,
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
+    ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal to between scalar and Array.
+        """
+        return comparison.greater_equal[ResultDType](
+            self.astype[ResultDType](), other.astype[ResultDType]()
+        )
 
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
@@ -1483,7 +1628,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __add__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array + scalar`.
@@ -1496,7 +1641,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __add__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array + array`.
@@ -1519,7 +1664,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __radd__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar + array`.
@@ -1554,7 +1699,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __sub__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array - scalar`.
@@ -1565,7 +1710,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __sub__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array - array`.
@@ -1588,7 +1733,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __rsub__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar - array`.
@@ -1620,7 +1765,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __mul__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array * scalar`.
@@ -1631,7 +1776,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __mul__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array * array`.
@@ -1654,7 +1799,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __rmul__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar * array`.
@@ -1736,7 +1881,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __truediv__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array / scalar`.
@@ -1747,7 +1892,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __truediv__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array / array`.
@@ -1782,7 +1927,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __rtruediv__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, s: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar / array`.
@@ -1799,7 +1944,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __floordiv__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array // scalar`.
@@ -1810,7 +1955,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __floordiv__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array // array`.
@@ -1845,7 +1990,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __rfloordiv__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar // array`.
@@ -1862,7 +2007,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __mod__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array % scalar`.
@@ -1873,7 +2018,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __mod__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `array % array`.
@@ -1914,7 +2059,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __rmod__[
         OtherDType: DType,
-        ResultDType: DType = TypeCoercion.result_type[dtype, OtherDType](),
+        ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
     ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
         """
         Enables `scalar % array`.

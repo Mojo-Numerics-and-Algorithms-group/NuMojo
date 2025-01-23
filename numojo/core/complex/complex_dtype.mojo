@@ -532,7 +532,7 @@ struct CDType(
             rhs: The CDType to compare against.
 
         Returns:
-            True if the DTypes are the same and False otherwise.
+            True if the CDTypes are the same and False otherwise.
         """
         return self != rhs
 

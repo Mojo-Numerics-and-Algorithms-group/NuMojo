@@ -4,6 +4,7 @@ from .complex_dtype import CDType
 
 alias ComplexScalar = ComplexSIMD[_, size=1]
 
+
 @register_passable("trivial")
 struct ComplexSIMD[
     cdtype: CDType, *, dtype: DType = CDType.to_dtype[cdtype](), size: Int = 1

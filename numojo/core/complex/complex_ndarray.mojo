@@ -4,16 +4,16 @@ Last updated: 2025-01-24
 """
 
 
-import builtin.math as builtin_math
+from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from algorithm import parallelize, vectorize
-from python import Python, PythonObject
-from sys import simdwidthof
+import builtin.math as builtin_math
 from collections import Dict
 from collections.optional import Optional
-from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
+from python import Python, PythonObject
+from sys import simdwidthof
+from utils import Variant
 from utils.numerics import isnan, isinf
 
 import numojo.routines.sorting as sorting
@@ -48,6 +48,7 @@ from numojo.core.utility import (
 from numojo.routines.io.formatting import (
     format_floating_precision,
     format_floating_scientific,
+    format_value,
     PrintOptions,
     printoptions,
     GLOBAL_PRINT_OPTIONS,
@@ -1526,9 +1527,7 @@ struct ComplexNDArray[
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = self._format_value(
-                        value, print_options
-                    )
+                    var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
                     if i < (number_of_items - 1):
                         result = result + seperator
@@ -1538,9 +1537,7 @@ struct ComplexNDArray[
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = self._format_value(
-                        value, print_options
-                    )
+                    var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
                     if i < (edge_items // 2 - 1):
                         result = result + seperator
@@ -1551,9 +1548,7 @@ struct ComplexNDArray[
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = self._format_value(
-                        value, print_options
-                    )
+                    var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
                     if i < (number_of_items - 1):
                         result = result + seperator
@@ -1620,84 +1615,6 @@ struct ComplexNDArray[
                         result = result + "\n"
             result = result + "]"
             return result
-
-    fn _format_value(
-        self,
-        value: ComplexSIMD[cdtype, dtype=dtype],
-        print_options: PrintOptions,
-    ) raises -> String:
-        """
-        Format a complex value based on the print options.
-
-        Args:
-            value: The complex value to format.
-            print_options: The print options.
-
-        Returns:
-            The formatted value as a string.
-        """
-        var sign = print_options.sign
-        var float_format = print_options.float_format
-        var nan_string = print_options.nan_string
-        var inf_string = print_options.inf_string
-        var formatted_width = print_options.formatted_width
-        var complex_format = print_options.complex_format
-
-        var re_str: String
-        var im_str: String
-
-        if dtype.is_floating_point():
-            if isnan(value.re):
-                re_str = nan_string
-            elif isinf(value.re):
-                re_str = inf_string
-            else:
-                if float_format == "scientific":
-                    re_str = format_floating_scientific(
-                        value.re, print_options.precision, sign
-                    )
-                else:
-                    re_str = format_floating_precision(
-                        value.re, print_options.precision, sign
-                    )
-
-            if isnan(value.im):
-                im_str = nan_string
-            elif isinf(value.im):
-                im_str = inf_string
-            else:
-                if float_format == "scientific":
-                    im_str = format_floating_scientific(
-                        value.im, print_options.precision, sign
-                    )
-                else:
-                    im_str = format_floating_precision(
-                        value.im, print_options.precision, sign
-                    )
-
-            if value.re == 0 and value.im == 0:
-                im_str = "+" + im_str
-        else:
-            re_str = str(value.re)
-            im_str = str(value.im)
-            if sign:
-                if value.re >= 0:
-                    re_str = "+" + re_str
-                if value.im >= 0:
-                    im_str = "+" + im_str
-                elif value.im <= 0:
-                    im_str = "-" + im_str.replace("-", "")
-            else:
-                if value.im <= 0:
-                    im_str = "-" + im_str.replace("-", "")
-
-        re_str = re_str.rjust(formatted_width)
-        im_str = im_str.rjust(formatted_width)
-
-        if complex_format == "parentheses":
-            return String("({0} {1}j)").format(re_str, im_str)
-        else:
-            return String("{0} {1}j").format(re_str, im_str)
 
     fn __len__(self) -> Int:
         return int(self._re.size)

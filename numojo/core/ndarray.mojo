@@ -41,6 +41,7 @@ from numojo.core.utility import (
 from numojo.routines.io.formatting import (
     format_floating_precision,
     format_floating_scientific,
+    format_value,
     PrintOptions,
     printoptions,
     GLOBAL_PRINT_OPTIONS,
@@ -2278,9 +2279,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = self._format_value(
-                        value, print_options
-                    )
+                    var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
                     if i < (number_of_items - 1):
                         result = result + seperator
@@ -2290,9 +2289,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = self._format_value(
-                        value, print_options
-                    )
+                    var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
                     if i < (edge_items // 2 - 1):
                         result = result + seperator
@@ -2303,9 +2300,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = self._format_value(
-                        value, print_options
-                    )
+                    var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
                     if i < (number_of_items - 1):
                         result = result + seperator
@@ -2372,45 +2367,6 @@ struct NDArray[dtype: DType = DType.float64](
                         result = result + "\n"
             result = result + "]"
             return result
-
-    fn _format_value[
-        dtype: DType
-    ](self, value: Scalar[dtype], print_options: PrintOptions) raises -> String:
-        """
-        Format a single value based on the print options.
-
-        Args:
-            value: The value to format.
-            print_options: The print options.
-
-        Returns:
-            The formatted value as a string.
-        """
-        var sign = print_options.sign
-        var float_format = print_options.float_format
-        var nan_string = print_options.nan_string
-        var inf_string = print_options.inf_string
-        var formatted_width = print_options.formatted_width
-
-        @parameter
-        if is_floattype[dtype]():
-            if isnan(value):
-                return nan_string.rjust(formatted_width)
-            if isinf(value):
-                return inf_string.rjust(formatted_width)
-            if float_format == "scientific":
-                return format_floating_scientific(
-                    value, print_options.precision, sign
-                )
-            else:
-                return format_floating_precision(
-                    value, print_options.precision, sign
-                ).rjust(formatted_width)
-        else:
-            var formatted = str(value)
-            if sign and value > 0:
-                formatted = "+" + formatted
-            return formatted.rjust(formatted_width)
 
     # ===-------------------------------------------------------------------===#
     # Methods

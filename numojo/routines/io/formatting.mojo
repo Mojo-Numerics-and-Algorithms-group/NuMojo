@@ -1,6 +1,8 @@
-import math as mt
 from builtin.math import pow
-from numojo.core.utility import is_inttype
+import math as mt
+from utils.numerics import isnan, isinf
+
+from numojo.core.utility import is_inttype, is_floattype
 
 alias DEFAULT_PRECISION = 4
 alias DEFAULT_SUPPRESS_SMALL = False
@@ -345,3 +347,124 @@ fn format_floating_precision[
         )
     except:
         raise Error("Failed to format complex floating-point value.")
+
+
+fn format_value[
+    dtype: DType
+](value: Scalar[dtype], print_options: PrintOptions) raises -> String:
+    """
+    Format a single value based on the print options.
+
+    Args:
+        value: The value to format.
+        print_options: The print options.
+
+    Returns:
+        The formatted value as a string.
+    """
+    var sign = print_options.sign
+    var float_format = print_options.float_format
+    var nan_string = print_options.nan_string
+    var inf_string = print_options.inf_string
+    var formatted_width = print_options.formatted_width
+
+    @parameter
+    if is_floattype[dtype]():
+        if isnan(value):
+            return nan_string.rjust(formatted_width)
+        if isinf(value):
+            return inf_string.rjust(formatted_width)
+        if float_format == "scientific":
+            return format_floating_scientific(
+                value, print_options.precision, sign
+            )
+        else:
+            return format_floating_precision(
+                value, print_options.precision, sign
+            ).rjust(formatted_width)
+    else:
+        var formatted = str(value)
+        if sign and value > 0:
+            formatted = "+" + formatted
+        return formatted.rjust(formatted_width)
+
+
+fn format_value[
+    cdtype: CDType, dtype: DType
+](
+    value: ComplexSIMD[cdtype, dtype=dtype],
+    print_options: PrintOptions,
+) raises -> String:
+    """
+    Format a complex value based on the print options.
+
+    Args:
+        value: The complex value to format.
+        print_options: The print options.
+
+    Returns:
+        The formatted value as a string.
+    """
+
+    var sign = print_options.sign
+    var float_format = print_options.float_format
+    var nan_string = print_options.nan_string
+    var inf_string = print_options.inf_string
+    var formatted_width = print_options.formatted_width
+    var complex_format = print_options.complex_format
+
+    var re_str: String
+    var im_str: String
+
+    if dtype.is_floating_point():
+        if isnan(value.re):
+            re_str = nan_string
+        elif isinf(value.re):
+            re_str = inf_string
+        else:
+            if float_format == "scientific":
+                re_str = format_floating_scientific(
+                    value.re, print_options.precision, sign
+                )
+            else:
+                re_str = format_floating_precision(
+                    value.re, print_options.precision, sign
+                )
+
+        if isnan(value.im):
+            im_str = nan_string
+        elif isinf(value.im):
+            im_str = inf_string
+        else:
+            if float_format == "scientific":
+                im_str = format_floating_scientific(
+                    value.im, print_options.precision, sign
+                )
+            else:
+                im_str = format_floating_precision(
+                    value.im, print_options.precision, sign
+                )
+
+        if value.re == 0 and value.im == 0:
+            im_str = "+" + im_str
+    else:
+        re_str = str(value.re)
+        im_str = str(value.im)
+        if sign:
+            if value.re >= 0:
+                re_str = "+" + re_str
+            if value.im >= 0:
+                im_str = "+" + im_str
+            elif value.im <= 0:
+                im_str = "-" + im_str.replace("-", "")
+        else:
+            if value.im <= 0:
+                im_str = "-" + im_str.replace("-", "")
+
+    re_str = re_str.rjust(formatted_width)
+    im_str = im_str.rjust(formatted_width)
+
+    if complex_format == "parentheses":
+        return String("({0} {1}j)").format(re_str, im_str)
+    else:
+        return String("{0} {1}j").format(re_str, im_str)

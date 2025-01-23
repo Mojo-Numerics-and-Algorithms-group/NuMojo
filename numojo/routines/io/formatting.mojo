@@ -181,7 +181,7 @@ fn set_printoptions(
 
 
 # TODO: fix the problem where precision > number of digits in the mantissa results in a not so exact value.
-fn format_float_scientific[
+fn format_floating_scientific[
     dtype: DType = DType.float64
 ](x: Scalar[dtype], precision: Int = 10, sign: Bool = False) raises -> String:
     """
@@ -202,7 +202,9 @@ fn format_float_scientific[
         Error: If the dtype is not a floating-point type or if precision is negative.
     """
     if dtype.is_integral():
-        raise Error("Invalid type provided. dtype must be a floating-point type.")
+        raise Error(
+            "Invalid type provided. dtype must be a floating-point type."
+        )
     if precision < 0:
         raise Error("Precision must be a non-negative integer.")
 
@@ -218,7 +220,7 @@ fn format_float_scientific[
 
         for i in range(2, precision + 2):
             if i >= len(m_string):
-                result += "0"  
+                result += "0"
             else:
                 result += m_string[i]
 

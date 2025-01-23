@@ -39,7 +39,7 @@ from numojo.core.utility import (
 
 from numojo.routines.io.formatting import (
     format_floating_precision,
-    format_float_scientific,
+    format_floating_scientific,
     PrintOptions,
     printoptions,
     GLOBAL_PRINT_OPTIONS,
@@ -2397,7 +2397,7 @@ struct NDArray[dtype: DType = DType.float64](
             if isinf(value):
                 return inf_string
             if float_format == "scientific":
-                return format_float_scientific(
+                return format_floating_scientific(
                     value, print_options.precision, sign
                 )
             else:

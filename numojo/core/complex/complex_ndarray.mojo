@@ -1,6 +1,6 @@
 """
 Implements N-Dimensional Complex Array
-Last updated: 2025-01-06
+Last updated: 2025-01-24
 """
 
 
@@ -47,6 +47,7 @@ from numojo.core.utility import (
 
 from numojo.routines.io.formatting import (
     format_floating_precision,
+    format_floating_scientific,
     PrintOptions,
     printoptions,
     GLOBAL_PRINT_OPTIONS,
@@ -1652,7 +1653,7 @@ struct ComplexNDArray[
                 re_str = inf_string
             else:
                 if float_format == "scientific":
-                    re_str = format_float_scientific(
+                    re_str = format_floating_scientific(
                         value.re, print_options.precision, sign
                     )
                 else:
@@ -1666,7 +1667,7 @@ struct ComplexNDArray[
                 im_str = inf_string
             else:
                 if float_format == "scientific":
-                    im_str = format_float_scientific(
+                    im_str = format_floating_scientific(
                         value.im, print_options.precision, sign
                     )
                 else:

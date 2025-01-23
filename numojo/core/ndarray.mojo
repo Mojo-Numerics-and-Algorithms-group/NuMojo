@@ -19,6 +19,7 @@ from python import Python, PythonObject
 from sys import simdwidthof
 from tensor import Tensor
 from utils import Variant
+from utils.numerics import isnan, isinf
 
 import numojo.core._array_funcs as _af
 from numojo.core.ndshape import NDArrayShape
@@ -37,7 +38,8 @@ from numojo.core.utility import (
 )
 
 from numojo.routines.io.formatting import (
-    format_floating_values,
+    format_floating_precision,
+    format_float_scientific,
     PrintOptions,
     printoptions,
     GLOBAL_PRINT_OPTIONS,
@@ -2263,36 +2265,47 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var seperator = print_options.separator
         var padding = print_options.padding
-        var items_to_display = print_options.items_to_display
+        var edge_items = print_options.edge_items
 
         if self.ndim == 0:
             return str(self.item(0))
         if dimension == self.ndim - 1:
             var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
-            if number_of_items <= items_to_display:  # Print all items
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
-                    result = result + format_floating_values(
-                        self.load[width=1](offset + i * self.strides[dimension])
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-
+                    var formatted_value = self._format_value(
+                        value, print_options
+                    )
+                    result = result + formatted_value
                     if i < (number_of_items - 1):
                         result = result + seperator
                 result = result + padding
             else:  # Print first 3 and last 3 items
-                for i in range(items_to_display // 2):
-                    result = result + format_floating_values(
-                        self.load[width=1](offset + i * self.strides[dimension])
+                for i in range(edge_items // 2):
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    if i < (items_to_display // 2 - 1):
+                    var formatted_value = self._format_value(
+                        value, print_options
+                    )
+                    result = result + formatted_value
+                    if i < (edge_items // 2 - 1):
                         result = result + seperator
                 result = result + seperator + "..." + seperator
                 for i in range(
-                    number_of_items - items_to_display // 2, number_of_items
+                    number_of_items - edge_items // 2, number_of_items
                 ):
-                    result = result + format_floating_values(
-                        self.load[width=1](offset + i * self.strides[dimension])
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
+                    var formatted_value = self._format_value(
+                        value, print_options
+                    )
+                    result = result + formatted_value
                     if i < (number_of_items - 1):
                         result = result + seperator
                 result = result + padding
@@ -2301,7 +2314,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             var result: String = str("[")
             var number_of_items = self.shape[dimension]
-            if number_of_items <= items_to_display:  # Print all items
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
                         result = result + self._array_to_string(
@@ -2322,7 +2335,7 @@ struct NDArray[dtype: DType = DType.float64](
                     if i < (number_of_items - 1):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
-                for i in range(items_to_display // 2):
+                for i in range(edge_items // 2):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
@@ -2343,7 +2356,7 @@ struct NDArray[dtype: DType = DType.float64](
                         result += "\n"
                 result = result + "...\n"
                 for i in range(
-                    number_of_items - items_to_display // 2, number_of_items
+                    number_of_items - edge_items // 2, number_of_items
                 ):
                     result = (
                         result
@@ -2358,6 +2371,44 @@ struct NDArray[dtype: DType = DType.float64](
                         result = result + "\n"
             result = result + "]"
             return result
+
+    fn _format_value[
+        dtype: DType
+    ](self, value: Scalar[dtype], print_options: PrintOptions) raises -> String:
+        """
+        Format a single value based on the print options.
+
+        Args:
+            value: The value to format.
+            print_options: The print options.
+
+        Returns:
+            The formatted value as a string.
+        """
+        var sign = print_options.sign
+        var float_format = print_options.float_format
+        var nan_string = print_options.nan_string
+        var inf_string = print_options.inf_string
+        var formatted_width = print_options.formatted_width
+
+        if dtype.is_floating_point():
+            if isnan(value):
+                return nan_string
+            if isinf(value):
+                return inf_string
+            if float_format == "scientific":
+                return format_float_scientific(
+                    value, print_options.precision, sign
+                )
+            else:
+                return format_floating_precision(
+                    value, print_options.precision, sign
+                )
+        else:
+            var formatted = str(value)
+            if sign and value > 0:
+                formatted = "+" + formatted
+            return formatted.rjust(formatted_width)
 
     # ===-------------------------------------------------------------------===#
     # Methods

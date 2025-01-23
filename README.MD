@@ -153,7 +153,24 @@ fn main() raises:
 
 ## How to install
 
-There are two approach to install and use the Numojo package.
+There are three approach to install and use the Numojo package.
+
+### Use magic CLI
+
+You can use the following command in the terminal to install `numojo`.
+
+```console
+magic add numojo 
+```
+
+### Add in toml file
+
+You can add `numojo` in the dependencies section of your toml file.
+
+```toml
+[dependencies]
+numojo = "==0.5"
+```
 
 ### Build package
 

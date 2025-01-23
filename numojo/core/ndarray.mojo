@@ -2399,9 +2399,13 @@ struct NDArray[dtype: DType = DType.float64](
             if isinf(value):
                 return inf_string.rjust(formatted_width)
             if float_format == "scientific":
-                return format_floating_scientific(value, print_options.precision, sign)
+                return format_floating_scientific(
+                    value, print_options.precision, sign
+                )
             else:
-                return format_floating_precision(value, print_options.precision, sign).rjust(formatted_width)
+                return format_floating_precision(
+                    value, print_options.precision, sign
+                ).rjust(formatted_width)
         else:
             var formatted = str(value)
             if sign and value > 0:

@@ -7,13 +7,16 @@ This is a list of RELEASED changes for the NuMojo Package.
 ### ⭐️ New
 
 - Add support for complex arrays `ComplexNDArray`, `ComplexSIMD`, `CDType` ([PR #165](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/165)).
-- Add `TypeCoercion` struct that calculates the resultant type based on two initial data types according to numpy rules ([PR #164](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/164)).
+- Add `TypeCoercion` struct that calculates the resultant type based on two initial data types. Apply type coercion to math functions ([PR #164](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/164), [PR #189](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/189)).
 - Add `OwnData` type as container of data buffer for `NDArray` and `Matrix`. The property `_buf` is changed from `UnsafePointer` to `OwnData`. Introduced `RefData` struct and `Bufferable` trait. This step prepares for future support of array views and facilitates an easy transition once parameterized traits are integrated into Mojo ([PR #175](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/175), [PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170), [PR #178](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/178)).
+- Add `NDIter` type as a iterator over the array items according to a certain memory layout. Use `NDArray.nditer()` to construct the iterator ([PR #188](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/188)).
 - Add an additional data type mapping for `NDArray.to_numpy`, i.e., `DType.index` is mapped to `numpy.intp` ([PR #157](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/157)).
 - Add method `NDArray.resize` that reshapes the array in-place ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
 - Add a new property `flags` for `NDArray` and `Matrix` to store memory layout of the array, e.g., c-continuous, f-continuous, own data. The memory layout is determined by both strides and shape of the array ([PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170), [PR #178](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/178)).
-- Add `det` function calculating the determinant of array ([PR #171](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/171)).
-- Add Householder-based QR decomposition for matrix ([PR #172](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/172)).
+- Add functions `to_tensor` and `from_tensor` (also an overload of `array`) that convert between `NDArray` and MAX `Tensor` ([Issue #183](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/183), [PR #184](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/184)).
+- Add several functions for linear algebra:
+  - Add `det` function calculating the determinant of array ([PR #171](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/171)).
+  - Add Householder-based QR decomposition for matrix ([PR #172](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/172)).
 
 ### 🦋 Changed
 
@@ -22,16 +25,20 @@ This is a list of RELEASED changes for the NuMojo Package.
   - Update `item` method to allow negative index and conduct boundary checks on that ([PR #167](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/167)).
   - Update `item` function so that it allows both setting and getting values, e.g., `a.item(1,2)` and `a.item(1,2) = 10` ([PR #176](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/176)).
   - Refine the `__init__` overloads ([PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170)).
-- Rename the underlying buffer of `Idx` type to `_buf` ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
+- Allow getting items from `NDArray` with a list or array of indices, while the array can be multi-dimensional. Allow getting items from `NDArray` with a list or array of boolean values, while the array can be both one-dimensional or multi-dimensional ([PR #180](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/180), [PR #182](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/182)).
 - Rename `Idx` struct as `Item`.You can get scalar from array using `a[item(1,2)]` ([PR #176](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/176)).
-- Integrate `mat` sub-package into `core` and `routines` modules, so that users can use a uniformed way to call functions for both `Matrix` and `NDArray` types ([PR #177](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/177))..
+- Update the constructor of the `Item` type to allow passing int-like values in ([PR #185](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/185)).
+- Integrate `mat` sub-package into `core` and `routines` modules, so that users can use a uniformed way to call functions for both `Matrix` and `NDArray` types ([PR #177](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/177)).
 - Update the following functions to allow operation by any axis:
   - `argsort` ([PR #157](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/157)).
   - `cumsum` and `cumprod` ([PR #160](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/160)).
   - `flip` ([PR #163](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/163)).
 - Update `matmul` to enable multiplication between two arrays of any dimensions ([PR #159](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/159)).
 - Refine the function `reshape` so that it is working on any dimensions and is working on both row-major and col-major. This also allows us to change the order with the code ```A.reshape(A.shape, "F"))```. Also refine functions `flatten`, `ravel` ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
+- Remove `size` property from `NDArrayShape` and add `size_of_array` method to get the size of the corresponding array ([PR #181](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/181)).
+- Improve the string representation of `NDArray`, `NDArrayShape`, `NDArrayStrides`, and `Item`, e.g., `str()`, `repr()`, `print()`. Allow customized separators, paddings, and number of items to display for `NDArray._array_to_string` method ([PR #185](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/185), [PR #186](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/186)).
 - Rename the auxiliary function `_get_index` as `_get_offset` ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
+- Rename the underlying buffer of `Idx` type to `_buf` ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
 - Return a view instead of copy for iterator of `NDArray` ([PR #174](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/174)).
 
 ### ❌ Removed
@@ -49,6 +56,8 @@ This is a list of RELEASED changes for the NuMojo Package.
 ### 📚 Documentatory and testing
 
 - Add `magic run t`, `magic run f`, and `magic run p` for the magic CLI. They first clear the terminal before running `test`,`final`, and `package`.
+- Allow partial testing via command, e.g., `magic run test_creation`, to avoid overheat.
+- Convert the readme file into pure markdown syntax ([PR #187](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/187)).
 
 ## 22/12/2024 (v0.4)
 

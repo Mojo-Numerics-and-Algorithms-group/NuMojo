@@ -23,7 +23,7 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
 
     @parameter
     fn cal_and[width: Int](i: Int):
-        res = res & A._buf.load[width=width](i).reduce_and()
+        res = res & A._buf.ptr.load[width=width](i).reduce_and()
 
     vectorize[cal_and, width](A.size)
     return res
@@ -133,7 +133,7 @@ fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
 
     @parameter
     fn cal_and[width: Int](i: Int):
-        res = res | A._buf.load[width=width](i).reduce_or()
+        res = res | A._buf.ptr.load[width=width](i).reduce_or()
 
     vectorize[cal_and, width](A.size)
     return res

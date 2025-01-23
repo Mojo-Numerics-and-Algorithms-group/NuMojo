@@ -434,7 +434,7 @@ struct ComplexNDArray[
         var ndims: Int = 0
         var count: Int = 0
         var spec: List[Int] = List[Int]()
-        var slice_list: List[Slice] = self._adjust_slice_(slices)
+        var slice_list: List[Slice] = self._adjust_slice(slices)
         for i in range(n_slices):
             if (
                 slice_list[i].start.value() >= self.shape[i]
@@ -666,7 +666,7 @@ struct ComplexNDArray[
             im=self._im._buf.ptr.load[width=1](idx),
         )
 
-    fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
+    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
         """
         Adjusts the slice values to lie within 0 and dim.
         """
@@ -748,7 +748,7 @@ struct ComplexNDArray[
         var spec: List[Int] = List[Int]()
         var count: Int = 0
 
-        var slices: List[Slice] = self._adjust_slice_(slice_list)
+        var slices: List[Slice] = self._adjust_slice(slice_list)
         for i in range(slices.__len__()):
             if (
                 slices[i].start.value() >= self.shape[i]

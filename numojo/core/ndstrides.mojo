@@ -7,8 +7,10 @@ Implements NDArrayStrides type.
 from utils import Variant
 from memory import UnsafePointer, memcpy
 
+alias Strides = NDArrayStrides
 
-@register_passable("trivial")
+
+@register_passable
 struct NDArrayStrides(Stringable):
     """Implements the NDArrayStrides."""
 
@@ -137,6 +139,12 @@ struct NDArrayStrides(Stringable):
             )
 
     @always_inline("nodebug")
+    fn __copyinit__(out self, other: Self):
+        self.ndim = other.ndim
+        self._buf = UnsafePointer[Int]().alloc(other.ndim)
+        memcpy(self._buf, other._buf, other.ndim)
+
+    @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         if index >= self.ndim:
             raise Error("Index out of bound")
@@ -159,18 +167,27 @@ struct NDArrayStrides(Stringable):
         return self.ndim
 
     @always_inline("nodebug")
+    fn __repr__(self) -> String:
+        """
+        Return a string of the strides of the array.
+        """
+        return "numojo.Strides" + str(self)
+
+    @always_inline("nodebug")
     fn __str__(self) -> String:
-        return String.write(self)
+        """
+        Return a string of the strides of the array.
+        """
+        var result: String = "("
+        for i in range(self.ndim):
+            result += str(self._buf[i])
+            if i < self.ndim - 1:
+                result += ","
+        result = result + ")"
+        return result
 
     fn write_to[W: Writer](self, mut writer: W):
-        var result: String = "Stride: ["
-        for i in range(self.ndim):
-            if i == self.ndim - 1:
-                result += self._buf[i].__str__()
-            else:
-                result += self._buf[i].__str__() + ", "
-        result = result + "]"
-        writer.write(result)
+        writer.write("Strides: " + str(self) + "  " + "ndim: " + str(self.ndim))
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:

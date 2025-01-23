@@ -6,7 +6,7 @@ Datatypes Module - Implements datatypes aliases, conversions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 
-# Rust-like data type alias
+# Rust-like or numpy-like data type alias
 """alias for `DType.int8`"""
 alias i8 = DType.int8
 """Data type alias for DType.int8"""
@@ -17,6 +17,8 @@ alias i32 = DType.int32
 alias i64 = DType.int64
 """Data type alias for DType.int64"""
 alias isize = DType.index
+"""Data type alias for DType.index"""
+alias intp = DType.index
 """Data type alias for DType.index"""
 alias u8 = DType.uint8
 """Data type alias for DType.uint8"""
@@ -32,6 +34,8 @@ alias f32 = DType.float32
 """Data type alias for DType.float32"""
 alias f64 = DType.float64
 """Data type alias for DType.float64"""
+alias boolean = DType.bool
+"""Data type alias for DType.bool"""
 
 # ===----------------------------------------------------------------------=== #
 

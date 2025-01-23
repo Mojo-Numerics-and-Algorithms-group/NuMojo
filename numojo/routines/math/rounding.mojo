@@ -22,7 +22,7 @@ fn round[
     # It will be fixed in future.
 
     for i in range(A.size):
-        A._buf[i] = builtin_math.round(A._buf[i], ndigits=decimals)
+        A._buf.ptr[i] = builtin_math.round(A._buf.ptr[i], ndigits=decimals)
 
     return A^
 

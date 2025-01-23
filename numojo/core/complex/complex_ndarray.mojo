@@ -1,19 +1,20 @@
 """
 Implements N-Dimensional Complex Array
-Last updated: 2025-01-06
+Last updated: 2025-01-24
 """
 
 
-import builtin.math as builtin_math
+from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from algorithm import parallelize, vectorize
-from python import Python, PythonObject
-from sys import simdwidthof
+import builtin.math as builtin_math
 from collections import Dict
 from collections.optional import Optional
-from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
+from python import Python, PythonObject
+from sys import simdwidthof
+from utils import Variant
+from utils.numerics import isnan, isinf
 
 import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
@@ -30,7 +31,7 @@ from numojo.routines.linalg.products import matmul
 from numojo.routines.manipulation import reshape, ravel
 
 import numojo.core._array_funcs as _af
-from numojo.core.datatypes import TypeCoercion
+from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
@@ -42,6 +43,15 @@ from numojo.core.utility import (
     _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
+)
+
+from numojo.routines.io.formatting import (
+    format_floating_precision,
+    format_floating_scientific,
+    format_value,
+    PrintOptions,
+    printoptions,
+    GLOBAL_PRINT_OPTIONS,
 )
 
 
@@ -1421,20 +1431,28 @@ struct ComplexNDArray[
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:
         """
-        Enables str(ComplexNDArray).
+        Enables str(array).
         """
-        return String.write(self)
+        var res: String
+        try:
+            res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
+        except e:
+            res = String("Cannot convert array to string") + str(e)
+
+        return res
 
     fn write_to[W: Writer](self, mut writer: W):
         try:
             writer.write(
-                self._array_to_string(0, 0)
+                self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
                 + "\n"
                 + str(self.ndim)
-                + "-D array  "
-                + self.shape.__str__()
-                + "  C-DType: "
-                + Self.cdtype.__str__()
+                + "D-array  Shape"
+                + str(self.shape)
+                + "  Strides"
+                + str(self.strides)
+                + "  DType: "
+                + _concise_dtype_str(self.dtype)
                 + "  C-cont: "
                 + str(self.flags["C_CONTIGUOUS"])
                 + "  F-cont: "
@@ -1443,7 +1461,7 @@ struct ComplexNDArray[
                 + str(self.flags["OWNDATA"])
             )
         except e:
-            writer.write("Cannot convert array to string")
+            writer.write("Cannot convert array to string" + str(e))
 
     fn __repr__(self) -> String:
         """
@@ -1481,50 +1499,72 @@ struct ComplexNDArray[
             print("Cannot convert array to string", e)
             return ""
 
-    fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
+    fn _array_to_string(
+        self,
+        dimension: Int,
+        offset: Int,
+        print_options: PrintOptions,
+    ) raises -> String:
+        """
+        Convert the array to a string.
+
+        Args:
+            dimension: The current dimension.
+            offset: The offset of the current dimension.
+            print_options: The print options.
+        """
+        var seperator = print_options.separator
+        var padding = print_options.padding
+        var edge_items = print_options.edge_items
+
         if self.ndim == 0:
             return str(self.item(0))
         if dimension == self.ndim - 1:
-            var result: String = str("[\t")
+            var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.strides[dimension]
-                        ).__str__()
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
+                    var formatted_value = format_value(value, print_options)
+                    result = result + formatted_value
+                    if i < (number_of_items - 1):
+                        result = result + seperator
+                result = result + padding
             else:  # Print first 3 and last 3 items
-                for i in range(3):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.strides[dimension]
-                        ).__str__()
+                for i in range(edge_items // 2):
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
-                result = result + "...\t"
-                for i in range(number_of_items - 3, number_of_items):
-                    result = (
-                        result
-                        + self.load[width=1](
-                            offset + i * self.strides[dimension]
-                        ).__str__()
+                    var formatted_value = format_value(value, print_options)
+                    result = result + formatted_value
+                    if i < (edge_items // 2 - 1):
+                        result = result + seperator
+                result = result + seperator + "..." + seperator
+                for i in range(
+                    number_of_items - edge_items // 2, number_of_items
+                ):
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
+                    var formatted_value = format_value(value, print_options)
+                    result = result + formatted_value
+                    if i < (number_of_items - 1):
+                        result = result + seperator
+                result = result + padding
             result = result + "]"
             return result
         else:
             var result: String = str("[")
             var number_of_items = self.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     if i > 0:
                         result = (
@@ -1533,16 +1573,18 @@ struct ComplexNDArray[
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
+                                print_options,
                             )
                         )
                     if i < (number_of_items - 1):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
-                for i in range(3):
+                for i in range(edge_items // 2):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     if i > 0:
                         result = (
@@ -1551,18 +1593,22 @@ struct ComplexNDArray[
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
+                                print_options,
                             )
                         )
                     if i < (number_of_items - 1):
                         result += "\n"
                 result = result + "...\n"
-                for i in range(number_of_items - 3, number_of_items):
+                for i in range(
+                    number_of_items - edge_items // 2, number_of_items
+                ):
                     result = (
                         result
                         + str(" ") * (dimension + 1)
                         + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     )
                     if i < (number_of_items - 1):

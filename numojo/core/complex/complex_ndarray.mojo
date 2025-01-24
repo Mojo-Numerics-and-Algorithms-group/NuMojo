@@ -1533,18 +1533,16 @@ struct ComplexNDArray[
                         result = result + seperator
                 result = result + padding
             else:  # Print first 3 and last 3 items
-                for i in range(edge_items // 2):
+                for i in range(edge_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
                     var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
-                    if i < (edge_items // 2 - 1):
+                    if i < (edge_items - 1):
                         result = result + seperator
                 result = result + seperator + "..." + seperator
-                for i in range(
-                    number_of_items - edge_items // 2, number_of_items
-                ):
+                for i in range(number_of_items - edge_items, number_of_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
@@ -1579,7 +1577,7 @@ struct ComplexNDArray[
                     if i < (number_of_items - 1):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
-                for i in range(edge_items // 2):
+                for i in range(edge_items):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
@@ -1599,9 +1597,7 @@ struct ComplexNDArray[
                     if i < (number_of_items - 1):
                         result += "\n"
                 result = result + "...\n"
-                for i in range(
-                    number_of_items - edge_items // 2, number_of_items
-                ):
+                for i in range(number_of_items - edge_items, number_of_items):
                     result = (
                         result
                         + str(" ") * (dimension + 1)

@@ -14,6 +14,7 @@ import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
 from collections import Dict
 from collections.optional import Optional
+from math import log10
 from memory import UnsafePointer, memset_zero, memcpy
 from python import Python, PythonObject
 from sys import simdwidthof
@@ -2255,7 +2256,7 @@ struct NDArray[dtype: DType = DType.float64](
         self,
         dimension: Int,
         offset: Int,
-        print_options: PrintOptions,
+        mut print_options: PrintOptions,
     ) raises -> String:
         """
         Convert the array to a string.
@@ -2268,6 +2269,58 @@ struct NDArray[dtype: DType = DType.float64](
         var seperator = print_options.separator
         var padding = print_options.padding
         var edge_items = print_options.edge_items
+
+        # The following code get the max value and the min value
+        # to determine the digits before decimals and the negative sign
+        # and then determine the formatted withd
+        var negative_sign: Bool
+        var number_of_digits: Int
+        var formatted_width: Int
+        var max_value: Scalar[dtype] = self._buf.ptr[]
+        var min_value: Scalar[dtype] = self._buf.ptr[]
+
+        var skip: Bool
+        for index in range(self.size):
+            skip = False
+            var remainder = index
+            var indices = Item(ndim=self.ndim, initialized=False)
+            for i in range(self.ndim):
+                indices[i], remainder = divmod(
+                    remainder, NDArrayStrides(self.shape)[i]
+                )
+                if (indices[i] >= 3) and (indices[i] < self.shape[i] - 3):
+                    skip = True
+                    continue
+            if skip:
+                continue
+            max_value = max(
+                max_value, self._buf.ptr[_get_offset(indices, self.strides)]
+            )
+            min_value = min(
+                min_value, self._buf.ptr[_get_offset(indices, self.strides)]
+            )
+        if min_value < 0:
+            negative_sign = True
+        else:
+            negative_sign = False
+        max_value = max(max_value, abs(min_value))
+        number_of_digits = int(log10(float(max_value)) + 1)
+        if dtype.is_floating_point():
+            formatted_width = (
+                print_options.precision
+                + 1
+                + number_of_digits
+                + int(negative_sign)
+            )
+        else:
+            formatted_width = number_of_digits + int(negative_sign)
+
+        # FIXME: When format_floating_scientific is fixed
+        # change the value to 14
+        if formatted_width <= 99:
+            print_options.formatted_width = formatted_width
+        else:
+            print_options.float_format = "scientific"
 
         if self.ndim == 0:
             return str(self.item(0))
@@ -2285,18 +2338,16 @@ struct NDArray[dtype: DType = DType.float64](
                         result = result + seperator
                 result = result + padding
             else:  # Print first 3 and last 3 items
-                for i in range(edge_items // 2):
+                for i in range(edge_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
                     var formatted_value = format_value(value, print_options)
                     result = result + formatted_value
-                    if i < (edge_items // 2 - 1):
+                    if i < (edge_items - 1):
                         result = result + seperator
                 result = result + seperator + "..." + seperator
-                for i in range(
-                    number_of_items - edge_items // 2, number_of_items
-                ):
+                for i in range(number_of_items - edge_items, number_of_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
@@ -2331,7 +2382,7 @@ struct NDArray[dtype: DType = DType.float64](
                     if i < (number_of_items - 1):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
-                for i in range(edge_items // 2):
+                for i in range(edge_items):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
@@ -2351,9 +2402,7 @@ struct NDArray[dtype: DType = DType.float64](
                     if i < (number_of_items - 1):
                         result += "\n"
                 result = result + "...\n"
-                for i in range(
-                    number_of_items - edge_items // 2, number_of_items
-                ):
+                for i in range(number_of_items - edge_items, number_of_items):
                     result = (
                         result
                         + str(" ") * (dimension + 1)

@@ -8,7 +8,7 @@ alias DEFAULT_PRECISION = 4
 alias DEFAULT_SUPPRESS_SMALL = False
 alias DEFAULT_SEPARATOR = " "
 alias DEFAULT_PADDING = ""
-alias DEFAULT_EDGE_ITEMS = 6
+alias DEFAULT_EDGE_ITEMS = 3
 alias DEFAULT_THRESHOLD = 10
 alias DEFAULT_LINE_WIDTH = 75
 alias DEFAULT_SIGN = False
@@ -183,7 +183,7 @@ fn set_printoptions(
     )
 
 
-# TODO: fix the problem where precision > number of digits in the mantissa results in a not so exact value.
+# FIXME: fix the problem where precision > number of digits in the mantissa results in a not so exact value.
 fn format_floating_scientific[
     dtype: DType = DType.float64
 ](x: Scalar[dtype], precision: Int = 10, sign: Bool = False) raises -> String:
@@ -246,7 +246,7 @@ fn format_floating_scientific[
 
         if x < 0:
             return (
-                String("-{0}{1}")
+                String("{0}{1}")
                 .format(result, exponent_str)
                 .rjust(formatted_width)
             )
@@ -272,7 +272,8 @@ fn format_floating_precision[
     Args:
         value: The value to format.
         precision: The number of decimal places to include.
-        sign: Whether to include the sign of the float in the result. Defaults to False.
+        sign: Whether to include the sign of the float in the result.
+            Defaults to False.
 
     Returns:
         The formatted value as a string.
@@ -304,6 +305,8 @@ fn format_floating_precision[
     var fractional_part = abs(rounded_value - integer_part)
 
     var result = str(integer_part)
+    if Scalar[dtype](0) > rounded_value > Scalar[dtype](-1):
+        result = "-" + result
 
     if precision > 0:
         result += "."

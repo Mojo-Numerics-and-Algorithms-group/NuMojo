@@ -19,7 +19,7 @@ alias item = Item
 @register_passable
 struct Item(CollectionElement):
     var _buf: UnsafePointer[Int]
-    var len: Int
+    var ndim: Int
 
     @always_inline("nodebug")
     fn __init__[T: Indexer](out self, *args: T):
@@ -32,7 +32,7 @@ struct Item(CollectionElement):
             args: Initial values.
         """
         self._buf = UnsafePointer[Int]().alloc(args.__len__())
-        self.len = args.__len__()
+        self.ndim = args.__len__()
         for i in range(args.__len__()):
             self._buf[i] = index(args[i])
 
@@ -46,9 +46,9 @@ struct Item(CollectionElement):
         Args:
             args: Initial values.
         """
-        self.len = len(args)
-        self._buf = UnsafePointer[Int]().alloc(self.len)
-        for i in range(self.len):
+        self.ndim = len(args)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(index(args[i]))
 
     @always_inline("nodebug")
@@ -58,10 +58,36 @@ struct Item(CollectionElement):
         Args:
             args: Initial values.
         """
-        self.len = len(args)
-        self._buf = UnsafePointer[Int]().alloc(self.len)
-        for i in range(self.len):
+        self.ndim = len(args)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(index(args[i]))
+
+    @always_inline("nodebug")
+    fn __init__(
+        out self,
+        ndim: Int,
+        initialized: Bool,
+    ) raises:
+        """
+        Construct Item with number of dimensions.
+
+        This method is useful when you want to create a Item with given ndim
+        without knowing the Item values.
+
+        Args:
+            ndim: Number of dimensions.
+            initialized: Whether the shape is initialized.
+                If yes, the values will be set to 0.
+                If no, the values will be uninitialized.
+        """
+        if ndim < 0:
+            raise Error("Number of dimensions must be non-negative.")
+        self.ndim = ndim
+        self._buf = UnsafePointer[Int]().alloc(ndim)
+        if initialized:
+            for i in range(ndim):
+                (self._buf + i).init_pointee_copy(0)
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -70,9 +96,9 @@ struct Item(CollectionElement):
         Args:
             other: The tuple to copy.
         """
-        self.len = other.len
-        self._buf = UnsafePointer[Int]().alloc(self.len)
-        memcpy(self._buf, other._buf, self.len)
+        self.ndim = other.ndim
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        memcpy(self._buf, other._buf, self.ndim)
 
     @always_inline("nodebug")
     fn __del__(owned self):
@@ -85,7 +111,7 @@ struct Item(CollectionElement):
         Returns:
             The length of the tuple.
         """
-        return self.len
+        return self.ndim
 
     @always_inline("nodebug")
     fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
@@ -103,12 +129,12 @@ struct Item(CollectionElement):
 
         var normalized_idx: Int = index(idx)
         if normalized_idx < 0:
-            normalized_idx = idx + self.len
+            normalized_idx = idx + self.ndim
 
-        if normalized_idx < 0 or normalized_idx >= self.len:
+        if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
                 String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.len, self.len - 1
+                    index(idx), -self.ndim, self.ndim - 1
                 )
             )
 
@@ -129,12 +155,12 @@ struct Item(CollectionElement):
 
         var normalized_idx: Int = index(idx)
         if normalized_idx < 0:
-            normalized_idx = idx + self.len
+            normalized_idx = idx + self.ndim
 
-        if normalized_idx < 0 or normalized_idx >= self.len:
+        if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
                 String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.len, self.len - 1
+                    index(idx), -self.ndim, self.ndim - 1
                 )
             )
 
@@ -152,7 +178,7 @@ struct Item(CollectionElement):
 
         return _ItemIter(
             item=self,
-            length=self.len,
+            length=self.ndim,
         )
 
     fn __repr__(self) -> String:
@@ -161,16 +187,16 @@ struct Item(CollectionElement):
 
     fn __str__(self) -> String:
         var result: String = "("
-        for i in range(self.len):
+        for i in range(self.ndim):
             result += str(self._buf[i])
-            if i < self.len - 1:
+            if i < self.ndim - 1:
                 result += ","
         result += ")"
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(
-            "Item at index: " + str(self) + "  " + "Length: " + str(self.len)
+            "Item at index: " + str(self) + "  " + "Length: " + str(self.ndim)
         )
 
 

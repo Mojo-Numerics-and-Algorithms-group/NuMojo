@@ -92,7 +92,7 @@ fn arange[
     var size = int(stop)
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
-        (result._buf.ptr + i).init_pointee_copy(i)
+        (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
 
     return result
 

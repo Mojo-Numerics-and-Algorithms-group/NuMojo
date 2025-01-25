@@ -2315,19 +2315,18 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             formatted_width = number_of_digits + int(negative_sign)
 
-        # FIXME: When format_floating_scientific is fixed
-        # change the value to 14
-        if formatted_width <= 99:
+        if formatted_width <= 14:
             print_options.formatted_width = formatted_width
         else:
             print_options.float_format = "scientific"
+            print_options.formatted_width = 7 + print_options.precision
 
         if self.ndim == 0:
             return str(self.item(0))
         if dimension == self.ndim - 1:
             var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
+            if number_of_items <= edge_items * 2:  # Print all items
                 for i in range(number_of_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
@@ -2361,7 +2360,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             var result: String = str("[")
             var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
+            if number_of_items <= edge_items * 2:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
                         result = result + self._array_to_string(

@@ -190,6 +190,9 @@ fn format_floating_scientific[
     """
     Format a float in scientific notation.
 
+    Notes: A scientific notation takes the form `-a.bbbbe+ii`. It will take
+    `7 + precision` letters in total.
+
     Parameters:
         dtype: Datatype of the float.
 
@@ -218,46 +221,50 @@ fn format_floating_scientific[
         var exponent_threshold = GLOBAL_PRINT_OPTIONS.exponent_threshold
         var formatted_width = GLOBAL_PRINT_OPTIONS.formatted_width
 
-        if x == 0.0:
-            var result: String = "0." + "0" * precision
-            return result.rjust(formatted_width)
+        if x == 0:
+            if sign:
+                var result: String = "+0." + "0" * precision + "e+00"
+                return result.rjust(formatted_width)
+            else:
+                var result: String = " 0." + "0" * precision + "e+00"
+                return result.rjust(formatted_width)
 
         var power: Int = int(mt.log10(abs(x)))
+        if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
+            power -= 1
         var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
-        var m_string: String = String("{0}").format(mantissa)
-        var result: String = m_string[0] + "."
+        var mantissa_without_sign_string = str(abs(mantissa))
 
-        for i in range(2, precision + 2):
-            if i >= len(m_string):
-                result += "0"
+        var result: String
+        if x < 0:
+            result = "-" + mantissa_without_sign_string[: 2 + precision]
+        else:
+            if sign:
+                result = "+" + mantissa_without_sign_string[: 2 + precision]
             else:
-                result += m_string[i]
+                result = " " + mantissa_without_sign_string[: 2 + precision]
 
         if suppress_scientific and abs(power) <= exponent_threshold:
             return format_floating_precision(x, precision, sign).rjust(
                 formatted_width
             )
 
-        var exponent_str: String
+        var exponent_string: String
         if power < 0:
-            exponent_str = String("e{0}").format(power)
+            if power > -10:
+                exponent_string = String("e-0{0}").format(-power)
+            else:
+                exponent_string = String("e-{0}").format(-power)
         else:
-            exponent_str = String("e+{0}").format(power)
+            if power < 10:
+                exponent_string = String("e+0{0}").format(power)
+            else:
+                exponent_string = String("e+{0}").format(power)
 
-        if x < 0:
-            return (
-                String("{0}{1}")
-                .format(result, exponent_str)
-                .rjust(formatted_width)
-            )
-        if sign:
-            return (
-                String("+{0}{1}")
-                .format(result, exponent_str)
-                .rjust(formatted_width)
-            )
         return (
-            String("{0}{1}").format(result, exponent_str).rjust(formatted_width)
+            String("{0}{1}")
+            .format(result, exponent_string)
+            .rjust(formatted_width)
         )
     except:
         raise Error("Failed to format float in scientific notation.")

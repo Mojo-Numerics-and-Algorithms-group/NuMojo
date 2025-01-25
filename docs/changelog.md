@@ -2,7 +2,7 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
-## xx/xx/2025 (v0.x)
+## xx/xx/2025 (v0.5)
 
 ### ⭐️ New
 
@@ -36,7 +36,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Update `matmul` to enable multiplication between two arrays of any dimensions ([PR #159](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/159)).
 - Refine the function `reshape` so that it is working on any dimensions and is working on both row-major and col-major. This also allows us to change the order with the code ```A.reshape(A.shape, "F"))```. Also refine functions `flatten`, `ravel` ([PR #158](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/158)).
 - Remove `size` property from `NDArrayShape` and add `size_of_array` method to get the size of the corresponding array ([PR #181](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/181)).
-- Improve the string representation of `NDArray`, `NDArrayShape`, `NDArrayStrides`, and `Item`, e.g., `str()`, `repr()`, `print()`. Allow customized separators, paddings, and number of items to display for `NDArray._array_to_string` method ([PR #185](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/185), [PR #186](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/186)).
+- Add `PrintOption` type to customize string representation of `NDArray`, `NDArrayShape`, `NDArrayStrides`, and `Item`, e.g., `str()`, `repr()`, `print()`. Allow customized separators, paddings, number of items to display, width of formatting, etc, for `NDArray._array_to_string` method. Auto-adjust width of formatted values and auto-determine wether scientific notations are needed ([PR #185](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/185), [PR #186](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/186), [PR #190](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/190), [PR #191](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/191), [PR #192](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/192)).
 - Rename the auxiliary function `_get_index` as `_get_offset` ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
 - Rename the underlying buffer of `Idx` type to `_buf` ([PR #173](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/173)).
 - Return a view instead of copy for iterator of `NDArray` ([PR #174](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/174)).

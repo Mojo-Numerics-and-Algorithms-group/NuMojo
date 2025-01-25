@@ -1,6 +1,6 @@
 [project]
 name = "NuMojo"
-version = "0.5.0"
+version = "0.5"
 description = "NuMojo is a library for numerical computing written in Mojo 🔥"
 authors = [
     "Shivasankar <shivasankar.ka@gmail.com>",

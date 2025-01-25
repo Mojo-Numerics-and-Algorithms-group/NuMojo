@@ -37,7 +37,7 @@ f = "clear && magic run mojo test tests -I ./ -I ./tests/ && magic run mojo form
 package = "magic run mojo package numojo"
 p = "clear && magic run mojo package numojo"
 # format the package
-format = "magic run mojo format ./"
+format = "magic run mojo format ./ && magic run mojo format docs/readthedocs/docs.py"
 
 [dependencies]
 max = "==24.6.0"

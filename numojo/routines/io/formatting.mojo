@@ -230,7 +230,7 @@ fn format_floating_scientific[
                 return result.rjust(formatted_width)
 
         var power: Int = int(mt.log10(abs(x)))
-        if x < 1:
+        if Scalar[dtype](0.0) < x < Scalar[dtype](1.0):
             power -= 1
         var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
         var mantissa_without_sign_string = str(abs(mantissa))

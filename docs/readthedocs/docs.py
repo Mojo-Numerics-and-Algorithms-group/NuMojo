@@ -4,9 +4,6 @@ from mdutils import Html
 import os
 from pathlib import Path
 
-
-print("Ignore the syntax warnings the behavoir handles Variadic list asignment def func(*variable)")
-
 docs = json.load(open("docs/readthedocs/docs.json"))
 
 def doc_func(func,mdfile:MdUtils,top_header=2):
@@ -27,7 +24,7 @@ def doc_func(func,mdfile:MdUtils,top_header=2):
                 if "*" not in param["name"]:
                         name =param["name"] 
                 else:
-                    name = param["name"].replace("*","\*")
+                    name = param["name"].replace("*",r"\*")
                 if param["description"]:
                     description = f': {param["description"]}'
                 else:
@@ -52,7 +49,7 @@ def doc_func(func,mdfile:MdUtils,top_header=2):
                 if "*" not in arg["name"]:
                     name =arg["name"] 
                 else:
-                    name = arg["name"].replace("*","\*")
+                    name = arg["name"].replace("*",r"\*")
                 if arg["description"]:
                     description = f': {arg["description"]}'
                     

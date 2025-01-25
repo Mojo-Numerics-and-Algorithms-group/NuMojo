@@ -7,3 +7,9 @@ repos:
         language: system
         files: '\.(mojo|🔥|py)$'
         stages: [pre-commit]
+      - id: autodoc
+        name: mautodoc
+        entry: magic run doc_pages
+        language: system
+        files: '\.(mojo|🔥|py)$'
+        stages: [pre-commit]

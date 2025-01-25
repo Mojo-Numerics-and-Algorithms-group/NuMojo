@@ -55,6 +55,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### 📚 Documentatory and testing
 
+- Add `readthedocs` pages to the repo under `/docs/readthedocs` ([PR #194](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/194)).
 - Add `magic run t`, `magic run f`, and `magic run p` for the magic CLI. They first clear the terminal before running `test`,`final`, and `package`.
 - Allow partial testing via command, e.g., `magic run test_creation`, to avoid overheat.
 - Convert the readme file into pure markdown syntax ([PR #187](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/187)).

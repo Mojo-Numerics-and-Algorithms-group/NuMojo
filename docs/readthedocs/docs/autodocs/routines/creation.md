@@ -556,6 +556,25 @@ Args:
 - N: Number of columns in the output. If N is not specified, a square array is returned. Default: Optional(None)
 - increasing: Order of the powers of the columns. If True, the powers increase from left to right, if False (the default) they are reversed. Default: False
 
+## astype
+
+
+```Mojo
+astype[dtype: DType, //, target: DType](a: NDArray[dtype]) -> NDArray[target]
+```  
+Summary  
+  
+Cast an NDArray to a different dtype.  
+  
+Parameters:  
+
+- dtype: Data type of the input array, always inferred.
+- target: Data type to cast the NDArray to.
+  
+Args:  
+
+- a: NDArray to be casted.
+
 ## fromstring
 
 
@@ -617,24 +636,23 @@ casted to the dtype of the NDArray.
 1-D array  Shape: [5]  DType: int32
 ```
 
-## astype
+## from_tensor
 
 
 ```Mojo
-astype[dtype: DType, //, target: DType](a: NDArray[dtype]) -> NDArray[target]
+from_tensor[dtype: DType = float64](data: Tensor[dtype]) -> NDArray[dtype]
 ```  
 Summary  
   
-Cast an NDArray to a different dtype.  
+Create array from tensor.  
   
 Parameters:  
 
-- dtype: Data type of the input array, always inferred.
-- target: Data type to cast the NDArray to.
+- dtype: Datatype of the NDArray elements. Defualt: `float64`
   
 Args:  
 
-- a: NDArray to be casted.
+- data: Tensor.
 
 ## array
 
@@ -700,11 +718,43 @@ Args:
 
 
 Example:
-    ```mojo
-    import numojo as nm
-    from numojo.prelude import *
-    from python import Python
-    var np = Python.import_module("numpy")
-    var np_arr = np.array([1, 2, 3, 4])
-    A = nm.array[f16](data=np_arr, order="C")
-    ```
+```mojo
+import numojo as nm
+from numojo.prelude import *
+from python import Python
+var np = Python.import_module("numpy")
+var np_arr = np.array([1, 2, 3, 4])
+A = nm.array[f16](data=np_arr, order="C")
+```
+
+
+```Mojo
+array[dtype: DType = float64](data: Tensor[dtype]) -> NDArray[dtype]
+```  
+Summary  
+  
+Create array from tensor.  
+  
+Parameters:  
+
+- dtype: Datatype of the NDArray elements. Defualt: `float64`
+  
+Args:  
+
+- data: Tensor.
+
+
+Example:
+```mojo
+import numojo as nm
+from tensor import Tensor, TensorShape
+from numojo.prelude import *
+
+fn main() raises:
+    height = 256
+    width = 256
+    channels = 3
+    image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
+    print(image)
+    print(nm.array(image))
+```

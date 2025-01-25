@@ -14,6 +14,7 @@ Datatypes Module - Implements datatypes aliases, conversions
 `i32`: Data type alias for DType.int32  
 `i64`: Data type alias for DType.int64  
 `isize`: Data type alias for DType.index  
+`intp`: Data type alias for DType.index  
 `u8`: Data type alias for DType.uint8  
 `u16`: Data type alias for DType.uint16  
 `u32`: Data type alias for DType.uint32  
@@ -21,6 +22,7 @@ Datatypes Module - Implements datatypes aliases, conversions
 `f16`: Data type alias for DType.float16  
 `f32`: Data type alias for DType.float32  
 `f64`: Data type alias for DType.float64  
+`boolean`: Data type alias for DType.bool  
 `ci8`: Data type alias for ComplexSIMD[DType.int16, 1]   
 `ci16`: Data type alias for ComplexSIMD[DType.int32, 1]   
 `ci32`: Data type alias for ComplexSIMD[DType.int64, 1]   
@@ -170,11 +172,11 @@ Parameters:
 - int_type
 - float_type
 
-#### result_type
+#### result
 
 
 ```Mojo
-result_type[T1: DType, T2: DType]() -> DType
+result[T1: DType, T2: DType]() -> DType
 ```  
 Summary  
   

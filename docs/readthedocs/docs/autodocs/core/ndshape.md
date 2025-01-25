@@ -28,8 +28,6 @@ Implements the NDArrayShape.
 ### Fields
   
   
-* size `Int`  
-    - Total number of elements of corresponding array.  
 * ndim `Int`  
     - Number of dimensions of array.  
 
@@ -144,6 +142,39 @@ Args:
 - self
 - shape: Another NDArrayShape to initialize from.
 
+
+```Mojo
+__init__(out self, ndim: Int, initialized: Bool)
+```  
+Summary  
+  
+Construct NDArrayShape with number of dimensions.  
+  
+Args:  
+
+- self
+- ndim: Number of dimensions.
+- initialized: Whether the shape is initialized. If yes, the values will be set to 1. If no, the values will be uninitialized.
+
+
+This method is useful when you want to create a shape with given ndim
+without knowing the shape values.
+
+#### __copyinit__
+
+
+```Mojo
+__copyinit__(out self, other: Self)
+```  
+Summary  
+  
+Initializes the NDArrayShape from another NDArrayShape.  
+  
+Args:  
+
+- self
+- other: Another NDArrayShape to initialize from.
+
 #### __getitem__
 
 
@@ -183,7 +214,7 @@ __eq__(self, other: Self) -> Bool
 ```  
 Summary  
   
-Check if two arrayshapes have identical dimensions.  
+Check if two shapes are identical.  
   
 Args:  
 
@@ -234,6 +265,20 @@ Args:
 
 - self
 
+#### __repr__
+
+
+```Mojo
+__repr__(self) -> String
+```  
+Summary  
+  
+Return a string of the shape of the array described by arrayshape.  
+  
+Args:  
+
+- self
+
 #### __str__
 
 
@@ -242,7 +287,7 @@ __str__(self) -> String
 ```  
 Summary  
   
-Return a string of the shape of the array described by arrayshape.  
+Return a string of the shape of the array.  
   
 Args:  
 
@@ -266,3 +311,31 @@ Args:
 
 - self
 - writer
+
+#### size_of_array
+
+
+```Mojo
+size_of_array(self) -> Int
+```  
+Summary  
+  
+Returns the total number of elements in the array.  
+  
+Args:  
+
+- self
+
+#### join
+
+
+```Mojo
+join(*shapes) -> Self
+```  
+Summary  
+  
+Join multiple shapes into a single shape.  
+  
+Args:  
+
+- \*shapes: Variable number of NDArrayShape objects.

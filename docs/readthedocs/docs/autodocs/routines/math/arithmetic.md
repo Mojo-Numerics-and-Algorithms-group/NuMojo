@@ -33,6 +33,30 @@ Args:
 
 
 ```Mojo
+add[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array1: NDArray[dtype], array2: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform addition on two arrays.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Constraints:
+
+Both arrays must have the same shapes.  
+  
+Args:  
+
+- array1: A NDArray.
+- array2: A NDArray.
+
+
+```Mojo
 add[dtype: DType, backend: Backend = Vectorized](array: NDArray[dtype], scalar: SIMD[dtype, 1]) -> NDArray[dtype]
 ```  
 Summary  
@@ -51,6 +75,30 @@ Args:
 
 
 ```Mojo
+add[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array: NDArray[dtype], scalar: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform addition on two arrays.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Constraints:
+
+Both arrays must have the same shapes.  
+  
+Args:  
+
+- array: A NDArray.
+- scalar: A NDArray.
+
+
+```Mojo
 add[dtype: DType, backend: Backend = Vectorized](scalar: SIMD[dtype, 1], array: NDArray[dtype]) -> NDArray[dtype]
 ```  
 Summary  
@@ -61,6 +109,26 @@ Parameters:
 
 - dtype: The element type.
 - backend: Sets utility function origin, defaults to `Vectorized`. Defualt: `Vectorized`
+  
+Args:  
+
+- scalar: A NDArray.
+- array: A NDArray.
+
+
+```Mojo
+add[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](scalar: SIMD[dtype, 1], array: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform addition on between an array and a scalar.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -110,6 +178,30 @@ Args:
 
 
 ```Mojo
+sub[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array1: NDArray[dtype], array2: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform subtraction on two arrays.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Constraints:
+
+Both arrays must have the same shapes.  
+  
+Args:  
+
+- array1: A NDArray.
+- array2: A NDArray.
+
+
+```Mojo
 sub[dtype: DType, backend: Backend = Vectorized](array: NDArray[dtype], scalar: SIMD[dtype, 1]) -> NDArray[dtype]
 ```  
 Summary  
@@ -128,6 +220,26 @@ Args:
 
 
 ```Mojo
+sub[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array: NDArray[dtype], scalar: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform subtraction on between an array and a scalar.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- array: A NDArray.
+- scalar: A NDArray.
+
+
+```Mojo
 sub[dtype: DType, backend: Backend = Vectorized](scalar: SIMD[dtype, 1], array: NDArray[dtype]) -> NDArray[dtype]
 ```  
 Summary  
@@ -138,6 +250,26 @@ Parameters:
 
 - dtype: The element type.
 - backend: Sets utility function origin, defaults to `Vectorized`. Defualt: `Vectorized`
+  
+Args:  
+
+- scalar: A NDArray.
+- array: A NDArray.
+
+
+```Mojo
+sub[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](scalar: SIMD[dtype, 1], array: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform subtraction on between an array and a scalar.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -249,6 +381,26 @@ Args:
 
 
 ```Mojo
+mul[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array1: NDArray[dtype], array2: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform multiplication on between two arrays.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- array1: A NDArray.
+- array2: A NDArray.
+
+
+```Mojo
 mul[dtype: DType, backend: Backend = Vectorized](array: NDArray[dtype], scalar: SIMD[dtype, 1]) -> NDArray[dtype]
 ```  
 Summary  
@@ -267,6 +419,26 @@ Args:
 
 
 ```Mojo
+mul[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array: NDArray[dtype], scalar: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform multiplication on between an array and a scalar.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- array: A NDArray.
+- scalar: A NDArray.
+
+
+```Mojo
 mul[dtype: DType, backend: Backend = Vectorized](scalar: SIMD[dtype, 1], array: NDArray[dtype]) -> NDArray[dtype]
 ```  
 Summary  
@@ -277,6 +449,26 @@ Parameters:
 
 - dtype: The element type.
 - backend: Sets utility function origin, defaults to `Vectorized`. Defualt: `Vectorized`
+  
+Args:  
+
+- scalar: A NDArray.
+- array: A NDArray.
+
+
+```Mojo
+mul[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](scalar: SIMD[dtype, 1], array: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform multiplication on between an array and a scalar.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -326,6 +518,26 @@ Args:
 
 
 ```Mojo
+div[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array1: NDArray[dtype], array2: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform true division on between two arrays.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- array1: A NDArray.
+- array2: A NDArray.
+
+
+```Mojo
 div[dtype: DType, backend: Backend = Vectorized](array: NDArray[dtype], scalar: SIMD[dtype, 1]) -> NDArray[dtype]
 ```  
 Summary  
@@ -344,6 +556,26 @@ Args:
 
 
 ```Mojo
+div[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](array: NDArray[dtype], scalar: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform true division on between an array and a scalar.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- array: A NDArray.
+- scalar: A NDArray.
+
+
+```Mojo
 div[dtype: DType, backend: Backend = Vectorized](scalar: SIMD[dtype, 1], array: NDArray[dtype]) -> NDArray[dtype]
 ```  
 Summary  
@@ -354,6 +586,26 @@ Parameters:
 
 - dtype: The element type.
 - backend: Sets utility function origin, defaults to `Vectorized`. Defualt: `Vectorized`
+  
+Args:  
+
+- scalar: A NDArray.
+- array: A NDArray.
+
+
+```Mojo
+div[dtype: DType, backend: Backend = Vectorized, *, OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](scalar: SIMD[dtype, 1], array: NDArray[OtherDType]) -> NDArray[ResultDType]
+```  
+Summary  
+  
+Perform true division on between an array and a scalar.  
+  
+Parameters:  
+
+- dtype: The element type.
+- backend: Sets utility function origin, defualts to `Vectorized`. Defualt: `Vectorized`
+- OtherDType: The element type of the second array.
+- ResultDType: The element type of the result array. Defualt: `result[::DType,::DType]()`
   
 Args:  
 

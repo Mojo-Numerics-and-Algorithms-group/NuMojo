@@ -140,6 +140,8 @@ Args:
 - self
 - other
 
+
+It is a deep copy. So the new array owns the data.
 #### __moveinit__
 
 
@@ -187,6 +189,19 @@ Args:
 
 
 ```Mojo
+__getitem__(self, index: Item) -> SIMD[dtype, 1]
+```  
+Summary  
+  
+Set the value at the index list.  
+  
+Args:  
+
+- self
+- index
+
+
+```Mojo
 __getitem__(self, idx: Int) -> Self
 ```  
 Summary  
@@ -201,19 +216,6 @@ Args:
 
 Example:
     `arr[1]` returns the second row of the array.
-
-```Mojo
-__getitem__(self, index: Item) -> SIMD[dtype, 1]
-```  
-Summary  
-  
-Set the value at the index list.  
-  
-Args:  
-
-- self
-- index
-
 
 ```Mojo
 __getitem__(self, owned *slices: Slice) -> Self
@@ -422,114 +424,97 @@ A.item(0,1,2) as Scalar
 
 
 ```Mojo
-__getitem__(self, index: List[Int]) -> Self
+__getitem__(self, indices: NDArray[index]) -> Self
 ```  
 Summary  
   
-Get items of array from a list of indices.  
+Get items from 0-th dimension of an ndarray of indices.  
   
 Args:  
 
 - self
-- index: List[Int].
+- indices: Array of intable values.
 
 
-It always gets the first dimension.
+If the original array is of shape (i,j,k) and
+the indices array is of shape (l,m,n), then the output array
+will be of shape (l,m,n,j,k).
 
 Example:
 ```console
-> var A = nm.NDArray[nm.i8](3,random=True)
-> print(A)
-[       14      97      -59     ]
-1-D array  Shape: [3]  DType: int8
->
-> print(A[List[Int](2,1,0,1,2)])
-[       -59     97      14      97      -59     ]
-1-D array  Shape: [5]  DType: int8
->
-> var B = nm.NDArray[nm.i8](3, 3,random=True)
-> print(B)
-[[      -4      112     -94     ]
-[      -48     -40     66      ]
-[      -2      -94     -18     ]]
-2-D array  Shape: [3, 3]  DType: int8
->
-> print(B[List[Int](2,1,0,1,2)])
-[[      -2      -94     -18     ]
-[      -48     -40     66      ]
-[      -4      112     -94     ]
-[      -48     -40     66      ]
-[      -2      -94     -18     ]]
-2-D array  Shape: [5, 3]  DType: int8
->
-> var C = nm.NDArray[nm.i8](3, 3, 3, random=True)
-> print(C)
-[[[     -126    -88     -79     ]
-[     14      78      99      ]
-[     -32     3       -42     ]]
-[[     56      -45     -71     ]
-[     -13     18      -102    ]
-[     4       83      26      ]]
-[[     61      -73     86      ]
-[     -125    -84     66      ]
-[     32      21      53      ]]]
-3-D array  Shape: [3, 3, 3]  DType: int8
->
-> print(C[List[Int](2,1,0,1,2)])
-[[[     61      -73     86      ]
-[     -125    -84     66      ]
-[     32      21      53      ]]
-[[     56      -45     -71     ]
-[     -13     18      -102    ]
-[     4       83      26      ]]
-[[     -126    -88     -79     ]
-[     14      78      99      ]
-[     -32     3       -42     ]]
-[[     56      -45     -71     ]
-[     -13     18      -102    ]
-[     4       83      26      ]]
-[[     61      -73     86      ]
-[     -125    -84     66      ]
-[     32      21      53      ]]]
-3-D array  Shape: [5, 3, 3]  DType: int8
+>>>var a = nm.arange[i8](6)
+>>>print(a)
+[       0       1       2       3       4       5       ]
+1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+>>>print(a[nm.array[isize]("[4, 2, 5, 1, 0, 2]")])
+[       4       2       5       1       0       2       ]
+1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+print(b)
+[[[     0       1       2       ]
+  [     3       4       5       ]]
+ [[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+print(b[nm.array[isize]("[2, 0, 1]")])
+[[[     0       0       0       ]
+  [     0       67      95      ]]
+ [[     0       1       2       ]
+  [     3       4       5       ]]
+ [[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [3, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
 ```
 
 
 ```Mojo
-__getitem__(self, index: NDArray[index]) -> Self
+__getitem__(self, indices: List[Int]) -> Self
 ```  
 Summary  
   
-Get items of array from an array of indices.  
+Get items from 0-th dimension of an array. It is an overload of `__getitem__(self, indices: NDArray[DType.index]) raises -> Self`.  
   
 Args:  
 
 - self
-- index
+- indices: A list of Int.
 
-
-Refer to `__getitem__(self, index: List[Int])`.
 
 Example:
 ```console
-> var X = nm.NDArray[nm.i8](3,random=True)
-> print(X)
-[       32      21      53      ]
-1-D array  Shape: [3]  DType: int8
-> print(X.argsort())
-[       1       0       2       ]
-1-D array  Shape: [3]  DType: index
-> print(X[X.argsort()])
-[       21      32      53      ]
-1-D array  Shape: [3]  DType: int8
+>>>var a = nm.arange[i8](6)
+>>>print(a)
+[       0       1       2       3       4       5       ]
+1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+>>>print(a[List[Int](4, 2, 5, 1, 0, 2)])
+[       4       2       5       1       0       2       ]
+1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+print(b)
+[[[     0       1       2       ]
+  [     3       4       5       ]]
+ [[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+print(b[List[Int](2, 0, 1)])
+[[[     0       0       0       ]
+  [     0       67      95      ]]
+ [[     0       1       2       ]
+  [     3       4       5       ]]
+ [[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [3, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
 ```
+
 
 ```Mojo
 __getitem__(self, mask: NDArray[bool]) -> Self
 ```  
 Summary  
   
-Get items of array corresponding to a mask.  
+Get item from an array according to a mask array.  
   
 Args:  
 
@@ -537,14 +522,71 @@ Args:
 - mask: NDArray with Dtype.bool.
 
 
+If array shape is equal to mask shape, it returns a flattened array of
+the values where mask is True.
+
+If array shape is not equal to mask shape, it returns items from the
+0-th dimension of the array where mask is True.
+
 Example:
-    ```
-    var A = numojo.core.NDArray[numojo.i16](6, random=True)
-    var mask = A > 0
-    print(A)
-    print(mask)
-    print(A[mask])
-    ```
+```console
+>>>var a = nm.arange[i8](6)
+>>>print(a)
+[       0       1       2       3       4       5       ]
+1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+>>>print(a[nm.array[boolean]("[1,0,1,1,0,1]")])
+[       0       2       3       5       ]
+1-D array  Shape: [4]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+print(b)
+[[[     0       1       2       ]
+  [     3       4       5       ]]
+ [[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+>>>print(b[nm.array[boolean]("[0,1]")])
+[[[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [1, 2, 3]  DType: int8  C-cont: True  F-cont: True  own data: True
+```
+
+
+```Mojo
+__getitem__(self, mask: List[Bool]) -> Self
+```  
+Summary  
+  
+Get items from 0-th dimension of an array according to mask. __getitem__(self, mask: NDArray[DType.bool]) raises -> Self.  
+  
+Args:  
+
+- self
+- mask: A list of boolean values.
+
+
+Example:
+```console
+>>>var a = nm.arange[i8](6)
+>>>print(a)
+[       0       1       2       3       4       5       ]
+1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+>>>print(a[List[Bool](True, False, True, True, False, True)])
+[       0       2       3       5       ]
+1-D array  Shape: [4]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+print(b)
+[[[     0       1       2       ]
+  [     3       4       5       ]]
+ [[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+>>>print(b[List[Bool](False, True)])
+[[[     6       7       8       ]
+  [     9       10      11      ]]]
+3-D array  Shape: [1, 2, 3]  DType: int8  C-cont: True  F-cont: True  own data: True
+```
 
 #### __setitem__
 
@@ -781,6 +823,42 @@ Args:
 
 
 ```Mojo
+__lt__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDtype, 1]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise less than.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
+__lt__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDtype]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise less than between scalar and Array.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
 __lt__(self, other: SIMD[dtype, 1]) -> NDArray[bool]
 ```  
 Summary  
@@ -806,6 +884,42 @@ Args:
 - other
 
 #### __le__
+
+
+```Mojo
+__le__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDtype, 1]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise less than or equal to.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
+__le__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDtype]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise less than or equal to between scalar and Array.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
 
 
 ```Mojo
@@ -837,11 +951,47 @@ Args:
 
 
 ```Mojo
+__eq__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDtype]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise equivalence.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
+__eq__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDtype, 1]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise equivalence.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
 __eq__(self, other: Self) -> NDArray[bool]
 ```  
 Summary  
   
-Itemwise equivelence.  
+Itemwise equivalence.  
   
 Args:  
 
@@ -854,7 +1004,7 @@ __eq__(self, other: SIMD[dtype, 1]) -> NDArray[bool]
 ```  
 Summary  
   
-Itemwise equivelence between scalar and Array.  
+Itemwise equivalence between scalar and Array.  
   
 Args:  
 
@@ -862,6 +1012,42 @@ Args:
 - other
 
 #### __ne__
+
+
+```Mojo
+__ne__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDtype]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise nonequivelence.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
+__ne__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDtype, 1]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise nonequivelence between scalar and Array.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
 
 
 ```Mojo
@@ -893,6 +1079,42 @@ Args:
 
 
 ```Mojo
+__gt__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDtype, 1]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise greater than.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
+__gt__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDtype]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise greater than between scalar and Array.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
 __gt__(self, other: SIMD[dtype, 1]) -> NDArray[bool]
 ```  
 Summary  
@@ -918,6 +1140,42 @@ Args:
 - other
 
 #### __ge__
+
+
+```Mojo
+__ge__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDtype, 1]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise greater than or equal to.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
+
+
+```Mojo
+__ge__[OtherDtype: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDtype]) -> NDArray[bool]
+```  
+Summary  
+  
+Itemwise less than or equal to between scalar and Array.  
+  
+Parameters:  
+
+- OtherDtype
+- ResultDType Defualt: `result[::DType,::DType]()`
+  
+Args:  
+
+- self
+- other
 
 
 ```Mojo
@@ -949,7 +1207,7 @@ Args:
 
 
 ```Mojo
-__add__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__add__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -958,7 +1216,7 @@ Enables `array + scalar`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -967,7 +1225,7 @@ Args:
 
 
 ```Mojo
-__add__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
+__add__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -976,7 +1234,7 @@ Enables `array + array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1013,7 +1271,7 @@ Args:
 
 
 ```Mojo
-__sub__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__sub__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1022,7 +1280,7 @@ Enables `array - scalar`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1031,7 +1289,7 @@ Args:
 
 
 ```Mojo
-__sub__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
+__sub__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1040,7 +1298,7 @@ Enables `array - array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1077,7 +1335,7 @@ Args:
 
 
 ```Mojo
-__mul__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__mul__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1086,7 +1344,7 @@ Enables `array * scalar`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1095,7 +1353,7 @@ Args:
 
 
 ```Mojo
-__mul__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
+__mul__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1104,7 +1362,7 @@ Enables `array * array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1156,7 +1414,7 @@ Args:
 
 
 ```Mojo
-__truediv__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__truediv__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1165,7 +1423,7 @@ Enables `array / scalar`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1174,7 +1432,7 @@ Args:
 
 
 ```Mojo
-__truediv__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
+__truediv__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1183,7 +1441,7 @@ Enables `array / array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1220,7 +1478,7 @@ Args:
 
 
 ```Mojo
-__floordiv__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__floordiv__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1229,7 +1487,7 @@ Enables `array // scalar`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1238,7 +1496,7 @@ Args:
 
 
 ```Mojo
-__floordiv__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
+__floordiv__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1247,7 +1505,7 @@ Enables `array // array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1284,7 +1542,7 @@ Args:
 
 
 ```Mojo
-__mod__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__mod__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1293,7 +1551,7 @@ Enables `array % scalar`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1302,7 +1560,7 @@ Args:
 
 
 ```Mojo
-__mod__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
+__mod__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: NDArray[OtherDType]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1311,7 +1569,7 @@ Enables `array % array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1376,7 +1634,7 @@ Args:
 
 
 ```Mojo
-__radd__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__radd__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1385,7 +1643,7 @@ Enables `scalar + array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1409,7 +1667,7 @@ Args:
 
 
 ```Mojo
-__rsub__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__rsub__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1418,7 +1676,7 @@ Enables `scalar - array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1442,7 +1700,7 @@ Args:
 
 
 ```Mojo
-__rmul__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__rmul__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1451,7 +1709,7 @@ Enables `scalar * array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1475,7 +1733,7 @@ Args:
 
 
 ```Mojo
-__rtruediv__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, s: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__rtruediv__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, s: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1484,7 +1742,7 @@ Enables `scalar / array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1508,7 +1766,7 @@ Args:
 
 
 ```Mojo
-__rfloordiv__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__rfloordiv__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1517,7 +1775,7 @@ Enables `scalar // array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1554,7 +1812,7 @@ Args:
 
 
 ```Mojo
-__rmod__[OtherDType: DType, ResultDType: DType = result_type[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
+__rmod__[OtherDType: DType, ResultDType: DType = result[::DType,::DType]()](self, other: SIMD[OtherDType, 1]) -> NDArray[ResultDType]
 ```  
 Summary  
   
@@ -1563,7 +1821,7 @@ Enables `scalar % array`.
 Parameters:  
 
 - OtherDType
-- ResultDType Defualt: `result_type[::DType,::DType]()`
+- ResultDType Defualt: `result[::DType,::DType]()`
   
 Args:  
 
@@ -1839,12 +2097,29 @@ __repr__(self) -> String
 ```  
 Summary  
   
-Compute the "official" string representation of NDArray. An example is: ``` fn main() raises:     var A = NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,))     print(repr(A)) ``` It prints what can be used to construct the array itself: ```console NDArray[DType.int8](List[Scalar[DType.int8]](14,97,-59,-4,112,), shape=List[Int](5,)) ```.  
+Compute the "official" string representation of NDArray.  
   
 Args:  
 
 - self
 
+
+You can construct the array using this representation.
+
+An example is:
+```console
+>>>import numojo as nm
+>>>var b = nm.arange[nm.f32](20).reshape(Shape(4, 5))
+>>>print(repr(b))
+numojo.array[f32](
+'''
+[[0.0, 1.0, 2.0, 3.0, 4.0]
+ [5.0, 6.0, 7.0, 8.0, 9.0]
+ [10.0, 11.0, 12.0, 13.0, 14.0]
+ [15.0, 16.0, 17.0, 18.0, 19.0]]
+'''
+)
+```
 #### __len__
 
 
@@ -2253,6 +2528,20 @@ Args:
 
 - self
 
+#### copy
+
+
+```Mojo
+copy(self) -> Self
+```  
+Summary  
+  
+Returns a copy of the array that owns the data. The returned array will be continuous in memory.  
+  
+Args:  
+
+- self
+
 #### cumprod
 
 
@@ -2534,6 +2823,55 @@ Args:
 
 - self
 
+#### nditer
+
+
+```Mojo
+nditer(self) -> _NDIter[self, dtype]
+```  
+Summary  
+  
+(Overload) Return an iterator yielding the array elements according to the memory layout of the array.  
+  
+Args:  
+
+- self
+
+
+```console
+>>>var a = nm.random.rand[i8](2, 3, min=0, max=100)
+>>>print(a)
+[[      37      8       25      ]
+ [      25      2       57      ]]
+2-D array  (2,3)  DType: int8  C-cont: True  F-cont: False  own data: True
+>>>for i in a.nditer():
+...    print(i, end=" ")
+37 8 25 25 2 57
+```
+
+```Mojo
+nditer(self, order: String) -> _NDIter[self, dtype]
+```  
+Summary  
+  
+Return an iterator yielding the array elements according to the order.  
+  
+Args:  
+
+- self
+- order
+
+
+```console
+>>>var a = nm.random.rand[i8](2, 3, min=0, max=100)
+>>>print(a)
+[[      37      8       25      ]
+ [      25      2       57      ]]
+2-D array  (2,3)  DType: int8  C-cont: True  F-cont: False  own data: True
+>>>for i in a.nditer():
+...    print(i, end=" ")
+37 8 25 25 2 57
+```
 #### prod
 
 
@@ -2700,6 +3038,38 @@ Args:
 
 - self
 
+#### to_tensor
+
+
+```Mojo
+to_tensor(self) -> Tensor[dtype]
+```  
+Summary  
+  
+Convert array to tensor of the same dtype.  
+  
+Args:  
+
+- self
+
+
+```mojo
+import numojo as nm
+from numojo.prelude import *
+
+fn main() raises:
+    var a = nm.random.randn[f16](2, 3, 4)
+    print(a)
+    print(a.to_tensor())
+
+    var b = nm.array[i8]("[[1, 2, 3], [4, 5, 6]]")
+    print(b)
+    print(b.to_tensor())
+
+    var c = nm.array[boolean]("[[1,0], [0,1]]")
+    print(c)
+    print(c.to_tensor())
+```
 #### trace
 
 

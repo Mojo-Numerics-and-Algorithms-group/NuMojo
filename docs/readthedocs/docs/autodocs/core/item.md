@@ -24,16 +24,13 @@ Implements Item type.
 - CollectionElement
 - Copyable
 - Movable
+- Stringable
 - UnknownDestructibility
 
-### Aliases
-  
-`dtype`:   
-`width`: 
 ### Fields
   
   
-* len `Int`  
+* ndim `Int`  
 
 ### Functions
 
@@ -41,11 +38,15 @@ Implements Item type.
 
 
 ```Mojo
-__init__(out self, owned *args: SIMD[index, 1])
+__init__[T: Indexer](out self, *args: T)
 ```  
 Summary  
   
 Construct the tuple.  
+  
+Parameters:  
+
+- T
   
 Args:  
 
@@ -53,21 +54,33 @@ Args:
 - \*args: Initial values.
 
 
+Parameter:
+    T: Type of values. It can be converted to `Int` with `index()`.
+
+
 ```Mojo
-__init__(out self, owned *args: Int)
+__init__[T: IndexerCollectionElement](out self, args: List[T])
 ```  
 Summary  
   
 Construct the tuple.  
   
+Parameters:  
+
+- T
+  
 Args:  
 
 - self
-- \*args: Initial values.
+- args: Initial values.
+
+
+Parameter:
+    T: Type of values. It can be converted to `Int` with `index()`.
 
 
 ```Mojo
-__init__(out self, owned args: Variant[List[Int], VariadicList[Int]])
+__init__(out self, args: VariadicList[Int])
 ```  
 Summary  
   
@@ -77,6 +90,24 @@ Args:
 
 - self
 - args: Initial values.
+
+
+```Mojo
+__init__(out self, ndim: Int, initialized: Bool)
+```  
+Summary  
+  
+Construct Item with number of dimensions.  
+  
+Args:  
+
+- self
+- ndim: Number of dimensions.
+- initialized: Whether the shape is initialized. If yes, the values will be set to 0. If no, the values will be uninitialized.
+
+
+This method is useful when you want to create a Item with given ndim
+without knowing the Item values.
 
 #### __copyinit__
 
@@ -93,51 +124,68 @@ Args:
 - self
 - other: The tuple to copy.
 
-#### __moveinit__
+#### __del__
 
 
 ```Mojo
-__moveinit__(out self, owned other: Self)
+__del__(owned self)
 ```  
 Summary  
   
-Move construct the tuple.  
+  
   
 Args:  
 
 - self
-- other: The tuple to move.
 
 #### __getitem__
 
 
 ```Mojo
-__getitem__(self, index: Int) -> Int
+__getitem__[T: Indexer](self, idx: T) -> Int
 ```  
 Summary  
   
 Get the value at the specified index.  
   
+Parameters:  
+
+- T
+  
 Args:  
 
 - self
-- index: The index of the value to get.
+- idx: The index of the value to get.
+
+
+Parameter:
+    T: Type of values. It can be converted to `Int` with `index()`.
 
 #### __setitem__
 
 
 ```Mojo
-__setitem__(self, index: Int, val: Int)
+__setitem__[T: Indexer, U: Indexer](self, idx: T, val: U)
 ```  
 Summary  
   
 Set the value at the specified index.  
   
+Parameters:  
+
+- T
+- U
+  
 Args:  
 
 - self
-- index: The index of the value to set.
+- idx: The index of the value to set.
 - val: The value to set.
+
+
+Parameter:
+    T: Type of values. It can be converted to `Int` with `index()`.
+    U: Type of values. It can be converted to `Int` with `index()`.
 
 #### __len__
 
@@ -157,7 +205,7 @@ Args:
 
 
 ```Mojo
-__iter__(self) -> _ItemIter[self]
+__iter__(self) -> _ItemIter
 ```  
 Summary  
   
@@ -170,6 +218,34 @@ Args:
 
 Notes:
     Need to add lifetimes after the new release.
+#### __repr__
+
+
+```Mojo
+__repr__(self) -> String
+```  
+Summary  
+  
+  
+  
+Args:  
+
+- self
+
+#### __str__
+
+
+```Mojo
+__str__(self) -> String
+```  
+Summary  
+  
+  
+  
+Args:  
+
+- self
+
 #### write_to
 
 
@@ -188,95 +264,3 @@ Args:
 
 - self
 - writer
-
-#### str
-
-
-```Mojo
-str(self) -> String
-```  
-Summary  
-  
-  
-  
-Args:  
-
-- self
-
-#### load
-
-
-```Mojo
-load[width: Int = 1](self, index: Int) -> SIMD[index, width]
-```  
-Summary  
-  
-  
-  
-Parameters:  
-
-- width Defualt: `1`
-  
-Args:  
-
-- self
-- index
-
-#### store
-
-
-```Mojo
-store[width: Int = 1](mut self, index: Int, val: SIMD[index, width])
-```  
-Summary  
-  
-  
-  
-Parameters:  
-
-- width Defualt: `1`
-  
-Args:  
-
-- self
-- index
-- val
-
-#### load_unsafe
-
-
-```Mojo
-load_unsafe[width: Int = 1](self, index: Int) -> SIMD[index, width]
-```  
-Summary  
-  
-  
-  
-Parameters:  
-
-- width Defualt: `1`
-  
-Args:  
-
-- self
-- index
-
-#### store_unsafe
-
-
-```Mojo
-store_unsafe[width: Int = 1](mut self, index: Int, val: SIMD[index, width])
-```  
-Summary  
-  
-  
-  
-Parameters:  
-
-- width Defualt: `1`
-  
-Args:  
-
-- self
-- index
-- val

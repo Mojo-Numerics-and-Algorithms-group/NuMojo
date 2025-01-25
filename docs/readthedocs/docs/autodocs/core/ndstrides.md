@@ -7,6 +7,9 @@
 ##  Module Summary
   
 Implements NDArrayStrides type.
+## Aliases
+  
+`Strides`: 
 ## NDArrayStrides
 
 ### NDArrayStrides Summary
@@ -20,7 +23,6 @@ Implements the NDArrayStrides.
 - AnyType
 - Stringable
 - UnknownDestructibility
-- Writable
 
 ### Fields
   
@@ -140,6 +142,21 @@ Args:
 - shape
 - order Default: String("C")
 
+#### __copyinit__
+
+
+```Mojo
+__copyinit__(out self, other: Self)
+```  
+Summary  
+  
+  
+  
+Args:  
+
+- self
+- other
+
 #### __getitem__
 
 
@@ -230,6 +247,20 @@ Args:
 
 - self
 
+#### __repr__
+
+
+```Mojo
+__repr__(self) -> String
+```  
+Summary  
+  
+Return a string of the strides of the array.  
+  
+Args:  
+
+- self
+
 #### __str__
 
 
@@ -238,7 +269,7 @@ __str__(self) -> String
 ```  
 Summary  
   
-  
+Return a string of the strides of the array.  
   
 Args:  
 

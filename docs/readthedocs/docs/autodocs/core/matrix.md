@@ -21,6 +21,7 @@
 - CollectionElement
 - Copyable
 - Movable
+- Sized
 - Stringable
 - UnknownDestructibility
 - Writable
@@ -37,6 +38,8 @@
     - Size of Matrix.  
 * strides `Tuple[Int, Int]`  
     - Strides of matrix.  
+* flags `Dict[String, Bool]`  
+    - Information about the memory layout of the array.  
 
 ### Functions
 
@@ -48,7 +51,7 @@ __init__(out self, shape: Tuple[Int, Int])
 ```  
 Summary  
   
-Matrix NDArray initialization.  
+Construct a matrix without initializing data.  
   
 Args:  
 
@@ -61,7 +64,7 @@ __init__(out self, data: Self)
 ```  
 Summary  
   
-Create a matrix from a matrix.  
+Construct a matrix from matrix.  
   
 Args:  
 
@@ -74,7 +77,7 @@ __init__(out self, data: NDArray[dtype])
 ```  
 Summary  
   
-Create Matrix from NDArray.  
+Construct a matrix from array.  
   
 Args:  
 
@@ -667,6 +670,57 @@ from numojo import Matrix
 A = Matrix.ones(shape=(4, 4))
 print(2 * A)
 ```
+#### __iter__
+
+
+```Mojo
+__iter__(self) -> _MatrixIter[self, dtype]
+```  
+Summary  
+  
+Iterate over elements of the Matrix, returning copied value.  
+  
+Args:  
+
+- self
+
+
+Example:
+```mojo
+from numojo import Matrix
+var A = Matrix.rand((4,4))
+for i in A:
+    print(i)
+```
+
+#### __len__
+
+
+```Mojo
+__len__(self) -> Int
+```  
+Summary  
+  
+Returns length of 0-th dimension.  
+  
+Args:  
+
+- self
+
+#### __reversed__
+
+
+```Mojo
+__reversed__(self) -> _MatrixIter[self, dtype, False]
+```  
+Summary  
+  
+Iterate backwards over elements of the Matrix, returning copied value.  
+  
+Args:  
+
+- self
+
 #### __str__
 
 
@@ -699,43 +753,6 @@ Args:
 
 - self
 - writer
-
-#### __iter__
-
-
-```Mojo
-__iter__(self) -> _MatrixIter[self, dtype]
-```  
-Summary  
-  
-Iterate over elements of the Matrix, returning copied value.  
-  
-Args:  
-
-- self
-
-
-Example:
-```mojo
-from numojo import Matrix
-var A = Matrix.rand((4,4))
-for i in A:
-    print(i)
-```
-
-#### __reversed__
-
-
-```Mojo
-__reversed__(self) -> _MatrixIter[self, dtype, False]
-```  
-Summary  
-  
-Iterate backwards over elements of the Matrix, returning copied value.  
-  
-Args:  
-
-- self
 
 #### all
 

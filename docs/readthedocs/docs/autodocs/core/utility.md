@@ -71,6 +71,24 @@ var np_arr = to_numpy(arr)
 var np_arr1 = arr.to_numpy()
 ```
 
+## to_tensor
+
+
+```Mojo
+to_tensor[dtype: DType](a: NDArray[dtype]) -> Tensor[dtype]
+```  
+Summary  
+  
+Convert to a tensor.  
+  
+Parameters:  
+
+- dtype
+  
+Args:  
+
+- a
+
 ## is_inttype
 
 

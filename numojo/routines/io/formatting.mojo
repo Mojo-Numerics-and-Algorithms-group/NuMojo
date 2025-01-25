@@ -221,7 +221,7 @@ fn format_floating_scientific[
         var exponent_threshold = GLOBAL_PRINT_OPTIONS.exponent_threshold
         var formatted_width = GLOBAL_PRINT_OPTIONS.formatted_width
 
-        if x == 0.0:
+        if x == 0:
             if sign:
                 var result: String = "+0." + "0" * precision + "e+00"
                 return result.rjust(formatted_width)
@@ -230,7 +230,7 @@ fn format_floating_scientific[
                 return result.rjust(formatted_width)
 
         var power: Int = int(mt.log10(abs(x)))
-        if Scalar[dtype](0.0) < x < Scalar[dtype](1.0):
+        if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
             power -= 1
         var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
         var mantissa_without_sign_string = str(abs(mantissa))

@@ -4,65 +4,90 @@ Implements Item type.
 `Item` is a series of `Int` on the heap.
 """
 
-from sys import simdwidthof
-from utils import Variant
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
+from sys import simdwidthof
+from utils import Variant
+
+from numojo.core.traits.indexer_collection_element import (
+    IndexerCollectionElement,
+)
 
 alias item = Item
 
 
+@register_passable
 struct Item(CollectionElement):
-    alias dtype: DType = DType.index
-    alias width = simdwidthof[Self.dtype]()
-    var _buf: UnsafePointer[Scalar[Self.dtype]]
-    var len: Int
+    var _buf: UnsafePointer[Int]
+    var ndim: Int
 
     @always_inline("nodebug")
-    fn __init__(mut self, owned *args: Scalar[Self.dtype]):
+    fn __init__[T: Indexer](out self, *args: T):
+        """Construct the tuple.
+
+        Parameter:
+            T: Type of values. It can be converted to `Int` with `index()`.
+
+        Args:
+            args: Initial values.
+        """
+        self._buf = UnsafePointer[Int]().alloc(args.__len__())
+        self.ndim = args.__len__()
+        for i in range(args.__len__()):
+            self._buf[i] = index(args[i])
+
+    @always_inline("nodebug")
+    fn __init__[T: IndexerCollectionElement](out self, args: List[T]) raises:
+        """Construct the tuple.
+
+        Parameter:
+            T: Type of values. It can be converted to `Int` with `index()`.
+
+        Args:
+            args: Initial values.
+        """
+        self.ndim = len(args)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(index(args[i]))
+
+    @always_inline("nodebug")
+    fn __init__(out self, args: VariadicList[Int]) raises:
         """Construct the tuple.
 
         Args:
             args: Initial values.
         """
-        self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
-        self.len = args.__len__()
-        for i in range(args.__len__()):
-            self._buf[i] = args[i]
-
-    @always_inline("nodebug")
-    fn __init__(mut self, owned *args: Int):
-        """Construct the tuple.
-
-        Args:
-            args: Initial values.
-        """
-        self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(args.__len__())
-        self.len = args.__len__()
-        for i in range(args.__len__()):
-            self._buf[i] = args[i]
+        self.ndim = len(args)
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(index(args[i]))
 
     @always_inline("nodebug")
     fn __init__(
-        mut self, owned args: Variant[List[Int], VariadicList[Int]]
+        out self,
+        ndim: Int,
+        initialized: Bool,
     ) raises:
-        """Construct the tuple.
+        """
+        Construct Item with number of dimensions.
+
+        This method is useful when you want to create a Item with given ndim
+        without knowing the Item values.
 
         Args:
-            args: Initial values.
+            ndim: Number of dimensions.
+            initialized: Whether the shape is initialized.
+                If yes, the values will be set to 0.
+                If no, the values will be uninitialized.
         """
-        if args.isa[List[Int]]():
-            self.len = args[List[Int]].__len__()
-            self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
-            for i in range(self.len):
-                self._buf[i] = args[List[Int]][i]
-        elif args.isa[VariadicList[Int]]():
-            self.len = args[VariadicList[Int]].__len__()
-            self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(self.len)
-            for i in range(self.len):
-                self._buf[i] = args[VariadicList[Int]][i]
-        else:
-            raise Error("Invalid type")
+        if ndim < 0:
+            raise Error("Number of dimensions must be non-negative.")
+        self.ndim = ndim
+        self._buf = UnsafePointer[Int]().alloc(ndim)
+        if initialized:
+            for i in range(ndim):
+                (self._buf + i).init_pointee_copy(0)
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -71,20 +96,13 @@ struct Item(CollectionElement):
         Args:
             other: The tuple to copy.
         """
-        self._buf = UnsafePointer[Scalar[Self.dtype]]().alloc(other.__len__())
-        self.len = other.len
-        for i in range(other.__len__()):
-            self._buf[i] = other[i]
+        self.ndim = other.ndim
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        memcpy(self._buf, other._buf, self.ndim)
 
     @always_inline("nodebug")
-    fn __moveinit__(mut self, owned other: Self):
-        """Move construct the tuple.
-
-        Args:
-            other: The tuple to move.
-        """
-        self._buf = other._buf
-        self.len = other.len
+    fn __del__(owned self):
+        self._buf.free()
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:
@@ -93,31 +111,62 @@ struct Item(CollectionElement):
         Returns:
             The length of the tuple.
         """
-        return self.len
+        return self.ndim
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Int) -> Int:
+    fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
         """Get the value at the specified index.
 
+        Parameter:
+            T: Type of values. It can be converted to `Int` with `index()`.
+
         Args:
-            index: The index of the value to get.
+            idx: The index of the value to get.
 
         Returns:
             The value at the specified index.
         """
-        return int(self._buf[index])
+
+        var normalized_idx: Int = index(idx)
+        if normalized_idx < 0:
+            normalized_idx = idx + self.ndim
+
+        if normalized_idx < 0 or normalized_idx >= self.ndim:
+            raise Error(
+                String("Index ({}) out of range [{}, {})").format(
+                    index(idx), -self.ndim, self.ndim - 1
+                )
+            )
+
+        return self._buf[normalized_idx]
 
     @always_inline("nodebug")
-    fn __setitem__(self, index: Int, val: Int):
+    fn __setitem__[T: Indexer, U: Indexer](self, idx: T, val: U) raises:
         """Set the value at the specified index.
 
+        Parameter:
+            T: Type of values. It can be converted to `Int` with `index()`.
+            U: Type of values. It can be converted to `Int` with `index()`.
+
         Args:
-            index: The index of the value to set.
+            idx: The index of the value to set.
             val: The value to set.
         """
-        self._buf[index] = val
 
-    fn __iter__(self) raises -> _ItemIter[__origin_of(self)]:
+        var normalized_idx: Int = index(idx)
+        if normalized_idx < 0:
+            normalized_idx = idx + self.ndim
+
+        if normalized_idx < 0 or normalized_idx >= self.ndim:
+            raise Error(
+                String("Index ({}) out of range [{}, {})").format(
+                    index(idx), -self.ndim, self.ndim - 1
+                )
+            )
+
+        self._buf[normalized_idx] = index(val)
+
+    fn __iter__(self) raises -> _ItemIter:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -127,88 +176,73 @@ struct Item(CollectionElement):
             Need to add lifetimes after the new release.
         """
 
-        return _ItemIter[__origin_of(self)](
-            array=self,
-            length=self.len,
+        return _ItemIter(
+            item=self,
+            length=self.ndim,
         )
 
-    fn write_to[W: Writer](self, mut writer: W):
-        writer.write("Item: " + self.str() + "\n" + "Length: " + str(self.len))
-
-    fn str(self) -> String:
-        var result: String = "["
-        for i in range(self.len):
-            result += str(self._buf[i])
-            if i < self.len - 1:
-                result += ", "
-        result += "]"
+    fn __repr__(self) -> String:
+        var result: String = "numojo.Item" + str(self)
         return result
 
-    @always_inline("nodebug")
-    fn load[width: Int = 1](self, index: Int) raises -> SIMD[Self.dtype, width]:
-        if index + width - 1 > self.len:
-            raise Error("Index out of bounds")
-        return self._buf.load[width=width](index)
+    fn __str__(self) -> String:
+        var result: String = "("
+        for i in range(self.ndim):
+            result += str(self._buf[i])
+            if i < self.ndim - 1:
+                result += ","
+        result += ")"
+        return result
 
-    @always_inline("nodebug")
-    fn store[
-        width: Int = 1
-    ](mut self, index: Int, val: SIMD[Self.dtype, width]) raises:
-        if index + width - 1 > self.len:
-            raise Error("Index out of bounds")
-        self._buf.store(index, val)
-
-    @always_inline("nodebug")
-    fn load_unsafe[width: Int = 1](self, index: Int) -> SIMD[Self.dtype, width]:
-        return self._buf.load[width=width](index)
-
-    @always_inline("nodebug")
-    fn store_unsafe[
-        width: Int = 1
-    ](mut self, index: Int, val: SIMD[Self.dtype, width]):
-        self._buf.store(index, val)
+    fn write_to[W: Writer](self, mut writer: W):
+        writer.write(
+            "Item at index: " + str(self) + "  " + "Length: " + str(self.ndim)
+        )
 
 
 @value
 struct _ItemIter[
-    is_mutable: Bool, //,
-    lifetime: Origin[is_mutable],
     forward: Bool = True,
 ]:
     """Iterator for Item.
 
     Parameters:
-        is_mutable: Whether the iterator is mutable.
-        lifetime: The lifetime of the underlying Item data.
         forward: The iteration direction. `False` is backwards.
     """
 
     var index: Int
-    var array: Item
+    var item: Item
     var length: Int
 
     fn __init__(
         mut self,
-        array: Item,
+        item: Item,
         length: Int,
     ):
         self.index = 0 if forward else length
         self.length = length
-        self.array = array
+        self.item = item
 
     fn __iter__(self) -> Self:
         return self
+
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
 
     fn __next__(mut self) raises -> Scalar[DType.index]:
         @parameter
         if forward:
             var current_index = self.index
             self.index += 1
-            return self.array.__getitem__(current_index)
+            return self.item.__getitem__(current_index)
         else:
             var current_index = self.index
             self.index -= 1
-            return self.array.__getitem__(current_index)
+            return self.item.__getitem__(current_index)
 
     fn __len__(self) -> Int:
         @parameter

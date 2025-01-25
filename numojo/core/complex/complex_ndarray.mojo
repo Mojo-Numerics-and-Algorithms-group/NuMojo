@@ -1,19 +1,20 @@
 """
 Implements N-Dimensional Complex Array
-Last updated: 2025-01-06
+Last updated: 2025-01-24
 """
 
 
-import builtin.math as builtin_math
+from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from algorithm import parallelize, vectorize
-from python import Python, PythonObject
-from sys import simdwidthof
+import builtin.math as builtin_math
 from collections import Dict
 from collections.optional import Optional
-from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
+from python import Python, PythonObject
+from sys import simdwidthof
+from utils import Variant
+from utils.numerics import isnan, isinf
 
 import numojo.routines.sorting as sorting
 import numojo.routines.math.arithmetic as arithmetic
@@ -30,11 +31,11 @@ from numojo.routines.linalg.products import matmul
 from numojo.routines.manipulation import reshape, ravel
 
 import numojo.core._array_funcs as _af
-from numojo.core.datatypes import TypeCoercion
+from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.complex_simd import ComplexSIMD
+from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
@@ -42,6 +43,15 @@ from numojo.core.utility import (
     _traverse_iterative_setter,
     to_numpy,
     bool_to_numeric,
+)
+
+from numojo.routines.io.formatting import (
+    format_floating_precision,
+    format_floating_scientific,
+    format_value,
+    PrintOptions,
+    printoptions,
+    GLOBAL_PRINT_OPTIONS,
 )
 
 
@@ -420,7 +430,8 @@ struct ComplexNDArray[
         var slice_list: List[Slice] = List[Slice]()
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        self.__setitem__(slices=slice_list, val=val)
+        # self.__setitem__(slices=slice_list, val=val)
+        self[slice_list] = val
 
     fn __setitem__(mut self, owned slices: List[Slice], val: Self) raises:
         """
@@ -433,7 +444,7 @@ struct ComplexNDArray[
         var ndims: Int = 0
         var count: Int = 0
         var spec: List[Int] = List[Int]()
-        var slice_list: List[Slice] = self._adjust_slice_(slices)
+        var slice_list: List[Slice] = self._adjust_slice(slices)
         for i in range(n_slices):
             if (
                 slice_list[i].start.value() >= self.shape[i]
@@ -628,7 +639,7 @@ struct ComplexNDArray[
                 var size_at_dim: Int = self.shape[i]
                 slice_list.append(Slice(0, size_at_dim))
 
-        var narr: Self = self.__getitem__(slice_list)
+        var narr: Self = self[slice_list]
 
         if self.ndim == 1:
             narr.ndim = 0
@@ -665,7 +676,7 @@ struct ComplexNDArray[
             im=self._im._buf.ptr.load[width=1](idx),
         )
 
-    fn _adjust_slice_(self, slice_list: List[Slice]) raises -> List[Slice]:
+    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
         """
         Adjusts the slice values to lie within 0 and dim.
         """
@@ -747,7 +758,7 @@ struct ComplexNDArray[
         var spec: List[Int] = List[Int]()
         var count: Int = 0
 
-        var slices: List[Slice] = self._adjust_slice_(slice_list)
+        var slices: List[Slice] = self._adjust_slice(slice_list)
         for i in range(slices.__len__()):
             if (
                 slices[i].start.value() >= self.shape[i]
@@ -887,7 +898,7 @@ struct ComplexNDArray[
                 var size_at_dim: Int = self.shape[i]
                 slice_list.append(Slice(0, size_at_dim))
 
-        var narr: Self = self.__getitem__(slice_list)
+        var narr: Self = self[slice_list]
 
         if count_int == self.ndim:
             narr.ndim = 0
@@ -943,7 +954,7 @@ struct ComplexNDArray[
         for i in index:
             new_index.append(int(i.item(0)))
 
-        return self.__getitem__(new_index)
+        return self[new_index]
 
     fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         """
@@ -1420,20 +1431,28 @@ struct ComplexNDArray[
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:
         """
-        Enables str(ComplexNDArray).
+        Enables str(array).
         """
-        return String.write(self)
+        var res: String
+        try:
+            res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
+        except e:
+            res = String("Cannot convert array to string") + str(e)
+
+        return res
 
     fn write_to[W: Writer](self, mut writer: W):
         try:
             writer.write(
-                self._array_to_string(0, 0)
+                self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
                 + "\n"
                 + str(self.ndim)
-                + "-D array  "
-                + self.shape.__str__()
-                + "  C-DType: "
-                + Self.cdtype.__str__()
+                + "D-array  Shape"
+                + str(self.shape)
+                + "  Strides"
+                + str(self.strides)
+                + "  DType: "
+                + _concise_dtype_str(self.dtype)
                 + "  C-cont: "
                 + str(self.flags["C_CONTIGUOUS"])
                 + "  F-cont: "
@@ -1442,7 +1461,7 @@ struct ComplexNDArray[
                 + str(self.flags["OWNDATA"])
             )
         except e:
-            writer.write("Cannot convert array to string")
+            writer.write("Cannot convert array to string" + str(e))
 
     fn __repr__(self) -> String:
         """
@@ -1480,50 +1499,70 @@ struct ComplexNDArray[
             print("Cannot convert array to string", e)
             return ""
 
-    fn _array_to_string(self, dimension: Int, offset: Int) raises -> String:
-        if self._re.ndim == 0:
+    fn _array_to_string(
+        self,
+        dimension: Int,
+        offset: Int,
+        print_options: PrintOptions,
+    ) raises -> String:
+        """
+        Convert the array to a string.
+
+        Args:
+            dimension: The current dimension.
+            offset: The offset of the current dimension.
+            print_options: The print options.
+        """
+        var seperator = print_options.separator
+        var padding = print_options.padding
+        var edge_items = print_options.edge_items
+
+        if self.ndim == 0:
             return str(self.item(0))
-        if dimension == self._re.ndim - 1:
-            var result: String = str("[\t")
-            var number_of_items = self._re.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+        if dimension == self.ndim - 1:
+            var result: String = String("[") + padding
+            var number_of_items = self.shape[dimension]
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
-                    result = (
-                        result
-                        + self.item(
-                            offset + i * self._re.strides[dimension]
-                        ).__str__()
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
+                    var formatted_value = format_value(value, print_options)
+                    result = result + formatted_value
+                    if i < (number_of_items - 1):
+                        result = result + seperator
+                result = result + padding
             else:  # Print first 3 and last 3 items
-                for i in range(3):
-                    result = (
-                        result
-                        + self.item(
-                            offset + i * self._re.strides[dimension]
-                        ).__str__()
+                for i in range(edge_items):
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
-                result = result + "...\t"
-                for i in range(number_of_items - 3, number_of_items):
-                    result = (
-                        result
-                        + self.item(
-                            offset + i * self._re.strides[dimension]
-                        ).__str__()
+                    var formatted_value = format_value(value, print_options)
+                    result = result + formatted_value
+                    if i < (edge_items - 1):
+                        result = result + seperator
+                result = result + seperator + "..." + seperator
+                for i in range(number_of_items - edge_items, number_of_items):
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
                     )
-                    result = result + "\t"
+                    var formatted_value = format_value(value, print_options)
+                    result = result + formatted_value
+                    if i < (number_of_items - 1):
+                        result = result + seperator
+                result = result + padding
             result = result + "]"
             return result
         else:
             var result: String = str("[")
-            var number_of_items = self._re.shape[dimension]
-            if number_of_items <= 6:  # Print all items
+            var number_of_items = self.shape[dimension]
+            if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
-                            offset + i * self._re.strides[dimension].__int__(),
+                            offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     if i > 0:
                         result = (
@@ -1531,18 +1570,19 @@ struct ComplexNDArray[
                             + str(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
-                                offset
-                                + i * self._re.strides[dimension].__int__(),
+                                offset + i * self.strides[dimension].__int__(),
+                                print_options,
                             )
                         )
                     if i < (number_of_items - 1):
                         result = result + "\n"
             else:  # Print first 3 and last 3 items
-                for i in range(3):
+                for i in range(edge_items):
                     if i == 0:
                         result = result + self._array_to_string(
                             dimension + 1,
-                            offset + i * self._re.strides[dimension].__int__(),
+                            offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     if i > 0:
                         result = (
@@ -1550,20 +1590,21 @@ struct ComplexNDArray[
                             + str(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
-                                offset
-                                + i * self._re.strides[dimension].__int__(),
+                                offset + i * self.strides[dimension].__int__(),
+                                print_options,
                             )
                         )
                     if i < (number_of_items - 1):
                         result += "\n"
                 result = result + "...\n"
-                for i in range(number_of_items - 3, number_of_items):
+                for i in range(number_of_items - edge_items, number_of_items):
                     result = (
                         result
                         + str(" ") * (dimension + 1)
                         + self._array_to_string(
                             dimension + 1,
-                            offset + i * self._re.strides[dimension].__int__(),
+                            offset + i * self.strides[dimension].__int__(),
+                            print_options,
                         )
                     )
                     if i < (number_of_items - 1):
@@ -1574,7 +1615,55 @@ struct ComplexNDArray[
     fn __len__(self) -> Int:
         return int(self._re.size)
 
-    # fn __iter__(self) raises -> _NDArrayIter[__origin_of(self), dtype]:
+    fn load[
+        width: Int = 1
+    ](self, index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
+        """
+        Safely loads a SIMD element of size `width` at `index`
+        from the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.load` directly.
+
+        Raises:
+            Index out of boundary.
+        """
+
+        if (index < 0) or (index >= self.size):
+            raise Error(
+                String("Invalid index: index out of bound [0, {}).").format(
+                    self.size
+                )
+            )
+
+        return ComplexSIMD[cdtype, dtype=dtype](
+            re=self._re._buf.ptr.load[width=1](index),
+            im=self._im._buf.ptr.load[width=1](index),
+        )
+
+    fn store[
+        width: Int
+    ](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype]) raises:
+        """
+        Safely stores SIMD element of size `width` at `index`
+        of the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.store` directly.
+
+        Raises:
+            Index out of boundary.
+        """
+
+        if (index < 0) or (index >= self.size):
+            raise Error(
+                String("Invalid index: index out of bound [0, {}).").format(
+                    self.size
+                )
+            )
+
+        self._re._buf.ptr.store(index, val.re)
+        self._im._buf.ptr.store(index, val.im)
+
+    # fn __iter__(self) raises -> _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype]:
     #     """Iterate over elements of the NDArray, returning copied value.
 
     #     Returns:
@@ -1584,14 +1673,14 @@ struct ComplexNDArray[
     #         Need to add lifetimes after the new release.
     #     """
 
-    #     return _NDArrayIter[__origin_of(self), dtype](
+    #     return _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype](
     #         array=self,
     #         length=self.shape[0],
     #     )
 
     # fn __reversed__(
     #     self,
-    # ) raises -> _NDArrayIter[__origin_of(self), dtype, forward=False]:
+    # ) raises -> _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype, forward=False]:
     #     """Iterate backwards over elements of the NDArray, returning
     #     copied value.
 
@@ -1599,10 +1688,10 @@ struct ComplexNDArray[
     #         A reversed iterator of NDArray elements.
     #     """
 
-    #     return _NDArrayIter[__origin_of(self), dtype, forward=False](
-    #         array=self,
-    #         length=self.shape[0],
-    #     )
+    # #     return _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype, forward=False](
+    # #         array=self,
+    # #         length=self.shape[0],
+    # #     )
 
     fn item(self, owned index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
         """
@@ -1633,9 +1722,6 @@ struct ComplexNDArray[
             )
 
         if self.flags["F_CONTIGUOUS"]:
-            # column-major should be converted to row-major
-            # The following code can be taken out as a function that
-            # convert any index to coordinates according to the order
             var c_stride = NDArrayStrides(shape=self.shape)
             var c_coordinates = List[Int]()
             var idx: Int = index
@@ -1734,9 +1820,9 @@ struct ComplexNDArray[
                     self._im._buf.ptr.store(
                         _get_offset(c_coordinates, self.strides), item.im
                     )
-
-                self._re._buf.ptr.store(idx, item.re)
-                self._im._buf.ptr.store(idx, item.im)
+                else:
+                    self._re._buf.ptr.store(idx, item.re)
+                    self._im._buf.ptr.store(idx, item.im)
             else:
                 raise Error(
                     String(
@@ -1763,30 +1849,45 @@ struct ComplexNDArray[
         """
         return Self(self._re, -self._im)
 
+    fn to_ndarray(self, type: String = "re") raises -> NDArray[dtype=dtype]:
+        if type == "re":
+            var result: NDArray[dtype=dtype] = NDArray[dtype=dtype](self.shape)
+            memcpy(result._buf.ptr, self._re._buf.ptr, self.size)
+            return result^
+        elif type == "im":
+            var result: NDArray[dtype=dtype] = NDArray[dtype=dtype](self.shape)
+            memcpy(result._buf.ptr, self._im._buf.ptr, self.size)
+            return result^
+        else:
+            raise Error("Invalid type: " + type + ", must be 're' or 'im'")
+
 
 # @value
 # struct _ComplexNDArrayIter[
 #     is_mutable: Bool, //,
 #     origin: Origin[is_mutable],
+#     cdtype: CDType,
 #     dtype: DType,
 #     forward: Bool = True,
 # ]:
-#     """Iterator for NDArray.
+#     """
+#     Iterator for NDArray.
 
 #     Parameters:
 #         is_mutable: Whether the iterator is mutable.
 #         origin: The lifetime of the underlying NDArray data.
+#         cdtype: The complex data type of the item.
 #         dtype: The data type of the item.
 #         forward: The iteration direction. `False` is backwards.
 #     """
 
 #     var index: Int
-#     var array: NDArray[dtype]
+#     var array: ComplexNDArray[cdtype, dtype=dtype]
 #     var length: Int
 
 #     fn __init__(
 #         mut self,
-#         array: NDArray[dtype],
+#         array: ComplexNDArray[cdtype, dtype=dtype],
 #         length: Int,
 #     ):
 #         self.index = 0 if forward else length
@@ -1796,7 +1897,7 @@ struct ComplexNDArray[
 #     fn __iter__(self) -> Self:
 #         return self
 
-#     fn __next__(mut self) raises -> NDArray[dtype]:
+#     fn __next__(mut self) raises -> ComplexNDArray[cdtype, dtype=dtype]:
 #         @parameter
 #         if forward:
 #             var current_index = self.index

@@ -89,7 +89,7 @@ fn reshape[
         Array of the same data with a new shape.
     """
 
-    if A.size != shape.size:
+    if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
     var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
@@ -264,7 +264,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]))
 
     if A.shape[0] == 1 or A.shape[1] == 1:
-        memcpy(B._buf, A._buf, A.size)
+        memcpy(B._buf.ptr, A._buf.ptr, A.size)
     else:
         for i in range(B.shape[0]):
             for j in range(B.shape[1]):

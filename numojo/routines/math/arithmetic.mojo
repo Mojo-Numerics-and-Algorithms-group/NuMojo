@@ -13,6 +13,7 @@ from utils import Variant
 
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+from numojo.core.datatypes import TypeCoercion
 
 
 fn add[
@@ -44,6 +45,39 @@ fn add[
 fn add[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array1: NDArray[dtype], array2: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform addition on two arrays.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return backend().math_func_2_array_in_one_array_out[
+        ResultDType, SIMD.__add__
+    ](array1.astype[ResultDType](), array2.astype[ResultDType]())
+
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Perform addition on between an array and a scalar.
@@ -67,6 +101,39 @@ fn add[
 fn add[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array: NDArray[dtype], scalar: Scalar[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform addition on two arrays.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array: A NDArray.
+        scalar: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        ResultDType, SIMD.__add__
+    ](array.astype[ResultDType](), scalar.cast[ResultDType]())
+
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Perform addition on between an array and a scalar.
@@ -83,6 +150,36 @@ fn add[
         The element-wise sum of `array1` and`array2`.
     """
     return add[dtype, backend=backend](array, scalar)
+
+
+fn add[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](scalar: Scalar[dtype], array: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform addition on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        scalar: A NDArray.
+        array: A NDArray.
+
+    Returns:
+        The elementwise sum of `array1` and`array2`.
+    """
+    return add[ResultDType, backend=backend](
+        array.astype[ResultDType](), scalar.cast[ResultDType]()
+    )
 
 
 fn add[
@@ -152,6 +249,39 @@ fn sub[
 fn sub[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array1: NDArray[dtype], array2: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform subtraction on two arrays.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        The elementwise difference of `array1` and`array2`.
+    """
+    return backend().math_func_2_array_in_one_array_out[
+        ResultDType, SIMD.__sub__
+    ](array1.astype[ResultDType](), array2.astype[ResultDType]())
+
+
+fn sub[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Perform subtraction on between an array and a scalar.
@@ -175,6 +305,36 @@ fn sub[
 fn sub[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array: NDArray[dtype], scalar: Scalar[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform subtraction on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array: A NDArray.
+        scalar: A NDArray.
+
+    Returns:
+        The elementwise difference of `array` and`scalar`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        ResultDType, SIMD.__sub__
+    ](array.astype[ResultDType](), scalar.cast[ResultDType]())
+
+
+fn sub[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Perform subtraction on between an array and a scalar.
@@ -191,6 +351,36 @@ fn sub[
         The element-wise difference of `array1` and`array2`.
     """
     return sub[dtype, backend=backend](array, scalar)
+
+
+fn sub[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](scalar: Scalar[dtype], array: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform subtraction on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        scalar: A NDArray.
+        array: A NDArray.
+
+    Returns:
+        The elementwise difference of `array` and`scalar`.
+    """
+    return sub[ResultDType, backend=backend](
+        array.astype[ResultDType](), scalar.cast[ResultDType]()
+    )
 
 
 fn diff[
@@ -323,6 +513,36 @@ fn mul[
 fn mul[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array1: NDArray[dtype], array2: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform multiplication on between two arrays.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        The element-wise product of `array1` and`array2`.
+    """
+    return backend().math_func_2_array_in_one_array_out[
+        ResultDType, SIMD.__mul__
+    ](array1.astype[ResultDType](), array2.astype[ResultDType]())
+
+
+fn mul[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Perform multiplication on between an array and a scalar.
@@ -346,6 +566,36 @@ fn mul[
 fn mul[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array: NDArray[dtype], scalar: Scalar[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform multiplication on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array: A NDArray.
+        scalar: A NDArray.
+
+    Returns:
+        The element-wise product of `array` and`scalar`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        ResultDType, SIMD.__mul__
+    ](array.astype[ResultDType](), scalar.cast[ResultDType]())
+
+
+fn mul[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Perform multiplication on between an array and a scalar.
@@ -362,6 +612,36 @@ fn mul[
         The element-wise product of `array1` and`array2`.
     """
     return mul[dtype, backend=backend](array, scalar)
+
+
+fn mul[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](scalar: Scalar[dtype], array: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform multiplication on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        scalar: A NDArray.
+        array: A NDArray.
+
+    Returns:
+        The element-wise product of `array` and`scalar`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        ResultDType, SIMD.__mul__
+    ](array.astype[ResultDType](), scalar.cast[ResultDType]())
 
 
 fn mul[
@@ -431,6 +711,36 @@ fn div[
 fn div[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array1: NDArray[dtype], array2: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform true division on between two arrays.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        The element-wise quotient of `array1` and`array2`.
+    """
+    return backend().math_func_2_array_in_one_array_out[
+        ResultDType, SIMD.__truediv__
+    ](array1.astype[ResultDType](), array2.astype[ResultDType]())
+
+
+fn div[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
     Perform true division on between an array and a scalar.
@@ -454,6 +764,36 @@ fn div[
 fn div[
     dtype: DType,
     backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](array: NDArray[dtype], scalar: Scalar[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform true division on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        array: A NDArray.
+        scalar: A NDArray.
+
+    Returns:
+        The element-wise quotient of `array` and`scalar`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        ResultDType, SIMD.__truediv__
+    ](array.astype[ResultDType](), scalar.cast[ResultDType]())
+
+
+fn div[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Perform true division on between an array and a scalar.
@@ -470,6 +810,36 @@ fn div[
         The element-wise quotient of `array1` and`array2`.
     """
     return div[dtype, backend=backend](array, scalar)
+
+
+fn div[
+    dtype: DType,
+    backend: _mf.Backend = _mf.Vectorized,
+    *,
+    OtherDType: DType,
+    ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
+](scalar: Scalar[dtype], array: NDArray[OtherDType]) raises -> NDArray[
+    ResultDType
+]:
+    """
+    Perform true division on between an array and a scalar.
+
+    Parameters:
+        dtype: The element type.
+        backend: Sets utility function origin, defualts to `Vectorized`.
+        OtherDType: The element type of the second array.
+        ResultDType: The element type of the result array.
+
+    Args:
+        scalar: A NDArray.
+        array: A NDArray.
+
+    Returns:
+        The element-wise quotient of `array` and`scalar`.
+    """
+    return backend().math_func_1_array_1_scalar_in_one_array_out[
+        ResultDType, SIMD.__truediv__
+    ](array.astype[ResultDType](), scalar.cast[ResultDType]())
 
 
 fn floor_div[

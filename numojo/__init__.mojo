@@ -11,10 +11,11 @@ alias __version__ = "V0.5"
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
+from numojo.core.ndstrides import NDArrayStrides, Strides
 from numojo.core.item import Item, item
-from numojo.core.complex_dtype import CDType
-from numojo.core.complex_simd import ComplexSIMD, ComplexScalar
-from numojo.core.complex_ndarray import ComplexNDArray
+from numojo.core.complex.complex_dtype import CDType
+from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar
+from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.matrix import Matrix
 from numojo.core.datatypes import (
     i8,
@@ -57,7 +58,11 @@ alias c = numojo.routines.constants.Constants.c
 # TODO Make explicit imports of each individual function in future
 # to avoid polluting the root namespace.
 from numojo.routines import io
-from numojo.routines.io import loadtxt, savetxt, format_float_scientific
+from numojo.routines.io import (
+    loadtxt,
+    savetxt,
+)
+from numojo.routines.io import printoptions, set_printoptions
 
 from numojo.routines import linalg
 
@@ -180,6 +185,7 @@ from numojo.routines.creation import (
     triu,
     vander,
     fromstring,
+    from_tensor,
     array,
 )
 

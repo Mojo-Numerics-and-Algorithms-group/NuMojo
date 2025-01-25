@@ -22,9 +22,17 @@ doc_pages = "rm -Rf docs/readthedocs/docs/docs && mojo doc numojo -o docs/readth
 test = "magic run mojo test tests -I ./ -I ./tests/ && magic run mojo package numojo"
 t = "clear && magic run mojo test tests -I ./ -I ./tests/ && magic run mojo package numojo"
 
-# runs all final checks before a commit
+
+# run individual tests to avoid overheat
+test_core = "magic run mojo test tests/core -I ./ -I ./tests/"
+test_creation = "magic run mojo test tests/routines/test_creation.mojo -I ./ -I ./tests/"
+test_manipulation = "magic run mojo test tests/routines/test_manipulation.mojo -I ./ -I ./tests/"
+test_linalg = "magic run mojo test tests/routines/test_linalg.mojo -I ./ -I ./tests/"
+
+# run all final checks before a commit
 final = "magic run mojo test tests -I ./ && magic run mojo format ./ && magic run mojo package numojo && magic run doc_pages"
 f = "clear && magic run mojo test tests -I ./ -I ./tests/ && magic run mojo format ./ && magic run mojo package numojo && magic run doc_pages"
+
 # compile the package
 package = "magic run mojo package numojo"
 p = "clear && magic run mojo package numojo"
@@ -32,7 +40,7 @@ p = "clear && magic run mojo package numojo"
 format = "magic run mojo format ./"
 
 [dependencies]
-max = "24.6.0"
+max = "==24.6.0"
 python = ">=3.9,<3.13"
 numpy = ">=1.19,<2.2"
 scipy = ">=1.14,<1.15"

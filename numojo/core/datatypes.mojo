@@ -6,7 +6,7 @@ Datatypes Module - Implements datatypes aliases, conversions
 # Last updated: 2024-06-18
 # ===----------------------------------------------------------------------=== #
 
-# Rust-like data type alias
+# Rust-like or numpy-like data type alias
 """alias for `DType.int8`"""
 alias i8 = DType.int8
 """Data type alias for DType.int8"""
@@ -17,6 +17,8 @@ alias i32 = DType.int32
 alias i64 = DType.int64
 """Data type alias for DType.int64"""
 alias isize = DType.index
+"""Data type alias for DType.index"""
+alias intp = DType.index
 """Data type alias for DType.index"""
 alias u8 = DType.uint8
 """Data type alias for DType.uint8"""
@@ -32,6 +34,8 @@ alias f32 = DType.float32
 """Data type alias for DType.float32"""
 alias f64 = DType.float64
 """Data type alias for DType.float64"""
+alias boolean = DType.bool
+"""Data type alias for DType.bool"""
 
 # ===----------------------------------------------------------------------=== #
 
@@ -185,7 +189,7 @@ struct TypeCoercion:
 
     @parameter
     @staticmethod
-    fn result_type[T1: DType, T2: DType]() -> DType:
+    fn result[T1: DType, T2: DType]() -> DType:
         """Returns the coerced output type for two input types."""
         if T1 == T2:
             return T1
@@ -203,3 +207,33 @@ struct TypeCoercion:
         elif T1.is_floating_point() and T2.is_integral():
             return TypeCoercion.coerce_mixed[T2, T1]()
         return T1
+
+
+fn _concise_dtype_str(dtype: DType) -> String:
+    """Returns a concise string representation of the data type."""
+    if dtype == i8:
+        return "i8"
+    elif dtype == i16:
+        return "i16"
+    elif dtype == i32:
+        return "i32"
+    elif dtype == i64:
+        return "i64"
+    elif dtype == isize:
+        return "index"
+    elif dtype == u8:
+        return "u8"
+    elif dtype == u16:
+        return "u16"
+    elif dtype == u32:
+        return "u32"
+    elif dtype == u64:
+        return "u64"
+    elif dtype == f16:
+        return "f16"
+    elif dtype == f32:
+        return "f32"
+    elif dtype == f64:
+        return "f64"
+    else:
+        return "Unknown"

@@ -6,7 +6,7 @@
 
 ##  Module Summary
   
-Implements N-Dimensional Complex Array Last updated: 2025-01-24
+Implements N-Dimensional Complex Array Last updated: 2025-01-26
 ## ComplexNDArray
 
 ### ComplexNDArray Summary
@@ -1198,11 +1198,31 @@ Args:
 
 To bypass boundary checks, use `self._buf.ptr.load` directly.
 
+
+```Mojo
+load[width: Int = 1](self, *indices: Int) -> ComplexSIMD[cdtype, dtype=dtype]
+```  
+Summary  
+  
+Safely loads a SIMD element of size `width` at given variadic indices from the underlying buffer.  
+  
+Parameters:  
+
+- width Defualt: `1`
+  
+Args:  
+
+- self
+- \*indices
+
+
+To bypass boundary checks, use `self._buf.ptr.load` directly.
+
 #### store
 
 
 ```Mojo
-store[width: Int](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype])
+store[width: Int = 1](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype])
 ```  
 Summary  
   
@@ -1210,12 +1230,33 @@ Safely stores SIMD element of size `width` at `index` of the underlying buffer.
   
 Parameters:  
 
-- width
+- width Defualt: `1`
   
 Args:  
 
 - self
 - index
+- val
+
+
+To bypass boundary checks, use `self._buf.ptr.store` directly.
+
+
+```Mojo
+store[width: Int = 1](mut self, *indices: Int, *, val: ComplexSIMD[cdtype, dtype=dtype])
+```  
+Summary  
+  
+Safely stores SIMD element of size `width` at given variadic indices of the underlying buffer.  
+  
+Parameters:  
+
+- width Defualt: `1`
+  
+Args:  
+
+- self
+- \*indices
 - val
 
 

@@ -6,7 +6,6 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 
 **[Explore the docs»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
 
-
 **Table of Contents**
 
 1. [About The Project](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#about-the-project)
@@ -28,7 +27,6 @@ NuMojo aims to encompass the extensive numerics capabilities found in Python pac
 =======
 
 ***What NuMojo is not***
-
 
 We seek to harness the full potential of Mojo, including vectorization, parallelization, and GPU acceleration (when available). Currently, NuMojo extends most (if not all) standard library math functions to support array inputs.
 
@@ -155,7 +153,8 @@ fn main() raises:
     print(nm.lstsq(A, C))
 ```
 
-An example of ComplexNDArray is as follows, 
+An example of ComplexNDArray is as follows,
+
 ```mojo
 import numojo as nm
 from numojo.prelude import *

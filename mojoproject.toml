@@ -16,19 +16,16 @@ license = "Apache-2.0"
 readme = "README.MD"
 
 [tasks]
-# Automatically Generate doc pages
-doc_pages = "rm -Rf docs/readthedocs/docs/docs && mojo doc numojo -o docs/readthedocs/docs.json && python docs/readthedocs/docs.py"
-
 # compile the package
 package = "magic run mojo package numojo"
-p = "clear && magic run mojo package numojo"
+p = "clear && magic run package"
 
 # format the package
 format = "magic run mojo format ./ && magic run mojo format docs/readthedocs/docs.py"
 
 # test whether tests pass and the package can be built
 test = "magic run mojo test tests -I ./ -I ./tests/ && magic run package"
-t = "clear && magic run mojo test tests -I ./ -I ./tests/ && magic run package"
+t = "clear && magic run test"
 
 # run individual tests to avoid overheat
 test_core = "magic run mojo test tests/core -I ./ -I ./tests/"
@@ -39,6 +36,12 @@ test_linalg = "magic run mojo test tests/routines/test_linalg.mojo -I ./ -I ./te
 # run all final checks before a commit
 final = "magic run test && magic run format && magic run package"
 f = "clear && magic run test && magic run format && magic run package"
+
+# Automatically Generate doc pages
+doc_pages = "rm -Rf docs/readthedocs/docs/docs && mojo doc numojo -o docs/readthedocs/docs.json && python docs/readthedocs/docs.py"
+
+# run everything and generate docs before release
+release = "clear && magic run final && magic run doc_pages"
 
 [dependencies]
 max = "==24.6.0"

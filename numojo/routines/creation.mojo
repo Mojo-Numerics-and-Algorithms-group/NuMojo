@@ -13,6 +13,7 @@ Array creation routine.
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
 3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and 
     reduce the number of function reloads.
+4) Simplify complex overloads into sum of real methods.
 
 ---
 
@@ -1531,9 +1532,34 @@ fn diag[
         raise Error("Arrays bigger than 2D are not supported")
 
 
+fn diag[
+    cdtype: CDType = CDType.float64, *, dtype: DType = CDType.to_dtype[cdtype]()
+](v: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) raises -> ComplexNDArray[
+    cdtype, dtype=dtype
+]:
+    """
+    Extract a diagonal or construct a diagonal ComplexNDArray.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+
+    Args:
+        v: ComplexNDArray to extract the diagonal from.
+        k: Diagonal offset.
+
+    Returns:
+        A 1-D ComplexNDArray with the diagonal of the input ComplexNDArray.
+    """
+    return ComplexNDArray[cdtype, dtype=dtype](
+        re=diag[dtype](v._re, k),
+        im=diag[dtype](v._im, k),
+    )
+
+
 fn diagflat[
     dtype: DType = DType.float64
-](mut v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
+](v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
     Generate a 2-D NDArray with the flattened input as the diagonal.
 
@@ -1563,6 +1589,31 @@ fn diagflat[
     return result^
 
 
+fn diagflat[
+    cdtype: CDType = CDType.float64, *, dtype: DType = CDType.to_dtype[cdtype]()
+](v: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) raises -> ComplexNDArray[
+    cdtype, dtype=dtype
+]:
+    """
+    Generate a 2-D ComplexNDArray with the flattened input as the diagonal.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+
+    Args:
+        v: ComplexNDArray to be flattened and used as the diagonal.
+        k: Diagonal offset.
+
+    Returns:
+        A 2-D ComplexNDArray with the flattened input as the diagonal.
+    """
+    return ComplexNDArray[cdtype, dtype=dtype](
+        re=diagflat[dtype](v._re, k),
+        im=diagflat[dtype](v._im, k),
+    )
+
+
 fn tri[
     dtype: DType = DType.float64
 ](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
@@ -1586,6 +1637,30 @@ fn tri[
             if j <= i + k:
                 result.store(i, j, val=Scalar[dtype](1))
     return result^
+
+
+fn tri[
+    cdtype: CDType = CDType.float64, *, dtype: DType = CDType.to_dtype[cdtype]()
+](N: Int, M: Int, k: Int = 0) raises -> ComplexNDArray[cdtype, dtype=dtype]:
+    """
+    Generate a 2-D ComplexNDArray with ones on and below the k-th diagonal.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+
+    Args:
+        N: Number of rows in the matrix.
+        M: Number of columns in the matrix.
+        k: Diagonal offset.
+
+    Returns:
+        A 2-D ComplexNDArray with ones on and below the k-th diagonal.
+    """
+    return ComplexNDArray[cdtype, dtype=dtype](
+        re=tri[dtype](N, M, k),
+        im=tri[dtype](N, M, k),
+    )
 
 
 fn tril[
@@ -1630,6 +1705,31 @@ fn tril[
     return result^
 
 
+fn tril[
+    cdtype: CDType = CDType.float64, *, dtype: DType = CDType.to_dtype[cdtype]()
+](m: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) raises -> ComplexNDArray[
+    cdtype, dtype=dtype
+]:
+    """
+    Zero out elements above the k-th diagonal.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+
+    Args:
+        m: ComplexNDArray to be zeroed out.
+        k: Diagonal offset.
+
+    Returns:
+        A ComplexNDArray with elements above the k-th diagonal zeroed out.
+    """
+    return ComplexNDArray[cdtype, dtype=dtype](
+        re=tril[dtype](m._re, k),
+        im=tril[dtype](m._im, k),
+    )
+
+
 fn triu[
     dtype: DType = DType.float64
 ](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
@@ -1672,6 +1772,31 @@ fn triu[
     return result^
 
 
+fn triu[
+    cdtype: CDType = CDType.float64, *, dtype: DType = CDType.to_dtype[cdtype]()
+](m: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) raises -> ComplexNDArray[
+    cdtype, dtype=dtype
+]:
+    """
+    Zero out elements below the k-th diagonal.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+
+    Args:
+        m: ComplexNDArray to be zeroed out.
+        k: Diagonal offset.
+
+    Returns:
+        A ComplexNDArray with elements below the k-th diagonal zeroed out.
+    """
+    return ComplexNDArray[cdtype, dtype=dtype](
+        re=triu[dtype](m._re, k),
+        im=triu[dtype](m._im, k),
+    )
+
+
 fn vander[
     dtype: DType = DType.float64
 ](
@@ -1706,6 +1831,34 @@ fn vander[
             for j in range(n_cols - 1, -1, -1):
                 result.store(i, n_cols - 1 - j, val=x_i**j)
     return result^
+
+
+fn vander[
+    cdtype: CDType = CDType.float64, *, dtype: DType = CDType.to_dtype[cdtype]()
+](
+    x: ComplexNDArray[cdtype, dtype=dtype],
+    N: Optional[Int] = None,
+    increasing: Bool = False,
+) raises -> ComplexNDArray[cdtype, dtype=dtype]:
+    """
+    Generate a Complex Vandermonde matrix.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+
+    Args:
+        x: 1-D input array.
+        N: Number of columns in the output. If N is not specified, a square array is returned.
+        increasing: Order of the powers of the columns. If True, the powers increase from left to right, if False (the default) they are reversed.
+
+    Returns:
+        A Complex Vandermonde matrix.
+    """
+    return ComplexNDArray[cdtype, dtype=dtype](
+        re=vander[dtype](x._re, N, increasing),
+        im=vander[dtype](x._im, N, increasing),
+    )
 
 
 # ===------------------------------------------------------------------------===#
@@ -1774,6 +1927,36 @@ fn astype[
             vectorize[vectorized_astypenb, a.width](a.size)
 
     return res
+
+
+fn astype[
+    cdtype: CDType, //,
+    target: CDType,
+    dtype: DType = CDType.to_dtype[cdtype](),
+    target_dtype: DType = CDType.to_dtype[cdtype](),
+](a: ComplexNDArray[cdtype, dtype=dtype]) raises -> ComplexNDArray[
+    target, dtype=target_dtype
+]:
+    """
+    Cast a ComplexNDArray to a different dtype.
+
+    Parameters:
+        cdtype: Complex datatype of the input array.
+        target: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+        target_dtype: Equivalent real datatype of the output array.
+
+    Args:
+        a: ComplexNDArray to be casted.
+
+    Returns:
+        A ComplexNDArray with the same shape and strides as `a`
+        but with elements casted to `target`.
+    """
+    return ComplexNDArray[target, dtype=target_dtype](
+        re=astype[target_dtype](a._re),
+        im=astype[target_dtype](a._im),
+    )
 
 
 # ===------------------------------------------------------------------------===#
@@ -1951,6 +2134,55 @@ fn array[
     A = NDArray[dtype](NDArrayShape(shape), order)
     for i in range(A.size):
         A._buf.ptr[i] = data[i]
+    return A
+
+
+fn array[
+    cdtype: CDType = CDType.float64, *, dtype: DType = CDType.to_dtype[cdtype]()
+](
+    real: List[Scalar[dtype]],
+    imag: List[Scalar[dtype]],
+    shape: List[Int],
+    order: String = "C",
+) raises -> ComplexNDArray[cdtype, dtype=dtype]:
+    """
+    Array creation with given data, shape and order.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+        dtype: Equivalent real datatype of the output array.
+
+    Args:
+        real: List of real data.
+        imag: List of imaginary data.
+        shape: List of shape.
+        order: Memory order C or F.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        nm.array[cf32](
+            real=List[Scalar[f32]](1, 2, 3, 4),
+            imag=List[Scalar[f32]](5, 6, 7, 8),
+            shape=List[Int](2, 2),
+        )
+        ```
+
+    Returns:
+        An Array of given data, shape and order.
+    """
+    if len(real) != len(imag):
+        raise (
+            "Real and imaginary data must have the same length! ({} != {})"
+            .format(len(real), len(imag))
+        )
+
+    A = ComplexNDArray[cdtype, dtype=dtype](shape=shape, order=order)
+
+    for i in range(A.size):
+        A._re._buf.ptr[i] = real[i]
+        A._im._buf.ptr[i] = imag[i]
     return A
 
 

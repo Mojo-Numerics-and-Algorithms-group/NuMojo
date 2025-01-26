@@ -3,12 +3,16 @@ Array manipulation routines.
 
 """
 
-from memory import memcpy
+from memory import UnsafePointer, memcpy
 from sys import simdwidthof
 from algorithm import vectorize
+
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
+import numojo.core.matrix as matrix
+from numojo.core.matrix import Matrix
+from numojo.core.utility import _list_of_flipped_range
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations
@@ -67,79 +71,64 @@ fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
 fn reshape[
     dtype: DType
 ](
-    mut array: NDArray[dtype], shape: VariadicList[Int], order: String = "C"
-) raises:
+    owned A: NDArray[dtype], shape: NDArrayShape, order: String = "C"
+) raises -> NDArray[dtype]:
     """
-        Reshapes the NDArray to given Shape.
+        Returns an array of the same data with a new shape.
 
     Raises:
         Error: If the number of elements do not match.
 
     Args:
-        array: A NDArray.
-        shape: Variadic integers of shape.
-        order: Order of the array - Row major `C` or Column major `F`.
-
-    """
-    var num_elements_new: Int = 1
-    var ndim_new: Int = 0
-    for i in shape:
-        num_elements_new *= i
-        ndim_new += 1
-
-    if array.size != num_elements_new:
-        raise Error("Cannot reshape: Number of elements do not match.")
-
-    var shape_new: List[Int] = List[Int]()
-    for i in range(ndim_new):
-        shape_new.append(shape[i])
-        var temp: Int = 1
-        for j in range(i + 1, ndim_new):  # temp
-            temp *= shape[j]
-
-    array.ndim = ndim_new
-    array.shape = NDArrayShape(shape=shape_new)
-    array.strides = NDArrayStrides(shape=shape_new, order=order)
-    array.order = order
-
-
-fn ravel[dtype: DType](mut array: NDArray[dtype], order: String = "C") raises:
-    """
-    Returns the raveled version of the NDArray.
-    """
-    if array.ndim == 1:
-        print("Array is already 1D")
-        return
-    else:
-        if order == "C":
-            reshape[dtype](array, array.size, order="C")
-        else:
-            reshape[dtype](array, array.size, order="F")
-
-
-fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Flattens the NDArray.
-
-    Parameters:
-        dtype: Dataype of the NDArray elements.
-
-    Args:
-        array: A NDArray.
+        A: A NDArray.
+        shape: New shape.
+        order: "C" or "F". Read in this order from the original array and
+            write in this order into the new array.
 
     Returns:
-        The 1 dimensional flattened NDArray.
+        Array of the same data with a new shape.
     """
 
-    var res: NDArray[dtype] = NDArray[dtype](Shape(array.size))
-    alias width: Int = simdwidthof[dtype]()
+    if A.size != shape.size_of_array():
+        raise Error("Cannot reshape: Number of elements do not match.")
 
-    @parameter
-    fn vectorized_flatten[simd_width: Int](index: Int) -> None:
-        res._buf.store(index, array._buf.load[width=simd_width](index))
+    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
 
-    vectorize[vectorized_flatten, width](array.size)
-    return res
+    if array_order != order:
+        # Read in this order from the original array
+        A = ravel(A, order=order)
+
+    # Write in this order into the new array
+    var B = NDArray[dtype](shape=shape, order=order)
+    memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+
+    return B^
+
+
+fn ravel[
+    dtype: DType
+](owned A: NDArray[dtype], order: String = "C") raises -> NDArray[dtype]:
+    """
+    Returns the raveled version of the NDArray.
+
+    Args:
+        A: NDArray.
+        order: The order to flatten the array.
+
+    Return:
+        A contiguous flattened array.
+    """
+
+    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+
+    if A.ndim == 1:
+        return A
+    else:
+        if array_order != order:
+            A = transpose(A, axes=_list_of_flipped_range(A.ndim))
+        var B = NDArray[dtype](Shape(A.size))
+        memcpy(B._buf.ptr, A._buf.ptr, A.size)
+        return B
 
 
 # ===----------------------------------------------------------------------=== #
@@ -147,7 +136,9 @@ fn flatten[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn _set_values_according_to_new_shape_and_strides(
+# TODO: Remove this one if the following function is working well:
+# `numojo.core.utility._traverse_buffer_according_to_shape_and_strides`
+fn _set_values_according_to_shape_and_strides(
     mut I: NDArray[DType.index],
     mut index: Int,
     current_dim: Int,
@@ -156,7 +147,7 @@ fn _set_values_according_to_new_shape_and_strides(
     new_strides: NDArrayStrides,
 ) raises:
     """
-    Auxiliary function for `transpose` that set values according to new shape
+    Auxiliary function for `transpose` that set values according to new shape'
     and strides for variadic number of dimensions.
     """
     for index_of_axis in range(new_shape[current_dim]):
@@ -164,10 +155,10 @@ fn _set_values_according_to_new_shape_and_strides(
             current_dim
         ]
         if current_dim >= new_shape.ndim - 1:
-            I._buf[index] = current_sum
+            I._buf.ptr[index] = current_sum
             index = index + 1
         else:
-            _set_values_according_to_new_shape_and_strides(
+            _set_values_according_to_shape_and_strides(
                 I,
                 index,
                 current_dim + 1,
@@ -188,17 +179,17 @@ fn transpose[
     ```mojo
     import numojo as nm
     var A = nm.random.rand(2,3,4,5)
-    nm.transpose(A)  # A is a 4darray.
-    nm.transpose(A, axes=List(3,2,1,0))
+    print(nm.transpose(A))  # A is a 4darray.
+    print(nm.transpose(A, axes=List(3,2,1,0)))
     ```
 
     Examples.
     ```mojo
     import numojo as nm
     # A is a 2darray
-    nm.transpose(A, axes=List(0, 1))  # equal to transpose of matrix
+    print(nm.transpose(A, axes=List(0, 1)))  # equal to transpose of matrix
     # A is a 3darray
-    nm.transpose(A, axes=List(2, 1, 0))  # transpose 0-th and 2-th dimensions
+    print(nm.transpose(A, axes=List(2, 1, 0)))  # transpose 0-th and 2-th dimensions
     ```
     """
     if len(axes) != A.ndim:
@@ -217,27 +208,24 @@ fn transpose[
                 ).format(i)
             )
 
-    var _shape = List[Int]()
-    var _strides = List[Int]()
-
+    var new_shape = NDArrayShape(shape=A.shape)
     for i in range(A.ndim):
-        _shape.append(A.shape[axes[i]])
-    var new_shape = NDArrayShape(shape=_shape)
+        new_shape._buf[i] = A.shape[axes[i]]
 
+    var new_strides = NDArrayStrides(strides=A.strides)
     for i in range(A.ndim):
-        _strides.append(A.strides[axes[i]])
-    var new_strides = NDArrayStrides(strides=_strides)
+        new_strides._buf[i] = A.strides[axes[i]]
 
-    var _index = 0
-    var I = NDArray[DType.index](shape=new_shape)
-
-    _set_values_according_to_new_shape_and_strides(
-        I, _index, 0, 0, new_shape, new_strides
+    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+    var I = NDArray[DType.index](Shape(A.size), order=array_order)
+    var ptr = I._buf.ptr
+    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
+        ptr, new_shape, new_strides
     )
 
-    var B = NDArray[dtype](I.shape)
+    var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B._buf[i] = A._buf[I._buf[i]]
+        B._buf.ptr[i] = A._buf.ptr[I._buf.ptr[i]]
     return B^
 
 
@@ -251,13 +239,14 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         return A
     if A.ndim == 2:
-        var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]))
+        var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+        var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
-            memcpy(B._buf, A._buf, A.size)
+            memcpy(B._buf.ptr, A._buf.ptr, A.size)
         else:
             for i in range(B.shape[0]):
                 for j in range(B.shape[1]):
-                    B.__setitem__(Idx(i, j), val=A.__getitem__(Idx(j, i)))
+                    B._setitem(i, j, val=A._getitem(j, i))
         return B^
     else:
         flipped_axes = List[Int]()
@@ -267,30 +256,87 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
+fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Transpose of matrix.
+    """
+
+    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]))
+
+    if A.shape[0] == 1 or A.shape[1] == 1:
+        memcpy(B._buf.ptr, A._buf.ptr, A.size)
+    else:
+        for i in range(B.shape[0]):
+            for j in range(B.shape[1]):
+                B._store(i, j, A._load(j, i))
+    return B^
+
+
 # ===----------------------------------------------------------------------=== #
 # Rearranging elements
 # ===----------------------------------------------------------------------=== #
 
 
-fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn flip[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Flips the NDArray along the given axis.
+    Returns flipped array and keep the shape.
 
     Parameters:
         dtype: DType.
 
     Args:
-        array: A NDArray.
+        A: A NDArray.
 
     Returns:
-        The flipped NDArray.
+        Flipped array.
     """
-    if array.ndim != 1:
-        raise Error("Flip is only supported for 1D arrays")
 
-    var result: NDArray[dtype] = NDArray[dtype](
-        shape=array.shape, order=array.order
+    for i in range(A.size // 2):
+        var temp = A._buf.ptr[i]
+        A._buf.ptr[i] = A._buf.ptr[A.size - 1 - i]
+        A._buf.ptr[A.size - 1 - i] = temp
+
+    return A^
+
+
+fn flip[
+    dtype: DType
+](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+    """
+    Returns flipped array along the given axis.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        axis: Axis along which to flip.
+
+    Returns:
+        Flipped array along the given axis.
+    """
+
+    if axis < 0:
+        axis += A.ndim
+    if (axis < 0) or (axis >= A.ndim):
+        raise Error(
+            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+        )
+
+    var I = NDArray[DType.index](Shape(A.size))
+    var ptr = I._buf.ptr
+
+    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
+        ptr, A.shape._move_axis_to_end(axis), A.strides._move_axis_to_end(axis)
     )
-    for i in range(array.size):
-        result._buf.store(i, array._buf[array.size - i - 1])
-    return result
+
+    print(A.size, A.shape[axis])
+    for i in range(0, A.size, A.shape[axis]):
+        for j in range(A.shape[axis] // 2):
+            var temp = A._buf.ptr[I._buf.ptr[i + j]]
+            A._buf.ptr[I._buf.ptr[i + j]] = A._buf.ptr[
+                I._buf.ptr[i + A.shape[axis] - 1 - j]
+            ]
+            A._buf.ptr[I._buf.ptr[i + A.shape[axis] - 1 - j]] = temp
+
+    return A^

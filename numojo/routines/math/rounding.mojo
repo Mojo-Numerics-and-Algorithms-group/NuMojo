@@ -2,24 +2,40 @@
 # Rounding
 # ===------------------------------------------------------------------------===#
 
-import math
+from builtin import math as builtin_math
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from utils import Variant
+from utils.numerics import nextafter as builtin_nextafter
 
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+import numojo.core.matrix as matrix
+from numojo.core.matrix import Matrix
+
+
+fn round[
+    dtype: DType
+](owned A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
+    # FIXME
+    # The built-in `round` function is not working now.
+    # It will be fixed in future.
+
+    for i in range(A.size):
+        A._buf.ptr[i] = builtin_math.round(A._buf.ptr[i], ndigits=decimals)
+
+    return A^
 
 
 fn tabs[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise absolute value of NDArray.
+    Element-wise absolute value of NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -36,11 +52,11 @@ fn tfloor[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise round down to nearest whole number of NDArray.
+    Element-wise round down to nearest whole number of NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -57,11 +73,11 @@ fn tceil[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise round up to nearest whole number of NDArray.
+    Element-wise round up to nearest whole number of NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -78,11 +94,11 @@ fn ttrunc[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise remove decimal value from float whole number of NDArray.
+    Element-wise remove decimal value from float whole number of NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -99,11 +115,11 @@ fn tround[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise round NDArray to whole number.
+    Element-wise round NDArray to whole number.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
@@ -120,17 +136,17 @@ fn roundeven[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Performs elementwise banker's rounding on the elements of a NDArray.
+    Performs element-wise banker's rounding on the elements of a NDArray.
 
     Parameters:
         dtype: The dtype of the input and output array.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: Array to perform rounding on.
 
     Returns:
-    The elementwise banker's rounding of NDArray.
+    The element-wise banker's rounding of NDArray.
 
     This rounding goes to the nearest integer with ties toward the nearest even integer.
     """
@@ -147,13 +163,13 @@ fn roundeven[
 
 #     Parameters:
 #         dtype: The dtype of the input and output array.
-#         backend: Sets utility function origin, defualts to `Vectorized`.
+#         backend: Sets utility function origin, defaults to `Vectorized`.
 
 #     Args:
 #         NDArray: array to perform rounding on.
 
 #     Returns:
-#     The elementwise rounding of x evaluating ties towards the smaller integer.
+#     The element-wise rounding of x evaluating ties towards the smaller integer.
 #     """
 #     return backend().math_func_1_array_in_one_array_out[
 #         dtype, SIMD.__round_half_down
@@ -168,13 +184,13 @@ fn roundeven[
 
 #     Parameters:
 #         dtype: The dtype of the input and output array.
-#         backend: Sets utility function origin, defualts to `Vectorized`.
+#         backend: Sets utility function origin, defaults to `Vectorized`.
 
 #     Args:
 #         NDArray: array to perform rounding on.
 
 #     Returns:
-#     The elementwise rounding of x evaluating ties towards the larger integer.
+#     The element-wise rounding of x evaluating ties towards the larger integer.
 #     """
 #     return backend().math_func_1_array_in_one_array_out[
 #         dtype, math.round_half_up
@@ -189,7 +205,7 @@ fn nextafter[
 
     Parameters:
         dtype: The dtype of the input and output array. Constraints: must be a floating-point type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, default to `Vectorized`.
 
 
     Args:
@@ -197,8 +213,8 @@ fn nextafter[
         array2: The second input argument.
 
     Returns:
-    The nextafter of the inputs.
+        The nextafter of the inputs.
     """
-    return backend().math_func_2_array_in_one_array_out[dtype, math.nextafter](
-        array1, array2
-    )
+    return backend().math_func_2_array_in_one_array_out[
+        dtype, builtin_nextafter
+    ](array1, array2)

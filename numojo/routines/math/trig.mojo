@@ -7,16 +7,23 @@ Implements Trigonometry functions for arrays.
 
 import math
 
-from numojo.routines.math.misc import sqrt
-from numojo.routines.math.arithmetic import fma
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+from numojo.core.matrix import Matrix
+import numojo.core.matrix as matrix
+
+from numojo.routines.math.misc import sqrt
+from numojo.routines.math.arithmetic import fma
 
 # TODO: add  dtype in backends and pass it here.
 
 # ===------------------------------------------------------------------------===#
 # Inverse Trig
 # ===------------------------------------------------------------------------===#
+
+
+fn arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
 
 
 fn acos[
@@ -27,15 +34,23 @@ fn acos[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array.
 
     Returns:
-        The elementwise acos of `array` in radians.
+        The element-wise acos of `array` in radians.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.acos](array)
+
+
+fn acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
+
+
+fn arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
 
 
 fn asin[
@@ -46,15 +61,23 @@ fn asin[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array.
 
     Returns:
-        The elementwise asin of `array` in radians.
+        The element-wise asin of `array` in radians.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.asin](array)
+
+
+fn asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
+
+
+fn arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
 
 
 fn atan[
@@ -65,15 +88,19 @@ fn atan[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array.
 
     Returns:
-        The elementwise atan of `array` in radians.
+        The element-wise atan of `array` in radians.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.atan](array)
+
+
+fn atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
 
 
 fn atan2[
@@ -88,14 +115,14 @@ fn atan2[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: An Array.
         array2: An Array.
 
     Returns:
-        The elementwise atan2 of `array1` and`array2` in radians.
+        The element-wise atan2 of `array1` and`array2` in radians.
     """
     return backend().math_func_2_array_in_one_array_out[dtype, math.atan2](
         array1, array2
@@ -115,15 +142,19 @@ fn cos[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise cos of `array`.
+        The element-wise cos of `array`.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.cos](array)
+
+
+fn cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.cos](A)
 
 
 fn sin[
@@ -134,15 +165,19 @@ fn sin[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise sin of `array`.
+        The element-wise sin of `array`.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.sin](array)
+
+
+fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.sin](A)
 
 
 fn tan[
@@ -153,15 +188,19 @@ fn tan[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array: An Array assumed to be in radian.
 
     Returns:
-        The elementwise tan of `array`.
+        The element-wise tan of `array`.
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.tan](array)
+
+
+fn tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.tan](A)
 
 
 fn hypot[
@@ -176,14 +215,14 @@ fn hypot[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: An Array.
         array2: An Array.
 
     Returns:
-        The elementwise hypotenuse of `array1` and`array2`.
+        The element-wise hypotenuse of `array1` and`array2`.
     """
     return backend().math_func_2_array_in_one_array_out[dtype, math.hypot](
         array1, array2
@@ -202,14 +241,14 @@ fn hypot_fma[
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized.
+        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
         array1: An Array.
         array2: An Array.
 
     Returns:
-        The elementwise hypotenuse of `array1` and`array2`.
+        The element-wise hypotenuse of `array1` and`array2`.
     """
 
     var array2_squared = fma[dtype, backend=backend](

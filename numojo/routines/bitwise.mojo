@@ -3,7 +3,7 @@
 # ===------------------------------------------------------------------------===#
 
 # ===------------------------------------------------------------------------===#
-# Elementwise bit operations
+# Element-wise bit operations
 # ===------------------------------------------------------------------------===#
 
 
@@ -13,22 +13,22 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from utils import Variant
 
 import numojo.core._math_funcs as _mf
-from ..core.ndarray import NDArray, NDArrayShape
-from ..core.utility import is_inttype, is_floattype, is_booltype
+from numojo.core.ndarray import NDArray, NDArrayShape
+from numojo.core.utility import is_inttype, is_floattype, is_booltype
 
 
 fn invert[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Elementwise invert of an array.
+    Element-wise invert of an array.
 
     Constraints:
         The array must be either a boolean or integral array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defualts to `Vectorized`.
+        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.

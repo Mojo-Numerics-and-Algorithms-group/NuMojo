@@ -1,4 +1,4 @@
-from .decompositions import lu_decomposition
-from .norms import trace
-from .products import cross, dot, matmul_parallelized
-from .solving import inv, solve
+from .decompositions import lu_decomposition, qr
+from .norms import det, trace
+from .products import cross, dot, matmul
+from .solving import inv, solve, lstsq

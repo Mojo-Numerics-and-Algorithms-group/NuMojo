@@ -7,6 +7,3 @@ Due to the similiarity with NumPy, a Numpy equivelent comparison will be our met
 The functions contained in utils_for_test.mojo `check` and `check_is_close` will be used to compare NuMojo results with NumPy equivelents.
 
 Each test must be in it's own def function and begin with the word test example `test_arange`. This allows the `mojo test` command to find it. A single function can cover multiple similiar tests but they should have unique strings to identify which check failed.
-
-
-

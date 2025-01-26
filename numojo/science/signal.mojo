@@ -6,7 +6,7 @@ It is like `scipy.signal` in Python.
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import Shape
-from numojo.core.index import Idx
+from numojo.core.item import Item
 from numojo.routines.creation import fromstring, zeros
 from numojo.routines.math.sums import sum
 
@@ -37,7 +37,7 @@ fn convolve2d[
     var in2_mirrored = in2
     var length = in2.size
     for i in range(length):
-        in2_mirrored._buf[i] = in2._buf[length - i - 1]
+        in2_mirrored._buf.ptr[i] = in2._buf.ptr[length - i - 1]
 
     var in1_height = in1.shape[0]
     var in1_width = in1.shape[1]
@@ -51,7 +51,7 @@ fn convolve2d[
 
     for i in range(output_height):
         for j in range(output_width):
-            output[Idx(i, j)] = sum(
+            output[Item(i, j)] = sum(
                 in1[i : i + in2_height, j : j + in2_width] * in2_mirrored
             )
 

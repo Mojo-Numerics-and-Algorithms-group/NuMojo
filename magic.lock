@@ -136,6 +136,7 @@ environments:
       - conda: https://conda.modular.com/max/linux-64/max-python-24.6.0-3.12release.conda
       - conda: https://conda.modular.com/max/noarch/mblack-24.6.0-release.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mdurl-0.1.2-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/mdutils-1.6.0-pyhd8ed1ab_1.conda
       - conda: https://conda.modular.com/max/noarch/mojo-jupyter-24.6.0-release.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/multidict-6.1.0-py312h178313f_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/multiprocess-0.70.15-py312h98912ed_1.conda
@@ -346,6 +347,7 @@ environments:
       - conda: https://conda.modular.com/max/osx-arm64/max-python-24.6.0-3.12release.conda
       - conda: https://conda.modular.com/max/noarch/mblack-24.6.0-release.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mdurl-0.1.2-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/mdutils-1.6.0-pyhd8ed1ab_1.conda
       - conda: https://conda.modular.com/max/noarch/mojo-jupyter-24.6.0-release.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/multidict-6.1.0-py312hdb8e49c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/multiprocess-0.70.15-py312h02f2b3b_1.conda
@@ -4249,6 +4251,22 @@ packages:
   license_family: MIT
   size: 14465
   timestamp: 1733255681319
+- kind: conda
+  name: mdutils
+  version: 1.6.0
+  build: pyhd8ed1ab_1
+  build_number: 1
+  subdir: noarch
+  noarch: python
+  url: https://conda.anaconda.org/conda-forge/noarch/mdutils-1.6.0-pyhd8ed1ab_1.conda
+  sha256: f47d2e56595ff6b0ab10eabf979f22f3870b1d6f7c030b76a61c165e7df8af76
+  md5: 62e46be7c3e8e93e1d695227e55a980a
+  depends:
+  - python >=3.9
+  license: MIT
+  license_family: MIT
+  size: 21359
+  timestamp: 1736261719080
 - kind: conda
   name: mojo-jupyter
   version: 24.6.0

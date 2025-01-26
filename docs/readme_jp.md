@@ -15,7 +15,7 @@
     <!-- when we create docs -->
     <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>ドキュメントを読む» </strong></a>
     <br>
-    <a href="https://discord.com/channels/1149778565756366939/1149778566603620455"><strong>
+    <a href="https://discord.gg/NcnSH5n26F"><strong>
     Discord チャンネルに参加する» </strong></a>
     <br />
     <!-- <br /> -->

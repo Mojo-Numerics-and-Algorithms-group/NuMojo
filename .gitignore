@@ -2,13 +2,13 @@
 /build
 /dist
 /local
-/.vscode
-.DS_Store
-*.html
-*.css
-*.py
 *.egg-info
-*.pyc
+
+# VSCode files
+/.vscode
+
+# MacOs Desktop Service file
+*.DS_Store
 
 # magic environments
 .magic
@@ -17,6 +17,13 @@
 .pixi
 /venv
 
+
+# Irrelevant files
+*.html
+*.css
+*.py
+*.pyc
+
 # Miscellaneous files
 mojo
 numojo.mojopkg
@@ -24,3 +31,6 @@ bench.mojo
 test_ndarray.ipynb
 test.mojo
 tempCodeRunnerFile.mojo
+
+# Auto docs
+docs/readthedocs/docs.json

@@ -33,22 +33,25 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     Returns:
         The generated NDArray of type `dtype` filled with random values.
     """
-    var result: NDArray[dtype] = NDArray[dtype](shape)
+
     if dtype.is_integral():
         raise Error(
             "Integral values cannot be sampled between 0 and 1. Use"
             " `rand(*shape, min, max)` instead."
         )
+
+    var result: NDArray[dtype] = NDArray[dtype](shape)
+
     for i in range(result.size):
         var temp: Scalar[dtype] = builtin_random.random_float64(0, 1).cast[
             dtype
         ]()
-        result.set(i, temp)
+        (result._buf.ptr + i).init_pointee_copy(temp)
     return result^
 
 
 @parameter
-fn int_rand_func[
+fn _int_rand_func[
     dtype: DType
 ](mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
     """
@@ -63,7 +66,7 @@ fn int_rand_func[
         max: The maximum value of the random integers.
     """
     builtin_random.randint[dtype](
-        ptr=result._buf,
+        ptr=result._buf.ptr,
         size=result.size,
         low=int(min),
         high=int(max),
@@ -71,7 +74,7 @@ fn int_rand_func[
 
 
 @parameter
-fn float_rand_func[
+fn _float_rand_func[
     dtype: DType
 ](mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
     """
@@ -89,7 +92,7 @@ fn float_rand_func[
         var temp: Scalar[dtype] = builtin_random.random_float64(
             min.cast[f64](), max.cast[f64]()
         ).cast[dtype]()
-        result._buf[i] = temp
+        (result._buf.ptr + i).init_pointee_copy(temp)
 
 
 fn rand[
@@ -122,9 +125,9 @@ fn rand[
 
     @parameter
     if is_floattype[dtype]():
-        float_rand_func[dtype](result, min, max)
+        _float_rand_func[dtype](result, min, max)
     elif is_inttype[dtype]():
-        int_rand_func[dtype](result, min, max)
+        _int_rand_func[dtype](result, min, max)
     else:
         raise Error(
             "Invalid type provided. dtype must be either an integral or"
@@ -167,9 +170,9 @@ fn rand[
 
     @parameter
     if is_floattype[dtype]():
-        float_rand_func[dtype](result, min, max)
+        _float_rand_func[dtype](result, min, max)
     elif is_inttype[dtype]():
-        int_rand_func[dtype](result, min, max)
+        _int_rand_func[dtype](result, min, max)
     else:
         raise Error(
             "Invalid type provided. dtype must be either an integral or"
@@ -207,7 +210,7 @@ fn randn[
     builtin_random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
     builtin_random.randn[dtype](
-        ptr=result._buf,
+        ptr=result._buf.ptr,
         size=result.size,
         mean=mean.cast[DType.float64](),
         variance=variance.cast[DType.float64](),
@@ -243,7 +246,7 @@ fn randn[
     builtin_random.seed()
     var result: NDArray[dtype] = NDArray[dtype](shape)
     builtin_random.randn[dtype](
-        ptr=result._buf,
+        ptr=result._buf.ptr,
         size=result.size,
         mean=mean.cast[DType.float64](),
         variance=variance.cast[DType.float64](),
@@ -278,7 +281,7 @@ fn rand_exponential[
 
     for i in range(result.num_elements()):
         var u = builtin_random.random_float64().cast[dtype]()
-        result._buf[i] = -mt.log(1 - u) / rate
+        (result._buf.ptr + i).init_pointee_copy(-mt.log(1 - u) / rate)
 
     return result^
 
@@ -310,6 +313,6 @@ fn rand_exponential[
 
     for i in range(result.num_elements()):
         var u = builtin_random.random_float64().cast[dtype]()
-        result._buf[i] = -mt.log(1 - u) / rate
+        (result._buf.ptr + i).init_pointee_copy(-mt.log(1 - u) / rate)
 
     return result^

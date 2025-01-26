@@ -2,6 +2,67 @@
 # Norms and other numbers
 # ===----------------------------------------------------------------------=== #
 
+from numojo.core.ndarray import NDArray
+from numojo.core.matrix import Matrix
+from numojo.routines.linalg.decompositions import (
+    lu_decomposition,
+    partial_pivoting,
+)
+
+
+fn det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Find the determinant of A using LUP decomposition.
+    """
+
+    if A.ndim != 2:
+        raise Error(String("Array must be 2d."))
+    if A.shape[0] != A.shape[1]:
+        raise Error(String("Matrix is not square."))
+
+    var det_L: Scalar[dtype] = 1
+    var det_U: Scalar[dtype] = 1
+    var n = A.shape[0]  # Dimension of the matrix
+
+    var A_pivoted: NDArray[dtype]
+    var U: NDArray[dtype]
+    var L: NDArray[dtype]
+    var s: Int
+    A_pivoted, _, s = partial_pivoting(A)
+    L, U = lu_decomposition[dtype](A_pivoted)
+
+    for i in range(n):
+        det_L = det_L * L.item(i, i)
+        det_U = det_U * U.item(i, i)
+
+    if s % 2 == 0:
+        return det_L * det_U
+    else:
+        return -det_L * det_U
+
+
+fn det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
+    """
+    Find the determinant of A using LUP decomposition.
+    """
+    var det_L: Scalar[dtype] = 1
+    var det_U: Scalar[dtype] = 1
+    var n = A.shape[0]  # Dimension of the matrix
+
+    var U: Matrix[dtype]
+    var L: Matrix[dtype]
+    A_pivoted, _, s = partial_pivoting(A)
+    L, U = lu_decomposition[dtype](A_pivoted)
+
+    for i in range(n):
+        det_L = det_L * L[i, i]
+        det_U = det_U * U[i, i]
+
+    if s % 2 == 0:
+        return det_L * det_U
+    else:
+        return -det_L * det_U
+
 
 # TODO: implement for arbitrary axis
 fn trace[
@@ -38,6 +99,34 @@ fn trace[
     for i in range(diag_length):
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i
-        result._buf.store(0, result._buf.load(0) + array._buf[row * cols + col])
+        result._buf.ptr.store(
+            0, result._buf.ptr.load(0) + array._buf.ptr[row * cols + col]
+        )
 
     return result
+
+
+fn trace[
+    dtype: DType
+](A: Matrix[dtype], offset: Int = 0) raises -> Scalar[dtype]:
+    """
+    Return the sum along diagonals of the array.
+
+    Similar to `numpy.trace`.
+    """
+    var m = A.shape[0]
+    var n = A.shape[1]
+
+    if offset >= max(m, n):  # Offset beyond the shape of the matrix
+        return 0
+
+    var res = Scalar[dtype](0)
+
+    if offset >= 0:
+        for i in range(n - offset):
+            res = res + A[i, i + offset]
+    else:
+        for i in range(m + offset):
+            res = res + A[i - offset, i]
+
+    return res

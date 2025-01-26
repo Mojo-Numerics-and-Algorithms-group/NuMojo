@@ -9,6 +9,8 @@ from collections.optional import Optional
 from math import sqrt
 
 from numojo.core.ndarray import NDArray
+import numojo.core.matrix as matrix
+from numojo.core.matrix import Matrix
 from numojo.core.utility import bool_to_numeric
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.math.arithmetic import add
@@ -28,6 +30,34 @@ fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
     """
     return sum(array, axis) / Scalar[array.dtype](array.shape[axis])
+
+
+fn mean[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+    """
+    Calculate the arithmetic average of all items in the Matrix.
+
+    Args:
+        A: Matrix.
+    """
+
+    return sum(A) / A.size
+
+
+fn mean[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+    """
+    Calculate the arithmetic average of a Matrix along the axis.
+
+    Args:
+        A: Matrix.
+        axis: 0 or 1.
+    """
+
+    if axis == 0:
+        return sum(A, axis=0) / A.shape[0]
+    elif axis == 1:
+        return sum(A, axis=1) / A.shape[1]
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
 
 
 fn meanall(array: NDArray) raises -> Float64:
@@ -58,99 +88,6 @@ fn meanall(array: NDArray) raises -> Float64:
     )
 
 
-fn max[
-    dtype: DType
-](array: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
-    """Maximums of array elements over a given axis.
-
-    Args:
-        array: NDArray.
-        axis: The axis along which the sum is performed.
-
-    Returns:
-        An NDArray.
-    """
-    var ndim: Int = array.ndim
-    var shape: List[Int] = List[Int]()
-    for i in range(ndim):
-        shape.append(array.shape[i])
-    if axis > ndim - 1:
-        raise Error("axis cannot be greater than the rank of the array")
-    var result_shape: List[Int] = List[Int]()
-    var axis_size: Int = shape[axis]
-    var slices: List[Slice] = List[Slice]()
-    for i in range(ndim):
-        if i != axis:
-            result_shape.append(shape[i])
-            slices.append(Slice(0, shape[i]))
-        else:
-            slices.append(Slice(0, 0))
-    print(result_shape.__str__())
-
-    slices[axis] = Slice(0, 1)
-
-    var result: NDArray[dtype] = array[slices]
-    for i in range(1, axis_size):
-        slices[axis] = Slice(i, i + 1)
-        var arr_slice = array[slices]
-        var mask1 = greater(arr_slice, result)
-        var mask2 = less(arr_slice, result)
-        # Wherever result is less than the new slice it is set to zero
-        # Wherever arr_slice is greater than the old result it is added to fill those zeros
-        result = add(
-            result * bool_to_numeric[dtype](mask2),
-            arr_slice * bool_to_numeric[dtype](mask1),
-        )
-
-    return result
-
-
-fn min[
-    dtype: DType
-](array: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
-    """Minumums of array elements over a given axis.
-
-    Args:
-        array: NDArray.
-        axis: The axis along which the sum is performed.
-
-    Returns:
-        An NDArray.
-    """
-    var ndim: Int = array.ndim
-    var shape: List[Int] = List[Int]()
-    for i in range(ndim):
-        shape.append(array.shape[i])
-    if axis > ndim - 1:
-        raise Error("axis cannot be greater than the rank of the array")
-    var result_shape: List[Int] = List[Int]()
-    var axis_size: Int = shape[axis]
-    var slices: List[Slice] = List[Slice]()
-    for i in range(ndim):
-        if i != axis:
-            result_shape.append(shape[i])
-            slices.append(Slice(0, shape[i]))
-        else:
-            slices.append(Slice(0, 0))
-
-    slices[axis] = Slice(0, 1)
-
-    var result: NDArray[dtype] = array[slices]
-    for i in range(1, axis_size):
-        slices[axis] = Slice(i, i + 1)
-        var arr_slice = array[slices]
-        var mask1 = less(arr_slice, result)
-        var mask2 = greater(arr_slice, result)
-        # Wherever result is greater than the new slice it is set to zero
-        # Wherever arr_slice is less than the old result it is added to fill those zeros
-        result = add(
-            result * bool_to_numeric[dtype](mask2),
-            arr_slice * bool_to_numeric[dtype](mask1),
-        )
-
-    return result
-
-
 fn cummean[
     dtype: DType = DType.float64
 ](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
@@ -165,7 +102,7 @@ fn cummean[
     Returns:
         The mean of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return cumsum[dtype](array) / (array.num_elements())
+    return sum[dtype](array) / (array.num_elements())
 
 
 fn mode[
@@ -225,6 +162,85 @@ fn median[
         return (sorted_array.item(n // 2 - 1) + sorted_array.item(n // 2)) / 2
 
 
+fn std[dtype: DType](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
+    """
+    Compute the standard deviation.
+
+    Args:
+        A: Matrix.
+        ddof: Delta degree of freedom.
+    """
+
+    if ddof >= A.size:
+        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+
+    return variance(A, ddof=ddof) ** 0.5
+
+
+fn std[
+    dtype: DType
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[dtype]:
+    """
+    Compute the standard deviation along axis.
+
+    Args:
+        A: Matrix.
+        axis: 0 or 1.
+        ddof: Delta degree of freedom.
+    """
+
+    return variance(A, axis, ddof=ddof) ** 0.5
+
+
+fn variance[
+    dtype: DType
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
+    """
+    Compute the variance.
+
+    Args:
+        A: Matrix.
+        ddof: Delta degree of freedom.
+    """
+
+    if ddof >= A.size:
+        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+
+    return sum((A - mean(A)) * (A - mean(A))) / (A.size - ddof)
+
+
+fn variance[
+    dtype: DType
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[dtype]:
+    """
+    Compute the variance along axis.
+
+    Args:
+        A: Matrix.
+        axis: 0 or 1.
+        ddof: Delta degree of freedom.
+    """
+
+    if (ddof >= A.shape[0]) or (ddof >= A.shape[1]):
+        raise Error(
+            String(
+                "ddof {ddof} should be smaller than size"
+                " {A.shape[0]}x{A.shape[1]}"
+            )
+        )
+
+    if axis == 0:
+        return sum((A - mean(A, axis=0)) * (A - mean(A, axis=0)), axis=0) / (
+            A.shape[0] - ddof
+        )
+    elif axis == 1:
+        return sum((A - mean(A, axis=1)) * (A - mean(A, axis=1)), axis=1) / (
+            A.shape[1] - ddof
+        )
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
 fn cumpvariance[
     dtype: DType = DType.float64
 ](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
@@ -251,7 +267,7 @@ fn cumpvariance[
     var result = Scalar[dtype]()
 
     for i in range(array.num_elements()):
-        result += (array.get(i) - mean_value) ** 2
+        result += (array.load(i) - mean_value) ** 2
 
     return sqrt(result / (array.num_elements()))
 
@@ -283,7 +299,7 @@ fn cumvariance[
 
     var result = Scalar[dtype]()
     for i in range(array.num_elements()):
-        result += (array.get(i) - mean_value) ** 2
+        result += (array.load(i) - mean_value) ** 2
 
     return sqrt(result / (array.num_elements() - 1))
 

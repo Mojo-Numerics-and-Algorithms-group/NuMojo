@@ -10,10 +10,12 @@ import math
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from sys import simdwidthof
+from memory import memcpy
 
 import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
+from numojo.core.matrix import Matrix
 from numojo.routines.creation import zeros
 from numojo.routines.math.sums import sum
 
@@ -42,15 +44,15 @@ fn cross[
         var array3: NDArray[dtype] = NDArray[dtype](NDArrayShape(3))
         array3.store(
             0,
-            (array1.get(1) * array2.get(2) - array1.get(2) * array2.get(1)),
+            (array1.load(1) * array2.load(2) - array1.load(2) * array2.load(1)),
         )
         array3.store(
             1,
-            (array1.get(2) * array2.get(0) - array1.get(0) * array2.get(2)),
+            (array1.load(2) * array2.load(0) - array1.load(0) * array2.load(2)),
         )
         array3.store(
             2,
-            (array1.get(0) * array2.get(1) - array1.get(1) * array2.get(0)),
+            (array1.load(0) * array2.load(1) - array1.load(1) * array2.load(0)),
         )
         return array3
     else:
@@ -89,10 +91,10 @@ fn dot[
 
         @parameter
         fn vectorized_dot[simd_width: Int](idx: Int) -> None:
-            result.store[width=simd_width](
+            result._buf.ptr.store(
                 idx,
-                array1.load[width=simd_width](idx)
-                * array2.load[width=simd_width](idx),
+                array1._buf.ptr.load[width=simd_width](idx)
+                * array2._buf.ptr.load[width=simd_width](idx),
             )
 
         vectorize[vectorized_dot, width](array1.size)
@@ -135,11 +137,11 @@ fn matmul_tiled_unrolled_parallelized[
 
                 @parameter
                 fn dot[simd_width: Int](n: Int):
-                    C.store(
+                    C._buf.ptr.store(
                         m * t2 + (n + x),
-                        val=C.load[simd_width](m * t2 + (n + x))
-                        + A.load(m * t1 + k)
-                        * B.load[simd_width](k * t2 + (n + x)),
+                        val=C._buf.ptr.load[width=simd_width](m * t2 + (n + x))
+                        + A._buf.ptr.load(m * t1 + k)
+                        * B._buf.ptr.load[width=simd_width](k * t2 + (n + x)),
                     )
 
                 alias unroll_factor = tile_x // width
@@ -154,71 +156,94 @@ fn matmul_tiled_unrolled_parallelized[
     return C
 
 
-fn matmul_1d[
+fn matmul_1darray[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
-    """Array multiplication for 1-d arrays (inner dot)."""
+    """
+    Array multiplication for 1-d arrays (inner dot).
+    """
 
-    alias width = max(simdwidthof[dtype](), 16)
+    var C = NDArray[dtype](Shape(1, 1))
 
-    try:
-        if A.ndim * B.ndim != 1:
-            raise Error("Dimension error!")
-    except e:
-        print(e)
-        print(
-            "The dimensions of the array should be 1.         A is of"
-            " {A.ndim}-dimension. B is of {B.ndim}-dimension."
+    if A.ndim * B.ndim != 1:
+        raise Error("The dimensions of the arrays should be 1.")
+    elif A.size != B.size:
+        raise Error(
+            String(
+                "matmul: a mismatch in core dimension 0: "
+                "size {} is different from {}".format(A.size, B.size)
+            )
         )
-
-    try:
-        if A.size != B.size:
-            raise Error("Size error!")
-    except e:
-        print(e)
-        print("The sizes of the array should be identical.")
-
-    var C: NDArray[dtype] = zeros[dtype](Shape(1, 1))
-
-    C.store(0, val=sum(A * B))
+    else:
+        C._buf.ptr.init_pointee_copy(sum(A * B))
 
     return C^
 
 
-fn matmul_parallelized[
+fn matmul_2darray[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
+    Array multiplication for 2-d arrays (inner dot).
 
-    Matrix multiplication Vectorized and parallelized.
+    Parameter:
+        dtype: Data type.
 
-    Conduct `matmul` using `vectorize` and `parallelize`.
+    Args:
+        A: First array.
+        B: Second array.
 
-    Reference: https://docs.modular.com/mojo/notebooks/Matmul
-    Compared to the reference, this function increases the size of
-    the SIMD vector from the default width to 16. The purpose is to
-    increase the performance via SIMD.
-    The function reduces the execution time by ~50 percent compared to
-    matmul_parallelized and matmul_tiled_unrolled_parallelized for large
-    matrices.
+    Return:
+        A multiplied by B.
+
+    Raises:
+        When the shape does not match.
+
+    Notes:
+        The multiplication is vectorized and parallelized.
+
+    References:
+        [1] https://docs.modular.com/mojo/notebooks/Matmul.
+        Compared to the reference, we increases the size of
+        the SIMD vector from the default width to 16. The purpose is to
+        increase the performance via SIMD.
+        This reduces the execution time by ~50 percent compared to
+        `matmul_parallelized` and `matmul_tiled_unrolled_parallelized` for large
+        matrices.
     """
 
     alias width = max(simdwidthof[dtype](), 16)
 
     if A.ndim * B.ndim == 1:
-        return matmul_1d(A, B)
-    elif A.ndim == 1:
-        A_reshaped = A
-        A_reshaped.reshape(1, A_reshaped.shape[0])
-        var res = A_reshaped @ B
-        res.reshape(B.shape[1])
-        return res
-    elif B.ndim == 1:
-        B_reshaped = B
-        B_reshaped.reshape(B_reshaped.shape[0], 1)
-        var res = A @ B_reshaped
-        res.reshape(A.shape[0])
-        return res
+        return matmul_1darray(A, B)
+
+    if (A.ndim == 1) and (A.size == B.shape[0]):
+        var A_reshaped = A.reshape(Shape(1, A.shape[0]))
+        var res = matmul_2darray(A_reshaped, B)
+        return res.reshape(Shape(B.shape[1]))
+
+    if (B.ndim == 1) and (A.shape[1] == B.size):
+        var B_reshaped = B.reshape(Shape(B.shape[0], 1))
+        var res = matmul_2darray(A, B_reshaped)
+        return res.reshape(Shape(A.shape[0]))
+
+    if (A.ndim == 1) or (B.ndim == 1):
+        raise Error(
+            String(
+                "matmul: a mismatch in shapes: {} is different from {}".format(
+                    A.shape[-1], B.shape[0]
+                )
+            )
+        )
+
+    if A.shape[1] != B.shape[0]:
+        raise Error(
+            String(
+                "matmul: a mismatch in shapes: {} is different from {}".format(
+                    A.shape[1], B.shape[0]
+                )
+            )
+        )
 
     var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
     var t0 = A.shape[0]
@@ -231,22 +256,152 @@ fn matmul_parallelized[
 
             @parameter
             fn dot[simd_width: Int](n: Int):
-                C.store(
+                C._buf.ptr.store(
                     m * t2 + n,
-                    val=C.load[simd_width](m * t2 + n)
-                    + A.load(m * t1 + k) * B.load[simd_width](k * t2 + n),
+                    val=C._buf.ptr.load[width=simd_width](m * t2 + n)
+                    + A._buf.ptr.load[width=simd_width](m * t1 + k)
+                    * B._buf.ptr.load[width=simd_width](k * t2 + n),
                 )
 
             vectorize[dot, width](t2)
 
     parallelize[calculate_A_rows](t0, t0)
 
-    var _t0 = t0
-    var _t1 = t1
-    var _t2 = t2
+    return C^
+
+
+fn matmul[
+    dtype: DType
+](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Array multiplication for any dimensions.
+
+    Parameter:
+        dtype: Data type.
+
+    Args:
+        A: First array.
+        B: Second array.
+
+    Return:
+        A multiplied by B.
+
+    Raises:
+        (1) The shapes of first n-2 dimensions do not match.
+        (2) The shape of -2 dimension of first array does not match
+        the shape of -1 dimension of the second array.
+
+    Notes:\n
+        When A and B are 1darray, it is equal to dot of vectors:
+        `(i) @ (i) -> (1)`.\n
+        When A and B are 2darray, it is equal to inner products of matrices:
+        `(i,j) @ (j,k) -> (i,k)`.\n
+        When A and B are more than 2d, it is equal to a stack of 2darrays:
+        `(i,j,k) @ (i,k,l) -> (i,j,l)` and
+        `(i,j,k,l) @ (i,j,l,m) -> (i,j,k,m)`.
+    """
+
+    if (A.ndim <= 2) and (B.ndim <= 2):
+        return matmul_2darray(A, B)
+
+    if A.ndim != B.ndim:
+        raise Error(
+            String("matmul: dimension {} is different from {}").format(
+                A.ndim, B.ndim
+            )
+        )
+
+    for i in range(A.ndim - 2):
+        if A.shape[i] != B.shape[i]:
+            raise Error(
+                String("matmul: {}-th dimensions mismatch: {} vs {}").format(
+                    A.shape[i], B.shape[i]
+                )
+            )
+
+    if A.shape[-1] != B.shape[-2]:
+        raise Error(
+            String(
+                "matmul: a mismatch in shapes: {} is different from {}"
+            ).format(A.shape[-1], B.shape[-2])
+        )
+
+    var shape_as_list = List[Int]()
+    for i in range(A.ndim - 2):
+        shape_as_list.append(A.shape[i])
+    shape_as_list.append(A.shape[-2])
+    shape_as_list.append(B.shape[-1])
+
+    var C = NDArray[dtype](Shape(shape_as_list))
+    var A_sub_matrix = NDArray[dtype](Shape(A.shape[-2], A.shape[-1]))
+    var B_sub_matrix = NDArray[dtype](Shape(B.shape[-2], B.shape[-1]))
+    var C_sub_matrix = NDArray[dtype](Shape(C.shape[-2], C.shape[-1]))
+
+    for i in range(C.size // C_sub_matrix.size):
+        memcpy(
+            A_sub_matrix._buf.ptr,
+            A._buf.ptr + (i * A_sub_matrix.size),
+            A_sub_matrix.size,
+        )
+        memcpy(
+            B_sub_matrix._buf.ptr,
+            B._buf.ptr + (i * B_sub_matrix.size),
+            B_sub_matrix.size,
+        )
+        C_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
+        memcpy(
+            C._buf.ptr + (i * C_sub_matrix.size),
+            C_sub_matrix._buf.ptr,
+            C_sub_matrix.size,
+        )
+    return C^
+
+
+fn matmul[
+    dtype: DType
+](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Matrix multiplication.
+
+    Example:
+    ```mojo
+    from numojo import Matrix
+    var A = Matrix.rand(shape=(1000, 1000))
+    var B = Matrix.rand(shape=(1000, 1000))
+    var C = mat.matmul(A, B)
+    ```
+    """
+
+    alias width = max(simdwidthof[dtype](), 16)
+
+    if A.shape[1] != B.shape[0]:
+        raise Error(
+            String("Cannot matmul {}x{} matrix with {}x{} matrix.").format(
+                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+            )
+        )
+
+    var C: Matrix[dtype] = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]))
+
+    @parameter
+    fn calculate_CC(m: Int):
+        for k in range(A.shape[1]):
+
+            @parameter
+            fn dot[simd_width: Int](n: Int):
+                C._store[simd_width](
+                    m,
+                    n,
+                    C._load[simd_width](m, n)
+                    + A._load(m, k) * B._load[simd_width](k, n),
+                )
+
+            vectorize[dot, width](B.shape[1])
+
+    parallelize[calculate_CC](A.shape[0], A.shape[0])
+
     var _A = A
     var _B = B
-    var _width = width
 
     return C^
 

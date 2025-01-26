@@ -151,6 +151,35 @@ fn main() raises:
     print(nm.lstsq(A, C))
 ```
 
+An example of ComplexNDArray is as follows, 
+```mojo
+import numojo as nm
+from numojo.prelude import *
+
+
+fn main() raises:
+    # Create a complexscalar 5 + 5j
+    var complexscalar = ComplexSIMD[cf32](re=5, im=5) 
+    # Create complex array filled with (5 + 5j)
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)
+    # Create complex array filled with (1 + 1j)
+    var B = nm.ones[cf32](Shape(1000, 1000))
+
+    # Print array
+    print(A)
+
+    # Array slicing
+    var A_slice = A[1:3, 4:19]
+
+    # Array multiplication
+    var C = A * B
+
+    # Get scalar from array
+    var A_item = A[item(291, 141)]
+    # Set an element of the array
+    A[item(291, 141)] = complexscalar
+```
+
 ## How to install
 
 There are three approach to install and use the Numojo package.

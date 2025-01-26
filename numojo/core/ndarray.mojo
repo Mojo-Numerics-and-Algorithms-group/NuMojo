@@ -2257,7 +2257,7 @@ struct NDArray[dtype: DType = DType.float64](
         self,
         dimension: Int,
         offset: Int,
-        mut print_options: PrintOptions,
+        owned print_options: PrintOptions,
     ) raises -> String:
         """
         Convert the array to a string.
@@ -2274,11 +2274,17 @@ struct NDArray[dtype: DType = DType.float64](
         # The following code get the max value and the min value
         # to determine the digits before decimals and the negative sign
         # and then determine the formatted withd
-        var negative_sign: Bool
-        var number_of_digits: Int
-        var formatted_width: Int
-        var max_value: Scalar[dtype] = self._buf.ptr[]
-        var min_value: Scalar[dtype] = self._buf.ptr[]
+        var negative_sign: Bool = False  # whether there should be a negative sign
+        var number_of_digits: Int  # number of digits before or after decimal point
+        var number_of_digits_small_values: Int  # number of digits after decimal point for small values
+        var formatted_width: Int  # formatted width based on precision and digits before decimal points
+        var max_value: Scalar[dtype] = abs(
+            self._buf.ptr[]
+        )  # maximum absolute value of the items
+        var min_value: Scalar[dtype] = abs(
+            self._buf.ptr[]
+        )  # minimum absolute value of the items
+        var val: Scalar[dtype]  # storage of value of the item
 
         var skip: Bool
         for index in range(self.size):
@@ -2294,18 +2300,24 @@ struct NDArray[dtype: DType = DType.float64](
                     continue
             if skip:
                 continue
+
+            val = self._buf.ptr[_get_offset(indices, self.strides)]
+            if val < 0:
+                negative_sign = True
             max_value = max(
-                max_value, self._buf.ptr[_get_offset(indices, self.strides)]
+                max_value,
+                abs(val),
             )
             min_value = min(
-                min_value, self._buf.ptr[_get_offset(indices, self.strides)]
+                min_value,
+                abs(val),
             )
-        if min_value < 0:
-            negative_sign = True
-        else:
-            negative_sign = False
-        max_value = max(max_value, abs(min_value))
-        number_of_digits = int(log10(float(max_value)) + 1)
+        number_of_digits = max(
+            int(log10(float(max_value))) + 1,
+            abs(int(log10(float(min_value)))) + 1,
+        )
+        number_of_digits_small_values = abs(int(log10(float(min_value)))) + 1
+
         if dtype.is_floating_point():
             formatted_width = (
                 print_options.precision
@@ -2316,19 +2328,22 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             formatted_width = number_of_digits + int(negative_sign)
 
-        # FIXME: When format_floating_scientific is fixed
-        # change the value to 14
-        if formatted_width <= 99:
+        # If the number is not too wide,
+        # or digits after decimal point is not many
+        # format it as a floating point.
+        if (formatted_width <= 14) and (number_of_digits_small_values <= 2):
             print_options.formatted_width = formatted_width
+        # Otherwise, format it as a scientific number.
         else:
             print_options.float_format = "scientific"
+            print_options.formatted_width = 7 + print_options.precision
 
         if self.ndim == 0:
             return str(self.item(0))
         if dimension == self.ndim - 1:
             var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
+            if number_of_items <= edge_items * 2:  # Print all items
                 for i in range(number_of_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
@@ -2362,7 +2377,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             var result: String = str("[")
             var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
+            if number_of_items <= edge_items * 2:  # Print all items
                 for i in range(number_of_items):
                     if i == 0:
                         result = result + self._array_to_string(

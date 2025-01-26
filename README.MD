@@ -77,8 +77,8 @@ from numojo.prelude import *
 
 fn main() raises:
     # Generate two 1000x1000 matrices with random float64 values
-    var A = nm.random.randn(shape=Shape(1000, 1000))
-    var B = nm.random.randn(shape=Shape(1000, 1000))
+    var A = nm.random.randn(Shape(1000, 1000))
+    var B = nm.random.randn(Shape(1000, 1000))
 
     # Generate a 3x2 matrix from string representation
     var X = nm.fromstring[f32]("[[1.1, -0.32, 1], [0.1, -3, 2.124]]")
@@ -182,7 +182,7 @@ This approach involves building a standalone package file `mojopkg`.
 
 ### Include NuMojo's path for compiler and LSP
 
-This approach does not require building a package file. Instead, when you compile your code, you can include the path of NuMojo reporsitory with the following command:
+This approach does not require building a package file. Instead, when you compile your code, you can include the path of NuMojo repository with the following command:
 
 ```console
 mojo run -I "../NuMojo" example.mojo

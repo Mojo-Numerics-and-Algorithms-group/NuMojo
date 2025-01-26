@@ -6,7 +6,6 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 
 **[Explore the docs»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
 
-**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_jp.md)**
 
 **Table of Contents**
 
@@ -25,6 +24,11 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 ***What NuMojo is***
 
 NuMojo aims to encompass the extensive numerics capabilities found in Python packages such as NumPy, SciPy, and Scikit-learn.
+
+=======
+
+***What NuMojo is not***
+
 
 We seek to harness the full potential of Mojo, including vectorization, parallelization, and GPU acceleration (when available). Currently, NuMojo extends most (if not all) standard library math functions to support array inputs.
 

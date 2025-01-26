@@ -300,6 +300,42 @@ Args:
 Arguments:
     other: The ComplexSIMD instance to divide by.
 
+#### __pow__
+
+
+```Mojo
+__pow__(self, other: Self) -> Self
+```  
+Summary  
+  
+Raises this ComplexSIMD instance to the power of another.  
+  
+Args:  
+
+- self
+- other
+
+
+Arguments:
+    other: The ComplexSIMD instance to raise to the power of.
+
+
+```Mojo
+__pow__(self, other: SIMD[dtype, 1]) -> Self
+```  
+Summary  
+  
+Raises this ComplexSIMD instance to the power of a scalar.  
+  
+Args:  
+
+- self
+- other
+
+
+Arguments:
+    other: The scalar to raise to the power of.
+
 #### __iadd__
 
 

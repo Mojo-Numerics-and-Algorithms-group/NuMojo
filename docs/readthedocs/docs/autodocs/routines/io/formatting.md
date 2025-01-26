@@ -185,6 +185,10 @@ Args:
 - precision: The number of decimal places to include in the mantissa. Default: 10
 - sign: Whether to include the sign of the float in the result. Defaults to False. Default: False
 
+
+Notes: A scientific notation takes the form `-a.bbbbe+ii`. It will take
+`7 + precision` letters in total.
+
 ## format_floating_precision
 
 

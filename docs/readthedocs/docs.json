@@ -18376,6 +18376,50 @@
                             "returnsDoc": "",
                             "signature": "load[width: Int = 1](self, index: Int) -> ComplexSIMD[cdtype, dtype=dtype]",
                             "summary": "Safely loads a SIMD element of size `width` at `index` from the underlying buffer."
+                          },
+                          {
+                            "args": [
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "self",
+                                "passingKind": "pos_or_kw",
+                                "type": "Self"
+                              },
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "*indices",
+                                "passingKind": "pos_or_kw",
+                                "type": "Int"
+                              }
+                            ],
+                            "async": false,
+                            "constraints": "",
+                            "deprecated": "",
+                            "description": "To bypass boundary checks, use `self._buf.ptr.load` directly.\n",
+                            "isDef": false,
+                            "isStatic": false,
+                            "kind": "function",
+                            "name": "load",
+                            "parameters": [
+                              {
+                                "default": "1",
+                                "description": "",
+                                "kind": "parameter",
+                                "name": "width",
+                                "passingKind": "pos_or_kw",
+                                "type": "Int"
+                              }
+                            ],
+                            "raises": true,
+                            "raisesDoc": "Index out of boundary.",
+                            "returnType": "ComplexSIMD[cdtype, dtype=dtype]",
+                            "returnsDoc": "",
+                            "signature": "load[width: Int = 1](self, *indices: Int) -> ComplexSIMD[cdtype, dtype=dtype]",
+                            "summary": "Safely loads a SIMD element of size `width` at given variadic indices from the underlying buffer."
                           }
                         ]
                       },
@@ -18420,6 +18464,7 @@
                             "name": "store",
                             "parameters": [
                               {
+                                "default": "1",
                                 "description": "",
                                 "kind": "parameter",
                                 "name": "width",
@@ -18431,8 +18476,60 @@
                             "raisesDoc": "Index out of boundary.",
                             "returnType": null,
                             "returnsDoc": "",
-                            "signature": "store[width: Int](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype])",
+                            "signature": "store[width: Int = 1](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype])",
                             "summary": "Safely stores SIMD element of size `width` at `index` of the underlying buffer."
+                          },
+                          {
+                            "args": [
+                              {
+                                "convention": "mut",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "self",
+                                "passingKind": "pos_or_kw",
+                                "type": "Self"
+                              },
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "*indices",
+                                "passingKind": "pos_or_kw",
+                                "type": "Int"
+                              },
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "val",
+                                "passingKind": "kw",
+                                "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                              }
+                            ],
+                            "async": false,
+                            "constraints": "",
+                            "deprecated": "",
+                            "description": "To bypass boundary checks, use `self._buf.ptr.store` directly.\n",
+                            "isDef": false,
+                            "isStatic": false,
+                            "kind": "function",
+                            "name": "store",
+                            "parameters": [
+                              {
+                                "default": "1",
+                                "description": "",
+                                "kind": "parameter",
+                                "name": "width",
+                                "passingKind": "pos_or_kw",
+                                "type": "Int"
+                              }
+                            ],
+                            "raises": true,
+                            "raisesDoc": "Index out of boundary.",
+                            "returnType": null,
+                            "returnsDoc": "",
+                            "signature": "store[width: Int = 1](mut self, *indices: Int, *, val: ComplexSIMD[cdtype, dtype=dtype])",
+                            "summary": "Safely stores SIMD element of size `width` at given variadic indices of the underlying buffer."
                           }
                         ]
                       },
@@ -18670,7 +18767,7 @@
                     "summary": "Represents a Complex N-Dimensional Array."
                   }
                 ],
-                "summary": "Implements N-Dimensional Complex Array Last updated: 2025-01-24",
+                "summary": "Implements N-Dimensional Complex Array Last updated: 2025-01-26",
                 "traits": []
               },
               {
@@ -19281,6 +19378,82 @@
                             "returnsDoc": "Self: A new ComplexSIMD instance representing the quotient.",
                             "signature": "__truediv__(self, other: Self) -> Self",
                             "summary": "Divides this ComplexSIMD instance by another."
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "function",
+                        "name": "__pow__",
+                        "overloads": [
+                          {
+                            "args": [
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "self",
+                                "passingKind": "pos_or_kw",
+                                "type": "Self"
+                              },
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "other",
+                                "passingKind": "pos_or_kw",
+                                "type": "Self"
+                              }
+                            ],
+                            "async": false,
+                            "constraints": "",
+                            "deprecated": "",
+                            "description": "Arguments:\n    other: The ComplexSIMD instance to raise to the power of.\n",
+                            "isDef": false,
+                            "isStatic": false,
+                            "kind": "function",
+                            "name": "__pow__",
+                            "parameters": [],
+                            "raises": false,
+                            "raisesDoc": "",
+                            "returnType": "Self",
+                            "returnsDoc": "Self: A new ComplexSIMD instance representing the result.",
+                            "signature": "__pow__(self, other: Self) -> Self",
+                            "summary": "Raises this ComplexSIMD instance to the power of another."
+                          },
+                          {
+                            "args": [
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "self",
+                                "passingKind": "pos_or_kw",
+                                "type": "Self"
+                              },
+                              {
+                                "convention": "read",
+                                "description": "",
+                                "kind": "argument",
+                                "name": "other",
+                                "passingKind": "pos_or_kw",
+                                "type": "SIMD[dtype, 1]"
+                              }
+                            ],
+                            "async": false,
+                            "constraints": "",
+                            "deprecated": "",
+                            "description": "Arguments:\n    other: The scalar to raise to the power of.\n",
+                            "isDef": false,
+                            "isStatic": false,
+                            "kind": "function",
+                            "name": "__pow__",
+                            "parameters": [],
+                            "raises": false,
+                            "raisesDoc": "",
+                            "returnType": "Self",
+                            "returnsDoc": "Self: A new ComplexSIMD instance representing the result.",
+                            "signature": "__pow__(self, other: SIMD[dtype, 1]) -> Self",
+                            "summary": "Raises this ComplexSIMD instance to the power of a scalar."
                           }
                         ]
                       },
@@ -20974,6 +21147,111 @@
                     "returnsDoc": "",
                     "signature": "arange[dtype: DType = float64](stop: SIMD[dtype, 1]) -> NDArray[dtype]",
                     "summary": "(Overload) When start is 0 and step is 1."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexSIMD[cdtype] - Start value.",
+                        "kind": "argument",
+                        "name": "start",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "ComplexSIMD[cdtype]  - End value.",
+                        "kind": "argument",
+                        "name": "stop",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "ComplexSIMD(SIMD(1), SIMD(1))",
+                        "description": "ComplexSIMD[cdtype]  - Step size between each element (default 1).",
+                        "kind": "argument",
+                        "name": "step",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "arange",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "Error if both dtype and dtype are integers or if dtype is a float and dtype is an integer.",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of datatype `dtype` with elements ranging from `start` to `stop` incremented with `step`.",
+                    "signature": "arange[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](start: ComplexSIMD[cdtype, dtype=dtype], stop: ComplexSIMD[cdtype, dtype=dtype], step: ComplexSIMD[cdtype, dtype=dtype] = ComplexSIMD(SIMD(1), SIMD(1))) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Function that computes a series of values starting from \"start\" to \"stop\" with given \"step\" size."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "stop",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "arange",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "arange[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](stop: ComplexSIMD[cdtype, dtype=dtype]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "(Overload) When start is 0 and step is 1."
                   }
                 ]
               },
@@ -21050,6 +21328,85 @@
                     "returnType": "NDArray[dtype]",
                     "returnsDoc": "A NDArray of datatype `dtype` with elements ranging from `start` to `stop` with num elements.",
                     "signature": "linspace[dtype: DType = float64](start: SIMD[dtype, 1], stop: SIMD[dtype, 1], num: Int = 50, endpoint: Bool = True, parallel: Bool = False) -> NDArray[dtype]",
+                    "summary": "Function that computes a series of linearly spaced values starting from \"start\" to \"stop\" with given size. Wrapper function for _linspace_serial, _linspace_parallel."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Start value.",
+                        "kind": "argument",
+                        "name": "start",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "End value.",
+                        "kind": "argument",
+                        "name": "stop",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "50",
+                        "description": "No of linearly spaced elements.",
+                        "kind": "argument",
+                        "name": "num",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "True",
+                        "description": "Specifies whether to include endpoint in the final ComplexNDArray, defaults to True.",
+                        "kind": "argument",
+                        "name": "endpoint",
+                        "passingKind": "pos_or_kw",
+                        "type": "Bool"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "False",
+                        "description": "Specifies whether the linspace should be calculated using parallelization, deafults to False.",
+                        "kind": "argument",
+                        "name": "parallel",
+                        "passingKind": "pos_or_kw",
+                        "type": "Bool"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "linspace",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "Error if dtype is an integer.",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.",
+                    "signature": "linspace[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](start: ComplexSIMD[cdtype, dtype=dtype], stop: ComplexSIMD[cdtype, dtype=dtype], num: Int = 50, endpoint: Bool = True, parallel: Bool = False) -> ComplexNDArray[cdtype, dtype=dtype]",
                     "summary": "Function that computes a series of linearly spaced values starting from \"start\" to \"stop\" with given size. Wrapper function for _linspace_serial, _linspace_parallel."
                   }
                 ]
@@ -21136,6 +21493,93 @@
                     "returnsDoc": "- A NDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.",
                     "signature": "logspace[dtype: DType = float64](start: SIMD[dtype, 1], stop: SIMD[dtype, 1], num: Int, endpoint: Bool = True, base: SIMD[dtype, 1] = SIMD(#kgen.float_literal<10|1>), parallel: Bool = False) -> NDArray[dtype]",
                     "summary": "Generate a logrithmic spaced NDArray of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "The starting value of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "start",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "The ending value of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "stop",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "The number of elements in the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "num",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "True",
+                        "description": "Whether to include the `stop` value in the ComplexNDArray. Defaults to True.",
+                        "kind": "argument",
+                        "name": "endpoint",
+                        "passingKind": "pos_or_kw",
+                        "type": "Bool"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "ComplexSIMD(SIMD(#kgen.float_literal<10|1>), SIMD(#kgen.float_literal<10|1>))",
+                        "description": "Base value of the logarithm, defaults to 10.",
+                        "kind": "argument",
+                        "name": "base",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "False",
+                        "description": "Specifies whether to calculate the logarithmic spaced values using parallelization.",
+                        "kind": "argument",
+                        "name": "parallel",
+                        "passingKind": "pos_or_kw",
+                        "type": "Bool"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "logspace",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "Error if dtype is an integer.",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "- A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.",
+                    "signature": "logspace[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](start: ComplexSIMD[cdtype, dtype=dtype], stop: ComplexSIMD[cdtype, dtype=dtype], num: Int, endpoint: Bool = True, base: ComplexSIMD[cdtype, dtype=dtype] = ComplexSIMD(SIMD(#kgen.float_literal<10|1>), SIMD(#kgen.float_literal<10|1>)), parallel: Bool = False) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a logrithmic spaced ComplexNDArray of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions."
                   }
                 ]
               },
@@ -21203,6 +21647,75 @@
                     "returnsDoc": "A NDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.",
                     "signature": "geomspace[dtype: DType = float64](start: SIMD[dtype, 1], stop: SIMD[dtype, 1], num: Int, endpoint: Bool = True) -> NDArray[dtype]",
                     "summary": "Generate a NDArray of `num` elements between `start` and `stop` in a geometric series."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "The starting value of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "start",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "The ending value of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "stop",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "The number of elements in the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "num",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "True",
+                        "description": "Whether to include the `stop` value in the ComplexNDArray. Defaults to True.",
+                        "kind": "argument",
+                        "name": "endpoint",
+                        "passingKind": "pos_or_kw",
+                        "type": "Bool"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "geomspace",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "Error if dtype is an integer.",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.",
+                    "signature": "geomspace[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](start: ComplexSIMD[cdtype, dtype=dtype], stop: ComplexSIMD[cdtype, dtype=dtype], num: Int, endpoint: Bool = True) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a ComplexNDArray of `num` elements between `start` and `stop` in a geometric series."
                   }
                 ]
               },
@@ -21317,6 +21830,138 @@
                     "returnsDoc": "",
                     "signature": "empty[dtype: DType = float64](shape: VariadicList[Int]) -> NDArray[dtype]",
                     "summary": "Overload of function `empty` that reads a variadic list of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Shape of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "NDArrayShape"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "empty",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with given `shape`.",
+                    "signature": "empty[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: NDArrayShape) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate an empty ComplexNDArray of given shape with arbitrary values."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "List[Int]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "empty",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "empty[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: List[Int]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `empty` that reads a list of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "VariadicList[Int]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "empty",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "empty[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: VariadicList[Int]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `empty` that reads a variadic list of ints."
                   }
                 ]
               },
@@ -21359,6 +22004,50 @@
                     "returnsDoc": "A NDArray of `dtype` with the same shape as `array`.",
                     "signature": "empty_like[dtype: DType = float64](array: NDArray[dtype]) -> NDArray[dtype]",
                     "summary": "Generate an empty NDArray of the same shape as `array`."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be used as a reference for the shape.",
+                        "kind": "argument",
+                        "name": "array",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "empty_like",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with the same shape as `array`.",
+                    "signature": "empty_like[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](array: ComplexNDArray[cdtype, dtype=dtype]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate an empty ComplexNDArray of the same shape as `array`."
                   }
                 ]
               },
@@ -21409,6 +22098,58 @@
                     "returnsDoc": "A NDArray of `dtype` with size N x M and ones on the diagonals.",
                     "signature": "eye[dtype: DType = float64](N: Int, M: Int) -> NDArray[dtype]",
                     "summary": "Return a 2-D NDArray with ones on the diagonal and zeros elsewhere."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Number of rows in the matrix.",
+                        "kind": "argument",
+                        "name": "N",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "Number of columns in the matrix.",
+                        "kind": "argument",
+                        "name": "M",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "eye",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with size N x M and ones on the diagonals.",
+                    "signature": "eye[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](N: Int, M: Int) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Return a 2-D ComplexNDArray with ones on the diagonal and zeros elsewhere."
                   }
                 ]
               },
@@ -21451,6 +22192,50 @@
                     "returnsDoc": "A NDArray of `dtype` with size N x N and ones on the diagonals.",
                     "signature": "identity[dtype: DType = float64](N: Int) -> NDArray[dtype]",
                     "summary": "Generate an identity matrix of size N x N."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Size of the matrix.",
+                        "kind": "argument",
+                        "name": "N",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "identity",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with size N x N and ones on the diagonals.",
+                    "signature": "identity[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](N: Int) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate an Complex identity matrix of size N x N."
                   }
                 ]
               },
@@ -21565,6 +22350,138 @@
                     "returnsDoc": "",
                     "signature": "ones[dtype: DType = float64](shape: VariadicList[Int]) -> NDArray[dtype]",
                     "summary": "Overload of function `ones` that reads a variadic of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Shape of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "NDArrayShape"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "It calls the function `full`.\n",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "ones",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with given `shape`.",
+                    "signature": "ones[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: NDArrayShape) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a ComplexNDArray of ones with given shape filled with ones."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "List[Int]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "ones",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "ones[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: List[Int]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `ones` that reads a list of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "VariadicList[Int]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "ones",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "ones[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: VariadicList[Int]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `ones` that reads a variadic of ints."
                   }
                 ]
               },
@@ -21607,6 +22524,50 @@
                     "returnsDoc": "A NDArray of `dtype` with the same shape as `a` filled with ones.",
                     "signature": "ones_like[dtype: DType = float64](array: NDArray[dtype]) -> NDArray[dtype]",
                     "summary": "Generate a NDArray of the same shape as `a` filled with ones."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be used as a reference for the shape.",
+                        "kind": "argument",
+                        "name": "array",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "ones_like",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with the same shape as `a` filled with ones.",
+                    "signature": "ones_like[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](array: ComplexNDArray[cdtype, dtype=dtype]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a ComplexNDArray of the same shape as `a` filled with ones."
                   }
                 ]
               },
@@ -21721,6 +22682,138 @@
                     "returnsDoc": "",
                     "signature": "zeros[dtype: DType = float64](shape: VariadicList[Int]) -> NDArray[dtype]",
                     "summary": "Overload of function `zeros` that reads a variadic list of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Shape of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "NDArrayShape"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "It calls the function `full`.\n",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "zeros",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with given `shape`.",
+                    "signature": "zeros[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: NDArrayShape) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a ComplexNDArray of zeros with given shape."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "List[Int]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "zeros",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "zeros[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: List[Int]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `zeros` that reads a list of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "VariadicList[Int]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "zeros",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "zeros[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: VariadicList[Int]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `zeros` that reads a variadic list of ints."
                   }
                 ]
               },
@@ -21763,6 +22856,50 @@
                     "returnsDoc": "A NDArray of `dtype` with the same shape as `a` filled with zeros.",
                     "signature": "zeros_like[dtype: DType = float64](array: NDArray[dtype]) -> NDArray[dtype]",
                     "summary": "Generate a NDArray of the same shape as `a` filled with zeros."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be used as a reference for the shape.",
+                        "kind": "argument",
+                        "name": "array",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "zeros_like",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with the same shape as `a` filled with zeros.",
+                    "signature": "zeros_like[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](array: ComplexNDArray[cdtype, dtype=dtype]) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a ComplexNDArray of the same shape as `a` filled with zeros."
                   }
                 ]
               },
@@ -21928,6 +23065,189 @@
                     "returnsDoc": "",
                     "signature": "full[dtype: DType = float64](shape: VariadicList[Int], fill_value: SIMD[dtype, 1], order: String = String(\"C\")) -> NDArray[dtype]",
                     "summary": "Overload of function `full` that reads a variadic list of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Shape of the ComplexNDArray.",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "NDArrayShape"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "Set all the values to this.",
+                        "kind": "argument",
+                        "name": "fill_value",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "String(\"C\")",
+                        "description": "Memory order C or F.",
+                        "kind": "argument",
+                        "name": "order",
+                        "passingKind": "pos_or_kw",
+                        "type": "String"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "Example:\n    ```mojo\n    import numojo as nm\n    from numojo.prelude import *\n    var a = nm.full[cf32](Shape(2,3,4), fill_value=ComplexSIMD[cf32](10, 10))\n    ```",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "full",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "full[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: NDArrayShape, fill_value: ComplexSIMD[cdtype, dtype=dtype], order: String = String(\"C\")) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Initialize an ComplexNDArray of certain shape fill it with a given value."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "List[Int]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "fill_value",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "String(\"C\")",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "order",
+                        "passingKind": "pos_or_kw",
+                        "type": "String"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "full",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "full[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: List[Int], fill_value: ComplexSIMD[cdtype, dtype=dtype], order: String = String(\"C\")) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `full` that reads a list of ints."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "VariadicList[Int]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "fill_value",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "String(\"C\")",
+                        "description": "",
+                        "kind": "argument",
+                        "name": "order",
+                        "passingKind": "pos_or_kw",
+                        "type": "String"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "full",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "",
+                    "signature": "full[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](shape: VariadicList[Int], fill_value: ComplexSIMD[cdtype, dtype=dtype], order: String = String(\"C\")) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Overload of function `full` that reads a variadic list of ints."
                   }
                 ]
               },
@@ -21987,6 +23307,67 @@
                     "returnsDoc": "A NDArray of `dtype` with the same shape as `a` filled with `fill_value`.",
                     "signature": "full_like[dtype: DType = float64](array: NDArray[dtype], fill_value: SIMD[dtype, 1], order: String = String(\"C\")) -> NDArray[dtype]",
                     "summary": "Generate a NDArray of the same shape as `a` filled with `fill_value`."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be used as a reference for the shape.",
+                        "kind": "argument",
+                        "name": "array",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "Value to fill the ComplexNDArray with.",
+                        "kind": "argument",
+                        "name": "fill_value",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexSIMD[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "String(\"C\")",
+                        "description": "Memory order C or F.",
+                        "kind": "argument",
+                        "name": "order",
+                        "passingKind": "pos_or_kw",
+                        "type": "String"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "full_like",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray of `dtype` with the same shape as `a` filled with `fill_value`.",
+                    "signature": "full_like[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](array: ComplexNDArray[cdtype, dtype=dtype], fill_value: ComplexSIMD[cdtype, dtype=dtype], order: String = String(\"C\")) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a ComplexNDArray of the same shape as `a` filled with `fill_value`."
                   }
                 ]
               },
@@ -22038,6 +23419,59 @@
                     "returnsDoc": "A 1-D NDArray with the diagonal of the input NDArray.",
                     "signature": "diag[dtype: DType = float64](v: NDArray[dtype], k: Int = 0) -> NDArray[dtype]",
                     "summary": "Extract a diagonal or construct a diagonal NDArray."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to extract the diagonal from.",
+                        "kind": "argument",
+                        "name": "v",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "0",
+                        "description": "Diagonal offset.",
+                        "kind": "argument",
+                        "name": "k",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "diag",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A 1-D ComplexNDArray with the diagonal of the input ComplexNDArray.",
+                    "signature": "diag[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](v: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Extract a diagonal or construct a diagonal ComplexNDArray."
                   }
                 ]
               },
@@ -22048,7 +23482,7 @@
                   {
                     "args": [
                       {
-                        "convention": "mut",
+                        "convention": "read",
                         "description": "NDArray to be flattened and used as the diagonal.",
                         "kind": "argument",
                         "name": "v",
@@ -22087,8 +23521,61 @@
                     "raisesDoc": "",
                     "returnType": "NDArray[dtype]",
                     "returnsDoc": "A 2-D NDArray with the flattened input as the diagonal.",
-                    "signature": "diagflat[dtype: DType = float64](mut v: NDArray[dtype], k: Int = 0) -> NDArray[dtype]",
+                    "signature": "diagflat[dtype: DType = float64](v: NDArray[dtype], k: Int = 0) -> NDArray[dtype]",
                     "summary": "Generate a 2-D NDArray with the flattened input as the diagonal."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be flattened and used as the diagonal.",
+                        "kind": "argument",
+                        "name": "v",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "0",
+                        "description": "Diagonal offset.",
+                        "kind": "argument",
+                        "name": "k",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "diagflat",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A 2-D ComplexNDArray with the flattened input as the diagonal.",
+                    "signature": "diagflat[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](v: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a 2-D ComplexNDArray with the flattened input as the diagonal."
                   }
                 ]
               },
@@ -22148,6 +23635,67 @@
                     "returnsDoc": "A 2-D NDArray with ones on and below the k-th diagonal.",
                     "signature": "tri[dtype: DType = float64](N: Int, M: Int, k: Int = 0) -> NDArray[dtype]",
                     "summary": "Generate a 2-D NDArray with ones on and below the k-th diagonal."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "Number of rows in the matrix.",
+                        "kind": "argument",
+                        "name": "N",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "Number of columns in the matrix.",
+                        "kind": "argument",
+                        "name": "M",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "0",
+                        "description": "Diagonal offset.",
+                        "kind": "argument",
+                        "name": "k",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "tri",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A 2-D ComplexNDArray with ones on and below the k-th diagonal.",
+                    "signature": "tri[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](N: Int, M: Int, k: Int = 0) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a 2-D ComplexNDArray with ones on and below the k-th diagonal."
                   }
                 ]
               },
@@ -22199,6 +23747,59 @@
                     "returnsDoc": "A NDArray with elements above the k-th diagonal zeroed out.",
                     "signature": "tril[dtype: DType = float64](m: NDArray[dtype], k: Int = 0) -> NDArray[dtype]",
                     "summary": "Zero out elements above the k-th diagonal."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be zeroed out.",
+                        "kind": "argument",
+                        "name": "m",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "0",
+                        "description": "Diagonal offset.",
+                        "kind": "argument",
+                        "name": "k",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "tril",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray with elements above the k-th diagonal zeroed out.",
+                    "signature": "tril[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](m: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Zero out elements above the k-th diagonal."
                   }
                 ]
               },
@@ -22249,6 +23850,59 @@
                     "returnType": "NDArray[dtype]",
                     "returnsDoc": "A NDArray with elements below the k-th diagonal zeroed out.",
                     "signature": "triu[dtype: DType = float64](m: NDArray[dtype], k: Int = 0) -> NDArray[dtype]",
+                    "summary": "Zero out elements below the k-th diagonal."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be zeroed out.",
+                        "kind": "argument",
+                        "name": "m",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "0",
+                        "description": "Diagonal offset.",
+                        "kind": "argument",
+                        "name": "k",
+                        "passingKind": "pos_or_kw",
+                        "type": "Int"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "triu",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A ComplexNDArray with elements below the k-th diagonal zeroed out.",
+                    "signature": "triu[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](m: ComplexNDArray[cdtype, dtype=dtype], k: Int = 0) -> ComplexNDArray[cdtype, dtype=dtype]",
                     "summary": "Zero out elements below the k-th diagonal."
                   }
                 ]
@@ -22310,6 +23964,68 @@
                     "returnsDoc": "A Vandermonde matrix.",
                     "signature": "vander[dtype: DType = float64](x: NDArray[dtype], N: Optional[Int] = Optional(None), increasing: Bool = False) -> NDArray[dtype]",
                     "summary": "Generate a Vandermonde matrix."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "1-D input array.",
+                        "kind": "argument",
+                        "name": "x",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "Optional(None)",
+                        "description": "Number of columns in the output. If N is not specified, a square array is returned.",
+                        "kind": "argument",
+                        "name": "N",
+                        "passingKind": "pos_or_kw",
+                        "type": "Optional[Int]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "False",
+                        "description": "Order of the powers of the columns. If True, the powers increase from left to right, if False (the default) they are reversed.",
+                        "kind": "argument",
+                        "name": "increasing",
+                        "passingKind": "pos_or_kw",
+                        "type": "Bool"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "vander",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "A Complex Vandermonde matrix.",
+                    "signature": "vander[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](x: ComplexNDArray[cdtype, dtype=dtype], N: Optional[Int] = Optional(None), increasing: Bool = False) -> ComplexNDArray[cdtype, dtype=dtype]",
+                    "summary": "Generate a Complex Vandermonde matrix."
                   }
                 ]
               },
@@ -22358,6 +24074,64 @@
                     "returnsDoc": "A NDArray with the same shape and strides as `a` but with elements casted to `target`.",
                     "signature": "astype[dtype: DType, //, target: DType](a: NDArray[dtype]) -> NDArray[target]",
                     "summary": "Cast an NDArray to a different dtype."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "ComplexNDArray to be casted.",
+                        "kind": "argument",
+                        "name": "a",
+                        "passingKind": "pos_or_kw",
+                        "type": "ComplexNDArray[cdtype, dtype=dtype]"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "astype",
+                    "parameters": [
+                      {
+                        "description": "Complex datatype of the input array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "inferred",
+                        "type": "CDType"
+                      },
+                      {
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "target",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "DType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "target_dtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[target, dtype=target_dtype]",
+                    "returnsDoc": "A ComplexNDArray with the same shape and strides as `a` but with elements casted to `target`.",
+                    "signature": "astype[cdtype: CDType, //, target: CDType, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType](), target_dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](a: ComplexNDArray[cdtype, dtype=dtype]) -> ComplexNDArray[target, dtype=target_dtype]",
+                    "summary": "Cast a ComplexNDArray to a different dtype."
                   }
                 ]
               },
@@ -22554,6 +24328,75 @@
                     "returnType": "NDArray[dtype]",
                     "returnsDoc": "An Array of given data, shape and order.",
                     "signature": "array[dtype: DType = float64](data: List[SIMD[dtype, 1]], shape: List[Int], order: String = String(\"C\")) -> NDArray[dtype]",
+                    "summary": "Array creation with given data, shape and order."
+                  },
+                  {
+                    "args": [
+                      {
+                        "convention": "read",
+                        "description": "List of real data.",
+                        "kind": "argument",
+                        "name": "real",
+                        "passingKind": "pos_or_kw",
+                        "type": "List[SIMD[dtype, 1]]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "List of imaginary data.",
+                        "kind": "argument",
+                        "name": "imag",
+                        "passingKind": "pos_or_kw",
+                        "type": "List[SIMD[dtype, 1]]"
+                      },
+                      {
+                        "convention": "read",
+                        "description": "List of shape.",
+                        "kind": "argument",
+                        "name": "shape",
+                        "passingKind": "pos_or_kw",
+                        "type": "List[Int]"
+                      },
+                      {
+                        "convention": "read",
+                        "default": "String(\"C\")",
+                        "description": "Memory order C or F.",
+                        "kind": "argument",
+                        "name": "order",
+                        "passingKind": "pos_or_kw",
+                        "type": "String"
+                      }
+                    ],
+                    "async": false,
+                    "constraints": "",
+                    "deprecated": "",
+                    "description": "Example:\n    ```mojo\n    import numojo as nm\n    from numojo.prelude import *\n    nm.array[cf32](\n        real=List[Scalar[f32]](1, 2, 3, 4),\n        imag=List[Scalar[f32]](5, 6, 7, 8),\n        shape=List[Int](2, 2),\n    )\n    ```\n",
+                    "isDef": false,
+                    "isStatic": false,
+                    "kind": "function",
+                    "name": "array",
+                    "parameters": [
+                      {
+                        "default": "{float64, float64}",
+                        "description": "Complex datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "cdtype",
+                        "passingKind": "pos_or_kw",
+                        "type": "CDType"
+                      },
+                      {
+                        "default": "to_dtype[numojo::core::complex::complex_dtype::CDType]()",
+                        "description": "Equivalent real datatype of the output array.",
+                        "kind": "parameter",
+                        "name": "dtype",
+                        "passingKind": "kw",
+                        "type": "DType"
+                      }
+                    ],
+                    "raises": true,
+                    "raisesDoc": "",
+                    "returnType": "ComplexNDArray[cdtype, dtype=dtype]",
+                    "returnsDoc": "An Array of given data, shape and order.",
+                    "signature": "array[cdtype: CDType = {float64, float64}, *, dtype: DType = to_dtype[numojo::core::complex::complex_dtype::CDType]()](real: List[SIMD[dtype, 1]], imag: List[SIMD[dtype, 1]], shape: List[Int], order: String = String(\"C\")) -> ComplexNDArray[cdtype, dtype=dtype]",
                     "summary": "Array creation with given data, shape and order."
                   },
                   {
@@ -24671,7 +26514,7 @@
                         "async": false,
                         "constraints": "",
                         "deprecated": "",
-                        "description": "",
+                        "description": "Notes: A scientific notation takes the form `-a.bbbbe+ii`. It will take\n`7 + precision` letters in total.\n",
                         "isDef": false,
                         "isStatic": false,
                         "kind": "function",

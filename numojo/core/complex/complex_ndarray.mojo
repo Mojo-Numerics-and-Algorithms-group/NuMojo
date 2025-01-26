@@ -1,42 +1,24 @@
 """
 Implements N-Dimensional Complex Array
-Last updated: 2025-01-24
+Last updated: 2025-01-26
 """
-
 
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
-from builtin.type_aliases import Origin
 import builtin.math as builtin_math
+from builtin.type_aliases import Origin
 from collections import Dict
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memcpy
 from python import Python, PythonObject
 from sys import simdwidthof
 from utils import Variant
-from utils.numerics import isnan, isinf
 
-import numojo.routines.sorting as sorting
-import numojo.routines.math.arithmetic as arithmetic
-import numojo.routines.logic.comparison as comparison
-import numojo.routines.math.rounding as rounding
-import numojo.routines.bitwise as bitwise
-import numojo.routines.linalg as linalg
-from numojo.routines.statistics.averages import mean, cummean
-from numojo.routines.math.products import prod, cumprod
-from numojo.routines.math.sums import sum, cumsum
-from numojo.routines.math.extrema import maxT, minT
-from numojo.routines.logic.truth import any
-from numojo.routines.linalg.products import matmul
-from numojo.routines.manipulation import reshape, ravel
-
-import numojo.core._array_funcs as _af
+from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.complex.complex_simd import ComplexSIMD
-from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
     _traverse_iterative,
@@ -44,7 +26,8 @@ from numojo.core.utility import (
     to_numpy,
     bool_to_numeric,
 )
-
+from numojo.core._math_funcs import Vectorized
+import numojo.routines.bitwise as bitwise
 from numojo.routines.io.formatting import (
     format_floating_precision,
     format_floating_scientific,
@@ -53,6 +36,18 @@ from numojo.routines.io.formatting import (
     printoptions,
     GLOBAL_PRINT_OPTIONS,
 )
+import numojo.routines.linalg as linalg
+from numojo.routines.linalg.products import matmul
+import numojo.routines.logic.comparison as comparison
+from numojo.routines.logic.truth import any
+from numojo.routines.manipulation import reshape, ravel
+import numojo.routines.math.rounding as rounding
+import numojo.routines.math.arithmetic as arithmetic
+from numojo.routines.math.extrema import maxT, minT
+from numojo.routines.math.products import prod, cumprod
+from numojo.routines.math.sums import sum, cumsum
+import numojo.routines.sorting as sorting
+from numojo.routines.statistics.averages import mean, cummean
 
 
 # ===----------------------------------------------------------------------===#
@@ -1641,7 +1636,7 @@ struct ComplexNDArray[
         )
 
     fn store[
-        width: Int
+        width: Int = 1
     ](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype]) raises:
         """
         Safely stores SIMD element of size `width` at `index`
@@ -1662,6 +1657,78 @@ struct ComplexNDArray[
 
         self._re._buf.ptr.store(index, val.re)
         self._im._buf.ptr.store(index, val.im)
+
+    fn load[
+        width: Int = 1
+    ](self, *indices: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
+        """
+        Safely loads a SIMD element of size `width` at given variadic indices
+        from the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.load` directly.
+
+        Raises:
+            Index out of boundary.
+        """
+
+        if len(indices) != self.ndim:
+            raise (
+                String(
+                    "Length of indices {} does not match ndim {}".format(
+                        len(indices), self.ndim
+                    )
+                )
+            )
+
+        for i in range(self.ndim):
+            if (indices[i] < 0) or (indices[i] >= self.shape[i]):
+                raise Error(
+                    String(
+                        "Invalid index at {}-th dim: "
+                        "index out of bound [0, {})."
+                    ).format(i, self.shape[i])
+                )
+
+        var idx: Int = _get_offset(indices, self.strides)
+        return ComplexSIMD[cdtype, dtype=dtype](
+            re=self._re._buf.ptr.load[width=1](idx),
+            im=self._im._buf.ptr.load[width=1](idx),
+        )
+
+    fn store[
+        width: Int = 1
+    ](mut self, *indices: Int, val: ComplexSIMD[cdtype, dtype=dtype]) raises:
+        """
+        Safely stores SIMD element of size `width` at given variadic indices
+        of the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.store` directly.
+
+        Raises:
+            Index out of boundary.
+        """
+
+        if len(indices) != self.ndim:
+            raise (
+                String(
+                    "Length of indices {} does not match ndim {}".format(
+                        len(indices), self.ndim
+                    )
+                )
+            )
+
+        for i in range(self.ndim):
+            if (indices[i] < 0) or (indices[i] >= self.shape[i]):
+                raise Error(
+                    String(
+                        "Invalid index at {}-th dim: "
+                        "index out of bound [0, {})."
+                    ).format(i, self.shape[i])
+                )
+
+        var idx: Int = _get_offset(indices, self.strides)
+        self._re._buf.ptr.store(idx, val.re)
+        self._im._buf.ptr.store(idx, val.im)
 
     # fn __iter__(self) raises -> _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype]:
     #     """Iterate over elements of the NDArray, returning copied value.

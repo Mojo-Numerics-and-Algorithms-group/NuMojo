@@ -159,6 +159,30 @@ struct ComplexSIMD[
         self.im = (self.im * other.re - self.re * other.im) / denom
         self.re = re
 
+    fn __pow__(self, other: Self) -> Self:
+        """
+        Raises this ComplexSIMD instance to the power of another.
+
+        Arguments:
+            other: The ComplexSIMD instance to raise to the power of.
+
+        Returns:
+            Self: A new ComplexSIMD instance representing the result.
+        """
+        return Self(self.re**other.re, self.im**other.im)
+
+    fn __pow__(self, other: Scalar[dtype]) -> Self:
+        """
+        Raises this ComplexSIMD instance to the power of a scalar.
+
+        Arguments:
+            other: The scalar to raise to the power of.
+
+        Returns:
+            Self: A new ComplexSIMD instance representing the result.
+        """
+        return Self(self.re**other, self.im**other)
+
     fn __pos__(self) -> Self:
         """
         Returns the ComplexSIMD instance itself.

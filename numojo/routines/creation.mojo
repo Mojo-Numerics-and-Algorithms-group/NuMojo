@@ -32,6 +32,7 @@ function. So it is easy for modification.
 """
 
 from algorithm import parallelize, vectorize
+from algorithm import parallelize, vectorize
 from builtin.math import pow
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy

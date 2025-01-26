@@ -3,38 +3,22 @@ Implements N-Dimensional Complex Array
 Last updated: 2025-01-26
 """
 
-
-import builtin.math as builtin_math
-import builtin.bool as builtin_bool
-from builtin.type_aliases import Origin
 from algorithm import parallelize, vectorize
-from python import Python, PythonObject
-from sys import simdwidthof
+import builtin.bool as builtin_bool
+import builtin.math as builtin_math
+from builtin.type_aliases import Origin
 from collections import Dict
 from collections.optional import Optional
-from utils import Variant
 from memory import UnsafePointer, memset_zero, memcpy
+from python import Python, PythonObject
+from sys import simdwidthof
+from utils import Variant
 
-import numojo.routines.sorting as sorting
-import numojo.routines.math.arithmetic as arithmetic
-import numojo.routines.logic.comparison as comparison
-import numojo.routines.math.rounding as rounding
-import numojo.routines.bitwise as bitwise
-import numojo.routines.linalg as linalg
-from numojo.routines.statistics.averages import mean, cummean
-from numojo.routines.math.products import prod, cumprod
-from numojo.routines.math.sums import sum, cumsum
-from numojo.routines.math.extrema import maxT, minT
-from numojo.routines.logic.truth import any
-from numojo.routines.linalg.products import matmul
-from numojo.routines.manipulation import reshape, ravel
-
+from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.complex.complex_simd import ComplexSIMD
-from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
     _traverse_iterative,
@@ -42,6 +26,8 @@ from numojo.core.utility import (
     to_numpy,
     bool_to_numeric,
 )
+from numojo.core._math_funcs import Vectorized
+import numojo.routines.bitwise as bitwise
 from numojo.routines.io.formatting import (
     format_floating_precision,
     format_floating_scientific,
@@ -50,6 +36,18 @@ from numojo.routines.io.formatting import (
     printoptions,
     GLOBAL_PRINT_OPTIONS,
 )
+import numojo.routines.linalg as linalg
+from numojo.routines.linalg.products import matmul
+import numojo.routines.logic.comparison as comparison
+from numojo.routines.logic.truth import any
+from numojo.routines.manipulation import reshape, ravel
+import numojo.routines.math.rounding as rounding
+import numojo.routines.math.arithmetic as arithmetic
+from numojo.routines.math.extrema import maxT, minT
+from numojo.routines.math.products import prod, cumprod
+from numojo.routines.math.sums import sum, cumsum
+import numojo.routines.sorting as sorting
+from numojo.routines.statistics.averages import mean, cummean
 
 
 # ===----------------------------------------------------------------------===#

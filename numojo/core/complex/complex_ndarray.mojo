@@ -1599,7 +1599,7 @@ struct ComplexNDArray[
         )
 
     fn store[
-        width: Int
+        width: Int = 1
     ](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype]) raises:
         """
         Safely stores SIMD element of size `width` at `index`
@@ -1620,6 +1620,78 @@ struct ComplexNDArray[
 
         self._re._buf.ptr.store(index, val.re)
         self._im._buf.ptr.store(index, val.im)
+
+    fn load[
+        width: Int = 1
+    ](self, *indices: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
+        """
+        Safely loads a SIMD element of size `width` at given variadic indices
+        from the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.load` directly.
+
+        Raises:
+            Index out of boundary.
+        """
+
+        if len(indices) != self.ndim:
+            raise (
+                String(
+                    "Length of indices {} does not match ndim {}".format(
+                        len(indices), self.ndim
+                    )
+                )
+            )
+
+        for i in range(self.ndim):
+            if (indices[i] < 0) or (indices[i] >= self.shape[i]):
+                raise Error(
+                    String(
+                        "Invalid index at {}-th dim: "
+                        "index out of bound [0, {})."
+                    ).format(i, self.shape[i])
+                )
+
+        var idx: Int = _get_offset(indices, self.strides)
+        return ComplexSIMD[cdtype, dtype=dtype](
+            re=self._re._buf.ptr.load[width=1](idx),
+            im=self._im._buf.ptr.load[width=1](idx),
+        )
+
+    fn store[
+        width: Int = 1
+    ](mut self, *indices: Int, val: ComplexSIMD[cdtype, dtype=dtype]) raises:
+        """
+        Safely stores SIMD element of size `width` at given variadic indices
+        of the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.store` directly.
+
+        Raises:
+            Index out of boundary.
+        """
+
+        if len(indices) != self.ndim:
+            raise (
+                String(
+                    "Length of indices {} does not match ndim {}".format(
+                        len(indices), self.ndim
+                    )
+                )
+            )
+
+        for i in range(self.ndim):
+            if (indices[i] < 0) or (indices[i] >= self.shape[i]):
+                raise Error(
+                    String(
+                        "Invalid index at {}-th dim: "
+                        "index out of bound [0, {})."
+                    ).format(i, self.shape[i])
+                )
+
+        var idx: Int = _get_offset(indices, self.strides)
+        self._re._buf.ptr.store(idx, val.re)
+        self._im._buf.ptr.store(idx, val.im)
 
     # fn __iter__(self) raises -> _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype]:
     #     """Iterate over elements of the NDArray, returning copied value.

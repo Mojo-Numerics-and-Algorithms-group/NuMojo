@@ -6,7 +6,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### ⭐️ New
 
-- Add support for complex arrays `ComplexNDArray`, `ComplexSIMD`, `CDType` ([PR #165](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/165)).
+- Add support for complex arrays `ComplexNDArray`, `ComplexSIMD`, `CDType` ([PR #165](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/165)). Add creation routines for complex arrays ([PR #195](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/195)).
 - Add `TypeCoercion` struct that calculates the resultant type based on two initial data types. Apply type coercion to math functions ([PR #164](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/164), [PR #189](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/189)).
 - Add `OwnData` type as container of data buffer for `NDArray` and `Matrix`. The property `_buf` is changed from `UnsafePointer` to `OwnData`. Introduced `RefData` struct and `Bufferable` trait. This step prepares for future support of array views and facilitates an easy transition once parameterized traits are integrated into Mojo ([PR #175](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/175), [PR #170](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/170), [PR #178](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/178)).
 - Add `NDIter` type as a iterator over the array items according to a certain memory layout. Use `NDArray.nditer()` to construct the iterator ([PR #188](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/188)).

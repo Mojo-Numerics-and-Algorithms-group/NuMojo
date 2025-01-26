@@ -1,0 +1,4 @@
+docs/readthedocs/docs.json -diff -merge
+docs/readthedocs/docs.json linguist-generated=true
+docs/readthedocs/docs/* -diff -merge
+docs/readthedocs/docs/* linguist-generated=true

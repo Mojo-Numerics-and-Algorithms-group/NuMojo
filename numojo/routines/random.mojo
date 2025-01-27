@@ -16,12 +16,10 @@ This module is similar to `numpy.random`. However, in this module, the shape is
 always appearing as the first argument.
 """
 
-from builtin.tuple import Tuple
 import math as mt
 from random import random as builtin_random
 
 from numojo.core.ndarray import NDArray
-from numojo.core.utility import is_inttype, is_floattype
 
 # ===----------------------------------------------------------------------=== #
 # Uniform distribution

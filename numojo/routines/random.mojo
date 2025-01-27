@@ -6,7 +6,10 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Create array of the given shape and populate it with random samples from
+numojo.routines.random
+----------------------
+
+Creates array of the given shape and populate it with random samples from
 a certain distribution.
 
 This module is similar to `numpy.random`. However, in this module, the shape is 
@@ -29,11 +32,11 @@ fn rand[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
-    Create an array of the given shape and populate it with random samples from
+    Creates an array of the given shape and populate it with random samples from
     a uniform distribution over [0, 1).
 
     Example:
-        ```py
+        ```mojo
         var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4))
         print(arr)
         ```
@@ -69,8 +72,9 @@ fn rand[
 
 fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
-    Overload of function `rand(shape: NDArrayShape)`
-    that reads in a sequence of `Int`.
+    Overloads the function `rand(shape: NDArrayShape)`.
+    Creates an array of the given shape and populate it with random samples from
+    a uniform distribution over [0, 1).
     """
     return rand[dtype](NDArrayShape(shape))
 
@@ -79,8 +83,9 @@ fn rand[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
     """
-    Overload of function `rand(shape: NDArrayShape)`
-    that reads in a list of `Int`.
+    Overloads the function `rand(shape: NDArrayShape)`.
+    Creates an array of the given shape and populate it with random samples from
+    a uniform distribution over [0, 1).
     """
     return rand[dtype](NDArrayShape(shape))
 
@@ -89,8 +94,9 @@ fn rand[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int]) raises -> NDArray[dtype]:
     """
-    Overload of function `rand(shape: NDArrayShape)`
-    that reads in a variadic list of `Int`.
+    Overloads the function `rand(shape: NDArrayShape)`
+    Creates an array of the given shape and populate it with random samples from
+    a uniform distribution over [0, 1).
     """
     return rand[dtype](NDArrayShape(shape))
 
@@ -101,12 +107,12 @@ fn rand[
     shape: NDArrayShape, min: Scalar[dtype], max: Scalar[dtype]
 ) raises -> NDArray[dtype]:
     """
-    Create an array of the given shape and populate it with random samples from
+    Creates an array of the given shape and populate it with random samples from
     a uniform distribution over [min, max). This is equivalent to
     `min + rand() * (max - min)`.
 
     Example:
-        ```py
+        ```mojo
         var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4), min=0, max=100)
         print(arr)
         ```
@@ -148,8 +154,10 @@ fn rand[
     dtype: DType = DType.float64
 ](*shape: Int, min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[dtype]:
     """
-    Overload of function `rand(shape: NDArrayShape, min, max)`
-    that reads in a sequence of `Int`.
+    Overloads the function `rand(shape: NDArrayShape, min, max)`.
+    Creates an array of the given shape and populate it with random samples from
+    a uniform distribution over [min, max). This is equivalent to
+    `min + rand() * (max - min)`.
     """
     return rand[dtype](NDArrayShape(shape), min=min, max=max)
 
@@ -160,8 +168,10 @@ fn rand[
     dtype
 ]:
     """
-    Overload of function `rand(shape: NDArrayShape, min, max)`
-    that reads in a list of `Int`.
+    Overloads the function `rand(shape: NDArrayShape, min, max)`.
+    Creates an array of the given shape and populate it with random samples from
+    a uniform distribution over [min, max). This is equivalent to
+    `min + rand() * (max - min)`.
     """
     return rand[dtype](NDArrayShape(shape), min=min, max=max)
 
@@ -257,7 +267,7 @@ fn randn[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
-    Create an array of the given shape and populate it with random samples from
+    Creates an array of the given shape and populate it with random samples from
     a standard normal distribution.
 
     Parameters:
@@ -285,8 +295,9 @@ fn randn[
 
 fn randn[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
-    Overload of function `randn(shape: NDArrayShape)`
-    that reads in a sequence of `Int`.
+    Overloads the function `randn(shape: NDArrayShape)`.
+    Creates an array of the given shape and populate it with random samples from
+    a standard normal distribution.
     """
     return randn[dtype](NDArrayShape(shape))
 
@@ -297,7 +308,7 @@ fn randn[
     shape: NDArrayShape, mean: Scalar[dtype], variance: Scalar[dtype]
 ) raises -> NDArray[dtype]:
     """
-    Create an array of the given shape and populate it with random samples from
+    Creates an array of the given shape and populate it with random samples from
     a normal distribution with given mean and variance.
 
     Parameters:
@@ -333,8 +344,9 @@ fn randn[
     dtype
 ]:
     """
-    Overload of function `randn(shape: NDArrayShape, mean, variance)`
-    that reads in a sequence of `Int`.
+    Overloads the function `randn(shape: NDArrayShape, mean, variance)`.
+    Creates an array of the given shape and populate it with random samples from
+    a normal distribution with given mean and variance.
     """
     return randn[dtype](NDArrayShape(shape), mean=mean, variance=variance)
 
@@ -345,8 +357,9 @@ fn randn[
     shape: List[Int], mean: Scalar[dtype], variance: Scalar[dtype]
 ) raises -> NDArray[dtype]:
     """
-    Overload of function `randn(shape: NDArrayShape, mean, variance)`
-    that reads in a list of `Int`.
+    Overloads the function `randn(shape: NDArrayShape, mean, variance)`.
+    Creates an array of the given shape and populate it with random samples from
+    a normal distribution with given mean and variance.
     """
     return randn[dtype](NDArrayShape(shape), mean=mean, variance=variance)
 
@@ -360,7 +373,7 @@ fn exponential[
     dtype: DType = DType.float64
 ](shape: NDArrayShape, scale: Scalar[dtype] = 1.0) raises -> NDArray[dtype]:
     """
-    Create an array of the given shape and populate it with random samples from
+    Creates an array of the given shape and populate it with random samples from
     an exponential distribution with given scale parameter.
 
     Example:
@@ -401,8 +414,9 @@ fn exponential[
     dtype: DType = DType.float64
 ](*shape: Int, scale: Scalar[dtype] = 1.0) raises -> NDArray[dtype]:
     """
-    Overload of function `exponential(shape: NDArrayShape, rate)`
-    that reads in a sequence of `Int`.
+    Overloads the function `exponential(shape: NDArrayShape, rate)`.
+    Creates an array of the given shape and populate it with random samples from
+    an exponential distribution with given scale parameter.
     """
 
     return exponential[dtype](NDArrayShape(shape), scale=scale)
@@ -412,15 +426,16 @@ fn exponential[
     dtype: DType = DType.float64
 ](shape: List[Int], scale: Scalar[dtype] = 1.0) raises -> NDArray[dtype]:
     """
-    Overload of function `exponential(shape: NDArrayShape, rate)`
-    that reads in a sequence of `Int`.
+    Overloads the function `exponential(shape: NDArrayShape, rate)`.
+    Creates an array of the given shape and populate it with random samples from
+    an exponential distribution with given scale parameter.
     """
 
     return exponential[dtype](NDArrayShape(shape), scale=scale)
 
 
 # ===----------------------------------------------------------------------=== #
-# Auxiliary functions
+# To be deprecated
 # ===----------------------------------------------------------------------=== #
 
 

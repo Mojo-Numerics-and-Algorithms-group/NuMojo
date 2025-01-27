@@ -36,10 +36,10 @@ fn rand[
     a uniform distribution over [0, 1).
 
     Example:
-        ```mojo
-        var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4))
-        print(arr)
-        ```
+    ```mojo
+    var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4))
+    print(arr)
+    ```
 
     Parameters:
         dtype: The data type of the NDArray elements.
@@ -112,10 +112,11 @@ fn rand[
     `min + rand() * (max - min)`.
 
     Example:
-        ```mojo
-        var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4), min=0, max=100)
-        print(arr)
-        ```
+    ```mojo
+    var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4), min=0, max=100)
+    print(arr)
+    ```
+
     Raises:
         Error: If the dtype is not a floating-point type.
 

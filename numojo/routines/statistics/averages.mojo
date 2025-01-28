@@ -6,7 +6,7 @@ Averages and variances
 # ===----------------------------------------------------------------------=== #
 
 from collections.optional import Optional
-from math import sqrt
+import math as mt
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
@@ -17,6 +17,25 @@ from numojo.routines.math.arithmetic import add
 from numojo.routines.sorting import binary_sort
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
+
+
+fn mean[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+    """
+    Calculate the arithmetic average of all items in the array.
+
+    parameters:
+        returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        a: NDArray.
+
+    Returns:
+        A scalar defaulting to float64.
+
+    """
+    return sum(a).cast[returned_dtype]() / a.size
 
 
 fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
@@ -58,34 +77,6 @@ fn mean[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         return sum(A, axis=1) / A.shape[1]
     else:
         raise Error(String("The axis can either be 1 or 0!"))
-
-
-fn meanall(array: NDArray) raises -> Float64:
-    """Mean of all items in the array.
-
-    Example:
-    ```console
-    > print(A)
-    [[      0.1315377950668335      0.458650141954422       0.21895918250083923     ]
-    [      0.67886471748352051     0.93469291925430298     0.51941639184951782     ]
-    [      0.034572109580039978    0.52970021963119507     0.007698186207562685    ]]
-    2-D array  Shape: [3, 3]  DType: float32
-
-    > print(nm.math.stats.meanall(A))
-    0.39045463667975533
-    ```
-
-    Args:
-        array: NDArray.
-
-    Returns:
-        Float64.
-    """
-
-    return (
-        sum(array).cast[DType.float64]()
-        / Int32(array.size).cast[DType.float64]()
-    )
 
 
 fn cummean[
@@ -269,7 +260,7 @@ fn cumpvariance[
     for i in range(array.num_elements()):
         result += (array.load(i) - mean_value) ** 2
 
-    return sqrt(result / (array.num_elements()))
+    return mt.sqrt(result / (array.num_elements()))
 
 
 fn cumvariance[
@@ -301,7 +292,7 @@ fn cumvariance[
     for i in range(array.num_elements()):
         result += (array.load(i) - mean_value) ** 2
 
-    return sqrt(result / (array.num_elements() - 1))
+    return mt.sqrt(result / (array.num_elements() - 1))
 
 
 fn cumpstdev[
@@ -322,7 +313,7 @@ fn cumpstdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return sqrt(cumpvariance[dtype](array, mu))
+    return mt.sqrt(cumpvariance[dtype](array, mu))
 
 
 fn cumstdev[
@@ -342,4 +333,4 @@ fn cumstdev[
     Returns:
         The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
     """
-    return sqrt(cumvariance[dtype](array, mu))
+    return mt.sqrt(cumvariance[dtype](array, mu))

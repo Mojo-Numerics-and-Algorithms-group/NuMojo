@@ -174,9 +174,11 @@ fn rand[
     """
     return rand[dtype](NDArrayShape(shape), min=min, max=max)
 
+
 # ===----------------------------------------------------------------------=== #
 # Discrete integers
 # ===----------------------------------------------------------------------=== #
+
 
 fn randint[
     dtype: DType = DType.int64

@@ -1,4 +1,5 @@
 import numojo as nm
+from numojo.prelude import *
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
 from testing.testing import assert_true, assert_almost_equal
@@ -28,6 +29,26 @@ def test_randminmax():
         arr_list_mean,
         3.5,
         msg="Mean of random array within min and max",
+        atol=0.1,
+    )
+
+
+def test_randint():
+    """Test random int array generation with min and max values."""
+    var arr_low_high = nm.random.randint(Shape(10, 10, 10), 0, 10)
+    var arr_high = nm.random.randint(Shape(10, 10, 10), 6)
+    var arr_low_high_mean = nm.mean(arr_low_high)
+    var arr_high_mean = nm.mean(arr_high)
+    assert_almost_equal(
+        arr_low_high_mean,
+        4.5,
+        msg="Mean of `nm.random.randint(Shape(10, 10), 0, 10)` breaks",
+        atol=0.1,
+    )
+    assert_almost_equal(
+        arr_high_mean,
+        2.5,
+        msg="Mean of `nm.random.randint(Shape(10, 10), 6)` breaks",
         atol=0.1,
     )
 
@@ -150,9 +171,11 @@ def test_randn_list():
 
 def test_rand_exponential():
     """Test random array generation with exponential distribution."""
-    var arr_variadic = nm.random.rand_exponential[nm.f64](20, 20, 20, rate=2.0)
-    var arr_list = nm.random.rand_exponential[nm.f64](
-        List[Int](20, 20, 20), rate=0.5
+    var arr_variadic = nm.random.exponential[nm.f64](
+        Shape(20, 20, 20), scale=2.0
+    )
+    var arr_list = nm.random.exponential[nm.f64](
+        List[Int](20, 20, 20), scale=0.5
     )
 
     var arr_variadic_mean = nm.cummean(arr_variadic)

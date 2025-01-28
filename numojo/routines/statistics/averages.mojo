@@ -19,7 +19,9 @@ from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
 
 
-fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
+fn mean[
+    dtype: DType
+](array: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Mean of array elements over a given axis.
     Args:
@@ -30,6 +32,22 @@ fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
 
     """
     return sum(array, axis) / Scalar[array.dtype](array.shape[axis])
+
+
+fn mean[
+    dtype: DType, //, dtype_out: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[dtype_out]:
+    """
+    Calculate the arithmetic average of all items in the array.
+
+    Args:
+        a: NDArray.
+
+    Returns:
+        A scalar.
+
+    """
+    return sum(a).cast[dtype_out]() / a.size
 
 
 fn mean[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:

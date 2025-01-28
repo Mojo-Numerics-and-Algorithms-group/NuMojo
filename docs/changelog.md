@@ -2,6 +2,14 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## xx/xx/2025 (v0.6)
+
+### ⭐️ New
+
+### 🦋 Changed
+
+- Update functions in the `random` module, add `randint`, and accept `Shape` as the first argument ([PR #199](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/199)).
+
 ## 26/01/2025 (v0.5)
 
 ### ⭐️ New

@@ -14,9 +14,9 @@ from numojo.core.matrix import Matrix
 from numojo.core.utility import bool_to_numeric
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.math.arithmetic import add
-from numojo.routines.sorting import binary_sort
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
+from numojo.routines.sorting import sort
 
 
 fn mean[
@@ -118,9 +118,7 @@ fn mean[
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn mode[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
+fn mode[dtype: DType](array: NDArray[dtype]) raises -> Scalar[dtype]:
     """Mode of all items of an array.
 
     Parameters:
@@ -132,7 +130,8 @@ fn mode[
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_array: NDArray[dtype] = binary_sort[dtype](array)
+
+    var sorted_array: NDArray[dtype] = sort(array)
     var max_count = 0
     var mode_value = sorted_array.item(0)
     var current_count = 1
@@ -152,14 +151,15 @@ fn mode[
     return mode_value
 
 
-# * IMPLEMENT median high and low
 fn median[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
-    """Median value of all items of an array.
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+    """
+    Median value of all items of an array.
 
     Parameters:
          dtype: The element type.
+         returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         array: An NDArray.
@@ -167,12 +167,15 @@ fn median[
     Returns:
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_array = binary_sort[dtype](array)
-    var n = array.num_elements()
-    if n % 2 == 1:
-        return sorted_array.item(n // 2)
+    var sorted_array = sort(array)
+
+    if array.size % 2 == 1:
+        return sorted_array.item(array.size // 2).cast[returned_dtype]()
     else:
-        return (sorted_array.item(n // 2 - 1) + sorted_array.item(n // 2)) / 2
+        return (
+            sorted_array.item(array.size // 2 - 1)
+            + sorted_array.item(array.size // 2)
+        ).cast[returned_dtype]() / 2
 
 
 fn std[

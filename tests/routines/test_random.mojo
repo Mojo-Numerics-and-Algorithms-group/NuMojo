@@ -16,8 +16,8 @@ def test_randminmax():
     """Test random array generation with min and max values."""
     var arr_variadic = nm.random.rand[nm.f64](10, 10, 10, min=1, max=2)
     var arr_list = nm.random.rand[nm.f64](List[Int](10, 10, 10), min=3, max=4)
-    var arr_variadic_mean = nm.cummean(arr_variadic)
-    var arr_list_mean = nm.cummean(arr_list)
+    var arr_variadic_mean = nm.mean(arr_variadic)
+    var arr_list_mean = nm.mean(arr_list)
     assert_almost_equal(
         arr_variadic_mean,
         1.5,
@@ -44,9 +44,9 @@ def test_randn():
         20, 20, 20, mean=1.0, variance=3.0
     )
 
-    var arr_variadic_mean01 = nm.cummean(arr_variadic_01)
-    var arr_variadic_mean31 = nm.cummean(arr_variadic_31)
-    var arr_variadic_mean12 = nm.cummean(arr_variadic_12)
+    var arr_variadic_mean01 = nm.mean(arr_variadic_01)
+    var arr_variadic_mean31 = nm.mean(arr_variadic_31)
+    var arr_variadic_mean12 = nm.mean(arr_variadic_12)
     var arr_variadic_var01 = nm.cumvariance(arr_variadic_01)
     var arr_variadic_var31 = nm.cumvariance(arr_variadic_31)
     var arr_variadic_var12 = nm.cumvariance(arr_variadic_12)
@@ -102,9 +102,9 @@ def test_randn_list():
         List[Int](20, 20, 20), mean=1.0, variance=2.0
     )
 
-    var arr_list_mean01 = nm.cummean(arr_list_01)
-    var arr_list_mean31 = nm.cummean(arr_list_31)
-    var arr_list_mean12 = nm.cummean(arr_list_12)
+    var arr_list_mean01 = nm.mean(arr_list_01)
+    var arr_list_mean31 = nm.mean(arr_list_31)
+    var arr_list_mean12 = nm.mean(arr_list_12)
     var arr_list_var01 = nm.cumvariance(arr_list_01)
     var arr_list_var31 = nm.cumvariance(arr_list_31)
     var arr_list_var12 = nm.cumvariance(arr_list_12)
@@ -155,8 +155,8 @@ def test_rand_exponential():
         List[Int](20, 20, 20), rate=0.5
     )
 
-    var arr_variadic_mean = nm.cummean(arr_variadic)
-    var arr_list_mean = nm.cummean(arr_list)
+    var arr_variadic_mean = nm.mean(arr_variadic)
+    var arr_list_mean = nm.mean(arr_list)
 
     # For exponential distribution, mean = 1 / rate
     assert_almost_equal(

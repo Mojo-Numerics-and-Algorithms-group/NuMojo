@@ -56,7 +56,7 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.bitwise as bitwise
 import numojo.routines.linalg as linalg
 from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
-from numojo.routines.statistics.averages import mean, cummean
+from numojo.routines.statistics.averages import mean
 from numojo.routines.math.products import prod, cumprod
 from numojo.routines.math.sums import sum, cumsum
 from numojo.routines.logic.truth import any
@@ -3247,26 +3247,29 @@ struct NDArray[dtype: DType = DType.float64](
 
         return result
 
-    fn mean(self: Self, axis: Int) raises -> Self:
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self: Self, axis: Int) raises -> NDArray[returned_dtype]:
         """
         Mean of array elements over a given axis.
+
         Args:
-            array: NDArray.
             axis: The axis along which the mean is performed.
+
         Returns:
             An NDArray.
 
         """
-        return mean(self, axis)
+        return mean[returned_dtype](self, axis)
 
     fn mean(self) raises -> Scalar[dtype]:
         """
-        Cumulative mean of a array.
+        Mean of a array.
 
         Returns:
-            The cumulative mean of the array as a SIMD Value of `dtype`.
+            The mean of the array as a SIMD Value of `dtype`.
         """
-        return cummean[dtype](self)
+        return mean[dtype](self)
 
     # fn nonzero(self):
     #     pass

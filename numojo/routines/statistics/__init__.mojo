@@ -1,9 +1,7 @@
 from .averages import (
     mean,
-    meanall,
     max,
     min,
-    cummean,
     mode,
     median,
     variance,

@@ -147,8 +147,6 @@ from numojo.routines.math import (
 from numojo.routines import statistics
 from numojo.routines.statistics import (
     mean,
-    meanall,
-    cummean,
     mode,
     median,
     variance,

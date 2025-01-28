@@ -25,7 +25,8 @@ fn mean[
     """
     Calculate the arithmetic average of all items in the array.
 
-    parameters:
+    Parameters:
+        dtype: The element type.
         returned_dtype: The returned data type, defaulting to float64.
 
     Args:
@@ -38,43 +39,81 @@ fn mean[
     return sum(a).cast[returned_dtype]() / a.size
 
 
-fn mean(array: NDArray, axis: Int = 0) raises -> NDArray[array.dtype]:
+fn mean[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
     """
     Mean of array elements over a given axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
-        array: NDArray.
+        a: NDArray.
         axis: The axis along which the mean is performed.
+
     Returns:
         An NDArray.
-
     """
-    return sum(array, axis) / Scalar[array.dtype](array.shape[axis])
+
+    var normalized_axis = axis
+
+    if axis < 0:
+        normalized_axis = axis + a.ndim
+
+    if normalized_axis < 0 or normalized_axis >= a.ndim:
+        raise Error(String("Axis {} out of bounds!").format(axis))
+
+    return (
+        sum(a, axis=normalized_axis).astype[returned_dtype]()
+        / a.shape[normalized_axis]
+    )
 
 
-fn mean[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn mean[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: Matrix[dtype]) -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in the Matrix.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
-        A: Matrix.
+        a: A matrix.
+
+    Returns:
+        A scalar of the returned data type.
     """
 
-    return sum(A) / A.size
+    return sum(a).cast[returned_dtype]() / a.size
 
 
-fn mean[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn mean[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: Matrix[dtype], axis: Int) raises -> Matrix[returned_dtype]:
     """
     Calculate the arithmetic average of a Matrix along the axis.
 
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
-        A: Matrix.
-        axis: 0 or 1.
+        a: A matrix.
+        axis: The axis along which the mean is performed.
+
+    Returns:
+        A matrix of the returned data type.
     """
 
     if axis == 0:
-        return sum(A, axis=0) / A.shape[0]
+        return sum(a, axis=0).astype[returned_dtype]() / a.shape[0]
     elif axis == 1:
-        return sum(A, axis=1) / A.shape[1]
+        return sum(a, axis=1).astype[returned_dtype]() / a.shape[1]
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 
@@ -136,7 +175,9 @@ fn median[
         return (sorted_array.item(n // 2 - 1) + sorted_array.item(n // 2)) / 2
 
 
-fn std[dtype: DType](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
+fn std[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the standard deviation.
 
@@ -148,12 +189,12 @@ fn std[dtype: DType](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
     if ddof >= A.size:
         raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
 
-    return variance(A, ddof=ddof) ** 0.5
+    return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
 fn std[
-    dtype: DType
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[dtype]:
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the standard deviation along axis.
 
@@ -163,12 +204,12 @@ fn std[
         ddof: Delta degree of freedom.
     """
 
-    return variance(A, axis, ddof=ddof) ** 0.5
+    return variance[returned_dtype](A, axis, ddof=ddof) ** 0.5
 
 
 fn variance[
-    dtype: DType
-](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the variance.
 
@@ -180,12 +221,15 @@ fn variance[
     if ddof >= A.size:
         raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
 
-    return sum((A - mean(A)) * (A - mean(A))) / (A.size - ddof)
+    return sum(
+        (A.astype[returned_dtype]() - mean[returned_dtype](A))
+        * (A.astype[returned_dtype]() - mean[returned_dtype](A))
+    ) / (A.size - ddof)
 
 
 fn variance[
-    dtype: DType
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[dtype]:
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the variance along axis.
 
@@ -204,13 +248,17 @@ fn variance[
         )
 
     if axis == 0:
-        return sum((A - mean(A, axis=0)) * (A - mean(A, axis=0)), axis=0) / (
-            A.shape[0] - ddof
-        )
+        return sum(
+            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0))
+            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0)),
+            axis=0,
+        ) / (A.shape[0] - ddof)
     elif axis == 1:
-        return sum((A - mean(A, axis=1)) * (A - mean(A, axis=1)), axis=1) / (
-            A.shape[1] - ddof
-        )
+        return sum(
+            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1))
+            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1)),
+            axis=1,
+        ) / (A.shape[1] - ddof)
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 
@@ -234,7 +282,7 @@ fn cumpvariance[
     """
     var mean_value: Scalar[dtype]
     if not mu:
-        mean_value = cummean[dtype](array)
+        mean_value = mean[dtype](array)
     else:
         mean_value = mu.value()
 
@@ -267,7 +315,7 @@ fn cumvariance[
     var mean_value: Scalar[dtype]
 
     if not mu:
-        mean_value = cummean[dtype](array)
+        mean_value = mean[dtype](array)
     else:
         mean_value = mu.value()
 

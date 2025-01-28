@@ -255,11 +255,15 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __del__(owned self):
+        """
+        Destroys all elements in the list and free its memory.
+        """
         var owndata = True
         try:
             owndata = self.flags["OWNDATA"]
         except:
             print("Invalid `OWNDATA` flag. Treat as `True`.")
+
         if owndata:
             self._buf.ptr.free()
 

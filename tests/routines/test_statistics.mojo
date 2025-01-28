@@ -10,10 +10,10 @@ from utils_for_test import check, check_is_close
 # ===-----------------------------------------------------------------------===#
 
 
-def test_mean():
+def test_mean_median_var_std():
     var np = Python.import_module("numpy")
-    var A = nm.NDArray[f64](Shape(10, 10))
-    var Anp = np.matrix(A.to_numpy())
+    var A = nm.random.randn(10, 10)
+    var Anp = A.to_numpy()
 
     assert_true(
         np.all(np.isclose(nm.mean(A), np.mean(Anp), atol=0.1)),
@@ -23,5 +23,20 @@ def test_mean():
         check_is_close(
             nm.mean(A, i),
             np.mean(Anp, i),
-            String("`mean` is broken for {i}-dimension"),
+            String("`mean` is broken for {}-dimension".format(i)),
         )
+
+    assert_true(
+        np.all(np.isclose(nm.median(A), np.median(Anp), atol=0.1)),
+        "`median` is broken",
+    )
+
+    assert_true(
+        np.all(np.isclose(nm.variance(A), np.`var`(Anp), atol=0.1)),
+        "`variance` is broken",
+    )
+
+    assert_true(
+        np.all(np.isclose(nm.std(A), np.std(Anp), atol=0.1)),
+        "`std` is broken",
+    )

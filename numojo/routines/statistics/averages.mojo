@@ -197,23 +197,6 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
-    returned_dtype
-]:
-    """
-    Compute the standard deviation along axis.
-
-    Args:
-        A: An Array.
-        axis: 0 or 1.
-        ddof: Delta degree of freedom.
-    """
-
-    return variance[returned_dtype](A, axis, ddof=ddof) ** 0.5
-
-
-fn std[
-    dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the standard deviation.
@@ -262,44 +245,6 @@ fn variance[
         (A.astype[returned_dtype]() - mean[returned_dtype](A))
         * (A.astype[returned_dtype]() - mean[returned_dtype](A))
     ) / (A.size - ddof)
-
-
-fn variance[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
-    returned_dtype
-]:
-    """
-    Compute the variance along axis.
-
-    Args:
-        A: An array.
-        axis: 0 or 1.
-        ddof: Delta degree of freedom.
-    """
-
-    if (ddof >= A.shape[0]) or (ddof >= A.shape[1]):
-        raise Error(
-            String(
-                "ddof {ddof} should be smaller than size"
-                " {A.shape[0]}x{A.shape[1]}"
-            )
-        )
-
-    if axis == 0:
-        return sum(
-            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0))
-            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0)),
-            axis=0,
-        ) / (A.shape[0] - ddof)
-    elif axis == 1:
-        return sum(
-            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1))
-            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1)),
-            axis=1,
-        ) / (A.shape[1] - ddof)
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
 
 
 fn variance[

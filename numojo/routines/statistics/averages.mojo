@@ -35,8 +35,8 @@ fn mean[
 
 
 fn mean[
-    dtype_in: DType, //, dtype: DType = DType.float64
-](a: NDArray[dtype_in]) raises -> Scalar[dtype]:
+    dtype: DType, //, dtype_out: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[dtype_out]:
     """
     Calculate the arithmetic average of all items in the array.
 
@@ -47,7 +47,7 @@ fn mean[
         A scalar.
 
     """
-    return sum(a).cast[dtype]() / a.size
+    return sum(a).cast[dtype_out]() / a.size
 
 
 fn mean[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:

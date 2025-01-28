@@ -79,23 +79,6 @@ fn mean[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn cummean[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
-    """Arithmatic mean of all items of an array.
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: An NDArray.
-
-    Returns:
-        The mean of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    return sum[dtype](array) / (array.num_elements())
-
-
 fn mode[
     dtype: DType = DType.float64
 ](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:

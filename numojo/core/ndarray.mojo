@@ -1854,6 +1854,13 @@ struct NDArray[dtype: DType = DType.float64](
     fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)
 
+    fn __pow__(self, rhs: Scalar[dtype]) raises -> Self:
+        """Power of items."""
+        var res = self
+        for i in range(self.size):
+            res._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
+        return res^
+
     fn __pow__(self, p: Self) raises -> Self:
         if self.size != p.size:
             raise Error(

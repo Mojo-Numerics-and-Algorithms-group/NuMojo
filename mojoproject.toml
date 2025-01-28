@@ -32,6 +32,7 @@ test_core = "magic run mojo test tests/core -I ./ -I ./tests/"
 test_creation = "magic run mojo test tests/routines/test_creation.mojo -I ./ -I ./tests/"
 test_linalg = "magic run mojo test tests/routines/test_linalg.mojo -I ./ -I ./tests/"
 test_manipulation = "magic run mojo test tests/routines/test_manipulation.mojo -I ./ -I ./tests/"
+test_random = "magic run mojo test tests/routines/test_random.mojo -I ./ -I ./tests/"
 test_statistics = "magic run mojo test tests/routines/test_statistics.mojo -I ./ -I ./tests/"
 
 # run all final checks before a commit

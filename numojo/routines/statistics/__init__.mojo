@@ -6,8 +6,4 @@ from .averages import (
     median,
     variance,
     std,
-    cumpvariance,
-    cumvariance,
-    cumpstdev,
-    cumstdev,
 )

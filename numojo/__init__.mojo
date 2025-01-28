@@ -151,10 +151,6 @@ from numojo.routines.statistics import (
     median,
     variance,
     std,
-    cumpvariance,
-    cumvariance,
-    cumpstdev,
-    cumstdev,
 )
 
 from numojo.routines import bitwise

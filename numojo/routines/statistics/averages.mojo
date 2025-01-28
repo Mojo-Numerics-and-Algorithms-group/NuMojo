@@ -97,7 +97,6 @@ fn mean[
     """
     Calculate the arithmetic average of a Matrix along the axis.
 
-
     Parameters:
         dtype: The element type.
         returned_dtype: The returned data type, defaulting to float64.
@@ -190,7 +189,11 @@ fn std[
     """
 
     if ddof >= A.size:
-        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
 
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
@@ -201,13 +204,21 @@ fn std[
     """
     Compute the standard deviation.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
         A: Matrix.
         ddof: Delta degree of freedom.
     """
 
     if ddof >= A.size:
-        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
 
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
@@ -217,6 +228,10 @@ fn std[
 ](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the standard deviation along axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         A: Matrix.
@@ -233,13 +248,21 @@ fn variance[
     """
     Compute the variance.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
         A: An array.
         ddof: Delta degree of freedom.
     """
 
     if ddof >= A.size:
-        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
 
     return sum(
         (A.astype[returned_dtype]() - mean[returned_dtype](A))
@@ -253,13 +276,21 @@ fn variance[
     """
     Compute the variance.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
         A: Matrix.
         ddof: Delta degree of freedom.
     """
 
     if ddof >= A.size:
-        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
 
     return sum(
         (A.astype[returned_dtype]() - mean[returned_dtype](A))
@@ -273,6 +304,10 @@ fn variance[
     """
     Compute the variance along axis.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
         A: Matrix.
         axis: 0 or 1.
@@ -281,9 +316,8 @@ fn variance[
 
     if (ddof >= A.shape[0]) or (ddof >= A.shape[1]):
         raise Error(
-            String(
-                "ddof {ddof} should be smaller than size"
-                " {A.shape[0]}x{A.shape[1]}"
+            String("ddof {} should be smaller than size {}x{}").format(
+                ddof, A.shape[0], A.shape[1]
             )
         )
 

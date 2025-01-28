@@ -3423,6 +3423,25 @@ struct NDArray[dtype: DType = DType.float64](
         var I = NDArray[DType.index](self.shape)
         sorting._sort_inplace(self, I, axis=axis)
 
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+        """
+        Compute the standard deviation.
+
+        Args:
+            ddof: Delta degree of freedom.
+        """
+
+        if ddof >= self.size:
+            raise Error(
+                String("ddof {} should be smaller than size {}").format(
+                    ddof, self.size
+                )
+            )
+
+        return variance[returned_dtype](self, ddof=ddof) ** 0.5
+
     fn sum(self: Self) raises -> Scalar[dtype]:
         """
         Sum of all array elements.
@@ -3519,6 +3538,20 @@ struct NDArray[dtype: DType = DType.float64](
         Retreive pointer without taking ownership.
         """
         return self._buf.ptr
+
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+        """
+        Returns the variance of array.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
+
+        Args:
+            ddof: Delta degree of freedom.
+        """
+        return variance[returned_dtype](self, ddof=ddof)
 
 
 # ===----------------------------------------------------------------------===#

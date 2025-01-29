@@ -6,7 +6,7 @@ Averages and variances
 # ===----------------------------------------------------------------------=== #
 
 from collections.optional import Optional
-from math import sqrt
+import math as mt
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
@@ -14,118 +14,110 @@ from numojo.core.matrix import Matrix
 from numojo.core.utility import bool_to_numeric
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.math.arithmetic import add
-from numojo.routines.sorting import binary_sort
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
+from numojo.routines.sorting import sort
 
 
 fn mean[
-    dtype: DType
-](array: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
-    """
-    Mean of array elements over a given axis.
-    Args:
-        array: NDArray.
-        axis: The axis along which the mean is performed.
-    Returns:
-        An NDArray.
-
-    """
-    return sum(array, axis) / Scalar[array.dtype](array.shape[axis])
-
-
-fn mean[
-    dtype: DType, //, dtype_out: DType = DType.float64
-](a: NDArray[dtype]) raises -> Scalar[dtype_out]:
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in the array.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         a: NDArray.
 
     Returns:
-        A scalar.
+        A scalar defaulting to float64.
 
     """
-    return sum(a).cast[dtype_out]() / a.size
+    return sum(a).cast[returned_dtype]() / a.size
 
 
-fn mean[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn mean[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
+    """
+    Mean of array elements over a given axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        a: NDArray.
+        axis: The axis along which the mean is performed.
+
+    Returns:
+        An NDArray.
+    """
+
+    var normalized_axis = axis
+
+    if axis < 0:
+        normalized_axis += a.ndim
+
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(String("Axis {} out of bounds!").format(axis))
+
+    return (
+        sum(a, axis=normalized_axis).astype[returned_dtype]()
+        / a.shape[normalized_axis]
+    )
+
+
+fn mean[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: Matrix[dtype]) -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in the Matrix.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
-        A: Matrix.
+        a: A matrix.
+
+    Returns:
+        A scalar of the returned data type.
     """
 
-    return sum(A) / A.size
+    return sum(a).cast[returned_dtype]() / a.size
 
 
-fn mean[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn mean[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: Matrix[dtype], axis: Int) raises -> Matrix[returned_dtype]:
     """
     Calculate the arithmetic average of a Matrix along the axis.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
-        A: Matrix.
-        axis: 0 or 1.
+        a: A matrix.
+        axis: The axis along which the mean is performed.
+
+    Returns:
+        A matrix of the returned data type.
     """
 
     if axis == 0:
-        return sum(A, axis=0) / A.shape[0]
+        return sum(a, axis=0).astype[returned_dtype]() / a.shape[0]
     elif axis == 1:
-        return sum(A, axis=1) / A.shape[1]
+        return sum(a, axis=1).astype[returned_dtype]() / a.shape[1]
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn meanall(array: NDArray) raises -> Float64:
-    """Mean of all items in the array.
-
-    Example:
-    ```console
-    > print(A)
-    [[      0.1315377950668335      0.458650141954422       0.21895918250083923     ]
-    [      0.67886471748352051     0.93469291925430298     0.51941639184951782     ]
-    [      0.034572109580039978    0.52970021963119507     0.007698186207562685    ]]
-    2-D array  Shape: [3, 3]  DType: float32
-
-    > print(nm.math.stats.meanall(A))
-    0.39045463667975533
-    ```
-
-    Args:
-        array: NDArray.
-
-    Returns:
-        Float64.
-    """
-
-    return (
-        sum(array).cast[DType.float64]()
-        / Int32(array.size).cast[DType.float64]()
-    )
-
-
-fn cummean[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
-    """Arithmatic mean of all items of an array.
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: An NDArray.
-
-    Returns:
-        The mean of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    return sum[dtype](array) / (array.num_elements())
-
-
-fn mode[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
+fn mode[dtype: DType](array: NDArray[dtype]) raises -> Scalar[dtype]:
     """Mode of all items of an array.
 
     Parameters:
@@ -137,7 +129,8 @@ fn mode[
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_array: NDArray[dtype] = binary_sort[dtype](array)
+
+    var sorted_array: NDArray[dtype] = sort(array)
     var max_count = 0
     var mode_value = sorted_array.item(0)
     var current_count = 1
@@ -157,14 +150,15 @@ fn mode[
     return mode_value
 
 
-# * IMPLEMENT median high and low
 fn median[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
-    """Median value of all items of an array.
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+    """
+    Median value of all items of an array.
 
     Parameters:
          dtype: The element type.
+         returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         array: An NDArray.
@@ -172,17 +166,47 @@ fn median[
     Returns:
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
-    var sorted_array = binary_sort[dtype](array)
-    var n = array.num_elements()
-    if n % 2 == 1:
-        return sorted_array.item(n // 2)
+    var sorted_array = sort(array)
+
+    if array.size % 2 == 1:
+        return sorted_array.item(array.size // 2).cast[returned_dtype]()
     else:
-        return (sorted_array.item(n // 2 - 1) + sorted_array.item(n // 2)) / 2
+        return (
+            sorted_array.item(array.size // 2 - 1)
+            + sorted_array.item(array.size // 2)
+        ).cast[returned_dtype]() / 2
 
 
-fn std[dtype: DType](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
+fn std[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the standard deviation.
+
+    Args:
+        A: An array.
+        ddof: Delta degree of freedom.
+    """
+
+    if ddof >= A.size:
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
+
+    return variance[returned_dtype](A, ddof=ddof) ** 0.5
+
+
+fn std[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+    """
+    Compute the standard deviation.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         A: Matrix.
@@ -190,16 +214,24 @@ fn std[dtype: DType](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
     """
 
     if ddof >= A.size:
-        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
 
-    return variance(A, ddof=ddof) ** 0.5
+    return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
 fn std[
-    dtype: DType
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[dtype]:
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the standard deviation along axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         A: Matrix.
@@ -207,14 +239,46 @@ fn std[
         ddof: Delta degree of freedom.
     """
 
-    return variance(A, axis, ddof=ddof) ** 0.5
+    return variance[returned_dtype](A, axis, ddof=ddof) ** 0.5
 
 
 fn variance[
-    dtype: DType
-](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[dtype]:
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the variance.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        A: An array.
+        ddof: Delta degree of freedom.
+    """
+
+    if ddof >= A.size:
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
+
+    return sum(
+        (A.astype[returned_dtype]() - mean[returned_dtype](A))
+        * (A.astype[returned_dtype]() - mean[returned_dtype](A))
+    ) / (A.size - ddof)
+
+
+fn variance[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+    """
+    Compute the variance.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         A: Matrix.
@@ -222,16 +286,27 @@ fn variance[
     """
 
     if ddof >= A.size:
-        raise Error(String("ddof {ddof} should be smaller than size {A.size}"))
+        raise Error(
+            String("ddof {} should be smaller than size {}").format(
+                ddof, A.size
+            )
+        )
 
-    return sum((A - mean(A)) * (A - mean(A))) / (A.size - ddof)
+    return sum(
+        (A.astype[returned_dtype]() - mean[returned_dtype](A))
+        * (A.astype[returned_dtype]() - mean[returned_dtype](A))
+    ) / (A.size - ddof)
 
 
 fn variance[
-    dtype: DType
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[dtype]:
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the variance along axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         A: Matrix.
@@ -241,123 +316,22 @@ fn variance[
 
     if (ddof >= A.shape[0]) or (ddof >= A.shape[1]):
         raise Error(
-            String(
-                "ddof {ddof} should be smaller than size"
-                " {A.shape[0]}x{A.shape[1]}"
+            String("ddof {} should be smaller than size {}x{}").format(
+                ddof, A.shape[0], A.shape[1]
             )
         )
 
     if axis == 0:
-        return sum((A - mean(A, axis=0)) * (A - mean(A, axis=0)), axis=0) / (
-            A.shape[0] - ddof
-        )
+        return sum(
+            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0))
+            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0)),
+            axis=0,
+        ) / (A.shape[0] - ddof)
     elif axis == 1:
-        return sum((A - mean(A, axis=1)) * (A - mean(A, axis=1)), axis=1) / (
-            A.shape[1] - ddof
-        )
+        return sum(
+            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1))
+            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1)),
+            axis=1,
+        ) / (A.shape[1] - ddof)
     else:
         raise Error(String("The axis can either be 1 or 0!"))
-
-
-fn cumpvariance[
-    dtype: DType = DType.float64
-](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
-    dtype, 1
-]:
-    """
-    Population variance of a array.
-
-    Parameters:
-         dtype: The element type..
-
-    Args:
-        array: A NDArray.
-        mu: The mean of the array, if provided.
-    Returns:
-        The variance of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    var mean_value: Scalar[dtype]
-    if not mu:
-        mean_value = cummean[dtype](array)
-    else:
-        mean_value = mu.value()
-
-    var result = Scalar[dtype]()
-
-    for i in range(array.num_elements()):
-        result += (array.load(i) - mean_value) ** 2
-
-    return sqrt(result / (array.num_elements()))
-
-
-fn cumvariance[
-    dtype: DType = DType.float64
-](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
-    dtype, 1
-]:
-    """
-    Variance of a array.
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: A NDArray.
-        mu: The mean of the array, if provided.
-
-    Returns:
-        The variance of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    var mean_value: Scalar[dtype]
-
-    if not mu:
-        mean_value = cummean[dtype](array)
-    else:
-        mean_value = mu.value()
-
-    var result = Scalar[dtype]()
-    for i in range(array.num_elements()):
-        result += (array.load(i) - mean_value) ** 2
-
-    return sqrt(result / (array.num_elements() - 1))
-
-
-fn cumpstdev[
-    dtype: DType = DType.float64
-](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
-    dtype, 1
-]:
-    """
-    Population standard deviation of a array.
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: A NDArray.
-        mu: The mean of the array, if provided.
-
-    Returns:
-        The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    return sqrt(cumpvariance[dtype](array, mu))
-
-
-fn cumstdev[
-    dtype: DType = DType.float64
-](array: NDArray[dtype], mu: Optional[Scalar[dtype]] = None) raises -> SIMD[
-    dtype, 1
-]:
-    """
-    Standard deviation of a array.
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: A NDArray.
-        mu: The mean of the array, if provided.
-    Returns:
-        The standard deviation of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    return sqrt(cumvariance[dtype](array, mu))

@@ -56,7 +56,7 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.bitwise as bitwise
 import numojo.routines.linalg as linalg
 from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
-from numojo.routines.statistics.averages import mean, cummean
+from numojo.routines.statistics.averages import mean
 from numojo.routines.math.products import prod, cumprod
 from numojo.routines.math.sums import sum, cumsum
 from numojo.routines.logic.truth import any
@@ -255,11 +255,15 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __del__(owned self):
+        """
+        Destroys all elements in the list and free its memory.
+        """
         var owndata = True
         try:
             owndata = self.flags["OWNDATA"]
         except:
             print("Invalid `OWNDATA` flag. Treat as `True`.")
+
         if owndata:
             self._buf.ptr.free()
 
@@ -1850,6 +1854,13 @@ struct NDArray[dtype: DType = DType.float64](
     fn __pow__(self, p: Int) -> Self:
         return self._elementwise_pow(p)
 
+    fn __pow__(self, rhs: Scalar[dtype]) raises -> Self:
+        """Power of items."""
+        var res = self
+        for i in range(self.size):
+            res._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
+        return res^
+
     fn __pow__(self, p: Self) raises -> Self:
         if self.size != p.size:
             raise Error(
@@ -3243,26 +3254,29 @@ struct NDArray[dtype: DType = DType.float64](
 
         return result
 
-    fn mean(self: Self, axis: Int) raises -> Self:
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self: Self, axis: Int) raises -> NDArray[returned_dtype]:
         """
         Mean of array elements over a given axis.
+
         Args:
-            array: NDArray.
             axis: The axis along which the mean is performed.
+
         Returns:
             An NDArray.
 
         """
-        return mean(self, axis)
+        return mean[returned_dtype](self, axis)
 
     fn mean(self) raises -> Scalar[dtype]:
         """
-        Cumulative mean of a array.
+        Mean of a array.
 
         Returns:
-            The cumulative mean of the array as a SIMD Value of `dtype`.
+            The mean of the array as a SIMD Value of `dtype`.
         """
-        return cummean[dtype](self)
+        return mean[dtype](self)
 
     # fn nonzero(self):
     #     pass
@@ -3409,6 +3423,25 @@ struct NDArray[dtype: DType = DType.float64](
         var I = NDArray[DType.index](self.shape)
         sorting._sort_inplace(self, I, axis=axis)
 
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+        """
+        Compute the standard deviation.
+
+        Args:
+            ddof: Delta degree of freedom.
+        """
+
+        if ddof >= self.size:
+            raise Error(
+                String("ddof {} should be smaller than size {}").format(
+                    ddof, self.size
+                )
+            )
+
+        return variance[returned_dtype](self, ddof=ddof) ** 0.5
+
     fn sum(self: Self) raises -> Scalar[dtype]:
         """
         Sum of all array elements.
@@ -3505,6 +3538,20 @@ struct NDArray[dtype: DType = DType.float64](
         Retreive pointer without taking ownership.
         """
         return self._buf.ptr
+
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+        """
+        Returns the variance of array.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
+
+        Args:
+            ddof: Delta degree of freedom.
+        """
+        return variance[returned_dtype](self, ddof=ddof)
 
 
 # ===----------------------------------------------------------------------===#

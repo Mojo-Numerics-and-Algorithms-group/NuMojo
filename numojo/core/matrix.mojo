@@ -1020,20 +1020,24 @@ struct Matrix[dtype: DType = DType.float64](
         """
         return numojo.math.extrema.max(self, axis=axis)
 
-    fn mean(self) raises -> Scalar[dtype]:
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self) raises -> Scalar[returned_dtype]:
         """
         Calculate the arithmetic average of all items in the Matrix.
         """
-        return numojo.statistics.mean(self)
+        return numojo.statistics.mean[returned_dtype](self)
 
-    fn mean(self, axis: Int) raises -> Self:
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int) raises -> Matrix[returned_dtype]:
         """
         Calculate the arithmetic average of a Matrix along the axis.
 
         Args:
             axis: 0 or 1.
         """
-        return numojo.statistics.mean(self, axis=axis)
+        return numojo.statistics.mean[returned_dtype](self, axis=axis)
 
     fn min(self) raises -> Scalar[dtype]:
         """
@@ -1103,16 +1107,20 @@ struct Matrix[dtype: DType = DType.float64](
     fn round(self, decimals: Int) raises -> Self:
         return numojo.math.rounding.round(self, decimals=decimals)
 
-    fn std(self, ddof: Int = 0) raises -> Scalar[dtype]:
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
         Compute the standard deviation.
 
         Args:
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.std(self, ddof=ddof)
+        return numojo.statistics.std[returned_dtype](self, ddof=ddof)
 
-    fn std(self, axis: Int, ddof: Int = 0) raises -> Self:
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
         Compute the standard deviation along axis.
 
@@ -1120,7 +1128,7 @@ struct Matrix[dtype: DType = DType.float64](
             axis: 0 or 1.
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.std(self, axis=axis, ddof=ddof)
+        return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
 
     fn sum(self) -> Scalar[dtype]:
         """
@@ -1167,16 +1175,20 @@ struct Matrix[dtype: DType = DType.float64](
     fn T(self) -> Self:
         return transpose(self)
 
-    fn variance(self, ddof: Int = 0) raises -> Scalar[dtype]:
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
         Compute the variance.
 
         Args:
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.variance(self, ddof=ddof)
+        return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
 
-    fn variance(self, axis: Int, ddof: Int = 0) raises -> Self:
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
         Compute the variance along axis.
 
@@ -1184,7 +1196,9 @@ struct Matrix[dtype: DType = DType.float64](
             axis: 0 or 1.
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.variance(self, axis=axis, ddof=ddof)
+        return numojo.statistics.variance[returned_dtype](
+            self, axis=axis, ddof=ddof
+        )
 
     # ===-------------------------------------------------------------------===#
     # To other data types

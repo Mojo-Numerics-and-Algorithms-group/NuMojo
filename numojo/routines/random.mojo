@@ -323,18 +323,7 @@ fn randn[
         a normal distribution with given mean and variance.
     """
 
-    builtin_random.seed()
-
-    var result: NDArray[dtype] = NDArray[dtype](shape)
-
-    builtin_random.randn[dtype](
-        ptr=result._buf.ptr,
-        size=result.size,
-        mean=mean.cast[DType.float64](),
-        variance=variance.cast[DType.float64](),
-    )
-
-    return result^
+    return randn[dtype](shape) * mt.sqrt(variance) + mean
 
 
 fn randn[

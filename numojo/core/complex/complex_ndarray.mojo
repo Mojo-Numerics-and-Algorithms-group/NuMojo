@@ -47,7 +47,7 @@ from numojo.routines.math.extrema import maxT, minT
 from numojo.routines.math.products import prod, cumprod
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.sorting as sorting
-from numojo.routines.statistics.averages import mean, cummean
+from numojo.routines.statistics.averages import mean
 
 
 # ===----------------------------------------------------------------------===#

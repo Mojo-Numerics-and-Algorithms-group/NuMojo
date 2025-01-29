@@ -2220,10 +2220,10 @@ fn array[
             continue
         shape.append(int(data.shape[i]))
     A = NDArray[dtype](NDArrayShape(shape), order=order)
-    A._buf = OwnData[dtype](A.size)
-    # memset_zero(A._buf, A.size)
     for i in range(A.size):
-        A._buf.ptr[i] = float(data.item(PythonObject(i))).cast[dtype]()
+        (A._buf.ptr + i).init_pointee_copy(
+            float(data.item(PythonObject(i))).cast[dtype]()
+        )
     return A
 
 

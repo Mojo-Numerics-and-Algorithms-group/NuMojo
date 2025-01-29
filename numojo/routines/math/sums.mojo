@@ -39,9 +39,7 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn sum[
-    dtype: DType
-](A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Returns sums of array elements over a given axis.
 
@@ -52,6 +50,10 @@ fn sum[
     print(nm.sum(A, axis=0))
     ```
 
+    Raises:
+        Error: If the axis is out of bound.
+        Error: If the number of dimensions is 1.
+
     Args:
         A: NDArray.
         axis: The axis along which the sum is performed.
@@ -60,25 +62,35 @@ fn sum[
         An NDArray.
     """
 
-    if axis < 0:
-        axis += A.ndim
-    if (axis < 0) or (axis >= A.ndim):
+    var normalized_axis = axis
+    if normalized_axis < 0:
+        normalized_axis += A.ndim
+
+    if (normalized_axis < 0) or (normalized_axis >= A.ndim):
         raise Error(
-            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+            String("Axis {} out of bound [0, {}).").format(axis, A.ndim)
+        )
+    if A.ndim == 1:
+        raise Error(
+            String(
+                "`numojo.routines.math.sums.sum()`: "
+                "Cannot sum over axis for 1-d array. "
+                "Please remove the `axis` argument."
+            )
         )
 
     var result_shape: List[Int] = List[Int]()
-    var size_of_axis: Int = A.shape[axis]
+    var size_of_axis: Int = A.shape[normalized_axis]
     var slices: List[Slice] = List[Slice]()
     for i in range(A.ndim):
-        if i != axis:
+        if i != normalized_axis:
             result_shape.append(A.shape[i])
             slices.append(Slice(0, A.shape[i]))
         else:
             slices.append(Slice(0, 0))  # Temp value
     var result = zeros[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
-        slices[axis] = Slice(i, i + 1)
+        slices[normalized_axis] = Slice(i, i + 1)
         var arr_slice = A[slices]
         result += arr_slice
 

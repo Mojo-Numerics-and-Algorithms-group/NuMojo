@@ -9,6 +9,11 @@ This is a list of RELEASED changes for the NuMojo Package.
 ### 🦋 Changed
 
 - Update functions in the `random` module, add `randint`, and accept `Shape` as the first argument ([PR #199](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/199)).
+- Update functions in the `statistics` module. Add the parameter `returned_dtype` to functions which defaults to `f64`. Add `variance()` and `std()` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
+
+### ❌ Removed
+
+- Remove `cumvariance`, `cumstd`, `cumpvariance`, `cumpstd` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
 
 ## 26/01/2025 (v0.5)
 

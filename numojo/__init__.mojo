@@ -194,6 +194,7 @@ from numojo.routines.manipulation import (
     reshape,
     ravel,
     transpose,
+    broadcast_to,
     flip,
 )
 

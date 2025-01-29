@@ -75,3 +75,19 @@ def test_transpose():
         np.transpose(Anp, [1, 3, 0, 2]),
         "4-d `transpose` with arbitrary `axes` is broken.",
     )
+
+
+def test_broadcast():
+    var np = Python.import_module("numpy")
+    var a = nm.random.rand(Shape(2, 1, 3))
+    var Anp = a.to_numpy()
+    check(
+        nm.broadcast_to(a, Shape(2, 2, 3)),
+        np.broadcast_to(a.to_numpy(), (2, 2, 3)),
+        "`broadcast_to` fails.",
+    )
+    check(
+        nm.broadcast_to(a, Shape(2, 2, 2, 3)),
+        np.broadcast_to(a.to_numpy(), (2, 2, 2, 3)),
+        "`broadcast_to` fails.",
+    )

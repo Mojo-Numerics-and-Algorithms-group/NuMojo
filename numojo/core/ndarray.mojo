@@ -75,6 +75,7 @@ from numojo.routines.manipulation import reshape, ravel
 #       RawData type is just a wrapper of `UnsafePointer`.
 #       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
 # TODO: Rename some variables or methods that should not be exposed to users.
+# TODO: Remove 0-d array. Raise errors if operations result in 0-d array.
 # ===----------------------------------------------------------------------===#
 
 
@@ -2323,10 +2324,7 @@ struct NDArray[dtype: DType = DType.float64](
                 min_value,
                 abs(val),
             )
-        number_of_digits = max(
-            int(log10(float(max_value))) + 1,
-            abs(int(log10(float(min_value)))) + 1,
-        )
+        number_of_digits = int(log10(float(max_value))) + 1
         number_of_digits_small_values = abs(int(log10(float(min_value)))) + 1
 
         if dtype.is_floating_point():

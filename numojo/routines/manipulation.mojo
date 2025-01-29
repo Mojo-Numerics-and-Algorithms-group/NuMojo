@@ -18,7 +18,7 @@ from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
-from numojo.core.utility import _list_of_flipped_range
+from numojo.core.utility import _list_of_flipped_range, _get_offset
 
 # ===----------------------------------------------------------------------=== #
 # TODO:
@@ -286,6 +286,66 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
 # ===----------------------------------------------------------------------=== #
 # Changing number of dimensions
 # ===----------------------------------------------------------------------=== #
+
+
+fn broadcast_to[
+    dtype: DType
+](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
+    if a.shape.ndim > shape.ndim:
+        raise Error(
+            String("Cannot broadcast shape {} to shape {}!").format(
+                a.shape, shape
+            )
+        )
+
+    # Check whether broadcasting is possible or not.
+    # We compare the shape from the trailing dimensions.
+
+    var b_strides = NDArrayStrides(
+        shape
+    )  # Strides of b when refer to data of a
+
+    for i in range(a.shape.ndim):
+        if a.shape[a.shape.ndim - 1 - i] == shape[shape.ndim - 1 - i]:
+            b_strides[shape.ndim - 1 - i] = a.strides[a.shape.ndim - 1 - i]
+        elif a.shape[a.shape.ndim - 1 - i] == 1:
+            b_strides[shape.ndim - 1 - i] = 0
+        else:
+            raise Error(
+                String("Cannot broadcast shape {} to shape {}!").format(
+                    a.shape, shape
+                )
+            )
+    for i in range(shape.ndim - a.shape.ndim):
+        b_strides[i] = 0
+
+    # Start broadcasting.
+    # TODO: When `OwnData` is supported, re-write this part.
+    # We just need to change the shape and strides and re-use the data.
+
+    var b = NDArray[dtype](shape)  # Construct array of targeted shape.
+    # TODO: `b.strides = b_strides` when OwnData
+
+    # Iterate all items in the new array and fill in correct values.
+    for offset in range(b.size):
+        var remainder = offset
+        var indices = Item(ndim=b.ndim, initialized=False)
+
+        for i in range(b.ndim):
+            indices[i], remainder = divmod(
+                remainder,
+                b.strides[
+                    i
+                ],  # TODO: Change b.strides to NDArrayStrides(b.shape) when OwnData
+            )
+
+        (b._buf.ptr + offset).init_pointee_copy(
+            a._buf.ptr[
+                _get_offset(indices, b_strides)
+            ]  # TODO: Change b_strides to b.strides when OwnData
+        )
+
+    return b^
 
 
 fn broadcast_to[

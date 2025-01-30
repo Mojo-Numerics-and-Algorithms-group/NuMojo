@@ -1,8 +1,0 @@
-
-
-
-
-# NDArrayTraits
-
-##  Module Summary
-  

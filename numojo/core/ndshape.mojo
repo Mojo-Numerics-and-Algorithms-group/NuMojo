@@ -1,23 +1,35 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Implements NDArrayShape type.
-
-`NDArrayShape` is a series of `Int` on the heap.
 """
 
 from memory import UnsafePointer, memcpy, memcmp
 
 alias Shape = NDArrayShape
+"""An alias of the NDArrayShape."""
 
 
 @register_passable
 struct NDArrayShape(Stringable, Writable):
-    """Implements the NDArrayShape."""
+    """
+    Presents the shape of `NDArray` type.
+
+    The data buffer of the NDArrayShape is a series of `Int`.
+    The number of elements in the shape must be positive, since the number of
+    dimensions of the array must be larger than 0. The number of dimension is
+    checkout upon creation of the shape.
+    """
 
     # Fields
     var _buf: UnsafePointer[Int]
     """Data buffer."""
     var ndim: Int
-    """Number of dimensions of array."""
+    """Number of dimensions of array. It must be larger than 0."""
 
     @always_inline("nodebug")
     fn __init__(out self, shape: Int):
@@ -39,8 +51,8 @@ struct NDArrayShape(Stringable, Writable):
         Args:
             shape: Variable number of integers representing the shape dimensions.
         """
-        if len(shape) == 0:
-            raise Error("Cannot create NDArray: shape cannot be empty")
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -51,10 +63,15 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with variable shape dimensions and a specified size.
 
+        Raises:
+            Error: If the number of dimensions is not positive.
+
         Args:
             shape: Variable number of integers representing the shape dimensions.
             size: The total number of elements in the array.
         """
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -63,13 +80,18 @@ struct NDArrayShape(Stringable, Writable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: List[Int]):
+    fn __init__(out self, shape: List[Int]) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions.
+
+        Raises:
+            Error: If the number of dimensions is not positive.
 
         Args:
             shape: A list of integers representing the shape dimensions.
         """
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -80,10 +102,17 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
+        Raises:
+            Error: If the number of dimensions is not positive.
+            Error: If the size of the array does not match the specified size.
+
         Args:
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
+
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
 
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
@@ -93,13 +122,20 @@ struct NDArrayShape(Stringable, Writable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: VariadicList[Int]):
+    fn __init__(out self, shape: VariadicList[Int]) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions.
+
+        Raises:
+            Error: If the number of dimensions is not positive.
 
         Args:
             shape: A list of integers representing the shape dimensions.
         """
+
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -110,22 +146,31 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
+        Raises:
+            Error: If the number of dimensions is not positive.
+            Error: If the size of the array does not match the specified size.
+
         Args:
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
 
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape[i])
+
         if self.size_of_array() != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
     fn __init__(out self, shape: NDArrayShape) raises:
         """
-        Initializes the NDArrayShape with another NDArrayShape.
+        Initializes the NDArrayShape from another NDArrayShape.
+        A deep copy of the data buffer is conducted.
 
         Args:
             shape: Another NDArrayShape to initialize from.
@@ -144,9 +189,11 @@ struct NDArrayShape(Stringable, Writable):
     ) raises:
         """
         Construct NDArrayShape with number of dimensions.
-
         This method is useful when you want to create a shape with given ndim
         without knowing the shape values.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
 
         Args:
             ndim: Number of dimensions.
@@ -154,8 +201,9 @@ struct NDArrayShape(Stringable, Writable):
                 If yes, the values will be set to 1.
                 If no, the values will be uninitialized.
         """
-        if ndim < 0:
-            raise Error("Number of dimensions must be non-negative.")
+        if ndim <= 0:
+            raise Error("Number of dimensions must be positive.")
+
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
         if initialized:
@@ -166,6 +214,7 @@ struct NDArrayShape(Stringable, Writable):
     fn __copyinit__(out self, other: Self):
         """
         Initializes the NDArrayShape from another NDArrayShape.
+        A deep copy of the data buffer is conducted.
 
         Args:
             other: Another NDArrayShape to initialize from.

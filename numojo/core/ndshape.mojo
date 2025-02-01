@@ -431,8 +431,7 @@ struct NDArrayShape(Stringable, Writable):
     fn _flip(self) raises -> Self:
         """
         Returns a new shape by flipping the items.
-
-        UNSAFE! No boundary check!
+        ***UNSAFE!*** No boundary check!
 
         Example:
         ```mojo
@@ -441,6 +440,9 @@ struct NDArrayShape(Stringable, Writable):
         print(A.shape)          # Shape: [2, 3, 4]
         print(A.shape._flip())  # Shape: [4, 3, 2]
         ```
+
+        Returns:
+            A new shape with the items flipped.
         """
 
         var shape = NDArrayShape(self)
@@ -451,8 +453,10 @@ struct NDArrayShape(Stringable, Writable):
     fn _move_axis_to_end(self, owned axis: Int) raises -> Self:
         """
         Returns a new shape by moving the value of axis to the end.
+        ***UNSAFE!*** No boundary check!
 
-        UNSAFE! No boundary check!
+        Args:
+            axis: The axis (index) to drop. It should be in `[-ndim, ndim)`.
 
         Example:
         ```mojo
@@ -479,7 +483,14 @@ struct NDArrayShape(Stringable, Writable):
 
     fn _pop(self, axis: Int) raises -> Self:
         """
-        drop information of certain axis.
+        Drops the item at the given axis (index).
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            axis: The axis (index) to drop. It should be in `[0, ndim)`.
+
+        Returns:
+            A new shape with the item at the given axis (index) dropped.
         """
         var res = Self(ndim=self.ndim - 1, initialized=False)
         memcpy(dest=res._buf, src=self._buf, count=axis)

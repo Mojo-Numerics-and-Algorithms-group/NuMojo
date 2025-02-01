@@ -1,27 +1,48 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Implements NDArrayStrides type.
-
-`NDArrayStrides` is a series of `Int` on the heap.
 """
 
-from utils import Variant
-from memory import UnsafePointer, memcpy
+from memory import UnsafePointer, memcmp, memcpy
 
 alias Strides = NDArrayStrides
+"""An alias of the NDArrayStrides."""
 
 
 @register_passable
 struct NDArrayStrides(Stringable):
-    """Implements the NDArrayStrides."""
+    """
+    Presents the strides of `NDArray` type.
+
+    The data buffer of the NDArrayStrides is a series of `Int` on memory.
+    The number of elements in the strides must be positive.
+    The number of dimension is checked upon creation of the strides.
+    """
 
     # Fields
     var _buf: UnsafePointer[Int]
     """Data buffer."""
     var ndim: Int
-    """Number of dimensions of array."""
+    """Number of dimensions of array. It must be larger than 0."""
 
     @always_inline("nodebug")
-    fn __init__(out self, *strides: Int):
+    fn __init__(out self, *strides: Int) raises:
+        """
+        Initializes the NDArrayStrides from strides.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
+
+        Args:
+            strides: Strides of the array.
+        """
+        if len(strides) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -139,6 +160,35 @@ struct NDArrayStrides(Stringable):
             )
 
     @always_inline("nodebug")
+    fn __init__(
+        out self,
+        ndim: Int,
+        initialized: Bool,
+    ) raises:
+        """
+        Construct NDArrayStrides with number of dimensions.
+        This method is useful when you want to create a strides with given ndim
+        without knowing the strides values.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
+
+        Args:
+            ndim: Number of dimensions.
+            initialized: Whether the strides is initialized.
+                If yes, the values will be set to 0.
+                If no, the values will be uninitialized.
+        """
+        if ndim <= 0:
+            raise Error("Number of dimensions must be positive.")
+
+        self.ndim = ndim
+        self._buf = UnsafePointer[Int]().alloc(ndim)
+        if initialized:
+            for i in range(ndim):
+                (self._buf + i).init_pointee_copy(0)
+
+    @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         self.ndim = other.ndim
         self._buf = UnsafePointer[Int]().alloc(other.ndim)
@@ -146,37 +196,84 @@ struct NDArrayStrides(Stringable):
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
-        if index >= self.ndim:
-            raise Error("Index out of bound")
-        if index >= 0:
-            return self._buf[index]
-        else:
-            return self._buf[self.ndim + index]
+        """
+        Gets stride at specified index.
+
+        raises:
+           Error: Index out of bound.
+
+        Args:
+          index: Index to get the stride.
+
+        Returns:
+           Stride value at the given index.
+        """
+
+        var normalized_index: Int = index
+        if normalized_index < 0:
+            normalized_index += self.ndim
+        if (normalized_index >= self.ndim) or (normalized_index < 0):
+            raise Error(
+                String("Index {} out of bound [{}, {})").format(
+                    -self.ndim, self.ndim
+                )
+            )
+
+        return self._buf[index]
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:
-        if index >= self.ndim:
-            raise Error("Index out of bound")
-        if index >= 0:
-            self._buf[index] = val
-        else:
-            self._buf[self.ndim + index] = val
+        """
+        Sets stride at specified index.
+
+        raises:
+           Error: Index out of bound.
+           Error: Value is not positive.
+
+        Args:
+          index: Index to get the stride.
+          val: Value to set at the given index.
+        """
+
+        var normalized_index: Int = index
+        if normalized_index < 0:
+            normalized_index += self.ndim
+        if (normalized_index >= self.ndim) or (normalized_index < 0):
+            raise Error(
+                String("Index {} out of bound [{}, {})").format(
+                    -self.ndim, self.ndim
+                )
+            )
+
+        self._buf[index] = val
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:
+        """
+        Gets number of dimensions of the array.
+
+        Returns:
+          Number of dimensions of the array.
+        """
         return self.ndim
 
     @always_inline("nodebug")
     fn __repr__(self) -> String:
         """
-        Return a string of the strides of the array.
+        Returns a string of the strides of the array.
+
+        Returns:
+            String representation of the strides of the array.
         """
         return "numojo.Strides" + str(self)
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
         """
-        Return a string of the strides of the array.
+        Returns a string of the strides of the array.
+
+        Returns:
+            String representation of the strides of the array.
         """
         var result: String = "("
         for i in range(self.ndim):
@@ -191,17 +288,39 @@ struct NDArrayStrides(Stringable):
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> Bool:
-        for i in range(self.ndim):
-            if self[i] != other[i]:
-                return False
+        """
+        Checks if two strides have identical dimensions and values.
+
+        Args:
+            other: The strides to compare with.
+
+        Returns:
+            True if both strides have identical dimensions and values.
+        """
+        if self.ndim != other.ndim:
+            return False
+        if memcmp(self._buf, other._buf, self.ndim) != 0:
+            return False
         return True
 
     @always_inline("nodebug")
     fn __ne__(self, other: Self) raises -> Bool:
+        """
+        Checks if two strides have identical dimensions and values.
+
+        Returns:
+           True if both strides do not have identical dimensions or values.
+        """
         return not self.__eq__(other)
 
     @always_inline("nodebug")
     fn __contains__(self, val: Int) raises -> Bool:
+        """
+        Checks if the given value is present in the strides.
+
+        Returns:
+          True if the given value is present in the strides.
+        """
         for i in range(self.ndim):
             if self[i] == val:
                 return True
@@ -214,8 +333,7 @@ struct NDArrayStrides(Stringable):
     fn _flip(self) raises -> Self:
         """
         Returns a new strides by flipping the items.
-
-        UNSAFE! No boundary check!
+        ***UNSAFE!*** No boundary check!
 
         Example:
         ```mojo
@@ -233,18 +351,20 @@ struct NDArrayStrides(Stringable):
 
     fn _move_axis_to_end(self, owned axis: Int) raises -> Self:
         """
-            Returns a new strides by moving the value of axis to the end.
+        Returns a new strides by moving the value of axis to the end.
+        ***UNSAFE!*** No boundary check!
 
-            UNSAFE! No boundary check!
-
-            Example:
-            ```mojo
-            import numojo as nm
-            var A = nm.random.randn(2, 3, 4)
+        Example:
+        ```mojo
+        import numojo as nm
+        var A = nm.random.randn(2, 3, 4)
         print(A.strides)                       # Stride: [12, 4, 1]
         print(A.strides._move_axis_to_end(0))  # Stride: [4, 1, 12]
         print(A.strides._move_axis_to_end(1))  # Stride: [12, 1, 4]
-            ```
+        ```
+
+        Returns:
+            A new strides with the items flipped.
         """
 
         if axis < 0:
@@ -261,20 +381,24 @@ struct NDArrayStrides(Stringable):
         strides._buf[strides.ndim - 1] = value
         return strides
 
-    fn _pop(self, axis: Int) -> Self:
+    fn _pop(self, axis: Int) raises -> Self:
         """
-        drop information of certain axis.
+        Drops information of certain axis.
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            axis: The axis (index) to drop. It should be in `[0, ndim)`.
+
+        Returns:
+            A new stride with the item at the given axis (index) dropped.
         """
-        var res = Self()
-        var buffer = UnsafePointer[Int].alloc(self.ndim - 1)
-        memcpy(dest=buffer, src=self._buf, count=axis)
+        var res = Self(ndim=self.ndim - 1, initialized=False)
+        memcpy(dest=res._buf, src=self._buf, count=axis)
         memcpy(
-            dest=buffer + axis,
+            dest=res._buf + axis,
             src=self._buf.offset(axis + 1),
             count=self.ndim - axis - 1,
         )
-        res.ndim = self.ndim - 1
-        res._buf = buffer
         return res
 
 

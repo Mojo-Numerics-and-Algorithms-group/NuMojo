@@ -19,10 +19,11 @@ struct NDArrayShape(Stringable, Writable):
     """
     Presents the shape of `NDArray` type.
 
-    The data buffer of the NDArrayShape is a series of `Int`.
-    The number of elements in the shape must be positive, since the number of
-    dimensions of the array must be larger than 0. The number of dimension is
-    checkout upon creation of the shape.
+    The data buffer of the NDArrayShape is a series of `Int` on memory.
+    The number of elements in the shape must be positive.
+    The elements of the shape must be positive.
+    The number of dimension and values of elements are checked upon
+    creation of the shape.
     """
 
     # Fields

@@ -43,20 +43,45 @@ struct NDArrayStrides(Stringable):
         """
         if len(strides) <= 0:
             raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: List[Int]):
+    fn __init__(out self, strides: List[Int]) raises:
+        """
+        Initializes the NDArrayStrides from a list of strides.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
+
+        Args:
+            strides: Strides of the array.
+        """
+        if len(strides) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: VariadicList[Int]):
+    fn __init__(out self, strides: VariadicList[Int]) raises:
+        """
+        Initializes the NDArrayStrides from a variadic list of strides.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
+
+        Args:
+            strides: Strides of the array.
+        """
+        if len(strides) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -64,24 +89,50 @@ struct NDArrayStrides(Stringable):
 
     @always_inline("nodebug")
     fn __init__(out self, strides: NDArrayStrides):
+        """
+        Initializes the NDArrayStrides from another strides.
+        A deep-copy of the elements is conducted.
+
+        Args:
+            strides: Strides of the array.
+        """
+
         self.ndim = strides.ndim
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
-    fn __init__(out self, *shape: Int, order: String) raises:
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+    fn __init__(
+        out self,
+        shape: NDArrayShape,
+        order: String = "C",
+    ) raises:
+        """
+        Initializes the NDArrayStrides from a shape and an order.
+
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
+
+        Args:
+            shape: Shape of the array.
+            order: Order of the memory layout
+                (row-major "C" or column-major "F").
+                Default is "C".
+        """
+
+        self.ndim = shape.ndim
+        self._buf = UnsafePointer[Int]().alloc(shape.ndim)
+
         if order == "C":
-            for i in range(self.ndim):
-                var temp: Int = 1
-                for j in range(i + 1, self.ndim):
-                    temp = temp * shape[j]
+            var temp = 1
+            for i in range(self.ndim - 1, -1, -1):
                 (self._buf + i).init_pointee_copy(temp)
+                temp *= shape[i]
         elif order == "F":
-            self._buf.init_pointee_copy(1)
-            for i in range(0, self.ndim - 1):
-                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
+            var temp = 1
+            for i in range(0, self.ndim):
+                (self._buf + i).init_pointee_copy(temp)
+                temp *= shape[i]
         else:
             raise Error(
                 "Invalid order: Only C style row major `C` & Fortran style"
@@ -89,24 +140,38 @@ struct NDArrayStrides(Stringable):
             )
 
     @always_inline("nodebug")
+    fn __init__(out self, *shape: Int, order: String) raises:
+        """
+        Overloads the function `__init__(shape: NDArrayShape, order: String)`.
+        Initializes the NDArrayStrides from a given shapes and an order.
+
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
+
+        Args:
+            shape: Shape of the array.
+            order: Order of the memory layout
+                (row-major "C" or column-major "F").
+                Default is "C".
+        """
+        self = Self(shape=NDArrayShape(shape), order=order)
+
+    @always_inline("nodebug")
     fn __init__(out self, shape: List[Int], order: String = "C") raises:
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        if order == "C":
-            for i in range(self.ndim):
-                var temp: Int = 1
-                for j in range(i + 1, self.ndim):
-                    temp = temp * shape[j]
-                (self._buf + i).init_pointee_copy(temp)
-        elif order == "F":
-            self._buf.init_pointee_copy(1)
-            for i in range(0, self.ndim - 1):
-                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
-        else:
-            raise Error(
-                "Invalid order: Only C style row major `C` & Fortran style"
-                " column major `F` are supported"
-            )
+        """
+        Overloads the function `__init__(shape: NDArrayShape, order: String)`.
+        Initializes the NDArrayStrides from a given shapes and an order.
+
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
+
+        Args:
+            shape: Shape of the array.
+            order: Order of the memory layout
+                (row-major "C" or column-major "F").
+                Default is "C".
+        """
+        self = Self(shape=NDArrayShape(shape), order=order)
 
     @always_inline("nodebug")
     fn __init__(
@@ -114,50 +179,20 @@ struct NDArrayStrides(Stringable):
         shape: VariadicList[Int],
         order: String = "C",
     ) raises:
-        self.ndim = shape.__len__()
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
-        if order == "C":
-            for i in range(self.ndim):
-                var temp: Int = 1
-                for j in range(i + 1, self.ndim):
-                    temp = temp * shape[j]
-                (self._buf + i).init_pointee_copy(temp)
-        elif order == "F":
-            self._buf.init_pointee_copy(1)
-            for i in range(0, self.ndim - 1):
-                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
-        else:
-            raise Error(
-                "Invalid order: Only C style row major `C` & Fortran style"
-                " column major `F` are supported"
-            )
+        """
+        Overloads the function `__init__(shape: NDArrayShape, order: String)`.
+        Initializes the NDArrayStrides from a given shapes and an order.
 
-    @always_inline("nodebug")
-    fn __init__(
-        out self,
-        owned shape: NDArrayShape,
-        order: String = "C",
-    ) raises:
-        self.ndim = shape.ndim
-        self._buf = UnsafePointer[Int]().alloc(shape.ndim)
-        if order == "C":
-            if shape.ndim == 1:
-                self._buf.init_pointee_copy(1)
-            else:
-                for i in range(shape.ndim):
-                    var temp: Int = 1
-                    for j in range(i + 1, shape.ndim):
-                        temp = temp * shape[j]
-                    (self._buf + i).init_pointee_copy(temp)
-        elif order == "F":
-            self._buf.init_pointee_copy(1)
-            for i in range(0, self.ndim - 1):
-                (self._buf + i + 1).init_pointee_copy(self._buf[i] * shape[i])
-        else:
-            raise Error(
-                "Invalid order: Only C style row major `C` & Fortran style"
-                " column major `F` are supported"
-            )
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
+
+        Args:
+            shape: Shape of the array.
+            order: Order of the memory layout
+                (row-major "C" or column-major "F").
+                Default is "C".
+        """
+        self = Self(shape=NDArrayShape(shape), order=order)
 
     @always_inline("nodebug")
     fn __init__(
@@ -190,6 +225,13 @@ struct NDArrayStrides(Stringable):
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
+        """
+        Initializes the NDArrayStrides from another strides.
+        A deep-copy of the elements is conducted.
+
+        Args:
+            other: Strides of the array.
+        """
         self.ndim = other.ndim
         self._buf = UnsafePointer[Int]().alloc(other.ndim)
         memcpy(self._buf, other._buf, other.ndim)
@@ -199,7 +241,7 @@ struct NDArrayStrides(Stringable):
         """
         Gets stride at specified index.
 
-        raises:
+        Raises:
            Error: Index out of bound.
 
         Args:
@@ -226,7 +268,7 @@ struct NDArrayStrides(Stringable):
         """
         Sets stride at specified index.
 
-        raises:
+        Raises:
            Error: Index out of bound.
            Error: Value is not positive.
 
@@ -250,10 +292,11 @@ struct NDArrayStrides(Stringable):
     @always_inline("nodebug")
     fn __len__(self) -> Int:
         """
-        Gets number of dimensions of the array.
+        Gets number of elements in the strides.
+        It equals to the number of dimensions of the array.
 
         Returns:
-          Number of dimensions of the array.
+          Number of elements in the strides.
         """
         return self.ndim
 
@@ -287,7 +330,7 @@ struct NDArrayStrides(Stringable):
         writer.write("Strides: " + str(self) + "  " + "ndim: " + str(self.ndim))
 
     @always_inline("nodebug")
-    fn __eq__(self, other: Self) raises -> Bool:
+    fn __eq__(self, other: Self) -> Bool:
         """
         Checks if two strides have identical dimensions and values.
 
@@ -304,7 +347,7 @@ struct NDArrayStrides(Stringable):
         return True
 
     @always_inline("nodebug")
-    fn __ne__(self, other: Self) raises -> Bool:
+    fn __ne__(self, other: Self) -> Bool:
         """
         Checks if two strides have identical dimensions and values.
 
@@ -314,7 +357,7 @@ struct NDArrayStrides(Stringable):
         return not self.__eq__(other)
 
     @always_inline("nodebug")
-    fn __contains__(self, val: Int) raises -> Bool:
+    fn __contains__(self, val: Int) -> Bool:
         """
         Checks if the given value is present in the strides.
 
@@ -322,7 +365,7 @@ struct NDArrayStrides(Stringable):
           True if the given value is present in the strides.
         """
         for i in range(self.ndim):
-            if self[i] == val:
+            if self._buf[i] == val:
                 return True
         return False
 
@@ -330,7 +373,7 @@ struct NDArrayStrides(Stringable):
     # Other private methods
     # ===-------------------------------------------------------------------===#
 
-    fn _flip(self) raises -> Self:
+    fn _flip(self) -> Self:
         """
         Returns a new strides by flipping the items.
         ***UNSAFE!*** No boundary check!
@@ -349,7 +392,7 @@ struct NDArrayStrides(Stringable):
             strides._buf[i] = self._buf[self.ndim - 1 - i]
         return strides
 
-    fn _move_axis_to_end(self, owned axis: Int) raises -> Self:
+    fn _move_axis_to_end(self, owned axis: Int) -> Self:
         """
         Returns a new strides by moving the value of axis to the end.
         ***UNSAFE!*** No boundary check!
@@ -375,7 +418,7 @@ struct NDArrayStrides(Stringable):
         if axis == self.ndim - 1:
             return strides
 
-        var value = strides[axis]
+        var value = strides._buf[axis]
         for i in range(axis, strides.ndim - 1):
             strides._buf[i] = strides._buf[i + 1]
         strides._buf[strides.ndim - 1] = value

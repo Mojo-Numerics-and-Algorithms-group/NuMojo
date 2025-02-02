@@ -302,7 +302,7 @@ fn broadcast_to[
     # We compare the shape from the trailing dimensions.
 
     var b_strides = NDArrayStrides(
-        shape
+        ndim=len(shape), initialized=False
     )  # Strides of b when refer to data of a
 
     for i in range(a.shape.ndim):
@@ -416,6 +416,49 @@ fn broadcast_to[
     var B = Matrix[dtype](shape)
     B = Matrix.full[dtype](shape, A)
     return B^
+
+
+fn _broadcast_back_to[
+    dtype: DType
+](a: NDArray[dtype], shape: NDArrayShape, axis: Int) raises -> NDArray[dtype]:
+    """
+    Broadcasts the array back to the given shape.
+    If array `b` is the result of array `a` operated along an axis,
+    it has one dimension less than `a`.
+    This function can broadcast `b` back to the shape of `a`.
+    It is a temporary function and should not be used by users.
+    When `OwnData` is supported, this function will be removed.
+    Whether broadcasting is possible or not is not checked.
+    """
+
+    var a_shape = shape
+    a_shape[axis] = 1
+
+    var b_strides = NDArrayStrides(
+        a_shape
+    )  # Strides of b when refer to data of a
+    b_strides[axis] = 0
+
+    # Start broadcasting.
+
+    var b = NDArray[dtype](shape)  # Construct array of targeted shape.
+
+    # Iterate all items in the new array and fill in correct values.
+    for offset in range(b.size):
+        var remainder = offset
+        var indices = Item(ndim=b.ndim, initialized=False)
+
+        for i in range(b.ndim):
+            indices[i], remainder = divmod(
+                remainder,
+                b.strides[i],
+            )
+
+        (b._buf.ptr + offset).init_pointee_copy(
+            a._buf.ptr[_get_offset(indices, b_strides)]
+        )
+
+    return b^
 
 
 # ===----------------------------------------------------------------------=== #

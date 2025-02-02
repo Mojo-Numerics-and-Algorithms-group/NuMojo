@@ -6,10 +6,13 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### ⭐️ New
 
+- Implement `broadcast_to()` for `NDArray`. The function broadcasts an ndarray to any compatible shape ([PR #202](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/202)).
+
 ### 🦋 Changed
 
 - Update functions in the `random` module, add `randint`, and accept `Shape` as the first argument ([PR #199](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/199)).
 - Update functions in the `statistics` module. Add the parameter `returned_dtype` to functions which defaults to `f64`. Add `variance()` and `std()` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
+- Add boundary checks for `NDArrayShape` and `NDArrayStrides` to ensure safe use. Improve the docstring ([PR #205](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/205), [PR #206](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/206)).
 
 ### ❌ Removed
 

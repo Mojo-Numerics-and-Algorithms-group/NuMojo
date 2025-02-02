@@ -37,6 +37,9 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with one dimension.
 
+        Raises:
+            Error: If the shape is not positive.
+
         Args:
             shape: Size of the array.
         """
@@ -193,7 +196,7 @@ struct NDArrayShape(Stringable, Writable):
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: NDArrayShape) raises:
+    fn __init__(out self, shape: NDArrayShape):
         """
         Initializes the NDArrayShape from another NDArrayShape.
         A deep copy of the data buffer is conducted.
@@ -205,7 +208,7 @@ struct NDArrayShape(Stringable, Writable):
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         memcpy(self._buf, shape._buf, shape.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(shape[i])
+            (self._buf + i).init_pointee_copy(shape._buf[i])
 
     @always_inline("nodebug")
     fn __init__(
@@ -308,10 +311,11 @@ struct NDArrayShape(Stringable, Writable):
     @always_inline("nodebug")
     fn __len__(self) -> Int:
         """
-        Gets number of dimensions of the array.
+        Gets number of elements in the shape.
+        It equals the number of dimensions of the array.
 
         Returns:
-          Number of dimensions of the array.
+          Number of elements in the shape.
         """
         return self.ndim
 
@@ -429,7 +433,7 @@ struct NDArrayShape(Stringable, Writable):
     # Other private methods
     # ===-------------------------------------------------------------------===#
 
-    fn _flip(self) raises -> Self:
+    fn _flip(self) -> Self:
         """
         Returns a new shape by flipping the items.
         ***UNSAFE!*** No boundary check!
@@ -451,7 +455,7 @@ struct NDArrayShape(Stringable, Writable):
             shape._buf[i] = self._buf[self.ndim - 1 - i]
         return shape
 
-    fn _move_axis_to_end(self, owned axis: Int) raises -> Self:
+    fn _move_axis_to_end(self, owned axis: Int) -> Self:
         """
         Returns a new shape by moving the value of axis to the end.
         ***UNSAFE!*** No boundary check!
@@ -476,7 +480,7 @@ struct NDArrayShape(Stringable, Writable):
         if axis == self.ndim - 1:
             return shape
 
-        var value = shape[axis]
+        var value = shape._buf[axis]
         for i in range(axis, shape.ndim - 1):
             shape._buf[i] = shape._buf[i + 1]
         shape._buf[shape.ndim - 1] = value

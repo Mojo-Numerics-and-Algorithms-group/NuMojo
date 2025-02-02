@@ -3426,19 +3426,33 @@ struct NDArray[dtype: DType = DType.float64](
     ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
         Compute the standard deviation.
+        See `numojo.std`.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
 
         Args:
             ddof: Delta degree of freedom.
         """
 
-        if ddof >= self.size:
-            raise Error(
-                String("ddof {} should be smaller than size {}").format(
-                    ddof, self.size
-                )
-            )
+        return std[returned_dtype](self, ddof=ddof)
 
-        return variance[returned_dtype](self, ddof=ddof) ** 0.5
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+        """
+        Compute the standard deviation along the axis.
+        See `numojo.std`.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
+
+        Args:
+            axis: The axis along which the mean is performed.
+            ddof: Delta degree of freedom.
+        """
+
+        return std[returned_dtype](self, axis=axis, ddof=ddof)
 
     fn sum(self: Self) raises -> Scalar[dtype]:
         """
@@ -3550,6 +3564,22 @@ struct NDArray[dtype: DType = DType.float64](
             ddof: Delta degree of freedom.
         """
         return variance[returned_dtype](self, ddof=ddof)
+
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+        """
+        Returns the variance of array along the axis.
+        See `numojo.variance`.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
+
+        Args:
+            axis: The axis along which the mean is performed.
+            ddof: Delta degree of freedom.
+        """
+        return variance[returned_dtype](self, axis=axis, ddof=ddof)
 
 
 # ===----------------------------------------------------------------------===#

@@ -190,6 +190,10 @@ fn std[
     """
     Compute the standard deviation.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
         A: An array.
         ddof: Delta degree of freedom.
@@ -212,6 +216,10 @@ fn std[
 ]:
     """
     Computes the standard deviation along the axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
 
     Args:
         A: An array.

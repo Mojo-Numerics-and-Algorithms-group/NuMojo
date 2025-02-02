@@ -17,6 +17,7 @@ from python import PythonObject, Python
 from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
 from numojo.core.utility import _get_offset, _update_flags
+from numojo.routines.manipulation import broadcast_to
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct
@@ -1633,73 +1634,3 @@ fn _logic_func_matrix_matrix_to_matrix[
     var _B = B
 
     return C^
-
-
-fn broadcast_to[
-    dtype: DType
-](A: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
-    """
-    Broadcase the vector to the given shape.
-
-    Example:
-
-    ```console
-    > from numojo import Matrix
-    > a = Matrix.fromstring("1 2 3", shape=(1, 3))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   2.0     3.0]
-     [1.0   2.0     3.0]
-     [1.0   2.0     3.0]]
-    > a = Matrix.fromstring("1 2 3", shape=(3, 1))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   1.0     1.0]
-     [2.0   2.0     2.0]
-     [3.0   3.0     3.0]]
-    > a = Matrix.fromstring("1", shape=(1, 1))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   1.0     1.0]
-     [1.0   1.0     1.0]
-     [1.0   1.0     1.0]]
-    > a = Matrix.fromstring("1 2", shape=(1, 2))
-    > print(mat.broadcast_to(a, (1, 2)))
-    [[1.0   2.0]]
-    > a = Matrix.fromstring("1 2 3 4", shape=(2, 2))
-    > print(mat.broadcast_to(a, (4, 2)))
-    Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
-    ```
-    """
-
-    var B = Matrix[dtype](shape)
-    if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        B = A
-    elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = Matrix.full[dtype](shape, A[0, 0])
-    elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
-        for i in range(shape[0]):
-            memcpy(
-                dest=B._buf.ptr.offset(shape[1] * i),
-                src=A._buf.ptr,
-                count=shape[1],
-            )
-    elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                B._store(i, j, A._buf.ptr[i])
-    else:
-        var message = String(
-            "Cannot broadcast shape {}x{} to shape {}x{}!"
-        ).format(A.shape[0], A.shape[1], shape[0], shape[1])
-        raise Error(message)
-    return B^
-
-
-fn broadcast_to[
-    dtype: DType
-](A: Scalar[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
-    """
-    Broadcase the scalar to the given shape.
-    """
-
-    var B = Matrix[dtype](shape)
-    B = Matrix.full[dtype](shape, A)
-    return B^

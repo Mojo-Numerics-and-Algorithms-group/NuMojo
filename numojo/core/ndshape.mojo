@@ -1,32 +1,52 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Implements NDArrayShape type.
-
-`NDArrayShape` is a series of `Int` on the heap.
 """
 
 from memory import UnsafePointer, memcpy, memcmp
 
 alias Shape = NDArrayShape
+"""An alias of the NDArrayShape."""
 
 
 @register_passable
 struct NDArrayShape(Stringable, Writable):
-    """Implements the NDArrayShape."""
+    """
+    Presents the shape of `NDArray` type.
+
+    The data buffer of the NDArrayShape is a series of `Int` on memory.
+    The number of elements in the shape must be positive.
+    The elements of the shape must be positive.
+    The number of dimension and values of elements are checked upon
+    creation of the shape.
+    """
 
     # Fields
     var _buf: UnsafePointer[Int]
     """Data buffer."""
     var ndim: Int
-    """Number of dimensions of array."""
+    """Number of dimensions of array. It must be larger than 0."""
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: Int):
+    fn __init__(out self, shape: Int) raises:
         """
         Initializes the NDArrayShape with one dimension.
+
+        Raises:
+            Error: If the shape is not positive.
 
         Args:
             shape: Size of the array.
         """
+
+        if shape < 1:
+            raise Error(String("Items of shape must be positive."))
+
         self.ndim = 1
         self._buf = UnsafePointer[Int]().alloc(shape)
         self._buf.init_pointee_copy(shape)
@@ -36,14 +56,19 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with variable shape dimensions.
 
+        Raises:
+           Error: If the number of dimensions is not positive.
+
         Args:
             shape: Variable number of integers representing the shape dimensions.
         """
-        if len(shape) == 0:
-            raise Error("Cannot create NDArray: shape cannot be empty")
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
+            if shape[i] < 1:
+                raise Error(String("Items of shape must be positive."))
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
@@ -51,28 +76,45 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with variable shape dimensions and a specified size.
 
+        Raises:
+            Error: If the number of dimensions is not positive.
+            Error: If items of shape is not positive.
+            Error: If the size is not a multiple of the product of all shape dimensions.
+
         Args:
             shape: Variable number of integers representing the shape dimensions.
             size: The total number of elements in the array.
         """
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
+            if shape[i] < 1:
+                raise Error(String("Items of shape must be positive."))
             (self._buf + i).init_pointee_copy(shape[i])
         if self.size_of_array() != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: List[Int]):
+    fn __init__(out self, shape: List[Int]) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions.
+
+        Raises:
+            Error: If the number of dimensions is not positive.
+            Error: If the items of the list are not positive.
 
         Args:
             shape: A list of integers representing the shape dimensions.
         """
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
+            if shape[i] < 1:
+                raise Error("Items of shape must be positive.")
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
@@ -80,29 +122,49 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
+        Raises:
+            Error: If the number of dimensions is not positive.
+            Error: If the items of the list are not positive.
+            Error: If the size of the array does not match the specified size.
+
         Args:
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
 
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
+            if shape[i] < 1:
+                raise Error("Items of shape must be positive.")
             (self._buf + i).init_pointee_copy(shape[i])
         if self.size_of_array() != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: VariadicList[Int]):
+    fn __init__(out self, shape: VariadicList[Int]) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions.
+
+        Raises:
+            Error: If the number of dimensions is not positive.
+            Error: If the items of the shape are not positive.
 
         Args:
             shape: A list of integers representing the shape dimensions.
         """
+
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
+            if shape[i] < 1:
+                raise Error("Items of shape must be positive.")
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
@@ -110,22 +172,34 @@ struct NDArrayShape(Stringable, Writable):
         """
         Initializes the NDArrayShape with a list of shape dimensions and a specified size.
 
+        Raises:
+            Error: If the number of dimensions is not positive.
+            Error: If the items of the shape are not positive.
+            Error: If the size of the array does not match the specified size.
+
         Args:
             shape: A list of integers representing the shape dimensions.
             size: The specified size of the NDArrayShape.
         """
 
+        if len(shape) <= 0:
+            raise Error("Number of dimensions of array must be positive.")
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
+            if shape[i] < 1:
+                raise Error("Items of shape must be positive.")
             (self._buf + i).init_pointee_copy(shape[i])
+
         if self.size_of_array() != size:
             raise Error("Cannot create NDArray: shape and size mismatch")
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: NDArrayShape) raises:
+    fn __init__(out self, shape: NDArrayShape):
         """
-        Initializes the NDArrayShape with another NDArrayShape.
+        Initializes the NDArrayShape from another NDArrayShape.
+        A deep copy of the data buffer is conducted.
 
         Args:
             shape: Another NDArrayShape to initialize from.
@@ -134,7 +208,7 @@ struct NDArrayShape(Stringable, Writable):
         self._buf = UnsafePointer[Int]().alloc(shape.ndim)
         memcpy(self._buf, shape._buf, shape.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(shape[i])
+            (self._buf + i).init_pointee_copy(shape._buf[i])
 
     @always_inline("nodebug")
     fn __init__(
@@ -144,9 +218,11 @@ struct NDArrayShape(Stringable, Writable):
     ) raises:
         """
         Construct NDArrayShape with number of dimensions.
-
         This method is useful when you want to create a shape with given ndim
         without knowing the shape values.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
 
         Args:
             ndim: Number of dimensions.
@@ -154,8 +230,9 @@ struct NDArrayShape(Stringable, Writable):
                 If yes, the values will be set to 1.
                 If no, the values will be uninitialized.
         """
-        if ndim < 0:
-            raise Error("Number of dimensions must be non-negative.")
+        if ndim <= 0:
+            raise Error("Number of dimensions must be positive.")
+
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
         if initialized:
@@ -166,6 +243,7 @@ struct NDArrayShape(Stringable, Writable):
     fn __copyinit__(out self, other: Self):
         """
         Initializes the NDArrayShape from another NDArrayShape.
+        A deep copy of the data buffer is conducted.
 
         Args:
             other: Another NDArrayShape to initialize from.
@@ -177,45 +255,87 @@ struct NDArrayShape(Stringable, Writable):
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         """
-        Get shape at specified index.
+        Gets shape at specified index.
+
+        raises:
+           Error: Index out of bound.
+
+        Args:
+          index: Index to get the shape.
+
+        Returns:
+           Shape value at the given index.
         """
-        if index >= self.ndim:
-            raise Error("Index out of bound")
-        if index >= 0:
-            return self._buf[index].__int__()
-        else:
-            return self._buf[self.ndim + index].__int__()
+
+        var normalized_index: Int = index
+        if normalized_index < 0:
+            normalized_index += self.ndim
+        if (normalized_index >= self.ndim) or (normalized_index < 0):
+            raise Error(
+                String("Index {} out of bound [{}, {})").format(
+                    -self.ndim, self.ndim
+                )
+            )
+
+        return self._buf[normalized_index]
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:
         """
-        Set shape at specified index.
+        Sets shape at specified index.
+
+        raises:
+           Error: Index out of bound.
+           Error: Value is not positive.
+
+        Args:
+          index: Index to get the shape.
+          val: Value to set at the given index.
         """
-        if index >= self.ndim:
-            raise Error("Index out of bound")
-        if index >= 0:
-            self._buf[index] = val
-        else:
-            self._buf[self.ndim + index] = val
+
+        var normalized_index: Int = index
+        if normalized_index < 0:
+            normalized_index += self.ndim
+        if (normalized_index >= self.ndim) or (normalized_index < 0):
+            raise Error(
+                String("Index {} out of bound [{}, {})").format(
+                    -self.ndim, self.ndim
+                )
+            )
+
+        if val <= 0:
+            raise Error(String("Value to be set is not positive."))
+
+        self._buf[index] = val
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:
         """
-        Get number of dimensions of the array described by arrayshape.
+        Gets number of elements in the shape.
+        It equals the number of dimensions of the array.
+
+        Returns:
+          Number of elements in the shape.
         """
         return self.ndim
 
     @always_inline("nodebug")
     fn __repr__(self) -> String:
         """
-        Return a string of the shape of the array described by arrayshape.
+        Returns a string of the shape of the array.
+
+        Returns:
+            String representation of the shape of the array.
         """
         return "numojo.Shape" + str(self)
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
         """
-        Return a string of the shape of the array.
+        Returns a string of the shape of the array.
+
+        Returns:
+            String representation of the shape of the array.
         """
         var result: String = "("
         for i in range(self.ndim):
@@ -229,9 +349,15 @@ struct NDArrayShape(Stringable, Writable):
         writer.write("Shape: " + str(self) + "  " + "ndim: " + str(self.ndim))
 
     @always_inline("nodebug")
-    fn __eq__(self, other: Self) raises -> Bool:
+    fn __eq__(self, other: Self) -> Bool:
         """
-        Check if two shapes are identical.
+        Checks if two shapes have identical dimensions and values.
+
+        Args:
+            other: The shape to compare with.
+
+        Returns:
+            True if both shapes have identical dimensions and values.
         """
         if self.ndim != other.ndim:
             return False
@@ -242,14 +368,20 @@ struct NDArrayShape(Stringable, Writable):
     @always_inline("nodebug")
     fn __ne__(self, other: Self) raises -> Bool:
         """
-        Check if two arrayshapes don't have identical dimensions.
+        Checks if two shapes have identical dimensions and values.
+
+        Returns:
+           True if both shapes do not have identical dimensions or values.
         """
         return not self.__eq__(other)
 
     @always_inline("nodebug")
     fn __contains__(self, val: Int) raises -> Bool:
         """
-        Check if any of the dimensions are equal to a value.
+        Checks if the given value is present in the array.
+
+        Returns:
+          True if the given value is present in the array.
         """
         for i in range(self.ndim):
             if self[i] == val:
@@ -263,6 +395,9 @@ struct NDArrayShape(Stringable, Writable):
     fn size_of_array(self) -> Int:
         """
         Returns the total number of elements in the array.
+
+        Returns:
+          The total number of elements in the corresponding array.
         """
         var size = 1
         for i in range(self.ndim):
@@ -298,11 +433,10 @@ struct NDArrayShape(Stringable, Writable):
     # Other private methods
     # ===-------------------------------------------------------------------===#
 
-    fn _flip(self) raises -> Self:
+    fn _flip(self) -> Self:
         """
         Returns a new shape by flipping the items.
-
-        UNSAFE! No boundary check!
+        ***UNSAFE!*** No boundary check!
 
         Example:
         ```mojo
@@ -311,6 +445,9 @@ struct NDArrayShape(Stringable, Writable):
         print(A.shape)          # Shape: [2, 3, 4]
         print(A.shape._flip())  # Shape: [4, 3, 2]
         ```
+
+        Returns:
+            A new shape with the items flipped.
         """
 
         var shape = NDArrayShape(self)
@@ -318,11 +455,13 @@ struct NDArrayShape(Stringable, Writable):
             shape._buf[i] = self._buf[self.ndim - 1 - i]
         return shape
 
-    fn _move_axis_to_end(self, owned axis: Int) raises -> Self:
+    fn _move_axis_to_end(self, owned axis: Int) -> Self:
         """
         Returns a new shape by moving the value of axis to the end.
+        ***UNSAFE!*** No boundary check!
 
-        UNSAFE! No boundary check!
+        Args:
+            axis: The axis (index) to drop. It should be in `[-ndim, ndim)`.
 
         Example:
         ```mojo
@@ -341,7 +480,7 @@ struct NDArrayShape(Stringable, Writable):
         if axis == self.ndim - 1:
             return shape
 
-        var value = shape[axis]
+        var value = shape._buf[axis]
         for i in range(axis, shape.ndim - 1):
             shape._buf[i] = shape._buf[i + 1]
         shape._buf[shape.ndim - 1] = value
@@ -349,7 +488,14 @@ struct NDArrayShape(Stringable, Writable):
 
     fn _pop(self, axis: Int) raises -> Self:
         """
-        drop information of certain axis.
+        Drops the item at the given axis (index).
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            axis: The axis (index) to drop. It should be in `[0, ndim)`.
+
+        Returns:
+            A new shape with the item at the given axis (index) dropped.
         """
         var res = Self(ndim=self.ndim - 1, initialized=False)
         memcpy(dest=res._buf, src=self._buf, count=axis)

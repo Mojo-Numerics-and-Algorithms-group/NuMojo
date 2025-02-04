@@ -10,7 +10,7 @@ authors = [
     "sandstromviktor <>",
     "durnwalder <>"
 ]
-channels = ["conda-forge", "https://conda.modular.com/max/"]
+channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 license = "Apache-2.0"
 readme = "README.MD"

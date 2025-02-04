@@ -12,6 +12,7 @@
 
 # magic environments
 .magic
+magic.lock
 
 # pixi environments
 .pixi
@@ -34,3 +35,4 @@ tempCodeRunnerFile.mojo
 
 # Auto docs
 docs/readthedocs/docs.json
+docs.json

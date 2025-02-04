@@ -40,7 +40,7 @@ final = "magic run test && magic run format && magic run package"
 f = "clear && magic run test && magic run format && magic run package"
 
 # Automatically Generate doc pages
-doc_pages = "rm -Rf docs/readthedocs/docs/docs && mojo doc numojo -o docs/readthedocs/docs.json && python docs/readthedocs/docs.py"
+doc_pages = "mojo doc numojo/ -o docs.json"
 
 # run everything and generate docs before release
 release = "clear && magic run final && magic run doc_pages"

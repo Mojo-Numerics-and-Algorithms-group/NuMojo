@@ -14,20 +14,20 @@ import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
 from collections import Dict
 from collections.optional import Optional
-from math import log10
 from memory import UnsafePointer, memset_zero, memcpy
-from python import Python, PythonObject
+from math import log10
+from python import PythonObject
 from sys import simdwidthof
 from tensor import Tensor
 from utils import Variant
-from utils.numerics import isnan, isinf
 
 import numojo.core._array_funcs as _af
+from numojo.core._math_funcs import Vectorized
+from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
+from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.item import Item
 from numojo.core.own_data import OwnData
-from numojo.core._math_funcs import Vectorized
 from numojo.core.utility import (
     _get_offset,
     _update_flags,
@@ -36,32 +36,24 @@ from numojo.core.utility import (
     to_numpy,
     to_tensor,
     bool_to_numeric,
-    is_floattype,
 )
-
+import numojo.routines.bitwise as bitwise
+import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
-    format_floating_precision,
-    format_floating_scientific,
     format_value,
     PrintOptions,
-    printoptions,
     GLOBAL_PRINT_OPTIONS,
 )
-import numojo.routines.creation as creation
-import numojo.routines.creation as creation
-import numojo.routines.sorting as sorting
-import numojo.routines.math.arithmetic as arithmetic
-import numojo.routines.logic.comparison as comparison
-import numojo.routines.math.rounding as rounding
-import numojo.routines.bitwise as bitwise
 import numojo.routines.linalg as linalg
-from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
-from numojo.routines.statistics.averages import mean
-from numojo.routines.math.products import prod, cumprod
-from numojo.routines.math.sums import sum, cumsum
-from numojo.routines.logic.truth import any
 from numojo.routines.linalg.products import matmul
+import numojo.routines.logic.comparison as comparison
 from numojo.routines.manipulation import reshape, ravel
+import numojo.routines.math.arithmetic as arithmetic
+from numojo.routines.math.products import prod, cumprod
+import numojo.routines.math.rounding as rounding
+from numojo.routines.math.sums import sum, cumsum
+import numojo.routines.sorting as sorting
+from numojo.routines.statistics.averages import mean
 
 # ===----------------------------------------------------------------------===#
 # NDArray
@@ -3426,19 +3418,33 @@ struct NDArray[dtype: DType = DType.float64](
     ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
         Compute the standard deviation.
+        See `numojo.std`.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
 
         Args:
             ddof: Delta degree of freedom.
         """
 
-        if ddof >= self.size:
-            raise Error(
-                String("ddof {} should be smaller than size {}").format(
-                    ddof, self.size
-                )
-            )
+        return std[returned_dtype](self, ddof=ddof)
 
-        return variance[returned_dtype](self, ddof=ddof) ** 0.5
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+        """
+        Compute the standard deviation along the axis.
+        See `numojo.std`.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
+
+        Args:
+            axis: The axis along which the mean is performed.
+            ddof: Delta degree of freedom.
+        """
+
+        return std[returned_dtype](self, axis=axis, ddof=ddof)
 
     fn sum(self: Self) raises -> Scalar[dtype]:
         """
@@ -3550,6 +3556,22 @@ struct NDArray[dtype: DType = DType.float64](
             ddof: Delta degree of freedom.
         """
         return variance[returned_dtype](self, ddof=ddof)
+
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+        """
+        Returns the variance of array along the axis.
+        See `numojo.variance`.
+
+        Parameters:
+            returned_dtype: The returned data type, defaulting to float64.
+
+        Args:
+            axis: The axis along which the mean is performed.
+            ddof: Delta degree of freedom.
+        """
+        return variance[returned_dtype](self, axis=axis, ddof=ddof)
 
 
 # ===----------------------------------------------------------------------===#

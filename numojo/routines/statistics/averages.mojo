@@ -1,3 +1,9 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Averages and variances
 """
@@ -13,6 +19,7 @@ import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.core.utility import bool_to_numeric
 from numojo.routines.logic.comparison import greater, less
+from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
 from numojo.routines.math.arithmetic import add
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
@@ -183,6 +190,10 @@ fn std[
     """
     Compute the standard deviation.
 
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
     Args:
         A: An array.
         ddof: Delta degree of freedom.
@@ -196,6 +207,48 @@ fn std[
         )
 
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
+
+
+fn std[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
+    returned_dtype
+]:
+    """
+    Computes the standard deviation along the axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        A: An array.
+        axis: The axis along which the mean is performed.
+        ddof: Delta degree of freedom.
+
+    Returns:
+        An array.
+
+    Raises:
+        Error: If the axis is out of bounds.
+        Error: If ddof is not smaller than the size of the axis.
+    """
+
+    var normalized_axis = axis
+    if normalized_axis < 0:
+        normalized_axis += A.ndim
+    if (normalized_axis >= A.ndim) or (normalized_axis < 0):
+        raise Error(String("Axis {} out of bounds!").format(axis))
+
+    for i in range(A.ndim):
+        if ddof >= A.shape[i]:
+            raise Error(
+                String(
+                    "ddof ({}) should be smaller than size ({}) of axis ({})"
+                ).format(ddof, A.shape[i], i)
+            )
+
+    return variance[returned_dtype](A, axis=normalized_axis, ddof=ddof) ** 0.5
 
 
 fn std[
@@ -268,6 +321,66 @@ fn variance[
         (A.astype[returned_dtype]() - mean[returned_dtype](A))
         * (A.astype[returned_dtype]() - mean[returned_dtype](A))
     ) / (A.size - ddof)
+
+
+fn variance[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
+    returned_dtype
+]:
+    """
+    Computes the variance along the axis.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        A: An array.
+        axis: The axis along which the mean is performed.
+        ddof: Delta degree of freedom.
+
+    Returns:
+        An array.
+
+    Raises:
+        Error: If the axis is out of bounds.
+        Error: If ddof is not smaller than the size of the axis.
+    """
+
+    var normalized_axis = axis
+    if normalized_axis < 0:
+        normalized_axis += A.ndim
+    if (normalized_axis >= A.ndim) or (normalized_axis < 0):
+        raise Error(String("Axis {} out of bounds!").format(axis))
+
+    for i in range(A.ndim):
+        if ddof >= A.shape[i]:
+            raise Error(
+                String(
+                    "ddof ({}) should be smaller than size ({}) of axis ({})"
+                ).format(ddof, A.shape[i], i)
+            )
+
+    return sum(
+        (
+            A.astype[returned_dtype]()
+            - _broadcast_back_to(
+                mean[returned_dtype](A, axis=normalized_axis),
+                A.shape,
+                axis=normalized_axis,
+            )
+        )
+        * (
+            A.astype[returned_dtype]()
+            - _broadcast_back_to(
+                mean[returned_dtype](A, axis=normalized_axis),
+                A.shape,
+                axis=normalized_axis,
+            )
+        ),
+        axis=normalized_axis,
+    ) / (A.shape[normalized_axis] - ddof)
 
 
 fn variance[

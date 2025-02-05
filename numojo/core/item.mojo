@@ -133,9 +133,10 @@ struct Item(CollectionElement):
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.ndim, self.ndim - 1
-                )
+                String(
+                    "Error in `numojo.Item.__getitem__()`: \n"
+                    "Index ({}) out of range [{}, {})\n"
+                ).format(index(idx), -self.ndim, self.ndim - 1)
             )
 
         return self._buf[normalized_idx]
@@ -159,9 +160,10 @@ struct Item(CollectionElement):
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.ndim, self.ndim - 1
-                )
+                String(
+                    "Error in `numojo.Item.__getitem__()`: \n"
+                    "Index ({}) out of range [{}, {})\n"
+                ).format(index(idx), -self.ndim, self.ndim - 1)
             )
 
         self._buf[normalized_idx] = index(val)

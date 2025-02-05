@@ -204,9 +204,10 @@ struct NDArrayStrides(Stringable):
         Construct NDArrayStrides with number of dimensions.
         This method is useful when you want to create a strides with given ndim
         without knowing the strides values.
+        `ndim == 0` is allowed in this method for 0darray (numojo scalar).
 
         Raises:
-           Error: If the number of dimensions is not positive.
+           Error: If the number of dimensions is negative.
 
         Args:
             ndim: Number of dimensions.
@@ -215,13 +216,23 @@ struct NDArrayStrides(Stringable):
                 If no, the values will be uninitialized.
         """
         if ndim <= 0:
-            raise Error("Number of dimensions must be positive.")
+            raise Error(
+                "Error in `numojo.NDArrayStrides.__init__(out self, ndim:"
+                " Int, initialized: Bool,)`. \n"
+                "Number of dimensions must be non-negative."
+            )
 
-        self.ndim = ndim
-        self._buf = UnsafePointer[Int]().alloc(ndim)
-        if initialized:
-            for i in range(ndim):
-                (self._buf + i).init_pointee_copy(0)
+        if ndim == 0:
+            # This is a 0darray (numojo scalar)
+            self.ndim = ndim
+            self._buf = UnsafePointer[Int]()
+
+        else:
+            self.ndim = ndim
+            self._buf = UnsafePointer[Int]().alloc(ndim)
+            if initialized:
+                for i in range(ndim):
+                    (self._buf + i).init_pointee_copy(0)
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):

@@ -232,6 +232,30 @@ struct NDArray[dtype: DType = DType.float64](
         )
         self.flags["OWNDATA"] = False
 
+    # for creating a 0darray (only for internal use)
+    fn _init_0darray(
+        mut self,
+        val: Scalar[dtype],
+    ) raises:
+        """
+        Initialize an special 0darray (numojo scalar).
+        The ndim is 0.
+        The shape is (0) (for internal use).
+        The strides is (1) (for internal use).
+        The size is 1 (for internal use).
+        """
+        self.shape = NDArrayShape(ndim=0, initialized=False)
+        self.strides = NDArrayStrides(ndim=0, initialized=False)
+        self.ndim = 0
+        self.size = 1
+        self._buf = OwnData[dtype](1)
+        # Initialize information on memory layout
+        self.flags = Dict[String, Bool]()
+        _update_flags(
+            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
+        )
+        self.flags["OWNDATA"] = True
+
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
         """
@@ -321,8 +345,21 @@ struct NDArray[dtype: DType = DType.float64](
         A[1:4] = B
         ```
         """
-        if self.ndim == 0 and val.ndim == 0:
-            self._buf.ptr.store(0, val._buf.ptr.load(0))
+
+        var normalized_index = idx
+        if normalized_index < 0:
+            normalized_index = self.shape[0] + idx
+        if normalized_index >= self.shape[0]:
+            raise Error("Index out of bounds")
+
+        # If the ndim is 0, then it is a numojo scalar (0darray).
+        # Not allow to set value to 0darray.
+        if self.ndim == 0 or val.ndim == 0:
+            raise Error(
+                "Error in `numojo.NDArray.__setitem__("
+                "self, idx: Int, val: Self)`: \n"
+                "Cannot set values to a 0-d array.\n"
+            )
 
         var slice_list = List[Slice]()
         if idx >= self.shape[0]:
@@ -795,6 +832,9 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             A slice of the array.
 
+        Raises:
+            Error: If the array is 0-d.
+
         Example:
             `arr[1]` returns the second row of the array.
         """
@@ -802,9 +842,12 @@ struct NDArray[dtype: DType = DType.float64](
         var slice_list = List[Slice]()
         slice_list.append(Slice(idx, idx + 1, 1))
 
-        # 0-d array always return itself
+        # If the ndim is 0, then it is a numojo scalar (0darray).
         if self.ndim == 0:
-            return self
+            raise Error(
+                "Error in `numojo.NDArray.__getitem__(self, idx: Int)`: \n"
+                "Cannot slice a 0-d array.\n"
+            )
 
         if self.ndim > 1:
             for i in range(1, self.ndim):
@@ -1434,10 +1477,13 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     fn __int__(self) raises -> Int:
-        """Get Int representation of the array.
+        """
+        Gets `Int` representation of the array.
 
-        Similar to Numpy, only 0-D arrays or length-1 arrays can be converted to
-        scalars.
+        Only 0-D arrays or length-1 arrays can be converted to scalars.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
 
         Example:
         ```console
@@ -1457,10 +1503,34 @@ struct NDArray[dtype: DType = DType.float64](
 
         """
         if (self.size == 1) or (self.ndim == 0):
-            return int(self.load(0))
+            return int(self._buf.ptr[])
         else:
-            raise (
-                "Only 0-D arrays or length-1 arrays can be converted to scalars"
+            raise Error(
+                "Error in `numojo.NDArray.__int__(self)`: \n"
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to scalars."
+            )
+
+    fn __float__(self) raises -> Float64:
+        """
+        Gets `Float64` representation of the array.
+
+        Only 0-D arrays or length-1 arrays can be converted to scalars.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
+
+        Returns:
+            Float representation of the array.
+
+        """
+        if (self.size == 1) or (self.ndim == 0):
+            return float(self._buf.ptr[])
+        else:
+            raise Error(
+                "Error in `numojo.NDArray.__int__(self)`: \n"
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to scalars."
             )
 
     fn __pos__(self) raises -> Self:
@@ -2175,31 +2245,35 @@ struct NDArray[dtype: DType = DType.float64](
         try:
             res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
         except e:
-            res = String("Cannot convert array to string") + str(e)
+            res = String("Cannot convert array to string.\n") + str(e)
 
         return res
 
     fn write_to[W: Writer](self, mut writer: W):
-        try:
-            writer.write(
-                self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
-                + "\n"
-                + str(self.ndim)
-                + "D-array  Shape"
-                + str(self.shape)
-                + "  Strides"
-                + str(self.strides)
-                + "  DType: "
-                + _concise_dtype_str(self.dtype)
-                + "  C-cont: "
-                + str(self.flags["C_CONTIGUOUS"])
-                + "  F-cont: "
-                + str(self.flags["F_CONTIGUOUS"])
-                + "  own data: "
-                + str(self.flags["OWNDATA"])
-            )
-        except e:
-            writer.write("Cannot convert array to string" + str(e))
+        if self.ndim == 0:
+            # For 0darray (numojo scalar), we can directly write the value
+            writer.write(str(self._buf.ptr[]) + "  (0darray)")
+        else:
+            try:
+                writer.write(
+                    self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
+                    + "\n"
+                    + str(self.ndim)
+                    + "D-array  Shape"
+                    + str(self.shape)
+                    + "  Strides"
+                    + str(self.strides)
+                    + "  DType: "
+                    + _concise_dtype_str(self.dtype)
+                    + "  C-cont: "
+                    + str(self.flags["C_CONTIGUOUS"])
+                    + "  F-cont: "
+                    + str(self.flags["F_CONTIGUOUS"])
+                    + "  own data: "
+                    + str(self.flags["OWNDATA"])
+                )
+            except e:
+                writer.write("Cannot convert array to string.\n" + str(e))
 
     fn __repr__(self) -> String:
         """
@@ -2233,7 +2307,7 @@ struct NDArray[dtype: DType = DType.float64](
                 + '\n"""\n)'
             )
         except e:
-            result = "Cannot convert array to string" + str(e)
+            result = "Cannot convert array to string.\n" + str(e)
 
         return result
 
@@ -2359,6 +2433,11 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             String representation of the array.
         """
+
+        if self.ndim == 0:
+            # For 0darray (numojo scalar), return the scalar value.
+            return str(self._buf.ptr[0])
+
         var seperator = print_options.separator
         var padding = print_options.padding
         var edge_items = print_options.edge_items
@@ -2427,8 +2506,6 @@ struct NDArray[dtype: DType = DType.float64](
             print_options.float_format = "scientific"
             print_options.formatted_width = 7 + print_options.precision
 
-        if self.ndim == 0:
-            return str(self.item(0))
         if dimension == self.ndim - 1:
             var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
@@ -3138,12 +3215,11 @@ struct NDArray[dtype: DType = DType.float64](
     ]:
         """
         Return the scalar at the coordinates.
-
         If one index is given, get the i-th item of the array (not buffer).
         It first scans over the first row, even it is a colume-major array.
-
         If more than one index is given, the length of the indices must match
         the number of dimensions of the array.
+        If the ndim is 0 (0darray), get the value as a mojo scalar.
 
         Args:
             index: Index of item, counted in row-major way.
@@ -3186,6 +3262,10 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(
                 String("`index` exceeds array size ({})").format(self.size)
             )
+
+        # For 0darray, return the scalar value.
+        if (self.ndim == 0) and (index == 0):
+            return self._buf.ptr[]
 
         if self.flags["F_CONTIGUOUS"]:
             # column-major should be converted to row-major

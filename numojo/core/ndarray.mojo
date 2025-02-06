@@ -792,6 +792,23 @@ struct NDArray[dtype: DType = DType.float64](
             index_of_buffer += indices[i] * self.strides._buf[i]
         return self._buf.ptr[index_of_buffer]
 
+    fn __getitem__(self) raises -> SIMD[dtype, 1]:
+        """
+        Gets the value of the 0darray.
+
+        Raises:
+            Error: If the array is not 0-d.
+
+        Returns:
+            The value of the 0darray.
+        """
+        if self.ndim != 0:
+            raise Error(
+                "Error in `numojo.NDArray.__getitem__()`: \n"
+                "Cannot get value without index.\n"
+            )
+        return self._buf.ptr[]
+
     fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]:
         """
         Get the value at the index list.
@@ -3228,7 +3245,8 @@ struct NDArray[dtype: DType = DType.float64](
             A scalar matching the dtype of the array.
 
         Raises:
-            Index is equal or larger than array size.
+            Error if array is 0darray (numojo scalar).
+            Error if index is equal or larger than array size.
 
         Example:
         ```console
@@ -3255,17 +3273,26 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
 
+        # For 0darray, raise error
+        if self.ndim == 0:
+            raise Error(
+                String(
+                    "\nError in `numojo.NDArray.item(index: Int)`: "
+                    "Cannot index a 0darray (numojo scalar). "
+                    "Use `a.item()` without arguments."
+                )
+            )
+
         if index < 0:
             index += self.size
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                String("`index` exceeds array size ({})").format(self.size)
+                String(
+                    "\nError in `numojo.NDArray.item(index: Int)`:"
+                    "`index` exceeds array size ({})"
+                ).format(self.size)
             )
-
-        # For 0darray, return the scalar value.
-        if (self.ndim == 0) and (index == 0):
-            return self._buf.ptr[]
 
         if self.flags["F_CONTIGUOUS"]:
             # column-major should be converted to row-major
@@ -3292,12 +3319,11 @@ struct NDArray[dtype: DType = DType.float64](
     ]:
         """
         Return the scalar at the coordinates.
-
         If one index is given, get the i-th item of the array (not buffer).
         It first scans over the first row, even it is a colume-major array.
-
         If more than one index is given, the length of the indices must match
         the number of dimensions of the array.
+        For 0darray (numojo scalar), return the scalar value.
 
         Args:
             index: The coordinates of the item.
@@ -3325,10 +3351,16 @@ struct NDArray[dtype: DType = DType.float64](
 
         if len(index) != self.ndim:
             raise Error(
-                String("Number of indices ({}) do not match ndim ({})").format(
-                    len(index), self.ndim
-                )
+                String(
+                    "\nError in `numojo.NDArray.item(*index: Int)`:"
+                    "Number of indices ({}) do not match ndim ({})"
+                ).format(len(index), self.ndim)
             )
+
+        # For 0darray, return the scalar value.
+        if self.ndim == 0:
+            return self._buf.ptr[]
+
         var list_index = List[Int]()
         for i in range(len(index)):
             if index[i] < 0:

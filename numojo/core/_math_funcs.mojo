@@ -14,6 +14,7 @@ from memory import UnsafePointer
 
 from numojo.core.traits.backend import Backend
 from numojo.core.ndarray import NDArray
+from numojo.routines.creation import _0darray
 
 # TODO Add string method to give name
 
@@ -222,6 +223,14 @@ struct Vectorized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array.ndim == 0:
+            var result_array = _0darray(
+                val=func[dtype, 1](array._buf.ptr[], scalar)
+            )
+            return result_array
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()

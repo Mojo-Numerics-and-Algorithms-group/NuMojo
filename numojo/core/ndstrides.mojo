@@ -215,7 +215,7 @@ struct NDArrayStrides(Stringable):
                 If yes, the values will be set to 0.
                 If no, the values will be uninitialized.
         """
-        if ndim <= 0:
+        if ndim < 0:
             raise Error(
                 "Error in `numojo.NDArrayStrides.__init__(out self, ndim:"
                 " Int, initialized: Bool,)`. \n"

@@ -117,7 +117,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: NDArrayShape,
         order: String = "C",
     ) raises:
@@ -145,7 +145,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: List[Int],
         order: String = "C",
     ) raises:
@@ -161,7 +161,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: VariadicList[Int],
         order: String = "C",
     ) raises:
@@ -175,7 +175,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         self = Self(Shape(shape), order)
 
-    # constructor when offset is known
     fn __init__(
         mut self,
         shape: List[Int],
@@ -203,9 +202,37 @@ struct NDArray[dtype: DType = DType.float64](
         )
         self.flags["OWNDATA"] = True
 
+    fn __init__(
+        out self,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
+        ndim: Int,
+        size: Int,
+        flags: Dict[String, Bool],
+    ):
+        """
+        Constructs an extremely specific array, with value uninitialized.
+        The properties do not need to be compatible and are not checked.
+        For example, it can construct a 0darray (numojo scalar).
+
+        Args:
+            shape: Shape of array.
+            strides: Strides of array.
+            ndim: Number of dimensions.
+            size: Size of array.
+            flags: Flags of array.
+        """
+
+        self.shape = shape
+        self.strides = strides
+        self.ndim = ndim
+        self.size = size
+        self.flags = flags
+        self._buf = OwnData[dtype](self.size)
+
     # for creating views (unsafe!)
     fn __init__(
-        mut self,
+        out self,
         shape: NDArrayShape,
         ref buffer: UnsafePointer[Scalar[dtype]],
         offset: Int,
@@ -213,6 +240,7 @@ struct NDArray[dtype: DType = DType.float64](
     ) raises:
         """
         Initialize an NDArray view with given shape, buffer, offset, and strides.
+        ***Unsafe!*** This function is currently unsafe. Only for internal use.
 
         Args:
             shape: Shape of the array.
@@ -231,30 +259,6 @@ struct NDArray[dtype: DType = DType.float64](
             self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
         )
         self.flags["OWNDATA"] = False
-
-    # for creating a 0darray (only for internal use)
-    fn _init_0darray(
-        mut self,
-        val: Scalar[dtype],
-    ) raises:
-        """
-        Initialize an special 0darray (numojo scalar).
-        The ndim is 0.
-        The shape is (0) (for internal use).
-        The strides is (1) (for internal use).
-        The size is 1 (for internal use).
-        """
-        self.shape = NDArrayShape(ndim=0, initialized=False)
-        self.strides = NDArrayStrides(ndim=0, initialized=False)
-        self.ndim = 0
-        self.size = 1
-        self._buf = OwnData[dtype](1)
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(
-            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
-        )
-        self.flags["OWNDATA"] = True
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -2269,7 +2273,10 @@ struct NDArray[dtype: DType = DType.float64](
     fn write_to[W: Writer](self, mut writer: W):
         if self.ndim == 0:
             # For 0darray (numojo scalar), we can directly write the value
-            writer.write(str(self._buf.ptr[]) + "  (0darray)")
+            writer.write(
+                str(self._buf.ptr[])
+                + String("  (0darray[" + _concise_dtype_str(self.dtype) + "])")
+            )
         else:
             try:
                 writer.write(

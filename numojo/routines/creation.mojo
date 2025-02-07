@@ -1,13 +1,12 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Array creation routine.
-"""
-# ===----------------------------------------------------------------------=== #
-# ARRAY CREATION ROUTINES
-# Last updated: 2024-09-08
-# ===----------------------------------------------------------------------=== #
 
-
-"""
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
@@ -34,6 +33,7 @@ function. So it is easy for modification.
 from algorithm import parallelize, vectorize
 from algorithm import parallelize, vectorize
 from builtin.math import pow
+from collections import Dict
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
 from python import PythonObject
@@ -42,7 +42,7 @@ from tensor import Tensor, TensorShape
 
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.core.utility import _get_offset
+from numojo.core.utility import _get_offset, _update_flags
 from numojo.core.own_data import OwnData
 
 
@@ -2259,3 +2259,31 @@ fn array[
     """
 
     return from_tensor(data)
+
+
+# ===----------------------------------------------------------------------=== #
+# Internal functions
+# ===----------------------------------------------------------------------=== #
+# for creating a 0darray (only for internal use)
+fn _0darray[
+    dtype: DType
+](val: Scalar[dtype],) raises -> NDArray[dtype]:
+    """
+    Initialize an special 0darray (numojo scalar).
+    The ndim is 0.
+    The shape is unitialized.
+    The strides is unitialized.
+    The size is 1 (for internal use).
+    """
+
+    var b = NDArray[dtype](
+        shape=NDArrayShape(ndim=0, initialized=False),
+        strides=NDArrayStrides(ndim=0, initialized=False),
+        ndim=0,
+        size=1,
+        flags=Dict[String, Bool](),
+    )
+    b._buf = OwnData[dtype](1)
+    b._buf.ptr.init_pointee_copy(val)
+    b.flags["OWNDATA"] = True
+    return b

@@ -831,6 +831,7 @@ struct NDArray[dtype: DType = DType.float64](
                 "The number of dimensions is {}."
             ).format(index.__len__(), self.ndim)
             raise Error(message)
+
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
                 var message = String(
@@ -870,16 +871,18 @@ struct NDArray[dtype: DType = DType.float64](
                 "Cannot slice a 0-d array.\n"
             )
 
-        if self.ndim > 1:
+        var narr: Self
+
+        # If the ndim is 1
+        if self.ndim == 1:
+            narr = creation._0darray[dtype](self._buf.ptr[idx])
+
+        else:
             for i in range(1, self.ndim):
                 var size_at_dim: Int = self.shape[i]
                 slice_list.append(Slice(0, size_at_dim, 1))
 
-        var narr: Self = self.__getitem__(slice_list)
-
-        if self.ndim == 1:
-            narr.ndim = 0
-            narr.shape._buf[0] = 0
+            narr = self.__getitem__(slice_list)
 
         return narr
 
@@ -1218,9 +1221,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         var narr: Self = self.__getitem__(slice_list)
 
+        # Number of ints equals to nidm, it returns a 0-D array.
         if count_int == self.ndim:
-            narr.ndim = 0
-            narr.shape._buf[0] = 0
+            narr = creation._0darray[dtype](narr._buf.ptr[])
 
         return narr
 

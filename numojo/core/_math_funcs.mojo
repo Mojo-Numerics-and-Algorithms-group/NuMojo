@@ -187,6 +187,13 @@ struct Vectorized(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
 
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array2.ndim == 0:
+            return self.math_func_1_array_1_scalar_in_one_array_out[
+                dtype, func
+            ](array1, array2[])
+
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         alias width = simdwidthof[dtype]()
 

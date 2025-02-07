@@ -2271,9 +2271,9 @@ fn _0darray[
     """
     Initialize an special 0darray (numojo scalar).
     The ndim is 0.
-    The shape is unitialized.
-    The strides is unitialized.
-    The size is 1 (for internal use).
+    The shape is unitialized (0-element shape).
+    The strides is unitialized (0-element strides).
+    The size is 1 (`=0!`).
     """
 
     var b = NDArray[dtype](

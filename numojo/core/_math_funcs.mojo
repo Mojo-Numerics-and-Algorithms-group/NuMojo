@@ -144,6 +144,13 @@ struct Vectorized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array.ndim == 0:
+            var result_array = _0darray(val=func[dtype, 1](array._buf.ptr[]))
+            return result_array
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()
 
@@ -234,9 +241,7 @@ struct Vectorized(Backend):
         # For 0darray (numojo scalar)
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
-            var result_array = _0darray(
-                val=func[dtype, 1](array._buf.ptr[], scalar)
-            )
+            var result_array = _0darray(val=func[dtype, 1](array[], scalar))
             return result_array
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
@@ -265,6 +270,14 @@ struct Vectorized(Backend):
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
             )
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array2.ndim == 0:
+            return self.math_func_compare_array_and_scalar[dtype, func](
+                array1, array2[]
+            )
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -295,6 +308,12 @@ struct Vectorized(Backend):
     ](
         self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
     ) raises -> NDArray[DType.bool]:
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array1.ndim == 0:
+            var result_array = _0darray(val=func[dtype, 1](array1[], scalar))
+            return result_array
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )

@@ -235,5 +235,9 @@ fn _concise_dtype_str(dtype: DType) -> String:
         return "f32"
     elif dtype == f64:
         return "f64"
+    elif dtype == boolean:
+        return "boolean"
+    elif dtype == isize:
+        return "isize"
     else:
         return "Unknown"

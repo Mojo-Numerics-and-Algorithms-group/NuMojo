@@ -12,7 +12,6 @@ from algorithm import parallelize, vectorize
 import builtin.math as builtin_math
 import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from collections import Dict
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memcpy
 from math import log10
@@ -24,13 +23,13 @@ from utils import Variant
 import numojo.core._array_funcs as _af
 from numojo.core._math_funcs import Vectorized
 from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
+from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 from numojo.core.own_data import OwnData
 from numojo.core.utility import (
     _get_offset,
-    _update_flags,
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
@@ -106,7 +105,7 @@ struct NDArray[dtype: DType = DType.float64](
     """Size of NDArray."""
     var strides: NDArrayStrides
     """Contains offset, strides."""
-    var flags: Dict[String, Bool]
+    var flags: Flags
     """Information about the memory layout of the array."""
 
     # ===-------------------------------------------------------------------===#
@@ -136,12 +135,9 @@ struct NDArray[dtype: DType = DType.float64](
         self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(shape, order=order)
         self._buf = OwnData[dtype](self.size)
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(
-            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
+        self.flags = Flags(
+            self.shape, self.strides, owndata=True, writeable=True
         )
-        self.flags["OWNDATA"] = True
 
     @always_inline("nodebug")
     fn __init__(
@@ -195,12 +191,9 @@ struct NDArray[dtype: DType = DType.float64](
         self.strides = NDArrayStrides(strides=strides)
         self._buf = OwnData[dtype](self.size)
         memset_zero(self._buf.ptr, self.size)
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(
-            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
+        self.flags = Flags(
+            self.shape, self.strides, owndata=True, writeable=True
         )
-        self.flags["OWNDATA"] = True
 
     fn __init__(
         out self,
@@ -208,7 +201,7 @@ struct NDArray[dtype: DType = DType.float64](
         strides: NDArrayStrides,
         ndim: Int,
         size: Int,
-        flags: Dict[String, Bool],
+        flags: Flags,
     ):
         """
         Constructs an extremely specific array, with value uninitialized.
@@ -253,12 +246,9 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = self.shape.ndim
         self.size = self.shape.size_of_array()
         self._buf = OwnData(ptr=buffer.offset(offset))
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(
-            self.flags, shape=self.shape, strides=self.strides, ndim=self.ndim
+        self.flags = Flags(
+            self.shape, self.strides, owndata=False, writeable=False
         )
-        self.flags["OWNDATA"] = False
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -273,10 +263,14 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = other.shape
         self.size = other.size
         self.strides = other.strides
-        self.flags = other.flags
         self._buf = OwnData[dtype](self.size)
         memcpy(self._buf.ptr, other._buf.ptr, other.size)
-        self.flags["OWNDATA"] = True
+        self.flags = Flags(
+            c_contiguous=other.flags.C_CONTIGUOUS,
+            f_contiguous=other.flags.F_CONTIGUOUS,
+            owndata=True,
+            writeable=True,
+        )
 
     @always_inline("nodebug")
     fn __moveinit__(mut self, owned existing: Self):
@@ -298,13 +292,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Destroys all elements in the list and free its memory.
         """
-        var owndata = True
-        try:
-            owndata = self.flags["OWNDATA"]
-        except:
-            print("Invalid `OWNDATA` flag. Treat as `True`.")
-
-        if owndata:
+        if self.flags.OWNDATA:
             self._buf.ptr.free()
 
     # ===-------------------------------------------------------------------===#
@@ -439,7 +427,7 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error(message)
 
         var noffset: Int = 0
-        if self.flags["C_CONTIGUOUS"]:
+        if self.flags.C_CONTIGUOUS:
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
@@ -448,7 +436,7 @@ struct NDArray[dtype: DType = DType.float64](
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
                 noffset += slice_list[i].start.value() * self.strides[i]
-        elif self.flags["F_CONTIGUOUS"]:
+        elif self.flags.F_CONTIGUOUS:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
@@ -625,7 +613,7 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error(message)
 
         var noffset: Int = 0
-        if self.flags["C_CONTIGUOUS"]:
+        if self.flags.C_CONTIGUOUS:
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
@@ -634,7 +622,7 @@ struct NDArray[dtype: DType = DType.float64](
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
                 noffset += slice_list[i].start.value() * self.strides[i]
-        elif self.flags["F_CONTIGUOUS"]:
+        elif self.flags.F_CONTIGUOUS:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
@@ -989,7 +977,8 @@ struct NDArray[dtype: DType = DType.float64](
             ncoefficients.append(1)
 
         var noffset: Int = 0
-        if self.flags["C_CONTIGUOUS"]:
+
+        if self.flags.C_CONTIGUOUS:
             noffset = 0
             for i in range(ndims):
                 var temp_stride: Int = 1
@@ -999,7 +988,7 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(slices.__len__()):
                 noffset += slices[i].start.value() * self.strides[i]
 
-        elif self.flags["F_CONTIGUOUS"]:
+        elif self.flags.F_CONTIGUOUS:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
@@ -2293,11 +2282,11 @@ struct NDArray[dtype: DType = DType.float64](
                     + "  DType: "
                     + _concise_dtype_str(self.dtype)
                     + "  C-cont: "
-                    + str(self.flags["C_CONTIGUOUS"])
+                    + str(self.flags.C_CONTIGUOUS)
                     + "  F-cont: "
-                    + str(self.flags["F_CONTIGUOUS"])
+                    + str(self.flags.F_CONTIGUOUS)
                     + "  own data: "
-                    + str(self.flags["OWNDATA"])
+                    + str(self.flags.OWNDATA)
                 )
             except e:
                 writer.write("Cannot convert array to string.\n" + str(e))
@@ -3131,7 +3120,7 @@ struct NDArray[dtype: DType = DType.float64](
         # TODO: Add logics for non-contiguous arrays when views are implemented.
         """
         Returns a copy of the array that owns the data.
-        The returned array will be continuous in memory.
+        The returned array will be contiguous in memory.
 
         Returns:
             A copy of the array.
@@ -3141,26 +3130,26 @@ struct NDArray[dtype: DType = DType.float64](
             self.strides == NDArrayStrides(shape=self.shape, order="F")
         ):
             # The strides and shape are matched.
-            # It either owns the data or it is a continuous view of another array.
-            # The array is continuous in memory. Nothing needs to be changed.
+            # It either owns the data or it is a contiguous view of another array.
+            # The array is contiguous in memory. Nothing needs to be changed.
             var result = self
             return result
         else:
             # The strides and shape are not matched.
             # It is a view of another array with different shape and strides.
-            if self.flags["C_CONTIGUOUS"]:
-                # The array is C-continuous in memory.
+            if self.flags.C_CONTIGUOUS:
+                # The array is C-contiguous in memory.
                 # Can be copied by the last dimension.
                 var result = self
                 return result
 
-            elif self.flags["F_CONTIGUOUS"]:
-                # The array is F-continuous in memory.
+            elif self.flags.F_CONTIGUOUS:
+                # The array is F-contiguous in memory.
                 # Can be copied by the first dimension.
                 var result = self
                 return result
             else:
-                # The array is not continuous in memory.
+                # The array is not contiguous in memory.
                 # Can be copied by item.
                 var result = self
                 return result
@@ -3304,7 +3293,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(self.size)
             )
 
-        if self.flags["F_CONTIGUOUS"]:
+        if self.flags.F_CONTIGUOUS:
             # column-major should be converted to row-major
             # The following code can be taken out as a function that
             # convert any index to coordinates according to the order
@@ -3434,9 +3423,8 @@ struct NDArray[dtype: DType = DType.float64](
         if index.isa[Int]():
             var idx = index._get_ptr[Int]()[]
             if idx < self.size:
-                if self.flags[
-                    "F_CONTIGUOUS"
-                ]:  # column-major should be converted to row-major
+                if self.flags.F_CONTIGUOUS:
+                    # column-major should be converted to row-major
                     # The following code can be taken out as a function that
                     # convert any index to coordinates according to the order
                     var c_stride = NDArrayStrides(shape=self.shape)
@@ -3610,7 +3598,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var order: String
 
-        if self.flags["F_CONTIGUOUS"]:
+        if self.flags.F_CONTIGUOUS:
             order = "F"
         else:
             order = "C"
@@ -3694,7 +3682,7 @@ struct NDArray[dtype: DType = DType.float64](
             shape: Shape after resize.
         """
 
-        var order = "C" if self.flags["C_CONTIGUOUS"] else "F"
+        var order = "C" if self.flags.C_CONTIGUOUS else "F"
 
         if shape.size_of_array() > self.size:
             var other = Self(shape=shape, order=order)

@@ -8,15 +8,15 @@
 """
 
 from algorithm import parallelize, vectorize
-from collections import Dict
 from memory import UnsafePointer, memcpy, memset_zero
 from random import random_float64
 from sys import simdwidthof
 from python import PythonObject, Python
 
+from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
-from numojo.core.utility import _get_offset, _update_flags
+from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to
 
 # ===----------------------------------------------------------------------===#
@@ -102,7 +102,7 @@ struct Matrix[dtype: DType = DType.float64](
     var strides: Tuple[Int, Int]
     """Strides of matrix."""
 
-    var flags: Dict[String, Bool]
+    var flags: Flags
     "Information about the memory layout of the array."
 
     # ===-------------------------------------------------------------------===#
@@ -125,10 +125,9 @@ struct Matrix[dtype: DType = DType.float64](
         self.strides = (shape[1], 1)
         self.size = shape[0] * shape[1]
         self._buf = OwnData[dtype](size=self.size)
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(self.flags, self.shape, self.strides)
-        self.flags["OWNDATA"] = True
+        self.flags = Flags(
+            self.shape, self.strides, owndata=True, writeable=True
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -163,10 +162,9 @@ struct Matrix[dtype: DType = DType.float64](
 
         self._buf = OwnData[dtype](self.size)
 
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(self.flags, self.shape, self.strides)
-        self.flags["OWNDATA"] = True
+        self.flags = Flags(
+            self.shape, self.strides, owndata=True, writeable=True
+        )
 
         if data.flags["C_CONTIGUOUS"]:
             for i in range(data.shape[0]):

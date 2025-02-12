@@ -40,9 +40,10 @@ from python import PythonObject
 from sys import simdwidthof
 from tensor import Tensor, TensorShape
 
+from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
-from numojo.core.utility import _get_offset, _update_flags
+from numojo.core.utility import _get_offset
 from numojo.core.own_data import OwnData
 
 
@@ -1886,7 +1887,7 @@ fn astype[
         A NDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    var array_order = "C" if a.flags["C_CONTIGUOUS"] else "F"
+    var array_order = "C" if a.flags.C_CONTIGUOUS else "F"
     var res = NDArray[target](a.shape, order=array_order)
 
     @parameter
@@ -2281,9 +2282,11 @@ fn _0darray[
         strides=NDArrayStrides(ndim=0, initialized=False),
         ndim=0,
         size=1,
-        flags=Dict[String, Bool](),
+        flags=Flags(
+            c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
+        ),
     )
     b._buf = OwnData[dtype](1)
     b._buf.ptr.init_pointee_copy(val)
-    b.flags["OWNDATA"] = True
+    b.flags.OWNDATA = True
     return b

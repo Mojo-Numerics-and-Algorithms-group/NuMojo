@@ -103,7 +103,7 @@ fn reshape[
     if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
-    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
 
     if array_order != order:
         # Read in this order from the original array
@@ -130,7 +130,7 @@ fn ravel[
         A contiguous flattened array.
     """
 
-    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
 
     if A.ndim == 1:
         return A
@@ -227,7 +227,7 @@ fn transpose[
     for i in range(A.ndim):
         new_strides._buf[i] = A.strides[axes[i]]
 
-    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.index](Shape(A.size), order=array_order)
     var ptr = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
@@ -250,7 +250,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         return A
     if A.ndim == 2:
-        var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+        var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
             memcpy(B._buf.ptr, A._buf.ptr, A.size)

@@ -61,16 +61,7 @@ def test_constructors():
 
 def test_iterator():
     var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
-    var a_iter = nm.core.ndarray._NDAxisIter[
-        origin = __origin_of(a), dtype=i8, forward=False
-    ](
-        ptr=a._buf.ptr,
-        axis=0,
-        length=a.size,
-        ndim=a.ndim,
-        shape=a.shape,
-        strides=a.strides,
-    )
+    var a_iter = a.iter_by_axis[forward=False](axis=0)
     var b = a_iter.__next__() == nm.array[i8]("[11, 23]")
     assert_true(
         b.item(0) == True,

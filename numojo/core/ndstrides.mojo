@@ -42,7 +42,12 @@ struct NDArrayStrides(Stringable):
             strides: Strides of the array.
         """
         if len(strides) <= 0:
-            raise Error("Number of dimensions of array must be positive.")
+            raise Error(
+                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
+                " array must be positive. However, it is {}.".format(
+                    len(strides)
+                )
+            )
 
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
@@ -61,7 +66,12 @@ struct NDArrayStrides(Stringable):
             strides: Strides of the array.
         """
         if len(strides) <= 0:
-            raise Error("Number of dimensions of array must be positive.")
+            raise Error(
+                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
+                " array must be positive. However, it is {}.".format(
+                    len(strides)
+                )
+            )
 
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
@@ -80,7 +90,12 @@ struct NDArrayStrides(Stringable):
             strides: Strides of the array.
         """
         if len(strides) <= 0:
-            raise Error("Number of dimensions of array must be positive.")
+            raise Error(
+                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
+                " array must be positive. However, it is {}.".format(
+                    len(strides)
+                )
+            )
 
         self.ndim = len(strides)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
@@ -272,7 +287,7 @@ struct NDArrayStrides(Stringable):
                 )
             )
 
-        return self._buf[index]
+        return self._buf[normalized_index]
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:
@@ -298,7 +313,7 @@ struct NDArrayStrides(Stringable):
                 )
             )
 
-        self._buf[index] = val
+        self._buf[normalized_index] = val
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:

@@ -16,6 +16,7 @@ from utils import Variant
 
 from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
+from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
@@ -78,7 +79,7 @@ struct ComplexNDArray[
     """Size of ComplexNDArray."""
     var strides: NDArrayStrides
     """Contains offset, strides."""
-    var flags: Dict[String, Bool]
+    var flags: Flags
     "Information about the memory layout of the array."
 
     """LIFETIME METHODS"""

@@ -113,14 +113,14 @@ struct CDType(
     - fn: finite (no inf or -inf encodings)
     - uz: unsigned zero (no -0 encoding)
     """
-    alias float8_e4m3fn = CDType(
+    alias float8_e4m3 = CDType(
         __mlir_attr.`#kgen.dtype.constant<f8e4m3> : !kgen.dtype`,
         __mlir_attr.`#kgen.dtype.constant<f8e4m3> : !kgen.dtype`,
     )
     """Represents a FP8E4M3 floating point format from the [OFP8
     standard](https://www.opencompute.org/documents/ocp-8-bit-floating-point-specification-ofp8-revision-1-0-2023-12-01-pdf-1).
 
-    This type is named `float8_e4m3fnfn` (the "fn" stands for "finite") in some
+    This type is named `float8_e4m3fn` (the "fn" stands for "finite") in some
     frameworks, as it does not encode -inf or inf.
 
     The 8 bits are encoded as `seeeemmm`:
@@ -236,8 +236,8 @@ struct CDType(
             return CDType.float8_e5m2
         if dtype == DType.float8_e5m2fnuz:
             return CDType.float8_e5m2fnuz
-        if dtype == DType.float8_e4m3fn:
-            return CDType.float8_e4m3fn
+        if dtype == DType.float8_e4m3:
+            return CDType.float8_e4m3
         if dtype == DType.float8_e4m3fnuz:
             return CDType.float8_e4m3fnuz
         if dtype == DType.bfloat16:
@@ -287,8 +287,8 @@ struct CDType(
             return CDType.float8_e5m2
         if dtype == DType.float8_e5m2fnuz:
             return CDType.float8_e5m2fnuz
-        if dtype == DType.float8_e4m3fn:
-            return CDType.float8_e4m3fn
+        if dtype == DType.float8_e4m3:
+            return CDType.float8_e4m3
         if dtype == DType.float8_e4m3fnuz:
             return CDType.float8_e4m3fnuz
         if dtype == DType.bfloat16:
@@ -339,8 +339,8 @@ struct CDType(
             return CDType.float8_e5m2
         elif str == String("float8_e5m2fnuz"):
             return CDType.float8_e5m2fnuz
-        elif str == String("float8_e4m3fn"):
-            return CDType.float8_e4m3fn
+        elif str == String("float8_e4m3"):
+            return CDType.float8_e4m3
         elif str == String("float8_e4m3fnuz"):
             return CDType.float8_e4m3fnuz
         elif str == String("bfloat16"):
@@ -392,8 +392,8 @@ struct CDType(
             return DType.float8_e5m2
         if other == CDType.float8_e5m2fnuz:
             return DType.float8_e5m2fnuz
-        if other == CDType.float8_e4m3fn:
-            return DType.float8_e4m3fn
+        if other == CDType.float8_e4m3:
+            return DType.float8_e4m3
         if other == CDType.float8_e4m3fnuz:
             return DType.float8_e4m3fnuz
         if other == CDType.bfloat16:
@@ -457,8 +457,8 @@ struct CDType(
             return writer.write("cfloat8_e5m2")
         if self == CDType.float8_e5m2fnuz:
             return writer.write("cfloat8_e5m2fnuz")
-        if self == CDType.float8_e4m3fn:
-            return writer.write("cfloat8_e4m3fn")
+        if self == CDType.float8_e4m3:
+            return writer.write("cfloat8_e4m3")
         if self == CDType.float8_e4m3fnuz:
             return writer.write("cfloat8_e4m3fnuz")
         if self == CDType.bfloat16:
@@ -662,7 +662,7 @@ struct CDType(
     @always_inline("nodebug")
     fn is_float8(self) -> Bool:
         """Returns True if the type is a 8bit-precision floating point type,
-        e.g. float8_e5m2, float8_e5m2fnuz, float8_e4m3fn and float8_e4m3fnuz.
+        e.g. float8_e5m2, float8_e5m2fnuz, float8_e4m3 and float8_e4m3fnuz.
 
         Returns:
             True if the type is a 8bit-precision float, false otherwise.
@@ -670,7 +670,7 @@ struct CDType(
 
         return self in (
             CDType.float8_e5m2,
-            CDType.float8_e4m3fn,
+            CDType.float8_e4m3,
             CDType.float8_e5m2fnuz,
             CDType.float8_e4m3fnuz,
         )
@@ -731,8 +731,8 @@ struct CDType(
             return 2 * sizeof[DType.float8_e5m2]()
         if self == CDType.float8_e5m2fnuz:
             return 2 * sizeof[DType.float8_e5m2fnuz]()
-        if self == CDType.float8_e4m3fn:
-            return 2 * sizeof[DType.float8_e4m3fn]()
+        if self == CDType.float8_e4m3:
+            return 2 * sizeof[DType.float8_e4m3]()
         if self == CDType.float8_e4m3fnuz:
             return 2 * sizeof[DType.float8_e4m3fnuz]()
         if self == CDType.bfloat16:

@@ -4100,8 +4100,15 @@ struct _NDAxisIter[
     dtype: DType,
     forward: Bool = True,
 ]():
+    # TODO:
+    # 1. Use `length` (`index`) instead of `size` (`offset`) for the
+    # length (counter) of the iterator.
+    # 2. Return a view instead of copy if possible (when Bufferable is supported).
+    # 3. Add an argument in `__init__()` to specify the starting offset or index.
     """
     An iterator yielding 1-d array by axis.
+    The yielded array is garanteed to be contiguous on memory,
+    and it is a view of the original array if possible.
 
     It can be used when a function reduces the dimension of the array by axis.
 

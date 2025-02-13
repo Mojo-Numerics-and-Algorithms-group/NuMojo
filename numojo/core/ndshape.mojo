@@ -356,7 +356,7 @@ struct NDArrayShape(Stringable, Writable):
         Returns:
             String representation of the shape of the array.
         """
-        return "numojo.Shape" + str(self)
+        return "numojo.Shape" + String(self)
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
@@ -368,14 +368,16 @@ struct NDArrayShape(Stringable, Writable):
         """
         var result: String = "("
         for i in range(self.ndim):
-            result += str(self._buf[i])
+            result += String(self._buf[i])
             if i < self.ndim - 1:
                 result += ","
         result += ")"
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
-        writer.write("Shape: " + str(self) + "  " + "ndim: " + str(self.ndim))
+        writer.write(
+            "Shape: " + String(self) + "  " + "ndim: " + String(self.ndim)
+        )
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) -> Bool:

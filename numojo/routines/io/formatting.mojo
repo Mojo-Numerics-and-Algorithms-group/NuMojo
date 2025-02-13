@@ -229,11 +229,11 @@ fn format_floating_scientific[
                 var result: String = " 0." + "0" * precision + "e+00"
                 return result.rjust(formatted_width)
 
-        var power: Int = int(mt.log10(abs(x)))
+        var power: Int = Int(mt.log10(abs(x)))
         if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
             power -= 1
         var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
-        var mantissa_without_sign_string = str(abs(mantissa))
+        var mantissa_without_sign_string = String(abs(mantissa))
 
         var result: String
         if x < 0:
@@ -308,10 +308,10 @@ fn format_floating_precision[
     var scaling_factor = 10**precision
     var rounded_value = round(value * scaling_factor) / scaling_factor
 
-    var integer_part = int(rounded_value)
+    var integer_part = Int(rounded_value)
     var fractional_part = abs(rounded_value - integer_part)
 
-    var result = str(integer_part)
+    var result = String(integer_part)
     if Scalar[dtype](0) > rounded_value > Scalar[dtype](-1):
         result = "-" + result
 
@@ -319,8 +319,8 @@ fn format_floating_precision[
         result += "."
         for _ in range(precision):
             fractional_part *= 10
-            var digit = int(fractional_part)
-            result += str(digit)
+            var digit = Int(fractional_part)
+            result += String(digit)
             fractional_part -= digit
 
     if sign and value > 0:
@@ -393,7 +393,7 @@ fn format_value[
                 value, print_options.precision, sign
             ).rjust(formatted_width)
     else:
-        var formatted = str(value)
+        var formatted = String(value)
         if sign and value > 0:
             formatted = "+" + formatted
         return formatted.rjust(formatted_width)
@@ -458,8 +458,8 @@ fn format_value[
         if value.re == 0 and value.im == 0:
             im_str = "+" + im_str
     else:
-        re_str = str(value.re)
-        im_str = str(value.im)
+        re_str = String(value.re)
+        im_str = String(value.im)
         if sign:
             if value.re >= 0:
                 re_str = "+" + re_str

@@ -710,7 +710,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         for i in range(len(index)):
-            self.store(int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
+            self.store(Int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
 
     fn __setitem__(
         mut self, mask: NDArray[DType.bool], val: NDArray[dtype]
@@ -1501,13 +1501,13 @@ struct NDArray[dtype: DType = DType.float64](
         Example:
         ```console
         > var A = NDArray[dtype](6, random=True)
-        > print(int(A))
+        > print(Int(A))
 
         Unhandled exception caught during execution: Only 0-D arrays or length-1 arrays can be converted to scalars
         mojo: error: execution exited with a non-zero result: 1
 
         > var B = NDArray[dtype](1, 1, random=True)
-        > print(int(B))
+        > print(Int(B))
         14
         ```
 
@@ -1516,7 +1516,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         """
         if (self.size == 1) or (self.ndim == 0):
-            return int(self._buf.ptr[])
+            return Int(self._buf.ptr[])
         else:
             raise Error(
                 "Error in `numojo.NDArray.__int__(self)`: \n"
@@ -1538,7 +1538,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         """
         if (self.size == 1) or (self.ndim == 0):
-            return float(self._buf.ptr[])
+            return Float64(self._buf.ptr[])
         else:
             raise Error(
                 "Error in `numojo.NDArray.__int__(self)`: \n"
@@ -2252,13 +2252,13 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:
         """
-        Enables str(array).
+        Enables String(array).
         """
         var res: String
         try:
             res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
         except e:
-            res = String("Cannot convert array to string.\n") + str(e)
+            res = String("Cannot convert array to string.\n") + String(e)
 
         return res
 
@@ -2266,7 +2266,7 @@ struct NDArray[dtype: DType = DType.float64](
         if self.ndim == 0:
             # For 0darray (numojo scalar), we can directly write the value
             writer.write(
-                str(self._buf.ptr[])
+                String(self._buf.ptr[])
                 + String("  (0darray[" + _concise_dtype_str(self.dtype) + "])")
             )
         else:
@@ -2274,22 +2274,22 @@ struct NDArray[dtype: DType = DType.float64](
                 writer.write(
                     self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
                     + "\n"
-                    + str(self.ndim)
+                    + String(self.ndim)
                     + "D-array  Shape"
-                    + str(self.shape)
+                    + String(self.shape)
                     + "  Strides"
-                    + str(self.strides)
+                    + String(self.strides)
                     + "  DType: "
                     + _concise_dtype_str(self.dtype)
                     + "  C-cont: "
-                    + str(self.flags.C_CONTIGUOUS)
+                    + String(self.flags.C_CONTIGUOUS)
                     + "  F-cont: "
-                    + str(self.flags.F_CONTIGUOUS)
+                    + String(self.flags.F_CONTIGUOUS)
                     + "  own data: "
-                    + str(self.flags.OWNDATA)
+                    + String(self.flags.OWNDATA)
                 )
             except e:
-                writer.write("Cannot convert array to string.\n" + str(e))
+                writer.write("Cannot convert array to string.\n" + String(e))
 
     fn __repr__(self) -> String:
         """
@@ -2316,14 +2316,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         try:
             result = (
-                str("numojo.array[")
+                String("numojo.array[")
                 + _concise_dtype_str(self.dtype)
-                + str('](\n"""\n')
+                + String('](\n"""\n')
                 + self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
                 + '\n"""\n)'
             )
         except e:
-            result = "Cannot convert array to string.\n" + str(e)
+            result = "Cannot convert array to string.\n" + String(e)
 
         return result
 
@@ -2452,7 +2452,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.ndim == 0:
             # For 0darray (numojo scalar), return the scalar value.
-            return str(self._buf.ptr[0])
+            return String(self._buf.ptr[0])
 
         var seperator = print_options.separator
         var padding = print_options.padding
@@ -2499,18 +2499,18 @@ struct NDArray[dtype: DType = DType.float64](
                 min_value,
                 abs(val),
             )
-        number_of_digits = int(log10(float(max_value))) + 1
-        number_of_digits_small_values = abs(int(log10(float(min_value)))) + 1
+        number_of_digits = Int(log10(Float64(max_value))) + 1
+        number_of_digits_small_values = abs(Int(log10(Float64(min_value)))) + 1
 
         if dtype.is_floating_point():
             formatted_width = (
                 print_options.precision
                 + 1
                 + number_of_digits
-                + int(negative_sign)
+                + Int(negative_sign)
             )
         else:
-            formatted_width = number_of_digits + int(negative_sign)
+            formatted_width = number_of_digits + Int(negative_sign)
 
         # If the number is not too wide,
         # or digits after decimal point is not many
@@ -2557,7 +2557,7 @@ struct NDArray[dtype: DType = DType.float64](
             result = result + "]"
             return result
         else:
-            var result: String = str("[")
+            var result: String = String("[")
             var number_of_items = self.shape[dimension]
             if number_of_items <= edge_items * 2:  # Print all items
                 for i in range(number_of_items):
@@ -2570,7 +2570,7 @@ struct NDArray[dtype: DType = DType.float64](
                     if i > 0:
                         result = (
                             result
-                            + str(" ") * (dimension + 1)
+                            + String(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
@@ -2590,7 +2590,7 @@ struct NDArray[dtype: DType = DType.float64](
                     if i > 0:
                         result = (
                             result
-                            + str(" ") * (dimension + 1)
+                            + String(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
@@ -2603,7 +2603,7 @@ struct NDArray[dtype: DType = DType.float64](
                 for i in range(number_of_items - edge_items, number_of_items):
                     result = (
                         result
-                        + str(" ") * (dimension + 1)
+                        + String(" ") * (dimension + 1)
                         + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),

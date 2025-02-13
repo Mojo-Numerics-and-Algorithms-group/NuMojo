@@ -260,7 +260,7 @@ struct ComplexSIMD[
         Returns:
             String: The string representation of the ComplexSIMD instance.
         """
-        return "ComplexSIMD[{}]({}, {})".format(str(dtype), self.re, self.im)
+        return "ComplexSIMD[{}]({}, {})".format(String(dtype), self.re, self.im)
 
     fn __getitem__(self, idx: Int) raises -> SIMD[dtype, size]:
         """

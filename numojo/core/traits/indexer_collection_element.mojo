@@ -1,4 +1,4 @@
-trait IndexerCollectionElement(Indexer, CollectionElement):
+trait IndexerCollectionElement(CollectionElement, Indexer):
     """The IndexerCollectionElement trait denotes a trait composition
     of the `Indexer` and `CollectionElement` traits.
 

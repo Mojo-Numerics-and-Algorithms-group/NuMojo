@@ -3996,9 +3996,156 @@ struct _NDArrayIter[
 
 
 @value
+struct _NDAxisIter[
+    is_mutable: Bool, //,
+    origin: Origin[is_mutable],
+    dtype: DType,
+    forward: Bool = True,
+]():
+    """
+    An iterator yielding 1-d array according to the axis.
+
+    It can be used when a function reduces the dimension of the array by axis.
+
+    Parameters:
+        is_mutable: Whether the iterator is mutable.
+        origin: The lifetime of the underlying NDArray data.
+        dtype: The data type of the item.
+        forward: The iteration direction. `False` is backwards.
+
+    Example:
+    ```
+    [[[ 0,  1,  2,  3],
+      [ 4,  5,  6,  7],
+      [ 8,  9, 10, 11]],
+     [[12, 13, 14, 15],
+      [16, 17, 18, 19],
+      [20, 21, 22, 23]]]
+    ```
+    The above array is of shape (2,3,3). Itering by `axis=0` returns:
+    ```
+    [0, 12], [1, 13], [2, 14], [3, 15]
+    [4, 16], [5, 17], [6, 18], [7, 19]
+    [8, 20], [9, 21], [10, 22], [11, 23]
+    ```
+    Itering by `axis=1` returns:
+    ```
+    [0, 4, 8], [1, 5, 9], [2, 6, 10], [3, 7, 11]
+    [12, 16, 20], [13, 17, 21], [14, 18, 22], [15, 19, 23]
+    ```
+    """
+
+    var ptr: UnsafePointer[Scalar[dtype]]
+    var axis: Int
+    var length: Int
+    var ndim: Int
+    var shape: NDArrayShape
+    var strides: NDArrayStrides
+    """Strides of array or view. It is not necessarily compatible with shape."""
+    var strides_by_axis: NDArrayStrides
+    """Strides by axis according to shape of view."""
+    var offset: Int
+    var size_of_res: Int
+    """Size of the result 1-d array."""
+
+    fn __init__(
+        out self,
+        ptr: UnsafePointer[Scalar[dtype]],
+        axis: Int,
+        length: Int,
+        ndim: Int,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
+    ) raises:
+        """
+        Initialize the iterator.
+
+        Args:
+            ptr: Pointer to the data buffer.
+            axis: Axis.
+            length: Length of the axis.
+            ndim: Number of dimensions.
+            shape: Shape of the array.
+            strides: Strides of array or view. It is not necessarily compatible with shape.
+        """
+        if axis < 0 or axis >= ndim:
+            raise Error("Axis must be in the range of [0, ndim).")
+
+        self.size_of_res = shape[axis]
+        self.offset = 0 if forward else length - self.size_of_res
+        self.ptr = ptr
+        self.axis = axis
+        self.length = length
+        self.ndim = ndim
+        self.shape = shape
+        self.strides = strides
+        self.strides_by_axis = NDArrayStrides(ndim=self.ndim, initialized=False)
+        var temp = 1
+        (self.strides_by_axis._buf + axis).init_pointee_copy(temp)
+        temp *= shape[axis]
+        for i in range(self.ndim - 1, -1, -1):
+            if i != axis:
+                (self.strides_by_axis._buf + i).init_pointee_copy(temp)
+                temp *= shape[i]
+
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.offset < self.length
+        else:
+            return self.offset > 0 - self.size_of_res
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return (self.length - self.offset) // self.size_of_res
+        else:
+            return self.offset // self.size_of_res + 1
+
+    fn __next__(mut self) raises -> NDArray[dtype]:
+        var res = NDArray[dtype](Shape(self.size_of_res))
+        var current_offset = self.offset
+
+        @parameter
+        if forward:
+            self.offset += self.size_of_res
+        else:
+            self.offset -= self.size_of_res
+
+        var remainder = current_offset
+        var item = Item(ndim=self.ndim, initialized=True)
+
+        for i in range(self.axis):
+            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+
+        for i in range(self.axis + 1, self.ndim):
+            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+
+        item[self.axis], remainder = divmod(
+            remainder, self.strides_by_axis[self.axis]
+        )
+
+        for j in range(self.size_of_res):
+            (res._buf.ptr + j).init_pointee_copy(
+                self.ptr[_get_offset(item, self.strides)]
+            )
+            item[self.axis] += 1
+
+        return res^
+
+
+@value
 struct _NDIter[
     is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType
 ]():
+    # TODO: Combine into `_NDAxisIter` with `axis=ndim-1`.
+    """
+    An iterator yielding the array elements according to the order.
+    """
+
     var ptr: UnsafePointer[Scalar[dtype]]
     var length: Int
     var ndim: Int

@@ -10,7 +10,7 @@ authors = [
     "sandstromviktor <>",
     "durnwalder <>"
 ]
-channels = ["https://conda.modular.com/max-nightly", "https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 license = "Apache-2.0"
 readme = "README.MD"
@@ -46,7 +46,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && magic run final && magic run doc_pages"
 
 [dependencies]
-max = "~=25.1"
+max = "=25.1"
 python = ">=3.11"
 numpy = ">=1.19"
 scipy = ">=1.14"

@@ -334,7 +334,7 @@ struct NDArrayStrides(Stringable):
         Returns:
             String representation of the strides of the array.
         """
-        return "numojo.Strides" + str(self)
+        return "numojo.Strides" + String(self)
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
@@ -346,14 +346,16 @@ struct NDArrayStrides(Stringable):
         """
         var result: String = "("
         for i in range(self.ndim):
-            result += str(self._buf[i])
+            result += String(self._buf[i])
             if i < self.ndim - 1:
                 result += ","
         result = result + ")"
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
-        writer.write("Strides: " + str(self) + "  " + "ndim: " + str(self.ndim))
+        writer.write(
+            "Strides: " + String(self) + "  " + "ndim: " + String(self.ndim)
+        )
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) -> Bool:

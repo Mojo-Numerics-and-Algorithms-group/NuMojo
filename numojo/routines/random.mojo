@@ -445,8 +445,8 @@ fn _int_rand_func[
     builtin_random.randint[dtype](
         ptr=result._buf.ptr,
         size=result.size,
-        low=int(min),
-        high=int(max),
+        low=Int(min),
+        high=Int(max),
     )
 
 

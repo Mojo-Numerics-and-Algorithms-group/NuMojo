@@ -13,7 +13,7 @@ from numojo.routines.creation import zeros, eye, full
 fn compute_householder[
     dtype: DType
 ](
-    inout H: Matrix[dtype], inout R: Matrix[dtype], row: Int, column: Int
+    mut H: Matrix[dtype], mut R: Matrix[dtype], row: Int, column: Int
 ) raises -> None:
     var sqrt2: SIMD[dtype, 1] = 1.4142135623730951
     var rRows = R.shape[0]
@@ -54,9 +54,9 @@ fn compute_householder[
 fn compute_qr[
     dtype: DType
 ](
-    inout H: Matrix[dtype],
+    mut H: Matrix[dtype],
     work_index: Int,
-    inout A: Matrix[dtype],
+    mut A: Matrix[dtype],
     row_start: Int,
     column_start: Int,
 ) raises -> None:

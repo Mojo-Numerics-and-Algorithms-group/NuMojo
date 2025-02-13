@@ -478,26 +478,26 @@ struct Matrix[dtype: DType = DType.float64](
 
     fn write_to[W: Writer](self, mut writer: W):
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
-            var result: String = str("[")
+            var result: String = String("[")
             var number_of_sep: Int = 1
             if self.shape[1] <= 6:
                 for j in range(self.shape[1]):
                     if j == self.shape[1] - 1:
                         number_of_sep = 0
-                    result += str(self[i, j]) + sep * number_of_sep
+                    result += String(self[i, j]) + sep * number_of_sep
             else:
                 for j in range(3):
-                    result += str(self[i, j]) + sep
-                result += str("...") + sep
+                    result += String(self[i, j]) + sep
+                result += String("...") + sep
                 for j in range(self.shape[1] - 3, self.shape[1]):
                     if j == self.shape[1] - 1:
                         number_of_sep = 0
-                    result += str(self[i, j]) + sep * number_of_sep
-            result += str("]")
+                    result += String(self[i, j]) + sep * number_of_sep
+            result += String("]")
             return result
 
-        var sep: String = str("\t")
-        var newline: String = str("\n ")
+        var sep: String = String("\t")
+        var newline: String = String("\n ")
         var number_of_newline: Int = 1
         var result: String = "["
 
@@ -512,32 +512,32 @@ struct Matrix[dtype: DType = DType.float64](
             else:
                 for i in range(3):
                     result += print_row(self, i, sep) + newline
-                result += str("...") + newline
+                result += String("...") + newline
                 for i in range(self.shape[0] - 3, self.shape[0]):
                     if i == self.shape[0] - 1:
                         number_of_newline = 0
                     result += (
                         print_row(self, i, sep) + newline * number_of_newline
                     )
-            result += str("]")
+            result += String("]")
             writer.write(
                 result
                 + "\nDType: "
-                + str(self.dtype)
+                + String(self.dtype)
                 + "  Shape: "
-                + str(self.shape[0])
+                + String(self.shape[0])
                 + "x"
-                + str(self.shape[1])
+                + String(self.shape[1])
                 + "  Strides: "
-                + str(self.strides[0])
+                + String(self.strides[0])
                 + ","
-                + str(self.strides[1])
+                + String(self.strides[1])
                 + "  C: "
-                + str(self.flags["C_CONTIGUOUS"])
+                + String(self.flags["C_CONTIGUOUS"])
                 + "  F: "
-                + str(self.flags["F_CONTIGUOUS"])
+                + String(self.flags["F_CONTIGUOUS"])
                 + "  Own: "
-                + str(self.flags["OWNDATA"])
+                + String(self.flags["OWNDATA"])
             )
         except e:
             print("Cannot transfer matrix to string!", e)
@@ -1428,16 +1428,20 @@ struct Matrix[dtype: DType = DType.float64](
 
         for i in range(len(bytes)):
             var b = bytes[i]
-            if isdigit(b) or (chr(int(b)) == ".") or (chr(int(b)) == "-"):
-                number_as_str = number_as_str + chr(int(b))
+            if (
+                chr(Int(b)).isdigit()
+                or (chr(Int(b)) == ".")
+                or (chr(Int(b)) == "-")
+            ):
+                number_as_str = number_as_str + chr(Int(b))
                 if i == len(bytes) - 1:  # Last byte
                     var number = atof(number_as_str).cast[dtype]()
                     data.append(number)  # Add the number to the data buffer
                     number_as_str = ""  # Clean the number cache
             if (
-                (chr(int(b)) == ",")
-                or (chr(int(b)) == "]")
-                or (chr(int(b)) == " ")
+                (chr(Int(b)) == ",")
+                or (chr(Int(b)) == "]")
+                or (chr(Int(b)) == " ")
             ):
                 if number_as_str != "":
                     var number = atof(number_as_str).cast[dtype]()

@@ -91,7 +91,7 @@ fn arange[
     (Overload) When start is 0 and step is 1.
     """
 
-    var size = int(stop)
+    var size = Int(stop)
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
         (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
@@ -159,8 +159,8 @@ fn arange[
     (Overload) When start is 0 and step is 1.
     """
 
-    var size_re = int(stop.re)
-    var size_im = int(stop.im)
+    var size_re = Int(stop.re)
+    var size_im = Int(stop.im)
     if size_re != size_im:
         raise Error(
             "Number of real and imaginary parts are not equal {} != {}".format(
@@ -2031,22 +2031,26 @@ fn fromstring[
     var number_as_str: String = ""
     for i in range(len(bytes)):
         var b = bytes[i]
-        if chr(int(b)) == "[":
+        if chr(Int(b)) == "[":
             level += 1
             ndim = max(ndim, level)
             if len(shape) < ndim:
                 shape.append(0)
             shape[level - 1] = 0
 
-        if isdigit(b) or (chr(int(b)) == ".") or (chr(int(b)) == "-"):
-            number_as_str = number_as_str + chr(int(b))
-        if (chr(int(b)) == ",") or (chr(int(b)) == "]"):
+        if (
+            chr(Int(b)).isdigit()
+            or (chr(Int(b)) == ".")
+            or (chr(Int(b)) == "-")
+        ):
+            number_as_str = number_as_str + chr(Int(b))
+        if (chr(Int(b)) == ",") or (chr(Int(b)) == "]"):
             if number_as_str != "":
                 var number = atof(number_as_str).cast[dtype]()
                 data.append(number)  # Add the number to the data buffer
                 number_as_str = ""  # Clean the number cache
                 shape[-1] = shape[-1] + 1
-        if chr(int(b)) == "]":
+        if chr(Int(b)) == "]":
             level = level - 1
             if level < 0:
                 raise ("Unmatched left and right brackets!")
@@ -2214,16 +2218,16 @@ fn array[
         An Array of given data, shape and order.
     """
 
-    var len = int(len(data.shape))
+    var len = Int(len(data.shape))
     var shape: List[Int] = List[Int]()
     for i in range(len):
-        if int(data.shape[i]) == 1:
+        if Int(data.shape[i]) == 1:
             continue
-        shape.append(int(data.shape[i]))
+        shape.append(Int(data.shape[i]))
     A = NDArray[dtype](NDArrayShape(shape), order=order)
     for i in range(A.size):
         (A._buf.ptr + i).init_pointee_copy(
-            float(data.item(PythonObject(i))).cast[dtype]()
+            Float64(data.item(PythonObject(i))).cast[dtype]()
         )
     return A
 

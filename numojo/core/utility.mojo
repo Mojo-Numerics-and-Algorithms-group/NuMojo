@@ -424,7 +424,6 @@ fn apply_func_on_array_without_dim_reduction[
     var res = NDArray[dtype](a.shape)
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
-        print("The memory layout is contiguous and the axis is the last one")
         # The memory layout is contiguous
         var offset = 0
         for elements in iterator:
@@ -439,17 +438,17 @@ fn apply_func_on_array_without_dim_reduction[
     else:
         # The memory layout is not contiguous
         for i in range(a.size // a.shape[axis]):
-            # The offsets of the input array in each iteration
-            var offsets: NDArray[DType.index]
+            # The indices of the input array in each iteration
+            var indices: NDArray[DType.index]
             # The elements of the input array in each iteration
             var elements: NDArray[dtype]
             # The array after applied the function
-            offsets, elements = iterator.ith(i)
+            indices, elements = iterator.ith(i)
 
             var res_along_axis: NDArray[dtype] = func[dtype](elements)
 
             for j in range(a.shape[axis]):
-                (res._buf.ptr + Int(offsets[j])).init_pointee_copy(
+                (res._buf.ptr + Int(indices[j])).init_pointee_copy(
                     (res_along_axis._buf.ptr + j)[]
                 )
 

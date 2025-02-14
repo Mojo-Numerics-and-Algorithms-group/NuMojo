@@ -4090,10 +4090,7 @@ struct _NDAxisIter[
     forward: Bool = True,
 ]():
     # TODO:
-    # - Use `length` (`index`) instead of `size` (`offset`) for the
-    #   length (counter) of the iterator.
     # - Return a view instead of copy if possible (when Bufferable is supported).
-    # - Add an argument in `__init__()` to specify the starting offset or index.
     """
     An iterator yielding 1-d array by axis.
     The yielded array is garanteed to be contiguous on memory,
@@ -4234,15 +4231,16 @@ struct _NDAxisIter[
         self, index: Int
     ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
         """
-        Gets the i-th item of the iterator, including the offsets and elements.
+        Gets the i-th 1-d array of the iterator and its indices
+        (C-order coordinates).
 
         Args:
             index: The index of the item. It must be non-negative.
 
         Returns:
-            Offsets and elements of the i-th item.
+            Coordinates and elements of the i-th 1-d array of the iterator.
         """
-        var offsets = NDArray[DType.index](Shape(self.size_of_res))
+        var indices = NDArray[DType.index](Shape(self.size_of_res))
         var elements = NDArray[dtype](Shape(self.size_of_res))
 
         if (index >= self.length) or (index < 0):
@@ -4263,14 +4261,17 @@ struct _NDAxisIter[
             remainder, self.strides_by_axis[self.axis]
         )
 
-        var offset = 0
+        var new_strides = NDArrayStrides(self.shape, order="C")
         for j in range(self.size_of_res):
-            offset = _get_offset(item, self.strides)
-            (offsets._buf.ptr + j).init_pointee_copy(offset)
-            (elements._buf.ptr + j).init_pointee_copy(self.ptr[offset])
+            (indices._buf.ptr + j).init_pointee_copy(
+                _get_offset(item, new_strides)
+            )
+            (elements._buf.ptr + j).init_pointee_copy(
+                self.ptr[_get_offset(item, self.strides)]
+            )
             item[self.axis] += 1
 
-        return Tuple(offsets, elements)
+        return Tuple(indices, elements)
 
 
 @value

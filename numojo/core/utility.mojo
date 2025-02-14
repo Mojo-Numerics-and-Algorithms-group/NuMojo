@@ -6,7 +6,7 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 # Last updated: 2024-10-14
 # ===----------------------------------------------------------------------=== #
 
-from algorithm.functional import vectorize
+from algorithm.functional import vectorize, parallelize
 from collections import Dict
 from memory import UnsafePointer, memcpy
 from python import Python, PythonObject
@@ -389,10 +389,20 @@ fn apply_func_on_array_with_dim_reduction[
     """
 
     var res = NDArray[returned_dtype](a.shape._pop(axis=axis))
-    var offset = 0
-    for i in a.iter_by_axis(axis=axis):
-        (res._buf.ptr + offset).init_pointee_copy(func[returned_dtype](i))
-        offset += 1
+    # The iterator along the axis
+    var iterator = a.iter_by_axis(axis=axis)
+
+    @parameter
+    fn parallelized_func(i: Int):
+        try:
+            (res._buf.ptr + i).init_pointee_copy(
+                func[returned_dtype](iterator.ith(i))
+            )
+        except e:
+            print("Error in parallelized_func", e)
+
+    parallelize[parallelized_func](a.size // a.shape[axis])
+
     return res^
 
 
@@ -424,33 +434,45 @@ fn apply_func_on_array_without_dim_reduction[
     var res = NDArray[dtype](a.shape)
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
-        # The memory layout is contiguous
-        var offset = 0
-        for elements in iterator:
-            var res_along_axis: NDArray[dtype] = func[dtype](elements)
-            memcpy(
-                res._buf.ptr + offset,
-                res_along_axis._buf.ptr,
-                res_along_axis.size,
-            )
-            offset += elements.size
+        # The memory layout is C-contiguous
+        var iterator = a.iter_by_axis(axis=axis)
+
+        @parameter
+        fn parallelized_func_c(i: Int):
+            try:
+                var elements: NDArray[dtype] = func[dtype](iterator.ith(i))
+                memcpy(
+                    res._buf.ptr + i * elements.size,
+                    elements._buf.ptr,
+                    elements.size,
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func_c](a.size // a.shape[axis])
 
     else:
         # The memory layout is not contiguous
-        for i in range(a.size // a.shape[axis]):
-            # The indices of the input array in each iteration
-            var indices: NDArray[DType.index]
-            # The elements of the input array in each iteration
-            var elements: NDArray[dtype]
-            # The array after applied the function
-            indices, elements = iterator.ith(i)
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                # The indices of the input array in each iteration
+                var indices: NDArray[DType.index]
+                # The elements of the input array in each iteration
+                var elements: NDArray[dtype]
+                # The array after applied the function
+                indices, elements = iterator.ith_with_indices(i)
 
-            var res_along_axis: NDArray[dtype] = func[dtype](elements)
+                var res_along_axis: NDArray[dtype] = func[dtype](elements)
 
-            for j in range(a.shape[axis]):
-                (res._buf.ptr + Int(indices[j])).init_pointee_copy(
-                    (res_along_axis._buf.ptr + j)[]
-                )
+                for j in range(a.shape[axis]):
+                    (res._buf.ptr + Int(indices[j])).init_pointee_copy(
+                        (res_along_axis._buf.ptr + j)[]
+                    )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
 
     return res^
 

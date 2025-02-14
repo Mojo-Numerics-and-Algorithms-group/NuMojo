@@ -4215,19 +4215,72 @@ struct _NDAxisIter[
             item[i], remainder = divmod(remainder, self.strides_by_axis[i])
         for i in range(self.axis + 1, self.ndim):
             item[i], remainder = divmod(remainder, self.strides_by_axis[i])
-        item[self.axis], remainder = divmod(
-            remainder, self.strides_by_axis[self.axis]
-        )
 
-        for j in range(self.size_of_res):
-            (res._buf.ptr + j).init_pointee_copy(
-                self.ptr[_get_offset(item, self.strides)]
+        if (self.axis == self.ndim - 1) & (
+            (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+        ):
+            # The memory layout is C-contiguous
+            memcpy(
+                res._buf.ptr,
+                self.ptr + _get_offset(item, self.strides),
+                self.size_of_res,
             )
-            item[self.axis] += 1
+
+        else:
+            for j in range(self.size_of_res):
+                (res._buf.ptr + j).init_pointee_copy(
+                    self.ptr[_get_offset(item, self.strides)]
+                )
+                item[self.axis] += 1
 
         return res^
 
-    fn ith(
+    fn ith(self, index: Int) raises -> NDArray[dtype]:
+        """
+        Gets the i-th 1-d array of the iterator.
+
+        Args:
+            index: The index of the item. It must be non-negative.
+
+        Returns:
+            Coordinates and elements of the i-th 1-d array of the iterator.
+        """
+        var elements = NDArray[dtype](Shape(self.size_of_res))
+
+        if (index >= self.length) or (index < 0):
+            raise Error(
+                String(
+                    "\nError in `NDAxisIter.ith()`: "
+                    "Index ({}) must be in the range of [0, {})"
+                ).format(index, self.length)
+            )
+
+        var remainder = index * self.size_of_res
+        var item = Item(ndim=self.ndim, initialized=True)
+        for i in range(self.axis):
+            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+        for i in range(self.axis + 1, self.ndim):
+            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+
+        if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
+            (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+        ):
+            # The memory layout is C-contiguous or F-contiguous
+            memcpy(
+                elements._buf.ptr,
+                self.ptr + _get_offset(item, self.strides),
+                self.size_of_res,
+            )
+        else:
+            for j in range(self.size_of_res):
+                (elements._buf.ptr + j).init_pointee_copy(
+                    self.ptr[_get_offset(item, self.strides)]
+                )
+                item[self.axis] += 1
+
+        return elements
+
+    fn ith_with_indices(
         self, index: Int
     ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
         """
@@ -4257,9 +4310,6 @@ struct _NDAxisIter[
             item[i], remainder = divmod(remainder, self.strides_by_axis[i])
         for i in range(self.axis + 1, self.ndim):
             item[i], remainder = divmod(remainder, self.strides_by_axis[i])
-        item[self.axis], remainder = divmod(
-            remainder, self.strides_by_axis[self.axis]
-        )
 
         var new_strides = NDArrayStrides(self.shape, order="C")
         for j in range(self.size_of_res):

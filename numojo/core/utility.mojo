@@ -152,6 +152,26 @@ fn _get_offset(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
     return indices[0] * strides[0] + indices[1] * strides[1]
 
 
+fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
+    """
+    Transfers the offset between C-contiguous and F-continuous memory layout.
+
+    Args:
+        offset: The offset of the array.
+        strides: The strides of the array.
+
+    Returns:
+        The offset of the array of a different memory layout.
+    """
+
+    var remainder = offset
+    var indices = Item(ndim=len(strides), initialized=False)
+    for i in range(len(strides)):
+        indices[i], remainder = divmod(remainder, strides[i])
+
+    return _get_offset(indices, strides._flip())
+
+
 # ===----------------------------------------------------------------------=== #
 # Functions to traverse a multi-dimensional array
 # ===----------------------------------------------------------------------=== #
@@ -315,8 +335,25 @@ fn _traverse_iterative_setter[
 
 fn apply_func_on_array_with_dim_reduction[
     dtype: DType,
-    func: fn[dtype_func: DType] (NDArray[dtype_func]) -> Scalar[dtype_func],
+    func: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
+        dtype_func
+    ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Applies a function to a NDArray by axis and reduce that dimension.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+
     var res = NDArray[dtype](a.shape._pop(axis=axis))
     var offset = 0
     for i in a.iter_by_axis(axis=axis):
@@ -332,11 +369,90 @@ fn apply_func_on_array_with_dim_reduction[
         NDArray[dtype_func]
     ) raises -> Scalar[returned_dtype_func],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
+    """
+    Applies a function to a NDArray by axis and reduce that dimension.
+    The target data type of the returned NDArray is different from the input
+    NDArray.
+    This is a function overload.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        returned_dtype: The data type of the output NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+
     var res = NDArray[returned_dtype](a.shape._pop(axis=axis))
     var offset = 0
     for i in a.iter_by_axis(axis=axis):
         (res._buf.ptr + offset).init_pointee_copy(func[returned_dtype](i))
         offset += 1
+    return res^
+
+
+fn apply_func_on_array_without_dim_reduction[
+    dtype: DType,
+    func: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
+        dtype_func
+    ],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Applies a function to a NDArray by axis without reducing that dimension.
+    The resulting array will have the same shape as the input array.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_by_axis(axis=axis)
+    # The final output array will have the same shape as the input array
+    var res = NDArray[dtype](a.shape)
+
+    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+        print("The memory layout is contiguous and the axis is the last one")
+        # The memory layout is contiguous
+        var offset = 0
+        for elements in iterator:
+            var res_along_axis: NDArray[dtype] = func[dtype](elements)
+            memcpy(
+                res._buf.ptr + offset,
+                res_along_axis._buf.ptr,
+                res_along_axis.size,
+            )
+            offset += elements.size
+
+    else:
+        # The memory layout is not contiguous
+        for i in range(a.size // a.shape[axis]):
+            # The offsets of the input array in each iteration
+            var offsets: NDArray[DType.index]
+            # The elements of the input array in each iteration
+            var elements: NDArray[dtype]
+            # The array after applied the function
+            offsets, elements = iterator.ith(i)
+
+            var res_along_axis: NDArray[dtype] = func[dtype](elements)
+
+            for j in range(a.shape[axis]):
+                (res._buf.ptr + Int(offsets[j])).init_pointee_copy(
+                    (res_along_axis._buf.ptr + j)[]
+                )
+
     return res^
 
 

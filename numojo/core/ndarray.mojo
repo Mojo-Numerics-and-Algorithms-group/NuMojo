@@ -30,6 +30,7 @@ from numojo.core.ndstrides import NDArrayStrides
 from numojo.core.own_data import OwnData
 from numojo.core.utility import (
     _get_offset,
+    _transfer_offset,
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
@@ -3294,19 +3295,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         if self.flags.F_CONTIGUOUS:
-            # column-major should be converted to row-major
-            # The following code can be taken out as a function that
-            # convert any index to coordinates according to the order
-            var c_stride = NDArrayStrides(shape=self.shape)
-            var c_coordinates = List[Int]()
-            var idx: Int = index
-            for i in range(c_stride.ndim):
-                var coordinate = idx // c_stride[i]
-                idx = idx - c_stride[i] * coordinate
-                c_coordinates.append(coordinate)
-
-            # Get the value by coordinates and the strides
-            return (self._buf.ptr + _get_offset(c_coordinates, self.strides))[]
+            return (self._buf.ptr + _transfer_offset(index, self.strides))[]
 
         else:
             return (self._buf.ptr + index)[]

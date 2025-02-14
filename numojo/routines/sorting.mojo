@@ -289,7 +289,34 @@ fn _sort_inplace[
         I = transpose(I, axes=transposed_axes)
 
 
-fn sort[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
+fn sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Sort 1-d array using quick sort method.
+    It is not guaranteed to be unstable.
+
+    Raises:
+        Error: If the input array is not 1-d.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: An 1-d array.
+    """
+
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
+            ).format(a.ndim)
+        )
+    res = a
+    var _I = NDArray[DType.index](a.shape)
+    _sort_inplace(res, _I, axis=0)
+    return res^
+
+
+fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Sort NDArray using quick sort method.
     It is not guaranteed to be unstable.
@@ -300,13 +327,13 @@ fn sort[dtype: DType](owned A: NDArray[dtype]) raises -> NDArray[dtype]:
         dtype: The input element type.
 
     Args:
-        A: NDArray.
+        a: NDArray.
     """
 
-    A = ravel(A)
-    var _I = NDArray[DType.index](A.shape)
-    _sort_inplace(A, _I, axis=0)
-    return A^
+    var res = ravel(a)
+    var _I = NDArray[DType.index](a.shape)
+    _sort_inplace(res, _I, axis=0)
+    return res^
 
 
 fn sort[

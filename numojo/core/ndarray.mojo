@@ -4101,10 +4101,10 @@ struct _NDAxisIter[
     forward: Bool = True,
 ]():
     # TODO:
-    # 1. Use `length` (`index`) instead of `size` (`offset`) for the
-    # length (counter) of the iterator.
-    # 2. Return a view instead of copy if possible (when Bufferable is supported).
-    # 3. Add an argument in `__init__()` to specify the starting offset or index.
+    # - Use `length` (`index`) instead of `size` (`offset`) for the
+    #   length (counter) of the iterator.
+    # - Return a view instead of copy if possible (when Bufferable is supported).
+    # - Add an argument in `__init__()` to specify the starting offset or index.
     """
     An iterator yielding 1-d array by axis.
     The yielded array is garanteed to be contiguous on memory,
@@ -4142,6 +4142,7 @@ struct _NDAxisIter[
 
     var ptr: UnsafePointer[Scalar[dtype]]
     var axis: Int
+    var length: Int
     var size: Int
     var ndim: Int
     var shape: NDArrayShape
@@ -4149,7 +4150,8 @@ struct _NDAxisIter[
     """Strides of array or view. It is not necessarily compatible with shape."""
     var strides_by_axis: NDArrayStrides
     """Strides by axis according to shape of view."""
-    var offset: Int
+    var index: Int
+    """Status counter."""
     var size_of_res: Int
     """Size of the result 1-d array."""
 
@@ -4177,9 +4179,9 @@ struct _NDAxisIter[
             raise Error("Axis must be in the range of [0, ndim).")
 
         self.size_of_res = shape[axis]
-        self.offset = 0 if forward else size - self.size_of_res
         self.ptr = ptr
         self.axis = axis
+        self.length = size // self.size_of_res
         self.size = size
         self.ndim = ndim
         self.shape = shape
@@ -4192,13 +4194,14 @@ struct _NDAxisIter[
             if i != axis:
                 (self.strides_by_axis._buf + i).init_pointee_copy(temp)
                 temp *= shape[i]
+        self.index = 0 if forward else self.length - 1
 
     fn __has_next__(self) -> Bool:
         @parameter
         if forward:
-            return self.offset < self.size
+            return self.index < self.length
         else:
-            return self.offset > 0 - self.size_of_res
+            return self.index >= 0
 
     fn __iter__(self) -> Self:
         return self
@@ -4206,29 +4209,26 @@ struct _NDAxisIter[
     fn __len__(self) -> Int:
         @parameter
         if forward:
-            return (self.size - self.offset) // self.size_of_res
+            return self.length - self.index
         else:
-            return self.offset // self.size_of_res + 1
+            return self.index
 
     fn __next__(mut self) raises -> NDArray[dtype]:
         var res = NDArray[dtype](Shape(self.size_of_res))
-        var current_offset = self.offset
+        var current_index = self.index
 
         @parameter
         if forward:
-            self.offset += self.size_of_res
+            self.index += 1
         else:
-            self.offset -= self.size_of_res
+            self.index -= 1
 
-        var remainder = current_offset
+        var remainder = current_index * self.size_of_res
         var item = Item(ndim=self.ndim, initialized=True)
-
         for i in range(self.axis):
             item[i], remainder = divmod(remainder, self.strides_by_axis[i])
-
         for i in range(self.axis + 1, self.ndim):
             item[i], remainder = divmod(remainder, self.strides_by_axis[i])
-
         item[self.axis], remainder = divmod(
             remainder, self.strides_by_axis[self.axis]
         )
@@ -4240,6 +4240,48 @@ struct _NDAxisIter[
             item[self.axis] += 1
 
         return res^
+
+    fn ith(
+        self, index: Int
+    ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
+        """
+        Gets the i-th item of the iterator, including the offsets and elements.
+
+        Args:
+            index: The index of the item. It must be non-negative.
+
+        Returns:
+            Offsets and elements of the i-th item.
+        """
+        var offsets = NDArray[DType.index](Shape(self.size_of_res))
+        var elements = NDArray[dtype](Shape(self.size_of_res))
+
+        if (index >= self.length) or (index < 0):
+            raise Error(
+                String(
+                    "\nError in `NDAxisIter.ith()`: "
+                    "Index ({}) must be in the range of [0, {})"
+                ).format(index, self.length)
+            )
+
+        var remainder = index * self.size_of_res
+        var item = Item(ndim=self.ndim, initialized=True)
+        for i in range(self.axis):
+            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+        for i in range(self.axis + 1, self.ndim):
+            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+        item[self.axis], remainder = divmod(
+            remainder, self.strides_by_axis[self.axis]
+        )
+
+        var offset = 0
+        for j in range(self.size_of_res):
+            offset = _get_offset(item, self.strides)
+            (offsets._buf.ptr + j).init_pointee_copy(offset)
+            (elements._buf.ptr + j).init_pointee_copy(self.ptr[offset])
+            item[self.axis] += 1
+
+        return Tuple(offsets, elements)
 
 
 @value

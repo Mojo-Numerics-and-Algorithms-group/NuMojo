@@ -4246,7 +4246,6 @@ struct _NDAxisIter[
 struct _NDIter[
     is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType
 ]():
-    # TODO: Combine into `_NDAxisIter` with `axis=ndim-1`.
     """
     An iterator yielding the array elements according to the order.
     """

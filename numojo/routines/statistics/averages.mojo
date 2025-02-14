@@ -26,6 +26,26 @@ import numojo.routines.math.misc as misc
 from numojo.routines.sorting import sort
 
 
+fn mean_1d[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+    """
+    Calculate the arithmetic average of all items in the array.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        a: NDArray.
+
+    Returns:
+        A scalar defaulting to float64.
+
+    """
+    return sum(a).cast[returned_dtype]() / a.size
+
+
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:

@@ -309,6 +309,38 @@ fn _traverse_iterative_setter[
 
 
 # ===----------------------------------------------------------------------=== #
+# Apply a function to NDArray by axis
+# ===----------------------------------------------------------------------=== #
+
+
+fn apply_func_on_array_with_dim_reduction[
+    dtype: DType,
+    func: fn[dtype_func: DType] (NDArray[dtype_func]) -> Scalar[dtype_func],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    var res = NDArray[dtype](a.shape._pop(axis=axis))
+    var offset = 0
+    for i in a.iter_by_axis(axis=axis):
+        (res._buf.ptr + offset).init_pointee_copy(func[dtype](i))
+        offset += 1
+    return res^
+
+
+fn apply_func_on_array_with_dim_reduction[
+    dtype: DType, //,
+    returned_dtype: DType,
+    func: fn[dtype_func: DType, //, returned_dtype_func: DType] (
+        NDArray[dtype_func]
+    ) raises -> Scalar[returned_dtype_func],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
+    var res = NDArray[returned_dtype](a.shape._pop(axis=axis))
+    var offset = 0
+    for i in a.iter_by_axis(axis=axis):
+        (res._buf.ptr + offset).init_pointee_copy(func[returned_dtype](i))
+        offset += 1
+    return res^
+
+
+# ===----------------------------------------------------------------------=== #
 # NDArray conversions
 # ===----------------------------------------------------------------------=== #
 fn bool_to_numeric[

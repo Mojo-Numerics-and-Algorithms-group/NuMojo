@@ -10,6 +10,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
+import numojo.core.utility as utility
 from numojo.routines.manipulation import ravel, transpose
 
 """
@@ -330,15 +331,15 @@ fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
         a: NDArray.
     """
 
-    var res = ravel(a)
-    var _I = NDArray[DType.index](a.shape)
-    _sort_inplace(res, _I, axis=0)
-    return res^
+    if a.ndim == 1:
+        return sort_1d(a)
+    else:
+        return sort_1d(ravel(a))
 
 
 fn sort[
     dtype: DType
-](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](owned a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Sort NDArray along the given axis using quick sort method.
     It is not guaranteed to be unstable.
@@ -349,14 +350,24 @@ fn sort[
         dtype: The input element type.
 
     Args:
-        A: NDArray to sort.
+        a: NDArray to sort.
         axis: The axis along which the array is sorted.
 
     """
 
-    var _I = NDArray[DType.index](A.shape)
-    _sort_inplace(A, _I, axis)
-    return A^
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
+        )
+
+    return utility.apply_func_on_array_without_dim_reduction[func=sort_1d](
+        a, axis=normalized_axis
+    )
 
 
 fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:

@@ -60,14 +60,14 @@ from numojo.routines.statistics.averages import mean
 #
 # TODO: Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
 #       matmul it into IxJx..xKxMx...xNxP array.
-# TODO: Add vectorization for _get_offset.
+# TODO: Consider whether we should add vectorization for _get_offset.
 # TODO: Create NDArrayView that points to the buffer of the raw array.
 #       This requires enhancement of functionalities of traits from Mojo's side.
 #       The data buffer can implement an ArrayData trait (RawData or RefData)
 #       RawData type is just a wrapper of `UnsafePointer`.
 #       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
 # TODO: Rename some variables or methods that should not be exposed to users.
-# TODO: Remove 0-d array. Raise errors if operations result in 0-d array.
+# TODO: Special checks for 0d array (numojo scalar).
 # ===----------------------------------------------------------------------===#
 
 
@@ -3641,6 +3641,17 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn mean[
         returned_dtype: DType = DType.float64
+    ](self) raises -> Scalar[returned_dtype]:
+        """
+        Mean of a array.
+
+        Returns:
+            The mean of the array.
+        """
+        return mean[returned_dtype](self)
+
+    fn mean[
+        returned_dtype: DType = DType.float64
     ](self: Self, axis: Int) raises -> NDArray[returned_dtype]:
         """
         Mean of array elements over a given axis.
@@ -3654,14 +3665,31 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return mean[returned_dtype](self, axis)
 
-    fn mean(self) raises -> Scalar[dtype]:
+    fn median[
+        returned_dtype: DType = DType.float64
+    ](self) raises -> Scalar[returned_dtype]:
         """
-        Mean of a array.
+        Median of a array.
 
         Returns:
-            The mean of the array as a SIMD Value of `dtype`.
+            The median of the array.
         """
-        return mean[dtype](self)
+        return median[returned_dtype](self)
+
+    fn median[
+        returned_dtype: DType = DType.float64
+    ](self: Self, axis: Int) raises -> NDArray[returned_dtype]:
+        """
+        Median of array elements over a given axis.
+
+        Args:
+            axis: The axis along which the median is performed.
+
+        Returns:
+            An NDArray.
+
+        """
+        return median[returned_dtype](self, axis)
 
     # fn nonzero(self):
     #     pass

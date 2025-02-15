@@ -29,8 +29,8 @@ magic.lock
 mojo
 numojo.mojopkg
 bench.mojo
-test_ndarray.ipynb
-test.mojo
+test*.mojo
+test*.ipynb
 tempCodeRunnerFile.mojo
 
 # Auto docs

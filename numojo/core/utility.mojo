@@ -331,6 +331,9 @@ fn apply_func_on_array_with_dim_reduction[
     """
     Applies a function to a NDArray by axis and reduce that dimension.
 
+    Raises:
+        Error when the array is 1-d.
+
     Parameters:
         dtype: The data type of the input NDArray elements.
         func: The function to apply to the NDArray.
@@ -342,6 +345,9 @@ fn apply_func_on_array_with_dim_reduction[
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
     """
+
+    if a.ndim == 1:
+        raise Error("\n`axis` argument is not allowed for 1-d array.")
 
     var res = NDArray[dtype](a.shape._pop(axis=axis))
     var offset = 0
@@ -364,6 +370,9 @@ fn apply_func_on_array_with_dim_reduction[
     NDArray.
     This is a function overload.
 
+    Raises:
+        Error when the array is 1-d.
+
     Parameters:
         dtype: The data type of the input NDArray elements.
         returned_dtype: The data type of the output NDArray elements.
@@ -376,6 +385,8 @@ fn apply_func_on_array_with_dim_reduction[
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
     """
+    if a.ndim == 1:
+        raise Error("\n`axis` argument is not allowed for 1-d array.")
 
     var res = NDArray[returned_dtype](a.shape._pop(axis=axis))
     # The iterator along the axis
@@ -453,6 +464,81 @@ fn apply_func_on_array_without_dim_reduction[
                 indices, elements = iterator.ith_with_indices(i)
 
                 var res_along_axis: NDArray[dtype] = func[dtype](elements)
+
+                for j in range(a.shape[axis]):
+                    (res._buf.ptr + Int(indices[j])).init_pointee_copy(
+                        (res_along_axis._buf.ptr + j)[]
+                    )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return res^
+
+
+fn apply_func_on_array_without_dim_reduction[
+    dtype: DType,
+    func: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
+        DType.index
+    ],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+    """
+    Applies a function to a NDArray by axis without reducing that dimension.
+    The resulting array will have the same shape as the input array.
+    The resulting array is an index array.
+    It can be used for, e.g., argsort.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The index array with the function applied to the input array by axis.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_by_axis(axis=axis)
+    # The final output array will have the same shape as the input array
+    var res = NDArray[DType.index](a.shape)
+
+    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+        # The memory layout is C-contiguous
+        var iterator = a.iter_by_axis(axis=axis)
+
+        @parameter
+        fn parallelized_func_c(i: Int):
+            try:
+                var elements: NDArray[DType.index] = func[dtype](
+                    iterator.ith(i)
+                )
+                memcpy(
+                    res._buf.ptr + i * elements.size,
+                    elements._buf.ptr,
+                    elements.size,
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func_c](a.size // a.shape[axis])
+
+    else:
+        # The memory layout is not contiguous
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                # The indices of the input array in each iteration
+                var indices: NDArray[DType.index]
+                # The elements of the input array in each iteration
+                var elements: NDArray[dtype]
+                # The array after applied the function
+                indices, elements = iterator.ith_with_indices(i)
+
+                var res_along_axis: NDArray[DType.index] = func[dtype](elements)
 
                 for j in range(a.shape[axis]):
                     (res._buf.ptr + Int(indices[j])).init_pointee_copy(

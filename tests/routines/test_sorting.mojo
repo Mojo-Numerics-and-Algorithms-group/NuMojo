@@ -9,6 +9,7 @@ fn test_sorting() raises:
     var B = nm.random.randn(2, 3)
     var C = nm.random.randn(2, 3, 4)
     var S = nm.random.randn(3, 3, 3, 3, 3, 3)  # 6d array
+    var Sf = S.reshape(S.shape, order="F")  # 6d array F order
 
     # Sort
     check(
@@ -59,9 +60,25 @@ fn test_sorting() raises:
             np.argsort(C.to_numpy(), axis=i),
             String("`argsort` 3d by axis {} is broken").format(i),
         )
+    check(
+        nm.argsort(S),
+        np.argsort(S.to_numpy(), axis=None),
+        String("`argsort` 6d by axis None is broken"),
+    )
     for i in range(6):
         check(
             nm.argsort(S, axis=i),
             np.argsort(S.to_numpy(), axis=i),
             String("`argsort` 6d by axis {} is broken").format(i),
+        )
+    check(
+        nm.argsort(Sf),
+        np.argsort(Sf.to_numpy(), axis=None),
+        String("`argsort` 6d F-order array by axis None is broken"),
+    )
+    for i in range(6):
+        check(
+            nm.argsort(Sf, axis=i),
+            np.argsort(Sf.to_numpy(), axis=i),
+            String("`argsort` 6d F-order by axis {} is broken").format(i),
         )

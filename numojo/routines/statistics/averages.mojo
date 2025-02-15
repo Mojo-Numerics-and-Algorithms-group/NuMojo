@@ -30,10 +30,8 @@ fn mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
     """
-    Calculate the arithmetic average of all items in the 1-d array.
-
-    Raises:
-        Error: If the array is not 1-d.
+    Calculate the arithmetic average of all items in an array.
+    Regardless of the shape of input, it is treated as a 1-d array.
 
     Parameters:
         dtype: The element type.
@@ -45,12 +43,6 @@ fn mean_1d[
     Returns:
         A scalar defaulting to float64.
     """
-    if a.ndim != 1:
-        raise Error(
-            String(
-                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
-            ).format(a.ndim)
-        )
 
     return sum(a).cast[returned_dtype]() / a.size
 
@@ -70,9 +62,8 @@ fn mean[
 
     Returns:
         A scalar defaulting to float64.
-
     """
-    return sum(a).cast[returned_dtype]() / a.size
+    return mean_1d[returned_dtype](a)
 
 
 fn mean[
@@ -158,7 +149,8 @@ fn median_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
     """
-    Median value of all items of a 1-d array.
+    Median value of all items an array.
+    Regardless of the shape of input, it is treated as a 1-d array.
 
     Parameters:
          dtype: The element type.
@@ -170,13 +162,6 @@ fn median_1d[
     Returns:
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
-
-    if a.ndim != 1:
-        raise Error(
-            String(
-                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
-            ).format(a.ndim)
-        )
 
     var sorted_array = sort(a)
 
@@ -205,7 +190,7 @@ fn median[
         The median of all of the member values of array as a SIMD Value of `dtype`.
     """
 
-    return median_1d[returned_dtype](ravel(a))
+    return median_1d[returned_dtype](a)
 
 
 fn median[
@@ -240,10 +225,9 @@ fn median[
 
 
 fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
-    """Mode of all items of a 1d array.
-
-    Raises:
-        Error: If the array is not 1-d.
+    """
+    Returns mode of all items of an array.
+    Regardless of the shape of input, it is treated as a 1-d array.
 
     Parameters:
         dtype: The element type.
@@ -254,13 +238,6 @@ fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     Returns:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
-
-    if a.ndim != 1:
-        raise Error(
-            String(
-                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
-            ).format(a.ndim)
-        )
 
     var sorted_array: NDArray[dtype] = sort(a)
     var max_count = 0

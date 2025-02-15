@@ -1,9 +1,22 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 """
 # ===----------------------------------------------------------------------=== #
-# Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-# Last updated: 2024-10-14
+# SECTIONS OF THE FILE:
+#
+# 1. Offset and traverse functions.
+# 2. Functions to traverse a multi-dimensional array.
+# 3. Apply a function to NDArray by axis.
+# 4. NDArray dtype conversions.
+# 5. Numojo.NDArray to other collections.
+# 6. Type checking functions.
+# 7. Miscellaneous utility functions.
 # ===----------------------------------------------------------------------=== #
 
 from algorithm.functional import vectorize, parallelize
@@ -18,36 +31,8 @@ from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 
-
-# FIXME: No long useful from 24.6:
-# `width` is now inferred from the SIMD's width.
-fn fill_pointer[
-    dtype: DType
-](
-    mut array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
-) raises:
-    """
-    Fill a NDArray with a specific value.
-
-    Parameters:
-        dtype: The data type of the NDArray elements.
-
-    Args:
-        array: The pointer to the NDArray.
-        size: The size of the NDArray.
-        value: The value to fill the NDArray with.
-    """
-    alias width = simdwidthof[dtype]()
-
-    @parameter
-    fn vectorized_fill[simd_width: Int](idx: Int):
-        array.store(idx, value)
-
-    vectorize[vectorized_fill, width](size)
-
-
 # ===----------------------------------------------------------------------=== #
-# GET OFFSET FUNCTIONS FOR NDARRAY
+# Offset and traverse functions
 # ===----------------------------------------------------------------------=== #
 
 
@@ -154,14 +139,18 @@ fn _get_offset(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
 
 fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
     """
-    Transfers the offset between C-contiguous and F-continuous memory layout.
+    Transfers the offset by flipping the strides information.
+    It can be used to transfer between C-contiguous and F-continuous memory
+    layout. For example, in a 4x4 C-contiguous array, the item with offset 4
+    has the indices (1, 0). The item with the same indices (1, 0) in a
+    F-continuous array has an offset of 1.
 
     Args:
-        offset: The offset of the array.
+        offset: The offset in memory of an element of array.
         strides: The strides of the array.
 
     Returns:
-        The offset of the array of a different memory layout.
+        The offset of the array of a flipped memory layout.
     """
 
     var remainder = offset
@@ -478,8 +467,10 @@ fn apply_func_on_array_without_dim_reduction[
 
 
 # ===----------------------------------------------------------------------=== #
-# NDArray conversions
+# NDArray dtype conversions
 # ===----------------------------------------------------------------------=== #
+
+
 fn bool_to_numeric[
     dtype: DType
 ](array: NDArray[DType.bool]) raises -> NDArray[dtype]:
@@ -506,6 +497,9 @@ fn bool_to_numeric[
     return res
 
 
+# ===----------------------------------------------------------------------=== #
+# Numojo.NDArray to other collections
+# ===----------------------------------------------------------------------=== #
 fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     """
     Convert a NDArray to a numpy array.
@@ -598,6 +592,8 @@ fn to_tensor[dtype: DType](a: NDArray[dtype]) raises -> Tensor[dtype]:
 # ===----------------------------------------------------------------------=== #
 # Type checking functions
 # ===----------------------------------------------------------------------=== #
+
+
 @parameter
 fn is_inttype[dtype: DType]() -> Bool:
     """
@@ -713,6 +709,11 @@ fn is_booltype(dtype: DType) -> Bool:
     if dtype == DType.bool:
         return True
     return False
+
+
+# ===----------------------------------------------------------------------=== #
+# Miscellaneous utility functions
+# ===----------------------------------------------------------------------=== #
 
 
 fn _list_of_range(n: Int) -> List[Int]:

@@ -8,7 +8,14 @@
 Sorting.
 """
 # ===----------------------------------------------------------------------=== #
-# Sorting
+# SECTIONS OF THIS FILE:
+# 1. `sort` and `argsort` functions exposed to users.
+# 2. Backend multiple sorting methods that can be used in `sort`.
+#     - Binary sort.
+#     - Bubble sort.
+#     - Quick sort (instable).
+#
+# TODO: Add more sorting algorithms.
 # ===----------------------------------------------------------------------=== #
 
 
@@ -22,11 +29,232 @@ from numojo.core.matrix import Matrix
 import numojo.core.utility as utility
 from numojo.routines.manipulation import ravel, transpose
 
-"""
-TODO:
-1) Add more sorting algorithms.
-2) Add axis.
-"""
+
+# ===----------------------------------------------------------------------=== #
+# Sorting functions exposed to users
+# ===----------------------------------------------------------------------=== #
+
+
+fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Sort NDArray using quick sort method.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: NDArray.
+    """
+
+    if a.ndim == 1:
+        return quick_sort_1d(a)
+    else:
+        return quick_sort_1d(ravel(a))
+
+
+fn sort[
+    dtype: DType
+](owned a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Sort NDArray along the given axis using quick sort method.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: NDArray to sort.
+        axis: The axis along which the array is sorted.
+
+    """
+
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
+        )
+
+    return utility.apply_func_on_array_without_dim_reduction[
+        func=quick_sort_1d
+    ](a, axis=normalized_axis)
+
+
+fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+    """
+    Sort the Matrix. It is first flattened before sorting.
+    """
+    var I = Matrix.zeros[DType.index](shape=A.shape)
+    var B = A.flatten()
+    _sort_inplace(B, I, 0, A.size - 1)
+
+    return B^
+
+
+fn sort[
+    dtype: DType
+](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+    """
+    Sort the Matrix along the given axis.
+    """
+    if axis == 1:
+        var I = Matrix.zeros[DType.index](shape=A.shape)
+        for i in range(A.shape[0]):
+            _sort_inplace(
+                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
+            )
+        return A^
+    elif axis == 0:
+        return transpose(sort(transpose(A), axis=1))
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
+fn argsort[
+    dtype: DType
+](owned A: NDArray[dtype]) raises -> NDArray[DType.index]:
+    """
+    Returns the indices that would sort an array.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        A: NDArray.
+
+    Returns:
+        Indices that would sort an array.
+    """
+
+    A = ravel(A)
+    var I = NDArray[DType.index](A.shape)
+    _sort_inplace(A, I, axis=0)
+    return I^
+
+
+fn argsort[
+    dtype: DType
+](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[DType.index]:
+    """
+    Returns the indices that would sort an array.
+    It is not guaranteed to be unstable.
+
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        A: NDArray to sort.
+        axis: The axis along which the array is sorted.
+
+    Returns:
+        Indices that would sort an array.
+
+    """
+
+    var I = NDArray[DType.index](A.shape)
+    _sort_inplace(A, I, axis)
+    return I^
+
+
+fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
+    """
+    Argsort the Matrix. It is first flattened before sorting.
+    """
+    var I = Matrix[DType.index](shape=(1, A.size))
+    for i in range(I.size):
+        I._buf.ptr[i] = i
+    var B = A.flatten()
+    _sort_inplace(B, I, 0, A.size - 1)
+
+    return I^
+
+
+fn argsort[
+    dtype: DType
+](owned A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+    """
+    Argsort the Matrix along the given axis.
+    """
+    if axis == 1:
+        var I = Matrix[DType.index](shape=A.shape)
+        for i in range(I.shape[0]):
+            for j in range(I.shape[1]):
+                I._store(i, j, j)
+
+        for i in range(A.shape[0]):
+            _sort_inplace(
+                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
+            )
+        return I^
+    elif axis == 0:
+        return transpose(argsort(transpose(A), axis=1))
+    else:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+
+# ===----------------------------------------------------------------------=== #
+# Multiple sorting algorithms in the backend.
+# ===----------------------------------------------------------------------=== #
+
+
+###############
+# Binary sort #
+###############
+
+
+fn binary_sort[
+    dtype: DType = DType.float64
+](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Binary sorting of NDArray.
+
+    Example:
+        ```py
+        var arr = numojo.core.random.rand[numojo.i16](100)
+        var sorted_arr = numojo.core.sort.binary_sort(arr)
+        print(sorted_arr)
+        ```
+
+    Parameters:
+         dtype: The element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The sorted NDArray of type `dtype`.
+    """
+
+    @parameter
+    if dtype != array.dtype:
+        alias dtype = array.dtype
+
+    var result: NDArray[dtype] = NDArray[dtype](array.shape)
+    for i in range(array.size):
+        result.store(i, array.load(i).cast[dtype]())
+
+    var n = array.num_elements()
+    for end in range(n, 1, -1):
+        for i in range(1, end):
+            if result[i - 1] > result[i]:
+                var temp: Scalar[dtype] = result.load(i - 1)
+                result.store(i - 1, result.load(i))
+                result.store(i, temp)
+    return result
+
 
 ###############
 # Bubble sort #
@@ -74,6 +302,33 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 ##############
 # Quick sort #
 ##############
+
+
+fn quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Sort 1-d array using quick sort method.
+    It is not guaranteed to be unstable.
+
+    Raises:
+        Error: If the input array is not 1-d.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: An 1-d array.
+    """
+
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
+            ).format(a.ndim)
+        )
+    res = a
+    var _I = NDArray[DType.index](a.shape)
+    _sort_inplace(res, _I, axis=0)
+    return res^
 
 
 fn _partition_in_range(
@@ -297,251 +552,3 @@ fn _sort_inplace[
         _sort_inplace(A, I, axis=-1)
         A = transpose(A, axes=transposed_axes)
         I = transpose(I, axes=transposed_axes)
-
-
-fn sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Sort 1-d array using quick sort method.
-    It is not guaranteed to be unstable.
-
-    Raises:
-        Error: If the input array is not 1-d.
-
-    Parameters:
-        dtype: The input element type.
-
-    Args:
-        a: An 1-d array.
-    """
-
-    if a.ndim != 1:
-        raise Error(
-            String(
-                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
-            ).format(a.ndim)
-        )
-    res = a
-    var _I = NDArray[DType.index](a.shape)
-    _sort_inplace(res, _I, axis=0)
-    return res^
-
-
-fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Sort NDArray using quick sort method.
-    It is not guaranteed to be unstable.
-
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The input element type.
-
-    Args:
-        a: NDArray.
-    """
-
-    if a.ndim == 1:
-        return sort_1d(a)
-    else:
-        return sort_1d(ravel(a))
-
-
-fn sort[
-    dtype: DType
-](owned a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
-    """
-    Sort NDArray along the given axis using quick sort method.
-    It is not guaranteed to be unstable.
-
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The input element type.
-
-    Args:
-        a: NDArray to sort.
-        axis: The axis along which the array is sorted.
-
-    """
-
-    var normalized_axis = axis
-    if axis < 0:
-        normalized_axis += a.ndim
-    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
-        raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
-            )
-        )
-
-    return utility.apply_func_on_array_without_dim_reduction[func=sort_1d](
-        a, axis=normalized_axis
-    )
-
-
-fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Sort the Matrix. It is first flattened before sorting.
-    """
-    var I = Matrix.zeros[DType.index](shape=A.shape)
-    var B = A.flatten()
-    _sort_inplace(B, I, 0, A.size - 1)
-
-    return B^
-
-
-fn sort[
-    dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
-    """
-    Sort the Matrix along the given axis.
-    """
-    if axis == 1:
-        var I = Matrix.zeros[DType.index](shape=A.shape)
-        for i in range(A.shape[0]):
-            _sort_inplace(
-                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
-            )
-        return A^
-    elif axis == 0:
-        return transpose(sort(transpose(A), axis=1))
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
-
-
-###############
-# Binary sort #
-###############
-
-
-fn binary_sort[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Binary sorting of NDArray.
-
-    Example:
-        ```py
-        var arr = numojo.core.random.rand[numojo.i16](100)
-        var sorted_arr = numojo.core.sort.binary_sort(arr)
-        print(sorted_arr)
-        ```
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: A NDArray.
-
-    Returns:
-        The sorted NDArray of type `dtype`.
-    """
-
-    @parameter
-    if dtype != array.dtype:
-        alias dtype = array.dtype
-
-    var result: NDArray[dtype] = NDArray[dtype](array.shape)
-    for i in range(array.size):
-        result.store(i, array.load(i).cast[dtype]())
-
-    var n = array.num_elements()
-    for end in range(n, 1, -1):
-        for i in range(1, end):
-            if result[i - 1] > result[i]:
-                var temp: Scalar[dtype] = result.load(i - 1)
-                result.store(i - 1, result.load(i))
-                result.store(i, temp)
-    return result
-
-
-# ===----------------------------------------------------------------------=== #
-# Searching
-# ===----------------------------------------------------------------------=== #
-
-
-fn argsort[
-    dtype: DType
-](owned A: NDArray[dtype]) raises -> NDArray[DType.index]:
-    """
-    Returns the indices that would sort an array.
-    It is not guaranteed to be unstable.
-
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The input element type.
-
-    Args:
-        A: NDArray.
-
-    Returns:
-        Indices that would sort an array.
-    """
-
-    A = ravel(A)
-    var I = NDArray[DType.index](A.shape)
-    _sort_inplace(A, I, axis=0)
-    return I^
-
-
-fn argsort[
-    dtype: DType
-](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[DType.index]:
-    """
-    Returns the indices that would sort an array.
-    It is not guaranteed to be unstable.
-
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The input element type.
-
-    Args:
-        A: NDArray to sort.
-        axis: The axis along which the array is sorted.
-
-    Returns:
-        Indices that would sort an array.
-
-    """
-
-    var I = NDArray[DType.index](A.shape)
-    _sort_inplace(A, I, axis)
-    return I^
-
-
-fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
-    """
-    Argsort the Matrix. It is first flattened before sorting.
-    """
-    var I = Matrix[DType.index](shape=(1, A.size))
-    for i in range(I.size):
-        I._buf.ptr[i] = i
-    var B = A.flatten()
-    _sort_inplace(B, I, 0, A.size - 1)
-
-    return I^
-
-
-fn argsort[
-    dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
-    """
-    Argsort the Matrix along the given axis.
-    """
-    if axis == 1:
-        var I = Matrix[DType.index](shape=A.shape)
-        for i in range(I.shape[0]):
-            for j in range(I.shape[1]):
-                I._store(i, j, j)
-
-        for i in range(A.shape[0]):
-            _sort_inplace(
-                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
-            )
-        return I^
-    elif axis == 0:
-        return transpose(argsort(transpose(A), axis=1))
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))

@@ -17,13 +17,42 @@ import math as mt
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
-from numojo.core.utility import bool_to_numeric
+import numojo.core.utility as utility
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
 from numojo.routines.math.arithmetic import add
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
 from numojo.routines.sorting import sort
+
+
+fn mean_1d[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+    """
+    Calculate the arithmetic average of all items in the 1-d array.
+
+    Raises:
+        Error: If the array is not 1-d.
+
+    Parameters:
+        dtype: The element type.
+        returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        a: A 1-d array.
+
+    Returns:
+        A scalar defaulting to float64.
+    """
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
+            ).format(a.ndim)
+        )
+
+    return sum(a).cast[returned_dtype]() / a.size
 
 
 fn mean[
@@ -65,17 +94,18 @@ fn mean[
     """
 
     var normalized_axis = axis
-
     if axis < 0:
         normalized_axis += a.ndim
-
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
-        raise Error(String("Axis {} out of bounds!").format(axis))
+        raise Error(
+            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
+        )
 
-    return (
-        sum(a, axis=normalized_axis).astype[returned_dtype]()
-        / a.shape[normalized_axis]
-    )
+    return utility.apply_func_on_array_with_dim_reduction[
+        returned_dtype=returned_dtype, func=mean_1d
+    ](a=a, axis=normalized_axis)
 
 
 fn mean[
@@ -124,6 +154,134 @@ fn mean[
         raise Error(String("The axis can either be 1 or 0!"))
 
 
+fn median_1d[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+    """
+    Median value of all items of a 1-d array.
+
+    Parameters:
+         dtype: The element type.
+         returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        a: A 1-d array.
+
+    Returns:
+        The median of all of the member values of array as a SIMD Value of `dtype`.
+    """
+
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
+            ).format(a.ndim)
+        )
+
+    var sorted_array = sort(a)
+
+    if a.size % 2 == 1:
+        return sorted_array.item(a.size // 2).cast[returned_dtype]()
+    else:
+        return (
+            sorted_array.item(a.size // 2 - 1) + sorted_array.item(a.size // 2)
+        ).cast[returned_dtype]() / 2
+
+
+fn median[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+    """
+    Median value of all items of an array.
+
+    Parameters:
+         dtype: The element type.
+         returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        a: A 1-d array.
+
+    Returns:
+        The median of all of the member values of array as a SIMD Value of `dtype`.
+    """
+
+    return median_1d[returned_dtype](ravel(a))
+
+
+fn median[
+    dtype: DType, //, returned_dtype: DType = DType.float64
+](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
+    """
+    Returns median of the array elements along the given axis.
+
+    Parameters:
+         dtype: The element type.
+         returned_dtype: The returned data type, defaulting to float64.
+
+    Args:
+        a: An array.
+        axis: The axis along which the median is performed.
+
+    Returns:
+        Median of the array elements along the given axis.
+    """
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
+        )
+    return utility.apply_func_on_array_with_dim_reduction[
+        returned_dtype=returned_dtype, func=median_1d
+    ](a=a, axis=normalized_axis)
+
+
+fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+    """Mode of all items of a 1d array.
+
+    Raises:
+        Error: If the array is not 1-d.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: An NDArray.
+
+    Returns:
+        The mode of all of the member values of array as a SIMD Value of `dtype`.
+    """
+
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "\nError in `sort_1d`: Input array must be 1-d, but got {}-d"
+            ).format(a.ndim)
+        )
+
+    var sorted_array: NDArray[dtype] = sort(a)
+    var max_count = 0
+    var mode_value = sorted_array.item(0)
+    var current_count = 1
+
+    for i in range(1, a.num_elements()):
+        if sorted_array[i] == sorted_array[i - 1]:
+            current_count += 1
+        else:
+            if current_count > max_count:
+                max_count = current_count
+                mode_value = sorted_array.item(i - 1)
+            current_count = 1
+
+    if current_count > max_count:
+        mode_value = sorted_array.item(a.num_elements() - 1)
+
+    return mode_value
+
+
 fn mode[dtype: DType](array: NDArray[dtype]) raises -> Scalar[dtype]:
     """Mode of all items of an array.
 
@@ -137,51 +295,37 @@ fn mode[dtype: DType](array: NDArray[dtype]) raises -> Scalar[dtype]:
         The mode of all of the member values of array as a SIMD Value of `dtype`.
     """
 
-    var sorted_array: NDArray[dtype] = sort(array)
-    var max_count = 0
-    var mode_value = sorted_array.item(0)
-    var current_count = 1
-
-    for i in range(1, array.num_elements()):
-        if sorted_array[i] == sorted_array[i - 1]:
-            current_count += 1
-        else:
-            if current_count > max_count:
-                max_count = current_count
-                mode_value = sorted_array.item(i - 1)
-            current_count = 1
-
-    if current_count > max_count:
-        mode_value = sorted_array.item(array.num_elements() - 1)
-
-    return mode_value
+    return mode_1d(ravel(array))
 
 
-fn median[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
-    Median value of all items of an array.
+    Returns mode of the array elements along the given axis.
 
     Parameters:
-         dtype: The element type.
-         returned_dtype: The returned data type, defaulting to float64.
+        dtype: The element type.
 
     Args:
-        array: An NDArray.
+        a: An NDArray.
+        axis: The axis along which the mode is performed.
 
     Returns:
-        The median of all of the member values of array as a SIMD Value of `dtype`.
+        Mode of the array elements along the given axis.
     """
-    var sorted_array = sort(array)
 
-    if array.size % 2 == 1:
-        return sorted_array.item(array.size // 2).cast[returned_dtype]()
-    else:
-        return (
-            sorted_array.item(array.size // 2 - 1)
-            + sorted_array.item(array.size // 2)
-        ).cast[returned_dtype]() / 2
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
+        )
+
+    return utility.apply_func_on_array_with_dim_reduction[func=mode_1d](
+        a=a, axis=normalized_axis
+    )
 
 
 fn std[

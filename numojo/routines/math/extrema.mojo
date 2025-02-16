@@ -51,7 +51,6 @@ fn max[
             slices.append(Slice(0, shape[i]))
         else:
             slices.append(Slice(0, 0))
-    print(result_shape.__str__())
 
     slices[axis] = Slice(0, 1)
 

@@ -78,6 +78,9 @@ fn sort[
             )
         )
 
+    if (a.ndim == 1) and (normalized_axis == 0):
+        return quick_sort_1d(a)
+
     return utility.apply_func_on_array_without_dim_reduction[
         func=quick_sort_1d
     ](a, axis=normalized_axis)
@@ -174,6 +177,9 @@ fn argsort[
             )
         )
 
+    if (a.ndim == 1) and (normalized_axis == 0):
+        return argsort_quick_sort_1d(a)
+
     return utility.apply_func_on_array_without_dim_reduction[
         func=argsort_quick_sort_1d
     ](a, axis=normalized_axis)
@@ -223,6 +229,17 @@ fn argsort[
 ###############
 # Binary sort #
 ###############
+
+
+fn binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    var res = a
+    for end in range(res.size, 1, -1):
+        for i in range(1, end):
+            if res._buf.ptr[i - 1] > res._buf.ptr[i]:
+                var temp = res._buf.ptr[i - 1]
+                res._buf.ptr[i - 1] = res._buf.ptr[i]
+                res._buf.ptr[i] = temp
+    return res
 
 
 fn binary_sort[

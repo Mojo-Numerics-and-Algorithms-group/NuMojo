@@ -6,17 +6,37 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### ⭐️ New
 
-- Implement `broadcast_to()` for `NDArray`. The function broadcasts an ndarray to any compatible shape ([PR #202](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/202)).
+- For `NDArray` type:
+  - Implement `broadcast_to()` for `NDArray`. The function broadcasts an array to any compatible shape ([PR #202](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/202)).
+- Add `NDAxisIter` type as a iterator that returns, in each iteration, a 1-d array along that axis  ([PR #212](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/212)).
+- Add `Flags` type for storing information on memory layout of arrays. The `Flags` type replaces the current `Dict[String, Bool]` type ([PR #210](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/210)).
+- Add `apply_func_on_array_with_dim_reduction()`, `apply_func_on_array_without_dim_reduction()` to allow applying functions working on 1-d array to any axis ([PR #213](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/213)).
 
 ### 🦋 Changed
 
-- Update functions in the `random` module, add `randint`, and accept `Shape` as the first argument ([PR #199](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/199)).
-- Update functions in the `statistics` module. Add the parameter `returned_dtype` to functions which defaults to `f64`. Add `variance()` and `std()` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
+- Update the syntax to accommodate to Mojo 25.1 ([PR #211](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/211)).
+  - Change constructors, e.g., `str()` to `String()`.
+  - Change `index()` function to `Int()`.
+  - Change the function `isdigit()` to method.
+  - Stop using `NDArray.__init__()` to construct arrays but `NDArray()`.
+- Update functions in the `random` module:
+  - Add `randint()`, and accept `Shape` as the first argument ([PR #199](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/199)).
+- Update functions in the `statistics` module:
+  - Add the parameter `returned_dtype` to functions which defaults to `f64` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
+  - Add `variance()` and `std()` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)). Allow calculating variance and std of an array by axis ([PR #207](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/207)).
+  - Allow `median()` and `mode()` functions to work on any axis.
+- Update functions in the `sotring` module:
+  - Considerably improve the performance of `sort()` function ([PR #213](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/213)).
+- Update the behaviors of 0-d array (numojo scalar). Although the syntax `a.item(0)` or `a[Item(0)]` is always preferred, we also allow some basic operations on 0-d array. 0-d array can now be unpacked to get the corresponding mojo scalar either by `[]` or by `item()` [PR #209](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/209).
 - Add boundary checks for `NDArrayShape` and `NDArrayStrides` to ensure safe use. Improve the docstring ([PR #205](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/205), [PR #206](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/206)).
 
 ### ❌ Removed
 
 - Remove `cumvariance`, `cumstd`, `cumpvariance`, `cumpstd` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
+
+### 📚 Documentatory and testing
+
+- Updates the roadmap document according to our current progress ([PR #208](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/208)).
 
 ## 26/01/2025 (v0.5)
 

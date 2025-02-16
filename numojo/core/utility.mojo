@@ -461,7 +461,7 @@ fn apply_func_on_array_without_dim_reduction[
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_indices(i)
+                indices, elements = iterator.ith_with_offsets(i)
 
                 var res_along_axis: NDArray[dtype] = func[dtype](elements)
 
@@ -536,7 +536,7 @@ fn apply_func_on_array_without_dim_reduction[
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_indices(i)
+                indices, elements = iterator.ith_with_offsets(i)
 
                 var res_along_axis: NDArray[DType.index] = func[dtype](elements)
 

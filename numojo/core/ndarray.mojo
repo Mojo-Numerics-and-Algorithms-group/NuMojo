@@ -4390,20 +4390,19 @@ struct _NDAxisIter[
 
         return elements
 
-    fn ith_with_indices(
+    fn ith_with_offsets(
         self, index: Int
     ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
         """
-        Gets the i-th 1-d array of the iterator and its indices
-        (C-order coordinates).
+        Gets the i-th 1-d array of the iterator and the offsets of its elements.
 
         Args:
             index: The index of the item. It must be non-negative.
 
         Returns:
-            Coordinates and elements of the i-th 1-d array of the iterator.
+            Offsets and elements of the i-th 1-d array of the iterator.
         """
-        var indices = NDArray[DType.index](Shape(self.size_of_res))
+        var offsets = NDArray[DType.index](Shape(self.size_of_res))
         var elements = NDArray[dtype](Shape(self.size_of_res))
 
         if (index >= self.length) or (index < 0):
@@ -4423,7 +4422,7 @@ struct _NDAxisIter[
 
         var new_strides = NDArrayStrides(self.shape, order="C")
         for j in range(self.size_of_res):
-            (indices._buf.ptr + j).init_pointee_copy(
+            (offsets._buf.ptr + j).init_pointee_copy(
                 _get_offset(item, new_strides)
             )
             (elements._buf.ptr + j).init_pointee_copy(
@@ -4431,7 +4430,7 @@ struct _NDAxisIter[
             )
             item[self.axis] += 1
 
-        return Tuple(indices, elements)
+        return Tuple(offsets, elements)
 
 
 @value

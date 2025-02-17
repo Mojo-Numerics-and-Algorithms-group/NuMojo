@@ -90,11 +90,9 @@ fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
 
     if a.ndim == 1:
-        a_flattened = a
+        return extrema_1d[max=True](a)
     else:
-        a_flattened = ravel(a)
-
-    return extrema_1d[max=True](a=a_flattened)
+        return extrema_1d[max=True](ravel(a))
 
 
 fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -263,8 +261,8 @@ fn min[
         # Wherever result is greater than the new slice it is set to zero
         # Wherever arr_slice is less than the old result it is added to fill those zeros
         result = add(
-            result * bool_to_numeric[dtype](mask2),
-            arr_slice * bool_to_numeric[dtype](mask1),
+            result * utility.bool_to_numeric[dtype](mask2),
+            arr_slice * utility.bool_to_numeric[dtype](mask1),
         )
 
     return result
@@ -385,24 +383,6 @@ fn amin[
         The minimum of all of the member values of array as a SIMD Value of `dtype`.
     """
     return minT[dtype](array)
-
-
-# this roughly seems to be just an alias for max in numpy
-fn amax[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
-    """
-    Maximum value of a array.
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: A array.
-    Returns:
-        The maximum of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    return maxT[dtype](array)
 
 
 fn mimimum[

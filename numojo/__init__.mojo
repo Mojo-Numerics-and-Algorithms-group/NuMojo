@@ -97,11 +97,7 @@ from numojo.routines.math import gradient, trapz
 from numojo.routines.math import exp, exp2, expm1, log, ln, log2, log10, log1p
 from numojo.routines.math import (
     max,
-    maxT,
     min,
-    minT,
-    amin,
-    amax,
     mimimum,
     maximum,
 )

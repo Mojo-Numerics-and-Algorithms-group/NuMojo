@@ -1,7 +1,7 @@
 from .arithmetic import add, sub, diff, mod, mul, div, floor_div, fma, remainder
 from .differences import gradient, trapz
 from .exponents import exp, exp2, expm1, log, ln, log2, log10, log1p
-from .extrema import max, maxT, minT, min, amin, amax, mimimum, maximum
+from .extrema import max, min, mimimum, maximum
 from .floating import copysign
 from .hyper import (
     arccosh,

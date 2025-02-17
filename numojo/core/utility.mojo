@@ -330,9 +330,7 @@ fn apply_func_on_array_with_dim_reduction[
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
-
-    Raises:
-        Error when the array is 1-d.
+    When the array is 1-d, the returned array will be a 0-d array.
 
     Parameters:
         dtype: The data type of the input NDArray elements.
@@ -346,11 +344,21 @@ fn apply_func_on_array_with_dim_reduction[
         The NDArray with the function applied to the input NDArray by axis.
     """
 
-    if a.ndim == 1:
-        raise Error("\n`axis` argument is not allowed for 1-d array.")
+    # if a.ndim == 1:
+    #     raise Error(
+    #         "\n`axis` argument is not allowed for 1-d array. Consider removing"
+    #         " `axis` argument."
+    #     )
 
-    var res = NDArray[dtype](a.shape._pop(axis=axis))
+    var res: NDArray[dtype]
+
+    if a.ndim == 1:
+        res = numojo.creation._0darray[dtype](0)
+    else:
+        res = NDArray[dtype](a.shape._pop(axis=axis))
+
     var offset = 0
+
     for i in a.iter_by_axis(axis=axis):
         (res._buf.ptr + offset).init_pointee_copy(func[dtype](i))
         offset += 1
@@ -366,9 +374,9 @@ fn apply_func_on_array_with_dim_reduction[
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
+    When the array is 1-d, the returned array will be a 0-d array.
     The target data type of the returned NDArray is different from the input
-    NDArray.
-    This is a function overload.
+    NDArray. This is a function ***overload***.
 
     Raises:
         Error when the array is 1-d.
@@ -385,10 +393,20 @@ fn apply_func_on_array_with_dim_reduction[
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
     """
-    if a.ndim == 1:
-        raise Error("\n`axis` argument is not allowed for 1-d array.")
 
-    var res = NDArray[returned_dtype](a.shape._pop(axis=axis))
+    # if a.ndim == 1:
+    #     raise Error(
+    #         "\n`axis` argument is not allowed for 1-d array. Consider removing"
+    #         " `axis` argument."
+    #     )
+
+    var res: NDArray[returned_dtype]
+
+    if a.ndim == 1:
+        res = numojo.creation._0darray[returned_dtype](0)
+    else:
+        res = NDArray[returned_dtype](a.shape._pop(axis=axis))
+
     # The iterator along the axis
     var iterator = a.iter_by_axis(axis=axis)
 

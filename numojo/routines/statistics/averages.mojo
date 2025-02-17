@@ -32,6 +32,7 @@ fn mean_1d[
     """
     Calculate the arithmetic average of all items in an array.
     Regardless of the shape of input, it is treated as a 1-d array.
+    It is the backend function for `mean`, with or without `axis`.
 
     Parameters:
         dtype: The element type.

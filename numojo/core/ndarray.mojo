@@ -2733,7 +2733,11 @@ struct NDArray[dtype: DType = DType.float64](
             # For 0darray (numojo scalar), we can directly write the value
             writer.write(
                 String(self._buf.ptr[])
-                + String("  (0darray[" + _concise_dtype_str(self.dtype) + "])")
+                + String(
+                    "  (0darray["
+                    + _concise_dtype_str(self.dtype)
+                    + "], use `[]` or `.item()` to unpack)"
+                )
             )
         else:
             try:

@@ -39,7 +39,7 @@ fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Sort NDArray using quick sort method.
     It is not guaranteed to be unstable.
-    When no axis is given, the array is flattened before sorting.
+    When no axis is given, the output array is flattened to 1d.
 
     Parameters:
         dtype: The input element type.
@@ -133,13 +133,13 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
     """
 
     if a.ndim == 1:
-        res = a
+        a_flattened = a
     else:
-        res = ravel(a)
+        a_flattened = ravel(a)
 
-    var indices = arange[DType.index](res.size)
+    var indices = arange[DType.index](a_flattened.size)
 
-    _sort_inplace(res, indices)
+    _sort_inplace(a_flattened, indices)
 
     return indices^
 

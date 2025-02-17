@@ -1,73 +1,132 @@
-# ===------------------------------------------------------------------------===#
-
-# Extrema finding
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 
 """
-TODO: 
-1) Add support for axis parameter.  
-2) Currently, constrained is crashing mojo, so commented it out and added raise Error. Check later.
-3) Relax constrained[] to let user get whatever output they want, but make a warning instead.
+Extrema finding
 """
 
-import math
+# ===-----------------------------------------------------------------------===#
+# SECTIONS:
+# 1. Find extrema in elements of a single array.
+# 2. Element-wise between elements of two arrays.
+#
+# TODO:
+# 1) Add support for axis parameter.
+# 2) Currently, constrained is crashing mojo, so commented it out and added raise Error. Check later.
+# 3) Relax constrained[] to let user get whatever output they want, but make a warning instead.
+# ===-----------------------------------------------------------------------===#
+
+from algorithm import vectorize
 from builtin.math import max as builtin_max
 from builtin.math import min as builtin_min
-from algorithm import vectorize
-from sys import simdwidthof
 from collections.optional import Optional
+from sys import simdwidthof
 
-from numojo.core.ndarray import NDArray
-import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
-from numojo.core.utility import bool_to_numeric
+import numojo.core.matrix as matrix
+from numojo.core.ndarray import NDArray
+import numojo.core.utility as utility
 from numojo.routines.sorting import binary_sort
 
 
-fn max[
-    dtype: DType
-](array: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
-    """Maximums of array elements over a given axis.
+# ===-----------------------------------------------------------------------===#
+# Find extrema in elements of a single array.
+# ===-----------------------------------------------------------------------===#
+
+
+fn extrema_1d[
+    dtype: DType, //, max: Bool
+](a: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Finds the max or min value in the buffer.
+    Regardless of the shape of input, it is treated as a 1-d array.
+    It is the backend function for `max` and `min`, with or without `axis`.
+
+    Parameters:
+        dtype: The element type.
+        max: If True, find max value, otherwise find min value.
 
     Args:
-        array: NDArray.
-        axis: The axis along which the sum is performed.
+        a: An array.
 
     Returns:
-        An NDArray.
+        A tuple of the max or min value and its index.
     """
-    var ndim: Int = array.ndim
-    var shape: List[Int] = List[Int]()
-    for i in range(ndim):
-        shape.append(array.shape[i])
-    if axis > ndim - 1:
-        raise Error("axis cannot be greater than the rank of the array")
-    var result_shape: List[Int] = List[Int]()
-    var axis_size: Int = shape[axis]
-    var slices: List[Slice] = List[Slice]()
-    for i in range(ndim):
-        if i != axis:
-            result_shape.append(shape[i])
-            slices.append(Slice(0, shape[i]))
-        else:
-            slices.append(Slice(0, 0))
 
-    slices[axis] = Slice(0, 1)
+    var value = a._buf.ptr[0]
 
-    var result: NDArray[dtype] = array[slices]
-    for i in range(1, axis_size):
-        slices[axis] = Slice(i, i + 1)
-        var arr_slice = array[slices]
-        var mask1 = greater(arr_slice, result)
-        var mask2 = less(arr_slice, result)
-        # Wherever result is less than the new slice it is set to zero
-        # Wherever arr_slice is greater than the old result it is added to fill those zeros
-        result = add(
-            result * bool_to_numeric[dtype](mask2),
-            arr_slice * bool_to_numeric[dtype](mask1),
+    @parameter
+    if max:
+        for i in range(a.size):
+            if (a._buf.ptr + i)[] > value:
+                value = a._buf.ptr[i]
+                index = i
+    else:
+        for i in range(a.size):
+            if (a._buf.ptr + i)[] < value:
+                value = a._buf.ptr[i]
+                index = i
+
+    return value
+
+
+fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Finds the max value of an array.
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: An array.
+
+    Returns:
+        The max value.
+    """
+
+    if a.ndim == 1:
+        a_flattened = a
+    else:
+        a_flattened = ravel(a)
+
+    return extrema_1d[max=True](a=a_flattened)
+
+
+fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Finds the max value of an array along the axis.
+    The number of dimension will be reduced by 1.
+    When no axis is given, the array is flattened before sorting.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: An array.
+        axis: The axis along which the max is performed.
+
+    Returns:
+        An array with reduced number of dimensions.
+    """
+
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
         )
 
-    return result
+    return utility.apply_func_on_array_with_dim_reduction[
+        func = extrema_1d[max=True]
+    ](a=a, axis=normalized_axis)
 
 
 fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
@@ -102,6 +161,42 @@ fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
+fn _find_extrema_and_index[
+    dtype: DType, //, max: Bool
+](A: NDArray[dtype]) raises -> Tuple[Scalar[dtype], Scalar[DType.index]]:
+    """
+    Finds the max or min value in the buffer and its index (first occurrence).
+    Regardless of the shape of input, it is treated as a 1-d array.
+
+    Parameters:
+        dtype: The element type.
+        max: If True, find max value, otherwise find min value.
+
+    Args:
+        A: An array.
+
+    Returns:
+        A tuple of the max or min value and its index.
+    """
+
+    var index: Scalar[DType.index] = 0
+    var value = A._buf.ptr[0]
+
+    @parameter
+    if max:
+        for i in range(A.size):
+            if (A._buf.ptr + i)[] > value:
+                value = A._buf.ptr[i]
+                index = i
+    else:
+        for i in range(A.size):
+            if (A._buf.ptr + i)[] < value:
+                value = A._buf.ptr[i]
+                index = i
+
+    return Tuple(value, index)
+
+
 fn _max[
     dtype: DType
 ](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
@@ -127,47 +222,6 @@ fn _max[
             max_index = i
 
     return (max_value, max_index)
-
-
-# for max and min, I can later change to the latest reduce.max, reduce.min()
-fn maxT[
-    dtype: DType = DType.float64
-](array: NDArray[dtype]) raises -> SIMD[dtype, 1]:
-    """
-    Maximum value of a array.
-
-    Parameters:
-         dtype: The element type.
-
-    Args:
-        array: A NDArray.
-    Returns:
-        The maximum of all of the member values of array as a SIMD Value of `dtype`.
-    """
-    # TODO: Test this
-    alias width = simdwidthof[dtype]()
-    var max_value = NDArray[dtype](NDArrayShape(width))
-    for i in range(width):
-        max_value.__setitem__(i, array[0])
-    # var max_value: SIMD[ dtype, width] = SIMD[ dtype, width](array[0])
-
-    @parameter
-    fn vectorized_max[simd_width: Int](idx: Int) -> None:
-        max_value._buf.ptr.store(
-            0,
-            builtin_max(
-                max_value._buf.ptr.load[width=simd_width](0),
-                array._buf.ptr.load[width=simd_width](idx),
-            ),
-        )
-
-    vectorize[vectorized_max, width](array.num_elements())
-
-    var result: Scalar[dtype] = Scalar[dtype](max_value.load(0))
-    for i in range(max_value.__len__()):
-        if max_value.load(i) > result:
-            result = max_value.load(i)
-    return result
 
 
 fn min[
@@ -385,6 +439,11 @@ fn maximum[
         The maximum of the two SIMD Values as a SIMD Value of `dtype`.
     """
     return builtin_max(s1, s2)
+
+
+# ===-----------------------------------------------------------------------===#
+# Element-wise between elements of two arrays.
+# ===-----------------------------------------------------------------------===#
 
 
 fn minimum[

@@ -4303,12 +4303,12 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    item[i] = remainder // self.strides_by_axis[i]
+                    item._buf[i] = remainder // self.strides_by_axis[i]
                     remainder %= self.strides_by_axis[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    item[i] = remainder // self.strides_by_axis[i]
+                    item._buf[i] = remainder // self.strides_by_axis[i]
                     remainder %= self.strides_by_axis[i]
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
@@ -4326,7 +4326,7 @@ struct _NDAxisIter[
                 (res._buf.ptr + j).init_pointee_copy(
                     self.ptr[_get_offset(item, self.strides)]
                 )
-                item[self.axis] += 1
+                item._buf[self.axis] += 1
 
         return res^
 
@@ -4356,12 +4356,12 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    item[i] = remainder // self.strides_by_axis[i]
+                    item._buf[i] = remainder // self.strides_by_axis[i]
                     remainder %= self.strides_by_axis[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    item[i] = remainder // self.strides_by_axis[i]
+                    item._buf[i] = remainder // self.strides_by_axis[i]
                     remainder %= self.strides_by_axis[i]
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
@@ -4378,7 +4378,7 @@ struct _NDAxisIter[
                 (elements._buf.ptr + j).init_pointee_copy(
                     self.ptr[_get_offset(item, self.strides)]
                 )
-                item[self.axis] += 1
+                item._buf[self.axis] += 1
 
         return elements
 
@@ -4386,13 +4386,15 @@ struct _NDAxisIter[
         self, index: Int
     ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
         """
-        Gets the i-th 1-d array of the iterator and the offsets of its elements.
+        Gets the i-th 1-d array of the iterator and the offsets (in C-order)
+        of its elements.
 
         Args:
             index: The index of the item. It must be non-negative.
 
         Returns:
-            Offsets and elements of the i-th 1-d array of the iterator.
+            Offsets (in C-order) and elements of the i-th 1-d array of the
+            iterator.
         """
         var offsets = NDArray[DType.index](Shape(self.size_of_res))
         var elements = NDArray[dtype](Shape(self.size_of_res))
@@ -4400,7 +4402,7 @@ struct _NDAxisIter[
         if (index >= self.length) or (index < 0):
             raise Error(
                 String(
-                    "\nError in `NDAxisIter.ith()`: "
+                    "\nError in `NDAxisIter.ith_with_offsets()`: "
                     "Index ({}) must be in the range of [0, {})"
                 ).format(index, self.length)
             )
@@ -4408,21 +4410,51 @@ struct _NDAxisIter[
         var remainder = index * self.size_of_res
         var item = Item(ndim=self.ndim, initialized=True)
         for i in range(self.axis):
-            item[i] = remainder // self.strides_by_axis[i]
+            item._buf[i] = remainder // self.strides_by_axis[i]
             remainder %= self.strides_by_axis[i]
         for i in range(self.axis + 1, self.ndim):
-            item[i] = remainder // self.strides_by_axis[i]
+            item._buf[i] = remainder // self.strides_by_axis[i]
             remainder %= self.strides_by_axis[i]
 
         var new_strides = NDArrayStrides(self.shape, order="C")
-        for j in range(self.size_of_res):
-            (offsets._buf.ptr + j).init_pointee_copy(
-                _get_offset(item, new_strides)
+
+        if (self.axis == self.ndim - 1) & (
+            (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+        ):
+            # The memory layout is C-contiguous
+            memcpy(
+                elements._buf.ptr,
+                self.ptr + _get_offset(item, self.strides),
+                self.size_of_res,
             )
-            (elements._buf.ptr + j).init_pointee_copy(
-                self.ptr[_get_offset(item, self.strides)]
+            var begin_offset = _get_offset(item, new_strides)
+            for j in range(self.size_of_res):
+                (offsets._buf.ptr + j).init_pointee_copy(begin_offset + j)
+
+        elif (self.axis == 0) & (
+            (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+        ):
+            # The memory layout is F-contiguous
+            memcpy(
+                elements._buf.ptr,
+                self.ptr + _get_offset(item, self.strides),
+                self.size_of_res,
             )
-            item[self.axis] += 1
+            for j in range(self.size_of_res):
+                (offsets._buf.ptr + j).init_pointee_copy(
+                    _get_offset(item, new_strides)
+                )
+                item._buf[self.axis] += 1
+
+        else:
+            for j in range(self.size_of_res):
+                (offsets._buf.ptr + j).init_pointee_copy(
+                    _get_offset(item, new_strides)
+                )
+                (elements._buf.ptr + j).init_pointee_copy(
+                    self.ptr[_get_offset(item, self.strides)]
+                )
+                item._buf[self.axis] += 1
 
         return Tuple(offsets, elements)
 

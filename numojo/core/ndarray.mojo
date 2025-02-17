@@ -3215,14 +3215,24 @@ struct NDArray[dtype: DType = DType.float64](
     fn argsort(self) raises -> NDArray[DType.index]:
         """
         Sort the NDArray and return the sorted indices.
-
-        See `numojo.routines.sorting.argsort()`.
+        See `numojo.argsort()`.
 
         Returns:
             The indices of the sorted NDArray.
         """
 
         return sorting.argsort(self)
+
+    fn argsort(self, axis: Int) raises -> NDArray[DType.index]:
+        """
+        Sort the NDArray and return the sorted indices.
+        See `numojo.argsort()`.
+
+        Returns:
+            The indices of the sorted NDArray.
+        """
+
+        return sorting.argsort(self, axis=axis)
 
     fn astype[target: DType](self) raises -> NDArray[target]:
         """

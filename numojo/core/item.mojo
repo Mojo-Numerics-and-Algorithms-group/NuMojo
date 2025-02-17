@@ -26,7 +26,7 @@ struct Item(CollectionElement):
         """Construct the tuple.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             args: Initial values.
@@ -34,14 +34,14 @@ struct Item(CollectionElement):
         self._buf = UnsafePointer[Int]().alloc(args.__len__())
         self.ndim = args.__len__()
         for i in range(args.__len__()):
-            self._buf[i] = index(args[i])
+            self._buf[i] = Int(args[i])
 
     @always_inline("nodebug")
     fn __init__[T: IndexerCollectionElement](out self, args: List[T]) raises:
         """Construct the tuple.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             args: Initial values.
@@ -49,7 +49,7 @@ struct Item(CollectionElement):
         self.ndim = len(args)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(index(args[i]))
+            (self._buf + i).init_pointee_copy(Int(args[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, args: VariadicList[Int]) raises:
@@ -61,7 +61,7 @@ struct Item(CollectionElement):
         self.ndim = len(args)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(index(args[i]))
+            (self._buf + i).init_pointee_copy(Int(args[i]))
 
     @always_inline("nodebug")
     fn __init__(
@@ -118,7 +118,7 @@ struct Item(CollectionElement):
         """Get the value at the specified index.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             idx: The index of the value to get.
@@ -127,15 +127,16 @@ struct Item(CollectionElement):
             The value at the specified index.
         """
 
-        var normalized_idx: Int = index(idx)
+        var normalized_idx: Int = Int(idx)
         if normalized_idx < 0:
-            normalized_idx = idx + self.ndim
+            normalized_idx = Int(idx) + self.ndim
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.ndim, self.ndim - 1
-                )
+                String(
+                    "Error in `numojo.Item.__getitem__()`: \n"
+                    "Index ({}) out of range [{}, {})\n"
+                ).format(Int(idx), -self.ndim, self.ndim - 1)
             )
 
         return self._buf[normalized_idx]
@@ -145,26 +146,27 @@ struct Item(CollectionElement):
         """Set the value at the specified index.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
-            U: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
+            U: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             idx: The index of the value to set.
             val: The value to set.
         """
 
-        var normalized_idx: Int = index(idx)
+        var normalized_idx: Int = Int(idx)
         if normalized_idx < 0:
-            normalized_idx = idx + self.ndim
+            normalized_idx = Int(idx) + self.ndim
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.ndim, self.ndim - 1
-                )
+                String(
+                    "Error in `numojo.Item.__getitem__()`: \n"
+                    "Index ({}) out of range [{}, {})\n"
+                ).format(Int(idx), -self.ndim, self.ndim - 1)
             )
 
-        self._buf[normalized_idx] = index(val)
+        self._buf[normalized_idx] = Int(val)
 
     fn __iter__(self) raises -> _ItemIter:
         """Iterate over elements of the NDArray, returning copied value.
@@ -182,13 +184,13 @@ struct Item(CollectionElement):
         )
 
     fn __repr__(self) -> String:
-        var result: String = "numojo.Item" + str(self)
+        var result: String = "numojo.Item" + String(self)
         return result
 
     fn __str__(self) -> String:
         var result: String = "("
         for i in range(self.ndim):
-            result += str(self._buf[i])
+            result += String(self._buf[i])
             if i < self.ndim - 1:
                 result += ","
         result += ")"
@@ -196,7 +198,11 @@ struct Item(CollectionElement):
 
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(
-            "Item at index: " + str(self) + "  " + "Length: " + str(self.ndim)
+            "Item at index: "
+            + String(self)
+            + "  "
+            + "Length: "
+            + String(self.ndim)
         )
 
 

@@ -16,6 +16,7 @@ from utils import Variant
 
 from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
+from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
@@ -78,7 +79,7 @@ struct ComplexNDArray[
     """Size of ComplexNDArray."""
     var strides: NDArrayStrides
     """Contains offset, strides."""
-    var flags: Dict[String, Bool]
+    var flags: Flags
     "Information about the memory layout of the array."
 
     """LIFETIME METHODS"""
@@ -114,8 +115,8 @@ struct ComplexNDArray[
         var A = nm.ComplexNDArray[cf32](Shape(2,3,4))
         ```
         """
-        self._re.__init__(shape, order)
-        self._im.__init__(shape, order)
+        self._re = NDArray[dtype](shape, order)
+        self._im = NDArray[dtype](shape, order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -135,8 +136,8 @@ struct ComplexNDArray[
             shape: List of shape.
             order: Memory order C or F.
         """
-        self._re.__init__(shape, order)
-        self._im.__init__(shape, order)
+        self._re = NDArray[dtype](shape, order)
+        self._im = NDArray[dtype](shape, order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -156,8 +157,8 @@ struct ComplexNDArray[
             shape: Variadic List of shape.
             order: Memory order C or F.
         """
-        self._re.__init__(shape, order)
-        self._im.__init__(shape, order)
+        self._re = NDArray[dtype](shape, order)
+        self._im = NDArray[dtype](shape, order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -173,8 +174,8 @@ struct ComplexNDArray[
         """
         Extremely specific ComplexNDArray initializer.
         """
-        self._re.__init__(shape, offset, strides)
-        self._im.__init__(shape, offset, strides)
+        self._re = NDArray[dtype](shape, offset, strides)
+        self._im = NDArray[dtype](shape, offset, strides)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -192,8 +193,8 @@ struct ComplexNDArray[
         """
         Extremely specific ComplexNDArray initializer.
         """
-        self._re.__init__(shape, buffer_re, offset, strides)
-        self._im.__init__(shape, buffer_im, offset, strides)
+        self._re = NDArray(shape, buffer_re, offset, strides)
+        self._im = NDArray(shape, buffer_re, offset, strides)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -205,8 +206,8 @@ struct ComplexNDArray[
         """
         Copy other into self.
         """
-        self._re.__copyinit__(other._re)
-        self._im.__copyinit__(other._im)
+        self._re = other._re
+        self._im = other._im
         self.ndim = other.ndim
         self.shape = other.shape
         self.size = other.size
@@ -218,8 +219,8 @@ struct ComplexNDArray[
         """
         Move other into self.
         """
-        self._re.__moveinit__(existing._re)
-        self._im.__moveinit__(existing._im)
+        self._re = existing._re^
+        self._im = existing._im^
         self.ndim = existing.ndim
         self.shape = existing.shape
         self.size = existing.size
@@ -569,10 +570,10 @@ struct ComplexNDArray[
 
         for i in range(len(index)):
             self._re.store(
-                int(index.load(i)), rebind[Scalar[dtype]](val._re.load(i))
+                Int(index.load(i)), rebind[Scalar[dtype]](val._re.load(i))
             )
             self._im.store(
-                int(index.load(i)), rebind[Scalar[dtype]](val._im.load(i))
+                Int(index.load(i)), rebind[Scalar[dtype]](val._im.load(i))
             )
 
     fn __setitem__(
@@ -922,7 +923,7 @@ struct ComplexNDArray[
         ndshape[0] = len(index)
         ndsize = 1
         for i in range(ndshape.ndim):
-            ndsize *= int(ndshape._buf[i])
+            ndsize *= Int(ndshape._buf[i])
         var result = ComplexNDArray[cdtype, dtype=dtype](ndshape)
         var size_per_item = ndsize // len(index)
 
@@ -930,10 +931,10 @@ struct ComplexNDArray[
         for i in range(len(index)):
             for j in range(size_per_item):
                 result._re._buf.ptr.store(
-                    i * size_per_item + j, self[int(index[i])].item(j).re
+                    i * size_per_item + j, self[Int(index[i])].item(j).re
                 )
                 result._im._buf.ptr.store(
-                    i * size_per_item + j, self[int(index[i])].item(j).im
+                    i * size_per_item + j, self[Int(index[i])].item(j).im
                 )
 
         return result
@@ -947,7 +948,7 @@ struct ComplexNDArray[
 
         var new_index = List[Int]()
         for i in index:
-            new_index.append(int(i.item(0)))
+            new_index.append(Int(i.item(0)))
 
         return self[new_index]
 
@@ -1426,13 +1427,13 @@ struct ComplexNDArray[
     # ===-------------------------------------------------------------------===#
     fn __str__(self) -> String:
         """
-        Enables str(array).
+        Enables String(array).
         """
         var res: String
         try:
             res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
         except e:
-            res = String("Cannot convert array to string") + str(e)
+            res = String("Cannot convert array to string") + String(e)
 
         return res
 
@@ -1441,22 +1442,22 @@ struct ComplexNDArray[
             writer.write(
                 self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
                 + "\n"
-                + str(self.ndim)
+                + String(self.ndim)
                 + "D-array  Shape"
-                + str(self.shape)
+                + String(self.shape)
                 + "  Strides"
-                + str(self.strides)
+                + String(self.strides)
                 + "  DType: "
                 + _concise_dtype_str(self.dtype)
                 + "  C-cont: "
-                + str(self.flags["C_CONTIGUOUS"])
+                + String(self.flags["C_CONTIGUOUS"])
                 + "  F-cont: "
-                + str(self.flags["F_CONTIGUOUS"])
+                + String(self.flags["F_CONTIGUOUS"])
                 + "  own data: "
-                + str(self.flags["OWNDATA"])
+                + String(self.flags["OWNDATA"])
             )
         except e:
-            writer.write("Cannot convert array to string" + str(e))
+            writer.write("Cannot convert array to string" + String(e))
 
     fn __repr__(self) -> String:
         """
@@ -1473,22 +1474,24 @@ struct ComplexNDArray[
         ```.
         """
         try:
-            var result: String = str("ComplexNDArray[CDType.") + str(
+            var result: String = String("ComplexNDArray[CDType.") + String(
                 self.cdtype
-            ) + str("](List[ComplexSIMD[CDType.c") + str(self._re.dtype) + str(
+            ) + String("](List[ComplexSIMD[CDType.c") + String(
+                self._re.dtype
+            ) + String(
                 "]]("
             )
             if self._re.size > 6:
                 for i in range(6):
-                    result = result + str(self.item(i)) + str(",")
+                    result = result + String(self.item(i)) + String(",")
                 result = result + " ... "
             else:
                 for i in range(self._re.size):
-                    result = result + str(self.item(i)) + str(",")
-            result = result + str("), shape=List[Int](")
+                    result = result + String(self.item(i)) + String(",")
+            result = result + String("), shape=List[Int](")
             for i in range(self._re.shape.ndim):
-                result = result + str(self._re.shape._buf[i]) + ","
-            result = result + str("))")
+                result = result + String(self._re.shape._buf[i]) + ","
+            result = result + String("))")
             return result
         except e:
             print("Cannot convert array to string", e)
@@ -1513,7 +1516,7 @@ struct ComplexNDArray[
         var edge_items = print_options.edge_items
 
         if self.ndim == 0:
-            return str(self.item(0))
+            return String(self.item(0))
         if dimension == self.ndim - 1:
             var result: String = String("[") + padding
             var number_of_items = self.shape[dimension]
@@ -1549,7 +1552,7 @@ struct ComplexNDArray[
             result = result + "]"
             return result
         else:
-            var result: String = str("[")
+            var result: String = String("[")
             var number_of_items = self.shape[dimension]
             if number_of_items <= edge_items:  # Print all items
                 for i in range(number_of_items):
@@ -1562,7 +1565,7 @@ struct ComplexNDArray[
                     if i > 0:
                         result = (
                             result
-                            + str(" ") * (dimension + 1)
+                            + String(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
@@ -1582,7 +1585,7 @@ struct ComplexNDArray[
                     if i > 0:
                         result = (
                             result
-                            + str(" ") * (dimension + 1)
+                            + String(" ") * (dimension + 1)
                             + self._array_to_string(
                                 dimension + 1,
                                 offset + i * self.strides[dimension].__int__(),
@@ -1595,7 +1598,7 @@ struct ComplexNDArray[
                 for i in range(number_of_items - edge_items, number_of_items):
                     result = (
                         result
-                        + str(" ") * (dimension + 1)
+                        + String(" ") * (dimension + 1)
                         + self._array_to_string(
                             dimension + 1,
                             offset + i * self.strides[dimension].__int__(),
@@ -1608,7 +1611,7 @@ struct ComplexNDArray[
             return result
 
     fn __len__(self) -> Int:
-        return int(self._re.size)
+        return Int(self._re.size)
 
     fn load[
         width: Int = 1

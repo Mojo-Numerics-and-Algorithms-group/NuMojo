@@ -239,8 +239,8 @@ fn cumsum[
 
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] - 1):
-            A._buf.ptr[int(I._buf.ptr[i + j + 1])] += A._buf.ptr[
-                int(I._buf.ptr[i + j])
+            A._buf.ptr[Int(I._buf.ptr[i + j + 1])] += A._buf.ptr[
+                Int(I._buf.ptr[i + j])
             ]
 
     return A^

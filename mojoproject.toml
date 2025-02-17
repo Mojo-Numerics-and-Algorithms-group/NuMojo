@@ -10,7 +10,7 @@ authors = [
     "sandstromviktor <>",
     "durnwalder <>"
 ]
-channels = ["conda-forge", "https://conda.modular.com/max/"]
+channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 license = "Apache-2.0"
 readme = "README.MD"
@@ -34,20 +34,21 @@ test_linalg = "magic run mojo test tests/routines/test_linalg.mojo -I ./ -I ./te
 test_manipulation = "magic run mojo test tests/routines/test_manipulation.mojo -I ./ -I ./tests/"
 test_random = "magic run mojo test tests/routines/test_random.mojo -I ./ -I ./tests/"
 test_statistics = "magic run mojo test tests/routines/test_statistics.mojo -I ./ -I ./tests/"
+test_sorting = "magic run mojo test tests/routines/test_sorting.mojo -I ./ -I ./tests/"
 
 # run all final checks before a commit
 final = "magic run test && magic run format && magic run package"
 f = "clear && magic run test && magic run format && magic run package"
 
 # Automatically Generate doc pages
-doc_pages = "rm -Rf docs/readthedocs/docs/docs && mojo doc numojo -o docs/readthedocs/docs.json && python docs/readthedocs/docs.py"
+doc_pages = "mojo doc numojo/ -o docs.json"
 
 # run everything and generate docs before release
 release = "clear && magic run final && magic run doc_pages"
 
 [dependencies]
-max = "==24.6.0"
-python = ">=3.9,<3.13"
-numpy = ">=1.19,<2.2"
-scipy = ">=1.14,<1.15"
-mdutils = ">=1.6.0"
+max = "=25.1"
+python = ">=3.11"
+numpy = ">=1.19"
+scipy = ">=1.14"
+mdutils = ">=1.6"

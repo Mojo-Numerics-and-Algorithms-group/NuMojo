@@ -332,11 +332,7 @@ def test_sorting():
         )
 
     check_matrices_close(
-        nm.argsort(A),
-        np.argsort(Anp, axis=None),
-        String("Argsort is broken")
-        + str(nm.argsort(A))
-        + str(np.argsort(Anp, axis=None)),
+        nm.argsort(A), np.argsort(Anp, axis=None), String("Argsort is broken")
     )
     for i in range(2):
         check_matrices_close(

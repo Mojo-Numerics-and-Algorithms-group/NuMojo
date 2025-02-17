@@ -20,11 +20,11 @@ fn loadtxt[
         var shape_offset_fin: Int = string.find("]")
         var ndim_offset_init: Int = string.find("[", start=shape_offset_fin)
         var ndim_offset_fin: Int = string.find("]", start=ndim_offset_init)
-        var ndim: Int = int(string[ndim_offset_init + 1 : ndim_offset_fin])
+        var ndim: Int = Int(string[ndim_offset_init + 1 : ndim_offset_fin])
         var ndshape: List[Int] = List[Int]()
         for i in range(shape_offset_init + 1, shape_offset_fin):
             if string[i].isdigit():
-                ndshape.append(int(string[i]))
+                ndshape.append(Int(string[i]))
         var data: List[Scalar[dtype]] = List[Scalar[dtype]]()
         for i in range(ndim_offset_fin + 2, len(string)):
             if string[i].isdigit():
@@ -38,7 +38,7 @@ fn savetxt[
 ](filename: String, array: NDArray[dtype], delimiter: String = ",") raises:
     var shape: String = "ndshape=["
     for i in range(array.ndim):
-        shape += str(array.shape[i])
+        shape += String(array.shape[i])
         if i != array.ndim - 1:
             shape = shape + ", "
     shape = shape + "]"
@@ -46,8 +46,8 @@ fn savetxt[
 
     with open(filename, "w") as file:
         file.write(shape + "\n")
-        file.write("ndim=[" + str(array.ndim) + "]\n")
+        file.write("ndim=[" + String(array.ndim) + "]\n")
         for i in range(array.size):
             if i % 10 == 0:
-                file.write(str("\n"))
-            file.write(str(array._buf.ptr[i]) + ",")
+                file.write(String("\n"))
+            file.write(String(array._buf.ptr[i]) + ",")

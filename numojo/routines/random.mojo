@@ -222,6 +222,19 @@ fn randint[
 
 fn randint[
     dtype: DType = DType.int64
+](*shape: Int, low: Int, high: Int) raises -> NDArray[dtype]:
+    """
+    Overloads the function `randint(shape: NDArrayShape, low, high)`.
+    Return an array of random integers from low (inclusive) to high (exclusive).
+    Note that it is different from the built-in `random.randint()` function
+    which returns integer in range low (inclusive) to high (inclusive).
+    """
+
+    return randint[dtype](NDArrayShape(shape), low=low, high=high)
+
+
+fn randint[
+    dtype: DType = DType.int64
 ](shape: NDArrayShape, high: Int) raises -> NDArray[dtype]:
     """
     Return an array of random integers from 0 (inclusive) to high (exclusive).
@@ -255,6 +268,17 @@ fn randint[
     )
 
     return result^
+
+
+fn randint[
+    dtype: DType = DType.int64
+](*shape: Int, high: Int) raises -> NDArray[dtype]:
+    """
+    Overloads the function `randint(shape: NDArrayShape, high)`.
+    Return an array of random integers from 0 (inclusive) to high (exclusive).
+    """
+
+    return randint[dtype](NDArrayShape(shape), high=high)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -445,8 +469,8 @@ fn _int_rand_func[
     builtin_random.randint[dtype](
         ptr=result._buf.ptr,
         size=result.size,
-        low=int(min),
-        high=int(max),
+        low=Int(min),
+        high=Int(max),
     )
 
 

@@ -1,52 +1,38 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 """
 # ===----------------------------------------------------------------------=== #
-# Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-# Last updated: 2024-10-14
+# SECTIONS OF THE FILE:
+#
+# 1. Offset and traverse functions.
+# 2. Functions to traverse a multi-dimensional array.
+# 3. Apply a function to NDArray by axis.
+# 4. NDArray dtype conversions.
+# 5. Numojo.NDArray to other collections.
+# 6. Type checking functions.
+# 7. Miscellaneous utility functions.
 # ===----------------------------------------------------------------------=== #
 
-from algorithm.functional import vectorize
+from algorithm.functional import vectorize, parallelize
 from collections import Dict
 from memory import UnsafePointer, memcpy
 from python import Python, PythonObject
 from sys import simdwidthof
 from tensor import Tensor, TensorShape
 
-from .ndarray import NDArray
-from .ndshape import NDArrayShape
-from .ndstrides import NDArrayStrides
-
-
-# FIXME: No long useful from 24.6:
-# `width` is now inferred from the SIMD's width.
-fn fill_pointer[
-    dtype: DType
-](
-    mut array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
-) raises:
-    """
-    Fill a NDArray with a specific value.
-
-    Parameters:
-        dtype: The data type of the NDArray elements.
-
-    Args:
-        array: The pointer to the NDArray.
-        size: The size of the NDArray.
-        value: The value to fill the NDArray with.
-    """
-    alias width = simdwidthof[dtype]()
-
-    @parameter
-    fn vectorized_fill[simd_width: Int](idx: Int):
-        array.store(idx, value)
-
-    vectorize[vectorized_fill, width](size)
-
+from numojo.core.flags import Flags
+from numojo.core.ndarray import NDArray
+from numojo.core.ndshape import NDArrayShape
+from numojo.core.ndstrides import NDArrayStrides
 
 # ===----------------------------------------------------------------------=== #
-# GET OFFSET FUNCTIONS FOR NDARRAY
+# Offset and traverse functions
 # ===----------------------------------------------------------------------=== #
 
 
@@ -146,9 +132,33 @@ fn _get_offset(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
         strides: The strides of the indices.
 
     Returns:
-        Offset of continuous memory layout.
+        Offset of contiguous memory layout.
     """
     return indices[0] * strides[0] + indices[1] * strides[1]
+
+
+fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
+    """
+    Transfers the offset by flipping the strides information.
+    It can be used to transfer between C-contiguous and F-continuous memory
+    layout. For example, in a 4x4 C-contiguous array, the item with offset 4
+    has the indices (1, 0). The item with the same indices (1, 0) in a
+    F-continuous array has an offset of 1.
+
+    Args:
+        offset: The offset in memory of an element of array.
+        strides: The strides of the array.
+
+    Returns:
+        The offset of the array of a flipped memory layout.
+    """
+
+    var remainder = offset
+    var indices = Item(ndim=len(strides), initialized=False)
+    for i in range(len(strides)):
+        indices[i], remainder = divmod(remainder, strides[i])
+
+    return _get_offset(indices, strides._flip())
 
 
 # ===----------------------------------------------------------------------=== #
@@ -308,8 +318,245 @@ fn _traverse_iterative_setter[
 
 
 # ===----------------------------------------------------------------------=== #
-# NDArray conversions
+# Apply a function to NDArray by axis
 # ===----------------------------------------------------------------------=== #
+
+
+fn apply_func_on_array_with_dim_reduction[
+    dtype: DType,
+    func: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
+        dtype_func
+    ],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Applies a function to a NDArray by axis and reduce that dimension.
+
+    Raises:
+        Error when the array is 1-d.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+
+    if a.ndim == 1:
+        raise Error("\n`axis` argument is not allowed for 1-d array.")
+
+    var res = NDArray[dtype](a.shape._pop(axis=axis))
+    var offset = 0
+    for i in a.iter_by_axis(axis=axis):
+        (res._buf.ptr + offset).init_pointee_copy(func[dtype](i))
+        offset += 1
+    return res^
+
+
+fn apply_func_on_array_with_dim_reduction[
+    dtype: DType, //,
+    returned_dtype: DType,
+    func: fn[dtype_func: DType, //, returned_dtype_func: DType] (
+        NDArray[dtype_func]
+    ) raises -> Scalar[returned_dtype_func],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
+    """
+    Applies a function to a NDArray by axis and reduce that dimension.
+    The target data type of the returned NDArray is different from the input
+    NDArray.
+    This is a function overload.
+
+    Raises:
+        Error when the array is 1-d.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        returned_dtype: The data type of the output NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+    if a.ndim == 1:
+        raise Error("\n`axis` argument is not allowed for 1-d array.")
+
+    var res = NDArray[returned_dtype](a.shape._pop(axis=axis))
+    # The iterator along the axis
+    var iterator = a.iter_by_axis(axis=axis)
+
+    @parameter
+    fn parallelized_func(i: Int):
+        try:
+            (res._buf.ptr + i).init_pointee_copy(
+                func[returned_dtype](iterator.ith(i))
+            )
+        except e:
+            print("Error in parallelized_func", e)
+
+    parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return res^
+
+
+fn apply_func_on_array_without_dim_reduction[
+    dtype: DType,
+    func: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
+        dtype_func
+    ],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Applies a function to a NDArray by axis without reducing that dimension.
+    The resulting array will have the same shape as the input array.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_by_axis(axis=axis)
+    # The final output array will have the same shape as the input array
+    var res = NDArray[dtype](a.shape)
+
+    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+        # The memory layout is C-contiguous
+        var iterator = a.iter_by_axis(axis=axis)
+
+        @parameter
+        fn parallelized_func_c(i: Int):
+            try:
+                var elements: NDArray[dtype] = func[dtype](iterator.ith(i))
+                memcpy(
+                    res._buf.ptr + i * elements.size,
+                    elements._buf.ptr,
+                    elements.size,
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func_c](a.size // a.shape[axis])
+
+    else:
+        # The memory layout is not contiguous
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                # The indices of the input array in each iteration
+                var indices: NDArray[DType.index]
+                # The elements of the input array in each iteration
+                var elements: NDArray[dtype]
+                # The array after applied the function
+                indices, elements = iterator.ith_with_offsets(i)
+
+                var res_along_axis: NDArray[dtype] = func[dtype](elements)
+
+                for j in range(a.shape[axis]):
+                    (res._buf.ptr + Int(indices[j])).init_pointee_copy(
+                        (res_along_axis._buf.ptr + j)[]
+                    )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return res^
+
+
+fn apply_func_on_array_without_dim_reduction[
+    dtype: DType,
+    func: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
+        DType.index
+    ],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+    """
+    Applies a function to a NDArray by axis without reducing that dimension.
+    The resulting array will have the same shape as the input array.
+    The resulting array is an index array.
+    It can be used for, e.g., argsort.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The index array with the function applied to the input array by axis.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_by_axis(axis=axis)
+    # The final output array will have the same shape as the input array
+    var res = NDArray[DType.index](a.shape)
+
+    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+        # The memory layout is C-contiguous
+        var iterator = a.iter_by_axis(axis=axis)
+
+        @parameter
+        fn parallelized_func_c(i: Int):
+            try:
+                var elements: NDArray[DType.index] = func[dtype](
+                    iterator.ith(i)
+                )
+                memcpy(
+                    res._buf.ptr + i * elements.size,
+                    elements._buf.ptr,
+                    elements.size,
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func_c](a.size // a.shape[axis])
+
+    else:
+        # The memory layout is not contiguous
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                # The indices of the input array in each iteration
+                var indices: NDArray[DType.index]
+                # The elements of the input array in each iteration
+                var elements: NDArray[dtype]
+                # The array after applied the function
+                indices, elements = iterator.ith_with_offsets(i)
+
+                var res_along_axis: NDArray[DType.index] = func[dtype](elements)
+
+                for j in range(a.shape[axis]):
+                    (res._buf.ptr + Int(indices[j])).init_pointee_copy(
+                        (res_along_axis._buf.ptr + j)[]
+                    )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return res^
+
+
+# ===----------------------------------------------------------------------=== #
+# NDArray dtype conversions
+# ===----------------------------------------------------------------------=== #
+
+
 fn bool_to_numeric[
     dtype: DType
 ](array: NDArray[DType.bool]) raises -> NDArray[dtype]:
@@ -336,6 +583,9 @@ fn bool_to_numeric[
     return res
 
 
+# ===----------------------------------------------------------------------=== #
+# Numojo.NDArray to other collections
+# ===----------------------------------------------------------------------=== #
 fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     """
     Convert a NDArray to a numpy array.
@@ -395,7 +645,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.bool:
             np_dtype = np.bool_
 
-        var order = "C" if array.flags["C_CONTIGUOUS"] else "F"
+        var order = "C" if array.flags.C_CONTIGUOUS else "F"
         numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
         var pointer_d = numpyarray.__array_interface__["data"][
             0
@@ -428,6 +678,8 @@ fn to_tensor[dtype: DType](a: NDArray[dtype]) raises -> Tensor[dtype]:
 # ===----------------------------------------------------------------------=== #
 # Type checking functions
 # ===----------------------------------------------------------------------=== #
+
+
 @parameter
 fn is_inttype[dtype: DType]() -> Bool:
     """
@@ -545,6 +797,11 @@ fn is_booltype(dtype: DType) -> Bool:
     return False
 
 
+# ===----------------------------------------------------------------------=== #
+# Miscellaneous utility functions
+# ===----------------------------------------------------------------------=== #
+
+
 fn _list_of_range(n: Int) -> List[Int]:
     """
     Generate a list of integers starting from 0 and of size n.
@@ -565,38 +822,3 @@ fn _list_of_flipped_range(n: Int) -> List[Int]:
     for i in range(n - 1, -1, -1):
         l.append(i)
     return l
-
-
-fn _update_flags(
-    mut flags: Dict[String, Bool],
-    shape: NDArrayShape,
-    strides: NDArrayStrides,
-    ndim: Int,
-) raises:
-    """
-    Update C_CONTIGUOUS and F_CONTIGUOUS of flags
-    according the shape and strides information.
-    """
-    flags["C_CONTIGUOUS"] = (
-        True if (strides[ndim - 1] == 1) or (shape[ndim - 1] == 1) else False
-    )
-    flags["F_CONTIGUOUS"] = (
-        True if (strides[0] == 1) or (shape[0] == 1) else False
-    )
-
-
-fn _update_flags(
-    mut flags: Dict[String, Bool],
-    shape: Tuple[Int, Int],
-    strides: Tuple[Int, Int],
-):
-    """
-    Update C_CONTIGUOUS and F_CONTIGUOUS of flags
-    according the shape and strides information.
-    """
-    flags["C_CONTIGUOUS"] = (
-        True if (strides[1] == 1) or (shape[1] == 1) else False
-    )
-    flags["F_CONTIGUOUS"] = (
-        True if (strides[0] == 1) or (shape[0] == 1) else False
-    )

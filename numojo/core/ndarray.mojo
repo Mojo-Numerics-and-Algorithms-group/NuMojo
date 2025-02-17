@@ -69,17 +69,9 @@ from numojo.routines.io.formatting import (
     PrintOptions,
     GLOBAL_PRINT_OPTIONS,
 )
-import numojo.routines.linalg as linalg
-from numojo.routines.linalg.products import matmul
 import numojo.routines.logic.comparison as comparison
-from numojo.routines.manipulation import reshape, ravel
 import numojo.routines.math.arithmetic as arithmetic
-import numojo.routines.math.extrema as extrema
-from numojo.routines.math.products import prod, cumprod
 import numojo.routines.math.rounding as rounding
-from numojo.routines.math.sums import sum, cumsum
-import numojo.routines.sorting as sorting
-from numojo.routines.statistics.averages import mean
 
 
 struct NDArray[dtype: DType = DType.float64](
@@ -2399,7 +2391,7 @@ struct NDArray[dtype: DType = DType.float64](
         self = self - other
 
     fn __matmul__(self, other: Self) raises -> Self:
-        return matmul(self, other)
+        return numojo.linalg.matmul(self, other)
 
     fn __mul__[
         OtherDType: DType,
@@ -3221,7 +3213,7 @@ struct NDArray[dtype: DType = DType.float64](
             The indices of the sorted NDArray.
         """
 
-        return sorting.argsort(self)
+        return numojo.sorting.argsort(self)
 
     fn argsort(self, axis: Int) raises -> NDArray[DType.index]:
         """
@@ -3232,7 +3224,7 @@ struct NDArray[dtype: DType = DType.float64](
             The indices of the sorted NDArray.
         """
 
-        return sorting.argsort(self, axis=axis)
+        return numojo.sorting.argsort(self, axis=axis)
 
     fn astype[target: DType](self) raises -> NDArray[target]:
         """
@@ -3322,7 +3314,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Cumprod of all items of an array.
         """
-        return cumprod[dtype](self)
+        return numojo.math.cumprod[dtype](self)
 
     fn cumprod(self, axis: Int) raises -> NDArray[dtype]:
         """
@@ -3334,7 +3326,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Cumprod of array by axis.
         """
-        return cumprod[dtype](self, axis=axis)
+        return numojo.math.cumprod[dtype](self, axis=axis)
 
     fn cumsum(self) raises -> NDArray[dtype]:
         """
@@ -3344,7 +3336,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Cumsum of all items of an array.
         """
-        return cumsum[dtype](self)
+        return numojo.math.cumsum[dtype](self)
 
     fn cumsum(self, axis: Int) raises -> NDArray[dtype]:
         """
@@ -3356,10 +3348,27 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Cumsum of array by axis.
         """
-        return cumsum[dtype](self, axis=axis)
+        return numojo.math.cumsum[dtype](self, axis=axis)
 
-    fn diagonal(self):
-        pass
+    fn diagonal[dtype: DType](self, offset: Int = 0) raises -> Self:
+        """
+        Returns specific diagonals.
+        Currently supports only 2D arrays.
+
+        Raises:
+            Error: If the array is not 2D.
+            Error: If the offset is beyond the shape of the array.
+
+        Parameters:
+            dtype: Data type of the array.
+
+        Args:
+            offset: Offset of the diagonal from the main diagonal.
+
+        Returns:
+            The diagonal of the NDArray.
+        """
+        return numojo.linalg.diagonal(self, offset=offset)
 
     fn fill(mut self, val: Scalar[dtype]):
         """
@@ -3495,7 +3504,7 @@ struct NDArray[dtype: DType = DType.float64](
             The max value.
         """
 
-        return extrema.max(self)
+        return numojo.math.max(self)
 
     fn max(self, axis: Int) raises -> Self:
         """
@@ -3510,7 +3519,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with reduced number of dimensions.
         """
 
-        return extrema.max(self, axis=axis)
+        return numojo.math.max(self, axis=axis)
 
     # TODO: Remove this methods
     fn mdot(self, other: Self) raises -> Self:
@@ -3563,7 +3572,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The mean of the array.
         """
-        return mean[returned_dtype](self)
+        return numojo.statistics.mean[returned_dtype](self)
 
     fn mean[
         returned_dtype: DType = DType.float64
@@ -3578,7 +3587,7 @@ struct NDArray[dtype: DType = DType.float64](
             An NDArray.
 
         """
-        return mean[returned_dtype](self, axis)
+        return numojo.statistics.mean[returned_dtype](self, axis)
 
     fn median[
         returned_dtype: DType = DType.float64
@@ -3615,7 +3624,7 @@ struct NDArray[dtype: DType = DType.float64](
             The min value.
         """
 
-        return extrema.min(self)
+        return numojo.math.min(self)
 
     fn min(self, axis: Int) raises -> Self:
         """
@@ -3630,7 +3639,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with reduced number of dimensions.
         """
 
-        return extrema.min(self, axis=axis)
+        return numojo.math.min(self, axis=axis)
 
     fn nditer(self) raises -> _NDIter[__origin_of(self), dtype]:
         """
@@ -3705,7 +3714,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Scalar.
         """
-        return sum(self)
+        return numojo.math.prod(self)
 
     fn prod(self: Self, axis: Int) raises -> Self:
         """
@@ -3718,7 +3727,7 @@ struct NDArray[dtype: DType = DType.float64](
             An NDArray.
         """
 
-        return prod(self, axis=axis)
+        return numojo.math.prod(self, axis=axis)
 
     # TODO: Remove this methods
     fn rdot(self, other: Self) raises -> Self:
@@ -3770,7 +3779,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Array of the same data with a new shape.
         """
-        return reshape[dtype](self, shape=shape, order=order)
+        return numojo.reshape(self, shape=shape, order=order)
 
     fn resize(mut self, shape: NDArrayShape) raises:
         """
@@ -3829,30 +3838,28 @@ struct NDArray[dtype: DType = DType.float64](
             buffer.store(i, self._buf.ptr.load[width=1](i + id * width))
         return buffer
 
-    fn sort(mut self) raises:
+    fn sort(mut self, axis: Int = -1) raises:
         """
-        Sort NDArray using quick sort method.
-        It is not guaranteed to be unstable.
-
-        When no axis is given, the array is flattened before sorting.
-
+        Sorts the array in-place along the given axis using quick sort method.
+        The deault axis is -1.
         See `numojo.sorting.sort` for more information.
-        """
-        var I = NDArray[DType.index](self.shape)
-        self = ravel(self)
-        sorting._sort_inplace(self, I, axis=0)
 
-    fn sort(mut self, owned axis: Int) raises:
+        Args:
+            axis: The axis along which the array is sorted. Defaults to -1.
         """
-        Sort NDArray along the given axis using quick sort method.
-        It is not guaranteed to be unstable.
 
-        When no axis is given, the array is flattened before sorting.
+        var normalized_axis: Int = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis >= self.ndim) or (normalized_axis < 0):
+            raise Error(
+                String(
+                    "\nError in `NDArray.sort()`: "
+                    "Axis ({}) is not in valid range [-{}, {})."
+                ).format(axis, self.ndim, self.ndim)
+            )
 
-        See `numojo.sorting.sort` for more information.
-        """
-        var I = NDArray[DType.index](self.shape)
-        sorting._sort_inplace(self, I, axis=axis)
+        numojo.sorting._sort_inplace(self, axis=normalized_axis)
 
     fn std[
         returned_dtype: DType = DType.float64
@@ -4002,7 +4009,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The trace of the ndarray.
         """
-        return linalg.norms.trace[dtype](self, offset, axis1, axis2)
+        return numojo.linalg.trace[dtype](self, offset, axis1, axis2)
 
     # TODO: Remove the underscore in the method name when view is supported.
     fn _transpose(self) raises -> Self:

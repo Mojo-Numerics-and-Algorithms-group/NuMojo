@@ -65,6 +65,7 @@ from numojo.routines.io import (
 from numojo.routines.io import printoptions, set_printoptions
 
 from numojo.routines import linalg
+from numojo.routines.linalg.misc import diagonal
 
 from numojo.routines import logic
 from numojo.routines.logic import (

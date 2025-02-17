@@ -44,18 +44,36 @@ alias printoptions = PrintOptions
 @value
 struct PrintOptions:
     var precision: Int
+    """
+    The number of decimal places to include in the formatted string.
+    Defaults to 4.
+    """
     var suppress_small: Bool
     var separator: String
+    """
+    The separator between elements in the array. Defaults to a space.
+    """
     var padding: String
+    """
+    The padding symbol between the elements at the edge and the brackets.
+    Defaults to an empty string.
+    """
     var threshold: Int
     var line_width: Int
     var edge_items: Int
+    """
+    The number of items to display at the beginning and end of a dimension.
+    Defaults to 3.
+    """
     var sign: Bool
     var float_format: String
     var complex_format: String
     var nan_string: String
     var inf_string: String
     var formatted_width: Int
+    """
+    The width of the formatted string per element of array.
+    """
     var exponent_threshold: Int
     var suppress_scientific: Bool
 

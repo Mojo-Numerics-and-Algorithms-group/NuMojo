@@ -74,6 +74,7 @@ from numojo.routines.linalg.products import matmul
 import numojo.routines.logic.comparison as comparison
 from numojo.routines.manipulation import reshape, ravel
 import numojo.routines.math.arithmetic as arithmetic
+import numojo.routines.math.extrema as extrema
 from numojo.routines.math.products import prod, cumprod
 import numojo.routines.math.rounding as rounding
 from numojo.routines.math.sums import sum, cumsum
@@ -3475,52 +3476,31 @@ struct NDArray[dtype: DType = DType.float64](
             strides=self.strides,
         )
 
-    fn max(self, axis: Int = 0) raises -> Self:
+    fn max(self) raises -> Scalar[dtype]:
         """
-        Max on axis.
-
-        Args:
-            axis: Axis.
+        Finds the max value of an array.
+        When no axis is given, the array is flattened before sorting.
 
         Returns:
-            Maximum value along the axis.
+            The max value.
         """
-        var ndim: Int = self.ndim
-        var shape: List[Int] = List[Int]()
-        for i in range(ndim):
-            shape.append(self.shape[i])
-        if axis > ndim - 1:
-            raise Error(
-                String(
-                    "Axis index ({}) must be smaller than "
-                    "the rank of the array ({})."
-                ).format(axis, ndim)
-            )
-        var result_shape: List[Int] = List[Int]()
-        var axis_size: Int = shape[axis]
-        var slices: List[Slice] = List[Slice]()
-        for i in range(ndim):
-            if i != axis:
-                result_shape.append(shape[i])
-                slices.append(Slice(0, shape[i], 1))
-            else:
-                slices.append(Slice(0, 0, 1))
 
-        slices[axis] = Slice(0, 1, 1)
-        var result: NDArray[dtype] = self[slices]
-        for i in range(1, axis_size):
-            slices[axis] = Slice(i, i + 1, 1)
-            var arr_slice = self[slices]
-            var mask1 = comparison.greater(arr_slice, result)
-            var mask2 = comparison.less(arr_slice, result)
-            # Wherever result is less than the new slice it is set to zero
-            # Wherever arr_slice is greater than the old result it is added to fill those zeros
-            result = arithmetic.add(
-                result * bool_to_numeric[dtype](mask2),
-                arr_slice * bool_to_numeric[dtype](mask1),
-            )
+        return extrema.max(self)
 
-        return result
+    fn max(self, axis: Int) raises -> Self:
+        """
+        Finds the max value of an array along the axis.
+        The number of dimension will be reduced by 1.
+        When no axis is given, the array is flattened before sorting.
+
+        Args:
+            axis: The axis along which the max is performed.
+
+        Returns:
+            An array with reduced number of dimensions.
+        """
+
+        return extrema.max(self, axis=axis)
 
     # TODO: Remove this methods
     fn mdot(self, other: Self) raises -> Self:
@@ -3563,53 +3543,6 @@ struct NDArray[dtype: DType = DType.float64](
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
         return new_matrix
-
-    fn min(self, axis: Int = 0) raises -> Self:
-        """
-        Min on axis.
-
-        Args:
-            axis: Axis.
-
-        Returns:
-            Minimum value along the axis.
-        """
-        var ndim: Int = self.ndim
-        var shape: List[Int] = List[Int]()
-        for i in range(ndim):
-            shape.append(self.shape[i])
-        if axis > ndim - 1:
-            raise Error(
-                String(
-                    "Axis index ({}) must be smaller than "
-                    "the rank of the array ({})."
-                ).format(axis, ndim)
-            )
-        var result_shape: List[Int] = List[Int]()
-        var axis_size: Int = shape[axis]
-        var slices: List[Slice] = List[Slice]()
-        for i in range(ndim):
-            if i != axis:
-                result_shape.append(shape[i])
-                slices.append(Slice(0, shape[i], 1))
-            else:
-                slices.append(Slice(0, 0, 1))
-
-        slices[axis] = Slice(0, 1, 1)
-        var result: NDArray[dtype] = self[slices]
-        for i in range(1, axis_size):
-            slices[axis] = Slice(i, i + 1, 1)
-            var arr_slice = self[slices]
-            var mask1 = comparison.less(arr_slice, result)
-            var mask2 = comparison.greater(arr_slice, result)
-            # Wherever result is greater than the new slice it is set to zero
-            # Wherever arr_slice is less than the old result it is added to fill those zeros
-            result = arithmetic.add(
-                result * bool_to_numeric[dtype](mask2),
-                arr_slice * bool_to_numeric[dtype](mask1),
-            )
-
-        return result
 
     fn mean[
         returned_dtype: DType = DType.float64
@@ -3663,8 +3596,31 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return median[returned_dtype](self, axis)
 
-    # fn nonzero(self):
-    #     pass
+    fn min(self) raises -> Scalar[dtype]:
+        """
+        Finds the min value of an array.
+        When no axis is given, the array is flattened before sorting.
+
+        Returns:
+            The min value.
+        """
+
+        return extrema.min(self)
+
+    fn min(self, axis: Int) raises -> Self:
+        """
+        Finds the min value of an array along the axis.
+        The number of dimension will be reduced by 1.
+        When no axis is given, the array is flattened before sorting.
+
+        Args:
+            axis: The axis along which the min is performed.
+
+        Returns:
+            An array with reduced number of dimensions.
+        """
+
+        return extrema.min(self, axis=axis)
 
     fn nditer(self) raises -> _NDIter[__origin_of(self), dtype]:
         """

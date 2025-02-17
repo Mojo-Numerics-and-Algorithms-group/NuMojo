@@ -37,6 +37,8 @@ struct Flags:
     also not writeable. If the parent object is writeable, the child object may 
     be not writeable.
     """
+    var FORC: Bool
+    """F_CONTIGUOUS or C_CONTIGUOUS."""
 
     # === ---------------------------------------------------------------- === #
     # Life cycle dunder methods
@@ -64,6 +66,7 @@ struct Flags:
         self.F_CONTIGUOUS = f_contiguous
         self.OWNDATA = owndata
         self.WRITEABLE = writeable and owndata
+        self.FORC = f_contiguous or c_contiguous
 
     fn __init__(
         out self,
@@ -91,6 +94,7 @@ struct Flags:
         )
         self.OWNDATA = owndata
         self.WRITEABLE = writeable and owndata
+        self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
     fn __init__(
         out self,
@@ -118,6 +122,7 @@ struct Flags:
         )
         self.OWNDATA = owndata
         self.WRITEABLE = writeable and owndata
+        self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
     fn __copyinit__(out self, other: Self):
         """
@@ -132,6 +137,7 @@ struct Flags:
         self.F_CONTIGUOUS = other.F_CONTIGUOUS
         self.OWNDATA = other.OWNDATA
         self.WRITEABLE = other.WRITEABLE
+        self.FORC = other.FORC
 
     # === ---------------------------------------------------------------- === #
     # Get and set dunder methods
@@ -158,6 +164,7 @@ struct Flags:
             and (key != "O")
             and (key != "WRITEABLE")
             and (key != "W")
+            and (key != "FORC")
         ):
             raise Error(
                 String(
@@ -171,5 +178,7 @@ struct Flags:
             return self.F_CONTIGUOUS
         elif (key == "OWNDATA") or (key == "O"):
             return self.OWNDATA
-        else:  # (key == "WRITEABLE") or (key == "W")
+        elif (key == "WRITEABLE") or (key == "W"):
             return self.WRITEABLE
+        else:
+            return self.FORC

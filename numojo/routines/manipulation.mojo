@@ -118,28 +118,40 @@ fn reshape[
 
 fn ravel[
     dtype: DType
-](owned A: NDArray[dtype], order: String = "C") raises -> NDArray[dtype]:
+](a: NDArray[dtype], order: String = "C") raises -> NDArray[dtype]:
     """
     Returns the raveled version of the NDArray.
 
     Args:
-        A: NDArray.
+        a: NDArray.
         order: The order to flatten the array.
 
     Return:
         A contiguous flattened array.
     """
 
-    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
-
-    if A.ndim == 1:
-        return A
+    var axis: Int
+    if order == "C":
+        axis = a.ndim - 1
+    elif order == "F":
+        axis = 0
     else:
-        if array_order != order:
-            A = transpose(A, axes=_list_of_flipped_range(A.ndim))
-        var B = NDArray[dtype](Shape(A.size))
-        memcpy(B._buf.ptr, A._buf.ptr, A.size)
-        return B
+        raise Error(
+            String("\nError in `ravel()`: Invalid order: {}").format(order)
+        )
+    var iterator = a.iter_by_axis(axis=axis, order=order)
+    var res = NDArray[dtype](Shape(a.size))
+    var length_of_elements = a.shape[axis]
+    var length_of_iterator = a.size // length_of_elements
+
+    for i in range(length_of_iterator):
+        memcpy(
+            dest=res._buf.ptr + i * length_of_elements,
+            src=iterator.ith(i)._buf.ptr,
+            count=length_of_elements,
+        )
+
+    return res^
 
 
 # ===----------------------------------------------------------------------=== #

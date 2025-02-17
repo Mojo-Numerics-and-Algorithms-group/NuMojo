@@ -3335,7 +3335,9 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn iter_by_axis[
         forward: Bool = True
-    ](self, axis: Int) raises -> _NDAxisIter[__origin_of(self), dtype, forward]:
+    ](self, axis: Int, order: String = "C") raises -> _NDAxisIter[
+        __origin_of(self), dtype, forward
+    ]:
         """
         Returns an iterator yielding 1-d array by axis.
 
@@ -3344,7 +3346,8 @@ struct NDArray[dtype: DType = DType.float64](
                 If False, iterate from the end to the beginning.
 
         Args:
-            axis: Axis by which the iteration is performed.
+            axis: The axis by which the iteration is performed.
+            order: The order to traverse the array.
 
         Returns:
             An iterator yielding 1-d array by axis.
@@ -3425,6 +3428,7 @@ struct NDArray[dtype: DType = DType.float64](
         return _NDAxisIter[__origin_of(self), dtype, forward](
             ptr=self._buf.ptr,
             axis=normalized_axis,
+            order=order,
             size=self.size,
             ndim=self.ndim,
             shape=self.shape,
@@ -4205,6 +4209,7 @@ struct _NDAxisIter[
 
     var ptr: UnsafePointer[Scalar[dtype]]
     var axis: Int
+    var order: String
     var length: Int
     var size: Int
     var ndim: Int
@@ -4222,6 +4227,7 @@ struct _NDAxisIter[
         out self,
         ptr: UnsafePointer[Scalar[dtype]],
         axis: Int,
+        order: String,
         size: Int,
         ndim: Int,
         shape: NDArrayShape,
@@ -4233,6 +4239,7 @@ struct _NDAxisIter[
         Args:
             ptr: Pointer to the data buffer.
             axis: Axis.
+            order: Order to traverse the array.
             size: Size of the axis.
             ndim: Number of dimensions.
             shape: Shape of the array.
@@ -4244,19 +4251,27 @@ struct _NDAxisIter[
         self.size_of_res = shape[axis]
         self.ptr = ptr
         self.axis = axis
+        self.order = order
         self.length = size // self.size_of_res
         self.size = size
         self.ndim = ndim
         self.shape = shape
         self.strides = strides
         self.strides_by_axis = NDArrayStrides(ndim=self.ndim, initialized=False)
-        var temp = 1
-        (self.strides_by_axis._buf + axis).init_pointee_copy(temp)
-        temp *= shape[axis]
-        for i in range(self.ndim - 1, -1, -1):
-            if i != axis:
-                (self.strides_by_axis._buf + i).init_pointee_copy(temp)
-                temp *= shape[i]
+        (self.strides_by_axis._buf + axis).init_pointee_copy(1)
+        temp = shape[axis]
+        if order == "C":
+            for i in range(self.ndim - 1, -1, -1):
+                if i != axis:
+                    (self.strides_by_axis._buf + i).init_pointee_copy(temp)
+                    temp *= shape[i]
+        else:
+            for i in range(self.ndim):
+                if i != axis:
+                    (self.strides_by_axis._buf + i).init_pointee_copy(temp)
+                    temp *= shape[i]
+
+        # Status of the iterator
         self.index = 0 if forward else self.length - 1
 
     fn __has_next__(self) -> Bool:
@@ -4288,10 +4303,19 @@ struct _NDAxisIter[
 
         var remainder = current_index * self.size_of_res
         var item = Item(ndim=self.ndim, initialized=True)
-        for i in range(self.axis):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
-        for i in range(self.axis + 1, self.ndim):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+
+        if self.order == "C":
+            for i in range(self.ndim):
+                if i != self.axis:
+                    item[i], remainder = divmod(
+                        remainder, self.strides_by_axis[i]
+                    )
+        else:
+            for i in range(self.ndim - 1, -1, -1):
+                if i != self.axis:
+                    item[i], remainder = divmod(
+                        remainder, self.strides_by_axis[i]
+                    )
 
         if (self.axis == self.ndim - 1) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -4334,10 +4358,19 @@ struct _NDAxisIter[
 
         var remainder = index * self.size_of_res
         var item = Item(ndim=self.ndim, initialized=True)
-        for i in range(self.axis):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
-        for i in range(self.axis + 1, self.ndim):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+
+        if self.order == "C":
+            for i in range(self.ndim):
+                if i != self.axis:
+                    item[i], remainder = divmod(
+                        remainder, self.strides_by_axis[i]
+                    )
+        else:
+            for i in range(self.ndim - 1, -1, -1):
+                if i != self.axis:
+                    item[i], remainder = divmod(
+                        remainder, self.strides_by_axis[i]
+                    )
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -4357,20 +4390,19 @@ struct _NDAxisIter[
 
         return elements
 
-    fn ith_with_indices(
+    fn ith_with_offsets(
         self, index: Int
     ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
         """
-        Gets the i-th 1-d array of the iterator and its indices
-        (C-order coordinates).
+        Gets the i-th 1-d array of the iterator and the offsets of its elements.
 
         Args:
             index: The index of the item. It must be non-negative.
 
         Returns:
-            Coordinates and elements of the i-th 1-d array of the iterator.
+            Offsets and elements of the i-th 1-d array of the iterator.
         """
-        var indices = NDArray[DType.index](Shape(self.size_of_res))
+        var offsets = NDArray[DType.index](Shape(self.size_of_res))
         var elements = NDArray[dtype](Shape(self.size_of_res))
 
         if (index >= self.length) or (index < 0):
@@ -4390,7 +4422,7 @@ struct _NDAxisIter[
 
         var new_strides = NDArrayStrides(self.shape, order="C")
         for j in range(self.size_of_res):
-            (indices._buf.ptr + j).init_pointee_copy(
+            (offsets._buf.ptr + j).init_pointee_copy(
                 _get_offset(item, new_strides)
             )
             (elements._buf.ptr + j).init_pointee_copy(
@@ -4398,7 +4430,7 @@ struct _NDAxisIter[
             )
             item[self.axis] += 1
 
-        return Tuple(indices, elements)
+        return Tuple(offsets, elements)
 
 
 @value

@@ -59,19 +59,33 @@ fn extrema_1d[
         Max value.
     """
 
+    alias simd_width = simdwidthof[dtype]()
     var value = a._buf.ptr[0]
 
     @parameter
     if is_max:
-        for i in range(a.size):
-            if (a._buf.ptr + i)[] > value:
-                value = a._buf.ptr[i]
-    else:
-        for i in range(a.size):
-            if (a._buf.ptr + i)[] < value:
-                value = a._buf.ptr[i]
 
-    return value
+        @parameter
+        fn vectorize_max[simd_width: Int](offset: Int) -> None:
+            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
+            if temp > value:
+                value = temp
+
+        vectorize[vectorize_max, simd_width](a.size)
+
+        return value
+
+    else:
+
+        @parameter
+        fn vectorize_min[simd_width: Int](offset: Int) -> None:
+            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
+            if temp < value:
+                value = temp
+
+        vectorize[vectorize_min, simd_width](a.size)
+
+        return value
 
 
 fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:

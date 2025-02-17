@@ -44,7 +44,7 @@ from numojo.routines.logic.truth import any
 from numojo.routines.manipulation import reshape, ravel
 import numojo.routines.math.rounding as rounding
 import numojo.routines.math.arithmetic as arithmetic
-from numojo.routines.math.extrema import maxT, minT
+from numojo.routines.math.extrema import max, min
 from numojo.routines.math.products import prod, cumprod
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.sorting as sorting

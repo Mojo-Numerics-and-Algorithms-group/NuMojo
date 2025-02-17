@@ -74,6 +74,7 @@ from numojo.routines.linalg.products import matmul
 import numojo.routines.logic.comparison as comparison
 from numojo.routines.manipulation import reshape, ravel
 import numojo.routines.math.arithmetic as arithmetic
+import numojo.routines.math.extrema as extrema
 from numojo.routines.math.products import prod, cumprod
 import numojo.routines.math.rounding as rounding
 from numojo.routines.math.sums import sum, cumsum
@@ -2733,7 +2734,11 @@ struct NDArray[dtype: DType = DType.float64](
             # For 0darray (numojo scalar), we can directly write the value
             writer.write(
                 String(self._buf.ptr[])
-                + String("  (0darray[" + _concise_dtype_str(self.dtype) + "])")
+                + String(
+                    "  (0darray["
+                    + _concise_dtype_str(self.dtype)
+                    + "], use `[]` or `.item()` to unpack)"
+                )
             )
         else:
             try:
@@ -3210,14 +3215,24 @@ struct NDArray[dtype: DType = DType.float64](
     fn argsort(self) raises -> NDArray[DType.index]:
         """
         Sort the NDArray and return the sorted indices.
-
-        See `numojo.routines.sorting.argsort()`.
+        See `numojo.argsort()`.
 
         Returns:
             The indices of the sorted NDArray.
         """
 
         return sorting.argsort(self)
+
+    fn argsort(self, axis: Int) raises -> NDArray[DType.index]:
+        """
+        Sort the NDArray and return the sorted indices.
+        See `numojo.argsort()`.
+
+        Returns:
+            The indices of the sorted NDArray.
+        """
+
+        return sorting.argsort(self, axis=axis)
 
     fn astype[target: DType](self) raises -> NDArray[target]:
         """
@@ -3471,52 +3486,31 @@ struct NDArray[dtype: DType = DType.float64](
             strides=self.strides,
         )
 
-    fn max(self, axis: Int = 0) raises -> Self:
+    fn max(self) raises -> Scalar[dtype]:
         """
-        Max on axis.
-
-        Args:
-            axis: Axis.
+        Finds the max value of an array.
+        When no axis is given, the array is flattened before sorting.
 
         Returns:
-            Maximum value along the axis.
+            The max value.
         """
-        var ndim: Int = self.ndim
-        var shape: List[Int] = List[Int]()
-        for i in range(ndim):
-            shape.append(self.shape[i])
-        if axis > ndim - 1:
-            raise Error(
-                String(
-                    "Axis index ({}) must be smaller than "
-                    "the rank of the array ({})."
-                ).format(axis, ndim)
-            )
-        var result_shape: List[Int] = List[Int]()
-        var axis_size: Int = shape[axis]
-        var slices: List[Slice] = List[Slice]()
-        for i in range(ndim):
-            if i != axis:
-                result_shape.append(shape[i])
-                slices.append(Slice(0, shape[i], 1))
-            else:
-                slices.append(Slice(0, 0, 1))
 
-        slices[axis] = Slice(0, 1, 1)
-        var result: NDArray[dtype] = self[slices]
-        for i in range(1, axis_size):
-            slices[axis] = Slice(i, i + 1, 1)
-            var arr_slice = self[slices]
-            var mask1 = comparison.greater(arr_slice, result)
-            var mask2 = comparison.less(arr_slice, result)
-            # Wherever result is less than the new slice it is set to zero
-            # Wherever arr_slice is greater than the old result it is added to fill those zeros
-            result = arithmetic.add(
-                result * bool_to_numeric[dtype](mask2),
-                arr_slice * bool_to_numeric[dtype](mask1),
-            )
+        return extrema.max(self)
 
-        return result
+    fn max(self, axis: Int) raises -> Self:
+        """
+        Finds the max value of an array along the axis.
+        The number of dimension will be reduced by 1.
+        When no axis is given, the array is flattened before sorting.
+
+        Args:
+            axis: The axis along which the max is performed.
+
+        Returns:
+            An array with reduced number of dimensions.
+        """
+
+        return extrema.max(self, axis=axis)
 
     # TODO: Remove this methods
     fn mdot(self, other: Self) raises -> Self:
@@ -3559,53 +3553,6 @@ struct NDArray[dtype: DType = DType.float64](
                     self[row : row + 1, :].vdot(other[:, col : col + 1]),
                 )
         return new_matrix
-
-    fn min(self, axis: Int = 0) raises -> Self:
-        """
-        Min on axis.
-
-        Args:
-            axis: Axis.
-
-        Returns:
-            Minimum value along the axis.
-        """
-        var ndim: Int = self.ndim
-        var shape: List[Int] = List[Int]()
-        for i in range(ndim):
-            shape.append(self.shape[i])
-        if axis > ndim - 1:
-            raise Error(
-                String(
-                    "Axis index ({}) must be smaller than "
-                    "the rank of the array ({})."
-                ).format(axis, ndim)
-            )
-        var result_shape: List[Int] = List[Int]()
-        var axis_size: Int = shape[axis]
-        var slices: List[Slice] = List[Slice]()
-        for i in range(ndim):
-            if i != axis:
-                result_shape.append(shape[i])
-                slices.append(Slice(0, shape[i], 1))
-            else:
-                slices.append(Slice(0, 0, 1))
-
-        slices[axis] = Slice(0, 1, 1)
-        var result: NDArray[dtype] = self[slices]
-        for i in range(1, axis_size):
-            slices[axis] = Slice(i, i + 1, 1)
-            var arr_slice = self[slices]
-            var mask1 = comparison.less(arr_slice, result)
-            var mask2 = comparison.greater(arr_slice, result)
-            # Wherever result is greater than the new slice it is set to zero
-            # Wherever arr_slice is less than the old result it is added to fill those zeros
-            result = arithmetic.add(
-                result * bool_to_numeric[dtype](mask2),
-                arr_slice * bool_to_numeric[dtype](mask1),
-            )
-
-        return result
 
     fn mean[
         returned_dtype: DType = DType.float64
@@ -3659,8 +3606,31 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return median[returned_dtype](self, axis)
 
-    # fn nonzero(self):
-    #     pass
+    fn min(self) raises -> Scalar[dtype]:
+        """
+        Finds the min value of an array.
+        When no axis is given, the array is flattened before sorting.
+
+        Returns:
+            The min value.
+        """
+
+        return extrema.min(self)
+
+    fn min(self, axis: Int) raises -> Self:
+        """
+        Finds the min value of an array along the axis.
+        The number of dimension will be reduced by 1.
+        When no axis is given, the array is flattened before sorting.
+
+        Args:
+            axis: The axis along which the min is performed.
+
+        Returns:
+            An array with reduced number of dimensions.
+        """
+
+        return extrema.min(self, axis=axis)
 
     fn nditer(self) raises -> _NDIter[__origin_of(self), dtype]:
         """
@@ -4343,20 +4313,18 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item._buf[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item._buf[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
 
-        if (self.axis == self.ndim - 1) & (
+        if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
         ):
-            # The memory layout is C-contiguous
+            # The memory layout is C-contiguous or F-contiguous
             memcpy(
                 res._buf.ptr,
                 self.ptr + _get_offset(item, self.strides),
@@ -4368,7 +4336,7 @@ struct _NDAxisIter[
                 (res._buf.ptr + j).init_pointee_copy(
                     self.ptr[_get_offset(item, self.strides)]
                 )
-                item[self.axis] += 1
+                item._buf[self.axis] += 1
 
         return res^
 
@@ -4398,15 +4366,13 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item._buf[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item._buf[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -4422,7 +4388,7 @@ struct _NDAxisIter[
                 (elements._buf.ptr + j).init_pointee_copy(
                     self.ptr[_get_offset(item, self.strides)]
                 )
-                item[self.axis] += 1
+                item._buf[self.axis] += 1
 
         return elements
 
@@ -4430,13 +4396,15 @@ struct _NDAxisIter[
         self, index: Int
     ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
         """
-        Gets the i-th 1-d array of the iterator and the offsets of its elements.
+        Gets the i-th 1-d array of the iterator and the offsets (in C-order)
+        of its elements.
 
         Args:
             index: The index of the item. It must be non-negative.
 
         Returns:
-            Offsets and elements of the i-th 1-d array of the iterator.
+            Offsets (in C-order) and elements of the i-th 1-d array of the
+            iterator.
         """
         var offsets = NDArray[DType.index](Shape(self.size_of_res))
         var elements = NDArray[dtype](Shape(self.size_of_res))
@@ -4444,7 +4412,7 @@ struct _NDAxisIter[
         if (index >= self.length) or (index < 0):
             raise Error(
                 String(
-                    "\nError in `NDAxisIter.ith()`: "
+                    "\nError in `NDAxisIter.ith_with_offsets()`: "
                     "Index ({}) must be in the range of [0, {})"
                 ).format(index, self.length)
             )
@@ -4452,19 +4420,51 @@ struct _NDAxisIter[
         var remainder = index * self.size_of_res
         var item = Item(ndim=self.ndim, initialized=True)
         for i in range(self.axis):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+            item._buf[i] = remainder // self.strides_by_axis[i]
+            remainder %= self.strides_by_axis[i]
         for i in range(self.axis + 1, self.ndim):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+            item._buf[i] = remainder // self.strides_by_axis[i]
+            remainder %= self.strides_by_axis[i]
 
         var new_strides = NDArrayStrides(self.shape, order="C")
-        for j in range(self.size_of_res):
-            (offsets._buf.ptr + j).init_pointee_copy(
-                _get_offset(item, new_strides)
+
+        if (self.axis == self.ndim - 1) & (
+            (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+        ):
+            # The memory layout is C-contiguous
+            memcpy(
+                elements._buf.ptr,
+                self.ptr + _get_offset(item, self.strides),
+                self.size_of_res,
             )
-            (elements._buf.ptr + j).init_pointee_copy(
-                self.ptr[_get_offset(item, self.strides)]
+            var begin_offset = _get_offset(item, new_strides)
+            for j in range(self.size_of_res):
+                (offsets._buf.ptr + j).init_pointee_copy(begin_offset + j)
+
+        elif (self.axis == 0) & (
+            (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+        ):
+            # The memory layout is F-contiguous
+            memcpy(
+                elements._buf.ptr,
+                self.ptr + _get_offset(item, self.strides),
+                self.size_of_res,
             )
-            item[self.axis] += 1
+            for j in range(self.size_of_res):
+                (offsets._buf.ptr + j).init_pointee_copy(
+                    _get_offset(item, new_strides)
+                )
+                item._buf[self.axis] += 1
+
+        else:
+            for j in range(self.size_of_res):
+                (offsets._buf.ptr + j).init_pointee_copy(
+                    _get_offset(item, new_strides)
+                )
+                (elements._buf.ptr + j).init_pointee_copy(
+                    self.ptr[_get_offset(item, self.strides)]
+                )
+                item._buf[self.axis] += 1
 
         return Tuple(offsets, elements)
 
@@ -4482,6 +4482,7 @@ struct _NDIter[
     var ndim: Int
     var shape: NDArrayShape
     var strides: NDArrayStrides
+    var strides_of_shape: NDArrayStrides
     var index: Int
     var order: String
 
@@ -4493,12 +4494,16 @@ struct _NDIter[
         shape: NDArrayShape,
         strides: NDArrayStrides,
         order: String,
-    ):
+    ) raises:
         self.length = length
         self.ptr = ptr
         self.ndim = ndim
         self.shape = shape
         self.strides = strides
+        if order == "C":
+            self.strides_of_shape = NDArrayStrides(shape, order="C")
+        else:
+            self.strides_of_shape = NDArrayStrides(shape, order="F")
         self.order = order
         self.index = 0
 
@@ -4520,13 +4525,11 @@ struct _NDIter[
 
         if self.order == "C":
             for i in range(self.ndim):
-                indices[i], remainder = divmod(
-                    remainder, NDArrayStrides(self.shape, order="C")[i]
-                )
+                indices[i] = remainder // self.strides_of_shape[i]
+                remainder %= self.strides_of_shape[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
-                indices[i], remainder = divmod(
-                    remainder, NDArrayStrides(self.shape, order="F")[i]
-                )
+                indices[i] = remainder // self.strides_of_shape[i]
+                remainder %= self.strides_of_shape[i]
 
         return self.ptr[_get_offset(indices, self.strides)]

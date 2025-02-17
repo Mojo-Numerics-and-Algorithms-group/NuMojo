@@ -38,9 +38,7 @@ fn gradient[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](x.shape)
-    var space: NDArray[dtype] = arange[dtype](
-        1, x.num_elements() + 1, step=spacing
-    )
+    var space: NDArray[dtype] = arange[dtype](1, x.size + 1, step=spacing)
     var hu: Scalar[dtype] = space.load(1)
     var hd: Scalar[dtype] = space.load(0)
     result.store(
@@ -48,15 +46,14 @@ fn gradient[
         (x.load(1) - x.load(0)) / (hu - hd),
     )
 
-    hu = space.load(x.num_elements() - 1)
-    hd = space.load(x.num_elements() - 2)
+    hu = space.load(x.size - 1)
+    hd = space.load(x.size - 2)
     result.store(
-        x.num_elements() - 1,
-        (x.load(x.num_elements() - 1) - x.load(x.num_elements() - 2))
-        / (hu - hd),
+        x.size - 1,
+        (x.load(x.size - 1) - x.load(x.size - 2)) / (hu - hd),
     )
 
-    for i in range(1, x.num_elements() - 1):
+    for i in range(1, x.size - 1):
         var hu: Scalar[dtype] = space.load(i + 1) - space.load(i)
         var hd: Scalar[dtype] = space.load(i) - space.load(i - 1)
         var fi: Scalar[dtype] = (
@@ -102,7 +99,7 @@ fn trapz[
         raise Error("x and y must have the same shape")
 
     var integral: Scalar[dtype] = 0.0
-    for i in range(x.num_elements() - 1):
+    for i in range(x.size - 1):
         var temp = (x.load(i + 1) - x.load(i)) * (
             y.load(i) + y.load(i + 1)
         ) / 2.0

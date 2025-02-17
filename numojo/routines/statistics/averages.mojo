@@ -32,6 +32,7 @@ fn mean_1d[
     """
     Calculate the arithmetic average of all items in an array.
     Regardless of the shape of input, it is treated as a 1-d array.
+    It is the backend function for `mean`, with or without `axis`.
 
     Parameters:
         dtype: The element type.
@@ -244,7 +245,7 @@ fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     var mode_value = sorted_array.item(0)
     var current_count = 1
 
-    for i in range(1, a.num_elements()):
+    for i in range(1, a.size):
         if sorted_array[i] == sorted_array[i - 1]:
             current_count += 1
         else:
@@ -254,7 +255,7 @@ fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
             current_count = 1
 
     if current_count > max_count:
-        mode_value = sorted_array.item(a.num_elements() - 1)
+        mode_value = sorted_array.item(a.size - 1)
 
     return mode_value
 

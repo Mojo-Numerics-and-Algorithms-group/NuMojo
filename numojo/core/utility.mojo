@@ -156,7 +156,8 @@ fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
     var remainder = offset
     var indices = Item(ndim=len(strides), initialized=False)
     for i in range(len(strides)):
-        indices[i], remainder = divmod(remainder, strides[i])
+        indices[i] = remainder // strides[i]
+        remainder %= strides[i]
 
     return _get_offset(indices, strides._flip())
 
@@ -330,9 +331,7 @@ fn apply_func_on_array_with_dim_reduction[
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
-
-    Raises:
-        Error when the array is 1-d.
+    When the array is 1-d, the returned array will be a 0-d array.
 
     Parameters:
         dtype: The data type of the input NDArray elements.
@@ -346,14 +345,29 @@ fn apply_func_on_array_with_dim_reduction[
         The NDArray with the function applied to the input NDArray by axis.
     """
 
-    if a.ndim == 1:
-        raise Error("\n`axis` argument is not allowed for 1-d array.")
+    # The iterator along the axis
+    var iterator = a.iter_by_axis(axis=axis)
+    # The final output array will have 1 less dimension than the input array
+    var res: NDArray[dtype]
 
-    var res = NDArray[dtype](a.shape._pop(axis=axis))
-    var offset = 0
-    for i in a.iter_by_axis(axis=axis):
-        (res._buf.ptr + offset).init_pointee_copy(func[dtype](i))
-        offset += 1
+    if a.ndim == 1:
+        res = numojo.creation._0darray[dtype](0)
+        (res._buf.ptr).init_pointee_copy(func[dtype](a))
+
+    else:
+        res = NDArray[dtype](a.shape._pop(axis=axis))
+
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                (res._buf.ptr + i).init_pointee_copy(
+                    func[dtype](iterator.ith(i))
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
     return res^
 
 
@@ -366,9 +380,9 @@ fn apply_func_on_array_with_dim_reduction[
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
+    When the array is 1-d, the returned array will be a 0-d array.
     The target data type of the returned NDArray is different from the input
-    NDArray.
-    This is a function overload.
+    NDArray. This is a function ***overload***.
 
     Raises:
         Error when the array is 1-d.
@@ -385,23 +399,29 @@ fn apply_func_on_array_with_dim_reduction[
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
     """
-    if a.ndim == 1:
-        raise Error("\n`axis` argument is not allowed for 1-d array.")
 
-    var res = NDArray[returned_dtype](a.shape._pop(axis=axis))
     # The iterator along the axis
     var iterator = a.iter_by_axis(axis=axis)
+    # The final output array will have 1 less dimension than the input array
+    var res: NDArray[returned_dtype]
 
-    @parameter
-    fn parallelized_func(i: Int):
-        try:
-            (res._buf.ptr + i).init_pointee_copy(
-                func[returned_dtype](iterator.ith(i))
-            )
-        except e:
-            print("Error in parallelized_func", e)
+    if a.ndim == 1:
+        res = numojo.creation._0darray[returned_dtype](0)
+        (res._buf.ptr).init_pointee_copy(func[returned_dtype](a))
 
-    parallelize[parallelized_func](a.size // a.shape[axis])
+    else:
+        res = NDArray[returned_dtype](a.shape._pop(axis=axis))
+
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                (res._buf.ptr + i).init_pointee_copy(
+                    func[returned_dtype](iterator.ith(i))
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
 
     return res^
 
@@ -435,8 +455,6 @@ fn apply_func_on_array_without_dim_reduction[
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
-        var iterator = a.iter_by_axis(axis=axis)
-
         @parameter
         fn parallelized_func_c(i: Int):
             try:
@@ -508,8 +526,6 @@ fn apply_func_on_array_without_dim_reduction[
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
-        var iterator = a.iter_by_axis(axis=axis)
-
         @parameter
         fn parallelized_func_c(i: Int):
             try:
@@ -650,7 +666,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()
-        memcpy(pointer_d, array.unsafe_ptr(), array.num_elements())
+        memcpy(pointer_d, array.unsafe_ptr(), array.size)
         _ = array
 
         return numpyarray^

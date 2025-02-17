@@ -4347,15 +4347,13 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
 
         if (self.axis == self.ndim - 1) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -4402,15 +4400,13 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    item[i], remainder = divmod(
-                        remainder, self.strides_by_axis[i]
-                    )
+                    item[i] = remainder // self.strides_by_axis[i]
+                    remainder %= self.strides_by_axis[i]
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -4456,9 +4452,11 @@ struct _NDAxisIter[
         var remainder = index * self.size_of_res
         var item = Item(ndim=self.ndim, initialized=True)
         for i in range(self.axis):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+            item[i] = remainder // self.strides_by_axis[i]
+            remainder %= self.strides_by_axis[i]
         for i in range(self.axis + 1, self.ndim):
-            item[i], remainder = divmod(remainder, self.strides_by_axis[i])
+            item[i] = remainder // self.strides_by_axis[i]
+            remainder %= self.strides_by_axis[i]
 
         var new_strides = NDArrayStrides(self.shape, order="C")
         for j in range(self.size_of_res):
@@ -4486,6 +4484,7 @@ struct _NDIter[
     var ndim: Int
     var shape: NDArrayShape
     var strides: NDArrayStrides
+    var strides_of_shape: NDArrayStrides
     var index: Int
     var order: String
 
@@ -4497,12 +4496,16 @@ struct _NDIter[
         shape: NDArrayShape,
         strides: NDArrayStrides,
         order: String,
-    ):
+    ) raises:
         self.length = length
         self.ptr = ptr
         self.ndim = ndim
         self.shape = shape
         self.strides = strides
+        if order == "C":
+            self.strides_of_shape = NDArrayStrides(shape, order="C")
+        else:
+            self.strides_of_shape = NDArrayStrides(shape, order="F")
         self.order = order
         self.index = 0
 
@@ -4524,13 +4527,11 @@ struct _NDIter[
 
         if self.order == "C":
             for i in range(self.ndim):
-                indices[i], remainder = divmod(
-                    remainder, NDArrayStrides(self.shape, order="C")[i]
-                )
+                indices[i] = remainder // self.strides_of_shape[i]
+                remainder %= self.strides_of_shape[i]
         else:
             for i in range(self.ndim - 1, -1, -1):
-                indices[i], remainder = divmod(
-                    remainder, NDArrayStrides(self.shape, order="F")[i]
-                )
+                indices[i] = remainder // self.strides_of_shape[i]
+                remainder %= self.strides_of_shape[i]
 
         return self.ptr[_get_offset(indices, self.strides)]

@@ -156,7 +156,8 @@ fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
     var remainder = offset
     var indices = Item(ndim=len(strides), initialized=False)
     for i in range(len(strides)):
-        indices[i], remainder = divmod(remainder, strides[i])
+        indices[i] = remainder // strides[i]
+        remainder %= strides[i]
 
     return _get_offset(indices, strides._flip())
 

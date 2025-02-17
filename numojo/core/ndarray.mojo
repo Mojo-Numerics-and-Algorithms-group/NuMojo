@@ -4311,10 +4311,10 @@ struct _NDAxisIter[
                     item[i] = remainder // self.strides_by_axis[i]
                     remainder %= self.strides_by_axis[i]
 
-        if (self.axis == self.ndim - 1) & (
+        if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
         ):
-            # The memory layout is C-contiguous
+            # The memory layout is C-contiguous or F-contiguous
             memcpy(
                 res._buf.ptr,
                 self.ptr + _get_offset(item, self.strides),

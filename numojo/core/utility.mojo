@@ -666,7 +666,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()
-        memcpy(pointer_d, array.unsafe_ptr(), array.num_elements())
+        memcpy(pointer_d, array.unsafe_ptr(), array.size)
         _ = array
 
         return numpyarray^

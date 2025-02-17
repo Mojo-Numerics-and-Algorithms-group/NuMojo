@@ -400,17 +400,15 @@ fn diff[
         The n-th order difference of the input array.
     """
 
-    var array1: NDArray[dtype] = NDArray[dtype](
-        NDArrayShape(array.num_elements())
-    )
-    for i in range(array.num_elements()):
+    var array1: NDArray[dtype] = NDArray[dtype](NDArrayShape(array.size))
+    for i in range(array.size):
         array1.store(i, array.load(i))
 
     for num in range(n):
         var result: NDArray[dtype] = NDArray[dtype](
-            NDArrayShape(array.num_elements() - (num + 1))
+            NDArrayShape(array.size - (num + 1))
         )
-        for i in range(array1.num_elements() - 1):
+        for i in range(array1.size - 1):
             result.store(i, (array1.load[1](i + 1) - array1.load[1](i)))
         array1 = result
     return array1

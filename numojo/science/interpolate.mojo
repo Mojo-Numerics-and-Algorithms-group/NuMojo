@@ -81,11 +81,11 @@ fn _interp1d_linear_interpolate[
         The linearly interpolated values of y at the points xi as An Array of `dtype`.
     """
     var result = NDArray[dtype](xi.shape)
-    for i in range(xi.num_elements()):
+    for i in range(xi.size):
         if xi._buf.ptr[i] <= x._buf.ptr[0]:
             result._buf.ptr.store(i, y._buf.ptr[0])
-        elif xi._buf.ptr[i] >= x._buf.ptr[x.num_elements() - 1]:
-            result._buf.ptr.store(i, y._buf.ptr[y.num_elements() - 1])
+        elif xi._buf.ptr[i] >= x._buf.ptr[x.size - 1]:
+            result._buf.ptr.store(i, y._buf.ptr[y.size - 1])
         else:
             var j = 0
             while xi._buf.ptr[i] > x._buf.ptr[j]:
@@ -116,7 +116,7 @@ fn _interp1d_linear_extrapolate[
         The linearly extrapolated values of y at the points xi as An Array of `dtype`.
     """
     var result = NDArray[dtype](xi.shape)
-    for i in range(xi.num_elements()):
+    for i in range(xi.size):
         if xi._buf.ptr.load[width=1](i) <= x._buf.ptr.load[width=1](0):
             var slope = (y._buf.ptr[1] - y._buf.ptr[0]) / (
                 x._buf.ptr[1] - x._buf.ptr[0]
@@ -124,16 +124,12 @@ fn _interp1d_linear_extrapolate[
             result._buf.ptr[i] = y._buf.ptr[0] + slope * (
                 xi._buf.ptr[i] - x._buf.ptr[0]
             )
-        elif xi._buf.ptr[i] >= x._buf.ptr[x.num_elements() - 1]:
-            var slope = (
-                y._buf.ptr[y.num_elements() - 1]
-                - y._buf.ptr[y.num_elements() - 2]
-            ) / (
-                x._buf.ptr[x.num_elements() - 1]
-                - x._buf.ptr[x.num_elements() - 2]
+        elif xi._buf.ptr[i] >= x._buf.ptr[x.size - 1]:
+            var slope = (y._buf.ptr[y.size - 1] - y._buf.ptr[y.size - 2]) / (
+                x._buf.ptr[x.size - 1] - x._buf.ptr[x.size - 2]
             )
-            result._buf.ptr[i] = y._buf.ptr[y.num_elements() - 1] + slope * (
-                xi._buf.ptr[i] - x._buf.ptr[x.num_elements() - 1]
+            result._buf.ptr[i] = y._buf.ptr[y.size - 1] + slope * (
+                xi._buf.ptr[i] - x._buf.ptr[x.size - 1]
             )
         else:
             var j = 0
@@ -165,11 +161,11 @@ fn _interp1d_linear_extrapolate[
 #         The quadratically interpolated values of y at the points xi as An Array of `dtype`.
 #     """
 #     var result = NDArray[dtype](xi.shape)
-#     for i in range(xi.num_elements()):
+#     for i in range(xi.size):
 #         if xi[i] <= x[0]:
 #             result[i] = y[0]
-#         elif xi[i] >= x[x.num_elements() - 1]:
-#             result[i] = y[y.num_elements() - 1]
+#         elif xi[i] >= x[x.size - 1]:
+#             result[i] = y[y.size - 1]
 #         else:
 #             var j = 1
 #             while xi[i] > x[j]:
@@ -205,17 +201,17 @@ fn _interp1d_linear_extrapolate[
 #         The quadratically extrapolated values of y at the points xi as An Array of `dtype`.
 #     """
 #     var result = NDArray[dtype](xi.shape)
-#     for i in range(xi.num_elements()):
+#     for i in range(xi.size):
 #         if xi[i] <= x[0]:
 #             var slope = (y[1] - y[0]) / (x[1] - x[0])
 #             var intercept = y[0] - slope * x[0]
 #             result[i] = intercept + slope * xi[i]
-#         elif xi[i] >= x[x.num_elements() - 1]:
-#             var slope = (y[y.num_elements() - 1] - y[y.num_elements() - 2]) / (
-#                 x[x.num_elements() - 1] - x[x.num_elements() - 2]
+#         elif xi[i] >= x[x.size - 1]:
+#             var slope = (y[y.size - 1] - y[y.size - 2]) / (
+#                 x[x.size - 1] - x[x.size - 2]
 #             )
-#             var intercept = y[y.num_elements() - 1] - slope * x[
-#                 x.num_elements() - 1
+#             var intercept = y[y.size - 1] - slope * x[
+#                 x.size - 1
 #             ]
 #             result[i] = intercept + slope * xi[i]
 #         else:
@@ -253,18 +249,18 @@ fn _interp1d_linear_extrapolate[
 #         The cubically interpolated values of y at the points xi as An Array of `dtype`.
 #     """
 #     var result = NDArray[dtype](xi.shape)
-#     for i in range(xi.num_elements()):
+#     for i in range(xi.size):
 #         if xi[i] <= x[0]:
 #             result[i] = y[0]
-#         elif xi[i] >= x[x.num_elements() - 1]:
-#             result[i] = y[y.num_elements() - 1]
+#         elif xi[i] >= x[x.size - 1]:
+#             result[i] = y[y.size - 1]
 #         else:
 #             var j = 0
 #             while xi[i] > x[j]:
 #                 j += 1
 #             # Ensure we have enough points for cubic interpolation
 #             # var j = math.max(j, 2)
-#             # var j = math.min(j, x.num_elements() - 2)
+#             # var j = math.min(j, x.size - 2)
 
 #             var x0 = x[j - 2]
 #             var x1 = x[j - 1]
@@ -305,7 +301,7 @@ fn _interp1d_linear_extrapolate[
 #         The cubically extrapolated values of y at the points xi as An Array of `dtype`.
 #     """
 #     var result = NDArray[dtype](xi.shape)
-#     for i in range(xi.num_elements()):
+#     for i in range(xi.size):
 #         if (xi[i] <= x[0]):
 #             var t = (xi[i] - x[0]) / (x[1] - x[0])
 #             var a0: NDArray[dtype] = (y[2] - y[1]) + (y[1]-y[0])
@@ -313,16 +309,16 @@ fn _interp1d_linear_extrapolate[
 #             var a2 = y[1] - y[0]
 #             var a3 = y[0]
 #             result[i] = a0 * t * t * t + a1 * t * t + a2 * t + a3
-#         elif xi[i] >= x[x.num_elements() - 1]:
-#             var t = (xi[i] - x[x.num_elements() - 2]) / (
-#                 x[x.num_elements() - 1] - x[x.num_elements() - 2]
+#         elif xi[i] >= x[x.size - 1]:
+#             var t = (xi[i] - x[x.size - 2]) / (
+#                 x[x.size - 1] - x[x.size - 2]
 #             )
-#             var a0 = y[y.num_elements() - 1] - y[y.num_elements() - 2] - y[
-#                 y.num_elements() - 3
-#             ] + y[y.num_elements() - 2]
-#             var a1 = y[y.num_elements() - 3] - y[y.num_elements() - 2] - a0
-#             var a2 = y[y.num_elements() - 2] - y[y.num_elements() - 3]
-#             var a3 = y[y.num_elements() - 2]
+#             var a0 = y[y.size - 1] - y[y.size - 2] - y[
+#                 y.size - 3
+#             ] + y[y.size - 2]
+#             var a1 = y[y.size - 3] - y[y.size - 2] - a0
+#             var a2 = y[y.size - 2] - y[y.size - 3]
+#             var a3 = y[y.size - 2]
 #             result[i] = a0 * t * t * t + a1 * t * t + a2 * t + a3
 #         else:
 #             var j = 1

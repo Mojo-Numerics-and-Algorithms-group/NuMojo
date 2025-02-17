@@ -273,7 +273,7 @@ fn binary_sort[
     for i in range(array.size):
         result.store(i, array.load(i).cast[dtype]())
 
-    var n = array.num_elements()
+    var n = array.size
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:

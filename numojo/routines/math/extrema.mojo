@@ -384,7 +384,7 @@ fn minimum[
             ),
         )
 
-    vectorize[vectorized_min, width](array1.num_elements())
+    vectorize[vectorized_min, width](array1.size)
     return result
 
 
@@ -419,5 +419,5 @@ fn maximum[
             ),
         )
 
-    vectorize[vectorized_max, width](array1.num_elements())
+    vectorize[vectorized_max, width](array1.size)
     return result

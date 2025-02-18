@@ -3393,13 +3393,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return ravel(self, order=order)
 
-    fn iter_by_axis[
+    fn iter_along_axis[
         forward: Bool = True
     ](self, axis: Int, order: String = "C") raises -> _NDAxisIter[
         __origin_of(self), dtype, forward
     ]:
         """
-        Returns an iterator yielding 1-d array by axis.
+        Returns an iterator yielding 1-d array slices along the given axis.
 
         Parameters:
             forward: If True, iterate from the beginning to the end.
@@ -3410,14 +3410,14 @@ struct NDArray[dtype: DType = DType.float64](
             order: The order to traverse the array.
 
         Returns:
-            An iterator yielding 1-d array by axis.
+            An iterator yielding 1-d array slices along the given axis.
 
         Example:
         ```mojo
         from numojo.prelude import *
         var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
         print(a)
-        for i in a.iter_by_axis(axis=0):
+        for i in a.iter_along_axis(axis=0):
             print(String(i))
         ```
 
@@ -3451,7 +3451,7 @@ struct NDArray[dtype: DType = DType.float64](
         from numojo.prelude import *
         var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
         print(a)
-        for i in a.iter_by_axis(axis=2):
+        for i in a.iter_along_axis(axis=2):
             print(String(i))
         ```
 
@@ -3480,7 +3480,7 @@ struct NDArray[dtype: DType = DType.float64](
         if (normalized_axis >= self.ndim) or (normalized_axis < 0):
             raise Error(
                 String(
-                    "\nError in `NDArray.iter_by_axis()`: "
+                    "\nError in `NDArray.iter_along_axis()`: "
                     "Axis ({}) is not in valid range [{}, {})."
                 ).format(axis, -self.ndim, self.ndim)
             )
@@ -4186,11 +4186,10 @@ struct _NDAxisIter[
     # TODO:
     # - Return a view instead of copy if possible (when Bufferable is supported).
     """
-    An iterator yielding 1-d array by axis.
-    The yielded array is garanteed to be contiguous on memory,
-    and it is a view of the original array if possible.
-
-    It can be used when a function reduces the dimension of the array by axis.
+    An iterator yielding 1-d array slices along the given axis.
+    The yielded array slices are garanteed to be contiguous on memory.
+    It will be a view of the original array where possible.
+    The iterator is useful when applying functions along a certain axis.
 
     Parameters:
         is_mutable: Whether the iterator is mutable.

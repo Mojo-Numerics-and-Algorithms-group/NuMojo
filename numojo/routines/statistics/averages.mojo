@@ -95,8 +95,8 @@ fn mean[
             )
         )
 
-    return utility.apply_func_on_array_with_dim_reduction[
-        returned_dtype=returned_dtype, func=mean_1d
+    return numojo.apply_along_axis[
+        returned_dtype=returned_dtype, func1d=mean_1d
     ](a=a, axis=normalized_axis)
 
 
@@ -220,8 +220,8 @@ fn median[
                 axis, a.ndim, a.ndim
             )
         )
-    return utility.apply_func_on_array_with_dim_reduction[
-        returned_dtype=returned_dtype, func=median_1d
+    return numojo.apply_along_axis[
+        returned_dtype=returned_dtype, func1d=median_1d
     ](a=a, axis=normalized_axis)
 
 
@@ -301,9 +301,7 @@ fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return utility.apply_func_on_array_with_dim_reduction[func=mode_1d](
-        a=a, axis=normalized_axis
-    )
+    return numojo.apply_along_axis[func1d=mode_1d](a=a, axis=normalized_axis)
 
 
 fn std[

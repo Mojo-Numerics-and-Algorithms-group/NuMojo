@@ -139,7 +139,7 @@ fn ravel[
         raise Error(
             String("\nError in `ravel()`: Invalid order: {}").format(order)
         )
-    var iterator = a.iter_by_axis(axis=axis, order=order)
+    var iterator = a.iter_along_axis(axis=axis, order=order)
     var res = NDArray[dtype](Shape(a.size))
     var length_of_elements = a.shape[axis]
     var length_of_iterator = a.size // length_of_elements

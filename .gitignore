@@ -27,11 +27,11 @@ magic.lock
 
 # Miscellaneous files
 mojo
-numojo.mojopkg
-bench.mojo
-test*.mojo
-test*.ipynb
-tempCodeRunnerFile.mojo
+/numojo.mojopkg
+/bench.mojo
+/test*.mojo
+/test*.ipynb
+/tempCodeRunnerFile.mojo
 
 # Auto docs
 docs/readthedocs/docs.json

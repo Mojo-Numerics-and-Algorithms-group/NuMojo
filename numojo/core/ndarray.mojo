@@ -4225,6 +4225,44 @@ struct _NDArrayIter[
         else:
             return self.index
 
+    fn ith(self, index: Int) raises -> NDArray[dtype]:
+        """
+        Gets the i-th array of the iterator.
+
+        Args:
+            index: The index of the item. It must be non-negative.
+
+        Returns:
+            The i-th `ndim-1`-D array of the iterator.
+        """
+
+        if (index >= self.length) or (index < 0):
+            raise Error(
+                String(
+                    "\nError in `NDArrayIter.ith()`: "
+                    "Index ({}) must be in the range of [0, {})"
+                ).format(index, self.length)
+            )
+
+        var res = NDArray[dtype](self.shape._pop(self.dimension))
+
+        for offset in range(self.size_of_res):
+            var remainder = offset
+            var item = Item(ndim=self.ndim, initialized=False)
+
+            for i in range(self.ndim - 1, -1, -1):
+                if i != self.dimension:
+                    (item._buf + i).init_pointee_copy(remainder % self.shape[i])
+                    remainder = remainder // self.shape[i]
+                else:
+                    (item._buf + self.dimension).init_pointee_copy(index)
+
+            (res._buf.ptr + offset).init_pointee_copy(
+                self.ptr[_get_offset(item, self.strides)]
+            )
+
+        return res
+
 
 @value
 struct _NDAxisIter[
@@ -4408,9 +4446,8 @@ struct _NDAxisIter[
             index: The index of the item. It must be non-negative.
 
         Returns:
-            Coordinates and elements of the i-th 1-d array of the iterator.
+            The i-th 1-d array of the iterator.
         """
-        var elements = NDArray[dtype](Shape(self.size_of_res))
 
         if (index >= self.length) or (index < 0):
             raise Error(
@@ -4419,6 +4456,8 @@ struct _NDAxisIter[
                     "Index ({}) must be in the range of [0, {})"
                 ).format(index, self.length)
             )
+
+        var elements = NDArray[dtype](Shape(self.size_of_res))
 
         var remainder = index * self.size_of_res
         var item = Item(ndim=self.ndim, initialized=True)

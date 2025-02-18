@@ -827,7 +827,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         # Get the shape of resulted array
-        var shape = NDArrayShape.join(indices.shape, self.shape._pop(0))
+        var shape = indices.shape.join(self.shape._pop(0))
 
         var result = NDArray[dtype](shape)
         var size_per_item = self.size // self.shape[0]
@@ -1937,15 +1937,17 @@ struct NDArray[dtype: DType = DType.float64](
         """
         If all true return true.
         """
-        if self.dtype == DType.bool:
-            if self.all():
-                return True
-            else:
-                return False
-        raise Error(
-            "core:ndarray:NDArray:__bool__: Bool is currently only implemented"
-            " for DType.bool"
-        )
+        if (self.size == 1) or (self.ndim == 0):
+            return Bool(self._buf.ptr[])
+
+        else:
+            raise Error(
+                "\nError in `numojo.NDArray.__int__(self)`: "
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to Bool."
+                "The truth value of an array with more than one element is "
+                "ambiguous. Use a.any() or a.all()."
+            )
 
     fn __int__(self) raises -> Int:
         """
@@ -4155,7 +4157,7 @@ struct _NDArrayIter[
     var strides: NDArrayStrides
     """Strides of array or view. It is not necessarily compatible with shape."""
     var ndim: Int
-    var size_of_res: Int
+    var size_of_item: Int
 
     fn __init__(out self, read a: NDArray[dtype], read dimension: Int) raises:
         """
@@ -4175,7 +4177,7 @@ struct _NDArrayIter[
         self.strides = a.strides
         self.ndim = a.ndim
         self.length = a.shape[dimension]
-        self.size_of_res = a.size // a.shape[dimension]
+        self.size_of_item = a.size // a.shape[dimension]
         # Status of the iterator
         self.index = 0 if forward else a.shape[dimension] - 1
 
@@ -4192,7 +4194,7 @@ struct _NDArrayIter[
         else:
             self.index -= 1
 
-        for offset in range(self.size_of_res):
+        for offset in range(self.size_of_item):
             var remainder = offset
             var item = Item(ndim=self.ndim, initialized=False)
 
@@ -4244,24 +4246,30 @@ struct _NDArrayIter[
                 ).format(index, self.length)
             )
 
-        var res = NDArray[dtype](self.shape._pop(self.dimension))
+        if self.ndim > 1:
+            var res = NDArray[dtype](self.shape._pop(self.dimension))
 
-        for offset in range(self.size_of_res):
-            var remainder = offset
-            var item = Item(ndim=self.ndim, initialized=False)
+            for offset in range(self.size_of_item):
+                var remainder = offset
+                var item = Item(ndim=self.ndim, initialized=False)
 
-            for i in range(self.ndim - 1, -1, -1):
-                if i != self.dimension:
-                    (item._buf + i).init_pointee_copy(remainder % self.shape[i])
-                    remainder = remainder // self.shape[i]
-                else:
-                    (item._buf + self.dimension).init_pointee_copy(index)
+                for i in range(self.ndim - 1, -1, -1):
+                    if i != self.dimension:
+                        (item._buf + i).init_pointee_copy(
+                            remainder % self.shape[i]
+                        )
+                        remainder = remainder // self.shape[i]
+                    else:
+                        (item._buf + self.dimension).init_pointee_copy(index)
 
-            (res._buf.ptr + offset).init_pointee_copy(
-                self.ptr[_get_offset(item, self.strides)]
-            )
+                (res._buf.ptr + offset).init_pointee_copy(
+                    self.ptr[_get_offset(item, self.strides)]
+                )
+            return res
 
-        return res
+        else:  # 0-D array
+            var res = numojo.creation._0darray[dtype](self.ptr[index])
+            return res
 
 
 @value
@@ -4322,7 +4330,7 @@ struct _NDAxisIter[
     """Strides according to shape of view and along the axis."""
     var index: Int
     """Status counter."""
-    var size_of_res: Int
+    var size_of_item: Int
     """Size of the result 1-d array."""
 
     fn __init__(
@@ -4343,11 +4351,11 @@ struct _NDAxisIter[
             raise Error("Axis must be in the range of [0, ndim).")
 
         self.size = a.size
-        self.size_of_res = a.shape[axis]
+        self.size_of_item = a.shape[axis]
         self.ptr = a._buf.ptr
         self.axis = axis
         self.order = order
-        self.length = self.size // self.size_of_res
+        self.length = self.size // self.size_of_item
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides
@@ -4388,7 +4396,7 @@ struct _NDAxisIter[
             return self.index
 
     fn __next__(mut self) raises -> NDArray[dtype]:
-        var res = NDArray[dtype](Shape(self.size_of_res))
+        var res = NDArray[dtype](Shape(self.size_of_item))
         var current_index = self.index
 
         @parameter
@@ -4397,7 +4405,7 @@ struct _NDAxisIter[
         else:
             self.index -= 1
 
-        var remainder = current_index * self.size_of_res
+        var remainder = current_index * self.size_of_item
         var item = Item(ndim=self.ndim, initialized=False)
 
         if self.order == "C":
@@ -4426,11 +4434,11 @@ struct _NDAxisIter[
             memcpy(
                 res._buf.ptr,
                 self.ptr + _get_offset(item, self.strides),
-                self.size_of_res,
+                self.size_of_item,
             )
 
         else:
-            for j in range(self.size_of_res):
+            for j in range(self.size_of_item):
                 (res._buf.ptr + j).init_pointee_copy(
                     self.ptr[_get_offset(item, self.strides)]
                 )
@@ -4457,9 +4465,9 @@ struct _NDAxisIter[
                 ).format(index, self.length)
             )
 
-        var elements = NDArray[dtype](Shape(self.size_of_res))
+        var elements = NDArray[dtype](Shape(self.size_of_item))
 
-        var remainder = index * self.size_of_res
+        var remainder = index * self.size_of_item
         var item = Item(ndim=self.ndim, initialized=True)
 
         if self.order == "C":
@@ -4488,10 +4496,10 @@ struct _NDAxisIter[
             memcpy(
                 elements._buf.ptr,
                 self.ptr + _get_offset(item, self.strides),
-                self.size_of_res,
+                self.size_of_item,
             )
         else:
-            for j in range(self.size_of_res):
+            for j in range(self.size_of_item):
                 (elements._buf.ptr + j).init_pointee_copy(
                     self.ptr[_get_offset(item, self.strides)]
                 )
@@ -4513,8 +4521,8 @@ struct _NDAxisIter[
             Offsets (in C-order) and elements of the i-th 1-d array of the
             iterator.
         """
-        var offsets = NDArray[DType.index](Shape(self.size_of_res))
-        var elements = NDArray[dtype](Shape(self.size_of_res))
+        var offsets = NDArray[DType.index](Shape(self.size_of_item))
+        var elements = NDArray[dtype](Shape(self.size_of_item))
 
         if (index >= self.length) or (index < 0):
             raise Error(
@@ -4524,7 +4532,7 @@ struct _NDAxisIter[
                 ).format(index, self.length)
             )
 
-        var remainder = index * self.size_of_res
+        var remainder = index * self.size_of_item
         var item = Item(ndim=self.ndim, initialized=True)
         for i in range(self.axis):
             item._buf[i] = remainder // self.strides_compatible[i]
@@ -4542,10 +4550,10 @@ struct _NDAxisIter[
             memcpy(
                 elements._buf.ptr,
                 self.ptr + _get_offset(item, self.strides),
-                self.size_of_res,
+                self.size_of_item,
             )
             var begin_offset = _get_offset(item, new_strides)
-            for j in range(self.size_of_res):
+            for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(begin_offset + j)
 
         elif (self.axis == 0) & (
@@ -4555,16 +4563,16 @@ struct _NDAxisIter[
             memcpy(
                 elements._buf.ptr,
                 self.ptr + _get_offset(item, self.strides),
-                self.size_of_res,
+                self.size_of_item,
             )
-            for j in range(self.size_of_res):
+            for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(
                     _get_offset(item, new_strides)
                 )
                 item._buf[self.axis] += 1
 
         else:
-            for j in range(self.size_of_res):
+            for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(
                     _get_offset(item, new_strides)
                 )

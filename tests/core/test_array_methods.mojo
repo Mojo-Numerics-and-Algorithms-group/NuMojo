@@ -61,7 +61,7 @@ def test_constructors():
 
 def test_iterator():
     var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
-    var a_iter = a.iter_by_axis[forward=False](axis=0)
+    var a_iter = a.iter_along_axis[forward=False](axis=0)
     var b = a_iter.__next__() == nm.array[i8]("[11, 23]")
     assert_true(
         b.item(0) == True,

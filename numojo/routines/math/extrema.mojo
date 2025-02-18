@@ -136,9 +136,9 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return utility.apply_func_on_array_with_dim_reduction[
-        func = extrema_1d[is_max=True]
-    ](a=a, axis=normalized_axis)
+    return numojo.apply_along_axis[func1d = extrema_1d[is_max=True]](
+        a=a, axis=normalized_axis
+    )
 
 
 fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
@@ -248,9 +248,9 @@ fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return utility.apply_func_on_array_with_dim_reduction[
-        func = extrema_1d[is_max=False]
-    ](a=a, axis=normalized_axis)
+    return numojo.apply_along_axis[func1d = extrema_1d[is_max=False]](
+        a=a, axis=normalized_axis
+    )
 
 
 fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:

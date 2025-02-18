@@ -81,9 +81,9 @@ fn sort[
     if (a.ndim == 1) and (normalized_axis == 0):
         return quick_sort_1d(a)
 
-    return utility.apply_func_on_array_without_dim_reduction[
-        func=quick_sort_1d
-    ](a, axis=normalized_axis)
+    return numojo.apply_along_axis[func1d=quick_sort_1d](
+        a, axis=normalized_axis
+    )
 
 
 fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
@@ -180,9 +180,9 @@ fn argsort[
     if (a.ndim == 1) and (normalized_axis == 0):
         return argsort_quick_sort_1d(a)
 
-    return utility.apply_func_on_array_without_dim_reduction[
-        func=argsort_quick_sort_1d
-    ](a, axis=normalized_axis)
+    return numojo.apply_along_axis[func1d=argsort_quick_sort_1d](
+        a, axis=normalized_axis
+    )
 
 
 fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:

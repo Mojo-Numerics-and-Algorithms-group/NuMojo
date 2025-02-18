@@ -333,7 +333,12 @@ struct NDArrayShape(Stringable, Writable):
             )
 
         if val <= 0:
-            raise Error(String("Value to be set is not positive."))
+            raise Error(
+                String(
+                    "\nError in `NDArrayShape.__setitem__`: "
+                    "Value to be set is not positive."
+                )
+            )
 
         self._buf[normalized_index] = val
 
@@ -435,8 +440,7 @@ struct NDArrayShape(Stringable, Writable):
             size *= self._buf[i]
         return size
 
-    @staticmethod
-    fn join(*shapes: Self) raises -> Self:
+    fn join(self, *shapes: Self) raises -> Self:
         """
         Join multiple shapes into a single shape.
 
@@ -446,13 +450,16 @@ struct NDArrayShape(Stringable, Writable):
         Returns:
             A new NDArrayShape object.
         """
-        var total_dims = 0
+        var total_dims = self.ndim
         for shape in shapes:
             total_dims += shape[].ndim
 
         var new_shape = Self(ndim=total_dims, initialized=False)
 
         var index = 0
+        for i in range(self.ndim):
+            (new_shape._buf + index).init_pointee_copy(self[i])
+            index += 1
         for shape in shapes:
             for i in range(shape[].ndim):
                 (new_shape._buf + index).init_pointee_copy(shape[][i])
@@ -463,6 +470,31 @@ struct NDArrayShape(Stringable, Writable):
     # ===-------------------------------------------------------------------===#
     # Other private methods
     # ===-------------------------------------------------------------------===#
+
+    fn _extend(self, *shapes: Int) raises -> Self:
+        """
+        Extend the shape by sizes of extended dimensions.
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            shapes: Sizes of extended dimensions.
+
+        Returns:
+            A new NDArrayShape object.
+        """
+        var total_dims = self.ndim + len(shapes)
+
+        var new_shape = Self(ndim=total_dims, initialized=False)
+
+        var offset = 0
+        for i in range(self.ndim):
+            (new_shape._buf + offset).init_pointee_copy(self[i])
+            offset += 1
+        for shape in shapes:
+            (new_shape._buf + offset).init_pointee_copy(shape)
+            offset += 1
+
+        return new_shape
 
     fn _flip(self) -> Self:
         """

@@ -59,7 +59,7 @@ fn extrema_1d[
         Max value.
     """
 
-    alias simd_width = simdwidthof[dtype]()
+    alias simd_width = builtin_max(simdwidthof[dtype](), 64)
     var value = a._buf.ptr[0]
 
     @parameter

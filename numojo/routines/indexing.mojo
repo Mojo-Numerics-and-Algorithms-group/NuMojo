@@ -78,6 +78,7 @@ fn compress[
     If no axis is provided, the array is flattened before use.
 
     Raises:
+        Error: If the axis is out of bound for the given array.
         Error: If the condition is not 1-D array.
         Error: If the condition length is out of bound for the given axis.
         Error: If the condition contains no True values.
@@ -94,9 +95,19 @@ fn compress[
         axis: The axis along which to take slices.
 
     Returns:
-        A NDArray[DType].
-
+        An array.
     """
+
+    var normalized_axis = axis
+    if normalized_axis < 0:
+        normalized_axis = a.ndim + normalized_axis
+    if (normalized_axis >= a.ndim) or (normalized_axis < 0):
+        raise Error(
+            String(
+                "\nError in `compress`: Axis {} is out of bound for array with"
+                " {} dimensions".format(axis, a.ndim)
+            )
+        )
 
     if condition.ndim != 1:
         raise Error(
@@ -104,12 +115,12 @@ fn compress[
                 "\nError in `compress`: Condition must be 1-D array, got {}"
             ).format(condition.ndim)
         )
-    if condition.size > a.shape[axis]:
+    if condition.size > a.shape[normalized_axis]:
         raise Error(
             String(
                 "\nError in `compress`: Condition length {} is out of bound for"
                 " axis {} with size {}".format(
-                    condition.size, axis, a.shape[axis]
+                    condition.size, axis, a.shape[normalized_axis]
                 )
             )
         )
@@ -124,18 +135,18 @@ fn compress[
         )
 
     var shape_of_res = a.shape
-    shape_of_res[axis] = number_of_true
+    shape_of_res[normalized_axis] = number_of_true
 
     var res = NDArray[dtype](Shape(shape_of_res))
     var res_strides = NDArrayStrides(ndim=res.ndim, initialized=False)
     var temp = 1
     for i in range(res.ndim - 1, -1, -1):
-        if i != axis:
+        if i != normalized_axis:
             (res_strides._buf + i).init_pointee_copy(temp)
             temp *= res.shape[i]
-    (res_strides._buf + axis).init_pointee_copy(temp)
+    (res_strides._buf + normalized_axis).init_pointee_copy(temp)
 
-    var iterator = a.iter_over_dimension(axis)
+    var iterator = a.iter_over_dimension(normalized_axis)
 
     var count = 0
     for i in range(len(condition)):
@@ -147,7 +158,7 @@ fn compress[
                 var item = Item(ndim=res.ndim, initialized=False)
 
                 # First along the axis
-                var j = axis
+                var j = normalized_axis
                 (item._buf + j).init_pointee_copy(
                     remainder // res_strides._buf[j]
                 )
@@ -155,7 +166,7 @@ fn compress[
 
                 # Then along other axes
                 for j in range(res.ndim):
-                    if j != axis:
+                    if j != normalized_axis:
                         (item._buf + j).init_pointee_copy(
                             remainder // res_strides._buf[j]
                         )
@@ -194,7 +205,7 @@ fn compress[
         a: The array.
 
     Returns:
-        A NDArray[DType].
+        An array.
 
     """
 

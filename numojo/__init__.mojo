@@ -181,7 +181,7 @@ from numojo.routines.creation import (
 )
 
 from numojo.routines import indexing
-from numojo.routines.indexing import where
+from numojo.routines.indexing import where, compress
 
 from numojo.routines.functional import apply_along_axis
 

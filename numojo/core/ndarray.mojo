@@ -3238,8 +3238,63 @@ struct NDArray[dtype: DType = DType.float64](
     # fn clip(self):
     #     pass
 
-    # fn compress(self):
-    #     pass
+    fn compress[
+        dtype: DType
+    ](self, condition: NDArray[DType.bool], axis: Int) raises -> Self:
+        # TODO: @forFudan try using parallelization for this function
+        """
+        Return selected slices of an array along given axis.
+        If no axis is provided, the array is flattened before use.
+
+        Raises:
+            Error: If the axis is out of bound for the given array.
+            Error: If the condition is not 1-D array.
+            Error: If the condition length is out of bound for the given axis.
+            Error: If the condition contains no True values.
+
+        Parameters:
+            dtype: DType.
+
+        Args:
+            condition: 1-D array of booleans that selects which entries to return.
+                If length of condition is less than the size of the array along the
+                given axis, then output is filled to the length of the condition
+                with False.
+            axis: The axis along which to take slices.
+
+        Returns:
+            An array.
+        """
+
+        return numojo.compress(condition=condition, a=self, axis=axis)
+
+    fn compress[
+        dtype: DType
+    ](self, condition: NDArray[DType.bool]) raises -> Self:
+        """
+        Return selected slices of an array along given axis.
+        If no axis is provided, the array is flattened before use.
+        This is a function ***OVERLOAD***.
+
+        Raises:
+            Error: If the condition is not 1-D array.
+            Error: If the condition length is out of bound for the given axis.
+            Error: If the condition contains no True values.
+
+        Parameters:
+            dtype: DType.
+
+        Args:
+            condition: 1-D array of booleans that selects which entries to return.
+                If length of condition is less than the size of the array along the
+                given axis, then output is filled to the length of the condition
+                with False.
+
+        Returns:
+            An array.
+        """
+
+        return numojo.compress(condition=condition, a=self)
 
     fn col(self, id: Int) raises -> Self:
         """Get the ith column of the matrix.

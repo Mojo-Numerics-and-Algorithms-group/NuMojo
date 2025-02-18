@@ -1942,7 +1942,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         else:
             raise Error(
-                "\nError in `numojo.NDArray.__int__(self)`: "
+                "\nError in `numojo.NDArray.__bool__(self)`: "
                 "Only 0-D arrays (numojo scalar) or length-1 arrays "
                 "can be converted to Bool."
                 "The truth value of an array with more than one element is "
@@ -2001,7 +2001,7 @@ struct NDArray[dtype: DType = DType.float64](
             return Float64(self._buf.ptr[])
         else:
             raise Error(
-                "Error in `numojo.NDArray.__int__(self)`: \n"
+                "Error in `numojo.NDArray.__float__(self)`: \n"
                 "Only 0-D arrays (numojo scalar) or length-1 arrays "
                 "can be converted to scalars."
             )

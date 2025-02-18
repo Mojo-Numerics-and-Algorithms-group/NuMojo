@@ -105,3 +105,15 @@ def norms():
     check_values_close(
         nm.math.linalg.det(arr), np.linalg.det(np_arr), "`det` is broken"
     )
+
+
+def test_misc():
+    var np = Python.import_module("numpy")
+    var arr = nm.core.random.rand(4, 8)
+    var np_arr = arr.to_numpy()
+    for i in range(-3, 8):
+        check_is_close(
+            nm.diagonal(arr, offset=i),
+            np.diagonal(np_arr, offset=i),
+            String("`diagonal` by axis {} is broken").format(i),
+        )

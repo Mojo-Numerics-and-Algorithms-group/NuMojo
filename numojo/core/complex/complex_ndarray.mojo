@@ -111,7 +111,7 @@ struct ComplexNDArray[
 
         Example:
         ```mojo
-        import numojo as nm
+        from numojo.prelude import *
         var A = nm.ComplexNDArray[cf32](Shape(2,3,4))
         ```
         """

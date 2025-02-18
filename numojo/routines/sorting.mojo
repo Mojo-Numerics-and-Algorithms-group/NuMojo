@@ -673,6 +673,51 @@ fn _sort_inplace[
     )
 
 
+fn _sort_inplace[dtype: DType](mut A: NDArray[dtype], axis: Int) raises:
+    """
+    Sort in-place NDArray along the given axis using quick sort method.
+    It is not guaranteed to be unstable.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        A: NDArray to sort.
+        axis: The axis along which the array is sorted.
+    """
+
+    if (axis >= A.ndim) or (axis < 0):
+        raise Error(
+            String(
+                "\nError in `_sort_inplace()`: "
+                "Axis ({}) is not in valid range [0, {})."
+            ).format(axis, A.ndim)
+        )
+
+    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var continous_axis = A.ndim - 1 if array_order == "C" else A.ndim - 2
+    """Contiguously stored axis. -1 if row-major, -2 if col-major."""
+
+    if axis == continous_axis:  # Last axis
+        for i in range(A.size // A.shape[continous_axis]):
+            _sort_in_range(
+                A,
+                left=i * A.shape[continous_axis],
+                right=(i + 1) * A.shape[continous_axis] - 1,
+            )
+    else:
+        var transposed_axes = List[Int](capacity=A.ndim)
+        for i in range(A.ndim):
+            transposed_axes.append(i)
+        transposed_axes[axis], transposed_axes[continous_axis] = (
+            transposed_axes[continous_axis],
+            transposed_axes[axis],
+        )
+        A = transpose(A, axes=transposed_axes)
+        _sort_inplace(A, axis=A.ndim - 1)
+        A = transpose(A, axes=transposed_axes)
+
+
 fn _sort_inplace[
     dtype: DType
 ](mut A: NDArray[dtype], mut I: NDArray[DType.index], owned axis: Int) raises:

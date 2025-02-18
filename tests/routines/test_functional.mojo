@@ -18,7 +18,7 @@ fn test_apply_along_axis() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.randn(Shape(4, 8, 16))
     var anp = a.to_numpy()
-    var b = nm.reshape(a, a.shape)
+    var b = nm.reshape(a, a.shape, order="F")
     var bnp = b.to_numpy()
 
     for i in range(a.ndim):

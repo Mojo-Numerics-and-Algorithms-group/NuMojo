@@ -438,18 +438,6 @@ struct NDArrayShape(Stringable, Writable):
         memcpy(res._buf, self._buf, self.ndim)
         return res
 
-    fn size_of_array(self) -> Int:
-        """
-        Returns the total number of elements in the array.
-
-        Returns:
-          The total number of elements in the corresponding array.
-        """
-        var size = 1
-        for i in range(self.ndim):
-            size *= self._buf[i]
-        return size
-
     fn join(self, *shapes: Self) raises -> Self:
         """
         Join multiple shapes into a single shape.
@@ -477,6 +465,18 @@ struct NDArrayShape(Stringable, Writable):
 
         return new_shape
 
+    fn size_of_array(self) -> Int:
+        """
+        Returns the total number of elements in the array.
+
+        Returns:
+          The total number of elements in the corresponding array.
+        """
+        var size = 1
+        for i in range(self.ndim):
+            size *= self._buf[i]
+        return size
+
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
         """
         Returns a new shape with the given axes swapped.
@@ -488,11 +488,10 @@ struct NDArrayShape(Stringable, Writable):
         Returns:
             A new shape with the given axes swapped.
         """
-        var shape = NDArrayShape(self)
-        var temp = shape[axis1]
-        shape[axis1] = shape[axis2]
-        shape[axis2] = temp
-        return shape
+        var res = self
+        res[axis1] = self[axis2]
+        res[axis2] = self[axis1]
+        return res
 
     # ===-------------------------------------------------------------------===#
     # Other private methods

@@ -9,9 +9,11 @@
 # Miscellaneous mathematical functions
 # ===------------------------------------------------------------------------===#
 
-import math
-from algorithm import parallelize
+from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
+import builtin.math as builtin_math
+import stdlib.math.math as stdlib_math
+from sys import simdwidthof
 from utils import Variant
 
 import numojo.core._math_funcs as _mf
@@ -37,7 +39,41 @@ fn cbrt[
     Returns:
         A NDArray equal to NDArray**(1/3).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.cbrt](array)
+    return backend().math_func_1_array_in_one_array_out[
+        dtype, stdlib_math.cbrt
+    ](array)
+
+
+fn clip[
+    dtype: DType, //
+](a: NDArray[dtype], a_min: Scalar[dtype], a_max: Scalar[dtype]) -> NDArray[
+    dtype
+]:
+    """
+    Limit the values in an array between [a_min, a_max].
+    If a_min is greater than a_max, the value is equal to a_max.
+
+    Parameters:
+        dtype: The data type.
+
+    Args:
+        a: A array.
+        a_min: The minimum value.
+        a_max: The maximum value.
+
+    Returns:
+        An array with the clipped values.
+    """
+
+    var res = a  # Deep copy of the array
+
+    for i in range(res.size):
+        if res._buf.ptr[i] < a_min:
+            res._buf.ptr[i] = a_min
+        if res._buf.ptr[i] > a_max:
+            res._buf.ptr[i] = a_max
+
+    return res
 
 
 fn _mt_rsqrt[
@@ -53,7 +89,7 @@ fn _mt_rsqrt[
     Returns:
         A SIMD equal to 1/SIMD**(1/2).
     """
-    return math.sqrt(SIMD.__truediv__(1, value))
+    return builtin_math.sqrt(SIMD.__truediv__(1, value))
 
 
 fn rsqrt[
@@ -91,7 +127,9 @@ fn sqrt[
     Returns:
         A NDArray equal to NDArray**(1/2).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.sqrt](array)
+    return backend().math_func_1_array_in_one_array_out[
+        dtype, stdlib_math.sqrt
+    ](array)
 
 
 # this is a temporary doc, write a more explanatory one
@@ -113,6 +151,6 @@ fn scalb[
         A NDArray with the shape of `NDArray` with values equal to the negative one plus
         e to the power of the value in the original NDArray at each position.
     """
-    return backend().math_func_2_array_in_one_array_out[dtype, math.scalb](
-        array1, array2
-    )
+    return backend().math_func_2_array_in_one_array_out[
+        dtype, stdlib_math.scalb
+    ](array1, array2)

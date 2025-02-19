@@ -5,6 +5,7 @@ Implements routines by topic:
 - Array manipulation routines (manipulation.mojo)
 - Bit-wise operations (bitwise.mojo)
 - Constants (constants.mojo)
+- Indexing routines (indexing.mojo)
 - Input and output (io/)
     - Text files (files.mojo)
     - Text formatting options (formatting.mojo)

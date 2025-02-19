@@ -10,16 +10,17 @@ Implements basic object methods for working with N-Dimensional Array.
 # ===----------------------------------------------------------------------===#
 # SECTIONS OF THE FILE:
 #
-# NDArray
+# `NDArray` type
 # 1. Life cycle methods.
 # 2. Indexing and slicing (get and set dunders and relevant methods).
 # 3. Operator dunders.
 # 4. IO, trait, and iterator dunders.
 # 5. Other methods (Sorted alphabetically).
 #
-# _NDArrayIter
-# _NDAxisIter
-# _NDIter
+# Iterators of `NDArray`:
+# 1. `_NDArrayIter` type
+# 2. `_NDAxisIter` type
+# 3. `_NDIter` type
 #
 # ===----------------------------------------------------------------------===#
 # FORMAT FOR DOCSTRING
@@ -4268,11 +4269,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         return _NDIter[__origin_of(self), dtype](
-            ptr=self._buf.ptr,
-            length=self.size,
-            ndim=self.ndim,
-            strides=self.strides,
-            shape=self.shape,
+            a=self,
             order=order,
         )
 
@@ -5159,6 +5156,7 @@ struct _NDIter[
 ]():
     """
     An iterator yielding the array elements according to the order.
+    It can be constructed by `NDArray.nditer()` method.
     """
 
     var ptr: UnsafePointer[Scalar[dtype]]
@@ -5172,22 +5170,18 @@ struct _NDIter[
 
     fn __init__(
         out self,
-        ptr: UnsafePointer[Scalar[dtype]],
-        length: Int,
-        ndim: Int,
-        shape: NDArrayShape,
-        strides: NDArrayStrides,
+        a: NDArray[dtype],
         order: String,
     ) raises:
-        self.length = length
-        self.ptr = ptr
-        self.ndim = ndim
-        self.shape = shape
-        self.strides = strides
+        self.length = a.size
+        self.ptr = a._buf.ptr
+        self.ndim = a.ndim
+        self.shape = a.shape
+        self.strides = a.strides
         if order == "C":
-            self.strides_of_shape = NDArrayStrides(shape, order="C")
+            self.strides_of_shape = NDArrayStrides(self.shape, order="C")
         else:
-            self.strides_of_shape = NDArrayStrides(shape, order="F")
+            self.strides_of_shape = NDArrayStrides(self.shape, order="F")
         self.order = order
         self.index = 0
 

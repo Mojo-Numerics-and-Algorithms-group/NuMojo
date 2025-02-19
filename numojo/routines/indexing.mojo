@@ -1,5 +1,16 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
-Indexing routines.
+Implement indexing routines.
+
+- Generating index arrays
+- Indexing-like operations
+- Inserting data into arrays
+- Iterating over arrays
 """
 
 from memory import memcpy

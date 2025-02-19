@@ -428,6 +428,16 @@ struct NDArrayShape(Stringable, Writable):
     # Other methods
     # ===-------------------------------------------------------------------===#
 
+    @always_inline("nodebug")
+    fn copy(read self) raises -> Self:
+        """
+        Returns a deep copy of the shape.
+        """
+
+        var res = Self(ndim=self.ndim, initialized=False)
+        memcpy(res._buf, self._buf, self.ndim)
+        return res
+
     fn size_of_array(self) -> Int:
         """
         Returns the total number of elements in the array.
@@ -466,6 +476,23 @@ struct NDArrayShape(Stringable, Writable):
                 index += 1
 
         return new_shape
+
+    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+        """
+        Returns a new shape with the given axes swapped.
+
+        Args:
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            A new shape with the given axes swapped.
+        """
+        var shape = NDArrayShape(self)
+        var temp = shape[axis1]
+        shape[axis1] = shape[axis2]
+        shape[axis2] = temp
+        return shape
 
     # ===-------------------------------------------------------------------===#
     # Other private methods

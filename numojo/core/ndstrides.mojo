@@ -398,6 +398,20 @@ struct NDArrayStrides(Stringable):
         return False
 
     # ===-------------------------------------------------------------------===#
+    # Other methods
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline("nodebug")
+    fn copy(read self) raises -> Self:
+        """
+        Returns a deep copy of the strides.
+        """
+
+        var res = Self(ndim=self.ndim, initialized=False)
+        memcpy(res._buf, self._buf, self.ndim)
+        return res
+
+    # ===-------------------------------------------------------------------===#
     # Other private methods
     # ===-------------------------------------------------------------------===#
 

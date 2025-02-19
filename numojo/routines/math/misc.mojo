@@ -1,5 +1,12 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+
 # ===------------------------------------------------------------------------===#
-# Miscellaneous
+# Miscellaneous mathematical functions
 # ===------------------------------------------------------------------------===#
 
 import math
@@ -31,28 +38,6 @@ fn cbrt[
         A NDArray equal to NDArray**(1/3).
     """
     return backend().math_func_1_array_in_one_array_out[dtype, math.cbrt](array)
-
-
-# fn pow[dtype: DType,
-#     backend: _mf.Backend = _mf.Vectorized](array1: NDArray[dtype], intval: Int) -> NDArray[dtype]:
-#     """
-#     Element-wise NDArray to the power of intval.
-
-#     Constraints:
-#         Both arrays must have the same shapes.
-
-#     Parameters:
-#         dtype: The element type.
-#         backend: Sets utility function origin, defaults to `Vectorized`.
-
-#     Args:
-#         array1: A NDArray.
-#         intval: An integer.
-
-#     Returns:
-#         A NDArray equal to NDArray**intval.
-#     """
-#     return backend().math_func_simd_int[dtype, math.pow](array1, intval)
 
 
 fn _mt_rsqrt[

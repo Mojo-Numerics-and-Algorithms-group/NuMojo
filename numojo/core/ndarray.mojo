@@ -4268,10 +4268,22 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
 
-        return _NDIter[__origin_of(self), dtype](
-            a=self,
-            order=order,
-        )
+        if order not in List[String]("C", "F"):
+            raise Error(
+                String(
+                    "\nError in `nditer()`: Invalid order: '{}'. The order"
+                    " should be 'C' or 'F'."
+                ).format(order)
+            )
+
+        var axis: Int
+
+        if order == "C":
+            axis = self.ndim - 1
+        else:
+            axis = 0
+
+        return _NDIter[__origin_of(self), dtype](a=self, order=order, axis=axis)
 
     fn num_elements(self) -> Int:
         """
@@ -4925,6 +4937,7 @@ struct _NDAxisIter[
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides
+        # Construct the compatible strides
         self.strides_compatible = NDArrayStrides(
             ndim=self.ndim, initialized=False
         )
@@ -5164,25 +5177,38 @@ struct _NDIter[
     var ndim: Int
     var shape: NDArrayShape
     var strides: NDArrayStrides
-    var strides_of_shape: NDArrayStrides
+    var strides_compatible: NDArrayStrides
     var index: Int
+    var axis: Int
+    """Axis along which the iterator travels."""
     var order: String
+    """Order to traverse the array."""
 
-    fn __init__(
-        out self,
-        a: NDArray[dtype],
-        order: String,
-    ) raises:
+    fn __init__(out self, a: NDArray[dtype], order: String, axis: Int) raises:
         self.length = a.size
+        self.order = order
+        self.axis = axis
         self.ptr = a._buf.ptr
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides
+        # Construct the compatible strides
+        self.strides_compatible = NDArrayStrides(
+            ndim=self.ndim, initialized=False
+        )
+        (self.strides_compatible._buf + axis).init_pointee_copy(1)
+        temp = a.shape[axis]
         if order == "C":
-            self.strides_of_shape = NDArrayStrides(self.shape, order="C")
+            for i in range(self.ndim - 1, -1, -1):
+                if i != axis:
+                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
+                    temp *= a.shape[i]
         else:
-            self.strides_of_shape = NDArrayStrides(self.shape, order="F")
-        self.order = order
+            for i in range(self.ndim):
+                if i != axis:
+                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
+                    temp *= a.shape[i]
+
         self.index = 0
 
     fn __iter__(self) -> Self:
@@ -5203,11 +5229,20 @@ struct _NDIter[
 
         if self.order == "C":
             for i in range(self.ndim):
-                indices[i] = remainder // self.strides_of_shape[i]
-                remainder %= self.strides_of_shape[i]
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
+
         else:
             for i in range(self.ndim - 1, -1, -1):
-                indices[i] = remainder // self.strides_of_shape[i]
-                remainder %= self.strides_of_shape[i]
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
 
         return self.ptr[_get_offset(indices, self.strides)]

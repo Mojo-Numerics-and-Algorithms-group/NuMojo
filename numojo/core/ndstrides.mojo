@@ -436,6 +436,9 @@ struct NDArrayStrides(Stringable):
         Returns a new strides by flipping the items.
         ***UNSAFE!*** No boundary check!
 
+        Returns:
+            A new strides with the items flipped.
+
         Example:
         ```mojo
         import numojo as nm
@@ -463,9 +466,6 @@ struct NDArrayStrides(Stringable):
         print(A.strides._move_axis_to_end(0))  # Stride: [4, 1, 12]
         print(A.strides._move_axis_to_end(1))  # Stride: [12, 1, 4]
         ```
-
-        Returns:
-            A new strides with the items flipped.
         """
 
         if axis < 0:

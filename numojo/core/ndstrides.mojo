@@ -411,6 +411,22 @@ struct NDArrayStrides(Stringable):
         memcpy(res._buf, self._buf, self.ndim)
         return res
 
+    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+        """
+        Returns a new strides with the given axes swapped.
+
+        Args:
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            A new strides with the given axes swapped.
+        """
+        var res = self
+        res[axis1] = self[axis2]
+        res[axis2] = self[axis1]
+        return res
+
     # ===-------------------------------------------------------------------===#
     # Other private methods
     # ===-------------------------------------------------------------------===#

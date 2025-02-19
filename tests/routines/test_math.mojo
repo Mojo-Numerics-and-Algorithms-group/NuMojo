@@ -413,3 +413,30 @@ fn test_extrema() raises:
             np.max(cfnp, axis=i),
             String("`sort` 3d f-order by axis {} is broken").format(i),
         )
+
+
+fn test_misc() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.random.randn(10)
+    var anp = a.to_numpy()
+    var c = nm.random.randn(2, 3, 4)
+    var cnp = c.to_numpy()
+    var cf = c.reshape(c.shape, order="F")  # 3d array F order
+    var cfnp = cf.to_numpy()
+
+    # clip
+    check(
+        nm.clip(a, -0.02, 0.3),
+        np.clip(anp, -0.02, 0.3),
+        String("`clip` 1d c-order is broken"),
+    )
+    check(
+        nm.clip(c, -0.02, 0.3),
+        np.clip(cnp, -0.02, 0.3),
+        String("`clip` 3d c-order is broken"),
+    )
+    check(
+        nm.clip(cf, 0.02, -0.01),
+        np.clip(cfnp, 0.02, -0.01),
+        String("`clip` 3d f-order is broken"),
+    )

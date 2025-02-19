@@ -114,7 +114,7 @@ from numojo.routines.math import (
     sinh,
     tanh,
 )
-from numojo.routines.math import cbrt, rsqrt, sqrt, scalb
+from numojo.routines.math import cbrt, clip, rsqrt, sqrt, scalb
 from numojo.routines.math import prod, cumprod
 from numojo.routines.math import (
     tabs,

@@ -14,7 +14,7 @@ from .hyper import (
     sinh,
     tanh,
 )
-from .misc import cbrt, rsqrt, sqrt, scalb
+from .misc import cbrt, clip, rsqrt, sqrt, scalb
 from .products import prod, cumprod
 from .rounding import (
     round,

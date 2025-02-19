@@ -961,6 +961,28 @@ fn fma[
     return backend().math_func_fma(array1, array2, simd)
 
 
+# fn pow[dtype: DType,
+#     backend: _mf.Backend = _mf.Vectorized](array1: NDArray[dtype], intval: Int) -> NDArray[dtype]:
+#     """
+#     Element-wise NDArray to the power of intval.
+
+#     Constraints:
+#         Both arrays must have the same shapes.
+
+#     Parameters:
+#         dtype: The element type.
+#         backend: Sets utility function origin, defaults to `Vectorized`.
+
+#     Args:
+#         array1: A NDArray.
+#         intval: An integer.
+
+#     Returns:
+#         A NDArray equal to NDArray**intval.
+#     """
+#     return backend().math_func_simd_int[dtype, math.pow](array1, intval)
+
+
 fn remainder[
     dtype: DType, backend: Backend = _mf.Vectorized
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:

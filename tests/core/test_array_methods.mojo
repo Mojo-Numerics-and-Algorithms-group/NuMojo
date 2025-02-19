@@ -1,3 +1,5 @@
+from python import Python
+
 from numojo.prelude import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
@@ -60,9 +62,12 @@ def test_constructors():
 
 
 def test_iterator():
+    var py = Python.import_module("builtins")
+
     var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
-    var a_iter = a.iter_by_axis[forward=False](axis=0)
-    var b = a_iter.__next__() == nm.array[i8]("[11, 23]")
+    var anp = a.to_numpy()
+    var a_iter_along_axis = a.iter_along_axis[forward=False](axis=0)
+    var b = a_iter_along_axis.__next__() == nm.array[i8]("[11, 23]")
     assert_true(
         b.item(0) == True,
         "`_NDAxisIter` breaks",
@@ -71,3 +76,21 @@ def test_iterator():
         b.item(1) == True,
         "`_NDAxisIter` breaks",
     )
+
+    var a_iter_over_dimension = a.__iter__()
+    var anp_iter_over_dimension = anp.__iter__()
+    for i in range(a.shape[0]):
+        check(
+            a_iter_over_dimension.__next__(),
+            anp_iter_over_dimension.__next__(),
+            "`_NDArrayIter` or `__iter__()` breaks",
+        )
+
+    var a_iter_over_dimension_reversed = a.__reversed__()
+    var anp_iter_over_dimension_reversed = py.reversed(anp)
+    for i in range(a.shape[0]):
+        check(
+            a_iter_over_dimension_reversed.__next__(),
+            anp_iter_over_dimension_reversed.__next__(),
+            "`_NDArrayIter` or `__reversed__()` breaks",
+        )

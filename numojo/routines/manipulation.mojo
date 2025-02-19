@@ -139,7 +139,7 @@ fn ravel[
         raise Error(
             String("\nError in `ravel()`: Invalid order: {}").format(order)
         )
-    var iterator = a.iter_by_axis(axis=axis, order=order)
+    var iterator = a.iter_along_axis(axis=axis, order=order)
     var res = NDArray[dtype](Shape(a.size))
     var length_of_elements = a.shape[axis]
     var length_of_iterator = a.size // length_of_elements
@@ -344,12 +344,9 @@ fn broadcast_to[
         var indices = Item(ndim=b.ndim, initialized=False)
 
         for i in range(b.ndim):
-            indices[i], remainder = divmod(
-                remainder,
-                b.strides[
-                    i
-                ],  # TODO: Change b.strides to NDArrayStrides(b.shape) when OwnData
-            )
+            indices[i] = remainder // b.strides[i]
+            remainder %= b.strides[i]
+            # TODO: Change b.strides to NDArrayStrides(b.shape) when OwnData
 
         (b._buf.ptr + offset).init_pointee_copy(
             a._buf.ptr[
@@ -461,10 +458,8 @@ fn _broadcast_back_to[
         var indices = Item(ndim=b.ndim, initialized=False)
 
         for i in range(b.ndim):
-            indices[i], remainder = divmod(
-                remainder,
-                b.strides[i],
-            )
+            indices[i] = remainder // b.strides[i]
+            remainder %= b.strides[i]
 
         (b._buf.ptr + offset).init_pointee_copy(
             a._buf.ptr[_get_offset(indices, b_strides)]

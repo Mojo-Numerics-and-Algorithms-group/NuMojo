@@ -71,6 +71,7 @@ fn test_sorting() raises:
             np.argsort(S.to_numpy(), axis=i),
             String("`argsort` 6d by axis {} is broken").format(i),
         )
+
     check(
         nm.argsort(Sf),
         np.argsort(Sf.to_numpy(), axis=None),
@@ -81,4 +82,15 @@ fn test_sorting() raises:
             nm.argsort(Sf, axis=i),
             np.argsort(Sf.to_numpy(), axis=i),
             String("`argsort` 6d F-order by axis {} is broken").format(i),
+        )
+
+    # In-place sort
+    for i in range(3):
+        C.sort(axis=i)
+        Cnp = C.to_numpy()
+        Cnp.sort(axis=i)
+        check(
+            C,
+            Cnp,
+            String("`NDArray.sort()` 3d by axis {} is broken").format(i),
         )

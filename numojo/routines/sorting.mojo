@@ -39,7 +39,7 @@ fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Sort NDArray using quick sort method.
     It is not guaranteed to be unstable.
-    When no axis is given, the array is flattened before sorting.
+    When no axis is given, the output array is flattened to 1d.
 
     Parameters:
         dtype: The input element type.
@@ -81,9 +81,9 @@ fn sort[
     if (a.ndim == 1) and (normalized_axis == 0):
         return quick_sort_1d(a)
 
-    return utility.apply_func_on_array_without_dim_reduction[
-        func=quick_sort_1d
-    ](a, axis=normalized_axis)
+    return numojo.apply_along_axis[func1d=quick_sort_1d](
+        a, axis=normalized_axis
+    )
 
 
 fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
@@ -133,13 +133,13 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
     """
 
     if a.ndim == 1:
-        res = a
+        a_flattened = a
     else:
-        res = ravel(a)
+        a_flattened = ravel(a)
 
-    var indices = arange[DType.index](res.size)
+    var indices = arange[DType.index](a_flattened.size)
 
-    _sort_inplace(res, indices)
+    _sort_inplace(a_flattened, indices)
 
     return indices^
 
@@ -180,9 +180,9 @@ fn argsort[
     if (a.ndim == 1) and (normalized_axis == 0):
         return argsort_quick_sort_1d(a)
 
-    return utility.apply_func_on_array_without_dim_reduction[
-        func=argsort_quick_sort_1d
-    ](a, axis=normalized_axis)
+    return numojo.apply_along_axis[func1d=argsort_quick_sort_1d](
+        a, axis=normalized_axis
+    )
 
 
 fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
@@ -273,7 +273,7 @@ fn binary_sort[
     for i in range(array.size):
         result.store(i, array.load(i).cast[dtype]())
 
-    var n = array.num_elements()
+    var n = array.size
     for end in range(n, 1, -1):
         for i in range(1, end):
             if result[i - 1] > result[i]:
@@ -671,6 +671,51 @@ fn _sort_inplace[
         left=0,
         right=A.size - 1,
     )
+
+
+fn _sort_inplace[dtype: DType](mut A: NDArray[dtype], axis: Int) raises:
+    """
+    Sort in-place NDArray along the given axis using quick sort method.
+    It is not guaranteed to be unstable.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        A: NDArray to sort.
+        axis: The axis along which the array is sorted.
+    """
+
+    if (axis >= A.ndim) or (axis < 0):
+        raise Error(
+            String(
+                "\nError in `_sort_inplace()`: "
+                "Axis ({}) is not in valid range [0, {})."
+            ).format(axis, A.ndim)
+        )
+
+    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var continous_axis = A.ndim - 1 if array_order == "C" else A.ndim - 2
+    """Contiguously stored axis. -1 if row-major, -2 if col-major."""
+
+    if axis == continous_axis:  # Last axis
+        for i in range(A.size // A.shape[continous_axis]):
+            _sort_in_range(
+                A,
+                left=i * A.shape[continous_axis],
+                right=(i + 1) * A.shape[continous_axis] - 1,
+            )
+    else:
+        var transposed_axes = List[Int](capacity=A.ndim)
+        for i in range(A.ndim):
+            transposed_axes.append(i)
+        transposed_axes[axis], transposed_axes[continous_axis] = (
+            transposed_axes[continous_axis],
+            transposed_axes[axis],
+        )
+        A = transpose(A, axes=transposed_axes)
+        _sort_inplace(A, axis=A.ndim - 1)
+        A = transpose(A, axes=transposed_axes)
 
 
 fn _sort_inplace[

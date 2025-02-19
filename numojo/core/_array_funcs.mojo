@@ -36,7 +36,7 @@ fn math_func_1_array_in_one_array_out[
         var simd_data = array._buf.ptr.load[width=simd_width](i)
         result_array._buf.ptr.store(i, func[dtype, simd_width](simd_data))
 
-    vectorize[closure, width](array.num_elements())
+    vectorize[closure, width](array.size)
 
     return result_array
 
@@ -79,7 +79,7 @@ fn math_func_2_array_in_one_array_out[
             i, func[dtype, simd_width](simd_data1, simd_data2)
         )
 
-    vectorize[closure, width](result_array.num_elements())
+    vectorize[closure, width](result_array.size)
 
     return result_array
 
@@ -115,5 +115,5 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
             i, func[dtype, simd_width](simd_data1, scalar)
         )
 
-    vectorize[closure, width](result_array.num_elements())
+    vectorize[closure, width](result_array.size)
     return result_array

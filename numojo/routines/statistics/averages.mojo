@@ -32,6 +32,7 @@ fn mean_1d[
     """
     Calculate the arithmetic average of all items in an array.
     Regardless of the shape of input, it is treated as a 1-d array.
+    It is the backend function for `mean`, with or without `axis`.
 
     Parameters:
         dtype: The element type.
@@ -94,8 +95,8 @@ fn mean[
             )
         )
 
-    return utility.apply_func_on_array_with_dim_reduction[
-        returned_dtype=returned_dtype, func=mean_1d
+    return numojo.apply_along_axis[
+        returned_dtype=returned_dtype, func1d=mean_1d
     ](a=a, axis=normalized_axis)
 
 
@@ -219,8 +220,8 @@ fn median[
                 axis, a.ndim, a.ndim
             )
         )
-    return utility.apply_func_on_array_with_dim_reduction[
-        returned_dtype=returned_dtype, func=median_1d
+    return numojo.apply_along_axis[
+        returned_dtype=returned_dtype, func1d=median_1d
     ](a=a, axis=normalized_axis)
 
 
@@ -244,7 +245,7 @@ fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     var mode_value = sorted_array.item(0)
     var current_count = 1
 
-    for i in range(1, a.num_elements()):
+    for i in range(1, a.size):
         if sorted_array[i] == sorted_array[i - 1]:
             current_count += 1
         else:
@@ -254,7 +255,7 @@ fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
             current_count = 1
 
     if current_count > max_count:
-        mode_value = sorted_array.item(a.num_elements() - 1)
+        mode_value = sorted_array.item(a.size - 1)
 
     return mode_value
 
@@ -300,9 +301,7 @@ fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return utility.apply_func_on_array_with_dim_reduction[func=mode_1d](
-        a=a, axis=normalized_axis
-    )
+    return numojo.apply_along_axis[func1d=mode_1d](a=a, axis=normalized_axis)
 
 
 fn std[

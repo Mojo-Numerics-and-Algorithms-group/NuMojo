@@ -657,8 +657,8 @@ struct NDArray[dtype: DType = DType.float64](
 
             - `A[1:4, 2:5, 3:6]`, leads to a 3-D array (no decrease in dimension),
             since there are 3 slices.
-            - `A[2:8]`, leads to a 3-D array (no decrease in dimension), since there
-            are 1 explicit slice and 2 implicit slices.
+            - `A[2:8]`, leads to a 3-D array (no decrease in dimension), since
+            there are 1 explicit slice and 2 implicit slices.
 
             When there is a mixture of int and slices passed into `__getitem__`,
             the number of integers will be the number of dimensions to be decreased.
@@ -667,17 +667,18 @@ struct NDArray[dtype: DType = DType.float64](
             - `A[1:4, 2, 2]`, leads to a 1-D array (vector), since there are 2
             integers, so the dimension decreases by 2.
 
-            Note that, even though a slice contains one row, it does not reduce the
-            dimensions. Example,
+            Note that, even though a slice contains one row, it does not reduce
+            the dimensions. Example,
 
-            - `A[1:2, 2:3, 3:4]`, leads to a 3-D array (no decrease in dimension),
-            since there are 3 slices.
+            - `A[1:2, 2:3, 3:4]`, leads to a 3-D array (no decrease in
+            dimension), since there are 3 slices.
 
             Note that, when the number of integers equals to the number of
             dimensions, the final outcome is an 0-D array instead of a number.
-            The user has to upack the 0-D array with the method`A.item(0)` to get the
-            corresponding number.
-            This behavior is different from numpy where the latter returns a number.
+            The user has to upack the 0-D array with the method`A.item(0)` to
+            get the corresponding number.
+            This behavior is different from numpy where the latter returns a
+            number.
 
             More examples for 1-D, 2-D, and 3-D arrays.
 

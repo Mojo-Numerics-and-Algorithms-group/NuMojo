@@ -89,7 +89,7 @@ fn _mt_rsqrt[
     Returns:
         A SIMD equal to 1/SIMD**(1/2).
     """
-    return builtin_math.sqrt(SIMD.__truediv__(1, value))
+    return stdlib_math.sqrt(SIMD.__truediv__(1, value))
 
 
 fn rsqrt[
@@ -115,7 +115,7 @@ fn sqrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element-wise squareroot of NDArray.
+    Element-wise square root of NDArray.
 
     Parameters:
         dtype: The element type.

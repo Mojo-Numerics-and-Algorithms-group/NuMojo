@@ -384,11 +384,11 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the array is not 0-d.
 
         Examples:
-            ```mojo
-            import numojo
-            var a = numojo.arange(3)[0]
-            print(a[]) # gets values of the 0-D array.
-            ```
+            ```console
+            >>>import numojo
+            >>>var a = numojo.arange(3)[0]
+            >>>print(a[]) # gets values of the 0-D array.
+            ```.
         """
         if self.ndim != 0:
             raise Error(
@@ -412,11 +412,11 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If any of the index elements exceeds the size of the dimension of the array.
 
         Examples:
-            ```mojo
-            import numojo
-            var a = numojo.arange(0, 10, 1).reshape(numojo.Shape(2, 5))
-            print(a[Item(1, 2)]) # gets values of the element at (1, 2).
-            ```
+            ```console
+            >>>import numojo
+            >>>var a = numojo.arange(0, 10, 1).reshape(numojo.Shape(2, 5))
+            >>>print(a[Item(1, 2)]) # gets values of the element at (1, 2).
+            ```.
         """
         if index.__len__() != self.ndim:
             raise Error(
@@ -455,11 +455,11 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the array is 0-d.
 
         Examples:
-            ```mojo
-            import numojo
-            var a = numojo.arange(0, 10, 1).reshape(numojo.Shape(2, 5))
-            print(a[1]) # returns the second row of the array.
-            ```
+            ```console
+            >>>import numojo
+            >>>var a = numojo.arange(0, 10, 1).reshape(numojo.Shape(2, 5))
+            >>>print(a[1]) # returns the second row of the array.
+            ```.
         """
 
         var slice_list = List[Slice]()
@@ -498,12 +498,12 @@ struct NDArray[dtype: DType = DType.float64](
             A slice of the array.
 
         Examples:
-            ```mojo
-            import numojo
-            var a = numojo.arange(10).reshape(numojo.shape(2, 5))
-            var b = a[:, 2:4]
-            print(b) # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
-            ```
+            ```console
+            >>>import numojo
+            >>>var a = numojo.arange(10).reshape(numojo.shape(2, 5))
+            >>>var b = a[:, 2:4]
+            >>>print(b) # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
+            ```.
         """
 
         var n_slices: Int = slices.__len__()
@@ -532,12 +532,12 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the slice list is empty.
 
         Examples:
-            ```mojo
-            import numojo
-            var a = numojo.arange(10).reshape(numojo.shape(2, 5))
-            var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
-            print(b)
-            ```
+            ```console
+            >>>import numojo
+            >>>var a = numojo.arange(10).reshape(numojo.shape(2, 5))
+            >>>var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
+            >>>print(b)
+            ```.
         """
         # Check error cases
         if slice_list.__len__() == 0:
@@ -561,7 +561,7 @@ struct NDArray[dtype: DType = DType.float64](
             var end: Int = slices[i].end.value()
             var step: Int = slices[i].step.or_else(1)
 
-            var slice_len: Int = Int((end - start) / step)
+            var slice_len: Int = len(range(start, end, step))
             spec.append(slice_len)
             if slice_len != 1:
                 ndims += 1
@@ -1410,12 +1410,12 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the value is a 0-D array.
 
         Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.random.rand[nm.i16](3, 2)
-        var B = nm.random.rand[nm.i16](3)
-        A[1:4] = B
-        ```
+            ```console
+            >>>import numojo as nm
+            >>>var A = nm.random.rand[nm.i16](3, 2)
+            >>>var B = nm.random.rand[nm.i16](3)
+            >>>A[1:4] = B
+            ```.
         """
 
         var normalized_index = idx
@@ -1558,7 +1558,7 @@ struct NDArray[dtype: DType = DType.float64](
             >>> import numojo
             >>> var A = numojo.random.rand[numojo.i16](2, 2, 2)
             >>> A[numojo.Item(0, 1, 1)] = 10
-            ```
+            ```.
         """
         if index.__len__() != self.ndim:
             var message = String(
@@ -1600,7 +1600,7 @@ struct NDArray[dtype: DType = DType.float64](
             >>> var A = numojo.random.rand[numojo.i16](2, 2, 2)
             >>> var mask = A > 0.5
             >>> A[mask] = 10
-            ```
+            ```.
         """
         if (
             mask.shape != self.shape
@@ -1670,7 +1670,7 @@ struct NDArray[dtype: DType = DType.float64](
             [      8       9       0       1       ]
             [      12      13      4       5       ]]
             2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
-            ```
+            ```.
         """
         var n_slices: Int = len(slices)
         var ndims: Int = 0
@@ -3164,7 +3164,7 @@ struct NDArray[dtype: DType = DType.float64](
             [15.0, 16.0, 17.0, 18.0, 19.0]]
             '''
             )
-            ```
+            ```.
         """
         var result: String
 
@@ -3547,8 +3547,10 @@ struct NDArray[dtype: DType = DType.float64](
         """
         # make this a compile time check when they become more readable
         if not (self.dtype is DType.bool or self.dtype.is_integral()):
-            raise Error("Error in `numojo.NDArray.all(self)`: "
-                "Array elements must be Boolean or Integer.")
+            raise Error(
+                "Error in `numojo.NDArray.all(self)`: "
+                "Array elements must be Boolean or Integer."
+            )
         # We might need to figure out how we want to handle truthyness before can do this
         var result: Bool = True
 
@@ -3573,8 +3575,10 @@ struct NDArray[dtype: DType = DType.float64](
         """
         # make this a compile time check
         if not (self.dtype is DType.bool or self.dtype.is_integral()):
-            raise Error("Error in `numojo.NDArray.any(self)`: "
-                "Array elements must be Boolean or Integer.")
+            raise Error(
+                "Error in `numojo.NDArray.any(self)`: "
+                "Array elements must be Boolean or Integer."
+            )
         var result: Bool = False
 
         @parameter
@@ -4186,7 +4190,7 @@ struct NDArray[dtype: DType = DType.float64](
             >>>for i in a.nditer():
             ...    print(i, end=" ")
             37 8 25 25 2 57
-            ```
+            ```.
         """
 
         var order: String

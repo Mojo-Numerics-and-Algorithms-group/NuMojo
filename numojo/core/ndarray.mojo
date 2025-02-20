@@ -1397,7 +1397,6 @@ struct NDArray[dtype: DType = DType.float64](
             indices: Indices to set the value.
             val: Value to set.
 
-
         Notes:
             This function is unsafe and for internal use only.
 

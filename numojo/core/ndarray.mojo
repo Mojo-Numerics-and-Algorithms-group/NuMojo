@@ -21,6 +21,19 @@ Implements basic object methods for working with N-Dimensional Array.
 # _NDAxisIter
 # _NDIter
 #
+# ===----------------------------------------------------------------------===#
+# FORMAT FOR DOCSTRING
+# 1) DESCRIPTION
+# 2) PARAMETERS
+# 3) ARGUMENTS
+# 4) RETURNS
+# 5) RAISES
+# 6) SEE ALSO
+# 7) NOTES
+# 8) EXAMPLES
+# ===----------------------------------------------------------------------===#
+
+# ===----------------------------------------------------------------------===#
 # TODO: Generalize mdot, rdot to take any IxJx...xKxL and LxMx...xNxP matrix and
 #       matmul it into IxJx..xKxMx...xNxP array.
 # TODO: Consider whether we should add vectorization for _get_offset.
@@ -341,12 +354,18 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             indices: Indices to get the value.
 
-        Example:
-        ```mojo
-        import numojo
-        var A = numojo.ones(numojo.Shape(2,3,4))
-        print(A._getitem(1,2,3))
-        ```
+        Returns:
+            The element of the array at the indices.
+
+        Notes:
+            This function is unsafe and should be used only on internal use.
+
+        Examples:
+            ```mojo
+            import numojo
+            var A = numojo.ones(numojo.Shape(2,3,4))
+            print(A._getitem(1,2,3))
+            ```
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
@@ -357,11 +376,18 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Gets the value of the 0-D array.
 
+        Returns:
+            The value of the 0-D array.
+
         Raises:
             Error: If the array is not 0-d.
 
-        Returns:
-            The value of the 0-D array.
+        Examples:
+            ```mojo
+            import numojo
+            var a = numojo.arange(3)[0]
+            print(a[]) # gets values of the 0-D array.
+            ```
         """
         if self.ndim != 0:
             raise Error(
@@ -379,23 +405,34 @@ struct NDArray[dtype: DType = DType.float64](
 
         Returns:
             The value at the index list.
+
+        Raises:
+            Error: If the length of `index` does not match the number of dimensions.
+            Error: If any of the index elements exceeds the size of the dimension of the array.
+
+        Examples:
+            ```mojo
+            import numojo
+            var a = numojo.arange(0, 10, 1).reshape(numojo.Shape(2, 5))
+            print(a[Item(1, 2)]) # gets values of the element at (1, 2).
+            ```
         """
         if index.__len__() != self.ndim:
-            var message = String(
-                "Error: Length of `index` does not match the number of"
-                " dimensions!\n"
-                "Length of indices is {}.\n"
-                "The number of dimensions is {}."
-            ).format(index.__len__(), self.ndim)
-            raise Error(message)
+            raise Error(
+                String(
+                    "Error in `numojo.NDArray.__getitem__(index: Item)`: \n"
+                    "Length of index ({}) does not match the number of dimensions ({}).\n"
+                ).format(index.__len__(), self.ndim)
+            )
 
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
                 var message = String(
-                    "Error: `index` exceeds the size!\n"
-                    "For {}-th dimension:\n"
-                    "The index is {}.\n"
-                    "The size of the dimension is {}"
+                    "Error in `numojo.NDArray.__getitem__(index: Item)`: \n"
+                    "Index out of bounds!\n"
+                    "For dimension {}:\n"
+                    "Index: {}\n"
+                    "Dimension size: {} \n"
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
 
@@ -415,8 +452,12 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If the array is 0-d.
 
-        Example:
-            `arr[1]` returns the second row of the array.
+        Examples:
+            ```mojo
+            import numojo
+            var a = numojo.arange(0, 10, 1).reshape(numojo.Shape(2, 5))
+            print(a[1]) # returns the second row of the array.
+            ```
         """
 
         var slice_list = List[Slice]()
@@ -451,31 +492,24 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             slices: Variadic slices.
 
-        Example:
-        ```mojo
-        import numojo
-        var a = numojo.arange(10).reshape(Shape(2, 5))
-        var b = a[:, 2:4] # `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
-        print(b)
-        ```
-
         Returns:
             A slice of the array.
+
+        Examples:
+            ```mojo
+            import numojo
+            var a = numojo.arange(10).reshape(numojo.shape(2, 5))
+            var b = a[:, 2:4] 
+            print(b) # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
+            ```
         """
 
         var n_slices: Int = slices.__len__()
-        if n_slices == 0:
-            raise Error("Error: Empty slice list provided")
-        if n_slices > self.ndim:
-            raise Error(
-                String("Error: number of slices {} exceeds array dimensions {}")
-                .format(n_slices, self.ndim)
-            )
         var slice_list: List[Slice] = List[Slice]()
         for i in range(len(slices)):
             slice_list.append(slices[i])
 
-        slice_list = self._adjust_slice(slice_list)
+
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
@@ -489,62 +523,48 @@ struct NDArray[dtype: DType = DType.float64](
 
         Args:
             slice_list: List of slices.
-        
-        Example:
-        ```mojo
-        import numojo
-        var a = numojo.arange(10).reshape(Shape(2, 5))
-        var b = a[:, 2:4] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
-        print(b)
-        ```
-
-        Raises:
-            Error: If the slice list is empty or the number of slices does not match the array dimensions.
 
         Returns:
             A slice of the array.
+
+        Raises:
+            Error: If the slice list is empty.
+
+        Examples:
+            ```mojo
+            import numojo
+            var a = numojo.arange(10).reshape(numojo.shape(2, 5))
+            var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
+            print(b)
+            ```
         """
         # Check error cases
         if slice_list.__len__() == 0:
-            raise Error("Error: Empty slice list provided")
-        if slice_list.__len__() != self.ndim:
             raise Error(
-                "Error: Number of slices (" + String(slice_list.__len__()) + 
-                ") does not match array dimensions (" + String(self.ndim) + ")"
+                "Error in `numojo.NDArray.__getitem__(slice_list: List[Slice])`:\n"
+                "Empty slice list provided!"
             )
+
+        if slice_list.__len__() < self.ndim:
+            for i in range(slice_list.__len__(), self.ndim):
+                slice_list.append(Slice(0, self.shape[i], 1))
 
         # Adjust slice
         var slices = self._adjust_slice(slice_list)
         var spec = List[Int]()
         var ndims = 0
-        
+
         # Calculate output shape and validate slices in one pass
         for i in range(self.ndim):
             var start: Int = slices[i].start.value()
             var end: Int = slices[i].end.value()
             var step: Int = slices[i].step.or_else(1)
 
-            if start >= end:
-                raise Error(
-                    "Error: Start index " + String(start) + 
-                    " must be less than end index " + String(end)
-                )
-            if start >= self.shape[i]:
-                raise Error(
-                    "Error: Start index " + String(start) + 
-                    " exceeds array dimension " + String(self.shape[i])
-                )
-            if end > self.shape[i]:
-                raise Error(
-                    "Error: End index " + String(end) + 
-                    " exceeds array dimension " + String(self.shape[i])
-                )
-
             var slice_len: Int = Int((end - start) / step)
             spec.append(slice_len)
             if slice_len != 1:
                 ndims += 1
-        
+
         ndims = 1 if ndims == 0 else ndims
 
         # Calculate new slices array shape, coefficients, and offset
@@ -569,7 +589,7 @@ struct NDArray[dtype: DType = DType.float64](
         var nstrides = List[Int]()
         if self.flags.C_CONTIGUOUS:
             var temp_stride = 1
-            for i in range(nshape.__len__()-1, -1, -1):
+            for i in range(nshape.__len__() - 1, -1, -1):
                 nstrides.insert(0, temp_stride)
                 temp_stride *= nshape[i]
         else:  # F_CONTIGUOUS
@@ -594,185 +614,188 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Get items by a series of either slices or integers.
 
-        A decrease of dimensions may or may not happen when `__getitem__` is
-        called on an ndarray. An ndarray of X-D array can become Y-D array after
-        `__getitem__` where `Y <= X`.
-
-        Whether the dimension decerases or not depends on:
-        1. What types of arguments are passed into `__getitem__`.
-        2. The number of arguments that are passed in `__getitem__`.
-
-        PRINCIPAL: The number of dimensions to be decreased is determined by
-        the number of `Int` passed in `__getitem__`.
-
-        For example, `A` is a 10x10x10 ndarray (3-D). Then,
-
-        - `A[1, 2, 3]` leads to a 0-D array (scalar), since there are 3 integers.
-        - `A[1, 2]` leads to a 1-D array (vector), since there are 2 integers,
-        so the dimension decreases by 2.
-        - `A[1]` leads to a 2-D array (matrix), since there is 1 integer, so the
-        dimension decreases by 1.
-
-        The number of dimensions will not decrease when Slice is passed in
-        `__getitem__` or no argument is passed in for a certain dimension
-        (it is an implicit slide and a slide of all items will be used).
-
-        Take the same example `A` with 10x10x10 in shape. Then,
-
-        - `A[1:4, 2:5, 3:6]`, leads to a 3-D array (no decrease in dimension),
-        since there are 3 slices.
-        - `A[2:8]`, leads to a 3-D array (no decrease in dimension), since there
-        are 1 explicit slice and 2 implicit slices.
-
-        When there is a mixture of int and slices passed into `__getitem__`,
-        the number of integers will be the number of dimensions to be decreased.
-        Example,
-
-        - `A[1:4, 2, 2]`, leads to a 1-D array (vector), since there are 2
-        integers, so the dimension decreases by 2.
-
-        Note that, even though a slice contains one row, it does not reduce the
-        dimensions. Example,
-
-        - `A[1:2, 2:3, 3:4]`, leads to a 3-D array (no decrease in dimension),
-        since there are 3 slices.
-
-        Note that, when the number of integers equals to the number of
-        dimensions, the final outcome is an 0-D array instead of a number.
-        The user has to upack the 0-D array with the method`A.item(0)` to get the
-        corresponding number.
-        This behavior is different from numpy where the latter returns a number.
-
-        More examples for 1-D, 2-D, and 3-D arrays.
-
-        ```console
-        A is a matrix
-        [[      -128    -95     65      -11     ]
-        [      8       -72     -116    45      ]
-        [      45      111     -30     4       ]
-        [      84      -120    -115    7       ]]
-        2-D array  Shape: [4, 4]  DType: int8
-
-        A[0]
-        [       -128    -95     65      -11     ]
-        1-D array  Shape: [4]  DType: int8
-
-        A[0, 1]
-        -95
-        0-D array  Shape: [0]  DType: int8
-
-        A[Slice(1,3)]
-        [[      8       -72     -116    45      ]
-        [      45      111     -30     4       ]]
-        2-D array  Shape: [2, 4]  DType: int8
-
-        A[1, Slice(2,4)]
-        [       -116    45      ]
-        1-D array  Shape: [2]  DType: int8
-
-        A[Slice(1,3), Slice(1,3)]
-        [[      -72     -116    ]
-        [      111     -30     ]]
-        2-D array  Shape: [2, 2]  DType: int8
-
-        A.item(0,1) as Scalar
-        -95
-
-        ==============================
-        A is a vector
-        [       43      -127    -30     -111    ]
-        1-D array  Shape: [4]  DType: int8
-
-        A[0]
-        43
-        0-D array  Shape: [0]  DType: int8
-
-        A[Slice(1,3)]
-        [       -127    -30     ]
-        1-D array  Shape: [2]  DType: int8
-
-        A.item(0) as Scalar
-        43
-
-        ==============================
-        A is a 3darray
-        [[[     -22     47      22      110     ]
-        [     88      6       -105    39      ]
-        [     -22     51      105     67      ]
-        [     -61     -116    60      -44     ]]
-        [[     33      65      125     -35     ]
-        [     -65     123     57      64      ]
-        [     38      -110    33      98      ]
-        [     -59     -17     68      -6      ]]
-        [[     -68     -58     -37     -86     ]
-        [     -4      101     104     -113    ]
-        [     103     1       4       -47     ]
-        [     124     -2      -60     -105    ]]
-        [[     114     -110    0       -30     ]
-        [     -58     105     7       -10     ]
-        [     112     -116    66      69      ]
-        [     83      -96     -124    48      ]]]
-        3-D array  Shape: [4, 4, 4]  DType: int8
-
-        A[0]
-        [[      -22     47      22      110     ]
-        [      88      6       -105    39      ]
-        [      -22     51      105     67      ]
-        [      -61     -116    60      -44     ]]
-        2-D array  Shape: [4, 4]  DType: int8
-
-        A[0, 1]
-        [       88      6       -105    39      ]
-        1-D array  Shape: [4]  DType: int8
-
-        A[0, 1, 2]
-        -105
-        0-D array  Shape: [0]  DType: int8
-
-        A[Slice(1,3)]
-        [[[     33      65      125     -35     ]
-        [     -65     123     57      64      ]
-        [     38      -110    33      98      ]
-        [     -59     -17     68      -6      ]]
-        [[     -68     -58     -37     -86     ]
-        [     -4      101     104     -113    ]
-        [     103     1       4       -47     ]
-        [     124     -2      -60     -105    ]]]
-        3-D array  Shape: [2, 4, 4]  DType: int8
-
-        A[1, Slice(2,4)]
-        [[      38      -110    33      98      ]
-        [      -59     -17     68      -6      ]]
-        2-D array  Shape: [2, 4]  DType: int8
-
-        A[Slice(1,3), Slice(1,3), 2]
-        [[      57      33      ]
-        [      104     4       ]]
-        2-D array  Shape: [2, 2]  DType: int8
-
-        A.item(0,1,2) as Scalar
-        -105
-        ```
-
         Args:
             slices: A series of either Slice or Int.
 
         Returns:
-            An ndarray with a smaller or equal dimension of the original one.
-        """
+            A slice of the ndarray with a smaller or equal dimension of the original one.
 
+        Raises:
+            Error: If the number of slices is greater than the number of dimensions of the array.
+
+        Notes:
+            A decrease of dimensions may or may not happen when `__getitem__` is
+            called on an ndarray. An ndarray of X-D array can become Y-D array after
+            `__getitem__` where `Y <= X`.
+
+            Whether the dimension decreases or not depends on:
+            1. What types of arguments are passed into `__getitem__`.
+            2. The number of arguments that are passed in `__getitem__`.
+
+            PRINCIPAL: The number of dimensions to be decreased is determined by
+            the number of `Int` passed in `__getitem__`.
+
+            For example, `A` is a 10x10x10 ndarray (3-D). Then,
+
+            - `A[1, 2, 3]` leads to a 0-D array (scalar), since there are 3 integers.
+            - `A[1, 2]` leads to a 1-D array (vector), since there are 2 integers,
+            so the dimension decreases by 2.
+            - `A[1]` leads to a 2-D array (matrix), since there is 1 integer, so the
+            dimension decreases by 1.
+
+            The number of dimensions will not decrease when Slice is passed in
+            `__getitem__` or no argument is passed in for a certain dimension
+            (it is an implicit slide and a slide of all items will be used).
+
+            Take the same example `A` with 10x10x10 in shape. Then,
+
+            - `A[1:4, 2:5, 3:6]`, leads to a 3-D array (no decrease in dimension),
+            since there are 3 slices.
+            - `A[2:8]`, leads to a 3-D array (no decrease in dimension), since there
+            are 1 explicit slice and 2 implicit slices.
+
+            When there is a mixture of int and slices passed into `__getitem__`,
+            the number of integers will be the number of dimensions to be decreased.
+            Example,
+
+            - `A[1:4, 2, 2]`, leads to a 1-D array (vector), since there are 2
+            integers, so the dimension decreases by 2.
+
+            Note that, even though a slice contains one row, it does not reduce the
+            dimensions. Example,
+
+            - `A[1:2, 2:3, 3:4]`, leads to a 3-D array (no decrease in dimension),
+            since there are 3 slices.
+
+            Note that, when the number of integers equals to the number of
+            dimensions, the final outcome is an 0-D array instead of a number.
+            The user has to upack the 0-D array with the method`A.item(0)` to get the
+            corresponding number.
+            This behavior is different from numpy where the latter returns a number.
+
+            More examples for 1-D, 2-D, and 3-D arrays.
+
+        Examples:
+            ```console
+            A is a matrix
+            [[      -128    -95     65      -11     ]
+            [      8       -72     -116    45      ]
+            [      45      111     -30     4       ]
+            [      84      -120    -115    7       ]]
+            2-D array  Shape: [4, 4]  DType: int8
+
+            A[0]
+            [       -128    -95     65      -11     ]
+            1-D array  Shape: [4]  DType: int8
+
+            A[0, 1]
+            -95
+            0-D array  Shape: [0]  DType: int8
+
+            A[Slice(1,3)]
+            [[      8       -72     -116    45      ]
+            [      45      111     -30     4       ]]
+            2-D array  Shape: [2, 4]  DType: int8
+
+            A[1, Slice(2,4)]
+            [       -116    45      ]
+            1-D array  Shape: [2]  DType: int8
+
+            A[Slice(1,3), Slice(1,3)]
+            [[      -72     -116    ]
+            [      111     -30     ]]
+            2-D array  Shape: [2, 2]  DType: int8
+
+            A.item(0,1) as Scalar
+            -95
+
+            ==============================
+            A is a vector
+            [       43      -127    -30     -111    ]
+            1-D array  Shape: [4]  DType: int8
+
+            A[0]
+            43
+            0-D array  Shape: [0]  DType: int8
+
+            A[Slice(1,3)]
+            [       -127    -30     ]
+            1-D array  Shape: [2]  DType: int8
+
+            A.item(0) as Scalar
+            43
+
+            ==============================
+            A is a 3darray
+            [[[     -22     47      22      110     ]
+            [     88      6       -105    39      ]
+            [     -22     51      105     67      ]
+            [     -61     -116    60      -44     ]]
+            [[     33      65      125     -35     ]
+            [     -65     123     57      64      ]
+            [     38      -110    33      98      ]
+            [     -59     -17     68      -6      ]]
+            [[     -68     -58     -37     -86     ]
+            [     -4      101     104     -113    ]
+            [     103     1       4       -47     ]
+            [     124     -2      -60     -105    ]]
+            [[     114     -110    0       -30     ]
+            [     -58     105     7       -10     ]
+            [     112     -116    66      69      ]
+            [     83      -96     -124    48      ]]]
+            3-D array  Shape: [4, 4, 4]  DType: int8
+
+            A[0]
+            [[      -22     47      22      110     ]
+            [      88      6       -105    39      ]
+            [      -22     51      105     67      ]
+            [      -61     -116    60      -44     ]]
+            2-D array  Shape: [4, 4]  DType: int8
+
+            A[0, 1]
+            [       88      6       -105    39      ]
+            1-D array  Shape: [4]  DType: int8
+
+            A[0, 1, 2]
+            -105
+            0-D array  Shape: [0]  DType: int8
+
+            A[Slice(1,3)]
+            [[[     33      65      125     -35     ]
+            [     -65     123     57      64      ]
+            [     38      -110    33      98      ]
+            [     -59     -17     68      -6      ]]
+            [[     -68     -58     -37     -86     ]
+            [     -4      101     104     -113    ]
+            [     103     1       4       -47     ]
+            [     124     -2      -60     -105    ]]]
+            3-D array  Shape: [2, 4, 4]  DType: int8
+
+            A[1, Slice(2,4)]
+            [[      38      -110    33      98      ]
+            [      -59     -17     68      -6      ]]
+            2-D array  Shape: [2, 4]  DType: int8
+
+            A[Slice(1,3), Slice(1,3), 2]
+            [[      57      33      ]
+            [      104     4       ]]
+            2-D array  Shape: [2, 2]  DType: int8
+
+            A.item(0,1,2) as Scalar
+            -105
+            ```.
+        """
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error(
                 String(
-                    "Error: number of slices {} \n"
-                    "is greater than number of dimension of array {}!"
+                    "Error in `numojo.NDArray.__getitem__(slices: Variant[Slice, Int])`:\n"
+                    "Number of slices {} is greater than number of dimension of array {}!"
                 ).format(n_slices, self.ndim)
             )
         var slice_list: List[Slice] = List[Slice]()
 
         var count_int = 0  # Count the number of Int in the argument
-
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
                 slice_list.append(slices[i]._get_ptr[Slice]()[0])
@@ -798,7 +821,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Get items from 0-th dimension of an ndarray of indices.
         If the original array is of shape (i,j,k) and
-        the indices array is of shape (l,m,n), then the output array
+        the indices array is of shape (l, m, n), then the output array
         will be of shape (l,m,n,j,k).
 
         Args:
@@ -807,32 +830,35 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             NDArray with items from the array of indices.
 
-        Example:
-        ```console
-        >>>var a = nm.arange[i8](6)
-        >>>print(a)
-        [       0       1       2       3       4       5       ]
-        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
-        >>>print(a[nm.array[isize]("[4, 2, 5, 1, 0, 2]")])
-        [       4       2       5       1       0       2       ]
-        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+        Raises:
+            Error: If the elements of indices are greater than size of the corresponding dimension of the array.
 
-        var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
-        print(b)
-        [[[     0       1       2       ]
-          [     3       4       5       ]]
-         [[     6       7       8       ]
-          [     9       10      11      ]]]
-        3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
-        print(b[nm.array[isize]("[2, 0, 1]")])
-        [[[     0       0       0       ]
-          [     0       67      95      ]]
-         [[     0       1       2       ]
-          [     3       4       5       ]]
-         [[     6       7       8       ]
-          [     9       10      11      ]]]
-        3-D array  Shape: [3, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
-        ```.
+        Examples:
+            ```console
+            >>>var a = nm.arange[i8](6)
+            >>>print(a)
+            [       0       1       2       3       4       5       ]
+            1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+            >>>print(a[nm.array[isize]("[4, 2, 5, 1, 0, 2]")])
+            [       4       2       5       1       0       2       ]
+            1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+            var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+            print(b)
+            [[[     0       1       2       ]
+            [     3       4       5       ]]
+            [[     6       7       8       ]
+            [     9       10      11      ]]]
+            3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+            print(b[nm.array[isize]("[2, 0, 1]")])
+            [[[     0       0       0       ]
+            [     0       67      95      ]]
+            [[     0       1       2       ]
+            [     3       4       5       ]]
+            [[     6       7       8       ]
+            [     9       10      11      ]]]
+            3-D array  Shape: [3, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+            ```.
         """
 
         # Get the shape of resulted array
@@ -846,6 +872,7 @@ struct NDArray[dtype: DType = DType.float64](
             if indices.item(i) >= self.shape[0]:
                 raise Error(
                     String(
+                        "Error in `numojo.NDArray.__getitem__(indices: NDArray[DType.index])`:\n"
                         "index {} with value {} is out of boundary [0, {})"
                     ).format(i, indices.item(i), self.shape[0])
                 )
@@ -869,7 +896,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             NDArray with items from the list of indices.
 
-        Example:
+        Examples:
         ```console
         >>>var a = nm.arange[i8](6)
         >>>print(a)
@@ -918,7 +945,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             NDArray with items from the mask.
 
-        Example:
+        Examples:
         ```console
         >>>var a = nm.arange[i8](6)
         >>>print(a)
@@ -1018,7 +1045,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             NDArray with items from the mask.
 
-        Example:
+        Examples:
         ```console
         >>>var a = nm.arange[i8](6)
         >>>print(a)
@@ -1071,7 +1098,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error if array is 0-D array (numojo scalar).
             Error if index is equal or larger than array size.
 
-        Example:
+        Examples:
         ```console
         >>> var A = nm.random.randn[nm.f16](2, 2, 2)
         >>> A = A.reshape(A.shape, order="F")
@@ -1145,7 +1172,7 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Index is equal or larger than size of dimension.
 
-        Example:
+        Examples:
         ```
         >>> var A = nm.random.randn[nm.f16](2, 2, 2)
         >>> A = A.reshape(A.shape, order="F")
@@ -1198,7 +1225,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The value at the index.
 
-        Example:
+        Examples:
         ```console
         > array.load(15)
         ```
@@ -1322,7 +1349,7 @@ struct NDArray[dtype: DType = DType.float64](
             indices: Indices to set the value.
             val: Value to set.
 
-        Example:
+        Examples:
         ```mojo
         import numojo
         var A = numojo.ones(numojo.Shape(2,3,4))
@@ -1342,7 +1369,7 @@ struct NDArray[dtype: DType = DType.float64](
             idx: Index to set.
             val: Value to set.
 
-        Example:
+        Examples:
         ```mojo
         import numojo as nm
         var A = nm.random.rand[nm.i16](3, 2)
@@ -1521,7 +1548,7 @@ struct NDArray[dtype: DType = DType.float64](
             slices: Variadic slices.
             val: Value to set.
 
-        Example:
+        Examples:
             `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
         """
         var slice_list: List[Slice] = List[Slice]()
@@ -1537,7 +1564,7 @@ struct NDArray[dtype: DType = DType.float64](
             slices: List of slices.
             val: Value to set.
 
-        Example:
+        Examples:
         ```console
         >>> var a = nm.arange[i8](16).reshape(Shape(4, 4))
         print(a)
@@ -1659,7 +1686,7 @@ struct NDArray[dtype: DType = DType.float64](
             slices: Variadic slices or integers.
             val: Value to set.
 
-        Example:
+        Examples:
         ```console
         >>> var a = nm.arange[i8](16).reshape(Shape(4, 4))
         print(a)
@@ -1707,7 +1734,7 @@ struct NDArray[dtype: DType = DType.float64](
             index: Array of indices.
             val: Value to set.
 
-        Example:
+        Examples:
         ```console
         > var X = nm.NDArray[nm.i8](3,random=True)
         > print(X)
@@ -1735,7 +1762,7 @@ struct NDArray[dtype: DType = DType.float64](
             mask: Boolean mask array.
             val: Value to set.
 
-        Example:
+        Examples:
         ```
         var A = numojo.core.NDArray[numojo.i16](6, random=True)
         var mask = A > 0
@@ -1854,7 +1881,7 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Index out of boundary.
 
-        Example:
+        Examples:
         ```console
         > array.store(15, val = 100)
         ```
@@ -1967,7 +1994,7 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If the array is not 0-D or length-1.
 
-        Example:
+        Examples:
         ```console
         > var A = NDArray[dtype](6, random=True)
         > print(Int(A))
@@ -2818,7 +2845,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An iterator of NDArray elements.
 
-        Example:
+        Examples:
         ```
         >>> var a = nm.random.arange[nm.i8](2, 3, 4).reshape(nm.Shape(2, 3, 4))
         >>> for i in a:
@@ -2868,38 +2895,46 @@ struct NDArray[dtype: DType = DType.float64](
         var n_slices: Int = slice_list.__len__()
         var slices = List[Slice]()
         for i in range(n_slices):
-            if i >= self.ndim:
-                raise Error("Error: Number of slices exceeds array dimensions")
+            # Get initial values with defaults
+            var start = slice_list[i].start.or_else(0)
+            var end = slice_list[i].end.or_else(self.shape[i])
+            var step = slice_list[i].step.or_else(1)
 
-            var start: Int = 0
-            var end: Int = self.shape[i]
-            var step: Int = 1
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    # start += self.shape[i]
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    # end += self.shape[i] + 1
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-            step = slice_list[i].step.or_else(1)
+            # Validate step
             if step == 0:
                 raise Error("Error: Slice step cannot be zero")
+
+            # Check for negative indices
+            if start < 0 or end < 0:
+                raise Error(
+                    String("Error: Negative indexing not supported in dimension {}")
+                    .format(i)
+                )
+                # Future implementation:
+                # start = self.shape[i] + start if start < 0 else start
+                # end = self.shape[i] + end if end < 0 else end
+
+            if start >= self.shape[i]:
+                raise Error(
+                    String("Error: Start index {} exceeds dimension {} size {}")
+                    .format(start, i, self.shape[i])
+                )
+            if end > self.shape[i]:
+                raise Error(
+                    String("Error: End index {} exceeds dimension {} size {}")
+                    .format(end, i, self.shape[i])
+                )
+            if start >= end:
+                raise Error(
+                    String("Error: Start index {} must be less than end index {} in dimension {}")
+                    .format(start, end, i)
+                )
 
             slices.append(
                 Slice(
                     start=Optional(start),
                     end=Optional(end),
-                    step=Optional(step),
+                    step=Optional(step)
                 )
             )
 
@@ -3486,7 +3521,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An iterator yielding 1-d array slices along the given axis.
 
-        Example:
+        Examples:
         ```mojo
         from numojo.prelude import *
         var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
@@ -4372,7 +4407,7 @@ struct _NDAxisIter[
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
 
-    Example:
+    Examples:
     ```
     [[[ 0,  1,  2,  3],
       [ 4,  5,  6,  7],

@@ -4271,8 +4271,8 @@ struct NDArray[dtype: DType = DType.float64](
         if order not in List[String]("C", "F"):
             raise Error(
                 String(
-                    "\nError in `nditer()`: Invalid order: '{}'. The order"
-                    " should be 'C' or 'F'."
+                    "\nError in `nditer()`: Invalid order: '{}'. "
+                    "The order should be 'C' or 'F'."
                 ).format(order)
             )
 
@@ -5271,11 +5271,19 @@ struct _NDIter[
 
         if self.order == "C":
             for i in range(self.ndim):
-                indices._buf[i] = remainder // self.strides_compatible._buf[i]
-                remainder %= self.strides_compatible._buf[i]
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
         else:
             for i in range(self.ndim - 1, -1, -1):
-                indices._buf[i] = remainder // self.strides_compatible._buf[i]
-                remainder %= self.strides_compatible._buf[i]
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
 
         return self.ptr[_get_offset(indices, self.strides)]

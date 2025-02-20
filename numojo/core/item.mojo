@@ -67,9 +67,9 @@ struct Item(CollectionElement):
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(Int(args[i]))
 
-    @always_inline("nodebug")
     fn __init__(
         out self,
+        *,
         ndim: Int,
         initialized: Bool,
     ) raises:
@@ -78,23 +78,59 @@ struct Item(CollectionElement):
         This method is useful when you want to create a Item with given ndim
         without knowing the Item values.
 
-        Raise
-            Error: If the number of dimensions is negative.
-
         Args:
             ndim: Number of dimensions.
             initialized: Whether the shape is initialized.
                 If yes, the values will be set to 0.
                 If no, the values will be uninitialized.
+
+        Raises:
+            Error: If the number of dimensions is negative.
         """
         if ndim < 0:
-            raise Error("Number of dimensions must be non-negative.")
+            raise Error(
+                "\nError in `Item.__init__()`: "
+                "Number of dimensions must be non-negative."
+            )
 
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
         if initialized:
             for i in range(ndim):
                 (self._buf + i).init_pointee_copy(0)
+
+    fn __init__(
+        out self, *, offset: Int, strides: NDArrayStrides, order: String
+    ) raises:
+        """
+        Construct Item from offset, given strides and order.
+
+        Args:
+            offset: The offset of the item.
+            strides: The strides of the array.
+            order: The order to traverse the array.
+        """
+
+        if order not in List[String]("C", "F"):
+            raise Error(
+                String(
+                    "\nError in `nditer()`: Invalid order: '{}'. "
+                    "The order should be 'C' or 'F'."
+                ).format(order)
+            )
+
+        self.ndim = strides.ndim
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+
+        var remainder = offset
+        if order == "C":
+            for i in range(len(self)):
+                (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
+                remainder %= strides._buf[i]
+        else:
+            for i in range(self.ndim - 1, -1, -1):
+                (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
+                remainder %= strides._buf[i]
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):

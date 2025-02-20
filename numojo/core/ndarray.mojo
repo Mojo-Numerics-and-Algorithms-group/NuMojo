@@ -25,12 +25,13 @@ Implements basic object methods for working with N-Dimensional Array.
 # FORMAT FOR DOCSTRING
 # 1) DESCRIPTION
 # 2) PARAMETERS
-# 3) ARGUMENTS
+# 3) ARGS
 # 4) RETURNS
 # 5) RAISES
 # 6) SEE ALSO
 # 7) NOTES
-# 8) EXAMPLES
+# 8) REFERENCES
+# 9) EXAMPLES
 # ===----------------------------------------------------------------------===#
 
 # ===----------------------------------------------------------------------===#

@@ -382,7 +382,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if index.__len__() != self.ndim:
             var message = String(
-                "Error: Length of `index` do not match the number of"
+                "Error: Length of `index` does not match the number of"
                 " dimensions!\n"
                 "Length of indices is {}.\n"
                 "The number of dimensions is {}."
@@ -393,11 +393,12 @@ struct NDArray[dtype: DType = DType.float64](
             if index[i] >= self.shape[i]:
                 var message = String(
                     "Error: `index` exceeds the size!\n"
-                    "For {}-the mension:\n"
+                    "For {}-th dimension:\n"
                     "The index is {}.\n"
-                    "The size of the dimensions is {}"
+                    "The size of the dimension is {}"
                 ).format(i, index[i], self.shape[i])
                 raise Error(message)
+
         var idx: Int = _get_offset(index, self.strides)
         return self._buf.ptr.load[width=1](idx)
 
@@ -450,20 +451,31 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             slices: Variadic slices.
 
+        Example:
+        ```mojo
+        import numojo
+        var a = numojo.arange(10).reshape(Shape(2, 5))
+        var b = a[:, 2:4] # `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
+        print(b)
+        ```
+
         Returns:
             A slice of the array.
-
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
         """
 
         var n_slices: Int = slices.__len__()
+        if n_slices == 0:
+            raise Error("Error: Empty slice list provided")
         if n_slices > self.ndim:
-            raise Error("Error: No of slices exceed the array dimensions.")
+            raise Error(
+                String("Error: number of slices {} exceeds array dimensions {}")
+                .format(n_slices, self.ndim)
+            )
         var slice_list: List[Slice] = List[Slice]()
         for i in range(len(slices)):
             slice_list.append(slices[i])
 
+        slice_list = self._adjust_slice(slice_list)
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
@@ -473,104 +485,101 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
         """
-        Retrieve slices of an array from list of slices.
+        Retrieve slices of an array from a list of slices.
 
         Args:
             slice_list: List of slices.
+        
+        Example:
+        ```mojo
+        import numojo
+        var a = numojo.arange(10).reshape(Shape(2, 5))
+        var b = a[:, 2:4] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
+        print(b)
+        ```
+
+        Raises:
+            Error: If the slice list is empty or the number of slices does not match the array dimensions.
 
         Returns:
             A slice of the array.
-
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced array (2 x 2).
         """
-
-        var n_slices: Int = slice_list.__len__()
-        if n_slices > self.ndim or n_slices < self.ndim:
-            raise Error("Error: No of slices do not match shape")
-
-        var ndims: Int = 0
-        var spec: List[Int] = List[Int]()
-        var count: Int = 0
-
-        var slices: List[Slice] = self._adjust_slice(slice_list)
-        for i in range(slices.__len__()):
-            if (
-                slices[i].start.value() >= self.shape[i]
-                or slices[i].end.value() > self.shape[i]
-            ):
-                raise Error("Error: Slice value exceeds the array shape")
-            var slice_len: Int = len(
-                range(
-                    slices[i].start.value(),
-                    slices[i].end.value(),
-                    slices[i].step.or_else(1),
-                )
+        # Check error cases
+        if slice_list.__len__() == 0:
+            raise Error("Error: Empty slice list provided")
+        if slice_list.__len__() != self.ndim:
+            raise Error(
+                "Error: Number of slices (" + String(slice_list.__len__()) + 
+                ") does not match array dimensions (" + String(self.ndim) + ")"
             )
+
+        # Adjust slice
+        var slices = self._adjust_slice(slice_list)
+        var spec = List[Int]()
+        var ndims = 0
+        
+        # Calculate output shape and validate slices in one pass
+        for i in range(self.ndim):
+            var start: Int = slices[i].start.value()
+            var end: Int = slices[i].end.value()
+            var step: Int = slices[i].step.or_else(1)
+
+            if start >= end:
+                raise Error(
+                    "Error: Start index " + String(start) + 
+                    " must be less than end index " + String(end)
+                )
+            if start >= self.shape[i]:
+                raise Error(
+                    "Error: Start index " + String(start) + 
+                    " exceeds array dimension " + String(self.shape[i])
+                )
+            if end > self.shape[i]:
+                raise Error(
+                    "Error: End index " + String(end) + 
+                    " exceeds array dimension " + String(self.shape[i])
+                )
+
+            var slice_len: Int = Int((end - start) / step)
             spec.append(slice_len)
             if slice_len != 1:
                 ndims += 1
-            else:
-                count += 1
-        if count == slices.__len__():
-            ndims = 1
+        
+        ndims = 1 if ndims == 0 else ndims
 
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
+        # Calculate new slices array shape, coefficients, and offset
+        var nshape = List[Int]()
+        var ncoefficients = List[Int]()
+        var noffset = 0
+        var nnum_elements = 1
 
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = len(
-                range(
-                    slices[j].start.value(),
-                    slices[j].end.value(),
-                    slices[j].step.or_else(1),
-                )
-            )
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slices[j].step.value())
-            j += 1
+        for i in range(self.ndim):
+            if spec[i] != 1:
+                nshape.append(spec[i])
+                nnum_elements *= spec[i]
+                ncoefficients.append(self.strides[i] * slices[i].step.value())
+            noffset += slices[i].start.value() * self.strides[i]
 
-        if count == slices.__len__():
+        if nshape.__len__() == 0:
             nshape.append(1)
             nnum_elements = 1
             ncoefficients.append(1)
 
-        var noffset: Int = 0
-
+        # Calculate strides based on memory layout: only C & F order are supported
+        var nstrides = List[Int]()
         if self.flags.C_CONTIGUOUS:
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
-                    temp_stride *= nshape[j]
+            var temp_stride = 1
+            for i in range(nshape.__len__()-1, -1, -1):
+                nstrides.insert(0, temp_stride)
+                temp_stride *= nshape[i]
+        else:  # F_CONTIGUOUS
+            var temp_stride = 1
+            for i in range(nshape.__len__()):
                 nstrides.append(temp_stride)
-            for i in range(slices.__len__()):
-                noffset += slices[i].start.value() * self.strides[i]
+                temp_stride *= nshape[i]
 
-        elif self.flags.F_CONTIGUOUS:
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slices.__len__()):
-                noffset += slices[i].start.value() * self.strides[i]
-
-        var narr = Self(
-            offset=noffset,
-            shape=nshape,
-            strides=nstrides,
-        )
-
+        # Create and iteratively set values in the new array
+        var narr = Self(offset=noffset, shape=nshape, strides=nstrides)
         var index = List[Int]()
         for _ in range(ndims):
             index.append(0)

@@ -18,6 +18,10 @@ alias item = Item
 
 @register_passable
 struct Item(CollectionElement):
+    """
+    Specifies the indices of an item of an array.
+    """
+
     var _buf: UnsafePointer[Int]
     var ndim: Int
 
@@ -231,6 +235,7 @@ struct Item(CollectionElement):
         print(item.offset(strides))
         # This prints `16`.
         ```
+        .
         """
 
         var offset: Int = 0

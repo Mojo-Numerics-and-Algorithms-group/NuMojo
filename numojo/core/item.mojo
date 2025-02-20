@@ -205,6 +205,34 @@ struct Item(CollectionElement):
             + String(self.ndim)
         )
 
+    # ===-------------------------------------------------------------------===#
+    # Other methods
+    # ===-------------------------------------------------------------------===#
+
+    fn offset(self, strides: NDArrayStrides) -> Int:
+        """Calculates the offset of the item according to strides.
+
+        Args:
+            strides: The strides of the array.
+
+        Returns:
+            The offset of the item.
+
+        Example:
+
+        ```mojo
+        >>> from numojo.prelude import *
+        >>> var item = Item(1, 2, 3)
+        >>> var strides = nm.Strides(4, 3, 2)
+        >>> print(item.offset(strides))
+        16
+        ```.
+        """
+        var offset: Int = 0
+        for i in range(self.ndim):
+            offset += self._buf[i] * strides._buf[i]
+        return offset
+
 
 @value
 struct _ItemIter[

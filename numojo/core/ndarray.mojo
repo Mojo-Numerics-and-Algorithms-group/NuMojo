@@ -5246,3 +5246,36 @@ struct _NDIter[
             (indices._buf + self.axis).init_pointee_copy(remainder)
 
         return self.ptr[_get_offset(indices, self.strides)]
+
+    fn ith(self, index: Int) raises -> Scalar[dtype]:
+        """
+        Gets the i-th element of the iterator.
+
+        Args:
+            index: The index of the item. It must be non-negative.
+
+        Returns:
+            The i-th element of the iterator.
+        """
+
+        if (index >= self.length) or (index < 0):
+            raise Error(
+                String(
+                    "\nError in `NDIter.ith()`: "
+                    "Index ({}) must be in the range of [0, {})"
+                ).format(index, self.length)
+            )
+
+        var remainder = index
+        var indices = Item(ndim=self.ndim, initialized=False)
+
+        if self.order == "C":
+            for i in range(self.ndim):
+                indices._buf[i] = remainder // self.strides_compatible._buf[i]
+                remainder %= self.strides_compatible._buf[i]
+        else:
+            for i in range(self.ndim - 1, -1, -1):
+                indices._buf[i] = remainder // self.strides_compatible._buf[i]
+                remainder %= self.strides_compatible._buf[i]
+
+        return self.ptr[_get_offset(indices, self.strides)]

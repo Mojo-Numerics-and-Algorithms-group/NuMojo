@@ -111,6 +111,16 @@ def test_iterator():
             "`_NDIter` or `nditer()` of C array by order C breaks",
         )
 
+    # NDIter of C-order array
+    a_nditer = a.nditer()
+    anp_nditer = np.nditer(anp)
+    for i in range(a.size):
+        check_values_close(
+            a_nditer.ith(i),
+            anp_nditer.__next__(),
+            "`_NDIter.ith()` of C array by order C breaks",
+        )
+
     var a_nditer_f = a.nditer(order="F")
     var anp_nditer_f = np.nditer(anp, order="F")
     for i in range(a.size):

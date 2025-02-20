@@ -23,17 +23,18 @@ Implements basic object methods for working with N-Dimensional Array.
 # 3. `_NDIter` type
 #
 # ===----------------------------------------------------------------------===#
-# FORMAT FOR DOCSTRING
-# 1) DESCRIPTION
-# 2) PARAMETERS
-# 3) ARGS
-# 4) RETURNS
-# 5) RAISES
+# FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
+# 1. Description *
+# 2. Parameters *
+# 3. Args *
+# 4. Constraints *
+# 4) Returns *
+# 5) Raises *
 # 6) SEE ALSO
 # 7) NOTES
 # 8) REFERENCES
-# 9) EXAMPLES
-# ===----------------------------------------------------------------------===#
+# 9) Examples *
+# (Items marked with * are flavored in "Mojo docstring style guide")
 #
 # ===----------------------------------------------------------------------===#
 # TODO: Consider whether we should add vectorization for _get_offset.

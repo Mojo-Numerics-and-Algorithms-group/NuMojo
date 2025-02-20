@@ -71,9 +71,11 @@ struct Item(CollectionElement):
     ) raises:
         """
         Construct Item with number of dimensions.
-
         This method is useful when you want to create a Item with given ndim
         without knowing the Item values.
+
+        Raise
+            Error: If the number of dimensions is negative.
 
         Args:
             ndim: Number of dimensions.
@@ -83,6 +85,7 @@ struct Item(CollectionElement):
         """
         if ndim < 0:
             raise Error("Number of dimensions must be non-negative.")
+
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
         if initialized:
@@ -115,7 +118,7 @@ struct Item(CollectionElement):
 
     @always_inline("nodebug")
     fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
-        """Get the value at the specified index.
+        """Gets the value at the specified index.
 
         Parameter:
             T: Type of values. It can be converted to `Int` with `Int()`.

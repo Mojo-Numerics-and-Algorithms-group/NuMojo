@@ -3235,8 +3235,21 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return creation.astype[target](self)
 
-    # fn clip(self):
-    #     pass
+    fn clip(self, a_min: Scalar[dtype], a_max: Scalar[dtype]) -> Self:
+        """
+        Limit the values in an array between [a_min, a_max].
+        If a_min is greater than a_max, the value is equal to a_max.
+        See `numojo.clip()` for more details.
+
+        Args:
+            a_min: The minimum value.
+            a_max: The maximum value.
+
+        Returns:
+            An array with the clipped values.
+        """
+
+        return numojo.clip(self, a_min, a_max)
 
     fn compress[
         dtype: DType

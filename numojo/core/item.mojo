@@ -108,6 +108,18 @@ struct Item(CollectionElement):
         Args:
             idx: The i-th item of the array.
             shape: The strides of the array.
+
+        Examples:
+
+        The following example demonstrates how to get the indices (coordinates)
+        of the 123-th item of a 3D array with shape (20, 30, 40).
+
+        ```console
+        >>> from numojo.prelude import *
+        >>> var item = Item(123, Shape(20, 30, 40))
+        >>> print(item)
+        Item at index: (0,3,3)  Length: 3
+        ```
         """
 
         if (idx < 0) or (idx >= shape.size_of_array()):

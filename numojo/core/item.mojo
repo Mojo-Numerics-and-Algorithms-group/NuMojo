@@ -6,6 +6,7 @@ Implements Item type.
 
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
+from os import abort
 from sys import simdwidthof
 from utils import Variant
 
@@ -99,38 +100,33 @@ struct Item(CollectionElement):
             for i in range(ndim):
                 (self._buf + i).init_pointee_copy(0)
 
-    fn __init__(
-        out self, *, offset: Int, strides: NDArrayStrides, order: String
-    ) raises:
+    fn __init__(out self, idx: Int, shape: NDArrayShape) raises:
         """
-        Construct Item from offset, given strides and order.
+        Get indices of the i-th item of the array of the given shape.
+        The item traverse the array in C-order.
 
         Args:
-            offset: The offset of the item.
-            strides: The strides of the array.
-            order: The order to traverse the array.
+            idx: The i-th item of the array.
+            shape: The strides of the array.
         """
 
-        if order not in List[String]("C", "F"):
+        if (idx < 0) or (idx >= shape.size_of_array()):
             raise Error(
                 String(
-                    "\nError in `nditer()`: Invalid order: '{}'. "
-                    "The order should be 'C' or 'F'."
-                ).format(order)
+                    "\nError in `Item.__init__(out self, idx: Int, shape:"
+                    " NDArrayShape)`: idx {} out of range [{}, {})."
+                ).format(idx, 0, shape.size_of_array())
             )
 
-        self.ndim = strides.ndim
+        self.ndim = shape.ndim
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
 
-        var remainder = offset
-        if order == "C":
-            for i in range(len(self)):
-                (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
-                remainder %= strides._buf[i]
-        else:
-            for i in range(self.ndim - 1, -1, -1):
-                (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
-                remainder %= strides._buf[i]
+        var strides = NDArrayStrides(shape)
+        var remainder = idx
+
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
+            remainder %= strides._buf[i]
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):

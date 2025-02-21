@@ -121,7 +121,7 @@ struct Item(CollectionElement):
         self.ndim = shape.ndim
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
 
-        var strides = NDArrayStrides(shape)
+        var strides = NDArrayStrides(shape, order="C")
         var remainder = idx
 
         for i in range(self.ndim):

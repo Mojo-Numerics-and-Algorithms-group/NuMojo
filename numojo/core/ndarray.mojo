@@ -10,29 +10,31 @@ Implements basic object methods for working with N-Dimensional Array.
 # ===----------------------------------------------------------------------===#
 # SECTIONS OF THE FILE:
 #
-# NDArray
+# `NDArray` type
 # 1. Life cycle methods.
 # 2. Indexing and slicing (get and set dunders and relevant methods).
 # 3. Operator dunders.
 # 4. IO, trait, and iterator dunders.
 # 5. Other methods (Sorted alphabetically).
 #
-# _NDArrayIter
-# _NDAxisIter
-# _NDIter
+# Iterators of `NDArray`:
+# 1. `_NDArrayIter` type
+# 2. `_NDAxisIter` type
+# 3. `_NDIter` type
 #
 # ===----------------------------------------------------------------------===#
-# FORMAT FOR DOCSTRING
-# 1) DESCRIPTION
-# 2) PARAMETERS
-# 3) ARGS
-# 4) RETURNS
-# 5) RAISES
+# FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
+# 1. Description *
+# 2. Parameters *
+# 3. Args *
+# 4. Constraints *
+# 4) Returns *
+# 5) Raises *
 # 6) SEE ALSO
 # 7) NOTES
 # 8) REFERENCES
-# 9) EXAMPLES
-# ===----------------------------------------------------------------------===#
+# 9) Examples *
+# (Items marked with * are flavored in "Mojo docstring style guide")
 #
 # ===----------------------------------------------------------------------===#
 # TODO: Consider whether we should add vectorization for _get_offset.
@@ -1395,7 +1397,6 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             indices: Indices to set the value.
             val: Value to set.
-
 
         Notes:
             This function is unsafe and for internal use only.
@@ -4267,14 +4268,22 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
 
-        return _NDIter[__origin_of(self), dtype](
-            ptr=self._buf.ptr,
-            length=self.size,
-            ndim=self.ndim,
-            strides=self.strides,
-            shape=self.shape,
-            order=order,
-        )
+        if order not in List[String]("C", "F"):
+            raise Error(
+                String(
+                    "\nError in `nditer()`: Invalid order: '{}'. "
+                    "The order should be 'C' or 'F'."
+                ).format(order)
+            )
+
+        var axis: Int
+
+        if order == "C":
+            axis = self.ndim - 1
+        else:
+            axis = 0
+
+        return _NDIter[__origin_of(self), dtype](a=self, order=order, axis=axis)
 
     fn num_elements(self) -> Int:
         """
@@ -4928,6 +4937,7 @@ struct _NDAxisIter[
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides
+        # Construct the compatible strides
         self.strides_compatible = NDArrayStrides(
             ndim=self.ndim, initialized=False
         )
@@ -5159,6 +5169,7 @@ struct _NDIter[
 ]():
     """
     An iterator yielding the array elements according to the order.
+    It can be constructed by `NDArray.nditer()` method.
     """
 
     var ptr: UnsafePointer[Scalar[dtype]]
@@ -5166,29 +5177,38 @@ struct _NDIter[
     var ndim: Int
     var shape: NDArrayShape
     var strides: NDArrayStrides
-    var strides_of_shape: NDArrayStrides
+    var strides_compatible: NDArrayStrides
     var index: Int
+    var axis: Int
+    """Axis along which the iterator travels."""
     var order: String
+    """Order to traverse the array."""
 
-    fn __init__(
-        out self,
-        ptr: UnsafePointer[Scalar[dtype]],
-        length: Int,
-        ndim: Int,
-        shape: NDArrayShape,
-        strides: NDArrayStrides,
-        order: String,
-    ) raises:
-        self.length = length
-        self.ptr = ptr
-        self.ndim = ndim
-        self.shape = shape
-        self.strides = strides
-        if order == "C":
-            self.strides_of_shape = NDArrayStrides(shape, order="C")
-        else:
-            self.strides_of_shape = NDArrayStrides(shape, order="F")
+    fn __init__(out self, a: NDArray[dtype], order: String, axis: Int) raises:
+        self.length = a.size
         self.order = order
+        self.axis = axis
+        self.ptr = a._buf.ptr
+        self.ndim = a.ndim
+        self.shape = a.shape
+        self.strides = a.strides
+        # Construct the compatible strides
+        self.strides_compatible = NDArrayStrides(
+            ndim=self.ndim, initialized=False
+        )
+        (self.strides_compatible._buf + axis).init_pointee_copy(1)
+        temp = a.shape[axis]
+        if order == "C":
+            for i in range(self.ndim - 1, -1, -1):
+                if i != axis:
+                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
+                    temp *= a.shape[i]
+        else:
+            for i in range(self.ndim):
+                if i != axis:
+                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
+                    temp *= a.shape[i]
+
         self.index = 0
 
     fn __iter__(self) -> Self:
@@ -5209,11 +5229,61 @@ struct _NDIter[
 
         if self.order == "C":
             for i in range(self.ndim):
-                indices[i] = remainder // self.strides_of_shape[i]
-                remainder %= self.strides_of_shape[i]
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
+
         else:
             for i in range(self.ndim - 1, -1, -1):
-                indices[i] = remainder // self.strides_of_shape[i]
-                remainder %= self.strides_of_shape[i]
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
+
+        return self.ptr[_get_offset(indices, self.strides)]
+
+    fn ith(self, index: Int) raises -> Scalar[dtype]:
+        """
+        Gets the i-th element of the iterator.
+
+        Args:
+            index: The index of the item. It must be non-negative.
+
+        Returns:
+            The i-th element of the iterator.
+        """
+
+        if (index >= self.length) or (index < 0):
+            raise Error(
+                String(
+                    "\nError in `NDIter.ith()`: "
+                    "Index ({}) must be in the range of [0, {})"
+                ).format(index, self.length)
+            )
+
+        var remainder = index
+        var indices = Item(ndim=self.ndim, initialized=False)
+
+        if self.order == "C":
+            for i in range(self.ndim):
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
+        else:
+            for i in range(self.ndim - 1, -1, -1):
+                if i != self.axis:
+                    (indices._buf + i).init_pointee_copy(
+                        remainder // self.strides_compatible._buf[i]
+                    )
+                    remainder %= self.strides_compatible._buf[i]
+            (indices._buf + self.axis).init_pointee_copy(remainder)
 
         return self.ptr[_get_offset(indices, self.strides)]

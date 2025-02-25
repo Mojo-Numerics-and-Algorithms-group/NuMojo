@@ -398,6 +398,36 @@ struct NDArrayStrides(Stringable):
         return False
 
     # ===-------------------------------------------------------------------===#
+    # Other methods
+    # ===-------------------------------------------------------------------===#
+
+    @always_inline("nodebug")
+    fn copy(read self) raises -> Self:
+        """
+        Returns a deep copy of the strides.
+        """
+
+        var res = Self(ndim=self.ndim, initialized=False)
+        memcpy(res._buf, self._buf, self.ndim)
+        return res
+
+    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+        """
+        Returns a new strides with the given axes swapped.
+
+        Args:
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            A new strides with the given axes swapped.
+        """
+        var res = self
+        res[axis1] = self[axis2]
+        res[axis2] = self[axis1]
+        return res
+
+    # ===-------------------------------------------------------------------===#
     # Other private methods
     # ===-------------------------------------------------------------------===#
 
@@ -405,6 +435,9 @@ struct NDArrayStrides(Stringable):
         """
         Returns a new strides by flipping the items.
         ***UNSAFE!*** No boundary check!
+
+        Returns:
+            A new strides with the items flipped.
 
         Example:
         ```mojo
@@ -433,9 +466,6 @@ struct NDArrayStrides(Stringable):
         print(A.strides._move_axis_to_end(0))  # Stride: [4, 1, 12]
         print(A.strides._move_axis_to_end(1))  # Stride: [12, 1, 4]
         ```
-
-        Returns:
-            A new strides with the items flipped.
         """
 
         if axis < 0:

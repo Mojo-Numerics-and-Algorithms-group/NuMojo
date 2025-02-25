@@ -428,17 +428,15 @@ struct NDArrayShape(Stringable, Writable):
     # Other methods
     # ===-------------------------------------------------------------------===#
 
-    fn size_of_array(self) -> Int:
+    @always_inline("nodebug")
+    fn copy(read self) raises -> Self:
         """
-        Returns the total number of elements in the array.
+        Returns a deep copy of the shape.
+        """
 
-        Returns:
-          The total number of elements in the corresponding array.
-        """
-        var size = 1
-        for i in range(self.ndim):
-            size *= self._buf[i]
-        return size
+        var res = Self(ndim=self.ndim, initialized=False)
+        memcpy(res._buf, self._buf, self.ndim)
+        return res
 
     fn join(self, *shapes: Self) raises -> Self:
         """
@@ -466,6 +464,34 @@ struct NDArrayShape(Stringable, Writable):
                 index += 1
 
         return new_shape
+
+    fn size_of_array(self) -> Int:
+        """
+        Returns the total number of elements in the array.
+
+        Returns:
+          The total number of elements in the corresponding array.
+        """
+        var size = 1
+        for i in range(self.ndim):
+            size *= self._buf[i]
+        return size
+
+    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+        """
+        Returns a new shape with the given axes swapped.
+
+        Args:
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            A new shape with the given axes swapped.
+        """
+        var res = self
+        res[axis1] = self[axis2]
+        res[axis2] = self[axis1]
+        return res
 
     # ===-------------------------------------------------------------------===#
     # Other private methods

@@ -2,7 +2,7 @@ from python import Python
 
 from numojo.prelude import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
-from utils_for_test import check, check_is_close
+from utils_for_test import check, check_is_close, check_values_close
 
 
 def test_constructors():
@@ -63,9 +63,14 @@ def test_constructors():
 
 def test_iterator():
     var py = Python.import_module("builtins")
+    var np = Python.import_module("numpy")
 
     var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
     var anp = a.to_numpy()
+    var f = nm.arange[i8](24).reshape(Shape(2, 3, 4), order="F")
+    var fnp = f.to_numpy()
+
+    # NDAxisIter
     var a_iter_along_axis = a.iter_along_axis[forward=False](axis=0)
     var b = a_iter_along_axis.__next__() == nm.array[i8]("[11, 23]")
     assert_true(
@@ -77,6 +82,7 @@ def test_iterator():
         "`_NDAxisIter` breaks",
     )
 
+    # NDArrayIter
     var a_iter_over_dimension = a.__iter__()
     var anp_iter_over_dimension = anp.__iter__()
     for i in range(a.shape[0]):
@@ -93,4 +99,52 @@ def test_iterator():
             a_iter_over_dimension_reversed.__next__(),
             anp_iter_over_dimension_reversed.__next__(),
             "`_NDArrayIter` or `__reversed__()` breaks",
+        )
+
+    # NDIter of C-order array
+    var a_nditer = a.nditer()
+    var anp_nditer = np.nditer(anp)
+    for i in range(a.size):
+        check_values_close(
+            a_nditer.__next__(),
+            anp_nditer.__next__(),
+            "`_NDIter` or `nditer()` of C array by order C breaks",
+        )
+
+    # NDIter of C-order array
+    a_nditer = a.nditer()
+    anp_nditer = np.nditer(anp)
+    for i in range(a.size):
+        check_values_close(
+            a_nditer.ith(i),
+            anp_nditer.__next__(),
+            "`_NDIter.ith()` of C array by order C breaks",
+        )
+
+    var a_nditer_f = a.nditer(order="F")
+    var anp_nditer_f = np.nditer(anp, order="F")
+    for i in range(a.size):
+        check_values_close(
+            a_nditer_f.__next__(),
+            anp_nditer_f.__next__(),
+            "`_NDIter` or `nditer()` of C array by order F breaks",
+        )
+
+    # NDIter of F-order array
+    var f_nditer = f.nditer()
+    var fnp_nditer = np.nditer(fnp)
+    for i in range(f.size):
+        check_values_close(
+            f_nditer.__next__(),
+            fnp_nditer.__next__(),
+            "`_NDIter` or `nditer()` of F array by order C breaks",
+        )
+
+    var f_nditer_f = f.nditer(order="F")
+    var fnp_nditer_f = np.nditer(fnp, order="F")
+    for i in range(f.size):
+        check_values_close(
+            f_nditer_f.__next__(),
+            fnp_nditer_f.__next__(),
+            "`_NDIter` or `nditer()` of F array by order F breaks",
         )

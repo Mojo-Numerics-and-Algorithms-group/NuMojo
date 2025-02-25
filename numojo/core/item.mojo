@@ -6,6 +6,7 @@ Implements Item type.
 
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
+from os import abort
 from sys import simdwidthof
 from utils import Variant
 
@@ -18,6 +19,10 @@ alias item = Item
 
 @register_passable
 struct Item(CollectionElement):
+    """
+    Specifies the indices of an item of an array.
+    """
+
     var _buf: UnsafePointer[Int]
     var ndim: Int
 
@@ -63,15 +68,14 @@ struct Item(CollectionElement):
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(Int(args[i]))
 
-    @always_inline("nodebug")
     fn __init__(
         out self,
+        *,
         ndim: Int,
         initialized: Bool,
     ) raises:
         """
         Construct Item with number of dimensions.
-
         This method is useful when you want to create a Item with given ndim
         without knowing the Item values.
 
@@ -80,14 +84,61 @@ struct Item(CollectionElement):
             initialized: Whether the shape is initialized.
                 If yes, the values will be set to 0.
                 If no, the values will be uninitialized.
+
+        Raises:
+            Error: If the number of dimensions is negative.
         """
         if ndim < 0:
-            raise Error("Number of dimensions must be non-negative.")
+            raise Error(
+                "\nError in `Item.__init__()`: "
+                "Number of dimensions must be non-negative."
+            )
+
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
         if initialized:
             for i in range(ndim):
                 (self._buf + i).init_pointee_copy(0)
+
+    fn __init__(out self, idx: Int, shape: NDArrayShape) raises:
+        """
+        Get indices of the i-th item of the array of the given shape.
+        The item traverse the array in C-order.
+
+        Args:
+            idx: The i-th item of the array.
+            shape: The strides of the array.
+
+        Examples:
+
+        The following example demonstrates how to get the indices (coordinates)
+        of the 123-th item of a 3D array with shape (20, 30, 40).
+
+        ```console
+        >>> from numojo.prelude import *
+        >>> var item = Item(123, Shape(20, 30, 40))
+        >>> print(item)
+        Item at index: (0,3,3)  Length: 3
+        ```
+        """
+
+        if (idx < 0) or (idx >= shape.size_of_array()):
+            raise Error(
+                String(
+                    "\nError in `Item.__init__(out self, idx: Int, shape:"
+                    " NDArrayShape)`: idx {} out of range [{}, {})."
+                ).format(idx, 0, shape.size_of_array())
+            )
+
+        self.ndim = shape.ndim
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+
+        var strides = NDArrayStrides(shape, order="C")
+        var remainder = idx
+
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
+            remainder %= strides._buf[i]
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -115,7 +166,7 @@ struct Item(CollectionElement):
 
     @always_inline("nodebug")
     fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
-        """Get the value at the specified index.
+        """Gets the value at the specified index.
 
         Parameter:
             T: Type of values. It can be converted to `Int` with `Int()`.
@@ -204,6 +255,37 @@ struct Item(CollectionElement):
             + "Length: "
             + String(self.ndim)
         )
+
+    # ===-------------------------------------------------------------------===#
+    # Other methods
+    # ===-------------------------------------------------------------------===#
+
+    fn offset(self, strides: NDArrayStrides) -> Int:
+        """
+        Calculates the offset of the item according to strides.
+
+        Args:
+            strides: The strides of the array.
+
+        Returns:
+            The offset of the item.
+
+        Examples:
+
+        ```mojo
+        from numojo.prelude import *
+        var item = Item(1, 2, 3)
+        var strides = nm.Strides(4, 3, 2)
+        print(item.offset(strides))
+        # This prints `16`.
+        ```
+        .
+        """
+
+        var offset: Int = 0
+        for i in range(self.ndim):
+            offset += self._buf[i] * strides._buf[i]
+        return offset
 
 
 @value

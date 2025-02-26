@@ -201,7 +201,7 @@ You can add `numojo` in the dependencies section of your toml file.
 
 ```toml
 [dependencies]
-numojo = "==0.5"
+numojo = "=0.6"
 ```
 
 ### Build package

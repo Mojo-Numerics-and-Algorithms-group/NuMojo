@@ -2,15 +2,20 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
-## xx/xx/2025 (v0.6)
+## 28/02/2025 (v0.6)
 
 ### ⭐️ New
 
-- For `NDArray` type:
-  - Implement `broadcast_to()` for `NDArray`. The function broadcasts an array to any compatible shape ([PR #202](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/202)).
-- Add `NDAxisIter` type as a iterator that returns, in each iteration, a 1-d array along that axis  ([PR #212](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/212)).
-- Add `Flags` type for storing information on memory layout of arrays. The `Flags` type replaces the current `Dict[String, Bool]` type ([PR #210](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/210)).
-- Add `apply_func_on_array_with_dim_reduction()`, `apply_func_on_array_without_dim_reduction()` to allow applying functions working on 1-d array to any axis ([PR #213](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/213)).
+- Implement the `broadcast_to()` method for `NDArray`. This function broadcasts an array to any compatible shape ([PR #202](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/202)).
+- Add the `apply_along_axis()` function that executes a function working on 1-d arrays on n-d arrays along the given axis ([PR #213](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/213), [PR #218](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/218)).
+- Implement the `diagonal()` function and the `NDArray.diagonal()` method ([PR #217](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/217)).
+- Implement the `compress()` function and the `NDArray.compress()` method ([PR #219](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/219)).
+- Implement the `clip()` function and the `NDArray.clip()` method  ([PR #220](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/220)).
+- Add the `_NDAxisIter` type as a iterator that returns, in each iteration, a 1-d array along that axis. The iterator traverse the array either by C-order or F-order ([PR #212](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/212), [PR #214](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/214)).
+- Add the `ith()` method to the `_NDArrayIter` type and to the `_NDIter` type to get the i-th item ([PR #219](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/219), [PR #221](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/221)).
+- Add the `Flags` type for storing information on memory layout of arrays. The `Flags` type replaces the current `Dict[String, Bool]` type ([PR #210](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/210), [PR #214](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/214)).
+- Add the `swapaxes()` methods for the `NDArrayShape` type and the `NDArrayStrides` type ([PR #221](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/221)).
+- Add the `offset()` methods for the `Item` type to get the offset of an index in the underlying buffer. Allow the `Item` object to be constructed from index and shape ([PR #221](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/221)).
 
 ### 🦋 Changed
 
@@ -25,17 +30,31 @@ This is a list of RELEASED changes for the NuMojo Package.
   - Add the parameter `returned_dtype` to functions which defaults to `f64` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
   - Add `variance()` and `std()` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)). Allow calculating variance and std of an array by axis ([PR #207](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/207)).
   - Allow `median()` and `mode()` functions to work on any axis.
-- Update functions in the `sotring` module:
-  - Considerably improve the performance of `sort()` function ([PR #213](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/213)).
-- Update the behaviors of 0-d array (numojo scalar). Although the syntax `a.item(0)` or `a[Item(0)]` is always preferred, we also allow some basic operations on 0-d array. 0-d array can now be unpacked to get the corresponding mojo scalar either by `[]` or by `item()` [PR #209](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/209).
+- Update functions in the `sorting` module:
+  - Considerably improve the performance of `sort()` function ([PR #213](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/213), [PR #214](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/214)).
+  - Allow `argsort` by any axis for both C-order and F-order arrays ([PR #214](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/214)).
+- Update function in the `math.extrema` module ([PR #216](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/216)):
+  - Allow the `max()` and `min()` functions to work on any axis.
+  - Update the `max()` and `min()` methods for the `NDArray` type.
+- Update the behaviors of 0-d array (numojo scalar). Although the syntax `a.item(0)` or `a[Item(0)]` is always preferred, we also allow some basic operations on 0-d array. 0-d array can now be unpacked to get the corresponding mojo scalar either by `[]` or by `item()` ([PR #209](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/209)).
 - Add boundary checks for `NDArrayShape` and `NDArrayStrides` to ensure safe use. Improve the docstring ([PR #205](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/205), [PR #206](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/206)).
+- Significantly increase the speed of printing large arrays ([PR #215](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/215)).
+- Replace the `NDArray.num_elements()` method by the `NDArray.size` attribute for all modules ([PR #216](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/216)).
 
 ### ❌ Removed
 
-- Remove `cumvariance`, `cumstd`, `cumpvariance`, `cumpstd` ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
+- Remove the `cumvariance`, `cumstd`, `cumpvariance`, `cumpstd` functions ([PR #200](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/200)).
+- Remove the `maxT()` and `minT()` functions ([PR #216](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/216)).
+
+### 🛠️ Fixed
+
+- Re-write the `ravel()` function so that it will not break for F-order arrays ([PR #214](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/214)).
+- Fix the `NDArray.sort()` method (in-place sort). The default axis is changed to `-1` ([PR #217](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/217)).
+- Fix the `NDArray.__bool__()` method which may returns incorrect results ([PR #219](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/219)).
 
 ### 📚 Documentatory and testing
 
+- Update the docstring of all methods belonging to the `NDArray` type, following the Mojo Docstring Style Guide. Provide more detailed error messages in the internal functions of `NDArray` to enhance clarity and traceability of errors ([PR #222](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/222)).
 - Updates the roadmap document according to our current progress ([PR #208](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/208)).
 
 ## 26/01/2025 (v0.5)

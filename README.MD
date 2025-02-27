@@ -42,26 +42,26 @@ Our primary objective is to develop a fast, comprehensive numerics library in Mo
 
 Core data types:
 
-- Native n-dimensional array (`numojo.core.ndarray.NDArray`).
-- Native 2-dimensional array, i.e., matrix (`numojo.core.matrix.Matrix`).
-- Native n-dimensional complex array (`numojo.core.complex_ndarray.ComplexNDArray`)
+- Native n-dimensional array (`numojo.NDArray`).
+- Native 2-dimensional array, i.e., matrix (`numojo.Matrix`).
+- Native n-dimensional complex array (`numojo.ComplexNDArray`)
 - Native fixed-dimension array (to be implemented when trait parameterization is available).
 
 Routines and objects:
 
-- Array creation routines (`numojo.routines.creation`)
-- Array manipulation routines (`numojo.routines.manipulation`)
-- Input and output (`numojo.routines.io`)
-- Linear algebra (`numojo.routines.linalg`)
-- Logic functions (`numojo.routines.logic`)
-- Mathematical functions (`numojo.routines.math`)
-- Exponents and logarithms (`numojo.routines.exponents`)
-- Extrema finding (`numojo.routines.extrema`)
-- Rounding (`numojo.routines.rounding`)
-- Trigonometric functions (`numojo.routines.trig`)
-- Random sampling (`numojo.routines.random`)
-- Sorting, searching, and counting (`numojo.routines.sorting`, `numojo.routines.searching`)
-- Statistics (`numojo.routines.statistics`)
+- Array creation routines (`numojo.creation`)
+- Array manipulation routines (`numojo.manipulation`)
+- Input and output (`numojo.io`)
+- Linear algebra (`numojo.linalg`)
+- Logic functions (`numojo.logic`)
+- Mathematical functions (`numojo.math`)
+- Exponents and logarithms (`numojo.exponents`)
+- Extrema finding (`numojo.extrema`)
+- Rounding (`numojo.rounding`)
+- Trigonometric functions (`numojo.trig`)
+- Random sampling (`numojo.random`)
+- Sorting and searching (`numojo.sorting`, `numojo.searching`)
+- Statistics (`numojo.statistics`)
 - etc...
 
 Please find all the available functions and objects [here](docs/features.md).
@@ -201,7 +201,7 @@ You can add `numojo` in the dependencies section of your toml file.
 
 ```toml
 [dependencies]
-numojo = "==0.5"
+numojo = "=0.6"
 ```
 
 ### Build package

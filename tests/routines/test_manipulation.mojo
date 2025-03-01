@@ -25,23 +25,60 @@ fn test_arr_manipulation() raises:
             String("`flip` by `axis` {} fails.").format(i),
         )
 
-    # Test reshape and ravel
+
+def test_ravel_reshape():
+    var np = Python.import_module("numpy")
+    var c = nm.fromstring[i8](
+        "[[[1,2,3,4][5,6,7,8]][[9,10,11,12][13,14,15,16]]]", order="C"
+    )
+    var cnp = c.to_numpy()
+    var f = nm.fromstring[i8](
+        "[[[1,2,3,4][5,6,7,8]][[9,10,11,12][13,14,15,16]]]", order="F"
+    )
+    var fnp = f.to_numpy()
+
+    # Test ravel
     check_is_close(
-        nm.reshape(B, Shape(4, 3, 2), "C"),
-        np.reshape(Bnp, (4, 3, 2), "C"),
-        "`reshape` by C is broken",
+        nm.ravel(c, order="C"),
+        np.ravel(cnp, order="C"),
+        "`ravel` C-order array by C order is broken.",
     )
     check_is_close(
-        nm.reshape(B, Shape(4, 3, 2), "F"),
-        np.reshape(Bnp, (4, 3, 2), "F"),
-        "`reshape` by F is broken",
+        nm.ravel(c, order="F"),
+        np.ravel(cnp, order="F"),
+        "`ravel` C-order array by F order is broken.",
+    )
+    check_is_close(
+        nm.ravel(f, order="C"),
+        np.ravel(fnp, order="C"),
+        "`ravel` F-order array by C order is broken.",
+    )
+    check_is_close(
+        nm.ravel(f, order="F"),
+        np.ravel(fnp, order="F"),
+        "`ravel` F-order array by F order is broken.",
     )
 
+    # Test reshape
     check_is_close(
-        nm.ravel(B, "C"), np.ravel(Bnp, "C"), "`ravel` by C is broken"
+        nm.reshape(c, Shape(4, 2, 2), "C"),
+        np.reshape(cnp, (4, 2, 2), "C"),
+        "`reshape` C by C is broken",
     )
     check_is_close(
-        nm.ravel(B, "F"), np.ravel(Bnp, "F"), "`ravel` by F is broken"
+        nm.reshape(c, Shape(4, 2, 2), "F"),
+        np.reshape(cnp, (4, 2, 2), "F"),
+        "`reshape` C by F is broken",
+    )
+    check_is_close(
+        nm.reshape(f, Shape(4, 2, 2), "C"),
+        np.reshape(fnp, (4, 2, 2), "C"),
+        "`reshape` F by C is broken",
+    )
+    check_is_close(
+        nm.reshape(f, Shape(4, 2, 2), "F"),
+        np.reshape(fnp, (4, 2, 2), "F"),
+        "`reshape` F by F is broken",
     )
 
 
@@ -74,4 +111,20 @@ def test_transpose():
         nm.transpose(A, axes=List(1, 3, 0, 2)),
         np.transpose(Anp, [1, 3, 0, 2]),
         "4-d `transpose` with arbitrary `axes` is broken.",
+    )
+
+
+def test_broadcast():
+    var np = Python.import_module("numpy")
+    var a = nm.random.rand(Shape(2, 1, 3))
+    var Anp = a.to_numpy()
+    check(
+        nm.broadcast_to(a, Shape(2, 2, 3)),
+        np.broadcast_to(a.to_numpy(), (2, 2, 3)),
+        "`broadcast_to` fails.",
+    )
+    check(
+        nm.broadcast_to(a, Shape(2, 2, 2, 3)),
+        np.broadcast_to(a.to_numpy(), (2, 2, 2, 3)),
+        "`broadcast_to` fails.",
     )

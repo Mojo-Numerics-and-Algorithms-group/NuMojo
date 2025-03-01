@@ -26,7 +26,7 @@ jobs:
 
       - name: Install magic
         run: |
-          curl -ssL https://magic.modular.com/ff414efd-16ac-4bf3-8efc-50b059272ab6 | bash
+          curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
     
       - name: Add path
         run: |

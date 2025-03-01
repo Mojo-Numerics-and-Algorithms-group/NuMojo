@@ -6,6 +6,7 @@ Implements Item type.
 
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
+from os import abort
 from sys import simdwidthof
 from utils import Variant
 
@@ -18,6 +19,10 @@ alias item = Item
 
 @register_passable
 struct Item(CollectionElement):
+    """
+    Specifies the indices of an item of an array.
+    """
+
     var _buf: UnsafePointer[Int]
     var ndim: Int
 
@@ -26,7 +31,7 @@ struct Item(CollectionElement):
         """Construct the tuple.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             args: Initial values.
@@ -34,14 +39,14 @@ struct Item(CollectionElement):
         self._buf = UnsafePointer[Int]().alloc(args.__len__())
         self.ndim = args.__len__()
         for i in range(args.__len__()):
-            self._buf[i] = index(args[i])
+            self._buf[i] = Int(args[i])
 
     @always_inline("nodebug")
     fn __init__[T: IndexerCollectionElement](out self, args: List[T]) raises:
         """Construct the tuple.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             args: Initial values.
@@ -49,7 +54,7 @@ struct Item(CollectionElement):
         self.ndim = len(args)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(index(args[i]))
+            (self._buf + i).init_pointee_copy(Int(args[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, args: VariadicList[Int]) raises:
@@ -61,17 +66,16 @@ struct Item(CollectionElement):
         self.ndim = len(args)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(index(args[i]))
+            (self._buf + i).init_pointee_copy(Int(args[i]))
 
-    @always_inline("nodebug")
     fn __init__(
         out self,
+        *,
         ndim: Int,
         initialized: Bool,
     ) raises:
         """
         Construct Item with number of dimensions.
-
         This method is useful when you want to create a Item with given ndim
         without knowing the Item values.
 
@@ -80,14 +84,61 @@ struct Item(CollectionElement):
             initialized: Whether the shape is initialized.
                 If yes, the values will be set to 0.
                 If no, the values will be uninitialized.
+
+        Raises:
+            Error: If the number of dimensions is negative.
         """
         if ndim < 0:
-            raise Error("Number of dimensions must be non-negative.")
+            raise Error(
+                "\nError in `Item.__init__()`: "
+                "Number of dimensions must be non-negative."
+            )
+
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
         if initialized:
             for i in range(ndim):
                 (self._buf + i).init_pointee_copy(0)
+
+    fn __init__(out self, idx: Int, shape: NDArrayShape) raises:
+        """
+        Get indices of the i-th item of the array of the given shape.
+        The item traverse the array in C-order.
+
+        Args:
+            idx: The i-th item of the array.
+            shape: The strides of the array.
+
+        Examples:
+
+        The following example demonstrates how to get the indices (coordinates)
+        of the 123-th item of a 3D array with shape (20, 30, 40).
+
+        ```console
+        >>> from numojo.prelude import *
+        >>> var item = Item(123, Shape(20, 30, 40))
+        >>> print(item)
+        Item at index: (0,3,3)  Length: 3
+        ```
+        """
+
+        if (idx < 0) or (idx >= shape.size_of_array()):
+            raise Error(
+                String(
+                    "\nError in `Item.__init__(out self, idx: Int, shape:"
+                    " NDArrayShape)`: idx {} out of range [{}, {})."
+                ).format(idx, 0, shape.size_of_array())
+            )
+
+        self.ndim = shape.ndim
+        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+
+        var strides = NDArrayStrides(shape, order="C")
+        var remainder = idx
+
+        for i in range(self.ndim):
+            (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
+            remainder %= strides._buf[i]
 
     @always_inline("nodebug")
     fn __copyinit__(mut self, other: Self):
@@ -115,10 +166,10 @@ struct Item(CollectionElement):
 
     @always_inline("nodebug")
     fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
-        """Get the value at the specified index.
+        """Gets the value at the specified index.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             idx: The index of the value to get.
@@ -127,15 +178,16 @@ struct Item(CollectionElement):
             The value at the specified index.
         """
 
-        var normalized_idx: Int = index(idx)
+        var normalized_idx: Int = Int(idx)
         if normalized_idx < 0:
-            normalized_idx = idx + self.ndim
+            normalized_idx = Int(idx) + self.ndim
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.ndim, self.ndim - 1
-                )
+                String(
+                    "Error in `numojo.Item.__getitem__()`: \n"
+                    "Index ({}) out of range [{}, {})\n"
+                ).format(Int(idx), -self.ndim, self.ndim - 1)
             )
 
         return self._buf[normalized_idx]
@@ -145,26 +197,27 @@ struct Item(CollectionElement):
         """Set the value at the specified index.
 
         Parameter:
-            T: Type of values. It can be converted to `Int` with `index()`.
-            U: Type of values. It can be converted to `Int` with `index()`.
+            T: Type of values. It can be converted to `Int` with `Int()`.
+            U: Type of values. It can be converted to `Int` with `Int()`.
 
         Args:
             idx: The index of the value to set.
             val: The value to set.
         """
 
-        var normalized_idx: Int = index(idx)
+        var normalized_idx: Int = Int(idx)
         if normalized_idx < 0:
-            normalized_idx = idx + self.ndim
+            normalized_idx = Int(idx) + self.ndim
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String("Index ({}) out of range [{}, {})").format(
-                    index(idx), -self.ndim, self.ndim - 1
-                )
+                String(
+                    "Error in `numojo.Item.__getitem__()`: \n"
+                    "Index ({}) out of range [{}, {})\n"
+                ).format(Int(idx), -self.ndim, self.ndim - 1)
             )
 
-        self._buf[normalized_idx] = index(val)
+        self._buf[normalized_idx] = Int(val)
 
     fn __iter__(self) raises -> _ItemIter:
         """Iterate over elements of the NDArray, returning copied value.
@@ -182,13 +235,13 @@ struct Item(CollectionElement):
         )
 
     fn __repr__(self) -> String:
-        var result: String = "numojo.Item" + str(self)
+        var result: String = "numojo.Item" + String(self)
         return result
 
     fn __str__(self) -> String:
         var result: String = "("
         for i in range(self.ndim):
-            result += str(self._buf[i])
+            result += String(self._buf[i])
             if i < self.ndim - 1:
                 result += ","
         result += ")"
@@ -196,8 +249,43 @@ struct Item(CollectionElement):
 
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(
-            "Item at index: " + str(self) + "  " + "Length: " + str(self.ndim)
+            "Item at index: "
+            + String(self)
+            + "  "
+            + "Length: "
+            + String(self.ndim)
         )
+
+    # ===-------------------------------------------------------------------===#
+    # Other methods
+    # ===-------------------------------------------------------------------===#
+
+    fn offset(self, strides: NDArrayStrides) -> Int:
+        """
+        Calculates the offset of the item according to strides.
+
+        Args:
+            strides: The strides of the array.
+
+        Returns:
+            The offset of the item.
+
+        Examples:
+
+        ```mojo
+        from numojo.prelude import *
+        var item = Item(1, 2, 3)
+        var strides = nm.Strides(4, 3, 2)
+        print(item.offset(strides))
+        # This prints `16`.
+        ```
+        .
+        """
+
+        var offset: Int = 0
+        for i in range(self.ndim):
+            offset += self._buf[i] * strides._buf[i]
+        return offset
 
 
 @value

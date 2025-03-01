@@ -1,13 +1,12 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Array creation routine.
-"""
-# ===----------------------------------------------------------------------=== #
-# ARRAY CREATION ROUTINES
-# Last updated: 2024-09-08
-# ===----------------------------------------------------------------------=== #
 
-
-"""
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
@@ -34,12 +33,14 @@ function. So it is easy for modification.
 from algorithm import parallelize, vectorize
 from algorithm import parallelize, vectorize
 from builtin.math import pow
+from collections import Dict
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
 from python import PythonObject
 from sys import simdwidthof
 from tensor import Tensor, TensorShape
 
+from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
@@ -90,7 +91,7 @@ fn arange[
     (Overload) When start is 0 and step is 1.
     """
 
-    var size = int(stop)
+    var size = Int(stop)
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
         (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
@@ -158,8 +159,8 @@ fn arange[
     (Overload) When start is 0 and step is 1.
     """
 
-    var size_re = int(stop.re)
-    var size_im = int(stop.im)
+    var size_re = Int(stop.re)
+    var size_im = Int(stop.im)
     if size_re != size_im:
         raise Error(
             "Number of real and imaginary parts are not equal {} != {}".format(
@@ -1886,7 +1887,7 @@ fn astype[
         A NDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    var array_order = "C" if a.flags["C_CONTIGUOUS"] else "F"
+    var array_order = "C" if a.flags.C_CONTIGUOUS else "F"
     var res = NDArray[target](a.shape, order=array_order)
 
     @parameter
@@ -2030,22 +2031,26 @@ fn fromstring[
     var number_as_str: String = ""
     for i in range(len(bytes)):
         var b = bytes[i]
-        if chr(int(b)) == "[":
+        if chr(Int(b)) == "[":
             level += 1
             ndim = max(ndim, level)
             if len(shape) < ndim:
                 shape.append(0)
             shape[level - 1] = 0
 
-        if isdigit(b) or (chr(int(b)) == ".") or (chr(int(b)) == "-"):
-            number_as_str = number_as_str + chr(int(b))
-        if (chr(int(b)) == ",") or (chr(int(b)) == "]"):
+        if (
+            chr(Int(b)).isdigit()
+            or (chr(Int(b)) == ".")
+            or (chr(Int(b)) == "-")
+        ):
+            number_as_str = number_as_str + chr(Int(b))
+        if (chr(Int(b)) == ",") or (chr(Int(b)) == "]"):
             if number_as_str != "":
                 var number = atof(number_as_str).cast[dtype]()
                 data.append(number)  # Add the number to the data buffer
                 number_as_str = ""  # Clean the number cache
                 shape[-1] = shape[-1] + 1
-        if chr(int(b)) == "]":
+        if chr(Int(b)) == "]":
             level = level - 1
             if level < 0:
                 raise ("Unmatched left and right brackets!")
@@ -2213,17 +2218,17 @@ fn array[
         An Array of given data, shape and order.
     """
 
-    var len = int(len(data.shape))
+    var len = Int(len(data.shape))
     var shape: List[Int] = List[Int]()
     for i in range(len):
-        if int(data.shape[i]) == 1:
+        if Int(data.shape[i]) == 1:
             continue
-        shape.append(int(data.shape[i]))
+        shape.append(Int(data.shape[i]))
     A = NDArray[dtype](NDArrayShape(shape), order=order)
-    A._buf = OwnData[dtype](A.size)
-    # memset_zero(A._buf, A.size)
     for i in range(A.size):
-        A._buf.ptr[i] = float(data.item(PythonObject(i))).cast[dtype]()
+        (A._buf.ptr + i).init_pointee_copy(
+            Float64(data.item(PythonObject(i))).cast[dtype]()
+        )
     return A
 
 
@@ -2259,3 +2264,33 @@ fn array[
     """
 
     return from_tensor(data)
+
+
+# ===----------------------------------------------------------------------=== #
+# Internal functions
+# ===----------------------------------------------------------------------=== #
+# for creating a 0darray (only for internal use)
+fn _0darray[
+    dtype: DType
+](val: Scalar[dtype],) raises -> NDArray[dtype]:
+    """
+    Initialize an special 0darray (numojo scalar).
+    The ndim is 0.
+    The shape is unitialized (0-element shape).
+    The strides is unitialized (0-element strides).
+    The size is 1 (`=0!`).
+    """
+
+    var b = NDArray[dtype](
+        shape=NDArrayShape(ndim=0, initialized=False),
+        strides=NDArrayStrides(ndim=0, initialized=False),
+        ndim=0,
+        size=1,
+        flags=Flags(
+            c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
+        ),
+    )
+    b._buf = OwnData[dtype](1)
+    b._buf.ptr.init_pointee_copy(val)
+    b.flags.OWNDATA = True
+    return b

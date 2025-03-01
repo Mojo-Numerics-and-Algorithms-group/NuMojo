@@ -65,6 +65,7 @@ from numojo.routines.io import (
 from numojo.routines.io import printoptions, set_printoptions
 
 from numojo.routines import linalg
+from numojo.routines.linalg.misc import diagonal
 
 from numojo.routines import logic
 from numojo.routines.logic import (
@@ -97,11 +98,7 @@ from numojo.routines.math import gradient, trapz
 from numojo.routines.math import exp, exp2, expm1, log, ln, log2, log10, log1p
 from numojo.routines.math import (
     max,
-    maxT,
     min,
-    minT,
-    amin,
-    amax,
     mimimum,
     maximum,
 )
@@ -117,7 +114,7 @@ from numojo.routines.math import (
     sinh,
     tanh,
 )
-from numojo.routines.math import cbrt, rsqrt, sqrt, scalb
+from numojo.routines.math import cbrt, clip, rsqrt, sqrt, scalb
 from numojo.routines.math import prod, cumprod
 from numojo.routines.math import (
     tabs,
@@ -147,16 +144,10 @@ from numojo.routines.math import (
 from numojo.routines import statistics
 from numojo.routines.statistics import (
     mean,
-    meanall,
-    cummean,
     mode,
     median,
     variance,
     std,
-    cumpvariance,
-    cumvariance,
-    cumpstdev,
-    cumstdev,
 )
 
 from numojo.routines import bitwise
@@ -190,7 +181,9 @@ from numojo.routines.creation import (
 )
 
 from numojo.routines import indexing
-from numojo.routines.indexing import where
+from numojo.routines.indexing import where, compress
+
+from numojo.routines.functional import apply_along_axis
 
 from numojo.routines import manipulation
 from numojo.routines.manipulation import (
@@ -200,6 +193,7 @@ from numojo.routines.manipulation import (
     reshape,
     ravel,
     transpose,
+    broadcast_to,
     flip,
 )
 

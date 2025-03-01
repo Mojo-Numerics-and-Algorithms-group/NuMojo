@@ -90,7 +90,7 @@ fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     #     var simd_data = array.load[width=simd_width](idx)
     #     result |= simd_data.reduce_and()
 
-    # vectorize[vectorize_sum, opt_nelts](array.num_elements())
+    # vectorize[vectorize_sum, opt_nelts](array.size)
     # return result
     for i in range(array.size):
         result &= array.load(i)
@@ -114,7 +114,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     #     var simd_data = array.load[width=simd_width](idx)
     #     result &= simd_data.reduce_or()
 
-    # vectorize[vectorize_sum, opt_nelts](array.num_elements())
+    # vectorize[vectorize_sum, opt_nelts](array.size)
     # return result
     for i in range(array.size):
         result |= array.load(i)

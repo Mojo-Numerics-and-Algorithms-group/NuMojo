@@ -1,4 +1,6 @@
+from math import sqrt
 import numojo as nm
+from numojo.prelude import *
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
 from testing.testing import assert_true, assert_almost_equal
@@ -16,8 +18,8 @@ def test_randminmax():
     """Test random array generation with min and max values."""
     var arr_variadic = nm.random.rand[nm.f64](10, 10, 10, min=1, max=2)
     var arr_list = nm.random.rand[nm.f64](List[Int](10, 10, 10), min=3, max=4)
-    var arr_variadic_mean = nm.cummean(arr_variadic)
-    var arr_list_mean = nm.cummean(arr_list)
+    var arr_variadic_mean = nm.mean(arr_variadic)
+    var arr_list_mean = nm.mean(arr_list)
     assert_almost_equal(
         arr_variadic_mean,
         1.5,
@@ -32,24 +34,40 @@ def test_randminmax():
     )
 
 
-def test_randn():
-    """Test random array generation with normal distribution."""
-    var arr_variadic_01 = nm.random.randn[nm.f64](
-        20, 20, 20, mean=0.0, variance=1.0
+def test_randint():
+    """Test random int array generation with min and max values."""
+    var arr_low_high = nm.random.randint(Shape(10, 10, 10), 0, 10)
+    var arr_high = nm.random.randint(Shape(10, 10, 10), 6)
+    var arr_low_high_mean = nm.mean(arr_low_high)
+    var arr_high_mean = nm.mean(arr_high)
+    assert_almost_equal(
+        arr_low_high_mean,
+        4.5,
+        msg="Mean of `nm.random.randint(Shape(10, 10), 0, 10)` breaks",
+        atol=0.1,
     )
-    var arr_variadic_31 = nm.random.randn[nm.f64](
-        20, 20, 20, mean=3.0, variance=1.0
-    )
-    var arr_variadic_12 = nm.random.randn[nm.f64](
-        20, 20, 20, mean=1.0, variance=3.0
+    assert_almost_equal(
+        arr_high_mean,
+        2.5,
+        msg="Mean of `nm.random.randint(Shape(10, 10), 6)` breaks",
+        atol=0.1,
     )
 
-    var arr_variadic_mean01 = nm.cummean(arr_variadic_01)
-    var arr_variadic_mean31 = nm.cummean(arr_variadic_31)
-    var arr_variadic_mean12 = nm.cummean(arr_variadic_12)
-    var arr_variadic_var01 = nm.cumvariance(arr_variadic_01)
-    var arr_variadic_var31 = nm.cumvariance(arr_variadic_31)
-    var arr_variadic_var12 = nm.cumvariance(arr_variadic_12)
+
+def test_randn():
+    """Test random array generation with normal distribution."""
+    var arr_variadic_01 = nm.random.randn[nm.f64](20, 20, 20)
+    var arr_variadic_31 = nm.random.randn[nm.f64](
+        Shape(20, 20, 20), mean=3, variance=1
+    )
+    var arr_variadic_12 = nm.random.randn[nm.f64](Shape(20, 20, 20), 1, 2)
+
+    var arr_variadic_mean01 = nm.mean(arr_variadic_01)
+    var arr_variadic_mean31 = nm.mean(arr_variadic_31)
+    var arr_variadic_mean12 = nm.mean(arr_variadic_12)
+    var arr_variadic_var01 = nm.variance(arr_variadic_01)
+    var arr_variadic_var31 = nm.variance(arr_variadic_31)
+    var arr_variadic_var12 = nm.variance(arr_variadic_12)
 
     assert_almost_equal(
         arr_variadic_mean01,
@@ -84,7 +102,7 @@ def test_randn():
     )
     assert_almost_equal(
         arr_variadic_var12,
-        3,
+        2,
         msg="Variance of random array with mean 1 and variance 2",
         atol=0.1,
     )
@@ -92,22 +110,16 @@ def test_randn():
 
 def test_randn_list():
     """Test random array generation with normal distribution."""
-    var arr_list_01 = nm.random.randn[nm.f64](
-        List[Int](20, 20, 20), mean=0.0, variance=1.0
-    )
-    var arr_list_31 = nm.random.randn[nm.f64](
-        List[Int](20, 20, 20), mean=3.0, variance=1.0
-    )
-    var arr_list_12 = nm.random.randn[nm.f64](
-        List[Int](20, 20, 20), mean=1.0, variance=2.0
-    )
+    var arr_list_01 = nm.random.randn[nm.f64](Shape(20, 20, 20))
+    var arr_list_31 = nm.random.randn[nm.f64](Shape(20, 20, 20)) + 3
+    var arr_list_12 = nm.random.randn[nm.f64](Shape(20, 20, 20)) * sqrt(2.0) + 1
 
-    var arr_list_mean01 = nm.cummean(arr_list_01)
-    var arr_list_mean31 = nm.cummean(arr_list_31)
-    var arr_list_mean12 = nm.cummean(arr_list_12)
-    var arr_list_var01 = nm.cumvariance(arr_list_01)
-    var arr_list_var31 = nm.cumvariance(arr_list_31)
-    var arr_list_var12 = nm.cumvariance(arr_list_12)
+    var arr_list_mean01 = nm.mean(arr_list_01)
+    var arr_list_mean31 = nm.mean(arr_list_31)
+    var arr_list_mean12 = nm.mean(arr_list_12)
+    var arr_list_var01 = nm.variance(arr_list_01)
+    var arr_list_var31 = nm.variance(arr_list_31)
+    var arr_list_var12 = nm.variance(arr_list_12)
 
     assert_almost_equal(
         arr_list_mean01,
@@ -150,13 +162,15 @@ def test_randn_list():
 
 def test_rand_exponential():
     """Test random array generation with exponential distribution."""
-    var arr_variadic = nm.random.rand_exponential[nm.f64](20, 20, 20, rate=2.0)
-    var arr_list = nm.random.rand_exponential[nm.f64](
-        List[Int](20, 20, 20), rate=0.5
+    var arr_variadic = nm.random.exponential[nm.f64](
+        Shape(20, 20, 20), scale=2.0
+    )
+    var arr_list = nm.random.exponential[nm.f64](
+        List[Int](20, 20, 20), scale=0.5
     )
 
-    var arr_variadic_mean = nm.cummean(arr_variadic)
-    var arr_list_mean = nm.cummean(arr_list)
+    var arr_variadic_mean = nm.mean(arr_variadic)
+    var arr_list_mean = nm.mean(arr_list)
 
     # For exponential distribution, mean = 1 / rate
     assert_almost_equal(
@@ -173,18 +187,18 @@ def test_rand_exponential():
     )
 
     # For exponential distribution, variance = 1 / (rate^2)
-    var arr_variadic_var = nm.cumvariance(arr_variadic)
-    var arr_list_var = nm.cumvariance(arr_list)
+    var arr_variadic_var = nm.variance(arr_variadic)
+    var arr_list_var = nm.variance(arr_list)
 
     assert_almost_equal(
         arr_variadic_var,
-        1 / (2),
+        1 / 2**2,
         msg="Variance of exponential distribution with rate 2.0",
         atol=0.1,
     )
     assert_almost_equal(
         arr_list_var,
-        1 / (0.5),
+        1 / 0.5**2,
         msg="Variance of exponential distribution with rate 0.5",
         atol=0.5,
     )

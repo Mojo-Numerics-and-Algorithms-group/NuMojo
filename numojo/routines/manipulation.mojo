@@ -1,6 +1,12 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+
 """
 Array manipulation routines.
-
 """
 
 from memory import UnsafePointer, memcpy
@@ -12,7 +18,12 @@ from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
-from numojo.core.utility import _list_of_flipped_range
+from numojo.core.utility import _list_of_flipped_range, _get_offset
+
+# ===----------------------------------------------------------------------=== #
+# TODO:
+# - When `OwnData` is supported, re-write `broadcast_to()`.`
+# ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations
@@ -92,7 +103,7 @@ fn reshape[
     if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
-    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
 
     if array_order != order:
         # Read in this order from the original array
@@ -107,28 +118,40 @@ fn reshape[
 
 fn ravel[
     dtype: DType
-](owned A: NDArray[dtype], order: String = "C") raises -> NDArray[dtype]:
+](a: NDArray[dtype], order: String = "C") raises -> NDArray[dtype]:
     """
     Returns the raveled version of the NDArray.
 
     Args:
-        A: NDArray.
+        a: NDArray.
         order: The order to flatten the array.
 
     Return:
         A contiguous flattened array.
     """
 
-    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
-
-    if A.ndim == 1:
-        return A
+    var axis: Int
+    if order == "C":
+        axis = a.ndim - 1
+    elif order == "F":
+        axis = 0
     else:
-        if array_order != order:
-            A = transpose(A, axes=_list_of_flipped_range(A.ndim))
-        var B = NDArray[dtype](Shape(A.size))
-        memcpy(B._buf.ptr, A._buf.ptr, A.size)
-        return B
+        raise Error(
+            String("\nError in `ravel()`: Invalid order: {}").format(order)
+        )
+    var iterator = a.iter_along_axis(axis=axis, order=order)
+    var res = NDArray[dtype](Shape(a.size))
+    var length_of_elements = a.shape[axis]
+    var length_of_iterator = a.size // length_of_elements
+
+    for i in range(length_of_iterator):
+        memcpy(
+            dest=res._buf.ptr + i * length_of_elements,
+            src=iterator.ith(i)._buf.ptr,
+            count=length_of_elements,
+        )
+
+    return res^
 
 
 # ===----------------------------------------------------------------------=== #
@@ -216,7 +239,7 @@ fn transpose[
     for i in range(A.ndim):
         new_strides._buf[i] = A.strides[axes[i]]
 
-    var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.index](Shape(A.size), order=array_order)
     var ptr = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
@@ -239,7 +262,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         return A
     if A.ndim == 2:
-        var array_order = "C" if A.flags["C_CONTIGUOUS"] else "F"
+        var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
             memcpy(B._buf.ptr, A._buf.ptr, A.size)
@@ -270,6 +293,179 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
             for j in range(B.shape[1]):
                 B._store(i, j, A._load(j, i))
     return B^
+
+
+# ===----------------------------------------------------------------------=== #
+# Changing number of dimensions
+# ===----------------------------------------------------------------------=== #
+
+
+fn broadcast_to[
+    dtype: DType
+](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
+    if a.shape.ndim > shape.ndim:
+        raise Error(
+            String("Cannot broadcast shape {} to shape {}!").format(
+                a.shape, shape
+            )
+        )
+
+    # Check whether broadcasting is possible or not.
+    # We compare the shape from the trailing dimensions.
+
+    var b_strides = NDArrayStrides(
+        ndim=len(shape), initialized=False
+    )  # Strides of b when refer to data of a
+
+    for i in range(a.shape.ndim):
+        if a.shape[a.shape.ndim - 1 - i] == shape[shape.ndim - 1 - i]:
+            b_strides[shape.ndim - 1 - i] = a.strides[a.shape.ndim - 1 - i]
+        elif a.shape[a.shape.ndim - 1 - i] == 1:
+            b_strides[shape.ndim - 1 - i] = 0
+        else:
+            raise Error(
+                String("Cannot broadcast shape {} to shape {}!").format(
+                    a.shape, shape
+                )
+            )
+    for i in range(shape.ndim - a.shape.ndim):
+        b_strides[i] = 0
+
+    # Start broadcasting.
+    # TODO: When `OwnData` is supported, re-write this part.
+    # We just need to change the shape and strides and re-use the data.
+
+    var b = NDArray[dtype](shape)  # Construct array of targeted shape.
+    # TODO: `b.strides = b_strides` when OwnData
+
+    # Iterate all items in the new array and fill in correct values.
+    for offset in range(b.size):
+        var remainder = offset
+        var indices = Item(ndim=b.ndim, initialized=False)
+
+        for i in range(b.ndim):
+            indices[i] = remainder // b.strides[i]
+            remainder %= b.strides[i]
+            # TODO: Change b.strides to NDArrayStrides(b.shape) when OwnData
+
+        (b._buf.ptr + offset).init_pointee_copy(
+            a._buf.ptr[
+                _get_offset(indices, b_strides)
+            ]  # TODO: Change b_strides to b.strides when OwnData
+        )
+
+    return b^
+
+
+fn broadcast_to[
+    dtype: DType
+](A: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+    """
+    Broadcasts the vector to the given shape.
+
+    Example:
+
+    ```console
+    > from numojo import Matrix
+    > a = Matrix.fromstring("1 2 3", shape=(1, 3))
+    > print(mat.broadcast_to(a, (3, 3)))
+    [[1.0   2.0     3.0]
+     [1.0   2.0     3.0]
+     [1.0   2.0     3.0]]
+    > a = Matrix.fromstring("1 2 3", shape=(3, 1))
+    > print(mat.broadcast_to(a, (3, 3)))
+    [[1.0   1.0     1.0]
+     [2.0   2.0     2.0]
+     [3.0   3.0     3.0]]
+    > a = Matrix.fromstring("1", shape=(1, 1))
+    > print(mat.broadcast_to(a, (3, 3)))
+    [[1.0   1.0     1.0]
+     [1.0   1.0     1.0]
+     [1.0   1.0     1.0]]
+    > a = Matrix.fromstring("1 2", shape=(1, 2))
+    > print(mat.broadcast_to(a, (1, 2)))
+    [[1.0   2.0]]
+    > a = Matrix.fromstring("1 2 3 4", shape=(2, 2))
+    > print(mat.broadcast_to(a, (4, 2)))
+    Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
+    ```
+    """
+
+    var B = Matrix[dtype](shape)
+    if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
+        B = A
+    elif (A.shape[0] == 1) and (A.shape[1] == 1):
+        B = Matrix.full[dtype](shape, A[0, 0])
+    elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
+        for i in range(shape[0]):
+            memcpy(
+                dest=B._buf.ptr.offset(shape[1] * i),
+                src=A._buf.ptr,
+                count=shape[1],
+            )
+    elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                B._store(i, j, A._buf.ptr[i])
+    else:
+        var message = String(
+            "Cannot broadcast shape {}x{} to shape {}x{}!"
+        ).format(A.shape[0], A.shape[1], shape[0], shape[1])
+        raise Error(message)
+    return B^
+
+
+fn broadcast_to[
+    dtype: DType
+](A: Scalar[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+    """
+    Broadcasts the scalar to the given shape.
+    """
+
+    var B = Matrix[dtype](shape)
+    B = Matrix.full[dtype](shape, A)
+    return B^
+
+
+fn _broadcast_back_to[
+    dtype: DType
+](a: NDArray[dtype], shape: NDArrayShape, axis: Int) raises -> NDArray[dtype]:
+    """
+    Broadcasts the array back to the given shape.
+    If array `b` is the result of array `a` operated along an axis,
+    it has one dimension less than `a`.
+    This function can broadcast `b` back to the shape of `a`.
+    It is a temporary function and should not be used by users.
+    When `OwnData` is supported, this function will be removed.
+    Whether broadcasting is possible or not is not checked.
+    """
+
+    var a_shape = shape
+    a_shape[axis] = 1
+
+    var b_strides = NDArrayStrides(
+        a_shape
+    )  # Strides of b when refer to data of a
+    b_strides[axis] = 0
+
+    # Start broadcasting.
+
+    var b = NDArray[dtype](shape)  # Construct array of targeted shape.
+
+    # Iterate all items in the new array and fill in correct values.
+    for offset in range(b.size):
+        var remainder = offset
+        var indices = Item(ndim=b.ndim, initialized=False)
+
+        for i in range(b.ndim):
+            indices[i] = remainder // b.strides[i]
+            remainder %= b.strides[i]
+
+        (b._buf.ptr + offset).init_pointee_copy(
+            a._buf.ptr[_get_offset(indices, b_strides)]
+        )
+
+    return b^
 
 
 # ===----------------------------------------------------------------------=== #

@@ -1,52 +1,38 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 """
 # ===----------------------------------------------------------------------=== #
-# Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-# Last updated: 2024-10-14
+# SECTIONS OF THE FILE:
+#
+# 1. Offset and traverse functions.
+# 2. Functions to traverse a multi-dimensional array.
+# 3. Apply a function to NDArray by axis.
+# 4. NDArray dtype conversions.
+# 5. Numojo.NDArray to other collections.
+# 6. Type checking functions.
+# 7. Miscellaneous utility functions.
 # ===----------------------------------------------------------------------=== #
 
-from algorithm.functional import vectorize
+from algorithm.functional import vectorize, parallelize
 from collections import Dict
 from memory import UnsafePointer, memcpy
 from python import Python, PythonObject
 from sys import simdwidthof
 from tensor import Tensor, TensorShape
 
-from .ndarray import NDArray
-from .ndshape import NDArrayShape
-from .ndstrides import NDArrayStrides
-
-
-# FIXME: No long useful from 24.6:
-# `width` is now inferred from the SIMD's width.
-fn fill_pointer[
-    dtype: DType
-](
-    mut array: UnsafePointer[Scalar[dtype]], size: Int, value: Scalar[dtype]
-) raises:
-    """
-    Fill a NDArray with a specific value.
-
-    Parameters:
-        dtype: The data type of the NDArray elements.
-
-    Args:
-        array: The pointer to the NDArray.
-        size: The size of the NDArray.
-        value: The value to fill the NDArray with.
-    """
-    alias width = simdwidthof[dtype]()
-
-    @parameter
-    fn vectorized_fill[simd_width: Int](idx: Int):
-        array.store(idx, value)
-
-    vectorize[vectorized_fill, width](size)
-
+from numojo.core.flags import Flags
+from numojo.core.ndarray import NDArray
+from numojo.core.ndshape import NDArrayShape
+from numojo.core.ndstrides import NDArrayStrides
 
 # ===----------------------------------------------------------------------=== #
-# GET OFFSET FUNCTIONS FOR NDARRAY
+# Offset and traverse functions
 # ===----------------------------------------------------------------------=== #
 
 
@@ -146,9 +132,34 @@ fn _get_offset(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
         strides: The strides of the indices.
 
     Returns:
-        Offset of continuous memory layout.
+        Offset of contiguous memory layout.
     """
     return indices[0] * strides[0] + indices[1] * strides[1]
+
+
+fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
+    """
+    Transfers the offset by flipping the strides information.
+    It can be used to transfer between C-contiguous and F-continuous memory
+    layout. For example, in a 4x4 C-contiguous array, the item with offset 4
+    has the indices (1, 0). The item with the same indices (1, 0) in a
+    F-continuous array has an offset of 1.
+
+    Args:
+        offset: The offset in memory of an element of array.
+        strides: The strides of the array.
+
+    Returns:
+        The offset of the array of a flipped memory layout.
+    """
+
+    var remainder = offset
+    var indices = Item(ndim=len(strides), initialized=False)
+    for i in range(len(strides)):
+        indices[i] = remainder // strides[i]
+        remainder %= strides[i]
+
+    return _get_offset(indices, strides._flip())
 
 
 # ===----------------------------------------------------------------------=== #
@@ -308,8 +319,10 @@ fn _traverse_iterative_setter[
 
 
 # ===----------------------------------------------------------------------=== #
-# NDArray conversions
+# NDArray dtype conversions
 # ===----------------------------------------------------------------------=== #
+
+
 fn bool_to_numeric[
     dtype: DType
 ](array: NDArray[DType.bool]) raises -> NDArray[dtype]:
@@ -336,6 +349,9 @@ fn bool_to_numeric[
     return res
 
 
+# ===----------------------------------------------------------------------=== #
+# Numojo.NDArray to other collections
+# ===----------------------------------------------------------------------=== #
 fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     """
     Convert a NDArray to a numpy array.
@@ -395,12 +411,12 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.bool:
             np_dtype = np.bool_
 
-        var order = "C" if array.flags["C_CONTIGUOUS"] else "F"
+        var order = "C" if array.flags.C_CONTIGUOUS else "F"
         numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()
-        memcpy(pointer_d, array.unsafe_ptr(), array.num_elements())
+        memcpy(pointer_d, array.unsafe_ptr(), array.size)
         _ = array
 
         return numpyarray^
@@ -428,6 +444,8 @@ fn to_tensor[dtype: DType](a: NDArray[dtype]) raises -> Tensor[dtype]:
 # ===----------------------------------------------------------------------=== #
 # Type checking functions
 # ===----------------------------------------------------------------------=== #
+
+
 @parameter
 fn is_inttype[dtype: DType]() -> Bool:
     """
@@ -545,6 +563,11 @@ fn is_booltype(dtype: DType) -> Bool:
     return False
 
 
+# ===----------------------------------------------------------------------=== #
+# Miscellaneous utility functions
+# ===----------------------------------------------------------------------=== #
+
+
 fn _list_of_range(n: Int) -> List[Int]:
     """
     Generate a list of integers starting from 0 and of size n.
@@ -565,38 +588,3 @@ fn _list_of_flipped_range(n: Int) -> List[Int]:
     for i in range(n - 1, -1, -1):
         l.append(i)
     return l
-
-
-fn _update_flags(
-    mut flags: Dict[String, Bool],
-    shape: NDArrayShape,
-    strides: NDArrayStrides,
-    ndim: Int,
-) raises:
-    """
-    Update C_CONTIGUOUS and F_CONTIGUOUS of flags
-    according the shape and strides information.
-    """
-    flags["C_CONTIGUOUS"] = (
-        True if (strides[ndim - 1] == 1) or (shape[ndim - 1] == 1) else False
-    )
-    flags["F_CONTIGUOUS"] = (
-        True if (strides[0] == 1) or (shape[0] == 1) else False
-    )
-
-
-fn _update_flags(
-    mut flags: Dict[String, Bool],
-    shape: Tuple[Int, Int],
-    strides: Tuple[Int, Int],
-):
-    """
-    Update C_CONTIGUOUS and F_CONTIGUOUS of flags
-    according the shape and strides information.
-    """
-    flags["C_CONTIGUOUS"] = (
-        True if (strides[1] == 1) or (shape[1] == 1) else False
-    )
-    flags["F_CONTIGUOUS"] = (
-        True if (strides[0] == 1) or (shape[0] == 1) else False
-    )

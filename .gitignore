@@ -12,6 +12,7 @@
 
 # magic environments
 .magic
+magic.lock
 
 # pixi environments
 .pixi
@@ -26,11 +27,12 @@
 
 # Miscellaneous files
 mojo
-numojo.mojopkg
-bench.mojo
-test_ndarray.ipynb
-test.mojo
-tempCodeRunnerFile.mojo
+/numojo.mojopkg
+/bench.mojo
+/test*.mojo
+/test*.ipynb
+/tempCodeRunnerFile.mojo
 
 # Auto docs
 docs/readthedocs/docs.json
+docs.json

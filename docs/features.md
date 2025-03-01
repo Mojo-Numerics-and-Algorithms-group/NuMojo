@@ -8,6 +8,7 @@ Available functions and objects by topics (also see imports within `__init__` fi
 - Array manipulation routines (`numojo.routines.manipulation`)
 - Bit-wise operations (`numojo.routines.bitwise`)
 - Constants (`numojo.routines.constants`)
+- Indexing routines (`numojo.routines.indexing`)
 - Input and output (`numojo.routines.io`)
 - Text files (`numojo.routines.files`)
 - Text formatting options (`numojo.routines.formatting`)
@@ -20,7 +21,13 @@ Available functions and objects by topics (also see imports within `__init__` fi
 - Array contents (`numojo.routines.contents`)
 - Truth value testing (`numojo.routines.truth`)
 - Mathematical functions (`numojo.routines.math`)
-  - Extrema: maxT, minT
+  - Sums (`numojo.routines.sums`)
+    - `sum()`
+  - Products (`numojo.routines.products`)
+    - `prod()`
+  - Differences (`numojo.routines.differences`)
+  - Extrema (`numojo.routines.math.extrema`)
+    - `max()`, `min()`
   - Trigonometry: acos, asin, atan, cos, sin, tan, atan2, hypot
   - Hyperbolic: acosh, asinh, atanh, cosh, sinh, tanh
   - Floating: copysign
@@ -35,17 +42,14 @@ Available functions and objects by topics (also see imports within `__init__` fi
 - Indexing (`numojo.routines.indexing`)
 - Miscellaneous (`numojo.routines.misc`)
 - Rounding (`numojo.routines.rounding`)
-- Sums, products, differences (`numojo.routines.sums`, `numojo.routines.products`, `numojo.routines.differences`)
-  - sum, prod
 - Trigonometric functions (`numojo.routines.trig`)
 - Random sampling (`numojo.routines.random`)
 - Sorting, searching, and counting (`numojo.routines.sorting`, `numojo.routines.searching`)
 - Statistics (`numojo.routines.statistics`)
-  - mean, mode, median
-  - variance
-- Averages and variances (`numojo.routines.averages`)
+  - Averages and variances (`numojo.routines.averages`)
+    - `mean()`, `mode()`, `median()`
+    - `variance()`, `std()`
 
 To-be-implemented functions and objects by topics:
 
 - Mathematical functions: abs, floor, ceil, trunc, round, roundeven, round_half_down, round_half_up, reciprocal, nextafter, remainder
-- Statistical functions: pvariance, pstdev, std

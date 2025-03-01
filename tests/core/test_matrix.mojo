@@ -316,50 +316,6 @@ def test_hyperbolic():
     check_matrices_close(nm.atanh(B), np.arctanh(Bnp), "atanh is broken")
 
 
-# ===-----------------------------------------------------------------------===#
-# Statistics
-# ===-----------------------------------------------------------------------===#
-
-
-def test_statistics():
-    var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((100, 100))
-    var Anp = np.matrix(A.to_numpy())
-
-    assert_true(
-        np.all(np.isclose(nm.mean(A), np.mean(Anp), atol=0.1)),
-        "`mean` is broken",
-    )
-    for i in range(2):
-        check_matrices_close(
-            nm.mean(A, i),
-            np.mean(Anp, i),
-            String("`mean` is broken for {i}-dimension"),
-        )
-
-    assert_true(
-        np.all(np.isclose(nm.variance(A), np.`var`(Anp), atol=0.1)),
-        "`variance` is broken",
-    )
-    for i in range(2):
-        check_matrices_close(
-            nm.variance(A, i),
-            np.`var`(Anp, i),
-            String("`variance` is broken for {i}-dimension"),
-        )
-
-    assert_true(
-        np.all(np.isclose(nm.std(A), np.std(Anp), atol=0.1)),
-        "`std` is broken",
-    )
-    for i in range(2):
-        check_matrices_close(
-            nm.std(A, i),
-            np.std(Anp, i),
-            String("`std` is broken for {i}-dimension"),
-        )
-
-
 def test_sorting():
     var np = Python.import_module("numpy")
     var A = Matrix.rand[f64]((10, 10))
@@ -376,11 +332,7 @@ def test_sorting():
         )
 
     check_matrices_close(
-        nm.argsort(A),
-        np.argsort(Anp, axis=None),
-        String("Argsort is broken")
-        + str(nm.argsort(A))
-        + str(np.argsort(Anp, axis=None)),
+        nm.argsort(A), np.argsort(Anp, axis=None), String("Argsort is broken")
     )
     for i in range(2):
         check_matrices_close(

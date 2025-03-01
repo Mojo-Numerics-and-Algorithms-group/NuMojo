@@ -8,15 +8,16 @@
 """
 
 from algorithm import parallelize, vectorize
-from collections import Dict
 from memory import UnsafePointer, memcpy, memset_zero
 from random import random_float64
 from sys import simdwidthof
 from python import PythonObject, Python
 
+from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
-from numojo.core.utility import _get_offset, _update_flags
+from numojo.core.utility import _get_offset
+from numojo.routines.manipulation import broadcast_to
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct
@@ -101,7 +102,7 @@ struct Matrix[dtype: DType = DType.float64](
     var strides: Tuple[Int, Int]
     """Strides of matrix."""
 
-    var flags: Dict[String, Bool]
+    var flags: Flags
     "Information about the memory layout of the array."
 
     # ===-------------------------------------------------------------------===#
@@ -124,10 +125,9 @@ struct Matrix[dtype: DType = DType.float64](
         self.strides = (shape[1], 1)
         self.size = shape[0] * shape[1]
         self._buf = OwnData[dtype](size=self.size)
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(self.flags, self.shape, self.strides)
-        self.flags["OWNDATA"] = True
+        self.flags = Flags(
+            self.shape, self.strides, owndata=True, writeable=True
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -162,10 +162,9 @@ struct Matrix[dtype: DType = DType.float64](
 
         self._buf = OwnData[dtype](self.size)
 
-        # Initialize information on memory layout
-        self.flags = Dict[String, Bool]()
-        _update_flags(self.flags, self.shape, self.strides)
-        self.flags["OWNDATA"] = True
+        self.flags = Flags(
+            self.shape, self.strides, owndata=True, writeable=True
+        )
 
         if data.flags["C_CONTIGUOUS"]:
             for i in range(data.shape[0]):
@@ -479,26 +478,26 @@ struct Matrix[dtype: DType = DType.float64](
 
     fn write_to[W: Writer](self, mut writer: W):
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
-            var result: String = str("[")
+            var result: String = String("[")
             var number_of_sep: Int = 1
             if self.shape[1] <= 6:
                 for j in range(self.shape[1]):
                     if j == self.shape[1] - 1:
                         number_of_sep = 0
-                    result += str(self[i, j]) + sep * number_of_sep
+                    result += String(self[i, j]) + sep * number_of_sep
             else:
                 for j in range(3):
-                    result += str(self[i, j]) + sep
-                result += str("...") + sep
+                    result += String(self[i, j]) + sep
+                result += String("...") + sep
                 for j in range(self.shape[1] - 3, self.shape[1]):
                     if j == self.shape[1] - 1:
                         number_of_sep = 0
-                    result += str(self[i, j]) + sep * number_of_sep
-            result += str("]")
+                    result += String(self[i, j]) + sep * number_of_sep
+            result += String("]")
             return result
 
-        var sep: String = str("\t")
-        var newline: String = str("\n ")
+        var sep: String = String("\t")
+        var newline: String = String("\n ")
         var number_of_newline: Int = 1
         var result: String = "["
 
@@ -513,32 +512,32 @@ struct Matrix[dtype: DType = DType.float64](
             else:
                 for i in range(3):
                     result += print_row(self, i, sep) + newline
-                result += str("...") + newline
+                result += String("...") + newline
                 for i in range(self.shape[0] - 3, self.shape[0]):
                     if i == self.shape[0] - 1:
                         number_of_newline = 0
                     result += (
                         print_row(self, i, sep) + newline * number_of_newline
                     )
-            result += str("]")
+            result += String("]")
             writer.write(
                 result
                 + "\nDType: "
-                + str(self.dtype)
+                + String(self.dtype)
                 + "  Shape: "
-                + str(self.shape[0])
+                + String(self.shape[0])
                 + "x"
-                + str(self.shape[1])
+                + String(self.shape[1])
                 + "  Strides: "
-                + str(self.strides[0])
+                + String(self.strides[0])
                 + ","
-                + str(self.strides[1])
+                + String(self.strides[1])
                 + "  C: "
-                + str(self.flags["C_CONTIGUOUS"])
+                + String(self.flags["C_CONTIGUOUS"])
                 + "  F: "
-                + str(self.flags["F_CONTIGUOUS"])
+                + String(self.flags["F_CONTIGUOUS"])
                 + "  Own: "
-                + str(self.flags["OWNDATA"])
+                + String(self.flags["OWNDATA"])
             )
         except e:
             print("Cannot transfer matrix to string!", e)
@@ -1020,20 +1019,24 @@ struct Matrix[dtype: DType = DType.float64](
         """
         return numojo.math.extrema.max(self, axis=axis)
 
-    fn mean(self) raises -> Scalar[dtype]:
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self) raises -> Scalar[returned_dtype]:
         """
         Calculate the arithmetic average of all items in the Matrix.
         """
-        return numojo.statistics.mean(self)
+        return numojo.statistics.mean[returned_dtype](self)
 
-    fn mean(self, axis: Int) raises -> Self:
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int) raises -> Matrix[returned_dtype]:
         """
         Calculate the arithmetic average of a Matrix along the axis.
 
         Args:
             axis: 0 or 1.
         """
-        return numojo.statistics.mean(self, axis=axis)
+        return numojo.statistics.mean[returned_dtype](self, axis=axis)
 
     fn min(self) raises -> Scalar[dtype]:
         """
@@ -1103,16 +1106,20 @@ struct Matrix[dtype: DType = DType.float64](
     fn round(self, decimals: Int) raises -> Self:
         return numojo.math.rounding.round(self, decimals=decimals)
 
-    fn std(self, ddof: Int = 0) raises -> Scalar[dtype]:
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
         Compute the standard deviation.
 
         Args:
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.std(self, ddof=ddof)
+        return numojo.statistics.std[returned_dtype](self, ddof=ddof)
 
-    fn std(self, axis: Int, ddof: Int = 0) raises -> Self:
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
         Compute the standard deviation along axis.
 
@@ -1120,7 +1127,7 @@ struct Matrix[dtype: DType = DType.float64](
             axis: 0 or 1.
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.std(self, axis=axis, ddof=ddof)
+        return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
 
     fn sum(self) -> Scalar[dtype]:
         """
@@ -1167,16 +1174,20 @@ struct Matrix[dtype: DType = DType.float64](
     fn T(self) -> Self:
         return transpose(self)
 
-    fn variance(self, ddof: Int = 0) raises -> Scalar[dtype]:
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
         Compute the variance.
 
         Args:
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.variance(self, ddof=ddof)
+        return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
 
-    fn variance(self, axis: Int, ddof: Int = 0) raises -> Self:
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
         Compute the variance along axis.
 
@@ -1184,7 +1195,9 @@ struct Matrix[dtype: DType = DType.float64](
             axis: 0 or 1.
             ddof: Delta degree of freedom.
         """
-        return numojo.statistics.variance(self, axis=axis, ddof=ddof)
+        return numojo.statistics.variance[returned_dtype](
+            self, axis=axis, ddof=ddof
+        )
 
     # ===-------------------------------------------------------------------===#
     # To other data types
@@ -1415,16 +1428,20 @@ struct Matrix[dtype: DType = DType.float64](
 
         for i in range(len(bytes)):
             var b = bytes[i]
-            if isdigit(b) or (chr(int(b)) == ".") or (chr(int(b)) == "-"):
-                number_as_str = number_as_str + chr(int(b))
+            if (
+                chr(Int(b)).isdigit()
+                or (chr(Int(b)) == ".")
+                or (chr(Int(b)) == "-")
+            ):
+                number_as_str = number_as_str + chr(Int(b))
                 if i == len(bytes) - 1:  # Last byte
                     var number = atof(number_as_str).cast[dtype]()
                     data.append(number)  # Add the number to the data buffer
                     number_as_str = ""  # Clean the number cache
             if (
-                (chr(int(b)) == ",")
-                or (chr(int(b)) == "]")
-                or (chr(int(b)) == " ")
+                (chr(Int(b)) == ",")
+                or (chr(Int(b)) == "]")
+                or (chr(Int(b)) == " ")
             ):
                 if number_as_str != "":
                     var number = atof(number_as_str).cast[dtype]()
@@ -1619,73 +1636,3 @@ fn _logic_func_matrix_matrix_to_matrix[
     var _B = B
 
     return C^
-
-
-fn broadcast_to[
-    dtype: DType
-](A: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
-    """
-    Broadcase the vector to the given shape.
-
-    Example:
-
-    ```console
-    > from numojo import Matrix
-    > a = Matrix.fromstring("1 2 3", shape=(1, 3))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   2.0     3.0]
-     [1.0   2.0     3.0]
-     [1.0   2.0     3.0]]
-    > a = Matrix.fromstring("1 2 3", shape=(3, 1))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   1.0     1.0]
-     [2.0   2.0     2.0]
-     [3.0   3.0     3.0]]
-    > a = Matrix.fromstring("1", shape=(1, 1))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   1.0     1.0]
-     [1.0   1.0     1.0]
-     [1.0   1.0     1.0]]
-    > a = Matrix.fromstring("1 2", shape=(1, 2))
-    > print(mat.broadcast_to(a, (1, 2)))
-    [[1.0   2.0]]
-    > a = Matrix.fromstring("1 2 3 4", shape=(2, 2))
-    > print(mat.broadcast_to(a, (4, 2)))
-    Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
-    ```
-    """
-
-    var B = Matrix[dtype](shape)
-    if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        B = A
-    elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = Matrix.full[dtype](shape, A[0, 0])
-    elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
-        for i in range(shape[0]):
-            memcpy(
-                dest=B._buf.ptr.offset(shape[1] * i),
-                src=A._buf.ptr,
-                count=shape[1],
-            )
-    elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                B._store(i, j, A._buf.ptr[i])
-    else:
-        var message = String(
-            "Cannot broadcast shape {}x{} to shape {}x{}!"
-        ).format(A.shape[0], A.shape[1], shape[0], shape[1])
-        raise Error(message)
-    return B^
-
-
-fn broadcast_to[
-    dtype: DType
-](A: Scalar[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
-    """
-    Broadcase the scalar to the given shape.
-    """
-
-    var B = Matrix[dtype](shape)
-    B = Matrix.full[dtype](shape, A)
-    return B^

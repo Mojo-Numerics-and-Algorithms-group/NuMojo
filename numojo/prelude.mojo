@@ -20,9 +20,11 @@ from numojo.prelude import *
 ```
 """
 
-from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
+import numojo as nm
+
 from numojo.core.item import Item, item
+from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import Shape, NDArrayShape
 
 from numojo.core.complex.complex_dtype import CDType

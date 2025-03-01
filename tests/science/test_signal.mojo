@@ -15,8 +15,4 @@ def test_convolve2d():
 
     res1 = nm.science.signal.convolve2d(in1, in2)
     res2 = sp.signal.convolve2d(npin1, npin2, mode="valid")
-    check(
-        res1,
-        res2,
-        "test_convolve2d failed #2\n" + str(res1) + "\n" + str(res2),
-    )
+    check(res1, res2, "test_convolve2d failed #2\n")

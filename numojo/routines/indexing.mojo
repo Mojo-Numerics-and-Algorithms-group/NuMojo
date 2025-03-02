@@ -232,3 +232,85 @@ fn compress[
 
     else:
         return compress(condition, ravel(a), axis=0)
+
+
+fn take_along_axis[
+    dtype: DType, //,
+](
+    arr: NDArray[dtype], indices: NDArray[DType.index], axis: Int = 0
+) raises -> NDArray[dtype]:
+    """
+    Take values from the input array along the given axis based on indices.
+
+    This function is similar to `numpy.take_along_axis`.
+
+    Raises:
+        Error: If the axis is out of bounds for the given array.
+        Error: If the shape of indices does not match the shape of the
+            input array except along the given axis.
+
+    Parameters:
+        dtype: DType of the input array.
+
+    Args:
+        arr: The source array.
+        indices: The indices array.
+        axis: The axis along which to take values. Default is 0.
+
+    Returns:
+        An array with the same shape as indices with values taken from the
+            input array along the given axis.
+    """
+    var normalized_axis = axis
+    if normalized_axis < 0:
+        normalized_axis = arr.ndim + normalized_axis
+    if (normalized_axis >= arr.ndim) or (normalized_axis < 0):
+        raise Error(
+            String(
+                "\nError in `take_along_axis`: Axis {} is out of bound for"
+                " array with {} dimensions"
+            ).format(axis, arr.ndim)
+        )
+
+    # Check if the shapes of arr and indices match except along the axis
+    for i in range(arr.ndim):
+        if i != normalized_axis and arr.shape[i] != indices.shape[i]:
+            raise Error(
+                String(
+                    "\nError in `take_along_axis`: Shape of indices must match"
+                    " shape of array except along the given axis"
+                )
+            )
+
+    # Create output array with same shape as indices
+    var result = NDArray[dtype](Shape(indices.shape))
+
+    var arr_iterator = arr.iter_along_axis(normalized_axis)
+    var indices_iterator = indices.iter_along_axis(normalized_axis)
+    var length_of_iterator = result.size // result.shape[normalized_axis]
+
+    if normalized_axis == arr.ndim - 1:
+        # If axis is the last axis, the data is contiguous.
+        for i in range(length_of_iterator):
+            var arr_slice = arr_iterator.ith(i)
+            var indices_slice = indices_iterator.ith(i)
+            var arr_slice_after_applying_indices = arr_slice[indices_slice]
+            memcpy(
+                result._buf.ptr + i * result.shape[normalized_axis],
+                arr_slice_after_applying_indices._buf.ptr,
+                result.shape[normalized_axis],
+            )
+    else:
+        # If axis is not the last axis, the data is not contiguous.
+        for i in range(length_of_iterator):
+            var arr_slice_offsets: NDArray[DType.index]
+            var arr_slice: NDArray[dtype]
+            arr_slice_offsets, arr_slice = arr_iterator.ith_with_offsets(i)
+            var indices_slice = indices_iterator.ith(i)
+            var arr_slice_after_applying_indices = arr_slice[indices_slice]
+            for j in range(arr_slice_after_applying_indices.size):
+                (result._buf.ptr + Int(arr_slice_offsets[j])).init_pointee_copy(
+                    arr_slice_after_applying_indices._buf.ptr[j]
+                )
+
+    return result

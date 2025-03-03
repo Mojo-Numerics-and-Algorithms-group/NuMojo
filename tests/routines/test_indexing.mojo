@@ -151,6 +151,71 @@ fn test_take_along_axis() raises:
         "`take_along_axis` with negative axis is broken",
     )
 
+    # Test cases where indices shape matches array shape except on the target axis
+
+    # For 2D array (3, 4)
+    var a2d_test = nm.arange[i8](12).reshape(Shape(3, 4))
+    var a2d_test_np = a2d_test.to_numpy()
+
+    # For axis=0, using indices of shape (2, 4) - different first dim, same second dim
+    var indices2d_axis0 = nm.array[intp]("[[0, 1, 2, 0], [1, 0, 2, 1]]")
+    var indices2d_axis0_np = indices2d_axis0.to_numpy()
+
+    check(
+        nm.indexing.take_along_axis(a2d_test, indices2d_axis0, axis=0),
+        np.take_along_axis(a2d_test_np, indices2d_axis0_np, axis=0),
+        (
+            "`take_along_axis` with shape-aligned indices on axis=0 for 2D"
+            " array is broken"
+        ),
+    )
+
+    # For axis=1, using indices of shape (3, 2) - same first dim, different second dim
+    var indices2d_axis1 = nm.array[intp]("[[0, 3], [2, 1], [1, 3]]")
+    var indices2d_axis1_np = indices2d_axis1.to_numpy()
+
+    check(
+        nm.indexing.take_along_axis(a2d_test, indices2d_axis1, axis=1),
+        np.take_along_axis(a2d_test_np, indices2d_axis1_np, axis=1),
+        (
+            "`take_along_axis` with shape-aligned indices on axis=1 for 2D"
+            " array is broken"
+        ),
+    )
+
+    # For 3D array (2, 3, 4)
+    # Reshape and get base numpy array
+    var a3d_test = nm.arange[i8](24).reshape(Shape(2, 3, 4))
+    var a3d_test_np = a3d_test.to_numpy()
+
+    # For axis=0, indices of shape (1, 3, 4) - same shape except dim 0
+    var ind_axis0 = nm.zeros[intp](Shape(1, 3, 4))
+    var ind_axis0_np = ind_axis0.to_numpy()
+
+    check(
+        nm.indexing.take_along_axis(a3d_test, ind_axis0, axis=0),
+        np.take_along_axis(a3d_test_np, ind_axis0_np, axis=0),
+        (
+            "`take_along_axis` with shape-aligned indices on axis=0 for 3D"
+            " array is broken"
+        ),
+    )
+
+    # For axis=2, indices of shape (2, 3, 2) - same shape except dim 2
+    var ind_axis2 = nm.array[intp](
+        "[[[0, 3], [2, 1], [3, 0]], [[1, 2], [0, 3], [2, 1]]]"
+    )
+    var ind_axis2_np = ind_axis2.to_numpy()
+
+    check(
+        nm.indexing.take_along_axis(a3d_test, ind_axis2, axis=2),
+        np.take_along_axis(a3d_test_np, ind_axis2_np, axis=2),
+        (
+            "`take_along_axis` with shape-aligned indices on axis=2 for 3D"
+            " array is broken"
+        ),
+    )
+
 
 fn test_take_along_axis_fortran_order() raises:
     var np = Python.import_module("numpy")

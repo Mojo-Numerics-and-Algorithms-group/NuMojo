@@ -20,25 +20,7 @@ alias DEFAULT_FORMATTED_WIDTH = 8
 alias DEFAULT_EXPONENT_THRESHOLD = 4
 alias DEFAULT_SUPPRESS_SCIENTIFIC = False
 
-var GLOBAL_PRINT_OPTIONS: PrintOptions = PrintOptions(
-    precision=DEFAULT_PRECISION,
-    suppress_small=DEFAULT_SUPPRESS_SMALL,
-    separator=DEFAULT_SEPARATOR,
-    padding=DEFAULT_PADDING,
-    threshold=DEFAULT_THRESHOLD,
-    line_width=DEFAULT_LINE_WIDTH,
-    edge_items=DEFAULT_EDGE_ITEMS,
-    sign=DEFAULT_SIGN,
-    float_format=DEFAULT_FLOAT_FORMAT,
-    complex_format=DEFAULT_COMPLEX_FORMAT,
-    nan_string=DEFAULT_NAN_STRING,
-    inf_string=DEFAULT_INF_STRING,
-    formatted_width=DEFAULT_FORMATTED_WIDTH,
-    exponent_threshold=DEFAULT_EXPONENT_THRESHOLD,
-    suppress_scientific=DEFAULT_SUPPRESS_SCIENTIFIC,
-)
-
-alias printoptions = PrintOptions
+alias GLOBAL_PRINT_OPTIONS = PrintOptions()
 
 
 @value
@@ -146,7 +128,8 @@ struct PrintOptions:
         self.suppress_scientific = suppress_scientific
 
     fn __enter__(mut self) -> Self:
-        GLOBAL_PRINT_OPTIONS.set_options(
+        var default_print_options = PrintOptions()
+        default_print_options.set_options(
             precision=self.precision,
             suppress_small=self.suppress_small,
             separator=self.separator,
@@ -163,10 +146,11 @@ struct PrintOptions:
             exponent_threshold=self.exponent_threshold,
             suppress_scientific=self.suppress_scientific,
         )
-        return GLOBAL_PRINT_OPTIONS
+        return default_print_options
 
     fn __exit__(mut self):
-        GLOBAL_PRINT_OPTIONS.set_options(
+        var default_print_options = PrintOptions()
+        default_print_options.set_options(
             precision=DEFAULT_PRECISION,
             suppress_small=DEFAULT_SUPPRESS_SMALL,
             separator=DEFAULT_SEPARATOR,
@@ -192,7 +176,8 @@ fn set_printoptions(
     padding: String = DEFAULT_PADDING,
     edge_items: Int = DEFAULT_EDGE_ITEMS,
 ):
-    GLOBAL_PRINT_OPTIONS.set_options(
+    var default_print_options = PrintOptions()
+    default_print_options.set_options(
         precision,
         suppress_small,
         separator,
@@ -204,7 +189,14 @@ fn set_printoptions(
 # FIXME: fix the problem where precision > number of digits in the mantissa results in a not so exact value.
 fn format_floating_scientific[
     dtype: DType = DType.float64
-](x: Scalar[dtype], precision: Int = 10, sign: Bool = False) raises -> String:
+](
+    x: Scalar[dtype],
+    precision: Int = 10,
+    sign: Bool = False,
+    suppress_scientific: Bool = False,
+    exponent_threshold: Int = 4,
+    formatted_width: Int = 8,
+) raises -> String:
     """
     Format a float in scientific notation.
 
@@ -218,6 +210,11 @@ fn format_floating_scientific[
         x: The float to format.
         precision: The number of decimal places to include in the mantissa.
         sign: Whether to include the sign of the float in the result. Defaults to False.
+        suppress_scientific: Whether to suppress scientific notation for small numbers.
+            Defaults to False.
+        exponent_threshold: The threshold for suppressing scientific notation.
+            Defaults to 4.
+        formatted_width: The width of the formatted string. Defaults to 8.
 
     Returns:
         A string representation of the float in scientific notation.
@@ -235,10 +232,6 @@ fn format_floating_scientific[
         raise Error("Precision must be a non-negative integer.")
 
     try:
-        var suppress_scientific = GLOBAL_PRINT_OPTIONS.suppress_scientific
-        var exponent_threshold = GLOBAL_PRINT_OPTIONS.exponent_threshold
-        var formatted_width = GLOBAL_PRINT_OPTIONS.formatted_width
-
         if x == 0:
             if sign:
                 var result: String = "+0." + "0" * precision + "e+00"
@@ -290,7 +283,12 @@ fn format_floating_scientific[
 
 fn format_floating_precision[
     dtype: DType
-](value: Scalar[dtype], precision: Int, sign: Bool = False) raises -> String:
+](
+    value: Scalar[dtype],
+    precision: Int,
+    sign: Bool = False,
+    suppress_small: Bool = False,
+) raises -> String:
     """
     Format a floating-point value to the specified precision.
 
@@ -299,6 +297,7 @@ fn format_floating_precision[
         precision: The number of decimal places to include.
         sign: Whether to include the sign of the float in the result.
             Defaults to False.
+        suppress_small: Whether to suppress small numbers. Defaults to False.
 
     Returns:
         The formatted value as a string.
@@ -316,7 +315,6 @@ fn format_floating_precision[
     if precision < 0:
         raise Error("Precision must be a non-negative integer.")
 
-    var suppress_small = GLOBAL_PRINT_OPTIONS.suppress_small
     if suppress_small and abs(value) < 1e-10:
         var result: String = String("0.")
         for _ in range(precision):
@@ -349,12 +347,19 @@ fn format_floating_precision[
 
 fn format_floating_precision[
     cdtype: CDType, dtype: DType
-](value: ComplexSIMD[cdtype, dtype=dtype]) raises -> String:
+](
+    value: ComplexSIMD[cdtype, dtype=dtype],
+    precision: Int = 4,
+    sign: Bool = False,
+) raises -> String:
     """
     Format a complex floating-point value to the specified precision.
 
     Args:
         value: The complex value to format.
+        precision: The number of decimal places to include.
+        sign: Whether to include the sign of the float in the result.
+            Defaults to False.
 
     Returns:
         The formatted value as a string.
@@ -363,9 +368,6 @@ fn format_floating_precision[
         Error: If the complex value cannot be formatted.
     """
     try:
-        var precision = GLOBAL_PRINT_OPTIONS.precision
-        var sign = GLOBAL_PRINT_OPTIONS.sign
-
         return (
             "("
             + format_floating_precision(value.re, precision, sign)

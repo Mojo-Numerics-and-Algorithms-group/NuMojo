@@ -232,3 +232,126 @@ fn compress[
 
     else:
         return compress(condition, ravel(a), axis=0)
+
+
+fn take_along_axis[
+    dtype: DType, //,
+](
+    arr: NDArray[dtype], indices: NDArray[DType.index], axis: Int = 0
+) raises -> NDArray[dtype]:
+    """
+    Takes values from the input array along the given axis based on indices.
+
+    Raises:
+        Error: If the axis is out of bounds for the given array.
+        Error: If the ndim of arr and indices are not the same.
+        Error: If the shape of indices does not match the shape of the
+            input array except along the given axis.
+
+    Parameters:
+        dtype: DType of the input array.
+
+    Args:
+        arr: The source array.
+        indices: The indices array.
+        axis: The axis along which to take values. Default is 0.
+
+    Returns:
+        An array with the same shape as indices with values taken from the
+            input array along the given axis.
+
+    Examples:
+
+    ```console
+    > var a = nm.arange[i8](12).reshape(Shape(3, 4))
+    > print(a)
+    [[ 0  1  2  3]
+     [ 4  5  6  7]
+     [ 8  9 10 11]]
+    > ind = nm.array[intp]("[[0, 1, 2, 0], [1, 0, 2, 1]]")
+    > print(ind)
+    [[0 1 2 0]
+     [1 0 2 1]]
+    > print(nm.indexing.take_along_axis(a, ind, axis=0))
+    [[ 0  5 10  3]
+     [ 4  1 10  7]]
+    ```
+    .
+    """
+    var normalized_axis = axis
+    if normalized_axis < 0:
+        normalized_axis = arr.ndim + normalized_axis
+    if (normalized_axis >= arr.ndim) or (normalized_axis < 0):
+        raise Error(
+            String(
+                "\nError in `take_along_axis`: Axis {} is out of bound for"
+                " array with {} dimensions"
+            ).format(axis, arr.ndim)
+        )
+
+    # Check if the ndim of arr and indices are same
+    if arr.ndim != indices.ndim:
+        raise Error(
+            String(
+                "\nError in `take_along_axis`: The ndim of arr and indices must"
+                " be same. Got {} and {}.".format(arr.ndim, indices.ndim)
+            )
+        )
+
+    # broadcast indices to the shape of arr if necessary
+    # When broadcasting, the shape of indices must match the shape of arr
+    # except along the axis
+
+    var broadcasted_indices = indices
+
+    if arr.shape != indices.shape:
+        var arr_shape_new = arr.shape
+        arr_shape_new[normalized_axis] = indices.shape[normalized_axis]
+
+        try:
+            broadcasted_indices = numojo.broadcast_to(indices, arr_shape_new)
+        except e:
+            raise Error(
+                String(
+                    "\nError in `take_along_axis`: Shape of indices must match"
+                    " shape of array except along the given axis. "
+                    + String(e)
+                )
+            )
+
+    # Create output array with same shape as broadcasted_indices
+    var result = NDArray[dtype](Shape(broadcasted_indices.shape))
+
+    var arr_iterator = arr.iter_along_axis(normalized_axis)
+    var indices_iterator = broadcasted_indices.iter_along_axis(normalized_axis)
+    var length_of_iterator = result.size // result.shape[normalized_axis]
+
+    if normalized_axis == arr.ndim - 1:
+        # If axis is the last axis, the data is contiguous.
+        for i in range(length_of_iterator):
+            var arr_slice = arr_iterator.ith(i)
+            var indices_slice = indices_iterator.ith(i)
+            var arr_slice_after_applying_indices = arr_slice[indices_slice]
+            memcpy(
+                result._buf.ptr + i * result.shape[normalized_axis],
+                arr_slice_after_applying_indices._buf.ptr,
+                result.shape[normalized_axis],
+            )
+    else:
+        # If axis is not the last axis, the data is not contiguous.
+        for i in range(length_of_iterator):
+            var indices_slice_offsets: NDArray[DType.index]
+            var indices_slice: NDArray[DType.index]
+            indices_slice_offsets, indices_slice = (
+                indices_iterator.ith_with_offsets(i)
+            )
+            var arr_slice = arr_iterator.ith(i)
+            var arr_slice_after_applying_indices = arr_slice[indices_slice]
+            for j in range(arr_slice_after_applying_indices.size):
+                (
+                    result._buf.ptr + Int(indices_slice_offsets[j])
+                ).init_pointee_copy(
+                    arr_slice_after_applying_indices._buf.ptr[j]
+                )
+
+    return result

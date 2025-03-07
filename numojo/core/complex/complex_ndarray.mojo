@@ -34,7 +34,6 @@ from numojo.routines.io.formatting import (
     format_floating_scientific,
     format_value,
     PrintOptions,
-    printoptions,
     GLOBAL_PRINT_OPTIONS,
 )
 import numojo.routines.linalg as linalg

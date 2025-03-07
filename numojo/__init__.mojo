@@ -62,7 +62,7 @@ from numojo.routines.io import (
     loadtxt,
     savetxt,
 )
-from numojo.routines.io import printoptions, set_printoptions
+from numojo.routines.io import set_printoptions
 
 from numojo.routines import linalg
 from numojo.routines.linalg.misc import diagonal
@@ -181,7 +181,7 @@ from numojo.routines.creation import (
 )
 
 from numojo.routines import indexing
-from numojo.routines.indexing import where, compress
+from numojo.routines.indexing import where, compress, take_along_axis
 
 from numojo.routines.functional import apply_along_axis
 

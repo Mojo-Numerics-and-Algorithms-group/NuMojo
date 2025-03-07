@@ -27,7 +27,7 @@ magic.lock
 
 # Miscellaneous files
 mojo
-/numojo.mojopkg
+numojo.mojopkg
 /bench.mojo
 /test*.mojo
 /test*.ipynb

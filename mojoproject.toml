@@ -16,15 +16,15 @@ license = "Apache-2.0"
 readme = "README.MD"
 
 [tasks]
-# compile the package
-package = "magic run mojo package numojo"
+# compile the package and copy it to the tests folder
+package = "magic run mojo package numojo && cp numojo.mojopkg tests/"
 p = "clear && magic run package"
 
 # format the package
-format = "magic run mojo format ./ && magic run mojo format docs/readthedocs/docs.py"
+format = "magic run mojo format ./"
 
-# test whether tests pass and the package can be built
-test = "magic run mojo test tests -I ./ -I ./tests/ && magic run package"
+# test whether tests pass on the built package
+test = "magic run package && magic run mojo test tests -I ./tests/"
 t = "clear && magic run test"
 
 # run individual tests to avoid overheat
@@ -40,8 +40,8 @@ test_statistics = "magic run mojo test tests/routines/test_statistics.mojo -I ./
 test_sorting = "magic run mojo test tests/routines/test_sorting.mojo -I ./ -I ./tests/"
 
 # run all final checks before a commit
-final = "magic run test && magic run format && magic run package"
-f = "clear && magic run test && magic run format && magic run package"
+final = "magic run format && magic run test"
+f = "clear && magic run final"
 
 # Automatically Generate doc pages
 doc_pages = "mojo doc numojo/ -o docs.json"
@@ -50,7 +50,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && magic run final && magic run doc_pages"
 
 [dependencies]
-max = "=25.1"
+max = "=25.1.1"
 python = ">=3.11"
 numpy = ">=1.19"
 scipy = ">=1.14"

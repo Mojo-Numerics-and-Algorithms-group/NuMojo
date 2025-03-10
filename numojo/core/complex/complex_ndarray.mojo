@@ -182,6 +182,35 @@ struct ComplexNDArray[
         self.flags = self._re.flags
 
     fn __init__(
+        out self,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
+        ndim: Int,
+        size: Int,
+        flags: Flags,
+    ):
+        """
+        Constructs an extremely specific ComplexNDArray, with value uninitialized.
+        The properties do not need to be compatible and are not checked.
+        For example, it can construct a 0-D array (numojo scalar).
+
+        Args:
+            shape: Shape of array.
+            strides: Strides of array.
+            ndim: Number of dimensions.
+            size: Size of array.
+            flags: Flags of array.
+        """
+
+        self.shape = shape
+        self.strides = strides
+        self.ndim = ndim
+        self.size = size
+        self.flags = flags
+        self._re = NDArray[dtype](shape, strides, ndim, size, flags)
+        self._im = NDArray[dtype](shape, strides, ndim, size, flags)
+        
+    fn __init__(
         mut self,
         shape: NDArrayShape,
         ref buffer_re: UnsafePointer[Scalar[dtype]],
@@ -190,7 +219,15 @@ struct ComplexNDArray[
         strides: NDArrayStrides,
     ) raises:
         """
-        Extremely specific ComplexNDArray initializer.
+        Initialize an ComplexNDArray view with given shape, buffer, offset, and strides.
+        ***Unsafe!*** This function is currently unsafe. Only for internal use.
+
+        Args:
+            shape: Shape of the array.
+            buffer_re: Unsafe pointer to the real part of the buffer.
+            buffer_im: Unsafe pointer to the imaginary part of the buffer.
+            offset: Offset value.
+            strides: Strides of the array.
         """
         self._re = NDArray(shape, buffer_re, offset, strides)
         self._im = NDArray(shape, buffer_re, offset, strides)
@@ -226,7 +263,7 @@ struct ComplexNDArray[
         self.strides = existing.strides
         self.flags = existing.flags
 
-    # Explicity deallocation
+    # Explicit deallocation
     # @always_inline("nodebug")
     # fn __del__(owned self):
     #     """

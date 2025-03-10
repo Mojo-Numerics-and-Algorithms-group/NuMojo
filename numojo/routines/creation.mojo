@@ -2294,3 +2294,35 @@ fn _0darray[
     b._buf.ptr.init_pointee_copy(val)
     b.flags.OWNDATA = True
     return b
+
+
+fn _0darray[
+    cdtype: CDType, *, dtype: DType = CDType.to_dtype[cdtype]()
+](
+    val: ComplexSIMD[cdtype, dtype=dtype],
+) raises -> ComplexNDArray[
+    cdtype, dtype=dtype
+]:
+    """
+    Initialize an special 0d complexarray (numojo scalar).
+    The ndim is 0.
+    The shape is unitialized (0-element shape).
+    The strides is unitialized (0-element strides).
+    The size is 1 (`=0!`).
+    """
+
+    var b = ComplexNDArray[cdtype, dtype=dtype](
+        shape=NDArrayShape(ndim=0, initialized=False),
+        strides=NDArrayStrides(ndim=0, initialized=False),
+        ndim=0,
+        size=1,
+        flags=Flags(
+            c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
+        ),
+    )
+    b._re._buf = OwnData[dtype](1)
+    b._im._buf = OwnData[dtype](1)
+    b._re._buf.ptr.init_pointee_copy(val.re)
+    b._im._buf.ptr.init_pointee_copy(val.im)
+    b.flags.OWNDATA = True
+    return b

@@ -478,8 +478,6 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         var narr: Self
-
-        # If the ndim is 1
         if self.ndim == 1:
             narr = creation._0darray[dtype](self._buf.ptr[idx])
 
@@ -620,7 +618,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
         """
-        Get items by a series of either slices or integers.
+        Get items of NDArray with a series of either slices or integers.
 
         Args:
             slices: A series of either Slice or Int.
@@ -806,7 +804,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
         var slice_list: List[Slice] = List[Slice]()
 
-        var count_int = 0  # Count the number of Int in the argument
+        var count_int: Int = 0  # Count the number of Int in the argument
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
                 slice_list.append(slices[i]._get_ptr[Slice]()[0])
@@ -820,11 +818,13 @@ struct NDArray[dtype: DType = DType.float64](
                 var size_at_dim: Int = self.shape[i]
                 slice_list.append(Slice(0, size_at_dim, 1))
 
-        var narr: Self = self.__getitem__(slice_list)
-
-        # Number of ints equals to nidm, it returns a 0-D array.
+        var narr: Self
         if count_int == self.ndim:
-            narr = creation._0darray[dtype](narr._buf.ptr[])
+            narr = creation._0darray[dtype](
+                self.__getitem__(slice_list)._buf.ptr[]
+            )
+        else:
+            narr = self.__getitem__(slice_list)
 
         return narr
 
@@ -1116,7 +1116,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the array (not buffer).
-        It first scans over the first row, even it is a colume-major array.
+        It first scans over the first row, even it is a column-major array.
         If more than one index is given, the length of the indices must match
         the number of dimensions of the array.
         If the ndim is 0 (0-D array), get the value as a mojo scalar.
@@ -1203,7 +1203,8 @@ struct NDArray[dtype: DType = DType.float64](
             A scalar matching the dtype of the array.
 
         Raises:
-            Index is equal or larger than size of dimension.
+            Error: If the number of indices is not equal to the number of dimensions of the array.
+            Error: If the index is equal or larger than size of dimension.
 
         Examples:
 

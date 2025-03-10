@@ -810,7 +810,9 @@ struct ComplexNDArray[
                     len_of_result += 1
 
             # Change the first number of the ndshape
-            var result = ComplexNDArray[cdtype, dtype=dtype](shape=NDArrayShape(len_of_result))
+            var result = ComplexNDArray[cdtype, dtype=dtype](
+                shape=NDArrayShape(len_of_result)
+            )
 
             # Fill in the values
             var offset = 0
@@ -899,11 +901,7 @@ struct ComplexNDArray[
 
         return self[mask_array]
 
-    fn item(
-        self, owned index: Int
-    ) raises -> ref [self._re._buf.ptr.origin, self._re._buf.ptr.address_space] ComplexSIMD[
-        cdtype, dtype=dtype
-    ]:
+    fn item(self, owned index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the complex array (not buffer).
@@ -953,8 +951,12 @@ struct ComplexNDArray[
 
         if self.flags.F_CONTIGUOUS:
             return ComplexSIMD[cdtype, dtype=dtype](
-                re=(self._re._buf.ptr + _transfer_offset(index, self.strides))[],
-                im=(self._im._buf.ptr + _transfer_offset(index, self.strides))[],
+                re=(
+                    self._re._buf.ptr + _transfer_offset(index, self.strides)
+                )[],
+                im=(
+                    self._im._buf.ptr + _transfer_offset(index, self.strides)
+                )[],
             )
 
         else:
@@ -963,11 +965,7 @@ struct ComplexNDArray[
                 im=(self._im._buf.ptr + index)[],
             )
 
-    fn item(
-        self, *index: Int
-    ) raises -> ref [self._re._buf.ptr.origin, self._re._buf.ptr.address_space] ComplexSIMD[
-        cdtype, dtype=dtype
-    ]:
+    fn item(self, *index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the complex array (not buffer).
@@ -1088,8 +1086,9 @@ struct ComplexNDArray[
         if (index < 0) or (index >= self.size):
             raise Error(
                 String(
-                    "\nError in `numojo.ComplexNDArray.load[width: Int = 1](index:"
-                    " Int)`:\nInvalid index: index out of bound [0, {})."
+                    "\nError in `numojo.ComplexNDArray.load[width: Int ="
+                    " 1](index: Int)`:\nInvalid index: index out of bound [0,"
+                    " {})."
                 ).format(self.size)
             )
 
@@ -1100,7 +1099,9 @@ struct ComplexNDArray[
 
     fn load[
         width: Int = 1
-    ](self, *indices: Int) raises -> ComplexSIMD[cdtype, dtype=dtype, size=width]:
+    ](self, *indices: Int) raises -> ComplexSIMD[
+        cdtype, dtype=dtype, size=width
+    ]:
         """
         Safely loads a ComplexSIMD element of size `width` at given variadic indices
         from the underlying buffer.
@@ -1129,8 +1130,9 @@ struct ComplexNDArray[
         if len(indices) != self.ndim:
             raise (
                 String(
-                    "\nError in `numojo.ComplexNDArray.load[width: Int = 1](*indices:"
-                    " Int)`:\nLength of indices ({}) does not match ndim ({})."
+                    "\nError in `numojo.ComplexNDArray.load[width: Int ="
+                    " 1](*indices: Int)`:\nLength of indices ({}) does not"
+                    " match ndim ({})."
                 ).format(len(indices), self.ndim)
             )
 
@@ -1637,6 +1639,7 @@ struct ComplexNDArray[
         """
         Enables `ComplexNDArray + ComplexNDArray`.
         """
+        print("add complex arrays")
         var real: NDArray[dtype] = math.add[dtype](self._re, other._re)
         var imag: NDArray[dtype] = math.add[dtype](self._im, other._im)
         return Self(real, imag)

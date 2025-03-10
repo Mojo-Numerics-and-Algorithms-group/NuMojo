@@ -820,7 +820,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         var narr: Self
         if count_int == self.ndim:
-            narr = creation._0darray[dtype](self.__getitem__(slice_list)._buf.ptr[])
+            narr = creation._0darray[dtype](
+                self.__getitem__(slice_list)._buf.ptr[]
+            )
         else:
             narr = self.__getitem__(slice_list)
 

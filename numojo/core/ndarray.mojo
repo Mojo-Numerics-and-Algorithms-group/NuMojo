@@ -862,9 +862,9 @@ struct NDArray[dtype: DType = DType.float64](
          [[     6       7       8       ]
           [     9       10      11      ]]]
         3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
-        print(b[nm.array[isize]("[2, 0, 1]")])
-        [[[     0       0       0       ]
-          [     0       67      95      ]]
+        print(b[nm.array[isize]("[1, 0, 1]")])
+        [[[     6       7       8       ]
+          [     9       10      11      ]]
          [[     0       1       2       ]
           [     3       4       5       ]]
          [[     6       7       8       ]
@@ -874,7 +874,95 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         # Get the shape of resulted array
-        var shape = indices.shape.join(self.shape._pop(0))
+        # var shape = indices.shape.join(self.shape._pop(0))
+        var shape = indices.shape.join(self.shape[1:])
+
+        var result = NDArray[dtype](shape)
+        var size_per_item = self.size // self.shape[0]
+
+        # Fill in the values
+        for i in range(indices.size):
+            if indices.item(i) >= self.shape[0]:
+                raise Error(
+                    String(
+                        "\nError in `numojo.NDArray.__getitem__(indices:"
+                        " NDArray[DType.index])`:\nindex {} with value {} is"
+                        " out of boundary [0, {})"
+                    ).format(i, indices.item(i), self.shape[0])
+                )
+            memcpy(
+                result._buf.ptr + i * size_per_item,
+                self._buf.ptr + indices.item(i) * size_per_item,
+                size_per_item,
+            )
+
+        return result
+
+    fn __getitem__(self, *indices: NDArray[DType.index]) raises -> Self:
+        """
+        Get items from 0-th dimension of an ndarray of indices.
+        If the original array is of shape (i,j,k) and
+        the indices array is of shape (l, m, n), then the output array
+        will be of shape (l,m,n,j,k).
+
+        Args:
+            indices: Array of indices.
+
+        Returns:
+            NDArray with items from the array of indices.
+
+        Raises:
+            Error: If the elements of indices are greater than size of the corresponding dimension of the array.
+
+        Examples:
+
+        ```console
+        >>>var a = nm.arange[i8](6)
+        >>>print(a)
+        [       0       1       2       3       4       5       ]
+        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+        >>>print(a[nm.array[isize]("[4, 2, 5, 1, 0, 2]")])
+        [       4       2       5       1       0       2       ]
+        1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
+
+        var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
+        print(b)
+        [[[     0       1       2       ]
+          [     3       4       5       ]]
+         [[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+        print(b[nm.array[isize]("[1, 0, 1]")])
+        [[[     6       7       8       ]
+          [     9       10      11      ]]
+         [[     0       1       2       ]
+          [     3       4       5       ]]
+         [[     6       7       8       ]
+          [     9       10      11      ]]]
+        3-D array  Shape: [3, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
+        ```.
+        """
+        if indices.__len__() >= self.size:
+            raise Error(
+                String(
+                    "\nError in `numojo.NDArray.__getitem__(*indices: NDArray[DType.index])`:\n"
+                    "The number of indices {} is greater than the size of the array {}."
+                ).format(indices.__len__(), self.size)
+            )
+
+        for i in range(indices.__len__()):
+            if indices[i].size!= self.ndim:
+                raise Error(
+                    String(
+                        "\nError in `numojo.NDArray.__getitem__(*indices: NDArray[DType.index])`:\n"
+                        "The index array {} is not a 1-D array."
+                    ).format(i)
+                )
+
+
+        # Get the shape of resulted array
+        # var shape = indices.shape.join(self.shape._pop(0))
+        var shape = indices.shape.join(self.shape[1:])
 
         var result = NDArray[dtype](shape)
         var size_per_item = self.size // self.shape[0]
@@ -1856,7 +1944,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.__setitem__(slices=slice_list, val=val)
 
     # TODO: fix this setter, add bound checks. Not sure about it's use case.
-    fn __setitem__(self, index: NDArray[DType.index], val: NDArray) raises:
+    fn __setitem__(mut self, index: NDArray[DType.index], val: NDArray[dtype]) raises:
         """
         Returns the items of the array from an array of indices.
 
@@ -1879,9 +1967,42 @@ struct NDArray[dtype: DType = DType.float64](
         1-D array  Shape: [3]  DType: int8
         ```.
         """
+        if index.ndim != 1:
+            raise Error(String(
+                "\nError in `numojo.NDArray.__setitem__(index: NDArray[DType.index], val: NDArray)`: "
+                "Index array must be 1-D. The index {} is {}D."
+            ).format(index.ndim))
 
-        for i in range(len(index)):
-            self.store(Int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
+        if index.size > self.shape[0]:
+            raise Error(String(
+                "\nError in `numojo.NDArray.__setitem__(index: NDArray[DType.index], val: NDArray)`: "
+                "Index array size {} is greater than the first dimension of the array {}. "
+                "The index array must be smaller than the array."
+            ).format(index.size, self.shape[0]))
+
+        # var output_shape_list: List[Int] = List[Int]()
+        # output_shape_list.append(index.size)
+        # for i in range(1, self.ndim):
+        #     output_shape_list.append(self.shape[i])
+
+        # var output_shape: NDArrayShape = NDArrayShape(output_shape_list)
+        # print("output_shape\n", output_shape.__str__())
+
+        for i in range(index.size):
+            if index.item(i) > self.shape[0]:
+                raise Error(String(
+                    "\nError in `numojo.NDArray.__setitem__(index: NDArray[DType.index], val: NDArray)`: Index {} is out of bounds. The array has {} elements."
+                ).format(index.item(i), self.shape[0]))
+            if index.item(i) < 0:
+                index.item(i) += self.shape[0]
+
+        # var new_arr: NDArray[dtype] = NDArray[dtype](output_shape)
+        for i in range(index.size):
+            print("index.item(i)", index.item(i))
+            self.__setitem__(idx=Int(index.item(i)), val=val)
+
+        # for i in range(len(index)):
+            # self.store(Int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
 
     fn __setitem__(
         mut self, mask: NDArray[DType.bool], val: NDArray[dtype]

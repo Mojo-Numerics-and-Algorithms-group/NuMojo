@@ -1,6 +1,8 @@
 from testing import assert_equal, assert_almost_equal
 from numojo import *
 
+# TODO: Added getter and setter tests
+
 
 fn test_complex_array_init() raises:
     """Test initialization of ComplexArray."""

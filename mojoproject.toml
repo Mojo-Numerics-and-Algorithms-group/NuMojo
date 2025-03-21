@@ -24,20 +24,21 @@ p = "clear && magic run package"
 format = "magic run mojo format ./"
 
 # test whether tests pass on the built package
-test = "magic run package && magic run mojo test tests -I ./tests/"
+test = "magic run package && magic run mojo test tests -I tests/ && rm tests/numojo.mojopkg"
 t = "clear && magic run test"
 
 # run individual tests to avoid overheat
-test_core = "magic run mojo test tests/core -I ./ -I ./tests/"
-test_creation = "magic run mojo test tests/routines/test_creation.mojo -I ./ -I ./tests/"
-test_functional = "magic run mojo test tests/routines/test_functional.mojo -I ./ -I ./tests/"
-test_indexing = "magic run mojo test tests/routines/test_indexing.mojo -I ./ -I ./tests/"
-test_linalg = "magic run mojo test tests/routines/test_linalg.mojo -I ./ -I ./tests/"
-test_manipulation = "magic run mojo test tests/routines/test_manipulation.mojo -I ./ -I ./tests/"
-test_math = "magic run mojo test tests/routines/test_math.mojo -I ./ -I ./tests/"
-test_random = "magic run mojo test tests/routines/test_random.mojo -I ./ -I ./tests/"
-test_statistics = "magic run mojo test tests/routines/test_statistics.mojo -I ./ -I ./tests/"
-test_sorting = "magic run mojo test tests/routines/test_sorting.mojo -I ./ -I ./tests/"
+test_core = "magic run package && magic run mojo test tests/core -I tests/ && rm tests/numojo.mojopkg"
+test_creation = "magic run package && magic run mojo test tests/routines/test_creation.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_functional = "magic run package && magic run mojo test tests/routines/test_functional.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_indexing = "magic run package && magic run mojo test tests/routines/test_indexing.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_linalg = "magic run package && magic run mojo test tests/routines/test_linalg.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_manipulation = "magic run package && magic run mojo test tests/routines/test_manipulation.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_math = "magic run package && magic run mojo test tests/routines/test_math.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_random = "magic run package && magic run mojo test tests/routines/test_random.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_statistics = "magic run package && magic run mojo test tests/routines/test_statistics.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_sorting = "magic run package && magic run mojo test tests/routines/test_sorting.mojo -I tests/ && rm tests/numojo.mojopkg"
+test_searching = "magic run package && magic run mojo test tests/routines/test_searching.mojo -I tests/ && rm tests/numojo.mojopkg"
 
 # run all final checks before a commit
 final = "magic run format && magic run test"

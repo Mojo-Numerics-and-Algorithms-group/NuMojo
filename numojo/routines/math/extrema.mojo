@@ -131,7 +131,7 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+            String("Error in `max`: Axis {} not in bound [-{}, {})").format(
                 axis, a.ndim, a.ndim
             )
         )
@@ -243,7 +243,7 @@ fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+            String("Error in `min`: Axis {} not in bound [-{}, {})").format(
                 axis, a.ndim, a.ndim
             )
         )

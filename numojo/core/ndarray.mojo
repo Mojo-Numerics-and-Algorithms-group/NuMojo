@@ -88,6 +88,7 @@ from numojo.routines.io.formatting import (
 import numojo.routines.logic.comparison as comparison
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
+import numojo.routines.searching as searching
 
 
 struct NDArray[dtype: DType = DType.float64](
@@ -3630,42 +3631,36 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[vectorized_any, self.width](self.size)
         return result
 
-    fn argmax(self) raises -> Int:
+    fn argmax(self) raises -> Scalar[DType.index]:
+        """Returns the indices of the maximum values along an axis.
+        When no axis is specified, the array is flattened.
+        See `numojo.argmax()` for more details.
         """
-        Get location in pointer of max value.
+        return searching.argmax(self)
 
-        Returns:
-            Index of the maximum value.
+    fn argmax(self, axis: Int) raises -> NDArray[DType.index]:
+        """Returns the indices of the maximum values along an axis.
+        See `numojo.argmax()` for more details.
         """
-        var result: Int = 0
-        var max_val: SIMD[dtype, 1] = self.load[width=1](0)
-        for i in range(1, self.size):
-            var temp: SIMD[dtype, 1] = self.load[width=1](i)
-            if temp > max_val:
-                max_val = temp
-                result = i
-        return result
+        return searching.argmax(self, axis=axis)
 
-    fn argmin(self) raises -> Int:
+    fn argmin(self) raises -> Scalar[DType.index]:
+        """Returns the indices of the minimum values along an axis.
+        When no axis is specified, the array is flattened.
+        See `numojo.argmin()` for more details.
         """
-        Get location in pointer of min value.
+        return searching.argmin(self)
 
-        Returns:
-            Index of the minimum value.
+    fn argmin(self, axis: Int) raises -> NDArray[DType.index]:
+        """Returns the indices of the minimum values along an axis.
+        See `numojo.argmin()` for more details.
         """
-        var result: Int = 0
-        var min_val: SIMD[dtype, 1] = self.load[width=1](0)
-        for i in range(1, self.size):
-            var temp: SIMD[dtype, 1] = self.load[width=1](i)
-            if temp < min_val:
-                min_val = temp
-                result = i
-        return result
+        return searching.argmin(self, axis=axis)
 
     fn argsort(self) raises -> NDArray[DType.index]:
         """
         Sort the NDArray and return the sorted indices.
-        See `numojo.argsort()`.
+        See `numojo.argsort()` for more details.
 
         Returns:
             The indices of the sorted NDArray.
@@ -3676,7 +3671,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn argsort(self, axis: Int) raises -> NDArray[DType.index]:
         """
         Sort the NDArray and return the sorted indices.
-        See `numojo.argsort()`.
+        See `numojo.argsort()` for more details.
 
         Returns:
             The indices of the sorted NDArray.

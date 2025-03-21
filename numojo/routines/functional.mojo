@@ -27,6 +27,9 @@ from numojo.core.ndstrides import NDArrayStrides
 # `a` is a 1-d array slice of the original array along given axis.
 # ===----------------------------------------------------------------------=== #
 
+# The following overloads of `apply_along_axis` are for the case when the
+# dimension of the input array is reduced.
+
 
 fn apply_along_axis[
     dtype: DType,
@@ -61,6 +64,55 @@ fn apply_along_axis[
 
     else:
         res = NDArray[dtype](a.shape._pop(axis=axis))
+
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                (res._buf.ptr + i).init_pointee_copy(
+                    func1d[dtype](iterator.ith(i))
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return res^
+
+
+fn apply_along_axis[
+    dtype: DType,
+    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
+        DType.index
+    ],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+    """
+    Applies a function to a NDArray by axis and reduce that dimension.
+    The returned data type is DType.index.
+    When the array is 1-d, the returned array will be a 0-d array.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func1d: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_along_axis(axis=axis)
+    # The final output array will have 1 less dimension than the input array
+    var res: NDArray[DType.index]
+
+    if a.ndim == 1:
+        res = numojo.creation._0darray[DType.index](0)
+        (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
+
+    else:
+        res = NDArray[DType.index](a.shape._pop(axis=axis))
 
         @parameter
         fn parallelized_func(i: Int):
@@ -129,6 +181,10 @@ fn apply_along_axis[
         parallelize[parallelized_func](a.size // a.shape[axis])
 
     return res^
+
+
+# The following overloads of `apply_along_axis` are for the case when the
+# dimension of the input array is not reduced.
 
 
 fn apply_along_axis[

@@ -1482,7 +1482,7 @@ fn diag[
         raise Error("Arrays bigger than 2D are not supported")
 
 
-fn diag[
+fn diagC[
     dtype: DType = DType.float64,
 ](v: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
     """
@@ -1536,7 +1536,7 @@ fn diagflat[
     return result^
 
 
-fn diagflat[
+fn diagflatC[
     dtype: DType = DType.float64,
 ](v: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
     """
@@ -1583,28 +1583,27 @@ fn tri[
     return result^
 
 
-# fn tri[
-#     dtype: DType = DType.float64,
-# ](N: Int, M: Int, k: Int = 0) raises -> ComplexNDArray[dtype]:
-#     """
-#     Generate a 2-D ComplexNDArray with ones on and below the k-th diagonal.
+fn triC[
+    dtype: DType = DType.float64,
+](N: Int, M: Int, k: Int = 0) raises -> ComplexNDArray[dtype]:
+    """
+    Generate a 2-D ComplexNDArray with ones on and below the k-th diagonal.
 
-#     Parameters:
-#         dtype: Complex datatype of the output array.
-#         dtype: Equivalent real datatype of the output array.
+    Parameters:
+        dtype: Complex datatype of the output array.
 
-#     Args:
-#         N: Number of rows in the matrix.
-#         M: Number of columns in the matrix.
-#         k: Diagonal offset.
+    Args:
+        N: Number of rows in the matrix.
+        M: Number of columns in the matrix.
+        k: Diagonal offset.
 
-#     Returns:
-#         A 2-D ComplexNDArray with ones on and below the k-th diagonal.
-#     """
-#     return ComplexNDArray[dtype](
-#         re=tri[dtype](N, M, k),
-#         im=tri[dtype](N, M, k),
-#     )
+    Returns:
+        A 2-D ComplexNDArray with ones on and below the k-th diagonal.
+    """
+    return ComplexNDArray[dtype](
+        re=tri[dtype](N, M, k),
+        im=tri[dtype](N, M, k),
+    )
 
 
 fn tril[
@@ -1649,7 +1648,7 @@ fn tril[
     return result^
 
 
-fn tril[
+fn trilC[
     dtype: DType = DType.float64,
 ](m: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
     """
@@ -1713,7 +1712,7 @@ fn triu[
     return result^
 
 
-fn triu[
+fn triuC[
     dtype: DType = DType.float64,
 ](m: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
     """
@@ -1771,7 +1770,7 @@ fn vander[
     return result^
 
 
-fn vander[
+fn vanderC[
     dtype: DType = DType.float64,
 ](
     x: ComplexNDArray[dtype],
@@ -2019,6 +2018,36 @@ fn from_tensor[
 
     return a
 
+fn from_tensorC[
+    dtype: DType = DType.float64
+](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
+    """
+    Create array from tensor.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        real: Tensor.
+        imag: Tensor.
+
+    Returns:
+        ComplexNDArray constructed from real and imaginary tensors.
+    """
+
+    var ndim = real.shape().rank()
+    if ndim != imag.shape().rank():
+        raise ("Real and imaginary tensors must have the same rank!")
+    var shape = NDArrayShape(ndim=ndim, initialized=False)
+    for i in range(ndim):
+        (shape._buf + i).init_pointee_copy(real.shape()[i])
+
+    var a = ComplexNDArray[dtype](shape=shape)
+
+    memcpy(a._re._buf.ptr, real._ptr, a._re.size)
+    memcpy(a._im._buf.ptr, imag._ptr, a._im.size)
+
+    return a
 
 # ===------------------------------------------------------------------------===#
 # Overloads of `array` function
@@ -2069,11 +2098,10 @@ fn array[
     A = NDArray[dtype](NDArrayShape(shape), order)
     for i in range(A.size):
         A._buf.ptr[i] = data[i]
-    return A
+    return A^
 
-
-fn array[
-    dtype: DType = DType.float64,
+fn arrayC[
+    dtype: DType = DType.float64
 ](
     real: List[Scalar[dtype]],
     imag: List[Scalar[dtype]],
@@ -2084,7 +2112,7 @@ fn array[
     Array creation with given data, shape and order.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        dtype: Datatype of the NDArray elements.
 
     Args:
         real: List of real data.
@@ -2096,7 +2124,7 @@ fn array[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.array[cf32](
+        nm.arrayC[cf32](
             real=List[Scalar[f32]](1, 2, 3, 4),
             imag=List[Scalar[f32]](5, 6, 7, 8),
             shape=List[Int](2, 2),
@@ -2104,20 +2132,16 @@ fn array[
         ```
 
     Returns:
-        An Array of given data, shape and order.
+        A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
+
     if len(real) != len(imag):
-        raise (
-            "Real and imaginary data must have the same length! ({} != {})"
-            .format(len(real), len(imag))
-        )
-
+        raise Error("Error in arrayC: Real and imaginary data must have the same length!")
     A = ComplexNDArray[dtype](shape=shape, order=order)
-
     for i in range(A.size):
         A._re._buf.ptr[i] = real[i]
         A._im._buf.ptr[i] = imag[i]
-    return A
+    return A^
 
 
 fn array[
@@ -2160,6 +2184,52 @@ fn array[
         )
     return A
 
+fn arrayC[
+    dtype: DType = DType.float64
+](real: PythonObject, imag: PythonObject, order: String = "C") raises -> ComplexNDArray[dtype]:
+    """
+    Array creation with given real and imaginary data, shape and order.
+
+    Example:
+    ```mojo
+    import numojo as nm
+    from numojo.prelude import *
+    from python import Python
+    var np = Python.import_module("numpy")
+    var np_arr = np.array([1, 2, 3, 4])
+    A = nm.arrayC[cf32](real=np_arr, imag=np_arr, order="C")
+    ```
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        real: A Numpy array (PythonObject).
+        imag: A Numpy array (PythonObject).
+        order: Memory order C or F.
+
+    Returns:
+        An Array of given data, shape and order.
+    """
+
+    var len = Int(len(real.shape))
+    var shape: List[Int] = List[Int]()
+    if real.shape != imag.shape:
+        raise Error("Error in arrayC: Real and imaginary data must have the same shape!")
+    for i in range(len):
+        if Int(real.shape[i]) == 1:
+            continue
+        shape.append(Int(real.shape[i]))
+    A = ComplexNDArray[dtype](shape=shape, order=order)
+
+    for i in range(A.size):
+        (A._re._buf.ptr + i).init_pointee_copy(
+            Float64(real.item(PythonObject(i))).cast[dtype]()
+        )
+        (A._im._buf.ptr + i).init_pointee_copy(
+            Float64(imag.item(PythonObject(i))).cast[dtype]()
+        )
+    return A^
 
 fn array[
     dtype: DType = DType.float64
@@ -2194,6 +2264,38 @@ fn array[
 
     return from_tensor(data)
 
+fn arrayC[
+    dtype: DType = DType.float64
+](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
+    """
+    Create array from tensor.
+
+    Example:
+    ```mojo
+    import numojo as nm
+    from tensor import Tensor, TensorShape
+    from numojo.prelude import *
+
+    fn main() raises:
+        height = 256
+        width = 256
+        channels = 3
+        image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
+        print(nm.arrayC(real=image, imag=image))
+    ```
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        real: Tensor.
+        imag: Tensor.
+
+    Returns:
+        ComplexNDArray.
+    """
+
+    return from_tensorC(real, imag)
 
 # ===----------------------------------------------------------------------=== #
 # Internal functions

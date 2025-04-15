@@ -87,9 +87,9 @@ from numojo.routines.statistics.averages import mean
 # ===----------------------------------------------------------------------===#
 # TODO: Add SIMD width as a parameter.
 @value
-struct ComplexNDArray[
-    dtype: DType = DType.float64
-](Stringable, Representable, CollectionElement, Sized, Writable):
+struct ComplexNDArray[dtype: DType = DType.float64](
+    Stringable, Representable, CollectionElement, Sized, Writable
+):
     """
     Represents a Complex N-Dimensional Array.
 
@@ -116,7 +116,9 @@ struct ComplexNDArray[
     """LIFETIME METHODS"""
 
     @always_inline("nodebug")
-    fn __init__(out self, owned re: NDArray[Self.dtype], owned im: NDArray[Self.dtype]):
+    fn __init__(
+        out self, owned re: NDArray[Self.dtype], owned im: NDArray[Self.dtype]
+    ):
         self._re = re
         self._im = im
         self.ndim = re.ndim
@@ -402,9 +404,7 @@ struct ComplexNDArray[
             im=self._im._buf.ptr[],
         )
 
-    fn __getitem__(
-        self, index: Item
-    ) raises -> ComplexSIMD[Self.dtype]:
+    fn __getitem__(self, index: Item) raises -> ComplexSIMD[Self.dtype]:
         """
         Get the value at the index list.
 
@@ -729,9 +729,9 @@ struct ComplexNDArray[
         # Get the shape of resulted array
         var shape = indices.shape.join(self.shape._pop(0))
 
-        var result: ComplexNDArray[Self.dtype] = ComplexNDArray[
-            Self.dtype
-        ](shape)
+        var result: ComplexNDArray[Self.dtype] = ComplexNDArray[Self.dtype](
+            shape
+        )
         var size_per_item = self.size // self.shape[0]
 
         # Fill in the values
@@ -1064,9 +1064,7 @@ struct ComplexNDArray[
             im=self._im._buf.ptr[index],
         )
 
-    fn load[
-        width: Int = 1
-    ](self, index: Int) raises -> ComplexSIMD[Self.dtype]:
+    fn load[width: Int = 1](self, index: Int) raises -> ComplexSIMD[Self.dtype]:
         """
         Safely loads a ComplexSIMD element of size `width` at `index`
         from the underlying buffer.
@@ -1099,9 +1097,7 @@ struct ComplexNDArray[
 
     fn load[
         width: Int = 1
-    ](self, *indices: Int) raises -> ComplexSIMD[
-        Self.dtype, width=width
-    ]:
+    ](self, *indices: Int) raises -> ComplexSIMD[Self.dtype, width=width]:
         """
         Safely loads a ComplexSIMD element of size `width` at given variadic indices
         from the underlying buffer.
@@ -1325,9 +1321,7 @@ struct ComplexNDArray[
             val._im, self._im, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    fn __setitem__(
-        mut self, index: Item, val: ComplexSIMD[Self.dtype]
-    ) raises:
+    fn __setitem__(mut self, index: Item, val: ComplexSIMD[Self.dtype]) raises:
         """
         Set the value at the index list.
         """
@@ -1652,9 +1646,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.add[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __radd__(
-        mut self, other: ComplexSIMD[Self.dtype]
-    ) raises -> Self:
+    fn __radd__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexSIMD + ComplexNDArray`.
         """
@@ -1746,9 +1738,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.sub[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __rsub__(
-        mut self, other: ComplexSIMD[Self.dtype]
-    ) raises -> Self:
+    fn __rsub__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexSIMD - ComplexNDArray`.
         """
@@ -1895,9 +1885,7 @@ struct ComplexNDArray[
         self._re *= other
         self._im *= other
 
-    fn __truediv__(
-        self, other: ComplexSIMD[Self.dtype]
-    ) raises -> Self:
+    fn __truediv__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexSIMD`.
         """
@@ -1913,9 +1901,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.div[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __truediv__(
-        self, other: ComplexNDArray[Self.dtype]
-    ) raises -> Self:
+    fn __truediv__(self, other: ComplexNDArray[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexNDArray`.
         """
@@ -1933,9 +1919,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.div[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __rtruediv__(
-        mut self, other: ComplexSIMD[Self.dtype]
-    ) raises -> Self:
+    fn __rtruediv__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexSIMD / ComplexNDArray`.
         """
@@ -2259,7 +2243,9 @@ struct ComplexNDArray[
 
     fn __reversed__(
         self,
-    ) raises -> _ComplexNDArrayIter[__origin_of(self._re), Self.dtype, forward=False]:
+    ) raises -> _ComplexNDArrayIter[
+        __origin_of(self._re), Self.dtype, forward=False
+    ]:
         """
         Iterates backwards over elements of the ComplexNDArray, returning
         copied value.
@@ -2268,11 +2254,12 @@ struct ComplexNDArray[
             A reversed iterator of NDArray elements.
         """
 
-        return _ComplexNDArrayIter[__origin_of(self._re), Self.dtype, forward=False](
+        return _ComplexNDArrayIter[
+            __origin_of(self._re), Self.dtype, forward=False
+        ](
             self,
             dimension=0,
         )
-
 
     fn itemset(
         mut self,
@@ -2386,7 +2373,9 @@ struct _ComplexNDArrayIter[
     var ndim: Int
     var size_of_item: Int
 
-    fn __init__(out self, read a: ComplexNDArray[dtype], read dimension: Int) raises:
+    fn __init__(
+        out self, read a: ComplexNDArray[dtype], read dimension: Int
+    ) raises:
         """
         Initialize the iterator.
 
@@ -2502,8 +2491,7 @@ struct _ComplexNDArrayIter[
             return res
 
         else:  # 0-D array
-            var res = numojo.creation._0darray[dtype](ComplexSIMD[dtype](
-                self.re_ptr[index],
-                self.im_ptr[index]
-            ))
+            var res = numojo.creation._0darray[dtype](
+                ComplexSIMD[dtype](self.re_ptr[index], self.im_ptr[index])
+            )
             return res

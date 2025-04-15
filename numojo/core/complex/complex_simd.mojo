@@ -2,13 +2,13 @@ from math import sqrt
 
 alias ComplexScalar = ComplexSIMD[_, width=1]
 
+
 @register_passable("trivial")
-struct ComplexSIMD[
-    dtype: DType, width: Int = 1
-]():
+struct ComplexSIMD[dtype: DType, width: Int = 1]():
     """
     Represents a Complex number SIMD type with real and imaginary parts.
     """
+
     # FIELDS
     """The underlying data real and imaginary parts of the complex number."""
     var re: SIMD[dtype, width]
@@ -25,7 +25,11 @@ struct ComplexSIMD[
         self = other
 
     @always_inline
-    fn __init__(out self, re: SIMD[Self.dtype, Self.width], im: SIMD[Self.dtype, Self.width]):
+    fn __init__(
+        out self,
+        re: SIMD[Self.dtype, Self.width],
+        im: SIMD[Self.dtype, Self.width],
+    ):
         """
         Initializes a ComplexSIMD instance with specified real and imaginary parts.
 
@@ -256,7 +260,9 @@ struct ComplexSIMD[
         Returns:
             String: The string representation of the ComplexSIMD instance.
         """
-        return "ComplexSIMD[{}]({}, {})".format(String(Self.dtype), self.re, self.im)
+        return "ComplexSIMD[{}]({}, {})".format(
+            String(Self.dtype), self.re, self.im
+        )
 
     fn __getitem__(self, idx: Int) raises -> SIMD[Self.dtype, Self.width]:
         """
@@ -276,7 +282,9 @@ struct ComplexSIMD[
         else:
             raise Error("Index out of range")
 
-    fn __setitem__(mut self, idx: Int, value: SIMD[Self.dtype, Self.width]) raises:
+    fn __setitem__(
+        mut self, idx: Int, value: SIMD[Self.dtype, Self.width]
+    ) raises:
         """
         Sets the real and imaginary parts of the ComplexSIMD instance.
 
@@ -314,9 +322,7 @@ struct ComplexSIMD[
         """
         return self[idx]
 
-    fn itemset(
-        mut self, val: ComplexSIMD[Self.dtype, Self.width]
-    ):
+    fn itemset(mut self, val: ComplexSIMD[Self.dtype, Self.width]):
         """
         Sets the real and imaginary parts of the ComplexSIMD instance.
 

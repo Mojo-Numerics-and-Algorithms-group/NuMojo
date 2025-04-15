@@ -421,10 +421,7 @@ fn format_value[
 
 fn format_value[
     dtype: DType
-](
-    value: ComplexSIMD[dtype],
-    print_options: PrintOptions,
-) raises -> String:
+](value: ComplexSIMD[dtype], print_options: PrintOptions,) raises -> String:
     """
     Format a complex value based on the print options.
 

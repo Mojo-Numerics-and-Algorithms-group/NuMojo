@@ -2124,7 +2124,7 @@ fn arrayC[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.arrayC[cf32](
+        nm.arrayC[f32](
             real=List[Scalar[f32]](1, 2, 3, 4),
             imag=List[Scalar[f32]](5, 6, 7, 8),
             shape=List[Int](2, 2),
@@ -2171,18 +2171,18 @@ fn array[
         An Array of given data, shape and order.
     """
 
-    var len = Int(len(data.shape))
+    var length = Int(len(data.shape))
     var shape: List[Int] = List[Int]()
-    for i in range(len):
+    for i in range(length):
         if Int(data.shape[i]) == 1:
             continue
         shape.append(Int(data.shape[i]))
-    A = NDArray[dtype](NDArrayShape(shape), order=order)
+    var A = NDArray[dtype](NDArrayShape(shape), order)
     for i in range(A.size):
         (A._buf.ptr + i).init_pointee_copy(
             Float64(data.item(PythonObject(i))).cast[dtype]()
         )
-    return A
+    return A^
 
 fn arrayC[
     dtype: DType = DType.float64
@@ -2197,7 +2197,7 @@ fn arrayC[
     from python import Python
     var np = Python.import_module("numpy")
     var np_arr = np.array([1, 2, 3, 4])
-    A = nm.arrayC[cf32](real=np_arr, imag=np_arr, order="C")
+    A = nm.arrayC[f32](real=np_arr, imag=np_arr, order="C")
     ```
 
     Parameters:
@@ -2209,7 +2209,7 @@ fn arrayC[
         order: Memory order C or F.
 
     Returns:
-        An Array of given data, shape and order.
+        A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
 
     var len = Int(len(real.shape))

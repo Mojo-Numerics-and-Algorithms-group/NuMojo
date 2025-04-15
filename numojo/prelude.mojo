@@ -27,7 +27,6 @@ from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import Shape, NDArrayShape
 
-from numojo.core.complex.complex_dtype import CDType
 from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 
@@ -46,15 +45,4 @@ from numojo.core.datatypes import (
     f32,
     f64,
     boolean,
-    ci8,
-    ci16,
-    ci32,
-    ci64,
-    cu8,
-    cu16,
-    cu32,
-    cu64,
-    cf16,
-    cf32,
-    cf64,
 )

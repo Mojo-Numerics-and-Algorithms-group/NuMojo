@@ -39,32 +39,6 @@ alias boolean = DType.bool
 
 # ===----------------------------------------------------------------------=== #
 
-# Complex SIMD data type aliases
-""" Data type alias for ComplexSIMD[DType.int8, 1] """
-alias ci8 = CDType.int8
-""" Data type alias for ComplexSIMD[DType.int16, 1] """
-alias ci16 = CDType.int16
-""" Data type alias for ComplexSIMD[DType.int32, 1] """
-alias ci32 = CDType.int32
-""" Data type alias for ComplexSIMD[DType.int64, 1] """
-alias ci64 = CDType.int64
-""" Data type alias for ComplexSIMD[DType.uint8, 1] """
-alias cu8 = CDType.uint8
-""" Data type alias for ComplexSIMD[DType.uint16, 1] """
-alias cu16 = CDType.uint16
-""" Data type alias for ComplexSIMD[DType.uint32, 1] """
-alias cu32 = CDType.uint32
-""" Data type alias for ComplexSIMD[DType.uint64, 1] """
-alias cu64 = CDType.uint64
-""" Data type alias for ComplexSIMD[DType.float16, 1] """
-alias cf16 = CDType.float16
-""" Data type alias for ComplexSIMD[DType.float32, 1] """
-alias cf32 = CDType.float32
-""" Data type alias for ComplexSIMD[DType.float64, 1] """
-alias cf64 = CDType.float64
-
-# ===----------------------------------------------------------------------=== #
-
 
 # TODO: Optimize the conditions with dict and move it to compile time
 # Dict can't be created at compile time rn

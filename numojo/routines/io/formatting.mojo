@@ -346,9 +346,9 @@ fn format_floating_precision[
 
 
 fn format_floating_precision[
-    cdtype: CDType, dtype: DType
+    dtype: DType
 ](
-    value: ComplexSIMD[cdtype, dtype=dtype],
+    value: ComplexSIMD[dtype],
     precision: Int = 4,
     sign: Bool = False,
 ) raises -> String:
@@ -420,11 +420,8 @@ fn format_value[
 
 
 fn format_value[
-    cdtype: CDType, dtype: DType
-](
-    value: ComplexSIMD[cdtype, dtype=dtype],
-    print_options: PrintOptions,
-) raises -> String:
+    dtype: DType
+](value: ComplexSIMD[dtype], print_options: PrintOptions,) raises -> String:
     """
     Format a complex value based on the print options.
 

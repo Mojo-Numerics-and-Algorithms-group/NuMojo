@@ -7,7 +7,6 @@ from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
 
 from .complex import (
-    CDType,
     ComplexSIMD,
     ComplexScalar,
     ComplexNDArray,
@@ -25,17 +24,6 @@ from .datatypes import (
     f16,
     f32,
     f64,
-    ci8,
-    ci16,
-    ci32,
-    ci64,
-    cu8,
-    cu16,
-    cu32,
-    cu64,
-    cf16,
-    cf32,
-    cf64,
 )
 
 # from .utility import

@@ -17,7 +17,7 @@ from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
 from numojo.core.utility import _get_offset
-from numojo.routines.manipulation import broadcast_to
+from numojo.routines.manipulation import broadcast_to, reorder_layout
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct
@@ -113,16 +113,22 @@ struct Matrix[dtype: DType = DType.float64](
     fn __init__(
         mut self,
         shape: Tuple[Int, Int],
+        order: String = "C",
     ):
         """
-        Construct a matrix without initializing data.
+        Create a new matrix of the given shape,without initializing data.
 
         Args:
-            shape: List of shape.
+            shape: Tuple representing (rows, columns).
+            order: Use "C" for row-major (C-style) layout or "F" for column-major
+               (Fortran-style) layout. Defaults to "C".
         """
 
         self.shape = (shape[0], shape[1])
-        self.strides = (shape[1], 1)
+        if order == "C":
+            self.strides = (shape[1], 1)
+        else:
+            self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
         self._buf = OwnData[dtype](size=self.size)
         self.flags = Flags(
@@ -1171,6 +1177,12 @@ struct Matrix[dtype: DType = DType.float64](
         """
         return transpose(self)
 
+    fn reorder_layout(self) -> Self:
+        """
+        reorder_layout matrix.
+        """
+        return reorder_layout(self)
+
     fn T(self) -> Self:
         return transpose(self)
 
@@ -1221,6 +1233,10 @@ struct Matrix[dtype: DType = DType.float64](
         try:
             var np = Python.import_module("numpy")
 
+            var np_arr_dim = PythonObject([])
+            np_arr_dim.append(self.shape[0])
+            np_arr_dim.append(self.shape[1])
+
             np.set_printoptions(4)
 
             # Implement a dictionary for this later
@@ -1251,7 +1267,8 @@ struct Matrix[dtype: DType = DType.float64](
             elif dtype == DType.index:
                 np_dtype = np.int64
 
-            numpyarray = np.empty(self.shape, dtype=np_dtype)
+            var order = "C" if self.flags.C_CONTIGUOUS else "F"
+            numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
             var pointer_d = numpyarray.__array_interface__["data"][
                 0
             ].unsafe_get_as_pointer[dtype]()
@@ -1270,7 +1287,11 @@ struct Matrix[dtype: DType = DType.float64](
     @staticmethod
     fn full[
         dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int], fill_value: Scalar[dtype] = 0) -> Matrix[dtype]:
+    ](
+        shape: Tuple[Int, Int],
+        fill_value: Scalar[dtype] = 0,
+        order: String = "C",
+    ) -> Matrix[dtype]:
         """Return a matrix with given shape and filled value.
 
         Example:
@@ -1280,7 +1301,7 @@ struct Matrix[dtype: DType = DType.float64](
         ```
         """
 
-        var matrix = Matrix[dtype](shape)
+        var matrix = Matrix[dtype](shape, order)
         for i in range(shape[0] * shape[1]):
             matrix._buf.ptr.store(i, fill_value)
 
@@ -1289,7 +1310,7 @@ struct Matrix[dtype: DType = DType.float64](
     @staticmethod
     fn zeros[
         dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int]) -> Matrix[dtype]:
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
         """Return a matrix with given shape and filled with zeros.
 
         Example:
@@ -1299,14 +1320,14 @@ struct Matrix[dtype: DType = DType.float64](
         ```
         """
 
-        var M = Matrix[dtype](shape)
+        var M = Matrix[dtype](shape, order)
         memset_zero(M._buf.ptr, M.size)
         return M^
 
     @staticmethod
     fn ones[
         dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int]) -> Matrix[dtype]:
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
         """Return a matrix with given shape and filled with ones.
 
         Example:
@@ -1319,8 +1340,10 @@ struct Matrix[dtype: DType = DType.float64](
         return Matrix.full[dtype](shape=shape, fill_value=1)
 
     @staticmethod
-    fn identity[dtype: DType = DType.float64](len: Int) -> Matrix[dtype]:
-        """Return a matrix with given shape and filled value.
+    fn identity[
+        dtype: DType = DType.float64
+    ](len: Int, order: String = "C") -> Matrix[dtype]:
+        """Return an identity matrix with given size.
 
         Example:
         ```mojo
@@ -1328,16 +1351,17 @@ struct Matrix[dtype: DType = DType.float64](
         var A = Matrix.identity(12)
         ```
         """
-
-        var matrix = Matrix.zeros[dtype]((len, len))
+        var matrix = Matrix.zeros[dtype]((len, len), order)
         for i in range(len):
-            matrix._buf.ptr.store(i * matrix.strides[0] + i, 1)
+            matrix._buf.ptr.store(
+                i * matrix.strides[0] + i * matrix.strides[1], 1
+            )
         return matrix^
 
     @staticmethod
     fn rand[
         dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int]) -> Matrix[dtype]:
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
         """Return a matrix with random values uniformed distributed between 0 and 1.
 
         Example:
@@ -1352,7 +1376,7 @@ struct Matrix[dtype: DType = DType.float64](
         Args:
             shape: The shape of the Matrix.
         """
-        var result = Matrix[dtype](shape)
+        var result = Matrix[dtype](shape, order)
         for i in range(result.size):
             result._buf.ptr.store(i, random_float64(0, 1).cast[dtype]())
         return result^
@@ -1361,7 +1385,9 @@ struct Matrix[dtype: DType = DType.float64](
     fn fromlist[
         dtype: DType
     ](
-        object: List[Scalar[dtype]], shape: Tuple[Int, Int] = (0, 0)
+        object: List[Scalar[dtype]],
+        shape: Tuple[Int, Int] = (0, 0),
+        order: String = "C",
     ) raises -> Matrix[dtype]:
         """Create a matrix from a 1-dimensional list into given shape.
 
@@ -1385,14 +1411,16 @@ struct Matrix[dtype: DType = DType.float64](
                 "The input has {} elements, but the target has the shape {}x{}"
             ).format(len(object), shape[0], shape[1])
             raise Error(message)
-        var M = Matrix[dtype](shape=shape)
+        var M = Matrix[dtype](shape=shape, order=order)
         memcpy(M._buf.ptr, object.data, M.size)
         return M^
 
     @staticmethod
     fn fromstring[
         dtype: DType = DType.float64
-    ](text: String, shape: Tuple[Int, Int] = (0, 0)) raises -> Matrix[dtype]:
+    ](
+        text: String, shape: Tuple[Int, Int] = (0, 0), order: String = "C"
+    ) raises -> Matrix[dtype]:
         """Matrix initialization from string representation of an matrix.
 
         Comma, right brackets, and whitespace are treated as seperators of numbers.

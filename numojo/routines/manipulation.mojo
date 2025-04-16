@@ -295,6 +295,42 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return B^
 
 
+fn reorder_layout[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Create a new Matrix with the opposite layout from A:
+    if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
+    If A is F-contiguous, create a new C-contiguous matrix.
+
+    Copy data into the new layout.
+    """
+
+    var rows = A.shape[0]
+    var cols = A.shape[1]
+
+    var new_order: String
+
+    try:
+        if A.flags["C_CONTIGUOUS"]:
+            new_order = "F"
+        else:
+            new_order = "C"
+    except Error:
+        return A
+
+    var B = Matrix[dtype](Tuple(rows, cols), new_order)
+
+    if new_order == "C":
+        for i in range(rows):
+            for j in range(cols):
+                B._buf.ptr[i * cols + j] = A._buf.ptr[i + j * rows]
+    else:
+        for j in range(cols):
+            for i in range(rows):
+                B._buf.ptr[j * rows + i] = A._buf.ptr[i * cols + j]
+
+    return B^
+
+
 # ===----------------------------------------------------------------------=== #
 # Changing number of dimensions
 # ===----------------------------------------------------------------------=== #

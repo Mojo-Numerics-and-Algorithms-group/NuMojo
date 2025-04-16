@@ -113,18 +113,19 @@ struct Matrix[dtype: DType = DType.float64](
     fn __init__(
         mut self,
         shape: Tuple[Int, Int],
-        c_contigous: Bool = True,
+        order: String = "C",
     ):
         """
         Create a new matrix of the given shape,without initializing data.
 
         Args:
             shape: Tuple representing (rows, columns).
-            c_contigous: If True, use row-major(C-style) memory layout. Otherwise use column-major(Fortran-style) layout.
+            order: Use "C" for row-major (C-style) layout or "F" for column-major
+               (Fortran-style) layout. Defaults to "C".
         """
 
         self.shape = (shape[0], shape[1])
-        if c_contigous:
+        if order == "C":
             self.strides = (shape[1], 1)
         else:
             self.strides = (1, shape[0])
@@ -1289,7 +1290,7 @@ struct Matrix[dtype: DType = DType.float64](
     ](
         shape: Tuple[Int, Int],
         fill_value: Scalar[dtype] = 0,
-        c_contigous: Bool = True,
+        order: String = "C",
     ) -> Matrix[dtype]:
         """Return a matrix with given shape and filled value.
 
@@ -1300,7 +1301,7 @@ struct Matrix[dtype: DType = DType.float64](
         ```
         """
 
-        var matrix = Matrix[dtype](shape, c_contigous)
+        var matrix = Matrix[dtype](shape, order)
         for i in range(shape[0] * shape[1]):
             matrix._buf.ptr.store(i, fill_value)
 
@@ -1309,7 +1310,7 @@ struct Matrix[dtype: DType = DType.float64](
     @staticmethod
     fn zeros[
         dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int], c_contigous: Bool = True) -> Matrix[dtype]:
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
         """Return a matrix with given shape and filled with zeros.
 
         Example:
@@ -1319,14 +1320,14 @@ struct Matrix[dtype: DType = DType.float64](
         ```
         """
 
-        var M = Matrix[dtype](shape, c_contigous)
+        var M = Matrix[dtype](shape, order)
         memset_zero(M._buf.ptr, M.size)
         return M^
 
     @staticmethod
     fn ones[
         dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int], c_contigous: Bool = True) -> Matrix[dtype]:
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
         """Return a matrix with given shape and filled with ones.
 
         Example:
@@ -1341,7 +1342,7 @@ struct Matrix[dtype: DType = DType.float64](
     @staticmethod
     fn identity[
         dtype: DType = DType.float64
-    ](len: Int, c_contigous: Bool = True) -> Matrix[dtype]:
+    ](len: Int, order: String = "C") -> Matrix[dtype]:
         """Return an identity matrix with given size.
 
         Example:
@@ -1350,7 +1351,7 @@ struct Matrix[dtype: DType = DType.float64](
         var A = Matrix.identity(12)
         ```
         """
-        var matrix = Matrix.zeros[dtype]((len, len), c_contigous)
+        var matrix = Matrix.zeros[dtype]((len, len), order)
         for i in range(len):
             matrix._buf.ptr.store(
                 i * matrix.strides[0] + i * matrix.strides[1], 1
@@ -1360,7 +1361,7 @@ struct Matrix[dtype: DType = DType.float64](
     @staticmethod
     fn rand[
         dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int], c_contigous: Bool = True) -> Matrix[dtype]:
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
         """Return a matrix with random values uniformed distributed between 0 and 1.
 
         Example:
@@ -1375,7 +1376,7 @@ struct Matrix[dtype: DType = DType.float64](
         Args:
             shape: The shape of the Matrix.
         """
-        var result = Matrix[dtype](shape, c_contigous)
+        var result = Matrix[dtype](shape, order)
         for i in range(result.size):
             result._buf.ptr.store(i, random_float64(0, 1).cast[dtype]())
         return result^
@@ -1386,7 +1387,7 @@ struct Matrix[dtype: DType = DType.float64](
     ](
         object: List[Scalar[dtype]],
         shape: Tuple[Int, Int] = (0, 0),
-        c_contigous: Bool = True,
+        order: String = "C",
     ) raises -> Matrix[dtype]:
         """Create a matrix from a 1-dimensional list into given shape.
 
@@ -1410,7 +1411,7 @@ struct Matrix[dtype: DType = DType.float64](
                 "The input has {} elements, but the target has the shape {}x{}"
             ).format(len(object), shape[0], shape[1])
             raise Error(message)
-        var M = Matrix[dtype](shape=shape, c_contigous=c_contigous)
+        var M = Matrix[dtype](shape=shape, order=order)
         memcpy(M._buf.ptr, object.data, M.size)
         return M^
 
@@ -1418,7 +1419,7 @@ struct Matrix[dtype: DType = DType.float64](
     fn fromstring[
         dtype: DType = DType.float64
     ](
-        text: String, shape: Tuple[Int, Int] = (0, 0), c_contigous: Bool = True
+        text: String, shape: Tuple[Int, Int] = (0, 0), order: String = "C"
     ) raises -> Matrix[dtype]:
         """Matrix initialization from string representation of an matrix.
 

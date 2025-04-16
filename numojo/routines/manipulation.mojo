@@ -307,16 +307,19 @@ fn reorder_layout[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     var rows = A.shape[0]
     var cols = A.shape[1]
 
-    var want_c: Bool
+    var new_order: String
 
     try:
-        want_c = not A.flags["C_CONTIGUOUS"]
+        if A.flags["C_CONTIGUOUS"]:
+            new_order = "F"
+        else:
+            new_order = "C"
     except Error:
         return A
 
-    var B = Matrix[dtype](Tuple(rows, cols), c_contigous=want_c)
+    var B = Matrix[dtype](Tuple(rows, cols), new_order)
 
-    if want_c:
+    if new_order == "C":
         for i in range(rows):
             for j in range(cols):
                 B._buf.ptr[i * cols + j] = A._buf.ptr[i + j * rows]

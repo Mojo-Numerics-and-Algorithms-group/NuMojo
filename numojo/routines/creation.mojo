@@ -36,7 +36,7 @@ from builtin.math import pow
 from collections import Dict
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
-from python import PythonObject
+from python import PythonObject, Python
 from sys import simdwidthof
 from tensor import Tensor, TensorShape
 
@@ -2171,17 +2171,45 @@ fn array[
         An Array of given data, shape and order.
     """
 
-    var length = Int(len(data.shape))
+    var len = Int(len(data.shape))
     var shape: List[Int] = List[Int]()
-    for i in range(length):
+    for i in range(len):
         if Int(data.shape[i]) == 1:
             continue
         shape.append(Int(data.shape[i]))
-    var A = NDArray[dtype](NDArrayShape(shape), order)
-    for i in range(A.size):
-        (A._buf.ptr + i).init_pointee_copy(
-            Float64(data.item(PythonObject(i))).cast[dtype]()
-        )
+
+    var np = Python.import_module("numpy")
+    var np_dtype = np.float64
+    if dtype == DType.float16:
+        np_dtype = np.float16
+    elif dtype == DType.float32:
+        np_dtype = np.float32
+    elif dtype == DType.int64:
+        np_dtype = np.int64
+    elif dtype == DType.int32:
+        np_dtype = np.int32
+    elif dtype == DType.int16:
+        np_dtype = np.int16
+    elif dtype == DType.int8:
+        np_dtype = np.int8
+    elif dtype == DType.index:
+        np_dtype = np.intp
+    elif dtype == DType.uint64:
+        np_dtype = np.uint64
+    elif dtype == DType.uint32:
+        np_dtype = np.uint32
+    elif dtype == DType.uint16:
+        np_dtype = np.uint16
+    elif dtype == DType.uint8:
+        np_dtype = np.uint8
+    elif dtype == DType.bool:
+        np_dtype = np.bool_
+
+    var array_shape: NDArrayShape = NDArrayShape(shape)
+    var np_arr = np.array(data, dtype= np_dtype, order= order.upper())
+    var pointer = np_arr.__array_interface__['data'][0].unsafe_get_as_pointer[dtype]()
+    var A: NDArray[dtype] = NDArray[dtype](array_shape, order)
+    memcpy[Scalar[dtype]](A._buf.ptr, pointer, A.size)
     return A^
 
 fn arrayC[
@@ -2220,15 +2248,42 @@ fn arrayC[
         if Int(real.shape[i]) == 1:
             continue
         shape.append(Int(real.shape[i]))
-    A = ComplexNDArray[dtype](shape=shape, order=order)
 
-    for i in range(A.size):
-        (A._re._buf.ptr + i).init_pointee_copy(
-            Float64(real.item(PythonObject(i))).cast[dtype]()
-        )
-        (A._im._buf.ptr + i).init_pointee_copy(
-            Float64(imag.item(PythonObject(i))).cast[dtype]()
-        )
+    var np = Python.import_module("numpy")
+    var np_dtype = np.float64
+    if dtype == DType.float16:
+        np_dtype = np.float16
+    elif dtype == DType.float32:
+        np_dtype = np.float32
+    elif dtype == DType.int64:
+        np_dtype = np.int64
+    elif dtype == DType.int32:
+        np_dtype = np.int32
+    elif dtype == DType.int16:
+        np_dtype = np.int16
+    elif dtype == DType.int8:
+        np_dtype = np.int8
+    elif dtype == DType.index:
+        np_dtype = np.intp
+    elif dtype == DType.uint64:
+        np_dtype = np.uint64
+    elif dtype == DType.uint32:
+        np_dtype = np.uint32
+    elif dtype == DType.uint16:
+        np_dtype = np.uint16
+    elif dtype == DType.uint8:
+        np_dtype = np.uint8
+    elif dtype == DType.bool:
+        np_dtype = np.bool_
+
+    var array_shape: NDArrayShape = NDArrayShape(shape)
+    var np_arr = np.array(real, dtype= np_dtype, order= order.upper())
+    var np_arr_imag = np.array(imag, dtype= np_dtype, order= order.upper())
+    var pointer = np_arr.__array_interface__['data'][0].unsafe_get_as_pointer[dtype]()
+    var pointer_imag = np_arr_imag.__array_interface__['data'][0].unsafe_get_as_pointer[dtype]()
+    var A: ComplexNDArray[dtype] = ComplexNDArray[dtype](array_shape, order)
+    memcpy[Scalar[dtype]](A._re._buf.ptr, pointer, A._re.size)
+    memcpy[Scalar[dtype]](A._im._buf.ptr, pointer_imag, A._im.size)
     return A^
 
 fn array[

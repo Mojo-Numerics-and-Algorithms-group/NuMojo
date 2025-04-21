@@ -158,39 +158,95 @@ fn argmax[
     return numojo.apply_along_axis[func1d=argmax_1d](a=a, axis=normalized_axis)
 
 
+@always_inline
+fn find_extrema_index[
+    dtype: DType, find_max: Bool
+](A: Matrix[dtype]) raises -> Scalar[DType.index]:
+    """Find index of min/max value, either in whole matrix or along an axis."""
+
+    var extreme_val = A[0, 0]
+    var extreme_idx: Scalar[DType.index] = 0
+
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            var current = A[i, j]
+            var linear_idx = i * A.shape[1] + j
+
+            if find_max:
+                if current > extreme_val:
+                    extreme_val = current
+                    extreme_idx = linear_idx
+            else:
+                if current < extreme_val:
+                    extreme_val = current
+                    extreme_idx = linear_idx
+
+    return extreme_idx
+
+
+@always_inline
+fn find_extrema_index[
+    dtype: DType, find_max: Bool
+](A: Matrix[dtype], axis: Optional[Int]) raises -> Matrix[DType.index]:
+    """Find index of min/max value, either in whole matrix or along an axis."""
+
+    if axis != 0 and axis != 1:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+    var B = Matrix[DType.index](
+        shape=(A.shape[0], 1) if axis == 1 else (1, A.shape[1])
+    )
+
+    if axis == 1:
+        for i in range(A.shape[0]):
+            var extreme_val = A[i, 0]
+            var extreme_idx = 0
+
+            for j in range(1, A.shape[1]):
+                var current = A[i, j]
+
+                if find_max:
+                    if current > extreme_val:
+                        extreme_val = current
+                        extreme_idx = j
+                else:
+                    if current < extreme_val:
+                        extreme_val = current
+                        extreme_idx = j
+
+            B[i, 0] = extreme_idx
+    else:
+        for j in range(A.shape[1]):
+            var extreme_val = A[0, j]
+            var extreme_idx = 0
+
+            for i in range(1, A.shape[0]):
+                var current = A[i, j]
+
+                if find_max:
+                    if current > extreme_val:
+                        extreme_val = current
+                        extreme_idx = i
+                else:
+                    if current < extreme_val:
+                        extreme_val = current
+                        extreme_idx = i
+
+            B[0, j] = extreme_idx
+
+    return B^
+
+
 fn argmax[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.index]:
-    """
-    Index of the max. It is first flattened before sorting.
-    """
-
-    var max_index: Scalar[DType.index]
-    _, max_index = _max(A, 0, A.size - 1)
-
-    return max_index
+    """Find index of max value in a flattened matrix."""
+    return find_extrema_index[dtype, True](A)
 
 
 fn argmax[
     dtype: DType
 ](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
-    """
-    Index of the max along the given axis.
-    """
-    if axis == 1:
-        var B = Matrix[DType.index](shape=(A.shape[0], 1))
-        for i in range(A.shape[0]):
-            B._store(
-                i,
-                0,
-                _max(A, start=i * A.strides[0], end=(i + 1) * A.strides[0] - 1)[
-                    1
-                ]
-                - i * A.strides[0],
-            )
-        return B^
-    elif axis == 0:
-        return transpose(argmax(transpose(A), axis=1))
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
+    """Find indices of max values along the given axis."""
+    return find_extrema_index[dtype, True](A, axis)
 
 
 fn argmin[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.index]:
@@ -257,11 +313,7 @@ fn argmin[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.index]:
     """
     Index of the min. It is first flattened before sorting.
     """
-
-    var min_index: Scalar[DType.index]
-    _, min_index = _min(A, 0, A.size - 1)
-
-    return min_index
+    return find_extrema_index[dtype, False](A)
 
 
 fn argmin[
@@ -270,19 +322,4 @@ fn argmin[
     """
     Index of the min along the given axis.
     """
-    if axis == 1:
-        var B = Matrix[DType.index](shape=(A.shape[0], 1))
-        for i in range(A.shape[0]):
-            B._store(
-                i,
-                0,
-                _min(A, start=i * A.strides[0], end=(i + 1) * A.strides[0] - 1)[
-                    1
-                ]
-                - i * A.strides[0],
-            )
-        return B^
-    elif axis == 0:
-        return transpose(argmin(transpose(A), axis=1))
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
+    return find_extrema_index[dtype, False](A, axis)

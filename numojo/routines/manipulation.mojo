@@ -284,7 +284,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Transpose of matrix.
     """
 
-    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]))
+    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=A.order())
 
     if A.shape[0] == 1 or A.shape[1] == 1:
         memcpy(B._buf.ptr, A._buf.ptr, A.size)
@@ -395,7 +395,9 @@ fn broadcast_to[
 
 fn broadcast_to[
     dtype: DType
-](A: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+](
+    A: Matrix[dtype], shape: Tuple[Int, Int], override_order: String = ""
+) raises -> Matrix[dtype]:
     """
     Broadcasts the vector to the given shape.
 
@@ -426,12 +428,17 @@ fn broadcast_to[
     Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
     ```
     """
+    var new_order: String
+    if override_order == "":
+        new_order = A.order()
+    else:
+        new_order = override_order
 
-    var B = Matrix[dtype](shape)
+    var B = Matrix[dtype](shape, order=new_order)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        B = A
+        return A
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = Matrix.full[dtype](shape, A[0, 0])
+        B = Matrix.full[dtype](shape, A[0, 0], order=new_order)
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(
@@ -453,13 +460,15 @@ fn broadcast_to[
 
 fn broadcast_to[
     dtype: DType
-](A: Scalar[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+](A: Scalar[dtype], shape: Tuple[Int, Int], order: String) raises -> Matrix[
+    dtype
+]:
     """
     Broadcasts the scalar to the given shape.
     """
 
     var B = Matrix[dtype](shape)
-    B = Matrix.full[dtype](shape, A)
+    B = Matrix.full[dtype](shape, A, order=order)
     return B^
 
 

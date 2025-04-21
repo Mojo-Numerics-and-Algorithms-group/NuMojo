@@ -144,7 +144,22 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
 
-        if A.flags.C_CONTIGUOUS:
+        if A.flags.F_CONTIGUOUS:
+
+            @parameter
+            fn calc_columns(j: Int):
+                @parameter
+                fn col_sum[width: Int](i: Int):
+                    B._store(
+                        0,
+                        j,
+                        B._load(0, j) + A._load[width=width](i, j).reduce_add(),
+                    )
+
+                vectorize[col_sum, width](A.shape[0])
+
+            parallelize[calc_columns](A.shape[1], A.shape[1])
+        else:
             for i in range(A.shape[0]):
 
                 @parameter
@@ -154,22 +169,6 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
                     )
 
                 vectorize[cal_vec_sum, width](A.shape[1])
-            else:
-
-                @parameter
-                fn calc_columns(j: Int):
-                    @parameter
-                    fn col_sum[width: Int](i: Int):
-                        B._store(
-                            0,
-                            j,
-                            B._load(0, j)
-                            + A._load[width=width](i, j).reduce_add(),
-                        )
-
-                    vectorize[col_sum, width](A.shape[0])
-
-                parallelize[calc_columns](A.shape[1], A.shape[1])
 
         return B^
 

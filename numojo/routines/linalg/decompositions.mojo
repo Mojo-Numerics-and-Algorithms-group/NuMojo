@@ -412,6 +412,24 @@ fn eig[
     tol: Scalar[dtype] = 1.0e-12,
     max_iter: Int = 10000,
 ) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+    """
+    Computes the eigenvalue decomposition for symmetric matrices using the QR algorithm.
+    For best performance, the input matrix should be in column-major order.
+
+    Args:
+        A: The input matrix. Must be square and symmetric.
+        tol: Convergence tolerance for off-diagonal elements.
+        max_iter: Maximum number of iterations for the QR algorithm.
+
+    Returns:
+        A tuple `(Q, D)` where:
+            - Q: A matrix whose columns are the eigenvectors
+            - D: A diagonal matrix containing the eigenvalues
+
+    Raises:
+        Error: If the matrix is not square or symmetric
+        Error: If the algorithm does not converge within max_iter iterations
+    """
     if A.shape[0] != A.shape[1]:
         raise Error("Matrix is not square.")
 
@@ -449,11 +467,11 @@ fn eig[
             )
         )
 
-    var Lambda = Matrix.zeros[dtype](shape=(n, n), order=A.order())
+    var D = Matrix.zeros[dtype](shape=(n, n), order=A.order())
     for i in range(n):
-        Lambda._store(i, i, T._load(i, i))
+        D._store(i, i, T._load(i, i))
 
     if A.flags.C_CONTIGUOUS:
         Q_total = Q_total.reorder_layout()
 
-    return Q_total^, Lambda^
+    return Q_total^, D^

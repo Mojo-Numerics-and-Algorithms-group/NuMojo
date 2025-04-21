@@ -3,6 +3,9 @@ from numojo.prelude import *
 from numojo.core.matrix import Matrix
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
+from sys import is_defined
+
+alias order = "F" if is_defined["F_CONTIGUOUS"]() else "C"
 
 # ===-----------------------------------------------------------------------===#
 # Main functions
@@ -39,7 +42,7 @@ fn check_values_close[
 
 def test_manipulation():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((10, 10)) * 1000
+    var A = Matrix.rand[f64]((10, 10), order=order) * 1000
     var Anp = np.matrix(A.to_numpy())
     check_matrices_equal(
         A.astype[nm.i32](),
@@ -70,7 +73,7 @@ def test_manipulation():
 def test_full():
     var np = Python.import_module("numpy")
     check_matrices_equal(
-        Matrix.full[f64]((10, 10), 10),
+        Matrix.full[f64]((10, 10), 10, order=order),
         np.full((10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
@@ -79,7 +82,7 @@ def test_full():
 def test_zeros():
     var np = Python.import_module("numpy")
     check_matrices_equal(
-        Matrix.zeros[f64](shape=(10, 10)),
+        Matrix.zeros[f64](shape=(10, 10), order=order),
         np.zeros((10, 10), dtype=np.float64),
         "Zeros is broken",
     )
@@ -92,9 +95,9 @@ def test_zeros():
 
 def test_arithmetic():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((10, 10))
-    var B = Matrix.rand[f64]((10, 10))
-    var C = Matrix.rand[f64]((10, 1))
+    var A = Matrix.rand[f64]((10, 10), order=order)
+    var B = Matrix.rand[f64]((10, 10), order=order)
+    var C = Matrix.rand[f64]((10, 1), order=order)
     var Ap = A.to_numpy()
     var Bp = B.to_numpy()
     var Cp = C.to_numpy()
@@ -116,8 +119,8 @@ def test_arithmetic():
 
 def test_logic():
     var np = Python.import_module("numpy")
-    var A = Matrix.ones((5, 1))
-    var B = Matrix.ones((5, 1))
+    var A = Matrix.ones((5, 1), order=order)
+    var B = Matrix.ones((5, 1), order=order)
     var L = Matrix.fromstring[i8](
         "[[0,0,0],[0,0,1],[1,1,1],[1,0,0]]", shape=(4, 3)
     )
@@ -156,12 +159,12 @@ def test_logic():
 
 def test_linalg():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((100, 100))
-    var B = Matrix.rand[f64]((100, 100))
+    var A = Matrix.rand[f64]((100, 100), order=order)
+    var B = Matrix.rand[f64]((100, 100), order=order)
     var E = Matrix.fromstring(
-        "[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3)
+        "[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3), order=order
     )
-    var Y = Matrix.rand((100, 1))
+    var Y = Matrix.rand((100, 1), order=order)
     var Anp = A.to_numpy()
     var Bnp = B.to_numpy()
     var Ynp = Y.to_numpy()
@@ -209,7 +212,7 @@ def test_linalg():
 
 
 def test_qr_decomposition():
-    A = Matrix.rand[f64]((20, 20))
+    A = Matrix.rand[f64]((20, 20), order=order)
 
     var np = Python.import_module("numpy")
 
@@ -229,7 +232,7 @@ def test_qr_decomposition():
 
 def test_qr_decomposition_asym_reduced():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((12, 5))
+    var A = Matrix.rand[f64]((12, 5), order=order)
     Q, R = nm.linalg.qr(A, mode="reduced")
 
     assert_true(
@@ -257,7 +260,7 @@ def test_qr_decomposition_asym_reduced():
 
 def test_qr_decomposition_asym_complete():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((12, 5))
+    var A = Matrix.rand[f64]((12, 5), order=order)
     Q, R = nm.linalg.qr(A, mode="complete")
 
     assert_true(
@@ -285,7 +288,7 @@ def test_qr_decomposition_asym_complete():
 
 def test_qr_decomposition_asym_complete2():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((5, 12))
+    var A = Matrix.rand[f64]((5, 12), order=order)
     Q, R = nm.linalg.qr(A, mode="complete")
 
     assert_true(
@@ -318,7 +321,7 @@ def test_qr_decomposition_asym_complete2():
 
 def test_math():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((100, 100))
+    var A = Matrix.rand[f64]((100, 100), order=order)
     var Anp = np.matrix(A.to_numpy())
 
     assert_true(
@@ -370,7 +373,7 @@ def test_math():
 
 def test_trigonometric():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((100, 100))
+    var A = Matrix.rand[f64]((100, 100), order=order)
     var Anp = np.matrix(A.to_numpy())
     check_matrices_close(nm.sin(A), np.sin(Anp), "sin is broken")
     check_matrices_close(nm.cos(A), np.cos(Anp), "cos is broken")
@@ -385,7 +388,9 @@ def test_trigonometric():
 
 def test_hyperbolic():
     var np = Python.import_module("numpy")
-    var A = Matrix.fromstring("[[1,2,3],[4,5,6],[7,8,9]]", shape=(3, 3))
+    var A = Matrix.fromstring(
+        "[[1,2,3],[4,5,6],[7,8,9]]", shape=(3, 3), order=order
+    )
     var B = A / 10
     var Anp = np.matrix(A.to_numpy())
     var Bnp = np.matrix(B.to_numpy())
@@ -402,7 +407,7 @@ def test_hyperbolic():
 
 def test_sorting():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((10, 10))
+    var A = Matrix.rand[f64]((10, 10), order=order)
     var Anp = np.matrix(A.to_numpy())
 
     check_matrices_close(
@@ -428,7 +433,7 @@ def test_sorting():
 
 def test_searching():
     var np = Python.import_module("numpy")
-    var A = Matrix.rand[f64]((10, 10))
+    var A = Matrix.rand[f64]((10, 10), order=order)
     var Anp = np.matrix(A.to_numpy())
 
     check_values_close(

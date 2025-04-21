@@ -283,8 +283,11 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
+    var order = "F"
+    if A.flags.C_CONTIGUOUS:
+        order = "C"
 
-    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=A.order())
+    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)
 
     if A.shape[0] == 1 or A.shape[1] == 1:
         memcpy(B._buf.ptr, A._buf.ptr, A.size)
@@ -428,17 +431,17 @@ fn broadcast_to[
     Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
     ```
     """
-    var new_order: String
+    var ord: String
     if override_order == "":
-        new_order = A.order()
+        ord = A.order()
     else:
-        new_order = override_order
+        ord = override_order
 
-    var B = Matrix[dtype](shape, order=new_order)
+    var B = Matrix[dtype](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
         return A
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = Matrix.full[dtype](shape, A[0, 0], order=new_order)
+        B = Matrix.full[dtype](shape, A[0, 0], order=ord)
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(

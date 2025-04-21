@@ -381,25 +381,67 @@ fn matmul[
             )
         )
 
-    var C: Matrix[dtype] = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]))
+    var C: Matrix[dtype]
 
-    @parameter
-    fn calculate_CC(m: Int):
-        for k in range(A.shape[1]):
+    if A.flags.C_CONTIGUOUS and B.flags.C_CONTIGUOUS:
+        C = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]), order=B.order())
 
-            @parameter
-            fn dot[simd_width: Int](n: Int):
-                C._store[simd_width](
-                    m,
-                    n,
-                    C._load[simd_width](m, n)
-                    + A._load(m, k) * B._load[simd_width](k, n),
-                )
+        @parameter
+        fn calculate_CC(m: Int):
+            for k in range(A.shape[1]):
 
-            vectorize[dot, width](B.shape[1])
+                @parameter
+                fn dot[simd_width: Int](n: Int):
+                    C._store[simd_width](
+                        m,
+                        n,
+                        C._load[simd_width](m, n)
+                        + A._load(m, k) * B._load[simd_width](k, n),
+                    )
 
-    parallelize[calculate_CC](A.shape[0], A.shape[0])
+                vectorize[dot, width](B.shape[1])
 
+        parallelize[calculate_CC](A.shape[0], A.shape[0])
+    elif A.flags.F_CONTIGUOUS and B.flags.F_CONTIGUOUS:
+        C = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]), order=B.order())
+
+        @parameter
+        fn calculate_FF(n: Int):
+            for k in range(A.shape[1]):
+
+                @parameter
+                fn dot_F[simd_width: Int](m: Int):
+                    C._store[simd_width](
+                        m,
+                        n,
+                        C._load[simd_width](m, n)
+                        + A._load[simd_width](m, k) * B._load(k, n),
+                    )
+
+                vectorize[dot_F, width](A.shape[0])
+
+        parallelize[calculate_FF](B.shape[1], B.shape[1])
+    elif A.flags.C_CONTIGUOUS and B.flags.F_CONTIGUOUS:
+        C = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]), order=B.order())
+
+        @parameter
+        fn calculate_CF(m: Int):
+            for n in range(B.shape[1]):
+                var sum: Scalar[dtype] = 0.0
+
+                @parameter
+                fn dot_product[simd_width: Int](k: Int):
+                    sum += (
+                        A._load[simd_width](m, k) * B._load[simd_width](k, n)
+                    ).reduce_add()
+
+                vectorize[dot_product, width](A.shape[1])
+                C._store(m, n, sum)
+
+        parallelize[calculate_CF](A.shape[0], A.shape[0])
+
+    else:
+        C = matmul(A.reorder_layout(), B)
     var _A = A
     var _B = B
 

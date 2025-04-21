@@ -1221,7 +1221,7 @@ struct Matrix[dtype: DType = DType.float64](
 
     fn reorder_layout(self) -> Self:
         """
-        reorder_layout matrix.
+        Reorder_layout matrix.
         """
         return reorder_layout(self)
 
@@ -1417,6 +1417,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         Args:
             shape: The shape of the Matrix.
+            order: The order of the Matrix. "C" or "F".
         """
         var result = Matrix[dtype](shape, order)
         for i in range(result.size):
@@ -1491,6 +1492,7 @@ struct Matrix[dtype: DType = DType.float64](
         Args:
             text: String representation of a matrix.
             shape: Shape of the matrix.
+            order: Order of the matrix. "C" or "F".
         """
 
         var data = List[Scalar[dtype]]()

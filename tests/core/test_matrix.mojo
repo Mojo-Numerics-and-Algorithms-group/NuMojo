@@ -319,6 +319,79 @@ def test_qr_decomposition_asym_complete2():
     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
 
 
+def test_eigen_decomposition():
+    var np = Python.import_module("numpy")
+
+    # Create a symmetric matrix by adding a matrix to its transpose
+    var A_random = Matrix.rand[f64]((10, 10), order=order)
+    var A = A_random + A_random.transpose()
+    var Anp = A.to_numpy()
+
+    # Compute eigendecomposition
+    Q, Lambda = nm.linalg.eig(A)
+
+    # Use NumPy for comparison
+    namedtuple = np.linalg.eig(Anp)
+
+    np_eigenvalues = namedtuple.eigenvalues
+    print(np_eigenvalues)
+    print(Lambda.to_numpy())
+    print(np.diag(Lambda.to_numpy()))
+
+    # Sort eigenvalues and eigenvectors for comparison (numpy doesn't guarantee order)
+    var np_sorted_eigenvalues = np.sort(np_eigenvalues)
+    var eigenvalues = np.diag(Lambda.to_numpy())
+    var sorted_eigenvalues = np.sort(eigenvalues)
+
+    assert_true(
+        np.allclose(sorted_eigenvalues, np_sorted_eigenvalues, atol=1e-10),
+        "Eigenvalues don't match expected values",
+    )
+
+    # Check that eigenvectors are orthogonal (Q^T Q = I)
+    var id = Q.transpose() @ Q
+    assert_true(
+        np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-10),
+        "Eigenvectors are not orthogonal",
+    )
+
+    # Check that A = Q * Lambda * Q^T (eigendecomposition property)
+    var A_reconstructed = Q @ Lambda @ Q.transpose()
+    print(A_reconstructed - A)
+    assert_true(
+        np.allclose(A_reconstructed.to_numpy(), Anp, atol=1e-10),
+        "A ≠ Q * Lambda * Q^T",
+    )
+
+    # Verify A*v = λ*v for each eigenvector and eigenvalue
+    for i in range(A.shape[0]):
+        var eigenvector = Matrix.zeros[f64]((A.shape[0], 1), order=order)
+        for j in range(A.shape[0]):
+            eigenvector[j, 0] = Q[j, i]
+
+        var Av = A @ eigenvector
+        var lambda_times_v = eigenvector * Lambda[i, i]
+
+        assert_true(
+            np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
+            "Eigenvector verification failed: A*v ≠ λ*v",
+        )
+
+    # Verify A*v = λ*v for each eigenvector and eigenvalue
+    for i in range(A.shape[0]):
+        var eigenvector = Matrix.zeros[f64]((A.shape[0], 1), order=order)
+        for j in range(A.shape[0]):
+            eigenvector[j, 0] = Q[j, i]
+
+        var Av = A @ eigenvector
+        var lambda_times_v = eigenvector * Lambda[i, i]
+
+        assert_true(
+            np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
+            "Eigenvector verification failed: A*v ≠ λ*v",
+        )
+
+
 # ===-----------------------------------------------------------------------===#
 # Mathematics
 # ===-----------------------------------------------------------------------===#

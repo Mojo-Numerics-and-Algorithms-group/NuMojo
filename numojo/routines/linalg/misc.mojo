@@ -9,6 +9,9 @@
 # Miscellaneous Linear Algebra Routines
 # ===----------------------------------------------------------------------=== #
 
+from sys import simdwidthof
+from algorithm import parallelize, vectorize
+
 from numojo.core.ndarray import NDArray
 
 
@@ -59,3 +62,40 @@ fn diagonal[
             res.item(i) = a.item(i - offset, i)
 
     return res
+
+
+fn issymmetric[
+    dtype: DType
+](
+    A: Matrix[dtype], rtol: Scalar[dtype] = 1e-5, atol: Scalar[dtype] = 1e-8
+) -> Bool:
+    """
+    Returns True if A is symmetric, False otherwise.
+
+    Parameters:
+        dtype: Data type of the Matrix Elements.
+
+    Args:
+        A: A Matrix.
+        rtol: Relative tolerance for comparison.
+        atol: Absolute tolerance for comparison.
+
+    Returns:
+        True if the array is symmetric, False otherwise.
+    """
+
+    if A.shape[0] != A.shape[1]:
+        return False
+
+    var n = A.shape[0]
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            var a_ij = A._load(i, j)
+            var a_ji = A._load(j, i)
+            var diff = abs(a_ij - a_ji)
+            var allowed_error = atol + rtol * max(abs(a_ij), abs(a_ji))
+            if diff > allowed_error:
+                return False
+
+    return True

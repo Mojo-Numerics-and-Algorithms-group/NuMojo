@@ -7,10 +7,11 @@ from algorithm import parallelize, vectorize
 import math as builtin_math
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, issymmetric
 from numojo.routines.creation import zeros, eye, full
 
 
+@always_inline
 fn _compute_householder[
     dtype: DType
 ](mut H: Matrix[dtype], mut R: Matrix[dtype], work_index: Int) raises -> None:
@@ -69,6 +70,7 @@ fn _compute_householder[
     vectorize[scaling_factor_increment_vec, simd_width](rRows)
 
 
+@always_inline
 fn _apply_householder[
     dtype: DType
 ](
@@ -396,3 +398,62 @@ fn qr[
             R = R[:inner, :]
 
     return Q^, R^
+
+
+# ===----------------------------------------------------------------------=== #
+# Eigenvalue Decomposition (symmetric) via the QR algorithm
+# ===----------------------------------------------------------------------=== #
+
+
+fn eig[
+    dtype: DType
+](
+    A: Matrix[dtype],
+    tol: Scalar[dtype] = 1.0e-12,
+    max_iter: Int = 10000,
+) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+    if A.shape[0] != A.shape[1]:
+        raise Error("Matrix is not square.")
+
+    var n = A.shape[0]
+    if not issymmetric(A):
+        raise Error("Matrix is not symmetric.")
+
+    var T: Matrix[dtype]
+    if A.flags.C_CONTIGUOUS:
+        T = A.reorder_layout()
+    else:
+        T = A
+
+    var Q_total = Matrix.identity[dtype](n)
+
+    for k in range(max_iter):
+        var Qk: Matrix[dtype]
+        var Rk: Matrix[dtype]
+        Qk, Rk = qr(T, mode="complete")
+
+        T = Rk @ Qk
+        Q_total = Q_total @ Qk
+
+        var offdiag_norm: Scalar[dtype] = 0
+        for i in range(n):
+            for j in range(i + 1, n):
+                var v = T._load(i, j)
+                offdiag_norm += v * v
+        if builtin_math.sqrt(offdiag_norm) < tol:
+            break
+    else:
+        raise Error(
+            String("QR algorithm did not converge in {} iterations.").format(
+                max_iter
+            )
+        )
+
+    var Lambda = Matrix.zeros[dtype](shape=(n, n), order=A.order())
+    for i in range(n):
+        Lambda._store(i, i, T._load(i, i))
+
+    if A.flags.C_CONTIGUOUS:
+        Q_total = Q_total.reorder_layout()
+
+    return Q_total^, Lambda^

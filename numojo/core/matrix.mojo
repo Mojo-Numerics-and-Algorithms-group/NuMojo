@@ -18,6 +18,8 @@ from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
 from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
+from numojo.routines.linalg.misc import issymmetric
+
 
 # ===----------------------------------------------------------------------===#
 # Matrix struct
@@ -1209,9 +1211,15 @@ struct Matrix[dtype: DType = DType.float64](
 
     fn trace(self) raises -> Scalar[dtype]:
         """
-        Transpose of matrix.
+        Trace of matrix.
         """
         return numojo.linalg.trace(self)
+
+    fn issymmetric(self) -> Bool:
+        """
+        Transpose of matrix.
+        """
+        return issymmetric(self)
 
     fn transpose(self) -> Self:
         """

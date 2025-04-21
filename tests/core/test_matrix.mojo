@@ -105,6 +105,11 @@ def test_arithmetic():
     check_matrices_close(A - B, Ap - Bp, "Sub is broken")
     check_matrices_close(A * B, Ap * Bp, "Mul is broken")
     check_matrices_close(A @ B, np.matmul(Ap, Bp), "Matmul is broken")
+    check_matrices_close(
+        A @ B.reorder_layout(),
+        np.matmul(Ap, Bp),
+        "Matmul is broken for mixed memory layouts",
+    )
     check_matrices_close(A + C, Ap + Cp, "Add (broadcast) is broken")
     check_matrices_close(A - C, Ap - Cp, "Sub (broadcast) is broken")
     check_matrices_close(A * C, Ap * Cp, "Mul (broadcast) is broken")

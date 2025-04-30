@@ -234,11 +234,18 @@ fn cumprod[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
     print(mat.cumprod(A))
     ```
     """
+    var reorder = False
+    if A.flags.F_CONTIGUOUS:
+        reorder = True
+        A = A.reorder_layout()
 
     A.resize(shape=(1, A.size))
 
     for i in range(1, A.size):
         A._buf.ptr[i] *= A._buf.ptr[i - 1]
+
+    if reorder:
+        A = A.reorder_layout()
 
     return A^
 
@@ -261,24 +268,42 @@ fn cumprod[
     print(mat.cumprod(A, axis=1))
     ```
     """
-
     alias width: Int = simdwidthof[dtype]()
 
     if axis == 0:
-        for i in range(1, A.shape[0]):
+        if A.flags.C_CONTIGUOUS:
+            for i in range(1, A.shape[0]):
 
-            @parameter
-            fn cal_vec[width: Int](j: Int):
-                A._store[width](
-                    i, j, A._load[width](i - 1, j) * A._load[width](i, j)
-                )
+                @parameter
+                fn cal_vec_row[width: Int](j: Int):
+                    A._store[width](
+                        i, j, A._load[width](i - 1, j) * A._load[width](i, j)
+                    )
 
-            vectorize[cal_vec, width](A.shape[1])
-
-        return A^
+                vectorize[cal_vec_row, width](A.shape[1])
+            return A^
+        else:
+            for j in range(A.shape[1]):
+                for i in range(1, A.shape[0]):
+                    A[i, j] = A[i - 1, j] * A[i, j]
+            return A^
 
     elif axis == 1:
-        return transpose(cumprod(transpose(A), axis=0))
+        if A.flags.C_CONTIGUOUS:
+            for i in range(A.shape[0]):
+                for j in range(1, A.shape[1]):
+                    A[i, j] = A[i, j - 1] * A[i, j]
+            return A^
+        else:
+            for j in range(1, A.shape[1]):
 
+                @parameter
+                fn cal_vec_column[width: Int](i: Int):
+                    A._store[width](
+                        i, j, A._load[width](i, j - 1) * A._load[width](i, j)
+                    )
+
+                vectorize[cal_vec_column, width](A.shape[0])
+            return A^
     else:
         raise Error(String("The axis can either be 1 or 0!"))

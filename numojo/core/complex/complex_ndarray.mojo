@@ -85,7 +85,11 @@ from numojo.routines.statistics.averages import mean
 # ===----------------------------------------------------------------------===#
 # ComplexNDArray
 # ===----------------------------------------------------------------------===#
+# TODO: Add SIMD width as a parameter.
 @value
+struct ComplexNDArray[dtype: DType = DType.float64](
+    Stringable, Representable, CollectionElement, Sized, Writable
+):
 struct ComplexNDArray[dtype: DType = DType.float64](
     Stringable, Representable, CollectionElement, Sized, Writable
 ):

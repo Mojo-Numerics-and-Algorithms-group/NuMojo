@@ -103,15 +103,45 @@ fn sort[
     """
     Sort the Matrix along the given axis.
     """
+    var order = A.order()
+
     if axis == 1:
-        var I = Matrix.zeros[DType.index](shape=A.shape)
+        var result = Matrix[dtype](shape=A.shape, order=order)
+
         for i in range(A.shape[0]):
-            _sort_inplace(
-                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
+            var row = Matrix[dtype](shape=(1, A.shape[1]), order="C")
+            var indices = Matrix.zeros[DType.index](
+                shape=(1, A.shape[1]), order="C"
             )
-        return A^
+
+            for j in range(A.shape[1]):
+                row._store(0, j, A._load(i, j))
+
+            _sort_inplace(row, indices, 0, row.size - 1)
+
+            for j in range(A.shape[1]):
+                result._store(i, j, row._load(0, j))
+
+        return result^
+
     elif axis == 0:
-        return transpose(sort(transpose(A), axis=1))
+        var result = Matrix[dtype](shape=A.shape, order=order)
+
+        for j in range(A.shape[1]):
+            var col = Matrix[dtype](shape=(A.shape[0], 1), order="C")
+            var indices = Matrix.zeros[DType.index](
+                shape=(A.shape[0], 1), order="C"
+            )
+
+            for i in range(A.shape[0]):
+                col._store(i, 0, A._load(i, j))
+
+            _sort_inplace(col, indices, 0, col.size - 1)
+
+            for i in range(A.shape[0]):
+                result._store(i, j, col._load(i, 0))
+
+        return result^
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 
@@ -189,10 +219,14 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
     """
     Argsort the Matrix. It is first flattened before sorting.
     """
-    var I = Matrix[DType.index](shape=(1, A.size))
+    var I = Matrix[DType.index](shape=(1, A.size), order=A.order())
     for i in range(I.size):
         I._buf.ptr[i] = i
-    var B = A.flatten()
+    var B: Matrix[dtype]
+    if A.order() == "C":
+        B = A.flatten()
+    else:
+        B = A.reorder_layout().flatten().reorder_layout()
     _sort_inplace(B, I, 0, A.size - 1)
 
     return I^
@@ -204,19 +238,43 @@ fn argsort[
     """
     Argsort the Matrix along the given axis.
     """
+    var order = A.order()
+
     if axis == 1:
-        var I = Matrix[DType.index](shape=A.shape)
-        for i in range(I.shape[0]):
-            for j in range(I.shape[1]):
-                I._store(i, j, j)
+        var result = Matrix[DType.index](shape=A.shape, order=order)
 
         for i in range(A.shape[0]):
-            _sort_inplace(
-                A, I, left=i * A.strides[0], right=(i + 1) * A.strides[0] - 1
-            )
-        return I^
+            var row = Matrix[dtype](shape=(1, A.shape[1]), order="C")
+            var idx = Matrix[DType.index](shape=(1, A.shape[1]), order="C")
+
+            for j in range(A.shape[1]):
+                row._store(0, j, A._load(i, j))
+                idx._store(0, j, j)
+
+            _sort_inplace(row, idx, 0, row.size - 1)
+
+            for j in range(A.shape[1]):
+                result._store(i, j, idx._load(0, j))
+
+        return result^
+
     elif axis == 0:
-        return transpose(argsort(transpose(A), axis=1))
+        var result = Matrix[DType.index](shape=A.shape, order=order)
+
+        for j in range(A.shape[1]):
+            var col = Matrix[dtype](shape=(A.shape[0], 1), order="C")
+            var idx = Matrix[DType.index](shape=(A.shape[0], 1), order="C")
+
+            for i in range(A.shape[0]):
+                col._store(i, 0, A._load(i, j))
+                idx._store(i, 0, i)
+
+            _sort_inplace(col, idx, 0, col.size - 1)
+
+            for i in range(A.shape[0]):
+                result._store(i, j, idx._load(i, 0))
+
+        return result^
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 

@@ -283,8 +283,11 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
+    var order = "F"
+    if A.flags.C_CONTIGUOUS:
+        order = "C"
 
-    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]))
+    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)
 
     if A.shape[0] == 1 or A.shape[1] == 1:
         memcpy(B._buf.ptr, A._buf.ptr, A.size)
@@ -292,6 +295,42 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
         for i in range(B.shape[0]):
             for j in range(B.shape[1]):
                 B._store(i, j, A._load(j, i))
+    return B^
+
+
+fn reorder_layout[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Create a new Matrix with the opposite layout from A:
+    if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
+    If A is F-contiguous, create a new C-contiguous matrix.
+
+    Copy data into the new layout.
+    """
+
+    var rows = A.shape[0]
+    var cols = A.shape[1]
+
+    var new_order: String
+
+    try:
+        if A.flags["C_CONTIGUOUS"]:
+            new_order = "F"
+        else:
+            new_order = "C"
+    except Error:
+        return A
+
+    var B = Matrix[dtype](Tuple(rows, cols), new_order)
+
+    if new_order == "C":
+        for i in range(rows):
+            for j in range(cols):
+                B._buf.ptr[i * cols + j] = A._buf.ptr[i + j * rows]
+    else:
+        for j in range(cols):
+            for i in range(rows):
+                B._buf.ptr[j * rows + i] = A._buf.ptr[i * cols + j]
+
     return B^
 
 
@@ -359,7 +398,9 @@ fn broadcast_to[
 
 fn broadcast_to[
     dtype: DType
-](A: Matrix[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+](
+    A: Matrix[dtype], shape: Tuple[Int, Int], override_order: String = ""
+) raises -> Matrix[dtype]:
     """
     Broadcasts the vector to the given shape.
 
@@ -390,12 +431,17 @@ fn broadcast_to[
     Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
     ```
     """
+    var ord: String
+    if override_order == "":
+        ord = A.order()
+    else:
+        ord = override_order
 
-    var B = Matrix[dtype](shape)
+    var B = Matrix[dtype](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        B = A
+        return A
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = Matrix.full[dtype](shape, A[0, 0])
+        B = Matrix.full[dtype](shape, A[0, 0], order=ord)
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(
@@ -417,13 +463,15 @@ fn broadcast_to[
 
 fn broadcast_to[
     dtype: DType
-](A: Scalar[dtype], shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+](A: Scalar[dtype], shape: Tuple[Int, Int], order: String) raises -> Matrix[
+    dtype
+]:
     """
     Broadcasts the scalar to the given shape.
     """
 
     var B = Matrix[dtype](shape)
-    B = Matrix.full[dtype](shape, A)
+    B = Matrix.full[dtype](shape, A, order=order)
     return B^
 
 

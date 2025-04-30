@@ -141,36 +141,90 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     )
 
 
+@always_inline
+fn matrix_extrema[
+    dtype: DType, find_max: Bool
+](A: Matrix[dtype]) raises -> Scalar[dtype]:
+    """
+    Generic implementation for finding global min/max in a matrix.
+    Works with any memory layout (row-major or column-major).
+    """
+    var extreme_val = A[0, 0]
+
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            var current = A[i, j]
+            if find_max:
+                if current > extreme_val:
+                    extreme_val = current
+            else:
+                if current < extreme_val:
+                    extreme_val = current
+
+    return extreme_val
+
+
+@always_inline
+fn matrix_extrema_axis[
+    dtype: DType, find_max: Bool
+](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+    """
+    Generic implementation for finding min/max along an axis in a matrix.
+    Works with any memory layout (row-major or column-major).
+    """
+    if axis != 0 and axis != 1:
+        raise Error(String("The axis can either be 1 or 0!"))
+
+    var B = Matrix[dtype](
+        shape=(A.shape[0], 1) if axis == 1 else (1, A.shape[1])
+    )
+
+    if axis == 1:
+        for i in range(A.shape[0]):
+            var extreme_val = A[i, 0]
+
+            for j in range(1, A.shape[1]):
+                var current = A[i, j]
+
+                if find_max:
+                    if current > extreme_val:
+                        extreme_val = current
+                else:
+                    if current < extreme_val:
+                        extreme_val = current
+
+            B[i, 0] = extreme_val
+    else:
+        for j in range(A.shape[1]):
+            var extreme_val = A[0, j]
+
+            for i in range(1, A.shape[0]):
+                var current = A[i, j]
+
+                if find_max:
+                    if current > extreme_val:
+                        extreme_val = current
+                else:
+                    if current < extreme_val:
+                        extreme_val = current
+
+            B[0, j] = extreme_val
+
+    return B^
+
+
 fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
     Find max item. It is first flattened before sorting.
     """
-
-    var max_value: Scalar[dtype]
-    max_value, _ = _max(A, 0, A.size - 1)
-
-    return max_value
+    return matrix_extrema[dtype, True](A)
 
 
 fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Find max item along the given axis.
     """
-    if axis == 1:
-        var B = Matrix[dtype](shape=(A.shape[0], 1))
-        for i in range(A.shape[0]):
-            B._store(
-                i,
-                0,
-                _max(A, start=i * A.strides[0], end=(i + 1) * A.strides[0] - 1)[
-                    0
-                ],
-            )
-        return B^
-    elif axis == 0:
-        return transpose(max(transpose(A), axis=1))
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
+    return matrix_extrema_axis[dtype, True](A, axis)
 
 
 fn _max[
@@ -190,12 +244,38 @@ fn _max[
         )
 
     var max_index: Scalar[DType.index] = start
-    var max_value = A._buf.ptr[start]
+
+    var rows = A.shape[0]
+    var cols = A.shape[1]
+
+    var start_row: Int
+    var start_col: Int
+
+    if A.flags.F_CONTIGUOUS:
+        start_col = start // rows
+        start_row = start % rows
+    else:
+        start_row = start // cols
+        start_col = start % cols
+
+    var max_value = A[start_row, start_col]
 
     for i in range(start, end + 1):
-        if A._buf.ptr[i] > max_value:
-            max_value = A._buf.ptr[i]
-            max_index = i
+        var row: Int
+        var col: Int
+
+        if A.flags.F_CONTIGUOUS:
+            col = i // rows
+            row = i % rows
+        else:
+            row = i // cols
+            col = i % cols
+
+        if row < rows and col < cols:
+            var current_value = A[row, col]
+            if current_value > max_value:
+                max_value = current_value
+                max_index = i
 
     return (max_value, max_index)
 
@@ -255,34 +335,16 @@ fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
 
 fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
-    Find min item. It is first flattened before sorting.
+    Find min item.
     """
-
-    var min_value: Scalar[dtype]
-    min_value, _ = _min(A, 0, A.size - 1)
-
-    return min_value
+    return matrix_extrema[dtype, False](A)
 
 
 fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Find min item along the given axis.
     """
-    if axis == 1:
-        var B = Matrix[dtype](shape=(A.shape[0], 1))
-        for i in range(A.shape[0]):
-            B._store(
-                i,
-                0,
-                _min(A, start=i * A.strides[0], end=(i + 1) * A.strides[0] - 1)[
-                    0
-                ],
-            )
-        return B^
-    elif axis == 0:
-        return transpose(min(transpose(A), axis=1))
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
+    return matrix_extrema_axis[dtype, False](A, axis)
 
 
 fn _min[
@@ -302,12 +364,38 @@ fn _min[
         )
 
     var min_index: Scalar[DType.index] = start
-    var min_value = A._buf.ptr[start]
+
+    var rows = A.shape[0]
+    var cols = A.shape[1]
+
+    var start_row: Int
+    var start_col: Int
+
+    if A.flags.F_CONTIGUOUS:
+        start_col = start // rows
+        start_row = start % rows
+    else:
+        start_row = start // cols
+        start_col = start % cols
+
+    var min_value = A[start_row, start_col]
 
     for i in range(start, end + 1):
-        if A._buf.ptr[i] < min_value:
-            min_value = A._buf.ptr[i]
-            min_index = i
+        var row: Int
+        var col: Int
+
+        if A.flags.F_CONTIGUOUS:
+            col = i // rows
+            row = i % rows
+        else:
+            row = i // cols
+            col = i % cols
+
+        if row < rows and col < cols:
+            var current_value = A[row, col]
+            if current_value < min_value:
+                min_value = current_value
+                min_index = i
 
     return (min_value, min_index)
 

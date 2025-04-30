@@ -46,7 +46,7 @@ from sys import simdwidthof
 from utils import Variant
 
 from numojo.core.complex.complex_simd import ComplexSIMD
-from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
+from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
@@ -113,12 +113,26 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     var flags: Flags
     "Information about the memory layout of the array."
 
-    """LIFETIME METHODS"""
+    # ===-------------------------------------------------------------------===#
+    # Life cycle methods
+    # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
     fn __init__(
         out self, owned re: NDArray[Self.dtype], owned im: NDArray[Self.dtype]
-    ):
+    ) raises:
+        """
+        Initialize a ComplexNDArray with given real and imaginary parts.
+
+        Args:
+            re: Real part of the complex array.
+            im: Imaginary part of the complex array.
+        """
+        if re.shape != im.shape:
+            raise Error(
+                "Error in `numojo.ComplexNDArray.__init__()`: "
+                "Real and imaginary parts must have the same shape."
+            )
         self._re = re
         self._im = im
         self.ndim = re.ndim
@@ -245,7 +259,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._im = NDArray[Self.dtype](shape, strides, ndim, size, flags)
 
     fn __init__(
-        mut self,
+        out self,
         shape: NDArrayShape,
         ref buffer_re: UnsafePointer[Scalar[Self.dtype]],
         ref buffer_im: UnsafePointer[Scalar[Self.dtype]],
@@ -320,9 +334,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     # Getter dunders and other getter methods
     #
     # 1. Basic Indexing Operations
-    # fn _getitem(self, *indices: Int) -> Scalar[dtype]                         # Direct unsafe getter
-    # fn __getitem__(self) raises -> SIMD[dtype, 1]                             # Get 0d array value
-    # fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]                # Get by coordinate list
+    # fn _getitem(self, *indices: Int) -> ComplexSIMD[Self.dtype]                         # Direct unsafe getter
+    # fn __getitem__(self) raises -> ComplexSIMD[Self.dtype]                             # Get 0d array value
+    # fn __getitem__(self, index: Item) raises -> ComplexSIMD[Self.dtype]                # Get by coordinate list
     #
     # 2. Single Index Slicing
     # fn __getitem__(self, idx: Int) raises -> Self                             # Get by single index
@@ -339,11 +353,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     # fn __getitem__(self, mask: List[Bool]) raises -> Self                     # Get by boolean list
     #
     # 5. Low-level Access
-    # fn item(self, owned index: Int) raises -> Scalar[dtype]                   # Get item by linear index
-    # fn item(self, *index: Int) raises -> Scalar[dtype]                        # Get item by coordinates
-    # fn load(self, owned index: Int) raises -> Scalar[dtype]                   # Load with bounds check
-    # fn load[width: Int](self, index: Int) raises -> SIMD[dtype, width]        # Load SIMD value
-    # fn load[width: Int](self, *indices: Int) raises -> SIMD[dtype, width]     # Load SIMD at coordinates
+    # fn item(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Get item by linear index
+    # fn item(self, *index: Int) raises -> ComplexSIMD[Self.dtype]                        # Get item by coordinates
+    # fn load(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Load with bounds check
+    # fn load[width: Int](self, index: Int) raises -> ComplexSIMD[Self.dtype, width]        # Load SIMD value
+    # fn load[width: Int](self, *indices: Int) raises -> ComplexSIMD[Self.dtype, width]     # Load SIMD at coordinates
     # ===-------------------------------------------------------------------===#
 
     fn _getitem(self, *indices: Int) -> ComplexSIMD[Self.dtype]:

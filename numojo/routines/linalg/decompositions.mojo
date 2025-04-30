@@ -427,8 +427,8 @@ fn eig[
             - D: A diagonal matrix containing the eigenvalues
 
     Raises:
-        Error: If the matrix is not square or symmetric
-        Error: If the algorithm does not converge within max_iter iterations
+        Error: If the matrix is not square or symmetric.
+        Error: If the algorithm does not converge within max_iter iterations.
     """
     if A.shape[0] != A.shape[1]:
         raise Error("Matrix is not square.")

@@ -42,7 +42,7 @@ alias boolean = DType.bool
 
 # TODO: Optimize the conditions with dict and move it to compile time
 # Dict can't be created at compile time rn
-# ! Will get back to TypeCoercions after Mojo's type system is improved. 
+# ! Will get back to TypeCoercions after Mojo's type system is improved.
 # struct TypeCoercion:
 #     """Handles type coercion using a promotion matrix approach."""
 
@@ -107,18 +107,18 @@ alias boolean = DType.bool
 #         """Coerces a signed and unsigned integer type."""
 #         alias signed = T1 if T1.is_signed() else T2
 #         alias unsigned = T2 if T1.is_signed() else T1
-        
+
 #         # If unsigned fits in signed, use signed
 #         if unsigned.sizeof() < signed.sizeof():
 #             return signed
-        
+
 #         # For same sized types, go up to next bigger signed type
 #         if unsigned.sizeof() == signed.sizeof():
 #             if unsigned == u8: return i16
 #             if unsigned == u16: return i32
 #             if unsigned == u32: return i64
 #             return f64  # u64/i64 -> f64
-        
+
 #         # If unsigned is larger, use next wider signed type
 #         if unsigned == u16: return i32
 #         if unsigned == u32: return i64
@@ -133,11 +133,11 @@ alias boolean = DType.bool
 #             if int_type.sizeof() <= 2:  # i8, u8, i16, u16
 #                 return f32
 #             return f64
-        
+
 #         # For f32, promote to f64 if int won't fit
 #         if float_type == f32 and int_type.sizeof() >= 4:  # i32, u32, i64, u64
 #             return f64
-        
+
 #         return float_type
 
 #     @parameter
@@ -147,11 +147,11 @@ alias boolean = DType.bool
 #         # Same type or bool cases
 #         if T1 == T2:
 #             return T1
-        
+
 #         # Float + Float
 #         elif T1.is_floating_point() and T2.is_floating_point():
 #             return TypeCoercion.coerce_floats[T1, T2]()
-        
+
 #         # Int + Int
 #         elif T1.is_integral() and T2.is_integral():
 #             if T1.is_signed() and T2.is_signed():
@@ -160,49 +160,49 @@ alias boolean = DType.bool
 #                 return TypeCoercion.coerce_unsigned_ints[T1, T2]()
 #             else:
 #                 return TypeCoercion.coerce_mixed_ints[T1, T2]()
-            
+
 #         # Float + Int
 #         elif T1.is_floating_point() and T2.is_integral():
 #             return TypeCoercion.coerce_mixed[T2, T1]()
 #         elif T1.is_integral() and T2.is_floating_point():
 #             return TypeCoercion.coerce_mixed[T1, T2]()
-        
+
 #         # Fallback
 #         return T1
 
 
-# fn _concise_dtype_str(dtype: DType) -> String:
-#     """Returns a concise string representation of the data type."""
-#     if dtype == i8:
-#         return "i8"
-#     elif dtype == i16:
-#         return "i16"
-#     elif dtype == i32:
-#         return "i32"
-#     elif dtype == i64:
-#         return "i64"
-#     elif dtype == isize:
-#         return "index"
-#     elif dtype == u8:
-#         return "u8"
-#     elif dtype == u16:
-#         return "u16"
-#     elif dtype == u32:
-#         return "u32"
-#     elif dtype == u64:
-#         return "u64"
-#     elif dtype == f16:
-#         return "f16"
-#     elif dtype == f32:
-#         return "f32"
-#     elif dtype == f64:
-#         return "f64"
-#     elif dtype == boolean:
-#         return "boolean"
-#     elif dtype == isize:
-#         return "isize"
-#     else:
-#         return "Unknown"
+fn _concise_dtype_str(dtype: DType) -> String:
+    """Returns a concise string representation of the data type."""
+    if dtype == i8:
+        return "i8"
+    elif dtype == i16:
+        return "i16"
+    elif dtype == i32:
+        return "i32"
+    elif dtype == i64:
+        return "i64"
+    elif dtype == isize:
+        return "index"
+    elif dtype == u8:
+        return "u8"
+    elif dtype == u16:
+        return "u16"
+    elif dtype == u32:
+        return "u32"
+    elif dtype == u64:
+        return "u64"
+    elif dtype == f16:
+        return "f16"
+    elif dtype == f32:
+        return "f32"
+    elif dtype == f64:
+        return "f64"
+    elif dtype == boolean:
+        return "boolean"
+    elif dtype == isize:
+        return "isize"
+    else:
+        return "Unknown"
 
 
 # alias ranks: List[DType] = List[DType](
@@ -259,18 +259,18 @@ alias boolean = DType.bool
 #     """Coerces a signed and unsigned integer type."""
 #     alias signed = T1 if T1.is_signed() else T2
 #     alias unsigned = T2 if T1.is_signed() else T1
-    
+
 #     # If unsigned fits in signed, use signed
 #     if unsigned.sizeof() < signed.sizeof():
 #         return signed
-        
+
 #     # For same sized types, go up to next bigger signed type
 #     if unsigned.sizeof() == signed.sizeof():
 #         if unsigned == u8: return i16
 #         if unsigned == u16: return i32
 #         if unsigned == u32: return i64
 #         return f64  # u64/i64 -> f64
-    
+
 #     # If unsigned is larger, use next wider signed type
 #     if unsigned == u16: return i32
 #     if unsigned == u32: return i64
@@ -284,11 +284,11 @@ alias boolean = DType.bool
 #         if int_type.sizeof() <= 2:  # i8, u8, i16, u16
 #             return f32
 #         return f64
-        
+
 #     # For f32, promote to f64 if int won't fit
 #     if float_type == f32 and int_type.sizeof() >= 4:  # i32, u32, i64, u64
 #         return f64
-        
+
 #     return float_type
 
 # @parameter
@@ -297,11 +297,11 @@ alias boolean = DType.bool
 #     # Same type or bool cases
 #     if T1 == T2:
 #         return T1
-        
+
 #     # Float + Float
 #     elif T1.is_floating_point() and T2.is_floating_point():
 #         return TypeCoercion.coerce_floats[T1, T2]()
-        
+
 #     # Int + Int
 #     elif T1.is_integral() and T2.is_integral():
 #         if T1.is_signed() and T2.is_signed():
@@ -310,12 +310,12 @@ alias boolean = DType.bool
 #             return TypeCoercion.coerce_unsigned_ints[T1, T2]()
 #         else:
 #             return TypeCoercion.coerce_mixed_ints[T1, T2]()
-            
+
 #     # Float + Int
 #     elif T1.is_floating_point() and T2.is_integral():
 #         return TypeCoercion.coerce_mixed[T2, T1]()
 #     elif T1.is_integral() and T2.is_floating_point():
 #         return TypeCoercion.coerce_mixed[T1, T2]()
-        
+
 #     # Fallback
 #     return T1

@@ -46,7 +46,7 @@ from sys import simdwidthof
 from utils import Variant
 
 from numojo.core.complex.complex_simd import ComplexSIMD
-from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
+from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
@@ -90,9 +90,6 @@ from numojo.routines.statistics.averages import mean
 struct ComplexNDArray[dtype: DType = DType.float64](
     Stringable, Representable, CollectionElement, Sized, Writable
 ):
-struct ComplexNDArray[dtype: DType = DType.float64](
-    Stringable, Representable, CollectionElement, Sized, Writable
-):
     """
     Represents a Complex N-Dimensional Array.
 
@@ -115,7 +112,6 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     """Contains offset, strides."""
     var flags: Flags
     "Information about the memory layout of the array."
-
 
     # ===-------------------------------------------------------------------===#
     # Life cycle methods

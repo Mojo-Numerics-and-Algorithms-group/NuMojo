@@ -63,7 +63,7 @@ from utils import Variant
 
 import numojo.core._array_funcs as _af
 from numojo.core._math_funcs import Vectorized
-from numojo.core.datatypes import TypeCoercion, _concise_dtype_str, result
+from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
@@ -2684,7 +2684,7 @@ struct NDArray[dtype: DType = DType.float64](
     #     return math.add[ResultDType](
     #         self.astype[ResultDType](), other.cast[ResultDType]()
     #     )
-    #    
+    #
 
     # fn __add__[
     #     OtherDType: DType,

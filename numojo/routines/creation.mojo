@@ -2082,11 +2082,9 @@ fn array[
         An Array of given data, shape and order.
     """
     A = NDArray[dtype](NDArrayShape(shape), order)
-
-    var pointer = data.unsafe_ptr()
-    memcpy[Scalar[dtype]](A._buf.ptr, pointer, A.size)
-
-    return A^
+    for i in range(A.size):
+        A._buf.ptr[i] = data[i]
+    return A
 
 
 fn arrayC[

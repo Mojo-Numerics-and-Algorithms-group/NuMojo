@@ -258,6 +258,49 @@ struct Vectorized(Backend):
         vectorize[closure, width](result_array.size)
         return result_array
 
+    fn math_func_1_scalar_1_array_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            scalar: A Scalars.
+            array: A NDArray.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array.ndim == 0:
+            var result_array = _0darray(val=func[dtype, 1](scalar, array[]))
+            return result_array
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        alias width = simdwidthof[dtype]()
+
+        @parameter
+        fn closure[simdwidth: Int](i: Int):
+            var simd_data1 = array._buf.ptr.load[width=simdwidth](i)
+            var simd_data2 = scalar
+            result_array._buf.ptr.store(
+                i, func[dtype, simdwidth](simd_data2, simd_data1)
+            )
+
+        vectorize[closure, width](result_array.size)
+        return result_array
+
     fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
@@ -601,6 +644,43 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             var simd_data2 = scalar
             result_array._buf.ptr.store(
                 i, func[dtype, simdwidth](simd_data1, simd_data2)
+            )
+
+        vectorize[closure, width, unroll_factor=unroll_factor](array.size)
+        return result_array
+
+    fn math_func_1_scalar_1_array_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            scalar: A Scalars.
+            array: A NDArray.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        alias width = simdwidthof[dtype]()
+
+        @parameter
+        fn closure[simdwidth: Int](i: Int):
+            var simd_data1 = array._buf.ptr.load[width=simdwidth](i)
+            var simd_data2 = scalar
+            result_array._buf.ptr.store(
+                i, func[dtype, simdwidth](simd_data2, simd_data1)
             )
 
         vectorize[closure, width, unroll_factor=unroll_factor](array.size)
@@ -993,6 +1073,52 @@ struct Parallelized(Backend):
                 result_array._buf.ptr.store(
                     i + comps_per_core * j,
                     func[dtype, simdwidth](simd_data1, simd_data2),
+                )
+
+            vectorize[closure, width](comps_per_core)
+
+        parallelize[par_closure](num_cores)
+        return result_array
+
+    fn math_func_1_scalar_1_array_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            scalar: A Scalars.
+            array: A NDArray.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        alias width = 1
+        var num_cores: Int = num_physical_cores()
+        var comps_per_core: Int = array.size // num_cores
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array._buf.ptr.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = scalar
+                result_array._buf.ptr.store(
+                    i + comps_per_core * j,
+                    func[dtype, simdwidth](simd_data2, simd_data1),
                 )
 
             vectorize[closure, width](comps_per_core)
@@ -1486,6 +1612,67 @@ struct VectorizedParallelized(Backend):
             result_array._buf.ptr.store(
                 i + remainder_offset,
                 func[dtype, simdwidth](simd_data1, simd_data2),
+            )
+
+        vectorize[remainder_closure, width](comps_remainder)
+        return result_array
+
+    fn math_func_1_scalar_1_array_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            scalar: A Scalar.
+            array: A NDArray.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        alias width = simdwidthof[dtype]()
+        var num_cores: Int = num_physical_cores()
+        var comps_per_core: Int = array.size // num_cores
+        var comps_remainder: Int = array.size % num_cores
+        var remainder_offset: Int = num_cores * comps_per_core
+
+        @parameter
+        fn par_closure(j: Int):
+            @parameter
+            fn closure[simdwidth: Int](i: Int):
+                var simd_data1 = array._buf.ptr.load[width=simdwidth](
+                    i + comps_per_core * j
+                )
+                var simd_data2 = scalar
+                result_array._buf.ptr.store(
+                    i + comps_per_core * j,
+                    func[dtype, simdwidth](simd_data2, simd_data1),
+                )
+
+            vectorize[closure, width](comps_per_core)
+
+        parallelize[par_closure](num_cores)
+
+        @parameter
+        fn remainder_closure[simdwidth: Int](i: Int):
+            var simd_data1 = array._buf.ptr.load[width=simdwidth](
+                i + remainder_offset
+            )
+            var simd_data2 = scalar
+            result_array._buf.ptr.store(
+                i + remainder_offset,
+                func[dtype, simdwidth](simd_data2, simd_data1),
             )
 
         vectorize[remainder_closure, width](comps_remainder)
@@ -2357,12 +2544,42 @@ struct Naive(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-
         for i in range(array.size):
             var simd_data1 = array._buf.ptr.load[width=1](i)
             var simd_data2 = scalar
             result_array.store[width=1](
                 i, func[dtype, 1](simd_data1, simd_data2)
+            )
+        return result_array
+
+    fn math_func_1_scalar_1_array_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            scalar: A Scalar.
+            array: A NDArray.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        for i in range(array.size):
+            var simd_data1 = array._buf.ptr.load[width=1](i)
+            var simd_data2 = scalar
+            result_array.store[width=1](
+                i, func[dtype, 1](simd_data2, simd_data1)
             )
         return result_array
 
@@ -2685,6 +2902,49 @@ struct VectorizedVerbose(Backend):
                 var simd_data2 = scalar
                 result_array.store[width=1](
                     i, func[dtype, 1](simd_data1, simd_data2)
+                )
+        return result_array
+
+    fn math_func_1_scalar_1_array_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            scalar: A Scalar.
+            array: A NDArray.
+
+        Returns:
+            A a new NDArray that is NDArray with the function func applied.
+        """
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        alias width = simdwidthof[dtype]()
+        for i in range(0, width * (array.size // width), width):
+            var simd_data1 = array._buf.ptr.load[width=width](i)
+            var simd_data2 = scalar
+            result_array.store[width=width](
+                i, func[dtype, width](simd_data2, simd_data1)
+            )
+
+        if array.size % width != 0:
+            for i in range(
+                width * (array.size // width),
+                array.size,
+            ):
+                var simd_data1 = array._buf.ptr.load[width=1](i)
+                var simd_data2 = scalar
+                result_array.store[width=1](
+                    i, func[dtype, 1](simd_data2, simd_data1)
                 )
         return result_array
 

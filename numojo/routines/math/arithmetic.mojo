@@ -808,7 +808,9 @@ fn div[
     Returns:
         The element-wise quotient of `array1` and`array2`.
     """
-    return div[dtype, backend=backend](array, scalar)
+    return backend().math_func_1_scalar_1_array_in_one_array_out[
+        dtype, SIMD.__truediv__
+    ](scalar, array)
 
 
 # fn div[

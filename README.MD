@@ -162,11 +162,11 @@ from numojo.prelude import *
 
 fn main() raises:
     # Create a complexscalar 5 + 5j
-    var complexscalar = ComplexSIMD[cf32](re=5, im=5) 
+    var complexscalar = ComplexSIMD[f32](re=5, im=5) 
     # Create complex array filled with (5 + 5j)
-    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)
+    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)
     # Create complex array filled with (1 + 1j)
-    var B = nm.ones[cf32](Shape(1000, 1000))
+    var B = nm.ones[f32](Shape(1000, 1000))
 
     # Print array
     print(A)

@@ -1672,12 +1672,8 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         Enables `Scalar + ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.add[dtype](
-            self._re, other.cast[dtype]()
-        )
-        var imag: NDArray[dtype] = math.add[dtype](
-            self._im, other.cast[dtype]()
-        )
+        var real: NDArray[dtype] = math.add[dtype](self._re, other)
+        var imag: NDArray[dtype] = math.add[dtype](self._im, other)
         return Self(real, imag)
 
     fn __radd__(mut self, other: NDArray[dtype]) raises -> Self:

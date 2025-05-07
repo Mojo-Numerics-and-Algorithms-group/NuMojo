@@ -36,6 +36,7 @@ from builtin.math import pow
 from collections import Dict
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
+from algorithm.memory import parallel_memcpy
 from python import PythonObject, Python
 from sys import simdwidthof
 from tensor import Tensor, TensorShape
@@ -2080,11 +2081,10 @@ fn array[
     Returns:
         An Array of given data, shape and order.
     """
-
     A = NDArray[dtype](NDArrayShape(shape), order)
     for i in range(A.size):
         A._buf.ptr[i] = data[i]
-    return A^
+    return A
 
 
 fn arrayC[

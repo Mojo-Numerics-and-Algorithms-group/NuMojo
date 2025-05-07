@@ -283,7 +283,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
-    var order = "F"
+    var order: String = "F"
     if A.flags.C_CONTIGUOUS:
         order = "C"
 
@@ -470,8 +470,7 @@ fn broadcast_to[
     Broadcasts the scalar to the given shape.
     """
 
-    var B = Matrix[dtype](shape)
-    B = Matrix.full[dtype](shape, A, order=order)
+    var B: Matrix[dtype] = Matrix.full[dtype](shape, A, order=order)
     return B^
 
 

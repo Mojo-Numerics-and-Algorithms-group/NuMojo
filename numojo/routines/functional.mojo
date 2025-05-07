@@ -340,16 +340,16 @@ fn apply_along_axis[
 # `func` operates on scalars.
 # ===----------------------------------------------------------------------=== #
 
-"""
-If a and b have the same shape and strides, the function will be applied
-element-wise to the two arrays.
+# """
+# If a and b have the same shape and strides, the function will be applied
+# element-wise to the two arrays.
 
-Else if a and b have the same shape and the strides are both 1 for axis -1 or 0
-(C or F contiguous is not sufficient due to broadcasted views),
-the function with be applied by axis -1 or axis 0.
+# Else if a and b have the same shape and the strides are both 1 for axis -1 or 0
+# (C or F contiguous is not sufficient due to broadcasted views),
+# the function with be applied by axis -1 or axis 0.
 
-Else, conduct item-wise calculation.
+# Else, conduct item-wise calculation.
 
-If a and b have different shape (including when b is scalar), 
-conduct a broadcasting.
-"""
+# If a and b have different shape (including when b is scalar),
+# conduct a broadcasting.
+# """

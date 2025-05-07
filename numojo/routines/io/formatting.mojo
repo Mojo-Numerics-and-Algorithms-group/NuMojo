@@ -60,7 +60,7 @@ struct PrintOptions:
     var suppress_scientific: Bool
 
     fn __init__(
-        mut self,
+        out self,
         precision: Int = DEFAULT_PRECISION,
         suppress_small: Bool = DEFAULT_SUPPRESS_SMALL,
         separator: String = DEFAULT_SEPARATOR,

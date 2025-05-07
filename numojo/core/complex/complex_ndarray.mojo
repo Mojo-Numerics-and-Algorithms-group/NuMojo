@@ -97,7 +97,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         dtype: Complex data type.
     """
 
-    """FIELDS"""
+    # FIELDS
     var _re: NDArray[Self.dtype]
     var _im: NDArray[Self.dtype]
 
@@ -286,7 +286,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.flags = self._re.flags
 
     @always_inline("nodebug")
-    fn __copyinit__(mut self, other: Self):
+    fn __copyinit__(out self, other: Self):
         """
         Copy other into self.
         """
@@ -299,7 +299,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.flags = other.flags
 
     @always_inline("nodebug")
-    fn __moveinit__(mut self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """
         Move other into self.
         """
@@ -601,7 +601,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var nshape = List[Int]()
         var ncoefficients = List[Int]()
         var noffset = 0
-        var nnum_elements = 1
+        var nnum_elements: Int = 1
 
         for i in range(self.ndim):
             if spec[i] != 1:
@@ -612,7 +612,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if nshape.__len__() == 0:
             nshape.append(1)
-            nnum_elements = 1
+            # nnum_elements = 1
             ncoefficients.append(1)
 
         # Calculate strides based on memory layout: only C & F order are supported
@@ -1174,7 +1174,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
             var start: Int = 0
             var end: Int = self.shape[i]
-            var step: Int = 1
+            var step: Int
             if slice_list[i].start is not None:
                 start = slice_list[i].start.value()
                 if start < 0:
@@ -1625,7 +1625,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             self._re, other.re
         ) and comparison.not_equal[dtype](self._im, other.im)
 
-    """ ARITHMETIC OPERATIONS """
+    # ===------------------------------------------------------------------=== #
+    # ARITHMETIC OPERATIONS
+    # ===------------------------------------------------------------------=== #
 
     fn __add__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
@@ -2216,10 +2218,8 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if len(indices) != self.ndim:
             raise (
-                String(
-                    "Length of indices {} does not match ndim {}".format(
-                        len(indices), self.ndim
-                    )
+                String("Length of indices {} does not match ndim {}").format(
+                    len(indices), self.ndim
                 )
             )
 

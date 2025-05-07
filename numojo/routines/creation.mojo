@@ -130,9 +130,9 @@ fn arangeC[
     var num_im: Int = ((stop.im - start.im) / step.im).__int__()
     if num_re != num_im:
         raise Error(
-            "Number of real and imaginary parts are not equal {} != {}".format(
-                num_re, num_im
-            )
+            String(
+                "Number of real and imaginary parts are not equal {} != {}"
+            ).format(num_re, num_im)
         )
     var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](Shape(num_re))
     for idx in range(num_re):
@@ -157,9 +157,9 @@ fn arangeC[
     var size_im = Int(stop.im)
     if size_re != size_im:
         raise Error(
-            "Number of real and imaginary parts are not equal {} != {}".format(
-                size_re, size_im
-            )
+            String(
+                "Number of real and imaginary parts are not equal {} != {}"
+            ).format(size_re, size_im)
         )
 
     var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](Shape(size_re))
@@ -1933,15 +1933,11 @@ fn fromstring[
         order: Memory order C or F.
     """
 
-    var data = List[Scalar[dtype]]()
-    """Inferred data buffer of the array"""
-    var shape = List[Int]()
-    """Inferred shape of the array"""
+    var data = List[Scalar[dtype]]()  # Inferred data buffer of the array
+    var shape = List[Int]()  # Inferred shape of the array
     var bytes = text.as_bytes()
-    var ndim = 0
-    """Inferred number_as_str of dimensions."""
-    var level = 0
-    """Current level of the array."""
+    var ndim = 0  # Inferred number_as_str of dimensions.
+    var level = 0  # Current level of the array.
     var number_as_str: String = ""
     for i in range(len(bytes)):
         var b = bytes[i]

@@ -11,7 +11,7 @@ trait Backend:
     A trait that defines backends for calculations in the rest of the library.
     """
 
-    fn __init__(mut self: Self):
+    fn __init__(out self: Self):
         """
         Initialize the backend.
         """

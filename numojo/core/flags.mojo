@@ -169,8 +169,8 @@ struct Flags:
             raise Error(
                 String(
                     "\nError in `Flags.__getitem__()`: "
-                    "Invalid field name or short name: {}".format(key)
-                )
+                    "Invalid field name or short name: {}"
+                ).format(key)
             )
         if (key == "C_CONTIGUOUS") or (key == "C"):
             return self.C_CONTIGUOUS

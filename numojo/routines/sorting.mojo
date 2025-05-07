@@ -753,8 +753,8 @@ fn _sort_inplace[dtype: DType](mut A: NDArray[dtype], axis: Int) raises:
         )
 
     var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
+    # Contiguously stored axis. -1 if row-major, -2 if col-major.
     var continous_axis = A.ndim - 1 if array_order == "C" else A.ndim - 2
-    """Contiguously stored axis. -1 if row-major, -2 if col-major."""
 
     if axis == continous_axis:  # Last axis
         for i in range(A.size // A.shape[continous_axis]):
@@ -804,8 +804,8 @@ fn _sort_inplace[
         )
 
     var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
+    # Contiguously stored axis. -1 if row-major, -2 if col-major.
     var continous_axis = A.ndim - 1 if array_order == "C" else A.ndim - 2
-    """Contiguously stored axis. -1 if row-major, -2 if col-major."""
 
     if axis == continous_axis:  # Last axis
         I = NDArray[DType.index](shape=A.shape)

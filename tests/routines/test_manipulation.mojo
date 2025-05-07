@@ -62,22 +62,22 @@ def test_ravel_reshape():
     # Test reshape
     check_is_close(
         nm.reshape(c, Shape(4, 2, 2), "C"),
-        np.reshape(cnp, (4, 2, 2), "C"),
+        np.reshape(cnp, Python.tuple(4, 2, 2), "C"),
         "`reshape` C by C is broken",
     )
     check_is_close(
         nm.reshape(c, Shape(4, 2, 2), "F"),
-        np.reshape(cnp, (4, 2, 2), "F"),
+        np.reshape(cnp, Python.tuple(4, 2, 2), "F"),
         "`reshape` C by F is broken",
     )
     check_is_close(
         nm.reshape(f, Shape(4, 2, 2), "C"),
-        np.reshape(fnp, (4, 2, 2), "C"),
+        np.reshape(fnp, Python.tuple(4, 2, 2), "C"),
         "`reshape` F by C is broken",
     )
     check_is_close(
         nm.reshape(f, Shape(4, 2, 2), "F"),
-        np.reshape(fnp, (4, 2, 2), "F"),
+        np.reshape(fnp, Python.tuple(4, 2, 2), "F"),
         "`reshape` F by F is broken",
     )
 
@@ -109,7 +109,7 @@ def test_transpose():
     )
     check_is_close(
         nm.transpose(A, axes=List(1, 3, 0, 2)),
-        np.transpose(Anp, [1, 3, 0, 2]),
+        np.transpose(Anp, Python.list(1, 3, 0, 2)),
         "4-d `transpose` with arbitrary `axes` is broken.",
     )
 
@@ -120,11 +120,11 @@ def test_broadcast():
     var Anp = a.to_numpy()
     check(
         nm.broadcast_to(a, Shape(2, 2, 3)),
-        np.broadcast_to(a.to_numpy(), (2, 2, 3)),
+        np.broadcast_to(a.to_numpy(), Python.tuple(2, 2, 3)),
         "`broadcast_to` fails.",
     )
     check(
         nm.broadcast_to(a, Shape(2, 2, 2, 3)),
-        np.broadcast_to(a.to_numpy(), (2, 2, 2, 3)),
+        np.broadcast_to(a.to_numpy(), Python.tuple(2, 2, 2, 3)),
         "`broadcast_to` fails.",
     )

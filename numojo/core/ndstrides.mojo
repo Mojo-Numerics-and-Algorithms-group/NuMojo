@@ -43,10 +43,10 @@ struct NDArrayStrides(Stringable):
         """
         if len(strides) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(
-                    len(strides)
-                )
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(strides))
             )
 
         self.ndim = len(strides)
@@ -67,10 +67,10 @@ struct NDArrayStrides(Stringable):
         """
         if len(strides) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(
-                    len(strides)
-                )
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(strides))
             )
 
         self.ndim = len(strides)
@@ -91,10 +91,10 @@ struct NDArrayStrides(Stringable):
         """
         if len(strides) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(
-                    len(strides)
-                )
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(strides))
             )
 
         self.ndim = len(strides)

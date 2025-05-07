@@ -1,12 +1,11 @@
+"""
+Implementing backend for array keeping it simple for now
+"""
 # from ..traits.NDArrayTraits import NDArrayBackend
 from algorithm.functional import parallelize, vectorize, num_physical_cores
 from sys import simdwidthof
 
 from numojo.core.ndarray import NDArray
-
-"""
-Implementing backend for array keeping it simple for now
-"""
 
 
 fn math_func_1_array_in_one_array_out[

@@ -113,7 +113,7 @@ struct Matrix[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: Tuple[Int, Int],
         order: String = "C",
     ):
@@ -139,7 +139,7 @@ struct Matrix[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         data: Self,
     ):
         """
@@ -150,7 +150,7 @@ struct Matrix[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         data: NDArray[dtype],
     ) raises:
         """
@@ -187,7 +187,7 @@ struct Matrix[dtype: DType = DType.float64](
                     self._store(i, j, data._getitem(i, j))
 
     @always_inline("nodebug")
-    fn __copyinit__(mut self, other: Self):
+    fn __copyinit__(out self, other: Self):
         """
         Copy other into self.
         """
@@ -199,7 +199,7 @@ struct Matrix[dtype: DType = DType.float64](
         self.flags = other.flags
 
     @always_inline("nodebug")
-    fn __moveinit__(mut self, owned other: Self):
+    fn __moveinit__(out self, owned other: Self):
         """
         Move other into self.
         """
@@ -211,10 +211,11 @@ struct Matrix[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __del__(owned self):
-        var owndata = True
+        var owndata: Bool
         try:
             owndata = self.flags["OWNDATA"]
         except:
+            owndata = True
             print("Invalid `OWNDATA` flag. Treat as `True`.")
         if owndata:
             self._buf.ptr.free()
@@ -1031,7 +1032,7 @@ struct Matrix[dtype: DType = DType.float64](
         """
         Returns the order.
         """
-        var order = "F"
+        var order: String = "F"
         if self.flags.C_CONTIGUOUS:
             order = "C"
         return order
@@ -1283,7 +1284,7 @@ struct Matrix[dtype: DType = DType.float64](
         try:
             var np = Python.import_module("numpy")
 
-            var np_arr_dim = PythonObject([])
+            var np_arr_dim = Python.list()
             np_arr_dim.append(self.shape[0])
             np_arr_dim.append(self.shape[1])
 
@@ -1572,7 +1573,7 @@ struct _MatrixIter[
     var length: Int
 
     fn __init__(
-        mut self,
+        out self,
         matrix: Matrix[dtype],
         length: Int,
     ):

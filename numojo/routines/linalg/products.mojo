@@ -171,8 +171,8 @@ fn matmul_1darray[
         raise Error(
             String(
                 "matmul: a mismatch in core dimension 0: "
-                "size {} is different from {}".format(A.size, B.size)
-            )
+                "size {} is different from {}"
+            ).format(A.size, B.size)
         )
     else:
         C._buf.ptr.init_pointee_copy(sum(A * B))
@@ -230,19 +230,15 @@ fn matmul_2darray[
     if (A.ndim == 1) or (B.ndim == 1):
         raise Error(
             String(
-                "matmul: a mismatch in shapes: {} is different from {}".format(
-                    A.shape[-1], B.shape[0]
-                )
-            )
+                "matmul: a mismatch in shapes: {} is different from {}"
+            ).format(A.shape[-1], B.shape[0])
         )
 
     if A.shape[1] != B.shape[0]:
         raise Error(
             String(
-                "matmul: a mismatch in shapes: {} is different from {}".format(
-                    A.shape[1], B.shape[0]
-                )
-            )
+                "matmul: a mismatch in shapes: {} is different from {}"
+            ).format(A.shape[1], B.shape[0])
         )
 
     var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))

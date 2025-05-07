@@ -123,7 +123,7 @@ fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
         raise Error(
             String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
         )
-    var order = "F"
+    var order: String = "F"
     if A.flags.C_CONTIGUOUS:
         order = "C"
 

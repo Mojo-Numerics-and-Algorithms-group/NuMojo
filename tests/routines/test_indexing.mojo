@@ -23,44 +23,46 @@ fn test_compress() raises:
 
     check(
         numojo.indexing.compress(nm.array[boolean]("[0, 1, 1, 0]"), b),
-        np.compress(np.array([0, 1, 1, 0]), bnp),
+        np.compress(np.array(Python.list(0, 1, 1, 0)), bnp),
         "`compress` 1-d array is broken",
     )
     check(
         numojo.indexing.compress(
             nm.array[boolean]("[0,1,1,0,1,0,1,0,1,1,1]"), a
         ),
-        np.compress(np.array([0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1]), anp),
+        np.compress(
+            np.array(Python.list(0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1)), anp
+        ),
         "`compress` 3-d array without `axis` is broken",
     )
     check(
         nm.indexing.compress(nm.array[boolean]("[0, 1]"), a, axis=0),
-        np.compress(np.array([0, 1]), anp, axis=0),
+        np.compress(np.array(Python.list(0, 1)), anp, axis=0),
         "`compress` 3-d array by axis 0 is broken",
     )
     check(
         nm.indexing.compress(nm.array[boolean]("[1]"), a, axis=0),
-        np.compress(np.array([1]), anp, axis=0),
+        np.compress(np.array(Python.list(1)), anp, axis=0),
         "`compress` 3-d array by axis 0 is broken",
     )
     check(
         nm.indexing.compress(nm.array[boolean]("[1, 0, 1]"), a, axis=1),
-        np.compress(np.array([1, 0, 1]), anp, axis=1),
+        np.compress(np.array(Python.list(1, 0, 1)), anp, axis=1),
         "`compress` 3-d array by axis 1 is broken (#1)",
     )
     check(
         nm.indexing.compress(nm.array[boolean]("[0, 1]"), a, axis=1),
-        np.compress(np.array([0, 1]), anp, axis=1),
+        np.compress(np.array(Python.list(0, 1)), anp, axis=1),
         "`compress` 3-d array by axis 1 is broken (#2)",
     )
     check(
         nm.indexing.compress(nm.array[boolean]("[1, 0, 1, 1]"), a, axis=2),
-        np.compress(np.array([1, 0, 1, 1]), anp, axis=2),
+        np.compress(np.array(Python.list(1, 0, 1, 1)), anp, axis=2),
         "`compress` 3-d array by axis 2 is broken",
     )
     check(
         nm.indexing.compress(nm.array[boolean]("[0, 1]"), a, axis=2),
-        np.compress(np.array([0, 1]), anp, axis=2),
+        np.compress(np.array(Python.list(0, 1)), anp, axis=2),
         "`compress` 3-d array by axis 2 is broken",
     )
 

@@ -8,6 +8,7 @@ from testing.testing import (
     assert_raises,
 )
 from python import Python, PythonObject
+import random as builtin_random
 from tensor import Tensor, TensorShape
 from utils_for_test import check, check_is_close
 
@@ -57,7 +58,7 @@ def test_zeros():
     var np = Python.import_module("numpy")
     check(
         nm.zeros[f64](Shape(10, 10, 10, 10)),
-        np.zeros((10, 10, 10, 10), dtype=np.float64),
+        np.zeros(Python.tuple(10, 10, 10, 10), dtype=np.float64),
         "Zeros is broken",
     )
 
@@ -66,7 +67,7 @@ def test_ones_from_shape():
     var np = Python.import_module("numpy")
     check(
         nm.ones[nm.f64](Shape(10, 10, 10, 10)),
-        np.ones((10, 10, 10, 10), dtype=np.float64),
+        np.ones(Python.tuple(10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
 
@@ -75,7 +76,7 @@ def test_ones_from_list():
     var np = Python.import_module("numpy")
     check(
         nm.ones[nm.f64](List[Int](10, 10, 10, 10)),
-        np.ones((10, 10, 10, 10), dtype=np.float64),
+        np.ones(Python.tuple(10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
 
@@ -84,7 +85,7 @@ def test_ones_from_vlist():
     var np = Python.import_module("numpy")
     check(
         nm.ones[nm.f64](VariadicList[Int](10, 10, 10, 10)),
-        np.ones((10, 10, 10, 10), dtype=np.float64),
+        np.ones(Python.tuple(10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
 
@@ -93,7 +94,7 @@ def test_full():
     var np = Python.import_module("numpy")
     check(
         nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
-        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        np.full(Python.tuple(10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
 
@@ -102,7 +103,7 @@ def test_full_from_shape():
     var np = Python.import_module("numpy")
     check(
         nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
-        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        np.full(Python.tuple(10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
 
@@ -111,7 +112,7 @@ def test_full_from_list():
     var np = Python.import_module("numpy")
     check(
         nm.full[nm.f64](List[Int](10, 10, 10, 10), fill_value=10),
-        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        np.full(Python.tuple(10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
 
@@ -120,7 +121,7 @@ def test_full_from_vlist():
     var np = Python.import_module("numpy")
     check(
         nm.full[nm.f64](VariadicList[Int](10, 10, 10, 10), fill_value=10),
-        np.full((10, 10, 10, 10), 10, dtype=np.float64),
+        np.full(Python.tuple(10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
 
@@ -351,7 +352,8 @@ def test_arr_manipulation():
 
 
 def test_tensor_conversion():
-    var image = Tensor[DType.float32].rand(TensorShape(256, 256, 3))
+    var image = Tensor[DType.float32](TensorShape(256, 256, 3))
+    builtin_random.rand(image.unsafe_ptr(), image.num_elements())
     var image_converted_via_array = nm.array(image).to_tensor()
     assert_equal(
         image == image_converted_via_array, True, "Tensor conversion is broken"

@@ -87,7 +87,9 @@ fn test_argmax() raises:
         check(
             nm.argmax(a3d_f, axis=i),
             np.argmax(a3d_f_np, axis=i),
-            "`argmax` with F-order 3D array on axis={} is broken".format(i),
+            String(
+                "`argmax` with F-order 3D array on axis={} is broken"
+            ).format(i),
         )
 
 
@@ -175,7 +177,9 @@ fn test_argmin() raises:
         check(
             nm.argmin(a3d_f, axis=i),
             np.argmin(a3d_f_np, axis=i),
-            "`argmin` with F-order 3D array on axis={} is broken".format(i),
+            String(
+                "`argmin` with F-order 3D array on axis={} is broken"
+            ).format(i),
         )
 
 

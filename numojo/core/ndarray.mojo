@@ -192,7 +192,7 @@ struct NDArray[dtype: DType = DType.float64](
         self = Self(Shape(shape), order)
 
     fn __init__(
-        mut self,
+        out self,
         shape: List[Int],
         offset: Int,
         strides: List[Int],
@@ -271,7 +271,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     @always_inline("nodebug")
-    fn __copyinit__(mut self, other: Self):
+    fn __copyinit__(out self, other: Self):
         """
         Copy other into self.
         It is a deep copy. So the new array owns the data.
@@ -293,7 +293,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     @always_inline("nodebug")
-    fn __moveinit__(mut self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """
         Move other into self.
 
@@ -578,7 +578,7 @@ struct NDArray[dtype: DType = DType.float64](
         var nshape = List[Int]()
         var ncoefficients = List[Int]()
         var noffset = 0
-        var nnum_elements = 1
+        var nnum_elements: Int = 1
 
         for i in range(self.ndim):
             if spec[i] != 1:
@@ -589,7 +589,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if nshape.__len__() == 0:
             nshape.append(1)
-            nnum_elements = 1
+            # nnum_elements = 1
             ncoefficients.append(1)
 
         # Calculate strides based on memory layout: only C & F order are supported
@@ -2115,8 +2115,8 @@ struct NDArray[dtype: DType = DType.float64](
                 String(
                     "\nError in `numojo.NDArray.store[width: Int](*indices:"
                     " Int, val: SIMD[dtype, width])`:\nLength of indices {}"
-                    " does not match ndim {}".format(len(indices), self.ndim)
-                )
+                    " does not match ndim {}"
+                ).format(len(indices), self.ndim)
             )
 
         for i in range(self.ndim):
@@ -2663,7 +2663,10 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.greater_equal[dtype](self, other)
 
-    """ ARITHMETIC OPERATORS """
+    # ===-------------------------------------------------------------------===#
+    # ARITHMETIC OPERATORS
+    # ===-------------------------------------------------------------------===#
+
     # fn __add__[
     #     OtherDType: DType,
     #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),

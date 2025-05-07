@@ -3,7 +3,7 @@ NuMojo is a library for numerical computing in Mojo 🔥
 similar to NumPy, SciPy in Python.
 """
 
-alias __version__ = "V0.5"
+alias __version__ = "V0.7.0"
 
 # ===----------------------------------------------------------------------=== #
 # Import core types

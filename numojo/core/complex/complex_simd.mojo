@@ -10,7 +10,7 @@ struct ComplexSIMD[dtype: DType, width: Int = 1]():
     """
 
     # FIELDS
-    """The underlying data real and imaginary parts of the complex number."""
+    # The underlying data real and imaginary parts of the complex number.
     var re: SIMD[dtype, width]
     var im: SIMD[dtype, width]
 
@@ -249,7 +249,7 @@ struct ComplexSIMD[dtype: DType, width: Int = 1]():
             writer: The writer to write to.
         """
         try:
-            writer.write("({} + {} j)".format(self.re, self.im))
+            writer.write(String("({} + {} j)").format(self.re, self.im))
         except e:
             writer.write("Cannot convert ComplexSIMD to string")
 
@@ -260,7 +260,7 @@ struct ComplexSIMD[dtype: DType, width: Int = 1]():
         Returns:
             String: The string representation of the ComplexSIMD instance.
         """
-        return "ComplexSIMD[{}]({}, {})".format(
+        return String("ComplexSIMD[{}]({}, {})").format(
             String(Self.dtype), self.re, self.im
         )
 

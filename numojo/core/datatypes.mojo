@@ -7,7 +7,6 @@ Datatypes Module - Implements datatypes aliases, conversions
 # ===----------------------------------------------------------------------=== #
 
 # Rust-like or numpy-like data type alias
-"""alias for `DType.int8`"""
 alias i8 = DType.int8
 """Data type alias for DType.int8"""
 alias i16 = DType.int16

@@ -8,7 +8,7 @@ from python import Python
 # TODO: there's something wrong with bool comparision even though result looks same.
 def test_bool_masks_gt():
     var np = Python.import_module("numpy")
-    var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
+    var np_A = np.arange(0, 24, dtype=np.int16).reshape(3, 2, 4)
     var A = nm.arange[nm.i16](0, 24)
     A = A.reshape(Shape(3, 2, 4))
 
@@ -26,7 +26,7 @@ def test_bool_masks_lt():
     var np = Python.import_module("numpy")
 
     # Create NumPy and NuMojo arrays using arange and reshape
-    var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
+    var np_A = np.arange(0, 24, dtype=np.int16).reshape(3, 2, 4)
     var A = nm.arange[nm.i16](0, 24)
     A = A.reshape(Shape(3, 2, 4))
 
@@ -45,7 +45,7 @@ def test_bool_masks_eq():
     var np = Python.import_module("numpy")
 
     # Create NumPy and NuMojo arrays using arange and reshape
-    var np_A = np.arange(0, 24, dtype=np.int16).reshape((3, 2, 4))
+    var np_A = np.arange(0, 24, dtype=np.int16).reshape(3, 2, 4)
     var A = nm.arange[nm.i16](0, 24)
     A = A.reshape(Shape(3, 2, 4))
 

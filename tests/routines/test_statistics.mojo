@@ -24,7 +24,7 @@ def test_mean_median_var_std():
         check_is_close(
             nm.mean(A, axis=axis),
             np.mean(Anp, axis=axis),
-            String("`mean` is broken for axis {}".format(axis)),
+            String("`mean` is broken for axis {}").format(axis),
         )
 
     assert_true(
@@ -35,7 +35,7 @@ def test_mean_median_var_std():
         check_is_close(
             nm.median(A, axis),
             np.median(Anp, axis),
-            String("`median` is broken for axis {}".format(axis)),
+            String("`median` is broken for axis {}").format(axis),
         )
 
     assert_true(
@@ -50,7 +50,7 @@ def test_mean_median_var_std():
         check_is_close(
             nm.mode(A, axis),
             sp.stats.mode(Anp, axis).mode,
-            String("`mode` is broken for axis {}".format(axis)),
+            String("`mode` is broken for axis {}").format(axis),
         )
 
     assert_true(
@@ -61,7 +61,7 @@ def test_mean_median_var_std():
         check_is_close(
             nm.variance(A, axis),
             np.`var`(Anp, axis),
-            String("`variance` is broken for axis {}".format(axis)),
+            String("`variance` is broken for axis {}").format(axis),
         )
 
     assert_true(
@@ -72,5 +72,5 @@ def test_mean_median_var_std():
         check_is_close(
             nm.std(A, axis),
             np.std(Anp, axis),
-            String("`std` is broken for axis {}".format(axis)),
+            String("`std` is broken for axis {}").format(axis),
         )

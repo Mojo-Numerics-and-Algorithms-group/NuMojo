@@ -28,7 +28,7 @@ def test_sum_prod():
         check_is_close(
             nm.sum(A, axis=i),
             np.sum(Anp, axis=i),
-            String("`sum` by axis {} fails.".format(i)),
+            String("`sum` by axis {} fails.").format(i),
         )
 
     check_is_close(
@@ -40,7 +40,7 @@ def test_sum_prod():
         check_is_close(
             nm.cumsum(A, axis=i),
             np.cumsum(Anp, axis=i),
-            String("`cumsum` by axis {} fails.".format(i)),
+            String("`cumsum` by axis {} fails.").format(i),
         )
 
     check_values_close(
@@ -52,7 +52,7 @@ def test_sum_prod():
         check_is_close(
             nm.prod(A, axis=i),
             np.prod(Anp, axis=i),
-            String("`prod` by axis {} fails.".format(i)),
+            String("`prod` by axis {} fails.").format(i),
         )
 
     check_is_close(
@@ -64,7 +64,7 @@ def test_sum_prod():
         check_is_close(
             nm.cumprod(A, axis=i),
             np.cumprod(Anp, axis=i),
-            String("`cumprod` by axis {} fails.".format(i)),
+            String("`cumprod` by axis {} fails.").format(i),
         )
 
 

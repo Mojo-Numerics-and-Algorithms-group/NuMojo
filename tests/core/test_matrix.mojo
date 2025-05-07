@@ -52,12 +52,12 @@ def test_manipulation():
 
     check_matrices_equal(
         A.reshape((50, 2)),
-        Anp.reshape((50, 2)),
+        Anp.reshape(50, 2),
         "Reshape is broken",
     )
 
     _ = A.resize((1000, 100))
-    _ = Anp.resize((1000, 100))
+    _ = Anp.resize(1000, 100)
     check_matrices_equal(
         A,
         Anp,
@@ -74,7 +74,7 @@ def test_full():
     var np = Python.import_module("numpy")
     check_matrices_equal(
         Matrix.full[f64]((10, 10), 10, order=order),
-        np.full((10, 10), 10, dtype=np.float64),
+        np.full(Python.tuple(10, 10), fill_value=10, dtype=np.float64),
         "Full is broken",
     )
 
@@ -83,7 +83,7 @@ def test_zeros():
     var np = Python.import_module("numpy")
     check_matrices_equal(
         Matrix.zeros[f64](shape=(10, 10), order=order),
-        np.zeros((10, 10), dtype=np.float64),
+        np.zeros(Python.tuple(10, 10), dtype=np.float64),
         "Zeros is broken",
     )
 

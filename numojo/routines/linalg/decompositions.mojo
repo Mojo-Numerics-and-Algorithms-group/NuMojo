@@ -348,7 +348,7 @@ fn qr[
     """
     var inner: Int
     var reorder: Bool = False
-    var reduce: Bool = False
+    var reduce: Bool
 
     var m = A.shape[0]
     var n = A.shape[1]
@@ -364,7 +364,7 @@ fn qr[
     else:
         raise Error(String("Invalid mode: {}").format(mode))
 
-    var R: Matrix[dtype] = A
+    var R: Matrix[dtype]
 
     if A.flags.C_CONTIGUOUS:
         reorder = True
@@ -445,7 +445,7 @@ fn eig[
 
     var Q_total = Matrix.identity[dtype](n)
 
-    for k in range(max_iter):
+    for _k in range(max_iter):
         var Qk: Matrix[dtype]
         var Rk: Matrix[dtype]
         Qk, Rk = qr(T, mode="complete")

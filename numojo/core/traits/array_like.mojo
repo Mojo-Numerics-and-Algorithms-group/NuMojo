@@ -19,7 +19,7 @@ from numojo.core.ndarray import NDArray
 #     A trait that defines backends for calculations in the rest of the library.
 #     """
 
-#     fn __init__(mut self: Self):
+#     fn __init__(mut self):
 #         """
 #         Initialize the backend.
 #         """
@@ -30,7 +30,7 @@ from numojo.core.ndarray import NDArray
 #         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
 #             type, simd_w
 #         ],
-#     ](self: Self, array: Arraylike) -> Arraylike:
+#     ](self, array: Arraylike) -> Arraylike:
 #         """
 #         Apply a SIMD function of one variable and one return to a NDArray
 
@@ -52,7 +52,7 @@ from numojo.core.ndarray import NDArray
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[type, simd_w],
 #     ](
-#         self: Self, array1: Arraylike, array2: Arraylike
+#         self, array1: Arraylike, array2: Arraylike
 #     ) raises -> Arraylike:
 #         """
 #         Apply a SIMD function of two variable and one return to a NDArray
@@ -80,7 +80,7 @@ from numojo.core.ndarray import NDArray
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[type, simd_w],
 #     ](
-#         self: Self, array: Arraylike, scalar: Scalar[dtype]
+#         self, array: Arraylike, scalar: Scalar[dtype]
 #     ) -> Arraylike:
 #         """
 #         Apply a SIMD function of two variable and one return to a NDArray

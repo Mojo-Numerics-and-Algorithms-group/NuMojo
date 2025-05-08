@@ -29,13 +29,13 @@ struct Vectorized(Backend):
     Uses defualt simdwidth.
     """
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         pass
 
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         array3: NDArray[dtype],
@@ -83,7 +83,7 @@ struct Vectorized(Backend):
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         simd: SIMD[dtype, 1],
@@ -130,7 +130,7 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -168,9 +168,9 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -220,9 +220,9 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -263,9 +263,9 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -306,9 +306,9 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        DType.bool
+    ]:
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -348,9 +348,9 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
+        DType.bool
+    ]:
         # For 0darray (numojo scalar)
         # Treat it as a scalar and apply the function
         if array1.ndim == 0:
@@ -380,7 +380,7 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         alias width = simdwidthof[dtype]()
 
@@ -397,7 +397,7 @@ struct Vectorized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()
 
@@ -445,13 +445,13 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     Uses defualt simdwidth.
     """
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         pass
 
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         array3: NDArray[dtype],
@@ -496,7 +496,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         simd: SIMD[dtype, 1],
@@ -542,7 +542,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -573,9 +573,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -617,9 +617,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -654,9 +654,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -691,9 +691,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        DType.bool
+    ]:
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -724,9 +724,9 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
+        DType.bool
+    ]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -750,7 +750,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         alias width = simdwidthof[dtype]()
 
@@ -767,7 +767,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()
 
@@ -791,13 +791,13 @@ struct Parallelized(Backend):
     No idea why, Not Reccomened for use at this Time.
     """
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         pass
 
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         array3: NDArray[dtype],
@@ -864,7 +864,7 @@ struct Parallelized(Backend):
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         simd: SIMD[dtype, 1],
@@ -929,7 +929,7 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -976,9 +976,9 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -1039,9 +1039,9 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -1085,9 +1085,9 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -1131,9 +1131,9 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        DType.bool
+    ]:
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -1183,9 +1183,9 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
+        DType.bool
+    ]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -1221,7 +1221,7 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         alias width = 1
         var num_cores: Int = num_physical_cores()
@@ -1255,7 +1255,7 @@ struct Parallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()
 
@@ -1279,13 +1279,13 @@ struct VectorizedParallelized(Backend):
     No idea why, Not Reccomened for use at this Time.
     """
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         pass
 
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         array3: NDArray[dtype],
@@ -1363,7 +1363,7 @@ struct VectorizedParallelized(Backend):
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         simd: SIMD[dtype, 1],
@@ -1436,7 +1436,7 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -1489,9 +1489,9 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -1561,9 +1561,9 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -1622,9 +1622,9 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -1683,9 +1683,9 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        DType.bool
+    ]:
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -1749,9 +1749,9 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
+        DType.bool
+    ]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -1799,7 +1799,7 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         alias width = simdwidthof[dtype]()
         var num_cores: Int = num_physical_cores()
@@ -1839,7 +1839,7 @@ struct VectorizedParallelized(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         alias width = simdwidthof[dtype]()
 
@@ -1865,13 +1865,13 @@ struct VectorizedParallelized(Backend):
 #     this number seems to be less than `num_physical_cores()`.
 #     """
 
-#     fn __init__(mut self: Self):
+#     fn __init__(mut self):
 #         pass
 
 #     fn math_func_fma[
 #         dtype: DType,
 #     ](
-#         self: Self,
+#         self,
 #         array1: NDArray[dtype],
 #         array2: NDArray[dtype],
 #         array3: NDArray[dtype],
@@ -1951,7 +1951,7 @@ struct VectorizedParallelized(Backend):
 #     fn math_func_fma[
 #         dtype: DType,
 #     ](
-#         self: Self,
+#         self,
 #         array1: NDArray[dtype],
 #         array2: NDArray[dtype],
 #         simd: SIMD[dtype, 1],
@@ -2020,7 +2020,7 @@ struct VectorizedParallelized(Backend):
 #         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
 #             type, simd_w
 #         ],
-#     ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+#     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
 #         """
 #         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -2072,7 +2072,7 @@ struct VectorizedParallelized(Backend):
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[type, simd_w],
 #     ](
-#         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
+#         self, array1: NDArray[dtype], array2: NDArray[dtype]
 #     ) raises -> NDArray[dtype]:
 #         """
 #         Apply a SIMD function of two variable and one return to a NDArray.
@@ -2140,7 +2140,7 @@ struct VectorizedParallelized(Backend):
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[type, simd_w],
 #     ](
-#         self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
+#         self, array: NDArray[dtype], scalar: Scalar[dtype]
 #     ) raises -> NDArray[dtype]:
 #         """
 #         Apply a SIMD function of two variable and one return to a NDArray.
@@ -2197,7 +2197,7 @@ struct VectorizedParallelized(Backend):
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[DType.bool, simd_w],
 #     ](
-#         self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
+#         self, array1: NDArray[dtype], array2: NDArray[dtype]
 #     ) raises -> NDArray[DType.bool]:
 #         if array1.shape != array2.shape:
 #             raise Error(
@@ -2259,7 +2259,7 @@ struct VectorizedParallelized(Backend):
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[DType.bool, simd_w],
 #     ](
-#         self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
+#         self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
 #     ) raises -> NDArray[DType.bool]:
 #         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
 #             array1.shape
@@ -2306,7 +2306,7 @@ struct VectorizedParallelized(Backend):
 #         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
 #             DType.bool, simd_w
 #         ],
-#     ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+#     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
 #         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
 #             array.shape
 #         )
@@ -2346,7 +2346,7 @@ struct VectorizedParallelized(Backend):
 #         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
 #             type, simd_w
 #         ],
-#     ](self: Self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+#     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
 #         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
 #         alias width = simdwidthof[dtype]()
 
@@ -2369,13 +2369,13 @@ struct Naive(Backend):
     Just loops for SIMD[Dtype, 1] equations
     """
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         pass
 
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         array3: NDArray[dtype],
@@ -2417,7 +2417,7 @@ struct Naive(Backend):
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         simd: SIMD[dtype, 1],
@@ -2460,7 +2460,7 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -2486,9 +2486,9 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -2526,9 +2526,9 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -2557,9 +2557,9 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -2588,9 +2588,9 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        DType.bool
+    ]:
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -2617,9 +2617,9 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
+        DType.bool
+    ]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -2639,7 +2639,7 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
 
         for i in range(array.size):
@@ -2652,7 +2652,7 @@ struct Naive(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
 
         for i in range(array.size):
@@ -2669,13 +2669,13 @@ struct VectorizedVerbose(Backend):
     Uses defualt simdwidth.
     """
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         pass
 
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         array3: NDArray[dtype],
@@ -2728,7 +2728,7 @@ struct VectorizedVerbose(Backend):
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         simd: SIMD[dtype, 1],
@@ -2782,7 +2782,7 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -2816,9 +2816,9 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -2867,9 +2867,9 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -2910,9 +2910,9 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](
-        self: Self, scalar: Scalar[dtype], array: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+    ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -2953,9 +2953,9 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        DType.bool
+    ]:
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -2997,9 +2997,9 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
-    ](
-        self: Self, array1: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[DType.bool]:
+    ](self, array1: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
+        DType.bool
+    ]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -3031,7 +3031,7 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array.size // width), width):
@@ -3052,7 +3052,7 @@ struct VectorizedVerbose(Backend):
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    ](self, array1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         alias width = simdwidthof[dtype]()
         for i in range(0, width * (array1.size // width), width):

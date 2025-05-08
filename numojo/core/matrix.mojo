@@ -1005,7 +1005,7 @@ struct Matrix[dtype: DType = DType.float64](
     fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
         return numojo.math.cumsum(self, axis=axis)
 
-    fn fill(self: Self, fill_value: Scalar[dtype]):
+    fn fill(self, fill_value: Scalar[dtype]):
         """
         Fill the matrix with value.
 

@@ -4146,7 +4146,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn mean[
         returned_dtype: DType = DType.float64
-    ](self: Self, axis: Int) raises -> NDArray[returned_dtype]:
+    ](self, axis: Int) raises -> NDArray[returned_dtype]:
         """
         Mean of array elements over a given axis.
 
@@ -4172,7 +4172,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn median[
         returned_dtype: DType = DType.float64
-    ](self: Self, axis: Int) raises -> NDArray[returned_dtype]:
+    ](self, axis: Int) raises -> NDArray[returned_dtype]:
         """
         Median of array elements over a given axis.
 
@@ -4292,7 +4292,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return self.size
 
-    fn prod(self: Self) raises -> Scalar[dtype]:
+    fn prod(self) raises -> Scalar[dtype]:
         """
         Product of all array elements.
 
@@ -4301,7 +4301,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return numojo.math.prod(self)
 
-    fn prod(self: Self, axis: Int) raises -> Self:
+    fn prod(self, axis: Int) raises -> Self:
         """
         Product of array elements over a given axis.
 
@@ -4493,7 +4493,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return std[returned_dtype](self, axis=axis, ddof=ddof)
 
-    fn sum(self: Self) raises -> Scalar[dtype]:
+    fn sum(self) raises -> Scalar[dtype]:
         """
         Returns sum of all array elements.
 
@@ -4502,7 +4502,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return sum(self)
 
-    fn sum(self: Self, axis: Int) raises -> Self:
+    fn sum(self, axis: Int) raises -> Self:
         """
         Sum of array elements over a given axis.
 

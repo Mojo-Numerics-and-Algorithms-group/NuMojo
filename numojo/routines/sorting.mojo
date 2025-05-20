@@ -35,7 +35,10 @@ from numojo.routines.manipulation import ravel, transpose
 # ===----------------------------------------------------------------------=== #
 
 
-fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+# Below are overrides for NDArray type
+fn sort[
+    dtype: DType
+](a: NDArray[dtype], stable: Bool = False) raises -> NDArray[dtype]:
     """
     Sort NDArray using quick sort method.
     It is not guaranteed to be unstable.
@@ -46,14 +49,17 @@ fn sort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
 
     Args:
         a: NDArray.
+        stable: If True, the sorting is stable. Default is False.
     """
-
-    return quick_sort_1d(a)
+    if stable:
+        return quick_sort_stable_1d(a)
+    else:
+        return quick_sort_1d(a)
 
 
 fn sort[
     dtype: DType
-](owned a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+](a: NDArray[dtype], axis: Int, stable: Bool = False) raises -> NDArray[dtype]:
     """
     Sort NDArray along the given axis using quick sort method.
     It is not guaranteed to be unstable.
@@ -65,7 +71,7 @@ fn sort[
     Args:
         a: NDArray to sort.
         axis: The axis along which the array is sorted.
-
+        stable: If True, the sorting is stable. Default is False.
     """
 
     var normalized_axis = axis
@@ -79,11 +85,64 @@ fn sort[
         )
 
     if (a.ndim == 1) and (normalized_axis == 0):
-        return quick_sort_1d(a)
+        if stable:
+            return quick_sort_stable_1d(a)
+        else:
+            return quick_sort_1d(a)
 
-    return numojo.apply_along_axis[func1d=quick_sort_1d](
-        a, axis=normalized_axis
-    )
+    if stable:
+        return numojo.apply_along_axis[func1d=quick_sort_stable_1d](
+            a, axis=normalized_axis
+        )
+    else:
+        return numojo.apply_along_axis[func1d=quick_sort_1d](
+            a, axis=normalized_axis
+        )
+
+
+fn sort_inplace[
+    dtype: DType
+](mut a: NDArray[dtype], axis: Int, stable: Bool = False) raises:
+    """
+    Sort NDArray in-place along the given axis using quick sort method.
+    It is not guaranteed to be unstable.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: NDArray to sort.
+        axis: The axis along which the array is sorted.
+        stable: If True, the sorting is stable. Default is False.
+    """
+
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
+        )
+
+    if (a.ndim == 1) and (normalized_axis == 0):
+        if stable:
+            quick_sort_stable_inplace_1d(a)
+        else:
+            quick_sort_inplace_1d(a)
+
+    if stable:
+        numojo.apply_along_axis[func1d=quick_sort_stable_inplace_1d](
+            a, axis=normalized_axis
+        )
+    else:
+        numojo.apply_along_axis[func1d=quick_sort_inplace_1d](
+            a, axis=normalized_axis
+        )
+
+
+# Below are overrides for Matrix type
 
 
 fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
@@ -92,7 +151,7 @@ fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     var I = Matrix.zeros[DType.index](shape=A.shape)
     var B = A.flatten()
-    _sort_inplace(B, I, 0, A.size - 1)
+    _quick_sort_inplace(B, I, 0, A.size - 1)
 
     return B^
 
@@ -117,7 +176,7 @@ fn sort[
             for j in range(A.shape[1]):
                 row._store(0, j, A._load(i, j))
 
-            _sort_inplace(row, indices, 0, row.size - 1)
+            _quick_sort_inplace(row, indices, 0, row.size - 1)
 
             for j in range(A.shape[1]):
                 result._store(i, j, row._load(0, j))
@@ -136,7 +195,7 @@ fn sort[
             for i in range(A.shape[0]):
                 col._store(i, 0, A._load(i, j))
 
-            _sort_inplace(col, indices, 0, col.size - 1)
+            _quick_sort_inplace(col, indices, 0, col.size - 1)
 
             for i in range(A.shape[0]):
                 result._store(i, j, col._load(i, 0))
@@ -169,7 +228,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
 
     var indices = arange[DType.index](a_flattened.size)
 
-    _sort_inplace(a_flattened, indices)
+    _quick_sort_inplace(a_flattened, indices)
 
     return indices^
 
@@ -227,7 +286,7 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
         B = A.flatten()
     else:
         B = A.reorder_layout().flatten().reorder_layout()
-    _sort_inplace(B, I, 0, A.size - 1)
+    _quick_sort_inplace(B, I, 0, A.size - 1)
 
     return I^
 
@@ -251,7 +310,7 @@ fn argsort[
                 row._store(0, j, A._load(i, j))
                 idx._store(0, j, j)
 
-            _sort_inplace(row, idx, 0, row.size - 1)
+            _quick_sort_inplace(row, idx, 0, row.size - 1)
 
             for j in range(A.shape[1]):
                 result._store(i, j, idx._load(0, j))
@@ -269,7 +328,7 @@ fn argsort[
                 col._store(i, 0, A._load(i, j))
                 idx._store(i, 0, i)
 
-            _sort_inplace(col, idx, 0, col.size - 1)
+            _quick_sort_inplace(col, idx, 0, col.size - 1)
 
             for i in range(A.shape[0]):
                 result._store(i, j, idx._load(i, 0))
@@ -407,9 +466,80 @@ fn quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     else:
         res = ravel(a)
 
-    _sort_inplace(res)
+    _quick_sort_inplace(res)
 
     return res^
+
+
+fn quick_sort_stable_1d[
+    dtype: DType
+](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Sort array using quick sort method.
+    Regardless of the shape of input, it is treated as a 1-d array.
+    The sorting is stable.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: An 1-d array.
+    """
+    var res: NDArray[dtype]
+    if a.ndim == 1:
+        res = a
+    else:
+        res = ravel(a)
+
+    _quick_sort_stable_inplace(res, res.size)
+
+    return res^
+
+
+fn quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
+    """
+    Sort array in-place using quick sort method.
+    Regardless of the shape of input, it is treated as a 1-d array.
+    It is not guaranteed to be unstable.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: An 1-d array.
+    """
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "Error in `quick_sort_inplace_1d`: "
+                "The input array must be 1-d array."
+            )
+        )
+    _quick_sort_inplace(a)
+    return
+
+
+fn quick_sort_stable_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
+    """
+    Sort array in-place using quick sort method.
+    Regardless of the shape of input, it is treated as a 1-d array.
+    The sorting is stable.
+
+    Parameters:
+        dtype: The input element type.
+
+    Args:
+        a: An 1-d array.
+    """
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "Error in `quick_sort_inplace_1d`: "
+                "The input array must be 1-d array."
+            )
+        )
+    _quick_sort_stable_inplace(a, a.size)
+    return
 
 
 fn argsort_quick_sort_1d[
@@ -432,7 +562,7 @@ fn argsort_quick_sort_1d[
 
     var res = a
     var indices = arange[DType.index](res.size)
-    _sort_inplace(res, indices)
+    _quick_sort_inplace(res, indices)
     return indices^
 
 
@@ -541,7 +671,7 @@ fn _partition_in_range(
     return store_index
 
 
-fn _sort_partition(
+fn _quick_sort_partition(
     mut A: Matrix, mut I: Matrix, left: Int, right: Int, pivot_index: Int
 ) raises -> Int:
     """
@@ -604,7 +734,7 @@ fn _sort_partition(
     return store_index
 
 
-fn _sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
+fn _quick_sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
     """
     Sort in-place of the data buffer (quick-sort) within give range.
     It is not guaranteed to be stable.
@@ -618,11 +748,13 @@ fn _sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
     if right > left:
         var pivot_index = left + (right - left) // 2
         var pivot_new_index = _partition_in_range(A, left, right, pivot_index)
-        _sort_in_range(A, left, pivot_new_index - 1)
-        _sort_in_range(A, pivot_new_index + 1, right)
+        _quick_sort_in_range(A, left, pivot_new_index - 1)
+        _quick_sort_in_range(A, pivot_new_index + 1, right)
 
 
-fn _sort_in_range(mut A: NDArray, mut I: NDArray, left: Int, right: Int) raises:
+fn _quick_sort_in_range(
+    mut A: NDArray, mut I: NDArray, left: Int, right: Int
+) raises:
     """
     Sort in-place of the data buffer (quick-sort) within give range.
     The indices are also sorted.
@@ -640,11 +772,13 @@ fn _sort_in_range(mut A: NDArray, mut I: NDArray, left: Int, right: Int) raises:
         var pivot_new_index = _partition_in_range(
             A, I, left, right, pivot_index
         )
-        _sort_in_range(A, I, left, pivot_new_index - 1)
-        _sort_in_range(A, I, pivot_new_index + 1, right)
+        _quick_sort_in_range(A, I, left, pivot_new_index - 1)
+        _quick_sort_in_range(A, I, pivot_new_index + 1, right)
 
 
-fn _sort_inplace(mut A: Matrix, mut I: Matrix, left: Int, right: Int) raises:
+fn _quick_sort_inplace(
+    mut A: Matrix, mut I: Matrix, left: Int, right: Int
+) raises:
     """
     Sort in-place of the data buffer (quick-sort).
     It is not guaranteed to be stable.
@@ -659,12 +793,14 @@ fn _sort_inplace(mut A: Matrix, mut I: Matrix, left: Int, right: Int) raises:
 
     if right > left:
         var pivot_index = left + (right - left) // 2
-        var pivot_new_index = _sort_partition(A, I, left, right, pivot_index)
-        _sort_inplace(A, I, left, pivot_new_index - 1)
-        _sort_inplace(A, I, pivot_new_index + 1, right)
+        var pivot_new_index = _quick_sort_partition(
+            A, I, left, right, pivot_index
+        )
+        _quick_sort_inplace(A, I, left, pivot_new_index - 1)
+        _quick_sort_inplace(A, I, pivot_new_index + 1, right)
 
 
-fn _sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
+fn _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     """
     Sort in-place array's buffer using quick sort method.
     It is not guaranteed to be unstable.
@@ -683,19 +819,19 @@ fn _sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     if not A.flags.FORC:
         raise Error(
             String(
-                "\nError in `_sort_inplace`:"
+                "\nError in `_quick_sort_inplace`:"
                 "The array must be contiguous to perform in-place sorting."
             )
         )
 
-    _sort_in_range(
+    _quick_sort_in_range(
         A,
         left=0,
         right=A.size - 1,
     )
 
 
-fn _sort_inplace[
+fn _quick_sort_inplace[
     dtype: DType
 ](mut A: NDArray[dtype], mut I: NDArray[DType.index]) raises:
     """
@@ -718,12 +854,12 @@ fn _sort_inplace[
     if not A.flags.FORC:
         raise Error(
             String(
-                "\nError in `_sort_inplace`:"
+                "\nError in `_quick_sort_inplace`:"
                 "The array must be contiguous to perform in-place sorting."
             )
         )
 
-    _sort_in_range(
+    _quick_sort_in_range(
         A,
         I,
         left=0,
@@ -731,104 +867,69 @@ fn _sort_inplace[
     )
 
 
-fn _sort_inplace[dtype: DType](mut A: NDArray[dtype], axis: Int) raises:
+fn _quick_sort_stable_inplace[
+    dtype: DType, //
+](mut a: NDArray[dtype], size: Int) raises:
     """
-    Sort in-place NDArray along the given axis using quick sort method.
-    It is not guaranteed to be unstable.
+    Sort in-place array's buffer using quick sort method.
+    The data buffer must be contiguous.
+    The sorting is stable
+
+    Raises:
+        Error: If the array is not contiguous.
 
     Parameters:
         dtype: The input element type.
 
     Args:
-        A: NDArray to sort.
-        axis: The axis along which the array is sorted.
+        a: NDArray to sort.
+        size: The size of the array.
     """
 
-    if (axis >= A.ndim) or (axis < 0):
+    if size <= 1:
+        return
+
+    if not a.flags.FORC:
         raise Error(
             String(
-                "\nError in `_sort_inplace()`: "
-                "Axis ({}) is not in valid range [0, {})."
-            ).format(axis, A.ndim)
-        )
-
-    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
-    # Contiguously stored axis. -1 if row-major, -2 if col-major.
-    var continous_axis = A.ndim - 1 if array_order == "C" else A.ndim - 2
-
-    if axis == continous_axis:  # Last axis
-        for i in range(A.size // A.shape[continous_axis]):
-            _sort_in_range(
-                A,
-                left=i * A.shape[continous_axis],
-                right=(i + 1) * A.shape[continous_axis] - 1,
-            )
-    else:
-        var transposed_axes = List[Int](capacity=A.ndim)
-        for i in range(A.ndim):
-            transposed_axes.append(i)
-        transposed_axes[axis], transposed_axes[continous_axis] = (
-            transposed_axes[continous_axis],
-            transposed_axes[axis],
-        )
-        A = transpose(A, axes=transposed_axes)
-        _sort_inplace(A, axis=A.ndim - 1)
-        A = transpose(A, axes=transposed_axes)
-
-
-fn _sort_inplace[
-    dtype: DType
-](mut A: NDArray[dtype], mut I: NDArray[DType.index], owned axis: Int) raises:
-    """
-    Sort in-place NDArray along the given axis using quick sort method.
-    It is not guaranteed to be unstable.
-
-    Parameters:
-        dtype: The input element type.
-
-    Args:
-        A: NDArray to sort.
-        I: NDArray that stores the indices.
-        axis: The axis along which the array is sorted.
-
-    """
-
-    if axis < 0:
-        axis = A.ndim + axis
-
-    if (axis >= A.ndim) or (axis < 0):
-        raise Error(
-            String("Axis {} is invalid for array of {} dimensions").format(
-                axis, A.ndim
+                "\nError in `_quick_sort_stable_inplace`:"
+                "The array must be contiguous to perform in-place sorting."
             )
         )
 
-    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
-    # Contiguously stored axis. -1 if row-major, -2 if col-major.
-    var continous_axis = A.ndim - 1 if array_order == "C" else A.ndim - 2
+    var pivot_index = size // 2
+    var pivot_value = a._buf.ptr[pivot_index]
 
-    if axis == continous_axis:  # Last axis
-        I = NDArray[DType.index](shape=A.shape)
-        for i in range(A.size // A.shape[continous_axis]):
-            for j in range(A.shape[continous_axis]):
-                (
-                    I._buf.ptr + i * A.shape[continous_axis] + j
-                ).init_pointee_copy(j)
-            _sort_in_range(
-                A,
-                I,
-                left=i * A.shape[continous_axis],
-                right=(i + 1) * A.shape[continous_axis] - 1,
-            )
-    else:
-        var transposed_axes = List[Int](capacity=A.ndim)
-        for i in range(A.ndim):
-            transposed_axes.append(i)
-        transposed_axes[axis], transposed_axes[continous_axis] = (
-            transposed_axes[continous_axis],
-            transposed_axes[axis],
-        )
-        A = transpose(A, axes=transposed_axes)
-        _sort_inplace(A, I, axis=-1)
-        A = transpose(A, axes=transposed_axes)
-        I = transpose(I, axes=transposed_axes)
+    var left = NDArray[dtype](shape=(size), order="C")
+    var right = NDArray[dtype](shape=(size), order="C")
+    var left_index = 0
+    var right_index = 0
+
+    # Put items to either left or right arrays
+    for i in range(size):
+        if i != pivot_index:
+            var value = a._buf.ptr[i]
+            if value < pivot_value:
+                left._buf.ptr[left_index] = value
+                left_index += 1
+            elif value > pivot_value:
+                right._buf.ptr[right_index] = value
+                right_index += 1
+            else:  # value == pivot_value
+                if i < pivot_index:
+                    left._buf.ptr[left_index] = value
+                    left_index += 1
+                else:
+                    right._buf.ptr[right_index] = value
+                    right_index += 1
+
+    # Sort left and right arrays
+    _quick_sort_stable_inplace(left, left_index)
+    _quick_sort_stable_inplace(right, right_index)
+
+    # Combine the sorted arrays
+    for i in range(left_index):
+        a._buf.ptr[i] = left._buf.ptr[i]
+    a._buf.ptr[left_index] = pivot_value
+    for i in range(right_index):
+        a._buf.ptr[left_index + 1 + i] = right._buf.ptr[i]

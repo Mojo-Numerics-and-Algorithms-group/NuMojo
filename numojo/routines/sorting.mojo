@@ -510,10 +510,8 @@ fn quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
     """
     if a.ndim != 1:
         raise Error(
-            String(
-                "Error in `quick_sort_inplace_1d`: "
-                "The input array must be 1-d array."
-            )
+            "Error in `quick_sort_inplace_1d`: "
+            "The input array must be 1-d array."
         )
     _quick_sort_inplace(a)
     return

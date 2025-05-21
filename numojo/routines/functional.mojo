@@ -256,6 +256,75 @@ fn apply_along_axis[
     return res^
 
 
+# The following overloads of `apply_along_axis` are for the case when the
+# dimension of the input array is not reduced.
+# The function is applied in-place to the input array.
+# For example, `sort_inplace()`.
+
+
+fn apply_along_axis[
+    dtype: DType, //,
+    func1d: fn[dtype_func: DType] (mut NDArray[dtype_func]) raises -> None,
+](mut a: NDArray[dtype], axis: Int) raises -> None:
+    """
+    Applies a function to a NDArray by axis without reducing that dimension.
+    The function is applied in-place to the input array.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func1d: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_along_axis(axis=axis)
+
+    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+        # The memory layout is C-contiguous
+        @parameter
+        fn parallelized_func_c(i: Int):
+            try:
+                var elements: NDArray[dtype] = iterator.ith(i)
+                func1d[dtype](elements)
+                memcpy(
+                    a._buf.ptr + i * elements.size,
+                    elements._buf.ptr,
+                    elements.size,
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func_c](a.size // a.shape[axis])
+
+    else:
+        # The memory layout is not contiguous
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                # The indices of the input array in each iteration
+                var indices: NDArray[DType.index]
+                # The elements of the input array in each iteration
+                var elements: NDArray[dtype]
+                # The array after applied the function
+                indices, elements = iterator.ith_with_offsets(i)
+
+                func1d[dtype](elements)
+
+                for j in range(a.shape[axis]):
+                    (a._buf.ptr + Int(indices[j])).init_pointee_copy(
+                        (elements._buf.ptr + j)[]
+                    )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return None
+
+
 fn apply_along_axis[
     dtype: DType,
     func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[

@@ -4434,7 +4434,7 @@ struct NDArray[dtype: DType = DType.float64](
             buffer.store(i, self._buf.ptr.load[width=1](i + id * width))
         return buffer
 
-    fn sort(mut self, axis: Int = -1) raises:
+    fn sort(mut self, axis: Int = -1, stable: Bool = False) raises:
         """
         Sorts the array in-place along the given axis using quick sort method.
         The deault axis is -1.
@@ -4442,11 +4442,11 @@ struct NDArray[dtype: DType = DType.float64](
 
         Args:
             axis: The axis along which the array is sorted. Defaults to -1.
+            stable: If True, the sort is stable. Defaults to False.
 
         Raises:
             Error: If the axis is out of bound for the given array.
         """
-
         var normalized_axis: Int = axis
         if normalized_axis < 0:
             normalized_axis += self.ndim
@@ -4457,8 +4457,7 @@ struct NDArray[dtype: DType = DType.float64](
                     "Axis ({}) is not in valid range [-{}, {})."
                 ).format(axis, self.ndim, self.ndim)
             )
-
-        numojo.sorting._sort_inplace(self, axis=normalized_axis)
+        numojo.sorting.sort_inplace(self, axis=normalized_axis, stable=stable)
 
     fn std[
         returned_dtype: DType = DType.float64

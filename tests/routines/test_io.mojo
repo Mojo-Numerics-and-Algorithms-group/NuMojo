@@ -3,6 +3,7 @@ from numojo import ones, full
 from python import Python
 import os
 
+
 fn test_save_and_load() raises:
     var np = Python.import_module("numpy")
     var arr = ones[numojo.f32](numojo.Shape(10, 15))
@@ -17,9 +18,10 @@ fn test_save_and_load() raises:
     # Clean up
     os.remove(fname)
 
+
 fn test_savetxt_and_loadtxt() raises:
     var np = Python.import_module("numpy")
-    var arr = full[numojo.f32](numojo.Shape(10, 15), fill_value = 5.0)
+    var arr = full[numojo.f32](numojo.Shape(10, 15), fill_value=5.0)
     var fname = "test_savetxt_loadtxt.txt"
     savetxt(fname, arr, fmt="%.2f")
     # Load with numpy for cross-check

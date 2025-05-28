@@ -1,53 +1,83 @@
 from numojo.routines.creation import fromstring
 from collections.optional import Optional
+from python import Python, PythonObject
 
 
-# contains a custom basic implementation of loadtxt and savetxt to be used temporarily
-# until the official implementation is ready
-# one could use numpy backend, but it might add a dependency to numpy
-# better load files through numpy and then pass it to Numojo through array() function
+# We call into the numpy backend for now, this at least let's people go back and forth smoothly.
+# might consider implementing a funciton to write a .numojo file which can be read by both numpy and numojo.
+
+
+fn load[
+    dtype: DType = f64
+](
+    file: String,
+    allow_pickle: Bool = False,
+    fix_imports: Bool = True,
+    encoding: String = "ASCII",
+    *,
+    max_header_size: Int = 10000,
+) raises -> NDArray[dtype]:
+    var np = Python.import_module("numpy")
+    var data = np.load(
+        file=file,
+        allow_pickle=allow_pickle,
+        fix_imports=fix_imports,
+        encoding=encoding,
+        max_header_size=max_header_size,
+    )
+    var array = numojo.array[dtype](data=data)
+    return array^
+
+
+fn save[
+    dtype: DType = f64
+](file: String, arr: NDArray[dtype], allow_pickle: Bool = True) raises:
+    var np = Python.import_module("numpy")
+    var data = np.save(file=file, arr=arr.to_numpy(), allow_pickle=allow_pickle)
+
+
 fn loadtxt[
     dtype: DType = f64
 ](
-    filename: String,
-    delimiter: String = ",",
+    fname: String,
+    comments: String = "#",
+    delimiter: String = " ",
     skiprows: Int = 0,
-    usecols: Optional[List[Int]] = None,
+    ndmin: Int = 0,
 ) raises -> NDArray[dtype]:
-    with open(filename, "r") as file:
-        string = file.read()
-        var shape_offset_init: Int = string.find("[")
-        var shape_offset_fin: Int = string.find("]")
-        var ndim_offset_init: Int = string.find("[", start=shape_offset_fin)
-        var ndim_offset_fin: Int = string.find("]", start=ndim_offset_init)
-        var ndim: Int = Int(string[ndim_offset_init + 1 : ndim_offset_fin])
-        var ndshape: List[Int] = List[Int]()
-        for i in range(shape_offset_init + 1, shape_offset_fin):
-            if string[i].isdigit():
-                ndshape.append(Int(string[i]))
-        var data: List[Scalar[dtype]] = List[Scalar[dtype]]()
-        for i in range(ndim_offset_fin + 2, len(string)):
-            if string[i].isdigit():
-                var number: String = string[i]
-                data.append(atof(number).cast[dtype]())
-        return array[dtype](data=data, shape=ndshape, order="C")
+    var np = Python.import_module("numpy")
+    var data = np.loadtxt(
+        fname=fname,
+        comments=comments,
+        delimiter=delimiter,
+        skiprows=skiprows,
+        ndmin=ndmin,
+    )
+    var array = numojo.array[dtype](data=data)
+    return array^
 
 
 fn savetxt[
     dtype: DType = f64
-](filename: String, array: NDArray[dtype], delimiter: String = ",") raises:
-    var shape: String = "ndshape=["
-    for i in range(array.ndim):
-        shape += String(array.shape[i])
-        if i != array.ndim - 1:
-            shape = shape + ", "
-    shape = shape + "]"
-    print(shape)
-
-    with open(filename, "w") as file:
-        file.write(shape + "\n")
-        file.write("ndim=[" + String(array.ndim) + "]\n")
-        for i in range(array.size):
-            if i % 10 == 0:
-                file.write(String("\n"))
-            file.write(String(array._buf.ptr[i]) + ",")
+](
+    fname: String,
+    array: NDArray[dtype],
+    fmt: String = "%.18e",
+    delimiter: String = " ",
+    newline: String = "\n",
+    header: String = "",
+    footer: String = "",
+    comments: String = "#",
+) raises:
+    var np = Python.import_module("numpy")
+    var np_arr = array.to_numpy()
+    np.savetxt(
+        fname=fname,
+        X=np_arr,
+        fmt=fmt,
+        delimiter=delimiter,
+        newline=newline,
+        header=header,
+        footer=footer,
+        comments=comments,
+    )

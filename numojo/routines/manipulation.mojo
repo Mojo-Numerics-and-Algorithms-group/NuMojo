@@ -14,6 +14,7 @@ from sys import simdwidthof
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
 import numojo.core.matrix as matrix
@@ -47,6 +48,19 @@ fn ndim[dtype: DType](array: NDArray[dtype]) -> Int:
     return array.ndim
 
 
+fn ndim[dtype: DType](array: ComplexNDArray[dtype]) -> Int:
+    """
+    Returns the number of dimensions of the NDArray.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The number of dimensions of the NDArray.
+    """
+    return array.ndim
+
+
 fn shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
     """
     Returns the shape of the NDArray.
@@ -60,7 +74,33 @@ fn shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
     return array.shape
 
 
+fn shape[dtype: DType](array: ComplexNDArray[dtype]) -> NDArrayShape:
+    """
+    Returns the shape of the NDArray.
+
+    Args:
+        array: A NDArray.
+
+    Returns: The shape of the NDArray.
+    """
+    return array.shape
+
+
 fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
+    """
+    Returns the size of the NDArray.
+
+    Args:
+        array: A NDArray.
+        axis: The axis to get the size of.
+
+    Returns:
+        The size of the NDArray.
+    """
+    return array.shape[axis]
+
+
+fn size[dtype: DType](array: ComplexNDArray[dtype], axis: Int) raises -> Int:
     """
     Returns the size of the NDArray.
 

@@ -12,6 +12,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### 🦋 Changed
 
+- Update the syntax to accommodate to Mojo 25.3 ([PR #245](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/245))
 - Improve the getter methods for `ComplexNDArray` ([PR #229](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/229)).
 - Re-write the `argmax()` and `argmin()` methods to return indices along given axis ([PR #230](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/230)).
 
@@ -19,10 +20,12 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 - Remove the `numojo.CDType` (Complex Data Type) ([PR #231](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/231)). We will use the standard `CDType` from Mojo instead.
 - Temporarily remove type coercion (`TypeCoercion`) until a better solution is available ([PR #242](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/242)). For now, please use implicit casting to convert arrays to targeted data types.
+- Remove redundant `self: Self` ([PR #246](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/246)).
 
 ### 🛠️ Fixed
 
 - Fixed broken links in zhs and zht readme files ([Issue #239](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/239), [PR #240](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/240)).
+- Fix error in division of an array and a scalar ([PR #244](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/244)).
 
 ### 📚 Documentatory and testing
 

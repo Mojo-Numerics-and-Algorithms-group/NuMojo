@@ -2,7 +2,7 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
-## xx/xx/2025 (v0.7.0)
+## 01/06/2025 (v0.7.0)
 
 ### ⭐️ New
 

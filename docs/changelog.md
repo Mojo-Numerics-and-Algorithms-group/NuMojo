@@ -12,9 +12,11 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### 🦋 Changed
 
-- Update the syntax to accommodate to Mojo 25.3 ([PR #245](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/245))
+- Update the syntax to accommodate to Mojo 25.3 ([PR #245](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/245)).
+- Migrate Magic to Pixi ([PR #250](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/250)).
 - Improve the getter methods for `ComplexNDArray` ([PR #229](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/229)).
 - Re-write the `argmax()` and `argmin()` methods to return indices along given axis ([PR #230](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/230)).
+- Replaced IO backend with NumPy ([PR #250](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/250)).
 
 ### ❌ Removed
 

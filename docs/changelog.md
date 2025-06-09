@@ -2,6 +2,41 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## 01/06/2025 (v0.7.0)
+
+### ⭐️ New
+
+- Implement the `take_along_axis()` method. This method allows you to take elements from an array along a specified axis, using the indices provided in another array ([PR #226](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/226)).
+- Add support for column-major memory layout for the `Matrix` type and for all matrix routines ([PR #232](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/232), [PR #233](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/233), [PR #234](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/234)).
+- Add eigenvalue decomposition for symmetric matrices ([PR #238](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/238)).
+
+### 🦋 Changed
+
+- Update the syntax to accommodate to Mojo 25.3 ([PR #245](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/245)).
+- Migrate Magic to Pixi ([PR #250](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/250)).
+- Improve the getter methods for `ComplexNDArray` ([PR #229](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/229)).
+- Re-write the `argmax()` and `argmin()` methods to return indices along given axis ([PR #230](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/230)).
+- Replaced IO backend with NumPy ([PR #250](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/250)).
+
+### ❌ Removed
+
+- Remove the `numojo.CDType` (Complex Data Type) ([PR #231](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/231)). We will use the standard `CDType` from Mojo instead.
+- Temporarily remove type coercion (`TypeCoercion`) until a better solution is available ([PR #242](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/242)). For now, please use implicit casting to convert arrays to targeted data types.
+- Remove redundant `self: Self` ([PR #246](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/246)).
+
+### 🛠️ Fixed
+
+- Fixed broken links in zhs and zht readme files ([Issue #239](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/239), [PR #240](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/240)).
+- Fix error in division of an array and a scalar ([PR #244](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/244)).
+
+### 📚 Documentatory and testing
+
+## 08/03/2025 (v0.6.1)
+
+### 🛠️ Fixed
+
+Fix the bug that numojo crashes on "mojopkg" ([PR #227](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/227)).
+
 ## 28/02/2025 (v0.6)
 
 ### ⭐️ New

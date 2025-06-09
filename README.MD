@@ -187,29 +187,31 @@ fn main() raises:
 
 There are three approach to install and use the Numojo package.
 
-### Use magic CLI
+### Add `numojo` in `pixi.toml`
 
-You can use the following command in the terminal to install `numojo`.
-
-```console
-magic add numojo 
-```
-
-### Add in toml file
-
-You can add `numojo` in the dependencies section of your toml file.
+You can add the package `numojo` of a specific version in the dependencies section of your toml file.
 
 ```toml
 [dependencies]
-numojo = "=0.6"
+numojo = "=0.7.0"
 ```
+
+Then, you can run `pixi install` to install the package.
+
+The following table shows the version of `numojo` and the corresponding version of `mojo` that is required.
+
+| `numojo` | `mojo` |
+| -------- | ------ |
+| v0.7.0   | ==25.3 |
+| v0.6.1   | ==25.2 |
+| v0.6.0   | ==25.2 |
 
 ### Build package
 
 This approach involves building a standalone package file `mojopkg`.
 
 1. Clone the repository.
-2. Build the package using `magic run package`.
+2. Build the package using `pixi run package`.
 3. Move the `numojo.mojopkg` into the directory containing the your code.
 
 ### Include NuMojo's path for compiler and LSP

@@ -123,8 +123,11 @@ fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
         raise Error(
             String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
         )
+    var order: String = "F"
+    if A.flags.C_CONTIGUOUS:
+        order = "C"
 
-    var I = Matrix.identity[dtype](A.shape[0])
+    var I = Matrix.identity[dtype](A.shape[0], order=order)
     var B = solve(A, I)
 
     return B^
@@ -364,16 +367,20 @@ fn solve[
     """
     Solve `AX = Y` using LUP decomposition.
     """
+    if A.flags.C_CONTIGUOUS != Y.flags.C_CONTIGUOUS:
+        raise Error("Input matrices A and Y must have the same memory layout")
+
     var U: Matrix[dtype]
     var L: Matrix[dtype]
+
     A_pivoted, P, _ = partial_pivoting(A)
     L, U = lu_decomposition[dtype](A_pivoted)
 
     var m = A.shape[0]
     var n = Y.shape[1]
 
-    var Z = Matrix.full[dtype]((m, n))
-    var X = Matrix.full[dtype]((m, n))
+    var Z = Matrix.full[dtype]((m, n), order=A.order())
+    var X = Matrix.full[dtype]((m, n), order=A.order())
 
     var PY = P @ Y
 

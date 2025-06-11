@@ -12,7 +12,7 @@ from utils_for_test import check, check_is_close, check_values_close
 def test_matmul_small():
     var np = Python.import_module("numpy")
     var arr = nm.ones[i8](Shape(4, 4))
-    var np_arr = np.ones((4, 4), dtype=np.int8)
+    var np_arr = np.ones(Python.tuple(4, 4), dtype=np.int8)
     check_is_close(
         arr @ arr, np.matmul(np_arr, np_arr), "Dunder matmul is broken"
     )

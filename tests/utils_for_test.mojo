@@ -4,7 +4,7 @@ import numojo as nm
 
 
 fn check[
-    dtype: DType
+    dtype: DType, //
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.all(np.equal(array.to_numpy(), np_sol)), st)

@@ -1,57 +1,77 @@
 # ===----------------------------------------------------------------------=== #
 # Decompositions
 # ===----------------------------------------------------------------------=== #
+from sys import simdwidthof
+from algorithm import parallelize, vectorize
 
-from algorithm import parallelize
 import math as builtin_math
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, issymmetric
 from numojo.routines.creation import zeros, eye, full
 
 
-fn compute_householder[
+@always_inline
+fn _compute_householder[
     dtype: DType
-](
-    mut H: Matrix[dtype], mut R: Matrix[dtype], row: Int, column: Int
-) raises -> None:
-    var sqrt2: SIMD[dtype, 1] = 1.4142135623730951
+](mut H: Matrix[dtype], mut R: Matrix[dtype], work_index: Int) raises -> None:
+    alias simd_width = simdwidthof[dtype]()
+    alias sqrt2: Scalar[dtype] = 1.4142135623730951
     var rRows = R.shape[0]
 
-    for i in range(row, rRows):
-        var val = R._load(i, column)
-        H._store(i, column, val)
-        R._store(i, column, 0.0)
+    @parameter
+    fn load_store_vec[n_elements: Int](i: Int):
+        var r_value = R._load[n_elements](i + work_index, work_index)
+        H._store[n_elements](i + work_index, work_index, r_value)
+        R._store[n_elements](i + work_index, work_index, 0.0)
 
-    var norm: Scalar[dtype] = 0.0
-    for i in range(rRows):
-        norm += H._load(i, column) ** 2
+    vectorize[load_store_vec, simd_width](rRows - work_index)
+
+    var norm = Scalar[dtype](0)
+
+    @parameter
+    fn calculate_norm[width: Int](i: Int):
+        norm += (H._load[width=width](i, work_index) ** 2).reduce_add()
+
+    vectorize[calculate_norm, simd_width](rRows)
+
     norm = builtin_math.sqrt(norm)
-    if row == rRows - 1 or norm == 0:
-        first_element = H._load(row, column)
-        R._store(row, column, -first_element)
-        H._store(row, column, sqrt2)
+    if work_index == rRows - 1 or norm == 0:
+        first_element = H._load(work_index, work_index)
+        R._store(work_index, work_index, -first_element)
+        H._store(work_index, work_index, sqrt2)
         return
 
-    scale = 1.0 / norm
-    if H._load(row, column) < 0:
-        scale = -scale
+    var scaling_factor = 1.0 / norm
+    if H._load(work_index, work_index) < 0:
+        scaling_factor = -scaling_factor
 
-    R._store(row, column, -1 / scale)
+    R._store(work_index, work_index, -1 / scaling_factor)
 
-    for i in range(row, rRows):
-        H._store(i, column, H._load(i, column) * scale)
+    @parameter
+    fn scaling_factor_vec[simd_width: Int](i: Int):
+        H._store[simd_width](
+            i, work_index, H._load[simd_width](i, work_index) * scaling_factor
+        )
 
-    increment = H._load(row, column) + 1.0
-    H._store(row, column, increment)
+    vectorize[scaling_factor_vec, simd_width](rRows)
 
-    s = builtin_math.sqrt(1.0 / increment)
+    increment = H._load(work_index, work_index) + 1.0
+    H._store(work_index, work_index, increment)
 
-    for i in range(row, rRows):
-        H._store(i, column, H._load(i, column) * s)
+    scaling_factor = builtin_math.sqrt(1.0 / increment)
+
+    @parameter
+    fn scaling_factor_increment_vec[simd_width: Int](i: Int):
+        H._store[simd_width](
+            i, work_index, H._load[simd_width](i, work_index) * scaling_factor
+        )
+
+    vectorize[scaling_factor_increment_vec, simd_width](rRows)
 
 
-fn compute_qr[
+@always_inline
+fn _apply_householder[
     dtype: DType
 ](
     mut H: Matrix[dtype],
@@ -62,14 +82,24 @@ fn compute_qr[
 ) raises -> None:
     var aRows = A.shape[0]
     var aCols = A.shape[1]
-
+    alias simdwidth = simdwidthof[dtype]()
     for j in range(column_start, aCols):
         var dot: SIMD[dtype, 1] = 0.0
-        for i in range(row_start, aRows):
-            dot += H._load(i, work_index) * A._load(i, j)
-        for i in range(row_start, aRows):
-            val = A._load(i, j) - H._load(i, work_index) * dot
+
+        @parameter
+        fn calculate_norm[width: Int](i: Int):
+            dot += (
+                H._load[width=width](i, work_index) * A._load[width=width](i, j)
+            ).reduce_add()
+
+        vectorize[calculate_norm, simdwidth](aRows)
+
+        @parameter
+        fn closure[width: Int](i: Int):
+            val = A._load[width](i, j) - H._load[width](i, work_index) * dot
             A._store(i, j, val)
+
+        vectorize[closure, simdwidth](aRows)
 
 
 fn lu_decomposition[
@@ -192,8 +222,8 @@ fn lu_decomposition[
     var n = A.shape[0]
 
     # Initiate upper and lower triangular matrices
-    var U = Matrix.full[dtype](shape=(n, n))
-    var L = Matrix.full[dtype](shape=(n, n))
+    var U = Matrix.full[dtype](shape=(n, n), order=A.order())
+    var L = Matrix.full[dtype](shape=(n, n), order=A.order())
 
     # Fill in L and U
     for i in range(0, n):
@@ -277,6 +307,8 @@ fn partial_pivoting[
     """
     var n = A.shape[0]
     var P = Matrix.identity[dtype](n)
+    if A.flags.F_CONTIGUOUS:
+        A = A.reorder_layout()
     var s: Int = 0  # Number of exchanges, for determinant
     for col in range(n):
         var max_p = abs(A[col, col])
@@ -290,42 +322,156 @@ fn partial_pivoting[
 
         if max_p_row != col:
             s = s + 1
+    if A.flags.F_CONTIGUOUS:
+        A = A.reorder_layout()
+        P = P.reorder_layout()
 
     return Tuple(A^, P^, s)
 
 
 fn qr[
     dtype: DType
-](owned A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: Matrix[dtype], mode: String = "reduced") raises -> Tuple[
+    Matrix[dtype], Matrix[dtype]
+]:
     """
-    Compute the QR decomposition of a matrix.
-
-    Decompose the matrix `A` as `QR`, where `Q` is orthonormal and `R` is upper-triangular.
-    This function is similar to `numpy.linalg.qr`.
+    Computes the QR decomposition using Householder transformations. For best
+    performance, the input matrix should be in column-major order.
 
     Args:
-        A: The input matrix to be factorized.
-
+        A: The input matrix.
+        mode: The mode of the decomposition. Can be "complete" or "reduced" simillar to numpy's QR decomposition.
+            - "complete": Returns Q and R such that A = QR, where Q is m x m and R is m x n.
+            - "reduced": Returns Q and R such that A = QR, where Q is m x min(m,n) and R is min(m,n) x n.
     Returns:
-        A tuple containing the orthonormal matrix `Q` and
-        the upper-triangular matrix `R`.
+        A tuple `(Q, R)` where `Q` is orthonormal and `R` is upper-triangular.
     """
+    var inner: Int
+    var reorder: Bool = False
+    var reduce: Bool
+
     var m = A.shape[0]
     var n = A.shape[1]
 
-    var Q = Matrix.full[dtype](shape=(m, m))
-    for i in range(m):
-        Q._store(i, i, 1.0)
-
     var min_n = min(m, n)
 
-    var H = Matrix.full[dtype](shape=(m, min_n))
+    if mode == "complete" or m == n:
+        reduce = False
+        inner = m
+    elif mode == "reduced":
+        reduce = True
+        inner = min_n
+    else:
+        raise Error(String("Invalid mode: {}").format(mode))
+
+    var R: Matrix[dtype]
+
+    if A.flags.C_CONTIGUOUS:
+        reorder = True
+
+    if reorder:
+        R = A.reorder_layout()
+    else:
+        R = A
+
+    var H = Matrix.zeros[dtype](shape=(m, min_n), order="F")
 
     for i in range(min_n):
-        compute_householder(H, A, i, i)
-        compute_qr(H, i, A, i, i + 1)
+        _compute_householder(H, R, i)
+        _apply_householder(H, i, R, i, i + 1)
+
+    var Q = Matrix.zeros[dtype]((m, inner), order="F")
+    for i in range(inner):
+        Q[i, i] = 1.0
 
     for i in range(min_n - 1, -1, -1):
-        compute_qr(H, i, Q, i, i)
+        _apply_householder(H, i, Q, i, i)
 
-    return Q, A
+    if reorder:
+        Q = Q.reorder_layout()
+        if reduce:
+            R = R[:inner, :].reorder_layout()
+        else:
+            R = R.reorder_layout()
+    else:
+        if reduce:
+            R = R[:inner, :]
+
+    return Q^, R^
+
+
+# ===----------------------------------------------------------------------=== #
+# Eigenvalue Decomposition (symmetric) via the QR algorithm
+# ===----------------------------------------------------------------------=== #
+
+
+fn eig[
+    dtype: DType
+](
+    A: Matrix[dtype],
+    tol: Scalar[dtype] = 1.0e-12,
+    max_iter: Int = 10000,
+) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+    """
+    Computes the eigenvalue decomposition for symmetric matrices using the QR algorithm.
+    For best performance, the input matrix should be in column-major order.
+
+    Args:
+        A: The input matrix. Must be square and symmetric.
+        tol: Convergence tolerance for off-diagonal elements.
+        max_iter: Maximum number of iterations for the QR algorithm.
+
+    Returns:
+        A tuple `(Q, D)` where:
+            - Q: A matrix whose columns are the eigenvectors
+            - D: A diagonal matrix containing the eigenvalues
+
+    Raises:
+        Error: If the matrix is not square or symmetric.
+        Error: If the algorithm does not converge within max_iter iterations.
+    """
+    if A.shape[0] != A.shape[1]:
+        raise Error("Matrix is not square.")
+
+    var n = A.shape[0]
+    if not issymmetric(A):
+        raise Error("Matrix is not symmetric.")
+
+    var T: Matrix[dtype]
+    if A.flags.C_CONTIGUOUS:
+        T = A.reorder_layout()
+    else:
+        T = A
+
+    var Q_total = Matrix.identity[dtype](n)
+
+    for _k in range(max_iter):
+        var Qk: Matrix[dtype]
+        var Rk: Matrix[dtype]
+        Qk, Rk = qr(T, mode="complete")
+
+        T = Rk @ Qk
+        Q_total = Q_total @ Qk
+
+        var offdiag_norm: Scalar[dtype] = 0
+        for i in range(n):
+            for j in range(i + 1, n):
+                var v = T._load(i, j)
+                offdiag_norm += v * v
+        if builtin_math.sqrt(offdiag_norm) < tol:
+            break
+    else:
+        raise Error(
+            String("QR algorithm did not converge in {} iterations.").format(
+                max_iter
+            )
+        )
+
+    var D = Matrix.zeros[dtype](shape=(n, n), order=A.order())
+    for i in range(n):
+        D._store(i, i, T._load(i, i))
+
+    if A.flags.C_CONTIGUOUS:
+        Q_total = Q_total.reorder_layout()
+
+    return Q_total^, D^

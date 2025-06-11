@@ -1,8 +1,39 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Implements N-Dimensional Complex Array
-Last updated: 2025-01-26
+Last updated: 2025-03-10
 """
+# ===----------------------------------------------------------------------===#
+# SECTIONS OF THE FILE:
+#
+# `ComplexNDArray` type
+# 1. Life cycle methods.
+# 2. Indexing and slicing (get and set dunders and relevant methods).
+# 3. Operator dunders.
+# 4. IO, trait, and iterator dunders.
+# 5. Other methods (Sorted alphabetically).
 
+#
+# ===----------------------------------------------------------------------===#
+# FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
+# 1. Description *
+# 2. Parameters *
+# 3. Args *
+# 4. Constraints *
+# 4) Returns *
+# 5) Raises *
+# 6) SEE ALSO
+# 7) NOTES
+# 8) REFERENCES
+# 9) Examples *
+# (Items marked with * are flavored in "Mojo docstring style guide")
+#
+# ===----------------------------------------------------------------------===#
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 import builtin.math as builtin_math
@@ -15,13 +46,14 @@ from sys import simdwidthof
 from utils import Variant
 
 from numojo.core.complex.complex_simd import ComplexSIMD
-from numojo.core.datatypes import TypeCoercion, _concise_dtype_str
+from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 from numojo.core.utility import (
     _get_offset,
+    _transfer_offset,
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
@@ -53,21 +85,21 @@ from numojo.routines.statistics.averages import mean
 # ===----------------------------------------------------------------------===#
 # ComplexNDArray
 # ===----------------------------------------------------------------------===#
+# TODO: Add SIMD width as a parameter.
 @value
-struct ComplexNDArray[
-    cdtype: CDType, *, dtype: DType = CDType.to_dtype[cdtype]()
-](Stringable, Representable, CollectionElement, Sized, Writable):
+struct ComplexNDArray[dtype: DType = DType.float64](
+    Stringable, Representable, CollectionElement, Sized, Writable
+):
     """
     Represents a Complex N-Dimensional Array.
 
     Parameters:
-        cdtype: Complex data type.
-        dtype: Real data type.
+        dtype: Complex data type.
     """
 
-    """FIELDS"""
-    var _re: NDArray[dtype]
-    var _im: NDArray[dtype]
+    # FIELDS
+    var _re: NDArray[Self.dtype]
+    var _im: NDArray[Self.dtype]
 
     # It's redundant, but better to have it as fields.
     var ndim: Int
@@ -81,10 +113,26 @@ struct ComplexNDArray[
     var flags: Flags
     "Information about the memory layout of the array."
 
-    """LIFETIME METHODS"""
+    # ===-------------------------------------------------------------------===#
+    # Life cycle methods
+    # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn __init__(mut self, owned re: NDArray[dtype], owned im: NDArray[dtype]):
+    fn __init__(
+        out self, owned re: NDArray[Self.dtype], owned im: NDArray[Self.dtype]
+    ) raises:
+        """
+        Initialize a ComplexNDArray with given real and imaginary parts.
+
+        Args:
+            re: Real part of the complex array.
+            im: Imaginary part of the complex array.
+        """
+        if re.shape != im.shape:
+            raise Error(
+                "Error in `numojo.ComplexNDArray.__init__()`: "
+                "Real and imaginary parts must have the same shape."
+            )
         self._re = re
         self._im = im
         self.ndim = re.ndim
@@ -95,7 +143,7 @@ struct ComplexNDArray[
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: NDArrayShape,
         order: String = "C",
     ) raises:
@@ -111,11 +159,11 @@ struct ComplexNDArray[
         Example:
         ```mojo
         from numojo.prelude import *
-        var A = nm.ComplexNDArray[cf32](Shape(2,3,4))
+        var A = nm.ComplexNDArray[f32](Shape(2,3,4))
         ```
         """
-        self._re = NDArray[dtype](shape, order)
-        self._im = NDArray[dtype](shape, order)
+        self._re = NDArray[Self.dtype](shape, order)
+        self._im = NDArray[Self.dtype](shape, order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -124,7 +172,7 @@ struct ComplexNDArray[
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: List[Int],
         order: String = "C",
     ) raises:
@@ -135,8 +183,8 @@ struct ComplexNDArray[
             shape: List of shape.
             order: Memory order C or F.
         """
-        self._re = NDArray[dtype](shape, order)
-        self._im = NDArray[dtype](shape, order)
+        self._re = NDArray[Self.dtype](shape, order)
+        self._im = NDArray[Self.dtype](shape, order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -145,7 +193,7 @@ struct ComplexNDArray[
 
     @always_inline("nodebug")
     fn __init__(
-        mut self,
+        out self,
         shape: VariadicList[Int],
         order: String = "C",
     ) raises:
@@ -156,8 +204,8 @@ struct ComplexNDArray[
             shape: Variadic List of shape.
             order: Memory order C or F.
         """
-        self._re = NDArray[dtype](shape, order)
-        self._im = NDArray[dtype](shape, order)
+        self._re = NDArray[Self.dtype](shape, order)
+        self._im = NDArray[Self.dtype](shape, order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -165,7 +213,7 @@ struct ComplexNDArray[
         self.flags = self._re.flags
 
     fn __init__(
-        mut self,
+        out self,
         shape: List[Int],
         offset: Int,
         strides: List[Int],
@@ -173,8 +221,8 @@ struct ComplexNDArray[
         """
         Extremely specific ComplexNDArray initializer.
         """
-        self._re = NDArray[dtype](shape, offset, strides)
-        self._im = NDArray[dtype](shape, offset, strides)
+        self._re = NDArray[Self.dtype](shape, offset, strides)
+        self._im = NDArray[Self.dtype](shape, offset, strides)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -182,18 +230,55 @@ struct ComplexNDArray[
         self.flags = self._re.flags
 
     fn __init__(
-        mut self,
+        out self,
         shape: NDArrayShape,
-        ref buffer_re: UnsafePointer[Scalar[dtype]],
-        ref buffer_im: UnsafePointer[Scalar[dtype]],
+        strides: NDArrayStrides,
+        ndim: Int,
+        size: Int,
+        flags: Flags,
+    ):
+        """
+        Constructs an extremely specific ComplexNDArray, with value uninitialized.
+        The properties do not need to be compatible and are not checked.
+        For example, it can construct a 0-D array (numojo scalar).
+
+        Args:
+            shape: Shape of array.
+            strides: Strides of array.
+            ndim: Number of dimensions.
+            size: Size of array.
+            flags: Flags of array.
+        """
+
+        self.shape = shape
+        self.strides = strides
+        self.ndim = ndim
+        self.size = size
+        self.flags = flags
+        self._re = NDArray[Self.dtype](shape, strides, ndim, size, flags)
+        self._im = NDArray[Self.dtype](shape, strides, ndim, size, flags)
+
+    fn __init__(
+        out self,
+        shape: NDArrayShape,
+        ref buffer_re: UnsafePointer[Scalar[Self.dtype]],
+        ref buffer_im: UnsafePointer[Scalar[Self.dtype]],
         offset: Int,
         strides: NDArrayStrides,
     ) raises:
         """
-        Extremely specific ComplexNDArray initializer.
+        Initialize an ComplexNDArray view with given shape, buffer, offset, and strides.
+        ***Unsafe!*** This function is currently unsafe. Only for internal use.
+
+        Args:
+            shape: Shape of the array.
+            buffer_re: Unsafe pointer to the real part of the buffer.
+            buffer_im: Unsafe pointer to the imaginary part of the buffer.
+            offset: Offset value.
+            strides: Strides of the array.
         """
         self._re = NDArray(shape, buffer_re, offset, strides)
-        self._im = NDArray(shape, buffer_re, offset, strides)
+        self._im = NDArray(shape, buffer_im, offset, strides)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -201,7 +286,7 @@ struct ComplexNDArray[
         self.flags = self._re.flags
 
     @always_inline("nodebug")
-    fn __copyinit__(mut self, other: Self):
+    fn __copyinit__(out self, other: Self):
         """
         Copy other into self.
         """
@@ -214,7 +299,7 @@ struct ComplexNDArray[
         self.flags = other.flags
 
     @always_inline("nodebug")
-    fn __moveinit__(mut self, owned existing: Self):
+    fn __moveinit__(out self, owned existing: Self):
         """
         Move other into self.
         """
@@ -226,7 +311,7 @@ struct ComplexNDArray[
         self.strides = existing.strides
         self.flags = existing.flags
 
-    # Explicity deallocation
+    # Explicit deallocation
     # @always_inline("nodebug")
     # fn __del__(owned self):
     #     """
@@ -240,7 +325,888 @@ struct ComplexNDArray[
     # Getter and setter dunders and other methods
     # ===-------------------------------------------------------------------===#
 
-    fn _setitem(self, *indices: Int, val: ComplexSIMD[cdtype, dtype=dtype]):
+    # ===-------------------------------------------------------------------===#
+    # Indexing and slicing
+    # Getter and setter dunders and other methods
+    # ===-------------------------------------------------------------------===#
+
+    # ===-------------------------------------------------------------------===#
+    # Getter dunders and other getter methods
+    #
+    # 1. Basic Indexing Operations
+    # fn _getitem(self, *indices: Int) -> ComplexSIMD[Self.dtype]                         # Direct unsafe getter
+    # fn __getitem__(self) raises -> ComplexSIMD[Self.dtype]                             # Get 0d array value
+    # fn __getitem__(self, index: Item) raises -> ComplexSIMD[Self.dtype]                # Get by coordinate list
+    #
+    # 2. Single Index Slicing
+    # fn __getitem__(self, idx: Int) raises -> Self                             # Get by single index
+    #
+    # 3. Multi-dimensional Slicing
+    # fn __getitem__(self, *slices: Slice) raises -> Self                       # Get by variable slices
+    # fn __getitem__(self, slice_list: List[Slice]) raises -> Self              # Get by list of slices
+    # fn __getitem__(self, *slices: Variant[Slice, Int]) raises -> Self         # Get by mix of slices/ints
+    #
+    # 4. Advanced Indexing
+    # fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self        # Get by index array
+    # fn __getitem__(self, indices: List[Int]) raises -> Self                   # Get by list of indices
+    # fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self            # Get by boolean mask
+    # fn __getitem__(self, mask: List[Bool]) raises -> Self                     # Get by boolean list
+    #
+    # 5. Low-level Access
+    # fn item(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Get item by linear index
+    # fn item(self, *index: Int) raises -> ComplexSIMD[Self.dtype]                        # Get item by coordinates
+    # fn load(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Load with bounds check
+    # fn load[width: Int](self, index: Int) raises -> ComplexSIMD[Self.dtype, width]        # Load SIMD value
+    # fn load[width: Int](self, *indices: Int) raises -> ComplexSIMD[Self.dtype, width]     # Load SIMD at coordinates
+    # ===-------------------------------------------------------------------===#
+
+    fn _getitem(self, *indices: Int) -> ComplexSIMD[Self.dtype]:
+        """
+        Get item at indices and bypass all boundary checks.
+        ***UNSAFE!*** No boundary checks made, for internal use only.
+
+        Args:
+            indices: Indices to get the value.
+
+        Returns:
+            The element of the array at the indices.
+
+        Notes:
+            This function is unsafe and should be used only on internal use.
+
+        Examples:
+
+        ```mojo
+        import numojo as nm
+        var A = nm.ones[nm.f32](nm.Shape(2,3,4))
+        print(A._getitem(1,2,3))
+        ```
+        """
+        var index_of_buffer: Int = 0
+        for i in range(self.ndim):
+            index_of_buffer += indices[i] * self.strides._buf[i]
+        return ComplexSIMD[Self.dtype](
+            re=self._re._buf.ptr.load[width=1](index_of_buffer),
+            im=self._im._buf.ptr.load[width=1](index_of_buffer),
+        )
+
+    fn __getitem__(self) raises -> ComplexSIMD[Self.dtype]:
+        """
+        Gets the value of the 0-D Complex array.
+
+        Returns:
+            The value of the 0-D Complex array.
+
+        Raises:
+            Error: If the array is not 0-d.
+
+        Examples:
+
+        ```console
+        >>> import numojo as nm
+        >>> var A = nm.ones[nm.f32](nm.Shape(2,3,4))
+        >>> print(A[]) # gets values of the 0-D array.
+        ```.
+        """
+        if self.ndim != 0:
+            raise Error(
+                "\nError in `numojo.ComplexNDArray.__getitem__()`: "
+                "Cannot get value without index."
+            )
+        return ComplexSIMD[Self.dtype](
+            re=self._re._buf.ptr[],
+            im=self._im._buf.ptr[],
+        )
+
+    fn __getitem__(self, index: Item) raises -> ComplexSIMD[Self.dtype]:
+        """
+        Get the value at the index list.
+
+        Args:
+            index: Index list.
+
+        Returns:
+            The value at the index list.
+
+        Raises:
+            Error: If the length of `index` does not match the number of dimensions.
+            Error: If any of the index elements exceeds the size of the dimension of the array.
+
+        Examples:
+
+        ```console
+        >>>import numojo as nm
+        >>>var A = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>>print(A[Item(1, 2)]) # gets values of the element at (1, 2).
+        ```.
+        """
+        if index.__len__() != self.ndim:
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.__getitem__(index:"
+                    " Item)`: Length of index ({}) does not match the number"
+                    " ofdimensions ({})."
+                ).format(index.__len__(), self.ndim)
+            )
+
+        for i in range(index.__len__()):
+            if index[i] >= self.shape[i]:
+                raise Error(
+                    String(
+                        "\nError in `numojo.ComplexNDArray.__getitem__(index:"
+                        " Item)`: Index out of bounds for dimension {} with"
+                        " index {}  and dimension size {}."
+                    ).format(i, index[i], self.shape[i])
+                )
+
+        var idx: Int = _get_offset(index, self.strides)
+        return ComplexSIMD[Self.dtype](
+            re=self._re._buf.ptr.load[width=1](idx),
+            im=self._im._buf.ptr.load[width=1](idx),
+        )
+
+    fn __getitem__(self, idx: Int) raises -> Self:
+        """
+        Retreive a slice of the ComplexNDArray corresponding to the index at the first dimension.
+
+        Args:
+            idx: Index to get the slice.
+
+        Returns:
+            A slice of the array.
+
+        Raises:
+            Error: If the array is 0-d.
+
+        Examples:
+
+        ```console
+        >>>import numojo as nm
+        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>>print(a[1]) # returns the second row of the array.
+        ```.
+        """
+
+        var slice_list = List[Slice]()
+        slice_list.append(Slice(idx, idx + 1))
+
+        if self.ndim == 0:
+            raise Error(
+                "\nError in `numojo.ComplexNDArray.__getitem__(self, idx:"
+                " Int)`: Cannot slice a 0-d array."
+            )
+
+        var narr: Self
+        if self.ndim == 1:
+            narr = creation._0darray[Self.dtype](
+                ComplexSIMD[Self.dtype](
+                    re=self._re._buf.ptr[idx],
+                    im=self._im._buf.ptr[idx],
+                ),
+            )
+        else:
+            for i in range(1, self.ndim):
+                var size_at_dim: Int = self.shape[i]
+                slice_list.append(Slice(0, size_at_dim))
+
+            narr = self[slice_list]
+
+        return narr
+
+    fn __getitem__(self, owned *slices: Slice) raises -> Self:
+        """
+        Retreive slices of a ComplexNDArray from variadic slices.
+
+        Args:
+            slices: Variadic slices.
+
+        Returns:
+            A slice of the array.
+
+        Examples:
+
+        ```console
+        >>>import numojo as nm
+        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>>var b = a[:, 2:4]
+        >>>print(b) # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
+        ```.
+        """
+
+        var n_slices: Int = slices.__len__()
+        var slice_list: List[Slice] = List[Slice]()
+        for i in range(len(slices)):
+            slice_list.append(slices[i])
+
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                slice_list.append(Slice(0, self.shape[i], 1))
+
+        var narr: Self = self[slice_list]
+        return narr
+
+    fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
+        """
+        Retrieve slices of a ComplexNDArray from a list of slices.
+
+        Args:
+            slice_list: List of slices.
+
+        Returns:
+            A slice of the array.
+
+        Raises:
+            Error: If the slice list is empty.
+
+        Examples:
+
+        ```console
+        >>>import numojo as nm
+        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>>var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
+        >>>print(b)
+        ```.
+        """
+
+        # Check error cases
+        if slice_list.__len__() == 0:
+            raise Error(
+                "\nError in `numojo.ComplexNDArray.__getitem__(slice_list:"
+                " List[Slice])`:\nEmpty slice list provided!"
+            )
+
+        if slice_list.__len__() < self.ndim:
+            for i in range(slice_list.__len__(), self.ndim):
+                slice_list.append(Slice(0, self.shape[i], 1))
+
+        # Adjust slice
+        var slices = self._adjust_slice(slice_list)
+        var spec = List[Int]()
+        var ndims = 0
+
+        # Calculate output shape and validate slices in one pass
+        for i in range(self.ndim):
+            var start: Int = slices[i].start.value()
+            var end: Int = slices[i].end.value()
+            var step: Int = slices[i].step.or_else(1)
+
+            var slice_len: Int = len(range(start, end, step))
+            spec.append(slice_len)
+            if slice_len != 1:
+                ndims += 1
+
+        ndims = 1 if ndims == 0 else ndims
+
+        # Calculate new slices array shape, coefficients, and offset
+        var nshape = List[Int]()
+        var ncoefficients = List[Int]()
+        var noffset = 0
+        var nnum_elements: Int = 1
+
+        for i in range(self.ndim):
+            if spec[i] != 1:
+                nshape.append(spec[i])
+                nnum_elements *= spec[i]
+                ncoefficients.append(self.strides[i] * slices[i].step.value())
+            noffset += slices[i].start.value() * self.strides[i]
+
+        if nshape.__len__() == 0:
+            nshape.append(1)
+            # nnum_elements = 1
+            ncoefficients.append(1)
+
+        # Calculate strides based on memory layout: only C & F order are supported
+        var nstrides = List[Int]()
+        if self.flags.C_CONTIGUOUS:
+            var temp_stride = 1
+            for i in range(nshape.__len__() - 1, -1, -1):
+                nstrides.insert(0, temp_stride)
+                temp_stride *= nshape[i]
+        else:  # F_CONTIGUOUS
+            var temp_stride = 1
+            for i in range(nshape.__len__()):
+                nstrides.append(temp_stride)
+                temp_stride *= nshape[i]
+
+        # Create and iteratively set values in the new array
+        var narr = ComplexNDArray[Self.dtype](
+            offset=noffset, shape=nshape, strides=nstrides
+        )
+        var index_re = List[Int]()
+        for _ in range(ndims):
+            index_re.append(0)
+
+        _traverse_iterative[dtype](
+            self._re,
+            narr._re,
+            nshape,
+            ncoefficients,
+            nstrides,
+            noffset,
+            index_re,
+            0,
+        )
+
+        var index_im = List[Int]()
+        for _ in range(ndims):
+            index_im.append(0)
+
+        _traverse_iterative[dtype](
+            self._im,
+            narr._im,
+            nshape,
+            ncoefficients,
+            nstrides,
+            noffset,
+            index_im,
+            0,
+        )
+
+        return narr
+
+    fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
+        """
+        Get items of ComplexNDArray with a series of either slices or integers.
+
+        Args:
+            slices: A series of either Slice or Int.
+
+        Returns:
+            A slice of the ndarray with a smaller or equal dimension of the original one.
+
+        Raises:
+            Error: If the number of slices is greater than the number of dimensions of the array.
+
+        Examples:
+
+        ```console
+        >>>import numojo as nm
+        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>>var b = a[1, 2:4]
+        >>>print(b)
+        ```.
+        """
+        var n_slices: Int = slices.__len__()
+        if n_slices > self.ndim:
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.__getitem__(slices:"
+                    " Variant[Slice, Int])`:\nNumber of slices {} is greater"
+                    " than number of dimension of array {}!"
+                ).format(n_slices, self.ndim)
+            )
+        var slice_list: List[Slice] = List[Slice]()
+
+        var count_int: Int = 0  # Count the number of Int in the argument
+        for i in range(len(slices)):
+            if slices[i].isa[Slice]():
+                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+            elif slices[i].isa[Int]():
+                count_int += 1
+                var int: Int = slices[i]._get_ptr[Int]()[0]
+                slice_list.append(Slice(int, int + 1))
+
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                var size_at_dim: Int = self.shape[i]
+                slice_list.append(Slice(0, size_at_dim))
+
+        var narr: Self
+        if count_int == self.ndim:
+            narr = creation._0darray[Self.dtype](
+                ComplexSIMD[Self.dtype](
+                    re=self._re._buf.ptr[],
+                    im=self._im._buf.ptr[],
+                ),
+            )
+        else:
+            narr = self[slice_list]
+
+        return narr
+
+    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
+        """
+        Get items from 0-th dimension of a ComplexNDArray of indices.
+        If the original array is of shape (i,j,k) and
+        the indices array is of shape (l, m, n), then the output array
+        will be of shape (l,m,n,j,k).
+
+        Args:
+            indices: Array of indices.
+
+        Returns:
+            ComplexNDArray with items from the array of indices.
+
+        Raises:
+            Error: If the elements of indices are greater than size of the corresponding dimension of the array.
+        """
+        # Get the shape of resulted array
+        var shape = indices.shape.join(self.shape._pop(0))
+
+        var result: ComplexNDArray[Self.dtype] = ComplexNDArray[Self.dtype](
+            shape
+        )
+        var size_per_item = self.size // self.shape[0]
+
+        # Fill in the values
+        for i in range(indices.size):
+            if indices.item(i) >= self.shape[0]:
+                raise Error(
+                    String(
+                        "\nError in `numojo.ComplexNDArray.__getitem__(indices:"
+                        " NDArray[DType.index])`:\nindex {} with value {} is"
+                        " out of boundary [0, {})"
+                    ).format(i, indices.item(i), self.shape[0])
+                )
+            memcpy(
+                result._re._buf.ptr + i * size_per_item,
+                self._re._buf.ptr + indices.item(i) * size_per_item,
+                size_per_item,
+            )
+            memcpy(
+                result._im._buf.ptr + i * size_per_item,
+                self._im._buf.ptr + indices.item(i) * size_per_item,
+                size_per_item,
+            )
+
+        return result
+
+    fn __getitem__(self, indices: List[Int]) raises -> Self:
+        """
+        Get items from 0-th dimension of a ComplexNDArray of indices.
+        It is an overload of
+        `__getitem__(self, indices: NDArray[DType.index]) raises -> Self`.
+
+        Args:
+            indices: A list of Int.
+
+        Returns:
+            ComplexNDArray with items from the list of indices.
+
+        Raises:
+            Error: If the elements of indices are greater than size of the corresponding dimension of the array.
+
+        """
+
+        var indices_array = NDArray[DType.index](shape=Shape(len(indices)))
+        for i in range(len(indices)):
+            (indices_array._buf.ptr + i).init_pointee_copy(indices[i])
+
+        return self[indices_array]
+
+    fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
+        """
+        Get item from a ComplexNDArray according to a mask array.
+        If array shape is equal to mask shape, it returns a flattened array of
+        the values where mask is True.
+        If array shape is not equal to mask shape, it returns items from the
+        0-th dimension of the array where mask is True.
+
+        Args:
+            mask: NDArray with Dtype.bool.
+
+        Returns:
+            ComplexNDArray with items from the mask.
+
+        Raises:
+            Error: If the mask is not a 1-D array (Currently we only support 1-d mask array).
+
+        """
+        # CASE 1:
+        # if array shape is equal to mask shape,
+        # return a flattened array of the values where mask is True
+        if mask.shape == self.shape:
+            var len_of_result = 0
+
+            # Count number of True
+            for i in range(mask.size):
+                if mask.item(i):
+                    len_of_result += 1
+
+            # Change the first number of the ndshape
+            var result = ComplexNDArray[Self.dtype](
+                shape=NDArrayShape(len_of_result)
+            )
+
+            # Fill in the values
+            var offset = 0
+            for i in range(mask.size):
+                if mask.item(i):
+                    (result._re._buf.ptr + offset).init_pointee_copy(
+                        self._re._buf.ptr[i]
+                    )
+                    (result._im._buf.ptr + offset).init_pointee_copy(
+                        self._im._buf.ptr[i]
+                    )
+                    offset += 1
+
+            return result
+
+        # CASE 2:
+        # if array shape is not equal to mask shape,
+        # return items from the 0-th dimension of the array where mask is True
+        if mask.ndim > 1:
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.__getitem__(mask:"
+                    " NDArray[DType.bool])`:\nCurrently we only support 1-d"
+                    " mask array."
+                )
+            )
+
+        if mask.shape[0] != self.shape[0]:
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.__getitem__(mask:"
+                    " NDArray[DType.bool])`:\nShape 0 of mask ({}) does not"
+                    " match that of array ({})."
+                ).format(mask.shape[0], self.shape[0])
+            )
+
+        var len_of_result = 0
+
+        # Count number of True
+        for i in range(mask.size):
+            if mask.item(i):
+                len_of_result += 1
+
+        # Change the first number of the ndshape
+        var shape = self.shape
+        shape._buf[0] = len_of_result
+
+        var result = ComplexNDArray[Self.dtype](shape)
+        var size_per_item = self.size // self.shape[0]
+
+        # Fill in the values
+        var offset = 0
+        for i in range(mask.size):
+            if mask.item(i):
+                memcpy(
+                    result._re._buf.ptr + offset * size_per_item,
+                    self._re._buf.ptr + i * size_per_item,
+                    size_per_item,
+                )
+                memcpy(
+                    result._im._buf.ptr + offset * size_per_item,
+                    self._im._buf.ptr + i * size_per_item,
+                    size_per_item,
+                )
+                offset += 1
+
+        return result
+
+    fn __getitem__(self, mask: List[Bool]) raises -> Self:
+        """
+        Get items from 0-th dimension of a ComplexNDArray according to mask.
+
+        Args:
+            mask: A list of boolean values.
+
+        Returns:
+            ComplexNDArray with items from the mask.
+
+        Raises:
+            Error: If the mask is not a 1-D array (Currently we only support 1-d mask array).
+        """
+
+        var mask_array = NDArray[DType.bool](shape=Shape(len(mask)))
+        for i in range(len(mask)):
+            (mask_array._buf.ptr + i).init_pointee_copy(mask[i])
+
+        return self[mask_array]
+
+    fn item(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]:
+        """
+        Return the scalar at the coordinates.
+        If one index is given, get the i-th item of the complex array (not buffer).
+        It first scans over the first row, even it is a column-major array.
+        If more than one index is given, the length of the indices must match
+        the number of dimensions of the array.
+        If the ndim is 0 (0-D array), get the value as a mojo scalar.
+
+        Args:
+            index: Index of item, counted in row-major way.
+
+        Returns:
+            A ComplexSIMD matching the dtype of the complex array.
+
+        Raises:
+            Error if array is 0-D array (numojo scalar).
+            Error if index is equal or larger than array size.
+
+        Examples:
+
+        ```console
+        >>> import numojo as nm
+        >>> var A = nm.full[nm.f32](Shape(2, 2, 2), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>> print(A.item(10)) # returns the 10-th item of the complex array.
+        ```.
+        """
+        # For 0-D array, raise error
+        if self.ndim == 0:
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.item(index: Int)`: "
+                    "Cannot index a 0-D Complex array (numojo scalar). "
+                    "Use `a.item()` without arguments."
+                )
+            )
+
+        if index < 0:
+            index += self.size
+
+        if (index < 0) or (index >= self.size):
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.item(index: Int)`:"
+                    "`index` exceeds array size ({})"
+                ).format(self.size)
+            )
+
+        if self.flags.F_CONTIGUOUS:
+            return ComplexSIMD[Self.dtype](
+                re=(
+                    self._re._buf.ptr + _transfer_offset(index, self.strides)
+                )[],
+                im=(
+                    self._im._buf.ptr + _transfer_offset(index, self.strides)
+                )[],
+            )
+
+        else:
+            return ComplexSIMD[Self.dtype](
+                re=(self._re._buf.ptr + index)[],
+                im=(self._im._buf.ptr + index)[],
+            )
+
+    fn item(self, *index: Int) raises -> ComplexSIMD[Self.dtype]:
+        """
+        Return the scalar at the coordinates.
+        If one index is given, get the i-th item of the complex array (not buffer).
+        It first scans over the first row, even it is a colume-major array.
+        If more than one index is given, the length of the indices must match
+        the number of dimensions of the array.
+        For 0-D complex array (numojo scalar), return the scalar value.
+
+        Args:
+            index: The coordinates of the item.
+
+        Returns:
+            A ComplexSIMD matching the dtype of the complex array.
+
+        Raises:
+            Error: If the number of indices is not equal to the number of dimensions of the array.
+            Error: If the index is equal or larger than size of dimension.
+
+        Examples:
+
+        ```console
+        >>> import numojo as nm
+        >>> var A = nm.full[nm.f32](Shape(2, 2, 2), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>> print(A.item(1, 1, 1)) # returns the 10-th item of the complex array.
+        ```.
+        """
+
+        if len(index) != self.ndim:
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.item(*index: Int)`:"
+                    "Number of indices ({}) do not match ndim ({})"
+                ).format(len(index), self.ndim)
+            )
+
+        if self.ndim == 0:
+            return ComplexSIMD[Self.dtype](
+                re=self._re._buf.ptr[],
+                im=self._im._buf.ptr[],
+            )
+
+        var list_index = List[Int]()
+        for i in range(len(index)):
+            if index[i] < 0:
+                list_index.append(index[i] + self.shape[i])
+            else:
+                list_index.append(index[i])
+            if (list_index[i] < 0) or (list_index[i] >= self.shape[i]):
+                raise Error(
+                    String("{}-th index exceeds shape size {}").format(
+                        i, self.shape[i]
+                    )
+                )
+        return ComplexSIMD[Self.dtype](
+            re=(self._re._buf.ptr + _get_offset(index, self.strides))[],
+            im=(self._im._buf.ptr + _get_offset(index, self.strides))[],
+        )
+
+    fn load(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]:
+        """
+        Safely retrieve i-th item from the underlying buffer.
+
+        `A.load(i)` differs from `A._buf.ptr[i]` due to boundary check.
+
+        Args:
+            index: Index of the item.
+
+        Returns:
+            The value at the index.
+
+        Raises:
+            Index out of bounds.
+
+        Examples:
+
+        ```console
+        >>> import numojo as nm
+        >>> var A = nm.full[nm.f32](Shape(2, 2, 2), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>> print(A.load(10)) # returns the 10-th item of the complex array.
+        ```.
+        """
+
+        if index < 0:
+            index += self.size
+
+        if (index >= self.size) or (index < 0):
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.load(index: Int)`: "
+                    "Invalid index: index out of bound [0, {})."
+                ).format(self.size)
+            )
+
+        return ComplexSIMD[Self.dtype](
+            re=self._re._buf.ptr[index],
+            im=self._im._buf.ptr[index],
+        )
+
+    fn load[width: Int = 1](self, index: Int) raises -> ComplexSIMD[Self.dtype]:
+        """
+        Safely loads a ComplexSIMD element of size `width` at `index`
+        from the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.load` directly.
+
+        Args:
+            index: Index of the item.
+
+        Returns:
+            The ComplexSIMD element at the index.
+
+        Raises:
+            Index out of boundary.
+        """
+
+        if (index < 0) or (index >= self.size):
+            raise Error(
+                String(
+                    "\nError in `numojo.ComplexNDArray.load[width: Int ="
+                    " 1](index: Int)`:\nInvalid index: index out of bound [0,"
+                    " {})."
+                ).format(self.size)
+            )
+
+        return ComplexSIMD[Self.dtype](
+            re=self._re._buf.ptr.load[width=1](index),
+            im=self._im._buf.ptr.load[width=1](index),
+        )
+
+    fn load[
+        width: Int = 1
+    ](self, *indices: Int) raises -> ComplexSIMD[Self.dtype, width=width]:
+        """
+        Safely loads a ComplexSIMD element of size `width` at given variadic indices
+        from the underlying buffer.
+
+        To bypass boundary checks, use `self._buf.ptr.load` directly.
+
+        Args:
+            indices: Variadic indices.
+
+        Returns:
+            The ComplexSIMD element at the indices.
+
+        Raises:
+            Error: If the length of indices does not match the number of dimensions.
+            Error: If any of the indices is out of bound.
+
+        Examples:
+
+        ```console
+        >>> import numojo as nm
+        >>> var A = nm.full[nm.f32](Shape(2, 2, 2), ComplexSIMD[nm.f32](1.0, 1.0))
+        >>> print(A.load(0, 1, 1))
+        ```.
+        """
+
+        if len(indices) != self.ndim:
+            raise (
+                String(
+                    "\nError in `numojo.ComplexNDArray.load[width: Int ="
+                    " 1](*indices: Int)`:\nLength of indices ({}) does not"
+                    " match ndim ({})."
+                ).format(len(indices), self.ndim)
+            )
+
+        for i in range(self.ndim):
+            if (indices[i] < 0) or (indices[i] >= self.shape[i]):
+                raise Error(
+                    String(
+                        "\nError in `numojo.ComplexNDArray.load[width: Int ="
+                        " 1](*indices: Int)`:\nInvalid index at {}-th dim:"
+                        " index out of bound [0, {})."
+                    ).format(i, self.shape[i])
+                )
+
+        var idx: Int = _get_offset(indices, self.strides)
+        return ComplexSIMD[Self.dtype, width=width](
+            re=self._re._buf.ptr.load[width=width](idx),
+            im=self._im._buf.ptr.load[width=width](idx),
+        )
+
+    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
+        """
+        Adjusts the slice values to lie within 0 and dim.
+        """
+        var n_slices: Int = slice_list.__len__()
+        var slices = List[Slice]()
+        for i in range(n_slices):
+            if i >= self.ndim:
+                raise Error("Error: Number of slices exceeds array dimensions")
+
+            var start: Int = 0
+            var end: Int = self.shape[i]
+            var step: Int
+            if slice_list[i].start is not None:
+                start = slice_list[i].start.value()
+                if start < 0:
+                    # start += self.shape[i]
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+
+            if slice_list[i].end is not None:
+                end = slice_list[i].end.value()
+                if end < 0:
+                    # end += self.shape[i] + 1
+                    raise Error(
+                        "Error: Negative indexing in slices not supported"
+                        " currently"
+                    )
+            step = slice_list[i].step.or_else(1)
+            if step == 0:
+                raise Error("Error: Slice step cannot be zero")
+
+            slices.append(
+                Slice(
+                    start=Optional(start),
+                    end=Optional(end),
+                    step=Optional(step),
+                )
+            )
+
+        return slices^
+
+    fn _setitem(self, *indices: Int, val: ComplexSIMD[Self.dtype]):
         """
         (UNSAFE! for internal use only.)
         Get item at indices and bypass all boundary checks.
@@ -369,9 +1335,7 @@ struct ComplexNDArray[
             val._im, self._im, nshape, ncoefficients, nstrides, noffset, index
         )
 
-    fn __setitem__(
-        mut self, index: Item, val: ComplexSIMD[cdtype, dtype=dtype]
-    ) raises:
+    fn __setitem__(mut self, index: Item, val: ComplexSIMD[Self.dtype]) raises:
         """
         Set the value at the index list.
         """
@@ -398,8 +1362,8 @@ struct ComplexNDArray[
 
     fn __setitem__(
         mut self,
-        mask: ComplexNDArray[cdtype, dtype=dtype],
-        value: ComplexSIMD[cdtype, dtype=dtype],
+        mask: ComplexNDArray[Self.dtype],
+        value: ComplexSIMD[Self.dtype],
     ) raises:
         """
         Set the value of the array at the indices where the mask is true.
@@ -577,8 +1541,8 @@ struct ComplexNDArray[
 
     fn __setitem__(
         mut self,
-        mask: ComplexNDArray[cdtype, dtype=dtype],
-        val: ComplexNDArray[cdtype, dtype=dtype],
+        mask: ComplexNDArray[Self.dtype],
+        val: ComplexNDArray[Self.dtype],
     ) raises:
         """
         Set the value of the ComplexNDArray at the indices where the mask is true.
@@ -596,391 +1560,6 @@ struct ComplexNDArray[
                 self._re._buf.ptr.store(i, val._re._buf.ptr.load(i))
             if mask._im._buf.ptr.load(i):
                 self._im._buf.ptr.store(i, val._im._buf.ptr.load(i))
-
-    # ===-------------------------------------------------------------------===#
-    # Getter dunders and other getter methods
-    # ===-------------------------------------------------------------------===#
-
-    fn _getitem(self, *indices: Int) -> ComplexSIMD[cdtype, dtype=dtype]:
-        """
-        (UNSAFE! for internal use only.)
-        Get item at indices and bypass all boundary checks.
-        """
-        var index_of_buffer: Int = 0
-        for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
-        return ComplexSIMD[cdtype, dtype=dtype](
-            re=self._re._buf.ptr.load[width=1](index_of_buffer),
-            im=self._im._buf.ptr.load[width=1](index_of_buffer),
-        )
-
-    fn __getitem__(self, idx: Int) raises -> Self:
-        """
-        Retreive a slice of the ComplexNDArray corresponding to the index at the first dimension.
-
-        Example:
-            `arr[1]` returns the second row of the ComplexNDArray.
-        """
-
-        var slice_list = List[Slice]()
-        slice_list.append(Slice(idx, idx + 1))
-
-        # 0-d array always return itself
-        if self.ndim == 0:
-            return self
-
-        if self.ndim > 1:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
-
-        var narr: Self = self[slice_list]
-
-        if self.ndim == 1:
-            narr.ndim = 0
-            narr.shape._buf[0] = 0
-
-        return narr
-
-    fn __getitem__(
-        self, index: Item
-    ) raises -> ComplexSIMD[cdtype, dtype=dtype]:
-        """
-        Get the value at the index list.
-        """
-        if index.__len__() != self.ndim:
-            var message = String(
-                "Error: Length of `index` do not match the number of"
-                " dimensions!\n"
-                "Length of indices is {}.\n"
-                "The number of dimensions is {}."
-            ).format(index.__len__(), self.ndim)
-            raise Error(message)
-        for i in range(index.__len__()):
-            if index[i] >= self.shape[i]:
-                var message = String(
-                    "Error: `index` exceeds the size!\n"
-                    "For {}-the mension:\n"
-                    "The index is {}.\n"
-                    "The size of the dimensions is {}"
-                ).format(i, index[i], self.shape[i])
-                raise Error(message)
-        var idx: Int = _get_offset(index, self.strides)
-        return ComplexSIMD[cdtype, dtype=dtype](
-            re=self._re._buf.ptr.load[width=1](idx),
-            im=self._im._buf.ptr.load[width=1](idx),
-        )
-
-    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
-        """
-        Adjusts the slice values to lie within 0 and dim.
-        """
-        var n_slices: Int = slice_list.__len__()
-        var slices = List[Slice]()
-        for i in range(n_slices):
-            if i >= self.ndim:
-                raise Error("Error: Number of slices exceeds array dimensions")
-
-            var start: Int = 0
-            var end: Int = self.shape[i]
-            var step: Int = 1
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    # start += self.shape[i]
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    # end += self.shape[i] + 1
-                    raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
-                    )
-            step = slice_list[i].step.or_else(1)
-            if step == 0:
-                raise Error("Error: Slice step cannot be zero")
-
-            slices.append(
-                Slice(
-                    start=Optional(start),
-                    end=Optional(end),
-                    step=Optional(step),
-                )
-            )
-
-        return slices^
-
-    fn __getitem__(self, owned *slices: Slice) raises -> Self:
-        """
-        Retreive slices of a ComplexNDArray from variadic slices.
-
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced ComplexNDArray (2 x 2).
-        """
-
-        var n_slices: Int = slices.__len__()
-        if n_slices > self.ndim:
-            raise Error("Error: No of slices exceed the array dimensions.")
-        var slice_list: List[Slice] = List[Slice]()
-        for i in range(len(slices)):
-            slice_list.append(slices[i])
-
-        if n_slices < self.ndim:
-            for i in range(n_slices, self.ndim):
-                slice_list.append(Slice(0, self.shape[i]))
-
-        var narr: Self = self[slice_list]
-        return narr
-
-    fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
-        """
-        Retreive slices of a ComplexNDArray from list of slices.
-
-        Example:
-            `arr[1:3, 2:4]` returns the corresponding sliced ComplexNDArray (2 x 2).
-        """
-
-        var n_slices: Int = slice_list.__len__()
-        if n_slices > self.ndim or n_slices < self.ndim:
-            raise Error("Error: No of slices do not match shape")
-
-        var ndims: Int = 0
-        var spec: List[Int] = List[Int]()
-        var count: Int = 0
-
-        var slices: List[Slice] = self._adjust_slice(slice_list)
-        for i in range(slices.__len__()):
-            if (
-                slices[i].start.value() >= self.shape[i]
-                or slices[i].end.value() > self.shape[i]
-            ):
-                raise Error("Error: Slice value exceeds the array shape")
-            var slice_len: Int = len(
-                range(
-                    slices[i].start.value(),
-                    slices[i].end.value(),
-                    slices[i].step.or_else(1),
-                )
-            )
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
-            else:
-                count += 1
-        if count == slices.__len__():
-            ndims = 1
-
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
-
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = len(
-                range(
-                    slices[j].start.value(),
-                    slices[j].end.value(),
-                    slices[j].step.or_else(1),
-                )
-            )
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(self.strides[j] * slices[j].step.value())
-            j += 1
-
-        if count == slices.__len__():
-            nshape.append(1)
-            nnum_elements = 1
-            ncoefficients.append(1)
-
-        var noffset: Int = 0
-        if self.flags["C_CONTIGUOUS"]:
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slices.__len__()):
-                noffset += slices[i].start.value() * self.strides[i]
-
-        elif self.flags["F_CONTIGUOUS"]:
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slices.__len__()):
-                noffset += slices[i].start.value() * self.strides[i]
-
-        var narr = Self(
-            offset=noffset,
-            shape=nshape,
-            strides=nstrides,
-        )
-
-        var index = List[Int]()
-        for _ in range(ndims):
-            index.append(0)
-
-        _traverse_iterative[dtype](
-            self._re,
-            narr._re,
-            nshape,
-            ncoefficients,
-            nstrides,
-            noffset,
-            index,
-            0,
-        )
-        _traverse_iterative[dtype](
-            self._im,
-            narr._im,
-            nshape,
-            ncoefficients,
-            nstrides,
-            noffset,
-            index,
-            0,
-        )
-
-        return narr
-
-    fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
-        """
-        Get items by a series of either slices or integers.
-
-        Args:
-            slices: A series of either Slice or Int.
-
-        Returns:
-            A ComplexNDArray with a smaller or equal dimension of the original one.
-        """
-
-        var n_slices: Int = slices.__len__()
-        if n_slices > self.ndim:
-            raise Error(
-                String(
-                    "Error: number of slices {} \n"
-                    "is greater than number of dimension of array {}!"
-                ).format(n_slices, self.ndim)
-            )
-        var slice_list: List[Slice] = List[Slice]()
-
-        var count_int = 0  # Count the number of Int in the argument
-
-        for i in range(len(slices)):
-            if slices[i].isa[Slice]():
-                slice_list.append(slices[i]._get_ptr[Slice]()[0])
-            elif slices[i].isa[Int]():
-                count_int += 1
-                var int: Int = slices[i]._get_ptr[Int]()[0]
-                slice_list.append(Slice(int, int + 1))
-
-        if n_slices < self.ndim:
-            for i in range(n_slices, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
-
-        var narr: Self = self[slice_list]
-
-        if count_int == self.ndim:
-            narr.ndim = 0
-            narr.shape._buf[0] = 0
-
-        return narr
-
-    fn __getitem__(self, index: List[Int]) raises -> Self:
-        """
-        Get items of ComplexNDArray from a list of indices.
-
-        It always gets the first dimension.
-        ```
-
-        Args:
-            index: List[Int].
-
-        Returns:
-            ComplexNDArray with items from the list of indices.
-        """
-
-        # Shape of the result should be
-        # Number of indice * shape from dim-1
-        # So just change the first number of the ndshape
-        var ndshape = self.shape
-        ndshape[0] = len(index)
-        ndsize = 1
-        for i in range(ndshape.ndim):
-            ndsize *= Int(ndshape._buf[i])
-        var result = ComplexNDArray[cdtype, dtype=dtype](ndshape)
-        var size_per_item = ndsize // len(index)
-
-        # Fill in the values
-        for i in range(len(index)):
-            for j in range(size_per_item):
-                result._re._buf.ptr.store(
-                    i * size_per_item + j, self[Int(index[i])].item(j).re
-                )
-                result._im._buf.ptr.store(
-                    i * size_per_item + j, self[Int(index[i])].item(j).im
-                )
-
-        return result
-
-    fn __getitem__(self, index: NDArray[DType.index]) raises -> Self:
-        """
-        Get items of ComplexNDArray from an array of indices.
-
-        Refer to `__getitem__(self, index: List[Int])`.
-        """
-
-        var new_index = List[Int]()
-        for i in index:
-            new_index.append(Int(i.item(0)))
-
-        return self[new_index]
-
-    fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
-        """
-        Get items of ComplexNDArray corresponding to a mask.
-
-        Example:
-            ```
-            var A = numojo.core.NDArray[numojo.i16](6, random=True)
-            var mask = A > 0
-            print(A)
-            print(mask)
-            print(A[mask])
-            ```
-
-        Args:
-            mask: NDArray with Dtype.bool.
-
-        Returns:
-            ComplexNDArray with items from the mask.
-        """
-        var true: List[Int] = List[Int]()
-        for i in range(mask.size):
-            if mask._buf.ptr.load[width=1](i):
-                true.append(i)
-
-        var result = Self(Shape(true.__len__()))
-        for i in range(true.__len__()):
-            result._re._buf.ptr.store(i, self._re.load(true[i]))
-            result._im._buf.ptr.store(i, self._im.load(true[i]))
-
-        return result
 
     fn __pos__(self) raises -> Self:
         """
@@ -1004,7 +1583,7 @@ struct ComplexNDArray[
                 "complex_ndarray:ComplexNDArray:__neg__: neg does not accept"
                 " bool type arrays"
             )
-        return self * ComplexSIMD[cdtype, dtype=dtype](-1.0, -1.0)
+        return self * ComplexSIMD[Self.dtype](-1.0, -1.0)
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
@@ -1017,7 +1596,7 @@ struct ComplexNDArray[
 
     @always_inline("nodebug")
     fn __eq__(
-        self, other: ComplexSIMD[cdtype, dtype=dtype]
+        self, other: ComplexSIMD[Self.dtype]
     ) raises -> NDArray[DType.bool]:
         """
         Itemwise equivalence between scalar and ComplexNDArray.
@@ -1037,7 +1616,7 @@ struct ComplexNDArray[
 
     @always_inline("nodebug")
     fn __ne__(
-        self, other: ComplexSIMD[cdtype, dtype=dtype]
+        self, other: ComplexSIMD[Self.dtype]
     ) raises -> NDArray[DType.bool]:
         """
         Itemwise non-equivalence between scalar and ComplexNDArray.
@@ -1046,9 +1625,11 @@ struct ComplexNDArray[
             self._re, other.re
         ) and comparison.not_equal[dtype](self._im, other.im)
 
-    """ ARITHMETIC OPERATIONS """
+    # ===------------------------------------------------------------------=== #
+    # ARITHMETIC OPERATIONS
+    # ===------------------------------------------------------------------=== #
 
-    fn __add__(self, other: ComplexSIMD[cdtype, dtype=dtype]) raises -> Self:
+    fn __add__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray + ComplexSIMD`.
         """
@@ -1068,6 +1649,7 @@ struct ComplexNDArray[
         """
         Enables `ComplexNDArray + ComplexNDArray`.
         """
+        print("add complex arrays")
         var real: NDArray[dtype] = math.add[dtype](self._re, other._re)
         var imag: NDArray[dtype] = math.add[dtype](self._im, other._im)
         return Self(real, imag)
@@ -1080,9 +1662,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.add[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __radd__(
-        mut self, other: ComplexSIMD[cdtype, dtype=dtype]
-    ) raises -> Self:
+    fn __radd__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexSIMD + ComplexNDArray`.
         """
@@ -1094,12 +1674,8 @@ struct ComplexNDArray[
         """
         Enables `Scalar + ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.add[dtype](
-            self._re, other.cast[dtype]()
-        )
-        var imag: NDArray[dtype] = math.add[dtype](
-            self._im, other.cast[dtype]()
-        )
+        var real: NDArray[dtype] = math.add[dtype](self._re, other)
+        var imag: NDArray[dtype] = math.add[dtype](self._im, other)
         return Self(real, imag)
 
     fn __radd__(mut self, other: NDArray[dtype]) raises -> Self:
@@ -1110,7 +1686,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.add[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __iadd__(mut self, other: ComplexSIMD[cdtype, dtype=dtype]) raises:
+    fn __iadd__(mut self, other: ComplexSIMD[Self.dtype]) raises:
         """
         Enables `ComplexNDArray += ComplexSIMD`.
         """
@@ -1138,7 +1714,7 @@ struct ComplexNDArray[
         self._re += other
         self._im += other
 
-    fn __sub__(self, other: ComplexSIMD[cdtype, dtype=dtype]) raises -> Self:
+    fn __sub__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray - ComplexSIMD`.
         """
@@ -1174,9 +1750,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.sub[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __rsub__(
-        mut self, other: ComplexSIMD[cdtype, dtype=dtype]
-    ) raises -> Self:
+    fn __rsub__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexSIMD - ComplexNDArray`.
         """
@@ -1200,7 +1774,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.sub[dtype](other, self._im)
         return Self(real, imag)
 
-    fn __isub__(mut self, other: ComplexSIMD[cdtype, dtype=dtype]) raises:
+    fn __isub__(mut self, other: ComplexSIMD[Self.dtype]) raises:
         """
         Enables `ComplexNDArray -= ComplexSIMD`.
         """
@@ -1235,7 +1809,7 @@ struct ComplexNDArray[
         var im_re: NDArray[dtype] = linalg.matmul[dtype](self._im, other._re)
         return Self(re_re - im_im, re_im + im_re)
 
-    fn __mul__(self, other: ComplexSIMD[cdtype, dtype=dtype]) raises -> Self:
+    fn __mul__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray * ComplexSIMD`.
         """
@@ -1271,7 +1845,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.mul[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __rmul__(self, other: ComplexSIMD[cdtype, dtype=dtype]) raises -> Self:
+    fn __rmul__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexSIMD * ComplexNDArray`.
         """
@@ -1295,7 +1869,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.mul[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __imul__(mut self, other: ComplexSIMD[cdtype, dtype=dtype]) raises:
+    fn __imul__(mut self, other: ComplexSIMD[Self.dtype]) raises:
         """
         Enables `ComplexNDArray *= ComplexSIMD`.
         """
@@ -1323,9 +1897,7 @@ struct ComplexNDArray[
         self._re *= other
         self._im *= other
 
-    fn __truediv__(
-        self, other: ComplexSIMD[cdtype, dtype=dtype]
-    ) raises -> Self:
+    fn __truediv__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexSIMD`.
         """
@@ -1341,9 +1913,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.div[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __truediv__(
-        self, other: ComplexNDArray[cdtype, dtype=dtype]
-    ) raises -> Self:
+    fn __truediv__(self, other: ComplexNDArray[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexNDArray`.
         """
@@ -1361,9 +1931,7 @@ struct ComplexNDArray[
         var imag: NDArray[dtype] = math.div[dtype](self._im, other)
         return Self(real, imag)
 
-    fn __rtruediv__(
-        mut self, other: ComplexSIMD[cdtype, dtype=dtype]
-    ) raises -> Self:
+    fn __rtruediv__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
         """
         Enables `ComplexSIMD / ComplexNDArray`.
         """
@@ -1393,7 +1961,7 @@ struct ComplexNDArray[
         var imag = numer._im / denom._re
         return Self(real, imag)
 
-    fn __itruediv__(mut self, other: ComplexSIMD[cdtype, dtype=dtype]) raises:
+    fn __itruediv__(mut self, other: ComplexSIMD[Self.dtype]) raises:
         """
         Enables `ComplexNDArray /= ComplexSIMD`.
         """
@@ -1464,17 +2032,17 @@ struct ComplexNDArray[
         An example is:
         ```
         fn main() raises:
-            var A = ComplexNDArray[cf32](List[ComplexSIMD[cf32]](14,97,-59,-4,112,), shape=List[Int](5,))
+            var A = ComplexNDArray[f32](List[ComplexSIMD[f32]](14,97,-59,-4,112,), shape=List[Int](5,))
             print(repr(A))
         ```
         It prints what can be used to construct the array itself:
         ```console
-            ComplexNDArray[cf32](List[ComplexSIMD[cf32]](14,97,-59,-4,112,), shape=List[Int](5,))
+            ComplexNDArray[f32](List[ComplexSIMD[f32]](14,97,-59,-4,112,), shape=List[Int](5,))
         ```.
         """
         try:
             var result: String = String("ComplexNDArray[CDType.") + String(
-                self.cdtype
+                self.dtype
             ) + String("](List[ComplexSIMD[CDType.c") + String(
                 self._re.dtype
             ) + String(
@@ -1612,34 +2180,9 @@ struct ComplexNDArray[
     fn __len__(self) -> Int:
         return Int(self._re.size)
 
-    fn load[
-        width: Int = 1
-    ](self, index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
-        """
-        Safely loads a SIMD element of size `width` at `index`
-        from the underlying buffer.
-
-        To bypass boundary checks, use `self._buf.ptr.load` directly.
-
-        Raises:
-            Index out of boundary.
-        """
-
-        if (index < 0) or (index >= self.size):
-            raise Error(
-                String("Invalid index: index out of bound [0, {}).").format(
-                    self.size
-                )
-            )
-
-        return ComplexSIMD[cdtype, dtype=dtype](
-            re=self._re._buf.ptr.load[width=1](index),
-            im=self._im._buf.ptr.load[width=1](index),
-        )
-
     fn store[
         width: Int = 1
-    ](mut self, index: Int, val: ComplexSIMD[cdtype, dtype=dtype]) raises:
+    ](mut self, index: Int, val: ComplexSIMD[Self.dtype]) raises:
         """
         Safely stores SIMD element of size `width` at `index`
         of the underlying buffer.
@@ -1660,46 +2203,9 @@ struct ComplexNDArray[
         self._re._buf.ptr.store(index, val.re)
         self._im._buf.ptr.store(index, val.im)
 
-    fn load[
-        width: Int = 1
-    ](self, *indices: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
-        """
-        Safely loads a SIMD element of size `width` at given variadic indices
-        from the underlying buffer.
-
-        To bypass boundary checks, use `self._buf.ptr.load` directly.
-
-        Raises:
-            Index out of boundary.
-        """
-
-        if len(indices) != self.ndim:
-            raise (
-                String(
-                    "Length of indices {} does not match ndim {}".format(
-                        len(indices), self.ndim
-                    )
-                )
-            )
-
-        for i in range(self.ndim):
-            if (indices[i] < 0) or (indices[i] >= self.shape[i]):
-                raise Error(
-                    String(
-                        "Invalid index at {}-th dim: "
-                        "index out of bound [0, {})."
-                    ).format(i, self.shape[i])
-                )
-
-        var idx: Int = _get_offset(indices, self.strides)
-        return ComplexSIMD[cdtype, dtype=dtype](
-            re=self._re._buf.ptr.load[width=1](idx),
-            im=self._im._buf.ptr.load[width=1](idx),
-        )
-
     fn store[
         width: Int = 1
-    ](mut self, *indices: Int, val: ComplexSIMD[cdtype, dtype=dtype]) raises:
+    ](mut self, *indices: Int, val: ComplexSIMD[Self.dtype]) raises:
         """
         Safely stores SIMD element of size `width` at given variadic indices
         of the underlying buffer.
@@ -1712,10 +2218,8 @@ struct ComplexNDArray[
 
         if len(indices) != self.ndim:
             raise (
-                String(
-                    "Length of indices {} does not match ndim {}".format(
-                        len(indices), self.ndim
-                    )
+                String("Length of indices {} does not match ndim {}").format(
+                    len(indices), self.ndim
                 )
             )
 
@@ -1732,131 +2236,45 @@ struct ComplexNDArray[
         self._re._buf.ptr.store(idx, val.re)
         self._im._buf.ptr.store(idx, val.im)
 
-    # fn __iter__(self) raises -> _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype]:
-    #     """Iterate over elements of the NDArray, returning copied value.
-
-    #     Returns:
-    #         An iterator of NDArray elements.
-
-    #     Notes:
-    #         Need to add lifetimes after the new release.
-    #     """
-
-    #     return _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype](
-    #         array=self,
-    #         length=self.shape[0],
-    #     )
-
-    # fn __reversed__(
-    #     self,
-    # ) raises -> _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype, forward=False]:
-    #     """Iterate backwards over elements of the NDArray, returning
-    #     copied value.
-
-    #     Returns:
-    #         A reversed iterator of NDArray elements.
-    #     """
-
-    # #     return _ComplexNDArrayIter[__origin_of(self._re), __origin_of(self._im), cdtype, dtype, forward=False](
-    # #         array=self,
-    # #         length=self.shape[0],
-    # #     )
-
-    fn item(self, owned index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
+    fn __iter__(
+        self,
+    ) raises -> _ComplexNDArrayIter[__origin_of(self._re), Self.dtype]:
         """
-        Return the scalar at the coordinates.
-
-        If one index is given, get the i-th item of the ComplexNDArray (not buffer).
-        It first scans over the first row, even it is a colume-major array.
-
-        If more than one index is given, the length of the indices must match
-        the number of dimensions of the array.
-
-        Args:
-            index: Index of item, counted in row-major way.
+        Iterates over elements of the ComplexNDArray and return sub-arrays as view.
 
         Returns:
-            A scalar matching the dtype of the array.
-
-        Raises:
-            Index is equal or larger than array size.
+            An iterator of ComplexNDArray elements.
         """
 
-        if index < 0:
-            index += self.size
+        return _ComplexNDArrayIter[__origin_of(self._re), Self.dtype](
+            self,
+            dimension=0,
+        )
 
-        if (index < 0) or (index >= self.size):
-            raise Error(
-                String("`index` exceeds array size ({})").format(self.size)
-            )
-
-        if self.flags["F_CONTIGUOUS"]:
-            var c_stride = NDArrayStrides(shape=self.shape)
-            var c_coordinates = List[Int]()
-            var idx: Int = index
-            for i in range(c_stride.ndim):
-                var coordinate = idx // c_stride[i]
-                idx = idx - c_stride[i] * coordinate
-                c_coordinates.append(coordinate)
-
-            # Get the value by coordinates and the strides
-            return ComplexSIMD[cdtype, dtype=dtype](
-                re=self._re._buf.ptr[_get_offset(c_coordinates, self.strides)],
-                im=self._im._buf.ptr[_get_offset(c_coordinates, self.strides)],
-            )
-
-        else:
-            return ComplexSIMD[cdtype, dtype=dtype](
-                re=self._re._buf.ptr[index], im=self._im._buf.ptr[index]
-            )
-
-    fn item(self, *index: Int) raises -> ComplexSIMD[cdtype, dtype=dtype]:
+    fn __reversed__(
+        self,
+    ) raises -> _ComplexNDArrayIter[
+        __origin_of(self._re), Self.dtype, forward=False
+    ]:
         """
-        Return the scalar at the coordinates.
-
-        If one index is given, get the i-th item of the ComplexNDArray (not buffer).
-        It first scans over the first row, even it is a colume-major array.
-
-        If more than one index is given, the length of the indices must match
-        the number of dimensions of the array.
-
-        Args:
-            index: The coordinates of the item.
+        Iterates backwards over elements of the ComplexNDArray, returning
+        copied value.
 
         Returns:
-            A scalar matching the dtype of the array.
-
-        Raises:
-            Index is equal or larger than size of dimension.
+            A reversed iterator of NDArray elements.
         """
 
-        if len(index) != self.ndim:
-            raise Error(
-                String("Number of indices ({}) do not match ndim ({})").format(
-                    len(index), self.ndim
-                )
-            )
-        var list_index = List[Int]()
-        for i in range(len(index)):
-            if index[i] < 0:
-                list_index.append(index[i] + self.shape[i])
-            else:
-                list_index.append(index[i])
-            if (list_index[i] < 0) or (list_index[i] >= self.shape[i]):
-                raise Error(
-                    String("{}-th index exceeds shape size {}").format(
-                        i, self.shape[i]
-                    )
-                )
-        return ComplexSIMD[cdtype, dtype=dtype](
-            re=self._re._buf.ptr[_get_offset(index, self.strides)],
-            im=self._im._buf.ptr[_get_offset(index, self.strides)],
+        return _ComplexNDArrayIter[
+            __origin_of(self._re), Self.dtype, forward=False
+        ](
+            self,
+            dimension=0,
         )
 
     fn itemset(
         mut self,
         index: Variant[Int, List[Int]],
-        item: ComplexSIMD[cdtype, dtype=dtype],
+        item: ComplexSIMD[Self.dtype],
     ) raises:
         """Set the scalar at the coordinates.
 
@@ -1931,63 +2349,159 @@ struct ComplexNDArray[
             raise Error("Invalid type: " + type + ", must be 're' or 'im'")
 
 
-# @value
-# struct _ComplexNDArrayIter[
-#     is_mutable: Bool, //,
-#     origin: Origin[is_mutable],
-#     cdtype: CDType,
-#     dtype: DType,
-#     forward: Bool = True,
-# ]:
-#     """
-#     Iterator for NDArray.
+@value
+struct _ComplexNDArrayIter[
+    is_mutable: Bool, //,
+    origin: Origin[is_mutable],
+    dtype: DType,
+    forward: Bool = True,
+]:
+    # TODO:
+    # Return a view instead of copy where possible
+    # (when Bufferable is supported).
+    """
+    An iterator yielding `ndim-1` array slices over the given dimension.
+    It is the default iterator of the `ComplexNDArray.__iter__() method and for loops.
+    It can also be constructed using the `ComplexNDArray.iter_over_dimension()` method.
+    It trys to create a view where possible.
 
-#     Parameters:
-#         is_mutable: Whether the iterator is mutable.
-#         origin: The lifetime of the underlying NDArray data.
-#         cdtype: The complex data type of the item.
-#         dtype: The data type of the item.
-#         forward: The iteration direction. `False` is backwards.
-#     """
+    Parameters:
+        is_mutable: Whether the iterator is mutable.
+        origin: The lifetime of the underlying NDArray data.
+        dtype: The data type of the item.
+        forward: The iteration direction. `False` is backwards.
+    """
 
-#     var index: Int
-#     var array: ComplexNDArray[cdtype, dtype=dtype]
-#     var length: Int
+    var index: Int
+    var re_ptr: UnsafePointer[Scalar[dtype]]
+    var im_ptr: UnsafePointer[Scalar[dtype]]
+    var dimension: Int
+    var length: Int
+    var shape: NDArrayShape
+    var strides: NDArrayStrides
+    """Strides of array or view. It is not necessarily compatible with shape."""
+    var ndim: Int
+    var size_of_item: Int
 
-#     fn __init__(
-#         mut self,
-#         array: ComplexNDArray[cdtype, dtype=dtype],
-#         length: Int,
-#     ):
-#         self.index = 0 if forward else length
-#         self.length = length
-#         self.array = array
+    fn __init__(
+        out self, read a: ComplexNDArray[dtype], read dimension: Int
+    ) raises:
+        """
+        Initialize the iterator.
 
-#     fn __iter__(self) -> Self:
-#         return self
+        Args:
+            a: The array
+            dimension: Dimension to iterate over.
+        """
 
-#     fn __next__(mut self) raises -> ComplexNDArray[cdtype, dtype=dtype]:
-#         @parameter
-#         if forward:
-#             var current_index = self.index
-#             self.index += 1
-#             return self.array.__getitem__(current_index)
-#         else:
-#             var current_index = self.index
-#             self.index -= 1
-#             return self.array.__getitem__(current_index)
+        if dimension < 0 or dimension >= a.ndim:
+            raise Error("Axis must be in the range of [0, ndim).")
 
-#     @always_inline
-#     fn __has_next__(self) -> Bool:
-#         @parameter
-#         if forward:
-#             return self.index < self.length
-#         else:
-#             return self.index > 0
+        self.re_ptr = a._re._buf.ptr
+        self.im_ptr = a._im._buf.ptr
+        self.dimension = dimension
+        self.shape = a.shape
+        self.strides = a.strides
+        self.ndim = a.ndim
+        self.length = a.shape[dimension]
+        self.size_of_item = a.size // a.shape[dimension]
+        # Status of the iterator
+        self.index = 0 if forward else a.shape[dimension] - 1
 
-#     fn __len__(self) -> Int:
-#         @parameter
-#         if forward:
-#             return self.length - self.index
-#         else:
-#             return self.index
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __next__(mut self) raises -> ComplexNDArray[dtype]:
+        var res = ComplexNDArray[dtype](self.shape._pop(self.dimension))
+        var current_index = self.index
+
+        @parameter
+        if forward:
+            self.index += 1
+        else:
+            self.index -= 1
+
+        for offset in range(self.size_of_item):
+            var remainder = offset
+            var item = Item(ndim=self.ndim, initialized=False)
+
+            for i in range(self.ndim - 1, -1, -1):
+                if i != self.dimension:
+                    (item._buf + i).init_pointee_copy(remainder % self.shape[i])
+                    remainder = remainder // self.shape[i]
+                else:
+                    (item._buf + self.dimension).init_pointee_copy(
+                        current_index
+                    )
+
+            (res._re._buf.ptr + offset).init_pointee_copy(
+                self.re_ptr[_get_offset(item, self.strides)]
+            )
+            (res._im._buf.ptr + offset).init_pointee_copy(
+                self.im_ptr[_get_offset(item, self.strides)]
+            )
+        return res
+
+    @always_inline
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index >= 0
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index
+
+    fn ith(self, index: Int) raises -> ComplexNDArray[dtype]:
+        """
+        Gets the i-th array of the iterator.
+
+        Args:
+            index: The index of the item. It must be non-negative.
+
+        Returns:
+            The i-th `ndim-1`-D array of the iterator.
+        """
+
+        if (index >= self.length) or (index < 0):
+            raise Error(
+                String(
+                    "\nError in `ComplexNDArrayIter.ith()`: "
+                    "Index ({}) must be in the range of [0, {})"
+                ).format(index, self.length)
+            )
+
+        if self.ndim > 1:
+            var res = ComplexNDArray[dtype](self.shape._pop(self.dimension))
+
+            for offset in range(self.size_of_item):
+                var remainder = offset
+                var item = Item(ndim=self.ndim, initialized=False)
+
+                for i in range(self.ndim - 1, -1, -1):
+                    if i != self.dimension:
+                        (item._buf + i).init_pointee_copy(
+                            remainder % self.shape[i]
+                        )
+                        remainder = remainder // self.shape[i]
+                    else:
+                        (item._buf + self.dimension).init_pointee_copy(index)
+
+                (res._re._buf.ptr + offset).init_pointee_copy(
+                    self.re_ptr[_get_offset(item, self.strides)]
+                )
+                (res._im._buf.ptr + offset).init_pointee_copy(
+                    self.im_ptr[_get_offset(item, self.strides)]
+                )
+            return res
+
+        else:  # 0-D array
+            var res = numojo.creation._0darray[dtype](
+                ComplexSIMD[dtype](self.re_ptr[index], self.im_ptr[index])
+            )
+            return res

@@ -13,6 +13,7 @@
 # magic environments
 .magic
 magic.lock
+pixi.lock
 
 # pixi environments
 .pixi

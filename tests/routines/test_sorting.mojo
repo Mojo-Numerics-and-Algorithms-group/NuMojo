@@ -92,5 +92,36 @@ fn test_sorting() raises:
         check(
             C,
             Cnp,
-            String("`NDArray.sort()` 3d by axis {} is broken").format(i),
+            String("`NDArray.sort()` 3d in-place by axis {} is broken").format(
+                i
+            ),
+        )
+
+    # Sort stably
+    check(
+        nm.sort(A, axis=0, stable=True),
+        np.sort(A.to_numpy(), axis=0, stable=True),
+        "`sort` 1d stably is broken",
+    )
+    check(
+        nm.sort(B, axis=0, stable=True),
+        np.sort(B.to_numpy(), axis=0, stable=True),
+        "`sort` 2d stably by axis 0 is broken",
+    )
+    check(
+        nm.sort(B, axis=1, stable=True),
+        np.sort(B.to_numpy(), axis=1, stable=True),
+        "`sort` 2d stably by axis 1 is broken",
+    )
+    for i in range(3):
+        check(
+            nm.sort(C, axis=i, stable=True),
+            np.sort(C.to_numpy(), axis=i, stable=True),
+            String("`sort` 3d stably by axis {} is broken").format(i),
+        )
+    for i in range(6):
+        check(
+            nm.sort(S, axis=i, stable=True),
+            np.sort(S.to_numpy(), axis=i, stable=True),
+            String("`sort` 6d stably by axis {} is broken").format(i),
         )

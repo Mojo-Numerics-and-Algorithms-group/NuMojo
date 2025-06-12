@@ -85,7 +85,7 @@ def test_iterator():
     # NDArrayIter
     var a_iter_over_dimension = a.__iter__()
     var anp_iter_over_dimension = anp.__iter__()
-    for i in range(a.shape[0]):
+    for _ in range(a.shape[0]):
         check(
             a_iter_over_dimension.__next__(),
             anp_iter_over_dimension.__next__(),
@@ -94,7 +94,7 @@ def test_iterator():
 
     var a_iter_over_dimension_reversed = a.__reversed__()
     var anp_iter_over_dimension_reversed = py.reversed(anp)
-    for i in range(a.shape[0]):
+    for _ in range(a.shape[0]):
         check(
             a_iter_over_dimension_reversed.__next__(),
             anp_iter_over_dimension_reversed.__next__(),
@@ -104,7 +104,7 @@ def test_iterator():
     # NDIter of C-order array
     var a_nditer = a.nditer()
     var anp_nditer = np.nditer(anp)
-    for i in range(a.size):
+    for _ in range(a.size):
         check_values_close(
             a_nditer.__next__(),
             anp_nditer.__next__(),
@@ -123,7 +123,7 @@ def test_iterator():
 
     var a_nditer_f = a.nditer(order="F")
     var anp_nditer_f = np.nditer(anp, order="F")
-    for i in range(a.size):
+    for _ in range(a.size):
         check_values_close(
             a_nditer_f.__next__(),
             anp_nditer_f.__next__(),
@@ -133,7 +133,7 @@ def test_iterator():
     # NDIter of F-order array
     var f_nditer = f.nditer()
     var fnp_nditer = np.nditer(fnp)
-    for i in range(f.size):
+    for _ in range(f.size):
         check_values_close(
             f_nditer.__next__(),
             fnp_nditer.__next__(),
@@ -142,7 +142,7 @@ def test_iterator():
 
     var f_nditer_f = f.nditer(order="F")
     var fnp_nditer_f = np.nditer(fnp, order="F")
-    for i in range(f.size):
+    for _ in range(f.size):
         check_values_close(
             f_nditer_f.__next__(),
             fnp_nditer_f.__next__(),

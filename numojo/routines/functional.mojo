@@ -27,6 +27,9 @@ from numojo.core.ndstrides import NDArrayStrides
 # `a` is a 1-d array slice of the original array along given axis.
 # ===----------------------------------------------------------------------=== #
 
+# The following overloads of `apply_along_axis` are for the case when the
+# dimension of the input array is reduced.
+
 
 fn apply_along_axis[
     dtype: DType,
@@ -61,6 +64,55 @@ fn apply_along_axis[
 
     else:
         res = NDArray[dtype](a.shape._pop(axis=axis))
+
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                (res._buf.ptr + i).init_pointee_copy(
+                    func1d[dtype](iterator.ith(i))
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return res^
+
+
+fn apply_along_axis[
+    dtype: DType,
+    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
+        DType.index
+    ],
+](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+    """
+    Applies a function to a NDArray by axis and reduce that dimension.
+    The returned data type is DType.index.
+    When the array is 1-d, the returned array will be a 0-d array.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func1d: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+
+    Returns:
+        The NDArray with the function applied to the input NDArray by axis.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_along_axis(axis=axis)
+    # The final output array will have 1 less dimension than the input array
+    var res: NDArray[DType.index]
+
+    if a.ndim == 1:
+        res = numojo.creation._0darray[DType.index](0)
+        (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
+
+    else:
+        res = NDArray[DType.index](a.shape._pop(axis=axis))
 
         @parameter
         fn parallelized_func(i: Int):
@@ -131,6 +183,10 @@ fn apply_along_axis[
     return res^
 
 
+# The following overloads of `apply_along_axis` are for the case when the
+# dimension of the input array is not reduced.
+
+
 fn apply_along_axis[
     dtype: DType, //,
     func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
@@ -198,6 +254,75 @@ fn apply_along_axis[
         parallelize[parallelized_func](a.size // a.shape[axis])
 
     return res^
+
+
+# The following overloads of `apply_along_axis` are for the case when the
+# dimension of the input array is not reduced.
+# The function is applied in-place to the input array.
+# For example, `sort_inplace()`.
+
+
+fn apply_along_axis[
+    dtype: DType, //,
+    func1d: fn[dtype_func: DType] (mut NDArray[dtype_func]) raises -> None,
+](mut a: NDArray[dtype], axis: Int) raises -> None:
+    """
+    Applies a function to a NDArray by axis without reducing that dimension.
+    The function is applied in-place to the input array.
+
+    Parameters:
+        dtype: The data type of the input NDArray elements.
+        func1d: The function to apply to the NDArray.
+
+    Args:
+        a: The NDArray to apply the function to.
+        axis: The axis to apply the function to.
+    """
+
+    # The iterator along the axis
+    var iterator = a.iter_along_axis(axis=axis)
+
+    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+        # The memory layout is C-contiguous
+        @parameter
+        fn parallelized_func_c(i: Int):
+            try:
+                var elements: NDArray[dtype] = iterator.ith(i)
+                func1d[dtype](elements)
+                memcpy(
+                    a._buf.ptr + i * elements.size,
+                    elements._buf.ptr,
+                    elements.size,
+                )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func_c](a.size // a.shape[axis])
+
+    else:
+        # The memory layout is not contiguous
+        @parameter
+        fn parallelized_func(i: Int):
+            try:
+                # The indices of the input array in each iteration
+                var indices: NDArray[DType.index]
+                # The elements of the input array in each iteration
+                var elements: NDArray[dtype]
+                # The array after applied the function
+                indices, elements = iterator.ith_with_offsets(i)
+
+                func1d[dtype](elements)
+
+                for j in range(a.shape[axis]):
+                    (a._buf.ptr + Int(indices[j])).init_pointee_copy(
+                        (elements._buf.ptr + j)[]
+                    )
+            except e:
+                print("Error in parallelized_func", e)
+
+        parallelize[parallelized_func](a.size // a.shape[axis])
+
+    return None
 
 
 fn apply_along_axis[
@@ -284,16 +409,16 @@ fn apply_along_axis[
 # `func` operates on scalars.
 # ===----------------------------------------------------------------------=== #
 
-"""
-If a and b have the same shape and strides, the function will be applied
-element-wise to the two arrays.
+# """
+# If a and b have the same shape and strides, the function will be applied
+# element-wise to the two arrays.
 
-Else if a and b have the same shape and the strides are both 1 for axis -1 or 0
-(C or F contiguous is not sufficient due to broadcasted views),
-the function with be applied by axis -1 or axis 0.
+# Else if a and b have the same shape and the strides are both 1 for axis -1 or 0
+# (C or F contiguous is not sufficient due to broadcasted views),
+# the function with be applied by axis -1 or axis 0.
 
-Else, conduct item-wise calculation.
+# Else, conduct item-wise calculation.
 
-If a and b have different shape (including when b is scalar), 
-conduct a broadcasting.
-"""
+# If a and b have different shape (including when b is scalar),
+# conduct a broadcasting.
+# """

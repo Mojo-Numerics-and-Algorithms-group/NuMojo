@@ -116,8 +116,8 @@ fn compress[
         raise Error(
             String(
                 "\nError in `compress`: Axis {} is out of bound for array with"
-                " {} dimensions".format(axis, a.ndim)
-            )
+                " {} dimensions"
+            ).format(axis, a.ndim)
         )
 
     if condition.ndim != 1:
@@ -130,10 +130,8 @@ fn compress[
         raise Error(
             String(
                 "\nError in `compress`: Condition length {} is out of bound for"
-                " axis {} with size {}".format(
-                    condition.size, axis, a.shape[normalized_axis]
-                )
-            )
+                " axis {} with size {}"
+            ).format(condition.size, axis, a.shape[normalized_axis])
         )
 
     var number_of_true: Int = 0
@@ -294,8 +292,8 @@ fn take_along_axis[
         raise Error(
             String(
                 "\nError in `take_along_axis`: The ndim of arr and indices must"
-                " be same. Got {} and {}.".format(arr.ndim, indices.ndim)
-            )
+                " be same. Got {} and {}."
+            ).format(arr.ndim, indices.ndim)
         )
 
     # broadcast indices to the shape of arr if necessary

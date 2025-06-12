@@ -9,11 +9,9 @@ Interpolate Module - Implements interpolation functions
 
 from numojo.core.ndarray import NDArray, NDArrayShape
 
-"""
 # TODO:
-1) Cross check all the functions with numpy
-2) Add support for axis argument
-"""
+# 1) Cross check all the functions with numpy
+# 2) Add support for axis argument
 
 
 fn interp1d[

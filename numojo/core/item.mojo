@@ -141,7 +141,7 @@ struct Item(CollectionElement):
             remainder %= strides._buf[i]
 
     @always_inline("nodebug")
-    fn __copyinit__(mut self, other: Self):
+    fn __copyinit__(out self, other: Self):
         """Copy construct the tuple.
 
         Args:
@@ -303,7 +303,7 @@ struct _ItemIter[
     var length: Int
 
     fn __init__(
-        mut self,
+        out self,
         item: Item,
         length: Int,
     ):

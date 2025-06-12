@@ -11,10 +11,9 @@ from numojo.routines.creation import arange
 from numojo.core.ndarray import NDArray
 from numojo.core.utility import is_inttype, is_floattype
 
-"""TODO: 
-1) add a Variant[NDArray, Scalar, ...] to include all possibilities
-2) add edge_order
-"""
+# TODO:
+# 1) add a Variant[NDArray, Scalar, ...] to include all possibilities
+# 2) add edge_order
 
 
 fn gradient[

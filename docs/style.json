@@ -141,7 +141,7 @@
                 "raisesDoc": "",
                 "returnType": null,
                 "returnsDoc": "",
-                "signature": "func(self: Self)",
+                "signature": "func(self)",
                 "summary": "Function docstring like previosly shown."
               }
             ]

@@ -150,7 +150,7 @@ fn roundeven[
 
     This rounding goes to the nearest integer with ties toward the nearest even integer.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.roundeven](
+    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__round__](
         array
     )
 

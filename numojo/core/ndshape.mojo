@@ -64,9 +64,12 @@ struct NDArrayShape(Stringable, Writable):
         """
         if len(shape) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(len(shape))
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(shape))
             )
+
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
@@ -90,8 +93,10 @@ struct NDArrayShape(Stringable, Writable):
         """
         if len(shape) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(len(shape))
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(shape))
             )
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
@@ -116,8 +121,10 @@ struct NDArrayShape(Stringable, Writable):
         """
         if len(shape) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(len(shape))
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(shape))
             )
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
@@ -143,8 +150,10 @@ struct NDArrayShape(Stringable, Writable):
 
         if len(shape) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(len(shape))
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(shape))
             )
 
         self.ndim = len(shape)
@@ -171,8 +180,10 @@ struct NDArrayShape(Stringable, Writable):
 
         if len(shape) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(len(shape))
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(shape))
             )
 
         self.ndim = len(shape)
@@ -199,8 +210,10 @@ struct NDArrayShape(Stringable, Writable):
 
         if len(shape) <= 0:
             raise Error(
-                "\nError in `NDArrayShape.__init__()`: Number of dimensions of"
-                " array must be positive. However, it is {}.".format(len(shape))
+                String(
+                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    " of array must be positive. However, it is {}."
+                ).format(len(shape))
             )
 
         self.ndim = len(shape)

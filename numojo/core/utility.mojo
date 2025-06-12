@@ -378,7 +378,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         np.set_printoptions(4)
 
         var dimension = array.ndim
-        var np_arr_dim = PythonObject([])
+        var np_arr_dim = Python.list()
 
         for i in range(dimension):
             np_arr_dim.append(array.shape[i])

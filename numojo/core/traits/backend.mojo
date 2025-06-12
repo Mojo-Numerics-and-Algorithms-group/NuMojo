@@ -11,7 +11,7 @@ trait Backend:
     A trait that defines backends for calculations in the rest of the library.
     """
 
-    fn __init__(mut self: Self):
+    fn __init__(out self):
         """
         Initialize the backend.
         """
@@ -20,7 +20,7 @@ trait Backend:
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         array3: NDArray[dtype],
@@ -50,7 +50,7 @@ trait Backend:
     fn math_func_fma[
         dtype: DType,
     ](
-        self: Self,
+        self,
         array1: NDArray[dtype],
         array2: NDArray[dtype],
         simd: SIMD[dtype, 1],
@@ -79,7 +79,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[dtype]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Apply a SIMD function of one variable and one return to a NDArray.
 
@@ -101,8 +101,12 @@ trait Backend:
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[dtype]:
+        self,
+        array1: NDArray[dtype],
+        array2: NDArray[dtype],
+    ) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -129,8 +133,12 @@ trait Backend:
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
-        self: Self, array: NDArray[dtype], scalar: Scalar[dtype]
-    ) raises -> NDArray[dtype]:
+        self,
+        array: NDArray[dtype],
+        scalar: Scalar[dtype],
+    ) raises -> NDArray[
+        dtype
+    ]:
         """
         Apply a SIMD function of two variable and one return to a NDArray.
 
@@ -151,14 +159,46 @@ trait Backend:
 
         ...
 
+    fn math_func_1_scalar_1_array_in_one_array_out[
+        dtype: DType,
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ]:
+        """
+        Apply a SIMD function of two variable and one return to a NDArray.
+
+        Constraints:
+            Both arrays must have the same shape
+
+        Parameters:
+            dtype: The element type.
+            func: The SIMD function to to apply.
+
+        Args:
+            scalar: A Scalars.
+            array: A NDArray.
+
+        Returns:
+            A new NDArray that is NDArray with the function func applied.
+        """
+
+        ...
+
     fn math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int] (
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, array1: NDArray[dtype], array2: NDArray[dtype]
-    ) raises -> NDArray[DType.bool]:
+        self,
+        array1: NDArray[dtype],
+        array2: NDArray[dtype],
+    ) raises -> NDArray[
+        DType.bool
+    ]:
         """
         Apply a SIMD comparision function of two variable.
 
@@ -184,8 +224,12 @@ trait Backend:
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](
-        self: Self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]
-    ) raises -> NDArray[DType.bool]:
+        self,
+        array1: NDArray[dtype],
+        scalar: SIMD[dtype, 1],
+    ) raises -> NDArray[
+        DType.bool
+    ]:
         """
         Apply a SIMD comparision function of two variable.
 
@@ -210,7 +254,7 @@ trait Backend:
         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
-    ](self: Self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ...
 
     # fn math_func_simd_int[
@@ -218,5 +262,5 @@ trait Backend:
     #     func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
     #         type, simd_w
     #     ],
-    # ](self: Self, array1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+    # ](self, array1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
     #     ...

@@ -53,3 +53,4 @@ jobs:
         run: |
           magic install
           magic run mojo test tests -I .
+          magic run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS

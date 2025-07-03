@@ -204,11 +204,11 @@ fn add[
     """
     var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
     var scalar_part: Scalar[dtype] = 0
-    for val in values:
-        if val[].isa[NDArray[dtype]]():
-            array_list.append(val[].take[NDArray[dtype]]())
-        elif val[].isa[Scalar[dtype]]():
-            scalar_part += val[].take[Scalar[dtype]]()
+    for i in range(len(values)):
+        if values[i].isa[NDArray[dtype]]():
+            array_list.append(values[i].take[NDArray[dtype]]())
+        elif values[i].isa[Scalar[dtype]]():
+            scalar_part += values[i].take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
@@ -664,11 +664,11 @@ fn mul[
     """
     var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
     var scalar_part: Scalar[dtype] = 0
-    for val in values:
-        if val[].isa[NDArray[dtype]]():
-            array_list.append(val[].take[NDArray[dtype]]())
-        elif val[].isa[Scalar[dtype]]():
-            scalar_part += val[].take[Scalar[dtype]]()
+    for i in range(len(values)):
+        if values[i].isa[NDArray[dtype]]():
+            array_list.append(values[i].take[NDArray[dtype]]())
+        elif values[i].isa[Scalar[dtype]]():
+            scalar_part += values[i].take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"

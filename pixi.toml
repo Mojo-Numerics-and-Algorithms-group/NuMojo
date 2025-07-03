@@ -55,7 +55,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
-max = "==25.3"
+max = ">=25.4.0,<26"
 python = ">=3.11"
 numpy = ">=2.0"
 scipy = ">=1.14"

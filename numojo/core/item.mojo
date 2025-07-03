@@ -18,7 +18,7 @@ alias item = Item
 
 
 @register_passable
-struct Item(CollectionElement):
+struct Item(Copyable, Movable, Stringable, Writable):
     """
     Specifies the indices of an item of an array.
     """

@@ -58,6 +58,7 @@ from memory import UnsafePointer, memset_zero, memcpy
 from math import log10
 from python import PythonObject
 from sys import simdwidthof
+
 # from tensor import Tensor
 from utils import Variant
 
@@ -90,8 +91,16 @@ import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
+
 struct NDArray[dtype: DType = DType.float64](
-    Stringable, Representable, Copyable, Movable, Sized, Writable, Absable, IntableRaising
+    Absable,
+    Copyable,
+    IntableRaising,
+    Movable,
+    Representable,
+    Sized,
+    Stringable,
+    Writable,
 ):
     # TODO: NDArray[dtype: DType = DType.float64,
     #               Buffer: Bufferable[dtype] = OwnData[dtype]]
@@ -958,7 +967,6 @@ struct NDArray[dtype: DType = DType.float64](
     #                     "The index array {} is not a 1-D array."
     #                 ).format(i)
     #             )
-
 
     #     # Get the shape of resulted array
     #     # var shape = indices.shape.join(self.shape._pop(0))
@@ -1944,7 +1952,9 @@ struct NDArray[dtype: DType = DType.float64](
         self.__setitem__(slices=slice_list, val=val)
 
     # TODO: fix this setter, add bound checks. Not sure about it's use case.
-    fn __setitem__(mut self, index: NDArray[DType.index], val: NDArray[dtype]) raises:
+    fn __setitem__(
+        mut self, index: NDArray[DType.index], val: NDArray[dtype]
+    ) raises:
         """
         Returns the items of the array from an array of indices.
 
@@ -1968,17 +1978,23 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
         if index.ndim != 1:
-            raise Error(String(
-                "\nError in `numojo.NDArray.__setitem__(index: NDArray[DType.index], val: NDArray)`: "
-                "Index array must be 1-D. The index {} is {}D."
-            ).format(index.ndim))
+            raise Error(
+                String(
+                    "\nError in `numojo.NDArray.__setitem__(index:"
+                    " NDArray[DType.index], val: NDArray)`: Index array must be"
+                    " 1-D. The index {} is {}D."
+                ).format(index.ndim)
+            )
 
         if index.size > self.shape[0]:
-            raise Error(String(
-                "\nError in `numojo.NDArray.__setitem__(index: NDArray[DType.index], val: NDArray)`: "
-                "Index array size {} is greater than the first dimension of the array {}. "
-                "The index array must be smaller than the array."
-            ).format(index.size, self.shape[0]))
+            raise Error(
+                String(
+                    "\nError in `numojo.NDArray.__setitem__(index:"
+                    " NDArray[DType.index], val: NDArray)`: Index array size {}"
+                    " is greater than the first dimension of the array {}. The"
+                    " index array must be smaller than the array."
+                ).format(index.size, self.shape[0])
+            )
 
         # var output_shape_list: List[Int] = List[Int]()
         # output_shape_list.append(index.size)
@@ -1990,9 +2006,13 @@ struct NDArray[dtype: DType = DType.float64](
 
         for i in range(index.size):
             if index.item(i) > self.shape[0]:
-                raise Error(String(
-                    "\nError in `numojo.NDArray.__setitem__(index: NDArray[DType.index], val: NDArray)`: Index {} is out of bounds. The array has {} elements."
-                ).format(index.item(i), self.shape[0]))
+                raise Error(
+                    String(
+                        "\nError in `numojo.NDArray.__setitem__(index:"
+                        " NDArray[DType.index], val: NDArray)`: Index {} is out"
+                        " of bounds. The array has {} elements."
+                    ).format(index.item(i), self.shape[0])
+                )
             if index.item(i) < 0:
                 index.item(i) += self.shape[0]
 
@@ -2002,7 +2022,7 @@ struct NDArray[dtype: DType = DType.float64](
             self.__setitem__(idx=Int(index.item(i)), val=val)
 
         # for i in range(len(index)):
-            # self.store(Int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
+        # self.store(Int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
 
     fn __setitem__(
         mut self, mask: NDArray[DType.bool], val: NDArray[dtype]
@@ -4748,7 +4768,13 @@ struct NDArray[dtype: DType = DType.float64](
             strides=self.strides._flip(),
         )
 
-    fn unsafe_ptr(self) -> UnsafePointer[Scalar[dtype]]:
+    fn unsafe_ptr(
+        ref self,
+    ) -> UnsafePointer[
+        Scalar[dtype],
+        mut = Origin(__origin_of(self)).mut,
+        origin = __origin_of(self),
+    ]:
         """
         Retreive pointer without taking ownership.
 
@@ -4756,7 +4782,7 @@ struct NDArray[dtype: DType = DType.float64](
             Unsafe pointer to the data buffer.
 
         """
-        return self._buf.ptr
+        return self._buf.ptr.origin_cast[mut = Origin(__origin_of(self)).mut, origin = __origin_of(self)]()
 
     fn variance[
         returned_dtype: DType = DType.float64

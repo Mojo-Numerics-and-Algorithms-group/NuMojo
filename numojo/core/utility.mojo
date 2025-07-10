@@ -24,6 +24,7 @@ from collections import Dict
 from memory import UnsafePointer, memcpy
 from python import Python, PythonObject
 from sys import simdwidthof
+
 # from tensor import Tensor, TensorShape
 
 from numojo.core.flags import Flags
@@ -438,7 +439,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
 #     var t = Tensor[dtype](TensorShape(shape))
 #     memcpy(t._ptr, a._buf.ptr, a.size)
 
-    # return t
+# return t
 
 
 # ===----------------------------------------------------------------------=== #

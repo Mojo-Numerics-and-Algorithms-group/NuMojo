@@ -95,13 +95,13 @@ import numojo.routines.searching as searching
 struct NDArray[dtype: DType = DType.float64](
     Absable,
     Copyable,
+    FloatableRaising,
     IntableRaising,
     Movable,
     Representable,
     Sized,
     Stringable,
     Writable,
-    FloatableRaising,
 ):
     # TODO: NDArray[dtype: DType = DType.float64,
     #               Buffer: Bufferable[dtype] = OwnData[dtype]]

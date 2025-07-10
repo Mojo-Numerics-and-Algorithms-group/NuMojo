@@ -56,6 +56,6 @@ release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
 max = ">=25.4.0,<26"
-python = ">=3.11"
-numpy = ">=2.0"
-scipy = ">=1.14"
+python = ">=3.13.5,<3.14"
+numpy = ">=2.3.1,<3"
+scipy = ">=1.16.0,<2"

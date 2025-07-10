@@ -31,13 +31,13 @@ jobs:
 
       - name: Install magic
         run: |
-          curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
+          curl -fsSL https://pixi.sh/install.sh | sh
       
-      - name: Add path
-        run: |
-          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
-          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
-          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+      # - name: Add path
+      #   run: |
+      #     echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
+      #     echo "$HOME/.modular/bin"  >> $GITHUB_PATH
+      #     echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
 
       - name: Activate virtualenv
         run: |
@@ -51,6 +51,6 @@ jobs:
 
       - name: Run tests
         run: |
-          magic install
-          magic run mojo test tests -I .
-          magic run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS
+          pixi install
+          pixi run mojo test tests -I .
+          pixi run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS

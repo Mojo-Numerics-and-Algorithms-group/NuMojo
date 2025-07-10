@@ -4782,7 +4782,9 @@ struct NDArray[dtype: DType = DType.float64](
             Unsafe pointer to the data buffer.
 
         """
-        return self._buf.ptr.origin_cast[mut = Origin(__origin_of(self)).mut, origin = __origin_of(self)]()
+        return self._buf.ptr.origin_cast[
+            mut = Origin(__origin_of(self)).mut, origin = __origin_of(self)
+        ]()
 
     fn variance[
         returned_dtype: DType = DType.float64

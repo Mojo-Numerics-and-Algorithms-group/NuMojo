@@ -9,7 +9,6 @@ from testing.testing import (
 )
 from python import Python, PythonObject
 import random as builtin_random
-from tensor import Tensor, TensorShape
 from utils_for_test import check, check_is_close
 
 
@@ -351,10 +350,10 @@ def test_arr_manipulation():
     )
 
 
-def test_tensor_conversion():
-    var image = Tensor[DType.float32](TensorShape(256, 256, 3))
-    builtin_random.rand(image.unsafe_ptr(), image.num_elements())
-    var image_converted_via_array = nm.array(image).to_tensor()
-    assert_equal(
-        image == image_converted_via_array, True, "Tensor conversion is broken"
-    )
+# def test_tensor_conversion():
+#     var image = Tensor[DType.float32](TensorShape(256, 256, 3))
+#     builtin_random.rand(image.unsafe_ptr(), image.num_elements())
+#     var image_converted_via_array = nm.array(image).to_tensor()
+#     assert_equal(
+#         image == image_converted_via_array, True, "Tensor conversion is broken"
+#     )

@@ -101,6 +101,7 @@ struct NDArray[dtype: DType = DType.float64](
     Sized,
     Stringable,
     Writable,
+    FloatableRaising,
 ):
     # TODO: NDArray[dtype: DType = DType.float64,
     #               Buffer: Bufferable[dtype] = OwnData[dtype]]

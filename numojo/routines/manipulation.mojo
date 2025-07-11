@@ -214,9 +214,9 @@ fn _set_values_according_to_shape_and_strides(
     and strides for variadic number of dimensions.
     """
     for index_of_axis in range(new_shape[current_dim]):
-        var current_sum = previous_sum + index_of_axis * new_strides[
-            current_dim
-        ]
+        var current_sum = (
+            previous_sum + index_of_axis * new_strides[current_dim]
+        )
         if current_dim >= new_shape.ndim - 1:
             I._buf.ptr[index] = current_sum
             index = index + 1

@@ -99,8 +99,8 @@ fn trapz[
 
     var integral: Scalar[dtype] = 0.0
     for i in range(x.size - 1):
-        var temp = (x.load(i + 1) - x.load(i)) * (
-            y.load(i) + y.load(i + 1)
-        ) / 2.0
+        var temp = (
+            (x.load(i + 1) - x.load(i)) * (y.load(i) + y.load(i + 1)) / 2.0
+        )
         integral += temp
     return integral

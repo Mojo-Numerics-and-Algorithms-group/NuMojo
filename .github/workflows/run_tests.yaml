@@ -37,27 +37,12 @@ jobs:
       - name: Add Modular to Pixi
         run: |
           export PATH="$HOME/.pixi/bin:$PATH"
-          pixi add modular
-      
-      - name: Set up Modular environment
-        run: |
-          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
-          echo "$HOME/.modular/bin" >> $GITHUB_PATH
-          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin" >> $GITHUB_PATH
-
-      - name: Setup Python virtualenv
-        run: |
-          python3 -m venv $HOME/venv/
-          . $HOME/venv/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
-
-      - name: Install packages
-        run: |
-          pip install "numpy"
 
       - name: Run tests
         run: |
           export PATH="$HOME/.pixi/bin:$PATH"
           pixi install
+          pixi run mojo package numojo
+          cp numojo.mojopkg tests/
           pixi run mojo test tests -I .
           pixi run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS

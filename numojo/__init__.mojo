@@ -49,6 +49,8 @@ from numojo.routines import io
 from numojo.routines.io import (
     loadtxt,
     savetxt,
+    load,
+    save,
 )
 from numojo.routines.io import set_printoptions
 

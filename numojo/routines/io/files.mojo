@@ -96,7 +96,7 @@ fn _write_uint16_le(mut file: FileHandle, value: UInt16) raises:
     bytes_ptr.free()
 
 
-fn save[
+fn savenpy[
     dtype: DType = f64
 ](fname: String, array: NDArray[dtype], allow_pickle: Bool = True) raises:
     """
@@ -192,7 +192,7 @@ fn save[
     finally:
         file.close()
 
-fn savenpy[
+fn save[
     dtype: DType = f64
 ](
     fname: String,

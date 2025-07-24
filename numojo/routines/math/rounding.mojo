@@ -8,7 +8,7 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from utils import Variant
 from utils.numerics import nextafter as builtin_nextafter
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix

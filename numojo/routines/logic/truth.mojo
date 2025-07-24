@@ -6,7 +6,7 @@ import math
 from algorithm import vectorize, parallelize
 from sys import simdwidthof
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 

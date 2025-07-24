@@ -59,7 +59,7 @@ from numojo.core.utility import (
     to_numpy,
     bool_to_numeric,
 )
-from numojo.core._math_funcs import Vectorized
+from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.bitwise as bitwise
 from numojo.routines.io.formatting import (
     format_floating_precision,

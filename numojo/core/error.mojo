@@ -39,6 +39,16 @@ struct NumojoError[
 
     fn __init__(
         out self,
+        message: StringLiteral,
+        suggestion: StringLiteral,
+        location: StringLiteral,
+    ):
+        self.message = message
+        self.suggestion = Optional[String](suggestion)
+        self.location = Optional[String](location)
+
+    fn __init__(
+        out self,
         message: String,
         suggestion: Optional[String] = None,
         location: Optional[String] = None,

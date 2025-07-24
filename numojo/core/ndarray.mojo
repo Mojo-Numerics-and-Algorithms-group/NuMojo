@@ -520,7 +520,7 @@ struct NDArray[dtype: DType = DType.float64](
                     suggestion=String(
                         "Ensure the array is at least 1-dimensional before"
                         " attempting to slice with an integer index. Or use"
-                        " `array[]` to get the value of a 0-D array."
+                        " `array.item()` to get the value of a 0-D array."
                     ),
                     location=String("NDArray.__getitem__(self, idx: Int)"),
                 )
@@ -1323,11 +1323,15 @@ struct NDArray[dtype: DType = DType.float64](
         # For 0-D array, raise error
         if self.ndim == 0:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.item(index: Int)`: "
-                    "Cannot index a 0-D array (numojo scalar). "
-                    "Use `a.item()` without arguments."
-                )
+            IndexError(
+                message=String(
+                "Cannot index a 0-D array (numojo scalar) with an integer index."
+                ),
+                suggestion=String(
+                "Use `a.item()` without arguments to retrieve the value of a 0-D array."
+                ),
+                location=String("NDArray.item(index: Int)")
+            )
             )
 
         if index < 0:
@@ -1335,10 +1339,15 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.item(index: Int)`:"
-                    "`index` exceeds array size ({})"
-                ).format(self.size)
+            IndexError(
+                message=String(
+                "Index out of bounds: received index {} for array of size {}."
+                ).format(index, self.size),
+                suggestion=String(
+                "Ensure the index is within the valid range [0, {})."
+                ).format(self.size),
+                location=String("NDArray.item(index: Int)")
+            )
             )
 
         if self.flags.F_CONTIGUOUS:
@@ -1388,10 +1397,15 @@ struct NDArray[dtype: DType = DType.float64](
 
         if len(index) != self.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.item(*index: Int)`:"
-                    "Number of indices ({}) do not match ndim ({})"
-                ).format(len(index), self.ndim)
+            IndexError(
+                message=String(
+                "Incorrect number of indices: expected {} indices (one per dimension), but received {}."
+                ).format(self.ndim, len(index)),
+                suggestion=String(
+                "Provide exactly {} indices to match the array's dimensionality and retrieve the element."
+                ).format(self.ndim),
+                location=String("NDArray.item(*index: Int)")
+            )
             )
 
         # For 0-D array, return the scalar value.
@@ -1406,8 +1420,14 @@ struct NDArray[dtype: DType = DType.float64](
                 list_index.append(index[i])
             if (list_index[i] < 0) or (list_index[i] >= self.shape[i]):
                 raise Error(
-                    String("{}-th index exceeds shape size {}").format(
-                        i, self.shape[i]
+                    IndexError(
+                        message=String(
+                            "Index out of bounds at dimension {}: received index {} for dimension size {}."
+                        ).format(i, list_index[i], self.shape[i]),
+                        suggestion=String(
+                            "Ensure that the index for dimension {} is within the valid range [0, {})."
+                        ).format(i, self.shape[i]),
+                        location=String("NDArray.item(*index: Int)")
                     )
                 )
         return (self._buf.ptr + _get_offset(index, self.strides))[]
@@ -1447,10 +1467,15 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index >= self.size) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.load(index: Int)`: "
-                    "Invalid index: index out of bound [0, {})."
-                ).format(self.size)
+            IndexError(
+                message=String(
+                "Index out of bounds: received index {} for array of size {}."
+                ).format(index, self.size),
+                suggestion=String(
+                "Ensure the index is within the valid range [0, {})."
+                ).format(self.size),
+                location=String("NDArray.load(index: Int)")
+            )
             )
 
         return self._buf.ptr[index]
@@ -1479,7 +1504,7 @@ struct NDArray[dtype: DType = DType.float64](
                     " Int)`:\nInvalid index: index out of bound [0, {})."
                 ).format(self.size)
             )
-
+ 
         return self._buf.ptr.load[width=width](index)
 
     fn load[width: Int = 1](self, *indices: Int) raises -> SIMD[dtype, width]:

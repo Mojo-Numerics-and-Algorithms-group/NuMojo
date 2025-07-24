@@ -415,8 +415,14 @@ struct NDArray[dtype: DType = DType.float64](
         if self.ndim != 0:
             raise Error(
                 IndexError(
-                    message="Cannot get value without index: only 0-D arrays support this operation.",
-                    suggestion="Use `array[]` to get the value of a 0-D array, or provide indices for higher-dimensional arrays.",
+                    message=(
+                        "Cannot get value without index: only 0-D arrays"
+                        " support this operation."
+                    ),
+                    suggestion=(
+                        "Use `array[]` to get the value of a 0-D array, or"
+                        " provide indices for higher-dimensional arrays."
+                    ),
                     location="NDArray.__getitem__()",
                 )
             )
@@ -448,27 +454,30 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(
                 IndexError(
                     message=String(
-                        "Length of index ({}) does not match the number of dimensions ({})."
+                        "Length of index ({}) does not match the number of"
+                        " dimensions ({})."
                     ).format(index.__len__(), self.ndim),
                     suggestion=String(
-                        "Ensure that the index list has exactly {} elements to match the array's dimensions."
+                        "Ensure that the index list has exactly {} elements to"
+                        " match the array's dimensions."
                     ).format(self.ndim),
-                    location=String("NDArray.__getitem__(index: Item)")
+                    location=String("NDArray.__getitem__(index: Item)"),
                 )
             )
-
 
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
                 raise Error(
                     ShapeError(
                         message=String(
-                            "Index out of bounds for dimension {}: received index {} but dimension size is {}."
+                            "Index out of bounds for dimension {}: received"
+                            " index {} but dimension size is {}."
                         ).format(i, index[i], self.shape[i]),
                         suggestion=String(
-                            "Ensure that the index for dimension {} is within the valid range [0, {})."
+                            "Ensure that the index for dimension {} is within"
+                            " the valid range [0, {})."
                         ).format(i, self.shape[i]),
-                        location=String("NDArray.__getitem__(index: Item)")
+                        location=String("NDArray.__getitem__(index: Item)"),
                     )
                 )
 
@@ -503,15 +512,18 @@ struct NDArray[dtype: DType = DType.float64](
         # If the ndim is 0, then it is a numojo scalar (0-D array).
         if self.ndim == 0:
             raise Error(
-            IndexError(
-                message=String(
-                "Cannot slice a 0-d array: slicing is only valid for arrays with at least one dimension."
-                ),
-                suggestion=String(
-                "Ensure the array is at least 1-dimensional before attempting to slice with an integer index. Or use `array[]` to get the value of a 0-D array."
-                ),
-                location=String("NDArray.__getitem__(self, idx: Int)")
-            )
+                IndexError(
+                    message=String(
+                        "Cannot slice a 0-d array: slicing is only valid for"
+                        " arrays with at least one dimension."
+                    ),
+                    suggestion=String(
+                        "Ensure the array is at least 1-dimensional before"
+                        " attempting to slice with an integer index. Or use"
+                        " `array[]` to get the value of a 0-D array."
+                    ),
+                    location=String("NDArray.__getitem__(self, idx: Int)"),
+                )
             )
 
         var narr: Self
@@ -584,15 +596,18 @@ struct NDArray[dtype: DType = DType.float64](
         # Check error cases
         if slice_list.__len__() == 0:
             raise Error(
-            IndexError(
-                message=String(
-                "Empty slice list provided to NDArray.__getitem__."
-                ),
-                suggestion=String(
-                "Provide a List with at least one slice to index the array."
-                ),
-                location=String("NDArray.__getitem__(slice_list: List[Slice])")
-            )
+                IndexError(
+                    message=String(
+                        "Empty slice list provided to NDArray.__getitem__."
+                    ),
+                    suggestion=String(
+                        "Provide a List with at least one slice to index the"
+                        " array."
+                    ),
+                    location=String(
+                        "NDArray.__getitem__(slice_list: List[Slice])"
+                    ),
+                )
             )
 
         if slice_list.__len__() < self.ndim:
@@ -840,15 +855,19 @@ struct NDArray[dtype: DType = DType.float64](
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error(
-            IndexError(
-                message=String(
-                "Too many indices or slices provided: received {} but array has only {} dimensions."
-                ).format(n_slices, self.ndim),
-                suggestion=String(
-                "Reduce the number of indices or slices to match the array's dimensionality ({})."
-                ).format(self.ndim),
-                location=String("NDArray.__getitem__(*slices: Variant[Slice, Int])"),
-            )
+                IndexError(
+                    message=String(
+                        "Too many indices or slices provided: received {} but"
+                        " array has only {} dimensions."
+                    ).format(n_slices, self.ndim),
+                    suggestion=String(
+                        "Reduce the number of indices or slices to match the"
+                        " array's dimensionality ({})."
+                    ).format(self.ndim),
+                    location=String(
+                        "NDArray.__getitem__(*slices: Variant[Slice, Int])"
+                    ),
+                )
             )
         var slice_list: List[Slice] = List[Slice]()
 
@@ -934,11 +953,15 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error(
                     IndexError(
                         message=String(
-                            "Index out of bounds: The index at position {} is {}, which exceeds the valid range for the first dimension (size {})."
+                            "Index out of bounds: The index at position {} is"
+                            " {}, which exceeds the valid range for the first"
+                            " dimension (size {})."
                         ).format(i, indices.item(i), self.shape[0]),
                         suggestion=String(
-                            "Ensure that all the indices provided are within the range [0, {}). "
-                            "Refer to the documentation to understand how this function indexes into the array."
+                            "Ensure that all the indices provided are within"
+                            " the range [0, {}). Refer to the documentation to"
+                            " understand how this function indexes into the"
+                            " array."
                         ).format(self.shape[0]),
                         location=String(
                             "NDArray.__getitem__(indices: NDArray[DType.index])"
@@ -1185,20 +1208,24 @@ struct NDArray[dtype: DType = DType.float64](
             return result^
         else:
             raise Error(
-            ShapeError(
-                message=String(
-                    "Boolean mask shape {} is not compatible with array shape {}. "
-                    "Currently supported: (1) exact shape match for element-wise masking, "
-                    "(2) 1-D mask with length matching first dimension. Broadcasting is not supported currently."
-                ).format(mask.shape, self.shape),
-                suggestion=String(
-                    "Ensure mask shape matches array shape for element-wise masking, "
-                    "or use 1-D mask with length {} for first-dimension indexing."
-                ).format(self.shape[0]),
-                location=String("NDArray.__getitem__(mask: NDArray[DType.bool])")
+                ShapeError(
+                    message=String(
+                        "Boolean mask shape {} is not compatible with array"
+                        " shape {}. Currently supported: (1) exact shape match"
+                        " for element-wise masking, (2) 1-D mask with length"
+                        " matching first dimension. Broadcasting is not"
+                        " supported currently."
+                    ).format(mask.shape, self.shape),
+                    suggestion=String(
+                        "Ensure mask shape matches array shape for element-wise"
+                        " masking, or use 1-D mask with length {} for"
+                        " first-dimension indexing."
+                    ).format(self.shape[0]),
+                    location=String(
+                        "NDArray.__getitem__(mask: NDArray[DType.bool])"
+                    ),
+                )
             )
-        )
-
 
     fn __getitem__(self, mask: List[Bool]) raises -> Self:
         """

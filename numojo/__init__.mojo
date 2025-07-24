@@ -30,6 +30,14 @@ from numojo.core.datatypes import (
     f32,
     f64,
 )
+from numojo.core.error import (
+    ShapeError,
+    IndexError,
+    BroadcastError,
+    MemoryError,
+    ValueError,
+    ArithmeticError,
+)
 
 # ===----------------------------------------------------------------------=== #
 # Import routines and objects

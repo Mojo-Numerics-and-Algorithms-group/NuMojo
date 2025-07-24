@@ -79,6 +79,14 @@ from numojo.core.utility import (
     # to_tensor,
     bool_to_numeric,
 )
+from numojo.core.error import (
+    IndexError,
+    ShapeError,
+    BroadcastError,
+    MemoryError,
+    ValueError,
+    ArithmeticError,
+)
 import numojo.routines.bitwise as bitwise
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
@@ -2251,22 +2259,40 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         if len(indices) != self.ndim:
-            raise (
-                String(
-                    "\nError in `numojo.NDArray.store[width: Int](*indices:"
-                    " Int, val: SIMD[dtype, width])`:\nLength of indices {}"
-                    " does not match ndim {}"
-                ).format(len(indices), self.ndim)
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Mismatch in number of indices: expected {} indices"
+                        " (one per dimension) but received {}."
+                    ).format(self.ndim, len(indices)),
+                    suggestion=String(
+                        "Provide exactly {} indices to correctly index into the"
+                        " array."
+                    ).format(self.ndim),
+                    location=String(
+                        "NDArray.store[width: Int](*indices: Int, val:"
+                        " SIMD[dtype, width])"
+                    ),
+                )
             )
 
         for i in range(self.ndim):
             if (indices[i] < 0) or (indices[i] >= self.shape[i]):
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.store[width: Int](*indices:"
-                        " Int, val: SIMD[dtype, width])`:\nInvalid index at"
-                        " {}-th dim: index out of bound [0, {})."
-                    ).format(i, self.shape[i])
+                    IndexError(
+                        message=String(
+                            "Invalid index at dimension {}: index {} is out of"
+                            " bounds [0, {})."
+                        ).format(i, indices[i], self.shape[i]),
+                        suggestion=String(
+                            "Ensure that index is within the valid range"
+                            " [0, {})"
+                        ).format(self.shape[i]),
+                        location=String(
+                            "NDArray.store[width: Int](*indices: Int, val:"
+                            " SIMD[dtype, width])"
+                        ),
+                    )
                 )
 
         var idx: Int = _get_offset(indices, self.strides)

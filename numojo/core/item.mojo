@@ -13,7 +13,6 @@ from utils import Variant
 from numojo.core.traits.indexer_collection_element import (
     IndexerCollectionElement,
 )
-
 alias item = Item
 
 

@@ -6,6 +6,7 @@ from memory import UnsafePointer, Span
 # We call into the numpy backend for now, this at least let's people go back and forth smoothly.
 # might consider implementing a funciton to write a .numojo file which can be read by both numpy and numojo.
 
+
 fn load[
     dtype: DType = f64
 ](
@@ -40,6 +41,7 @@ fn load[
     var array = numojo.array[dtype](data=data)
     return array^
 
+
 @parameter
 fn _get_dtype_string[dtype: DType]() -> String:
     """
@@ -51,6 +53,7 @@ fn _get_dtype_string[dtype: DType]() -> String:
     Returns:
         A string representing the dtype in numpy format.
     """
+
     @parameter
     if dtype == DType.bool:
         return "'|b1'"
@@ -189,6 +192,28 @@ fn save[
     finally:
         file.close()
 
+fn savenpy[
+    dtype: DType = f64
+](
+    fname: String,
+    array: NDArray[dtype],
+    allow_pickle: Bool = True,
+) raises:
+    """
+    Save an array to a binary file in NumPy .npy format.
+
+    Args:
+        fname: File or filename to which the data is saved.
+        array: Array data to be saved.
+        allow_pickle: Allow saving object arrays using Python pickles.
+    """
+    var np = Python.import_module("numpy")
+    var np_arr = array.to_numpy()
+    np.save(
+        fname=fname,
+        arr=np_arr,
+        allow_pickle=allow_pickle,
+    )   
 
 fn loadtxt[
     dtype: DType = f64

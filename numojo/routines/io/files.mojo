@@ -192,13 +192,10 @@ fn savenpy[
     finally:
         file.close()
 
+
 fn save[
     dtype: DType = f64
-](
-    fname: String,
-    array: NDArray[dtype],
-    allow_pickle: Bool = True,
-) raises:
+](fname: String, array: NDArray[dtype], allow_pickle: Bool = True,) raises:
     """
     Save an array to a binary file in NumPy .npy format.
 
@@ -213,7 +210,8 @@ fn save[
         fname=fname,
         arr=np_arr,
         allow_pickle=allow_pickle,
-    )   
+    )
+
 
 fn loadtxt[
     dtype: DType = f64

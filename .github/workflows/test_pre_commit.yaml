@@ -32,7 +32,7 @@ jobs:
       - name: Add Modular to Pixi
         run: |
           export PATH="$HOME/.pixi/bin:$PATH"
-          pixi add max
+          pixi install
     
       - name: Set up Modular environment
         run: |

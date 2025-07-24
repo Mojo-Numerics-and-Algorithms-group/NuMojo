@@ -207,7 +207,7 @@ fn save[
     var np = Python.import_module("numpy")
     var np_arr = array.to_numpy()
     np.save(
-        fname=fname,
+        file=fname,
         arr=np_arr,
         allow_pickle=allow_pickle,
     )

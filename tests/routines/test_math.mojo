@@ -357,12 +357,16 @@ def test_add_array_par():
     var arr = nm.arange[nm.f64](0, 20)
 
     check(
-        nm.add[nm.f64, backend = nm.routines.math._math_funcs.Vectorized](arr, 5.0),
+        nm.add[nm.f64, backend = nm.routines.math._math_funcs.Vectorized](
+            arr, 5.0
+        ),
         np.arange(0, 20) + 5,
         "Add array + scalar",
     )
     check(
-        nm.add[nm.f64, backend = nm.routines.math._math_funcs.Vectorized](arr, arr),
+        nm.add[nm.f64, backend = nm.routines.math._math_funcs.Vectorized](
+            arr, arr
+        ),
         np.arange(0, 20) + np.arange(0, 20),
         "Add array + array",
     )

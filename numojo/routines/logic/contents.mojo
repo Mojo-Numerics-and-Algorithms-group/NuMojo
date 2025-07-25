@@ -8,7 +8,7 @@ Implements Checking routines: currently not SIMD due to bool bit packing issue
 
 import math
 
-import numojo.routines.math._math_funcs as _mf
+import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
 # fn is_power_of_2[

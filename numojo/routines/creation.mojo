@@ -789,7 +789,7 @@ fn geomspace[
 
     if endpoint:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var base: Scalar[dtype] = (stop / start)
+        var base: Scalar[dtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: Scalar[dtype] = base**power
         for i in range(num):
@@ -798,7 +798,7 @@ fn geomspace[
 
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var base: Scalar[dtype] = (stop / start)
+        var base: Scalar[dtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: Scalar[dtype] = base**power
         for i in range(num):
@@ -841,7 +841,7 @@ fn geomspaceC[
         var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](
             NDArrayShape(num)
         )
-        var base: ComplexSIMD[dtype] = (stop / start)
+        var base: ComplexSIMD[dtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: ComplexSIMD[dtype] = base**power
         for i in range(num):
@@ -855,7 +855,7 @@ fn geomspaceC[
         var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](
             NDArrayShape(num)
         )
-        var base: ComplexSIMD[dtype] = (stop / start)
+        var base: ComplexSIMD[dtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: ComplexSIMD[dtype] = base**power
         for i in range(num):

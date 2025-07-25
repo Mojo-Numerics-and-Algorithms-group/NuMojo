@@ -2041,12 +2041,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         ```.
         """
         try:
-            var result: String = String("ComplexNDArray[CDType.") + String(
-                self.dtype
-            ) + String("](List[ComplexSIMD[CDType.c") + String(
-                self._re.dtype
-            ) + String(
-                "]]("
+            var result: String = (
+                String("ComplexNDArray[CDType.")
+                + String(self.dtype)
+                + String("](List[ComplexSIMD[CDType.c")
+                + String(self._re.dtype)
+                + String("]](")
             )
             if self._re.size > 6:
                 for i in range(6):

@@ -3518,7 +3518,9 @@ struct NDArray[dtype: DType = DType.float64](
         # the pritable region to determine the digits before decimals and
         # the negative sign and then determine the formatted width.
         if dimension == 0:
-            var negative_sign: Bool = False  # whether there should be a negative sign
+            var negative_sign: Bool = (
+                False  # whether there should be a negative sign
+            )
             var number_of_digits: Int  # number of digits before or after decimal point
             var number_of_digits_small_values: Int  # number of digits after decimal point for small values
             var formatted_width: Int  # formatted width based on precision and digits before decimal points

@@ -59,7 +59,7 @@ from numojo.core.utility import (
     to_numpy,
     bool_to_numeric,
 )
-from numojo.core._math_funcs import Vectorized
+from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.bitwise as bitwise
 from numojo.routines.io.formatting import (
     format_floating_precision,
@@ -88,7 +88,7 @@ from numojo.routines.statistics.averages import mean
 # TODO: Add SIMD width as a parameter.
 @value
 struct ComplexNDArray[dtype: DType = DType.float64](
-    Stringable, Representable, CollectionElement, Sized, Writable
+    Copyable, Movable, Representable, Sized, Stringable, Writable
 ):
     """
     Represents a Complex N-Dimensional Array.
@@ -2041,12 +2041,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         ```.
         """
         try:
-            var result: String = String("ComplexNDArray[CDType.") + String(
-                self.dtype
-            ) + String("](List[ComplexSIMD[CDType.c") + String(
-                self._re.dtype
-            ) + String(
-                "]]("
+            var result: String = (
+                String("ComplexNDArray[CDType.")
+                + String(self.dtype)
+                + String("](List[ComplexSIMD[CDType.c")
+                + String(self._re.dtype)
+                + String("]](")
             )
             if self._re.size > 6:
                 for i in range(6):

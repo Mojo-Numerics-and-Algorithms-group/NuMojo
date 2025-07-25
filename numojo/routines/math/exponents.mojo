@@ -8,7 +8,7 @@ from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from utils import Variant
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
 alias ln = log

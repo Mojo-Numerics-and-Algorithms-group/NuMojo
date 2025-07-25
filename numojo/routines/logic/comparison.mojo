@@ -9,7 +9,7 @@ Implements comparison math currently not using backend due to bool bitpacking is
 
 import math
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
 

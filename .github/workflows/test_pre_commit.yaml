@@ -24,17 +24,23 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install magic
+      - name: Install Pixi
         run: |
-          curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
+          curl -fsSL https://pixi.sh/install.sh | bash
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      
+      - name: Add Modular to Pixi
+        run: |
+          export PATH="$HOME/.pixi/bin:$PATH"
+          pixi install
     
-      - name: Add path
+      - name: Set up Modular environment
         run: |
           echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
-          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
-          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+          echo "$HOME/.modular/bin" >> $GITHUB_PATH
+          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin" >> $GITHUB_PATH
 
-      - name: Activate virtualenv
+      - name: Setup Python virtualenv
         run: |
           python3 -m venv $HOME/venv/
           . $HOME/venv/bin/activate
@@ -47,5 +53,6 @@ jobs:
       
       - name: Run pre-commit
         run: | 
-          magic install
+          export PATH="$HOME/.pixi/bin:$PATH"
+          pixi install
           pre-commit run --all-files

@@ -1,10 +1,12 @@
-trait IndexerCollectionElement(CollectionElement, Indexer):
-    """The IndexerCollectionElement trait denotes a trait composition
-    of the `Indexer` and `CollectionElement` traits.
+alias IndexerCollectionElement = Indexer & Copyable & Movable
 
-    This is useful to have as a named entity since Mojo does not
-    currently support anonymous trait compositions to constrain
-    on `Indexer & CollectionElement` in the parameter.
-    """
+# trait IndexerCollectionElement(Copyable, Indexer, Movable):
+#     """The IndexerCollectionElement trait denotes a trait composition
+#     of the `Indexer` and `CollectionElement` traits.
 
-    pass
+#     This is useful to have as a named entity since Mojo does not
+#     currently support anonymous trait compositions to constrain
+#     on `Indexer & CollectionElement` in the parameter.
+#     """
+
+#     pass

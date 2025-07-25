@@ -4,7 +4,7 @@ alias ComplexScalar = ComplexSIMD[_, width=1]
 
 
 @register_passable("trivial")
-struct ComplexSIMD[dtype: DType, width: Int = 1]():
+struct ComplexSIMD[dtype: DType, width: Int = 1](Stringable, Writable):
     """
     Represents a Complex number SIMD type with real and imaginary parts.
     """

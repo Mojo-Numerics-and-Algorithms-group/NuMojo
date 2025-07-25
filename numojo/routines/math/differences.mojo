@@ -6,7 +6,7 @@ import math
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.routines.creation import arange
 from numojo.core.ndarray import NDArray
 from numojo.core.utility import is_inttype, is_floattype
@@ -99,8 +99,8 @@ fn trapz[
 
     var integral: Scalar[dtype] = 0.0
     for i in range(x.size - 1):
-        var temp = (x.load(i + 1) - x.load(i)) * (
-            y.load(i) + y.load(i + 1)
-        ) / 2.0
+        var temp = (
+            (x.load(i + 1) - x.load(i)) * (y.load(i) + y.load(i + 1)) / 2.0
+        )
         integral += temp
     return integral

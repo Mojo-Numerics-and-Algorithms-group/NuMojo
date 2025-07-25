@@ -29,28 +29,22 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install magic
+      - name: Install pixi
         run: |
-          curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
-      
-      - name: Add path
-        run: |
-          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
-          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
-          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+          curl -fsSL https://pixi.sh/install.sh | bash
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.pixi/bin:$PATH"
 
-      - name: Activate virtualenv
+      - name: Pixi install
         run: |
-          python3 -m venv $HOME/venv/
-          . $HOME/venv/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
+          pixi install
 
-      - name: Install packages
+      - name: Build package
         run: |
-          pip install "numpy"
+          pixi run mojo package numojo
+          cp numojo.mojopkg tests/
 
       - name: Run tests
         run: |
-          magic install
-          magic run mojo test tests -I .
-          magic run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS
+          pixi run mojo test tests -I .
+          pixi run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS

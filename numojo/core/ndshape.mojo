@@ -15,7 +15,7 @@ alias Shape = NDArrayShape
 
 
 @register_passable
-struct NDArrayShape(Stringable, Writable):
+struct NDArrayShape(Sized, Stringable & Representable, Writable):
     """
     Presents the shape of `NDArray` type.
 
@@ -462,8 +462,8 @@ struct NDArrayShape(Stringable, Writable):
             A new NDArrayShape object.
         """
         var total_dims = self.ndim
-        for shape in shapes:
-            total_dims += shape[].ndim
+        for i in range(len(shapes)):
+            total_dims += shapes[i].ndim
 
         var new_shape = Self(ndim=total_dims, initialized=False)
 
@@ -471,9 +471,10 @@ struct NDArrayShape(Stringable, Writable):
         for i in range(self.ndim):
             (new_shape._buf + index).init_pointee_copy(self[i])
             index += 1
-        for shape in shapes:
-            for i in range(shape[].ndim):
-                (new_shape._buf + index).init_pointee_copy(shape[][i])
+
+        for i in range(len(shapes)):
+            for j in range(shapes[i].ndim):
+                (new_shape._buf + index).init_pointee_copy(shapes[i][j])
                 index += 1
 
         return new_shape

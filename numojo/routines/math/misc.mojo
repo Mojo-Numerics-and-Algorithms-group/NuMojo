@@ -16,7 +16,7 @@ import stdlib.math.math as stdlib_math
 from sys import simdwidthof
 from utils import Variant
 
-import numojo.routines.math._math_funcs as _mf
+import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
 

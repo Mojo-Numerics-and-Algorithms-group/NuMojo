@@ -166,24 +166,11 @@ struct Flags:
             and (key != "W")
             and (key != "FORC")
         ):
-            # raise Error(
-            #     String(
-            #         "\nError in `Flags.__getitem__()`: "
-            #         "Invalid field name or short name: {}"
-            #     ).format(key)
-            # )
             raise Error(
-                MemoryError(
-                    message=String(
-                        "\n[Flags.__getitem__] Invalid field name or short"
-                        " name: '{}'."
-                    ).format(key),
-                    suggestion=String(
-                        "Valid keys are: 'C_CONTIGUOUS', 'C', 'F_CONTIGUOUS',"
-                        " 'F', 'OWNDATA', 'O', 'WRITEABLE', 'W', 'FORC'."
-                    ),
-                    location=String("numojo.core.flags.__getitem__"),
-                )
+                String(
+                    "\nError in `Flags.__getitem__()`: "
+                    "Invalid field name or short name: {}"
+                ).format(key)
             )
         if (key == "C_CONTIGUOUS") or (key == "C"):
             return self.C_CONTIGUOUS

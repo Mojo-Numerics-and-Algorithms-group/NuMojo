@@ -15,7 +15,7 @@ alias Strides = NDArrayStrides
 
 
 @register_passable
-struct NDArrayStrides(Sized, Stringable, Writable):
+struct NDArrayStrides(Stringable):
     """
     Presents the strides of `NDArray` type.
 

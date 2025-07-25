@@ -12,7 +12,7 @@ from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from utils import Variant
 
-import numojo.routines.math._math_funcs as _mf
+import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray, NDArrayShape
 from numojo.core.utility import is_inttype, is_floattype, is_booltype
 

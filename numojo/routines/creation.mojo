@@ -39,8 +39,7 @@ from memory import UnsafePointer, memset_zero, memset, memcpy
 from algorithm.memory import parallel_memcpy
 from python import PythonObject, Python
 from sys import simdwidthof
-
-# from tensor import Tensor, TensorShape
+from tensor import Tensor, TensorShape
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
@@ -789,7 +788,7 @@ fn geomspace[
 
     if endpoint:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var base: Scalar[dtype] = stop / start
+        var base: Scalar[dtype] = (stop / start)
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: Scalar[dtype] = base**power
         for i in range(num):
@@ -798,7 +797,7 @@ fn geomspace[
 
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var base: Scalar[dtype] = stop / start
+        var base: Scalar[dtype] = (stop / start)
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: Scalar[dtype] = base**power
         for i in range(num):
@@ -841,7 +840,7 @@ fn geomspaceC[
         var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](
             NDArrayShape(num)
         )
-        var base: ComplexSIMD[dtype] = stop / start
+        var base: ComplexSIMD[dtype] = (stop / start)
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: ComplexSIMD[dtype] = base**power
         for i in range(num):
@@ -855,7 +854,7 @@ fn geomspaceC[
         var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](
             NDArrayShape(num)
         )
-        var base: ComplexSIMD[dtype] = stop / start
+        var base: ComplexSIMD[dtype] = (stop / start)
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: ComplexSIMD[dtype] = base**power
         for i in range(num):
@@ -1973,64 +1972,64 @@ fn fromstring[
     return result^
 
 
-# fn from_tensor[
-#     dtype: DType = DType.float64
-# ](data: Tensor[dtype]) raises -> NDArray[dtype]:
-#     """
-#     Create array from tensor.
+fn from_tensor[
+    dtype: DType = DType.float64
+](data: Tensor[dtype]) raises -> NDArray[dtype]:
+    """
+    Create array from tensor.
 
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
+    Parameters:
+        dtype: Datatype of the NDArray elements.
 
-#     Args:
-#         data: Tensor.
+    Args:
+        data: Tensor.
 
-#     Returns:
-#         NDArray.
-#     """
+    Returns:
+        NDArray.
+    """
 
-#     var ndim = data.shape().rank()
-#     var shape = NDArrayShape(ndim=ndim, initialized=False)
-#     for i in range(ndim):
-#         (shape._buf + i).init_pointee_copy(data.shape()[i])
+    var ndim = data.shape().rank()
+    var shape = NDArrayShape(ndim=ndim, initialized=False)
+    for i in range(ndim):
+        (shape._buf + i).init_pointee_copy(data.shape()[i])
 
-#     var a = NDArray[dtype](shape=shape)
+    var a = NDArray[dtype](shape=shape)
 
-#     memcpy(a._buf.ptr, data._ptr, a.size)
+    memcpy(a._buf.ptr, data._ptr, a.size)
 
-#     return a
+    return a
 
 
-# fn from_tensorC[
-#     dtype: DType = DType.float64
-# ](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
-#     """
-#     Create array from tensor.
+fn from_tensorC[
+    dtype: DType = DType.float64
+](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
+    """
+    Create array from tensor.
 
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
+    Parameters:
+        dtype: Datatype of the NDArray elements.
 
-#     Args:
-#         real: Tensor.
-#         imag: Tensor.
+    Args:
+        real: Tensor.
+        imag: Tensor.
 
-#     Returns:
-#         ComplexNDArray constructed from real and imaginary tensors.
-#     """
+    Returns:
+        ComplexNDArray constructed from real and imaginary tensors.
+    """
 
-#     var ndim = real.shape().rank()
-#     if ndim != imag.shape().rank():
-#         raise ("Real and imaginary tensors must have the same rank!")
-#     var shape = NDArrayShape(ndim=ndim, initialized=False)
-#     for i in range(ndim):
-#         (shape._buf + i).init_pointee_copy(real.shape()[i])
+    var ndim = real.shape().rank()
+    if ndim != imag.shape().rank():
+        raise ("Real and imaginary tensors must have the same rank!")
+    var shape = NDArrayShape(ndim=ndim, initialized=False)
+    for i in range(ndim):
+        (shape._buf + i).init_pointee_copy(real.shape()[i])
 
-#     var a = ComplexNDArray[dtype](shape=shape)
+    var a = ComplexNDArray[dtype](shape=shape)
 
-#     memcpy(a._re._buf.ptr, real._ptr, a._re.size)
-#     memcpy(a._im._buf.ptr, imag._ptr, a._im.size)
+    memcpy(a._re._buf.ptr, real._ptr, a._re.size)
+    memcpy(a._im._buf.ptr, imag._ptr, a._im.size)
 
-#     return a
+    return a
 
 
 # ===------------------------------------------------------------------------===#
@@ -2285,72 +2284,72 @@ fn arrayC[
     return A^
 
 
-# fn array[
-#     dtype: DType = DType.float64
-# ](data: Tensor[dtype]) raises -> NDArray[dtype]:
-#     """
-#     Create array from tensor.
+fn array[
+    dtype: DType = DType.float64
+](data: Tensor[dtype]) raises -> NDArray[dtype]:
+    """
+    Create array from tensor.
 
-#     Example:
-#     ```mojo
-#     import numojo as nm
-#     from tensor import Tensor, TensorShape
-#     from numojo.prelude import *
+    Example:
+    ```mojo
+    import numojo as nm
+    from tensor import Tensor, TensorShape
+    from numojo.prelude import *
 
-#     fn main() raises:
-#         height = 256
-#         width = 256
-#         channels = 3
-#         image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
-#         print(image)
-#         print(nm.array(image))
-#     ```
+    fn main() raises:
+        height = 256
+        width = 256
+        channels = 3
+        image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
+        print(image)
+        print(nm.array(image))
+    ```
 
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
+    Parameters:
+        dtype: Datatype of the NDArray elements.
 
-#     Args:
-#         data: Tensor.
+    Args:
+        data: Tensor.
 
-#     Returns:
-#         NDArray.
-#     """
+    Returns:
+        NDArray.
+    """
 
-#     return from_tensor(data)
+    return from_tensor(data)
 
 
-# fn arrayC[
-#     dtype: DType = DType.float64
-# ](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
-#     """
-#     Create array from tensor.
+fn arrayC[
+    dtype: DType = DType.float64
+](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
+    """
+    Create array from tensor.
 
-#     Example:
-#     ```mojo
-#     import numojo as nm
-#     from tensor import Tensor, TensorShape
-#     from numojo.prelude import *
+    Example:
+    ```mojo
+    import numojo as nm
+    from tensor import Tensor, TensorShape
+    from numojo.prelude import *
 
-#     fn main() raises:
-#         height = 256
-#         width = 256
-#         channels = 3
-#         image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
-#         print(nm.arrayC(real=image, imag=image))
-#     ```
+    fn main() raises:
+        height = 256
+        width = 256
+        channels = 3
+        image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
+        print(nm.arrayC(real=image, imag=image))
+    ```
 
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
+    Parameters:
+        dtype: Datatype of the NDArray elements.
 
-#     Args:
-#         real: Tensor.
-#         imag: Tensor.
+    Args:
+        real: Tensor.
+        imag: Tensor.
 
-#     Returns:
-#         ComplexNDArray.
-#     """
+    Returns:
+        ComplexNDArray.
+    """
 
-#     return from_tensorC(real, imag)
+    return from_tensorC(real, imag)
 
 
 # ===----------------------------------------------------------------------=== #

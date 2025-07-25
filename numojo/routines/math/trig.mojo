@@ -7,7 +7,7 @@ Implements Trigonometry functions for arrays.
 
 import math
 
-import numojo.routines.math._math_funcs as _mf
+import numojo.core._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 import numojo.core.matrix as matrix

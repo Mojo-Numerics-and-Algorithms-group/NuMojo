@@ -27,7 +27,7 @@ from numojo.routines.linalg.misc import issymmetric
 
 
 struct Matrix[dtype: DType = DType.float64](
-    Copyable, Movable, Sized, Stringable, Writable
+    CollectionElement, Sized, Stringable, Writable
 ):
     # TODO: Matrix[dtype: DType = DType.float64,
     #               Buffer: Bufferable[dtype] = OwnData[dtype]]

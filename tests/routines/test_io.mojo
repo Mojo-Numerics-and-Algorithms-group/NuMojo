@@ -8,7 +8,7 @@ fn test_save_and_load() raises:
     var np = Python.import_module("numpy")
     var arr = ones[numojo.f32](numojo.Shape(10, 15))
     var fname = "test_save_load.npy"
-    save(fname, arr)
+    save(fname=fname, array=arr)
     # Load with numpy for cross-check
     var np_loaded = np.load(fname)
     np.allclose(np_loaded, arr.to_numpy())

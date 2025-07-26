@@ -26,7 +26,14 @@ from .datatypes import (
     f64,
 )
 
-# from .utility import
+from .error import (
+    ShapeError,
+    IndexError,
+    BroadcastError,
+    MemoryError,
+    ValueError,
+    ArithmeticError,
+)
 
 alias idx = Item
 alias shape = NDArrayShape

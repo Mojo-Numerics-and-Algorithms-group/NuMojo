@@ -1,7 +1,4 @@
-from .files import (
-    loadtxt,
-    savetxt,
-)
+from .files import loadtxt, savetxt, load, save
 
 from .formatting import (
     format_floating_scientific,

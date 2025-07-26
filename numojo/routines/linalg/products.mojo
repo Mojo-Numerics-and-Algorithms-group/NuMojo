@@ -12,7 +12,7 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from sys import simdwidthof
 from memory import memcpy
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.matrix import Matrix

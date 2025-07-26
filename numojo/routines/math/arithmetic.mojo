@@ -10,7 +10,7 @@ from algorithm import parallelize, Static2DTileUnitFunc as Tile2DFunc
 import math
 from utils import Variant
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.traits.backend import Backend
 from numojo.core.ndarray import NDArray
 

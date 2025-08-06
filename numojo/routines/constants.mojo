@@ -7,8 +7,7 @@ Constants
 # ===----------------------------------------------------------------------=== #
 
 
-@value
-struct Constants(AnyType):
+struct Constants(AnyType, Copyable, Movable):
     """Define constants.
 
     Use alias for compile time evaluation of indefinite precision.

@@ -86,7 +86,6 @@ from numojo.routines.statistics.averages import mean
 # ComplexNDArray
 # ===----------------------------------------------------------------------===#
 # TODO: Add SIMD width as a parameter.
-@value
 struct ComplexNDArray[dtype: DType = DType.float64](
     Copyable, Movable, Representable, Sized, Stringable, Writable
 ):
@@ -2349,13 +2348,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             raise Error("Invalid type: " + type + ", must be 're' or 'im'")
 
 
-@value
 struct _ComplexNDArrayIter[
     is_mutable: Bool, //,
     origin: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
-]:
+](Copyable, Movable):
     # TODO:
     # Return a view instead of copy where possible
     # (when Bufferable is supported).

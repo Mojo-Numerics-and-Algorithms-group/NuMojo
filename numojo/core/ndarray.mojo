@@ -4961,13 +4961,12 @@ struct NDArray[dtype: DType = DType.float64](
 # ===----------------------------------------------------------------------===#
 
 
-@value
 struct _NDArrayIter[
     is_mutable: Bool, //,
     origin: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
-]:
+](Copyable, Movable):
     # TODO:
     # Return a view instead of copy where possible
     # (when Bufferable is supported).
@@ -5107,13 +5106,12 @@ struct _NDArrayIter[
             return res
 
 
-@value
 struct _NDAxisIter[
     is_mutable: Bool, //,
     origin: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
-]():
+](Copyable, Movable):
     # TODO:
     # Return a view instead of copy where possible
     # (when Bufferable is supported).
@@ -5421,10 +5419,9 @@ struct _NDAxisIter[
         return Tuple(offsets, elements)
 
 
-@value
 struct _NDIter[
     is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType
-]():
+](Copyable, Movable):
     """
     An iterator yielding the array elements according to the order.
     It can be constructed by `NDArray.nditer()` method.

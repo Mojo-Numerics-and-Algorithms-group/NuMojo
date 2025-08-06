@@ -8,7 +8,8 @@ Implements backend functions for mathematics
 
 
 from testing import assert_raises
-from algorithm.functional import parallelize, vectorize, num_physical_cores
+from algorithm.functional import parallelize, vectorize
+from sys.info import num_physical_cores
 from sys import simdwidthof
 from memory import UnsafePointer
 

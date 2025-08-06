@@ -1455,7 +1455,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         if (shape[0] == 0) and (shape[1] == 0):
             var M = Matrix[dtype](shape=(1, len(object)))
-            memcpy(M._buf.ptr, object.data, M.size)
+            memcpy(M._buf.ptr, object.unsafe_ptr(), M.size)
             return M^
 
         if shape[0] * shape[1] != len(object):
@@ -1464,7 +1464,7 @@ struct Matrix[dtype: DType = DType.float64](
             ).format(len(object), shape[0], shape[1])
             raise Error(message)
         var M = Matrix[dtype](shape=shape, order="C")
-        memcpy(M._buf.ptr, object.data, M.size)
+        memcpy(M._buf.ptr, object.unsafe_ptr(), M.size)
         if order == "F":
             M = M.reorder_layout()
         return M^
@@ -1552,13 +1552,12 @@ struct Matrix[dtype: DType = DType.float64](
 # ===-----------------------------------------------------------------------===#
 
 
-@value
 struct _MatrixIter[
     is_mutable: Bool, //,
     lifetime: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
-]:
+](Copyable, Movable):
     """Iterator for Matrix.
 
     Parameters:

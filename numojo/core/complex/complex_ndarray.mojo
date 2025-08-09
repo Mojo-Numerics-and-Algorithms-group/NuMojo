@@ -88,6 +88,14 @@ from numojo.core.error import (
     ValueError,
     ArithmeticError,
 )
+from numojo.core.error import (
+    IndexError,
+    ShapeError,
+    BroadcastError,
+    MemoryError,
+    ValueError,
+    ArithmeticError,
+)
 
 
 # ===----------------------------------------------------------------------===#

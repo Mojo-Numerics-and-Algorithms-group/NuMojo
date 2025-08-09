@@ -66,6 +66,8 @@ import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
+import numojo.routines.math._array_funcs as _af
+from numojo.routines.math._math_funcs import Vectorized
 from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item

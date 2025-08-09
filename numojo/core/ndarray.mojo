@@ -53,7 +53,7 @@ from algorithm import parallelize, vectorize
 import builtin.math as builtin_math
 import builtin.bool as builtin_bool
 from builtin.type_aliases import Origin
-from collec[48;25;80;850;1280ttions.optional import Optional
+from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memcpy
 from math import log10
 from python import PythonObject
@@ -493,7 +493,6 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = _get_offset(index, self.strides)
         return self._buf.ptr.load[width=1](idx)
 
-
     # Can be faster if we only return a view since we are not copying the data.
     fn __getitem__(self, idx: Int) raises -> Self:
         """
@@ -575,14 +574,14 @@ struct NDArray[dtype: DType = DType.float64](
             alloc_order = String("F")
         var result = NDArray[dtype](shape=out_shape, order=alloc_order)
 
-    # Fast path for C-contiguous arrays
+        # Fast path for C-contiguous arrays
         if self.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
             memcpy(result._buf.ptr, self._buf.ptr + norm * block, block)
             return result^
 
-    # (F-order or arbitrary stride layout)
-    # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
+        # (F-order or arbitrary stride layout)
+        # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
         self._copy_first_axis_slice[dtype](self, norm, result)
         return result^
 
@@ -3785,7 +3784,9 @@ struct NDArray[dtype: DType = DType.float64](
             if (not summarize) or (n_items == edge):
                 # full print
                 for i in range(n_items):
-                    var value = self.load[width=1](offset + i * self.strides[dimension])
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
+                    )
                     out += format_value(value, options)
                     if i < n_items - 1:
                         out += separator
@@ -3793,13 +3794,17 @@ struct NDArray[dtype: DType = DType.float64](
             else:
                 # summarized: head ... tail
                 for i in range(edge):
-                    var value = self.load[width=1](offset + i * self.strides[dimension])
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
+                    )
                     out += format_value(value, options)
                     if i < edge - 1:
                         out += separator
                 out += separator + String("...") + separator
                 for i in range(n_items - edge, n_items):
-                    var value = self.load[width=1](offset + i * self.strides[dimension])
+                    var value = self.load[width=1](
+                        offset + i * self.strides[dimension]
+                    )
                     out += format_value(value, options)
                     if i < n_items - 1:
                         out += separator
@@ -3810,12 +3815,12 @@ struct NDArray[dtype: DType = DType.float64](
                 var wrapped: String = String("")
                 var line_len: Int = 0
                 for c in out.codepoint_slices():
-                    if c == String('\n'):
+                    if c == String("\n"):
                         wrapped += c
                         line_len = 0
                     else:
-                        if line_len >= options.line_width and c != String(' '):
-                            wrapped += '\n'
+                        if line_len >= options.line_width and c != String(" "):
+                            wrapped += "\n"
                             line_len = 0
                         wrapped += c
                         line_len += 1
@@ -4697,7 +4702,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
         return new_matrix
 
-    # TODO: make it inplace? 
+    # TODO: make it inplace?
     fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
         """
         Returns an array of the same data with a new shape.

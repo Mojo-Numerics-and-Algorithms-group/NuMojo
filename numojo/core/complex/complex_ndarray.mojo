@@ -80,6 +80,9 @@ from numojo.routines.math.products import prod, cumprod
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.sorting as sorting
 from numojo.routines.statistics.averages import mean
+from numojo.core.error import (
+    IndexError, ShapeError, BroadcastError, MemoryError, ValueError, ArithmeticError
+)
 
 
 # ===----------------------------------------------------------------------===#
@@ -129,8 +132,15 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         if re.shape != im.shape:
             raise Error(
-                "Error in `numojo.ComplexNDArray.__init__()`: "
-                "Real and imaginary parts must have the same shape."
+                ShapeError(
+                    message=String(
+                        "Real and imaginary array parts must have identical shapes; got re={} vs im={}."
+                    ).format(re.shape, im.shape),
+                    suggestion=String(
+                        "Ensure both NDArray arguments are created with the same shape before constructing ComplexNDArray."
+                    ),
+                    location=String("ComplexNDArray.__init__(re, im)"),
+                )
             )
         self._re = re
         self._im = im
@@ -409,8 +419,15 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         if self.ndim != 0:
             raise Error(
-                "\nError in `numojo.ComplexNDArray.__getitem__()`: "
-                "Cannot get value without index."
+                IndexError(
+                    message=String(
+                        "Cannot read a scalar value from a non-0D ComplexNDArray without indices."
+                    ),
+                    suggestion=String(
+                        "Use `A[]` only for 0D arrays (scalars). For higher dimensions supply indices, e.g. `A[i,j]`."
+                    ),
+                    location=String("ComplexNDArray.__getitem__()"),
+                )
             )
         return ComplexSIMD[Self.dtype](
             re=self._re._buf.ptr[],
@@ -441,21 +458,21 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         if index.__len__() != self.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.__getitem__(index:"
-                    " Item)`: Length of index ({}) does not match the number"
-                    " ofdimensions ({})."
-                ).format(index.__len__(), self.ndim)
+                IndexError(
+                    message=String("Expected {} indices (ndim) but received {}.").format(self.ndim, index.__len__()),
+                    suggestion=String("Provide one index per dimension for shape {}.").format(self.shape),
+                    location=String("ComplexNDArray.__getitem__(index: Item)"),
+                )
             )
 
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
                 raise Error(
-                    String(
-                        "\nError in `numojo.ComplexNDArray.__getitem__(index:"
-                        " Item)`: Index out of bounds for dimension {} with"
-                        " index {}  and dimension size {}."
-                    ).format(i, index[i], self.shape[i])
+                    IndexError(
+                        message=String("Index {} out of range for dimension {} (size {}).").format(index[i], i, self.shape[i]),
+                        suggestion=String("Valid indices for this dimension are in [0, {}).").format(self.shape[i]),
+                        location=String("ComplexNDArray.__getitem__(index: Item)"),
+                    )
                 )
 
         var idx: Int = _get_offset(index, self.strides)
@@ -491,8 +508,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if self.ndim == 0:
             raise Error(
-                "\nError in `numojo.ComplexNDArray.__getitem__(self, idx:"
-                " Int)`: Cannot slice a 0-d array."
+                IndexError(
+                    message=String("Cannot slice a 0D ComplexNDArray (scalar)."),
+                    suggestion=String("Use `A[]` or `A.item(0)` to read the scalar value."),
+                    location=String("ComplexNDArray.__getitem__(idx: Int)"),
+                )
             )
 
         var narr: Self
@@ -570,8 +590,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         # Check error cases
         if slice_list.__len__() == 0:
             raise Error(
-                "\nError in `numojo.ComplexNDArray.__getitem__(slice_list:"
-                " List[Slice])`:\nEmpty slice list provided!"
+                IndexError(
+                    message=String("Empty slice list provided."),
+                    suggestion=String("Provide at least one Slice; e.g. use [:] or Slice(0, n, 1)."),
+                    location=String("ComplexNDArray.__getitem__(slice_list: List[Slice])"),
+                )
             )
 
         if slice_list.__len__() < self.ndim:
@@ -688,11 +711,13 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.__getitem__(slices:"
-                    " Variant[Slice, Int])`:\nNumber of slices {} is greater"
-                    " than number of dimension of array {}!"
-                ).format(n_slices, self.ndim)
+                IndexError(
+                    message=String(
+                        "Too many indices/slices: received {} but array has {} dimensions."
+                    ).format(n_slices, self.ndim),
+                    suggestion=String("Use at most {} indices/slices (one per dimension).").format(self.ndim),
+                    location=String("ComplexNDArray.__getitem__(*slices: Variant[Slice, Int])"),
+                )
             )
         var slice_list: List[Slice] = List[Slice]()
 
@@ -751,11 +776,15 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         for i in range(indices.size):
             if indices.item(i) >= self.shape[0]:
                 raise Error(
-                    String(
-                        "\nError in `numojo.ComplexNDArray.__getitem__(indices:"
-                        " NDArray[DType.index])`:\nindex {} with value {} is"
-                        " out of boundary [0, {})"
-                    ).format(i, indices.item(i), self.shape[0])
+                    IndexError(
+                        message=String(
+                            "Index {} (value {}) out of range for first dimension size {}."
+                        ).format(i, indices.item(i), self.shape[0]),
+                        suggestion=String(
+                            "Ensure each index < {}. Consider clipping or validating indices before indexing."
+                        ).format(self.shape[0]),
+                        location=String("ComplexNDArray.__getitem__(indices: NDArray[index])"),
+                    )
                 )
             memcpy(
                 result._re._buf.ptr + i * size_per_item,
@@ -846,20 +875,28 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         # return items from the 0-th dimension of the array where mask is True
         if mask.ndim > 1:
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.__getitem__(mask:"
-                    " NDArray[DType.bool])`:\nCurrently we only support 1-d"
-                    " mask array."
+                ShapeError(
+                    message=String(
+                        "Boolean mask must be 1-D or match full array shape; got ndim={} for mask shape {}."
+                    ).format(mask.ndim, mask.shape),
+                    suggestion=String(
+                        "Use a 1-D mask of length {} for first-dimension filtering or a full-shape mask {} for element-wise selection."
+                    ).format(self.shape[0], self.shape),
+                    location=String("ComplexNDArray.__getitem__(mask: NDArray[bool])"),
                 )
             )
 
         if mask.shape[0] != self.shape[0]:
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.__getitem__(mask:"
-                    " NDArray[DType.bool])`:\nShape 0 of mask ({}) does not"
-                    " match that of array ({})."
-                ).format(mask.shape[0], self.shape[0])
+                ShapeError(
+                    message=String(
+                        "Mask length {} does not match first dimension size {}."
+                    ).format(mask.shape[0], self.shape[0]),
+                    suggestion=String(
+                        "Provide mask of length {} to filter along first dimension."
+                    ).format(self.shape[0]),
+                    location=String("ComplexNDArray.__getitem__(mask: NDArray[bool])"),
+                )
             )
 
         var len_of_result = 0
@@ -944,10 +981,10 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         # For 0-D array, raise error
         if self.ndim == 0:
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.item(index: Int)`: "
-                    "Cannot index a 0-D Complex array (numojo scalar). "
-                    "Use `a.item()` without arguments."
+                IndexError(
+                    message=String("Cannot index into a 0D ComplexNDArray with a linear position."),
+                    suggestion=String("Call item() with no arguments or use A[] to read scalar."),
+                    location=String("ComplexNDArray.item(index: Int)"),
                 )
             )
 
@@ -956,10 +993,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.item(index: Int)`:"
-                    "`index` exceeds array size ({})"
-                ).format(self.size)
+                IndexError(
+                    message=String("Linear index {} out of range for array size {}.").format(index, self.size),
+                    suggestion=String("Valid linear indices: 0..{} (inclusive). Use negative indices only where supported.").format(self.size - 1),
+                    location=String("ComplexNDArray.item(index: Int)"),
+                )
             )
 
         if self.flags.F_CONTIGUOUS:
@@ -1008,10 +1046,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if len(index) != self.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.item(*index: Int)`:"
-                    "Number of indices ({}) do not match ndim ({})"
-                ).format(len(index), self.ndim)
+                IndexError(
+                    message=String("Expected {} indices (ndim) but got {}.").format(self.ndim, len(index)),
+                    suggestion=String("Provide one coordinate per dimension for shape {}.").format(self.shape),
+                    location=String("ComplexNDArray.item(*index: Int)"),
+                )
             )
 
         if self.ndim == 0:
@@ -1028,8 +1067,10 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 list_index.append(index[i])
             if (list_index[i] < 0) or (list_index[i] >= self.shape[i]):
                 raise Error(
-                    String("{}-th index exceeds shape size {}").format(
-                        i, self.shape[i]
+                    IndexError(
+                        message=String("Index {} out of range for dimension {} (size {}).").format(list_index[i], i, self.shape[i]),
+                        suggestion=String("Valid range is [0, {}). Consider adjusting or clipping.").format(self.shape[i]),
+                        location=String("ComplexNDArray.item(*index: Int)"),
                     )
                 )
         return ComplexSIMD[Self.dtype](
@@ -1066,10 +1107,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if (index >= self.size) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.load(index: Int)`: "
-                    "Invalid index: index out of bound [0, {})."
-                ).format(self.size)
+                IndexError(
+                    message=String("Index {} out of range for size {}.").format(index, self.size),
+                    suggestion=String("Use 0 <= i < {}. Adjust negatives manually; negative indices are not supported here.").format(self.size),
+                    location=String("ComplexNDArray.load(index: Int)"),
+                )
             )
 
         return ComplexSIMD[Self.dtype](
@@ -1096,11 +1138,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                String(
-                    "\nError in `numojo.ComplexNDArray.load[width: Int ="
-                    " 1](index: Int)`:\nInvalid index: index out of bound [0,"
-                    " {})."
-                ).format(self.size)
+                IndexError(
+                    message=String("Index {} out of range for size {}.").format(index, self.size),
+                    suggestion=String("Use 0 <= i < {} when loading elements.").format(self.size),
+                    location=String("ComplexNDArray.load[width](index: Int)"),
+                )
             )
 
         return ComplexSIMD[Self.dtype](
@@ -1137,22 +1179,22 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
 
         if len(indices) != self.ndim:
-            raise (
-                String(
-                    "\nError in `numojo.ComplexNDArray.load[width: Int ="
-                    " 1](*indices: Int)`:\nLength of indices ({}) does not"
-                    " match ndim ({})."
-                ).format(len(indices), self.ndim)
+            raise Error(
+                IndexError(
+                    message=String("Expected {} indices (ndim) but received {}.").format(self.ndim, len(indices)),
+                    suggestion=String("Provide one index per dimension: shape {} needs {} coordinates.").format(self.shape, self.ndim),
+                    location=String("ComplexNDArray.load[width](*indices: Int)"),
+                )
             )
 
         for i in range(self.ndim):
             if (indices[i] < 0) or (indices[i] >= self.shape[i]):
                 raise Error(
-                    String(
-                        "\nError in `numojo.ComplexNDArray.load[width: Int ="
-                        " 1](*indices: Int)`:\nInvalid index at {}-th dim:"
-                        " index out of bound [0, {})."
-                    ).format(i, self.shape[i])
+                    IndexError(
+                        message=String("Index {} out of range for dim {} (size {}).").format(indices[i], i, self.shape[i]),
+                        suggestion=String("Valid range for dim {} is [0, {}).").format(i, self.shape[i]),
+                        location=String("ComplexNDArray.load[width](*indices: Int)"),
+                    )
                 )
 
         var idx: Int = _get_offset(indices, self.strides)
@@ -1170,6 +1212,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         for i in range(n_slices):
             if i >= self.ndim:
                 raise Error("Error: Number of slices exceeds array dimensions")
+                # Could consider ShapeError, but keep generic until slice API stabilized.
 
             var start: Int = 0
             var end: Int = self.shape[i]
@@ -1179,8 +1222,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 if start < 0:
                     # start += self.shape[i]
                     raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
+                        IndexError(
+                            message=String("Negative slice start not supported (dimension {} start {}).").format(i, start),
+                            suggestion=String("Use non-negative starts; add self.shape[dim] if you intended python-style negative indexing."),
+                            location=String("ComplexNDArray._adjust_slice")
+                        )
                     )
 
             if slice_list[i].end is not None:
@@ -1188,12 +1234,21 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 if end < 0:
                     # end += self.shape[i] + 1
                     raise Error(
-                        "Error: Negative indexing in slices not supported"
-                        " currently"
+                        IndexError(
+                            message=String("Negative slice end not supported (dimension {} end {}).").format(i, end),
+                            suggestion=String("Use non-negative ends; add self.shape[dim] if you intended python-style negative indexing."),
+                            location=String("ComplexNDArray._adjust_slice")
+                        )
                     )
             step = slice_list[i].step.or_else(1)
             if step == 0:
-                raise Error("Error: Slice step cannot be zero")
+                raise Error(
+                    ValueError(
+                        message=String("Slice step cannot be zero (dimension {}).").format(i),
+                        suggestion=String("Use positive or negative non-zero step to define slice progression."),
+                        location=String("ComplexNDArray._adjust_slice"),
+                    )
+                )
 
             slices.append(
                 Slice(
@@ -2194,8 +2249,10 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                String("Invalid index: index out of bound [0, {}).").format(
-                    self.size
+                IndexError(
+                    message=String("Index {} out of range for array size {}.").format(index, self.size),
+                    suggestion=String("Use 0 <= i < {} when storing; adjust index or reshape array.").format(self.size),
+                    location=String("ComplexNDArray.store(index: Int)"),
                 )
             )
 
@@ -2216,19 +2273,22 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
 
         if len(indices) != self.ndim:
-            raise (
-                String("Length of indices {} does not match ndim {}").format(
-                    len(indices), self.ndim
+            raise Error(
+                IndexError(
+                    message=String("Expected {} indices (ndim) but received {}.").format(self.ndim, len(indices)),
+                    suggestion=String("Provide one index per dimension for shape {}.").format(self.shape),
+                    location=String("ComplexNDArray.store(*indices)"),
                 )
             )
 
         for i in range(self.ndim):
             if (indices[i] < 0) or (indices[i] >= self.shape[i]):
                 raise Error(
-                    String(
-                        "Invalid index at {}-th dim: "
-                        "index out of bound [0, {})."
-                    ).format(i, self.shape[i])
+                    IndexError(
+                        message=String("Index {} out of range for dim {} (size {}).").format(indices[i], i, self.shape[i]),
+                        suggestion=String("Valid range for dim {} is [0, {}).").format(i, self.shape[i]),
+                        location=String("ComplexNDArray.store(*indices)"),
+                    )
                 )
 
         var idx: Int = _get_offset(indices, self.strides)
@@ -2311,20 +2371,31 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     self._im._buf.ptr.store(idx, item.im)
             else:
                 raise Error(
-                    String(
-                        "Error: Elements of `index` ({}) \n"
-                        "exceed the array size ({})."
-                    ).format(idx, self.size)
+                    IndexError(
+                        message=String("Linear index {} out of range for size {}.").format(idx, self.size),
+                        suggestion=String("Valid linear indices: 0..{}.").format(self.size - 1),
+                        location=String("ComplexNDArray.itemset(Int)"),
+                    )
                 )
 
         else:
             var indices = index._get_ptr[List[Int]]()[]
             if indices.__len__() != self.ndim:
-                raise Error("Error: Length of Indices do not match the shape")
+                raise Error(
+                    IndexError(
+                        message=String("Expected {} indices (ndim) but received {}.").format(self.ndim, indices.__len__()),
+                        suggestion=String("Provide one index per dimension; shape {} has {} dimensions.").format(self.shape, self.ndim),
+                        location=String("ComplexNDArray.itemset(List[Int])"),
+                    )
+                )
             for i in range(indices.__len__()):
                 if indices[i] >= self.shape[i]:
                     raise Error(
-                        "Error: Elements of `index` exceed the array shape"
+                        IndexError(
+                            message=String("Index {} out of range for dim {} (size {}).").format(indices[i], i, self.shape[i]),
+                            suggestion=String("Valid range: [0, {}).").format(self.shape[i]),
+                            location=String("ComplexNDArray.itemset(List[Int])"),
+                        )
                     )
             self._re._buf.ptr.store(_get_offset(indices, self.strides), item.re)
             self._im._buf.ptr.store(_get_offset(indices, self.strides), item.im)
@@ -2345,7 +2416,13 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             memcpy(result._buf.ptr, self._im._buf.ptr, self.size)
             return result^
         else:
-            raise Error("Invalid type: " + type + ", must be 're' or 'im'")
+            raise Error(
+                ValueError(
+                    message=String("Invalid component selector '{}' (expected 're' or 'im').").format(type),
+                    suggestion=String("Call to_ndarray('re') for real part or to_ndarray('im') for imaginary part."),
+                    location=String("ComplexNDArray.to_ndarray"),
+                )
+            )
 
 
 struct _ComplexNDArrayIter[
@@ -2393,7 +2470,13 @@ struct _ComplexNDArrayIter[
         """
 
         if dimension < 0 or dimension >= a.ndim:
-            raise Error("Axis must be in the range of [0, ndim).")
+            raise Error(
+                IndexError(
+                    message=String("Axis {} out of valid range [0, {}).").format(dimension, a.ndim),
+                    suggestion=String("Valid axes: 0..{}. Use {} for last axis of shape {}.").format(a.ndim - 1, a.ndim - 1, a.shape),
+                    location=String("_ComplexNDArrayIter.__init__"),
+                )
+            )
 
         self.re_ptr = a._re._buf.ptr
         self.im_ptr = a._im._buf.ptr
@@ -2468,10 +2551,11 @@ struct _ComplexNDArrayIter[
 
         if (index >= self.length) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `ComplexNDArrayIter.ith()`: "
-                    "Index ({}) must be in the range of [0, {})"
-                ).format(index, self.length)
+                IndexError(
+                    message=String("Iterator index {} out of range [0, {}).").format(index, self.length),
+                    suggestion=String("Use ith(i) with 0 <= i < {} or iterate via for-loop.").format(self.length),
+                    location=String("_ComplexNDArrayIter.ith"),
+                )
             )
 
         if self.ndim > 1:

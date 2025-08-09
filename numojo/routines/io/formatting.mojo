@@ -23,8 +23,7 @@ alias DEFAULT_SUPPRESS_SCIENTIFIC = False
 alias GLOBAL_PRINT_OPTIONS = PrintOptions()
 
 
-@value
-struct PrintOptions:
+struct PrintOptions(Copyable, Movable):
     var precision: Int
     """
     The number of decimal places to include in the formatted string.

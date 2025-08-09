@@ -68,14 +68,25 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
 
     if (normalized_axis < 0) or (normalized_axis >= A.ndim):
         raise Error(
-            String("Axis {} out of bound [0, {}).").format(axis, A.ndim)
+            IndexError(
+                message=String(
+                    "Axis out of range: got {}; valid range is [0, {})."
+                ).format(axis, A.ndim),
+                suggestion=String(
+                    "Use a valid axis in [0, {}) or a negative axis within"
+                    " [-{}, -1]."
+                ).format(A.ndim, A.ndim),
+                location=String("routines.math.sums.sum(A, axis)"),
+            )
         )
     if A.ndim == 1:
         raise Error(
-            String(
-                "`numojo.routines.math.sums.sum()`: "
-                "Cannot sum over axis for 1-d array. "
-                "Please remove the `axis` argument."
+            ShapeError(
+                message=String("Cannot use axis with 1D array."),
+                suggestion=String(
+                    "Call `sum(A)` without axis, or reshape A to 2D or higher."
+                ),
+                location=String("routines.math.sums.sum(A, axis)"),
             )
         )
 

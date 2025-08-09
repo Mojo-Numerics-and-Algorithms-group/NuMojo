@@ -64,6 +64,8 @@ from utils import Variant
 
 import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
+import numojo.routines.math._array_funcs as _af
+from numojo.routines.math._math_funcs import Vectorized
 from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
@@ -416,12 +418,12 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(
                 IndexError(
                     message=(
-                        "Cannot get value without index: only 0-D arrays"
-                        " support this operation."
+                        "Cannot read a scalar value from a non-0D array without"
+                        " indices."
                     ),
                     suggestion=(
-                        "Use `array[]` to get the value of a 0-D array, or"
-                        " provide indices for higher-dimensional arrays."
+                        "Use `a[]` for 0D arrays, or pass indices (e.g., `a[i,"
+                        " j]`) for higher-dimensional arrays."
                     ),
                     location="NDArray.__getitem__()",
                 )
@@ -454,12 +456,10 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(
                 IndexError(
                     message=String(
-                        "Length of index ({}) does not match the number of"
-                        " dimensions ({})."
-                    ).format(index.__len__(), self.ndim),
+                        "Invalid index length: expected {} but got {}."
+                    ).format(self.ndim, index.__len__()),
                     suggestion=String(
-                        "Ensure that the index list has exactly {} elements to"
-                        " match the array's dimensions."
+                        "Pass exactly {} indices (one per dimension)."
                     ).format(self.ndim),
                     location=String("NDArray.__getitem__(index: Item)"),
                 )
@@ -470,13 +470,13 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error(
                     ShapeError(
                         message=String(
-                            "Index out of bounds for dimension {}: received"
-                            " index {} but dimension size is {}."
+                            "Index out of range at dim {}: got {}; valid range"
+                            " is [0, {})."
                         ).format(i, index[i], self.shape[i]),
                         suggestion=String(
-                            "Ensure that the index for dimension {} is within"
-                            " the valid range [0, {})."
-                        ).format(i, self.shape[i]),
+                            "Clamp or validate indices against the dimension"
+                            " size ({})."
+                        ).format(self.shape[i]),
                         location=String("NDArray.__getitem__(index: Item)"),
                     )
                 )
@@ -513,14 +513,9 @@ struct NDArray[dtype: DType = DType.float64](
         if self.ndim == 0:
             raise Error(
                 IndexError(
-                    message=String(
-                        "Cannot slice a 0-d array: slicing is only valid for"
-                        " arrays with at least one dimension."
-                    ),
+                    message=String("Cannot slice a 0D array."),
                     suggestion=String(
-                        "Ensure the array is at least 1-dimensional before"
-                        " attempting to slice with an integer index. Or use"
-                        " `array[]` to get the value of a 0-D array."
+                        "Use `a.item()` or `a[]` to read its scalar value."
                     ),
                     location=String("NDArray.__getitem__(self, idx: Int)"),
                 )
@@ -857,12 +852,11 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(
                 IndexError(
                     message=String(
-                        "Too many indices or slices provided: received {} but"
-                        " array has only {} dimensions."
+                        "Too many indices or slices: received {} but array has"
+                        " only {} dimensions."
                     ).format(n_slices, self.ndim),
                     suggestion=String(
-                        "Reduce the number of indices or slices to match the"
-                        " array's dimensionality ({})."
+                        "Pass at most {} indices/slices (one per dimension)."
                     ).format(self.ndim),
                     location=String(
                         "NDArray.__getitem__(*slices: Variant[Slice, Int])"
@@ -953,15 +947,12 @@ struct NDArray[dtype: DType = DType.float64](
                 raise Error(
                     IndexError(
                         message=String(
-                            "Index out of bounds: The index at position {} is"
-                            " {}, which exceeds the valid range for the first"
-                            " dimension (size {})."
+                            "Index out of range at position {}: got {}; valid"
+                            " range for the first dimension is [0, {})."
                         ).format(i, indices.item(i), self.shape[0]),
                         suggestion=String(
-                            "Ensure that all the indices provided are within"
-                            " the range [0, {}). Refer to the documentation to"
-                            " understand how this function indexes into the"
-                            " array."
+                            "Validate indices against the first dimension size"
+                            " ({})."
                         ).format(self.shape[0]),
                         location=String(
                             "NDArray.__getitem__(indices: NDArray[DType.index])"
@@ -975,91 +966,6 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         return result
-
-    # fn __getitem__(self, *indices: NDArray[DType.index]) raises -> Self:
-    #     """
-    #     Get items from 0-th dimension of an ndarray of indices.
-    #     If the original array is of shape (i,j,k) and
-    #     the indices array is of shape (l, m, n), then the output array
-    #     will be of shape (l,m,n,j,k).
-
-    #     Args:
-    #         indices: Array of indices.
-
-    #     Returns:
-    #         NDArray with items from the array of indices.
-
-    #     Raises:
-    #         Error: If the elements of indices are greater than size of the corresponding dimension of the array.
-
-    #     Examples:
-
-    #     ```console
-    #     >>>var a = nm.arange[i8](6)
-    #     >>>print(a)
-    #     [       0       1       2       3       4       5       ]
-    #     1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
-    #     >>>print(a[nm.array[isize]("[4, 2, 5, 1, 0, 2]")])
-    #     [       4       2       5       1       0       2       ]
-    #     1-D array  Shape: [6]  DType: int8  C-cont: True  F-cont: True  own data: True
-
-    #     var b = nm.arange[i8](12).reshape(Shape(2, 2, 3))
-    #     print(b)
-    #     [[[     0       1       2       ]
-    #       [     3       4       5       ]]
-    #      [[     6       7       8       ]
-    #       [     9       10      11      ]]]
-    #     3-D array  Shape: [2, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
-    #     print(b[nm.array[isize]("[1, 0, 1]")])
-    #     [[[     6       7       8       ]
-    #       [     9       10      11      ]]
-    #      [[     0       1       2       ]
-    #       [     3       4       5       ]]
-    #      [[     6       7       8       ]
-    #       [     9       10      11      ]]]
-    #     3-D array  Shape: [3, 2, 3]  DType: int8  C-cont: True  F-cont: False  own data: True
-    #     ```.
-    #     """
-    #     if indices.__len__() >= self.size:
-    #         raise Error(
-    #             String(
-    #                 "\nError in `numojo.NDArray.__getitem__(*indices: NDArray[DType.index])`:\n"
-    #                 "The number of indices {} is greater than the size of the array {}."
-    #             ).format(indices.__len__(), self.size)
-    #         )
-
-    #     for i in range(indices.__len__()):
-    #         if indices[i].size!= self.ndim:
-    #             raise Error(
-    #                 String(
-    #                     "\nError in `numojo.NDArray.__getitem__(*indices: NDArray[DType.index])`:\n"
-    #                     "The index array {} is not a 1-D array."
-    #                 ).format(i)
-    #             )
-
-    #     # Get the shape of resulted array
-    #     # var shape = indices.shape.join(self.shape._pop(0))
-    #     var shape = indices.shape.join(self.shape._pop(0))
-    #     var result = NDArray[dtype](shape)
-    #     var size_per_item = self.size // self.shape[0]
-
-    #     # Fill in the values
-    #     for i in range(len(indices.size)):
-    #         if indices.item(i) >= self.shape[0]:
-    #             raise Error(
-    #                 String(
-    #                     "\nError in `numojo.NDArray.__getitem__(indices:"
-    #                     " NDArray[DType.index])`:\nindex {} with value {} is"
-    #                     " out of boundary [0, {})"
-    #                 ).format(i, indices.item(i), self.shape[0])
-    #             )
-    #         memcpy(
-    #             result._buf.ptr + i * size_per_item,
-    #             self._buf.ptr + indices.item(i) * size_per_item,
-    #             size_per_item,
-    #         )
-
-    #     return result
 
     fn __getitem__(self, indices: List[Int]) raises -> Self:
         # TODO: Use trait IntLike when it is supported by Mojo.
@@ -1323,10 +1229,16 @@ struct NDArray[dtype: DType = DType.float64](
         # For 0-D array, raise error
         if self.ndim == 0:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.item(index: Int)`: "
-                    "Cannot index a 0-D array (numojo scalar). "
-                    "Use `a.item()` without arguments."
+                IndexError(
+                    message=String(
+                        "Cannot index a 0-D array (numojo scalar) with an"
+                        " integer index."
+                    ),
+                    suggestion=String(
+                        "Call `a.item()` with no arguments to get its scalar"
+                        " value."
+                    ),
+                    location=String("NDArray.item(index: Int)"),
                 )
             )
 
@@ -1335,10 +1247,16 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.item(index: Int)`:"
-                    "`index` exceeds array size ({})"
-                ).format(self.size)
+                IndexError(
+                    message=String(
+                        "Index out of range: got {}; valid range is [0, {})."
+                    ).format(index, self.size),
+                    suggestion=String(
+                        "Clamp or validate the index against the array size"
+                        " ({})."
+                    ).format(self.size),
+                    location=String("NDArray.item(index: Int)"),
+                )
             )
 
         if self.flags.F_CONTIGUOUS:
@@ -1388,10 +1306,15 @@ struct NDArray[dtype: DType = DType.float64](
 
         if len(index) != self.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.item(*index: Int)`:"
-                    "Number of indices ({}) do not match ndim ({})"
-                ).format(len(index), self.ndim)
+                IndexError(
+                    message=String(
+                        "Invalid number of indices: expected {} but got {}."
+                    ).format(self.ndim, len(index)),
+                    suggestion=String(
+                        "Pass exactly {} indices (one per dimension)."
+                    ).format(self.ndim),
+                    location=String("NDArray.item(*index: Int)"),
+                )
             )
 
         # For 0-D array, return the scalar value.
@@ -1406,8 +1329,16 @@ struct NDArray[dtype: DType = DType.float64](
                 list_index.append(index[i])
             if (list_index[i] < 0) or (list_index[i] >= self.shape[i]):
                 raise Error(
-                    String("{}-th index exceeds shape size {}").format(
-                        i, self.shape[i]
+                    IndexError(
+                        message=String(
+                            "Index out of range at dim {}: got {}; valid range"
+                            " is [0, {})."
+                        ).format(i, list_index[i], self.shape[i]),
+                        suggestion=String(
+                            "Clamp or validate indices against the dimension"
+                            " size ({})."
+                        ).format(self.shape[i]),
+                        location=String("NDArray.item(*index: Int)"),
                     )
                 )
         return (self._buf.ptr + _get_offset(index, self.strides))[]
@@ -1445,17 +1376,27 @@ struct NDArray[dtype: DType = DType.float64](
         if index < 0:
             index += self.size
 
-        if (index >= self.size) or (index < 0):
+        if index >= self.size:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.load(index: Int)`: "
-                    "Invalid index: index out of bound [0, {})."
-                ).format(self.size)
+                IndexError(
+                    message=String(
+                        "Index out of range: got {}; valid range is [0, {})."
+                    ).format(index, self.size),
+                    suggestion=String(
+                        "Clamp or validate the index against the array size"
+                        " ({})."
+                    ).format(self.size),
+                    location=String(
+                        "NDArray.load(index: Int) -> Scalar[dtype]"
+                    ),
+                )
             )
 
         return self._buf.ptr[index]
 
-    fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
+    fn load[
+        width: Int = 1
+    ](self, owned index: Int) raises -> SIMD[dtype, width]:
         """
         Safely loads a SIMD element of size `width` at `index`
         from the underlying buffer.
@@ -1471,13 +1412,24 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Index out of boundary.
         """
+        if index < 0:
+            index += self.size
 
-        if (index < 0) or (index >= self.size):
+        if index >= self.size:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.load[width: Int = 1](index:"
-                    " Int)`:\nInvalid index: index out of bound [0, {})."
-                ).format(self.size)
+                IndexError(
+                    message=String(
+                        "Index out of range: got {}; valid range is [0, {})."
+                    ).format(index, self.size),
+                    suggestion=String(
+                        "Clamp or validate the index against the array size"
+                        " ({})."
+                    ).format(self.size),
+                    location=String(
+                        "NDArray.load[width: Int = 1](index: Int) ->"
+                        " SIMD[dtype, width]"
+                    ),
+                )
             )
 
         return self._buf.ptr.load[width=width](index)
@@ -1509,24 +1461,48 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         if len(indices) != self.ndim:
-            raise (
-                String(
-                    "\nError in `numojo.NDArray.load[width: Int = 1](*indices:"
-                    " Int)`:\nLength of indices ({}) does not match ndim ({})."
-                ).format(len(indices), self.ndim)
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Invalid number of indices: expected {} but got {}."
+                    ).format(self.ndim, len(indices)),
+                    suggestion=String(
+                        "Pass exactly {} indices (one per dimension)."
+                    ).format(self.ndim),
+                    location=String(
+                        "NDArray.load[width: Int = 1](*indices: Int) ->"
+                        " SIMD[dtype, width]"
+                    ),
+                )
             )
 
+        var indices_list: List[Int] = List[Int](capacity=self.ndim)
         for i in range(self.ndim):
-            if (indices[i] < 0) or (indices[i] >= self.shape[i]):
+            var idx_i = indices[i]
+            if idx_i < 0:
+                idx_i += self.shape[i]
+            elif idx_i >= self.shape[i]:
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.load[width: Int ="
-                        " 1](*indices: Int)`:\nInvalid index at {}-th dim:"
-                        " index out of bound [0, {})."
-                    ).format(i, self.shape[i])
+                    IndexError(
+                        message=String(
+                            "Index out of range at dim {}: got {}; valid range"
+                            " is [0, {})."
+                        ).format(i, idx_i, self.shape[i]),
+                        suggestion=String(
+                            "Clamp or validate indices against the dimension"
+                            " size ({})."
+                        ).format(self.shape[i]),
+                        location=String(
+                            "NDArray.load[width: Int = 1](*indices: Int) ->"
+                            " SIMD[dtype, width]"
+                        ),
+                    )
                 )
+            indices_list.append(idx_i)
 
-        var idx: Int = _get_offset(indices, self.strides)
+        # indices_list already built above
+
+        var idx: Int = _get_offset(indices_list, self.strides)
         return self._buf.ptr.load[width=width](idx)
 
     # ===-------------------------------------------------------------------===#
@@ -1579,153 +1555,214 @@ struct NDArray[dtype: DType = DType.float64](
             index_of_buffer += indices[i] * self.strides._buf[i]
         self._buf.ptr[index_of_buffer] = val
 
-    fn __setitem__(mut self, idx: Int, val: Self) raises:
-        """
-        Set a slice of array with given array.
-
-        Args:
-            idx: Index to set.
-            val: Value to set.
-
-        Raises:
-            Error: If the index is out of bounds.
-            Error: If the value is a 0-D array.
-
-        Examples:
-
-        ```console
-        >>>import numojo as nm
-        >>>var A = nm.random.rand[nm.i16](3, 2)
-        >>>var B = nm.random.rand[nm.i16](3)
-        >>>A[1:4] = B
-        ```.
-        """
-
-        var normalized_index = idx
-        if normalized_index < 0:
-            normalized_index = self.shape[0] + idx
-        if normalized_index >= self.shape[0]:
+    fn __setitem__(self, idx: Int, val: Self) raises:
+        if self.ndim - 1 != val.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(idx: Int, val:"
-                    " Self)`:\nIndex out of bounds: index ({}) is out of bounds"
-                    " [0, {})."
-                ).format(idx, self.shape[0])
-            )
-
-        # If the ndim is 0, then it is a numojo scalar (0-D array).
-        # Not allow to set value to 0-D array.
-        if self.ndim == 0 or val.ndim == 0:
-            raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(idx: Int, val:"
-                    " Self)`:\nCannot set values to a 0-d array."
+                ValueError(
+                    message=String(
+                        "Dimension mismatch: The target array has {} dimensions"
+                        " after the first dimension, but the value array has {}"
+                        " dimensions."
+                    ).format(self.ndim - 1, val.ndim),
+                    suggestion=String(
+                        "Ensure that the value array has the same number of"
+                        " dimensions as the target array after the first"
+                        " dimension. For example, if the target array is"
+                        " 3-dimensional, the value array should be"
+                        " 2-dimensional."
+                    ),
+                    location=String(
+                        "NDArray.__setitem__(idx: Int, val: NDArray[dtype])"
+                    ),
                 )
             )
 
-        var slice_list = List[Slice]()
-        if idx >= self.shape[0]:
-            raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(idx: Int, val:"
-                    " Self)`:\nSlice value exceeds the array shape!\nThe {}-th"
-                    " dimension is of size {}.\nThe slice goes from {} to {}"
-                ).format(
-                    0,
-                    self.shape[0],
-                    idx,
-                    idx + 1,
-                )
-            )
-        slice_list.append(Slice(idx, idx + 1, 1))
-        if self.ndim > 1:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim, 1))
-
-        var n_slices: Int = len(slice_list)
-        var ndims: Int = 0
-        var count: Int = 0
-        var spec: List[Int] = List[Int]()
-        for i in range(n_slices):
-            if slice_list[i].step is None:
-                raise Error(String("Step of slice is None."))
-            var slice_len: Int = (
-                (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step.or_else(1)
-            ).__int__()
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
-            else:
-                count += 1
-        if count == slice_list.__len__():
-            ndims = 1
-
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
-
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = (
-                (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step.or_else(1)
-            ).__int__()
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(
-                self.strides[j] * slice_list[j].step.or_else(1)
-            )
-            j += 1
-
-        # TODO: We can remove this check after we have support for broadcasting
-        for i in range(ndims):
-            if nshape[i] != val.shape[i]:
+        for i in range(val.ndim):
+            if self.shape[i + 1] != val.shape[i]:
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.__setitem__(idx: Int, val:"
-                        " Self)`: Shape mismatch! Cannot set the array values"
-                        " with given array. The {}-th dimension of the array"
-                        " is of shape {}. The {}-th dimension of the value is"
-                        " of shape {}."
-                    ).format(nshape[i], val.shape[i])
+                    ShapeError(
+                        message=String(
+                            "Shape mismatch: Cannot set array with shape {} to"
+                            " array with shape {}."
+                        ).format(self.shape, val.shape),
+                        suggestion=String(
+                            "Ensure that the dimensions of the value array"
+                            " match the dimensions of the target array after"
+                            " the first dimension."
+                        ),
+                        location=String(
+                            "NDArray.__setitem__(idx: Int, val: NDArray[dtype])"
+                        ),
+                    )
                 )
 
-        var noffset: Int = 0
-        if self.flags.C_CONTIGUOUS:
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
-        elif self.flags.F_CONTIGUOUS:
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
+        var size_per_item: Int = self.size // self.shape[0]
+        for i in range(self.shape[0]):
+            if i == idx:
+                memcpy(
+                    self._buf.ptr + i * size_per_item,
+                    val._buf.ptr,
+                    size_per_item,
+                )
+            else:
+                continue
 
-        var index = List[Int]()
-        for _ in range(ndims):
-            index.append(0)
+    # fn __setitem__(mut self, idx: Int, val: Self) raises:
+    #     """
+    #     Set a slice of array with given array.
 
-        _traverse_iterative_setter[dtype](
-            val, self, nshape, ncoefficients, nstrides, noffset, index
-        )
+    #     Args:
+    #         idx: Index to set.
+    #         val: Value to set.
 
-    fn __setitem__(mut self, index: Item, val: Scalar[dtype]) raises:
+    #     Raises:
+    #         Error: If the index is out of bounds.
+    #         Error: If the value is a 0-D array.
+
+    #     Examples:
+
+    #     ```console
+    #     >>>import numojo as nm
+    #     >>>var A = nm.random.rand[nm.i16](3, 2)
+    #     >>>var B = nm.random.rand[nm.i16](3)
+    #     >>>A[1:4] = B
+    #     ```.
+    #     """
+    #     var normalized_index = idx
+    #     if normalized_index < 0:
+    #         normalized_index = self.shape[0] + idx
+    #     if normalized_index >= self.shape[0]:
+    #         raise Error(
+    #         IndexError(
+    #             message=String(
+    #             "Index out of bounds: The provided index ({}) exceeds the valid range for the first dimension of the array [0, {}).").format(idx, self.shape[0]),
+    #             suggestion=String(
+    #             "Ensure that the index is within the valid range [0, {})."
+    #             ).format(self.shape[0]),
+    #             location=String("NDArray.__setitem__(idx: Int, val: Self)")
+    #         )
+    #         )
+
+    #     # If the ndim is 0, then it is a numojo scalar (0-D array).
+    #     # Not allow to set value to 0-D array.
+    #     if self.ndim == 0 or val.ndim == 0:
+    #         raise Error(
+    #         ValueError(
+    #             message=String(
+    #             "Cannot assign values to a 0-D array (numojo scalar)."
+    #             ),
+    #             suggestion=String(
+    #             "Ensure that the target array is at least 1-dimensional"
+    #             " before attempting to assign values. For 0-D arrays,"
+    #             " use `.itemset()` or similar methods to modify the value."
+    #             ),
+    #             location=String("NDArray.__setitem__(idx: Int, val: Self)")
+    #         )
+    #         )
+
+    #     var slice_list = List[Slice]()
+    #     if idx >= self.shape[0]:
+    #         raise Error(
+    #             String(
+    #                 "\nError in `numojo.NDArray.__setitem__(idx: Int, val:"
+    #                 " Self)`:\nSlice value exceeds the array shape!\nThe {}-th"
+    #                 " dimension is of size {}.\nThe slice goes from {} to {}"
+    #             ).format(
+    #                 0,
+    #                 self.shape[0],
+    #                 idx,
+    #                 idx + 1,
+    #             )
+    #         )
+    #     slice_list.append(Slice(idx, idx + 1, 1))
+    #     if self.ndim > 1:
+    #         for i in range(1, self.ndim):
+    #             var size_at_dim: Int = self.shape[i]
+    #             slice_list.append(Slice(0, size_at_dim, 1))
+
+    #     var n_slices: Int = len(slice_list)
+    #     var ndims: Int = 0
+    #     var count: Int = 0
+    #     var spec: List[Int] = List[Int]()
+    #     for i in range(n_slices):
+    #         if slice_list[i].step is None:
+    #             raise Error(String("Step of slice is None."))
+    #         var slice_len: Int = (
+    #             (slice_list[i].end.value() - slice_list[i].start.value())
+    #             / slice_list[i].step.or_else(1)
+    #         ).__int__()
+    #         spec.append(slice_len)
+    #         if slice_len != 1:
+    #             ndims += 1
+    #         else:
+    #             count += 1
+    #     if count == slice_list.__len__():
+    #         ndims = 1
+
+    #     var nshape: List[Int] = List[Int]()
+    #     var ncoefficients: List[Int] = List[Int]()
+    #     var nstrides: List[Int] = List[Int]()
+    #     var nnum_elements: Int = 1
+
+    #     var j: Int = 0
+    #     count = 0
+    #     for _ in range(ndims):
+    #         while spec[j] == 1:
+    #             count += 1
+    #             j += 1
+    #         if j >= self.ndim:
+    #             break
+    #         var slice_len: Int = (
+    #             (slice_list[j].end.value() - slice_list[j].start.value())
+    #             / slice_list[j].step.or_else(1)
+    #         ).__int__()
+    #         nshape.append(slice_len)
+    #         nnum_elements *= slice_len
+    #         ncoefficients.append(
+    #             self.strides[j] * slice_list[j].step.or_else(1)
+    #         )
+    #         j += 1
+
+    #     # TODO: We can remove this check after we have support for broadcasting
+    #     for i in range(ndims):
+    #         if nshape[i] != val.shape[i]:
+    #             raise Error(
+    #                 String(
+    #                     "\nError in `numojo.NDArray.__setitem__(idx: Int, val:"
+    #                     " Self)`: Shape mismatch! Cannot set the array values"
+    #                     " with given array. The {}-th dimension of the array"
+    #                     " is of shape {}. The {}-th dimension of the value is"
+    #                     " of shape {}."
+    #                 ).format(nshape[i], val.shape[i])
+    #             )
+
+    #     var noffset: Int = 0
+    #     if self.flags.C_CONTIGUOUS:
+    #         noffset = 0
+    #         for i in range(ndims):
+    #             var temp_stride: Int = 1
+    #             for j in range(i + 1, ndims):
+    #                 temp_stride *= nshape[j]
+    #             nstrides.append(temp_stride)
+    #         for i in range(slice_list.__len__()):
+    #             noffset += slice_list[i].start.value() * self.strides[i]
+    #     elif self.flags.F_CONTIGUOUS:
+    #         noffset = 0
+    #         nstrides.append(1)
+    #         for i in range(0, ndims - 1):
+    #             nstrides.append(nstrides[i] * nshape[i])
+    #         for i in range(slice_list.__len__()):
+    #             noffset += slice_list[i].start.value() * self.strides[i]
+
+    #     var index = List[Int]()
+    #     for _ in range(ndims):
+    #         index.append(0)
+
+    #     _traverse_iterative_setter[dtype](
+    #         val, self, nshape, ncoefficients, nstrides, noffset, index
+    #     )
+
+    fn __setitem__(mut self, owned index: Item, val: Scalar[dtype]) raises:
         """
         Sets the value at the index list.
 
@@ -1747,23 +1784,39 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if index.__len__() != self.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(index: Item, val:"
-                    " Scalar[dtype])`: Length of `index` does not match the"
-                    " number of dimensions! Length of indices is {}. The"
-                    " array dimension is {}."
-                ).format(index.__len__(), self.ndim)
+                IndexError(
+                    message=String(
+                        "Invalid index length: expected {} but got {}."
+                    ).format(self.ndim, index.__len__()),
+                    suggestion=String(
+                        "Pass exactly {} indices (one per dimension)."
+                    ).format(self.ndim),
+                    location=String(
+                        "NDArray.__setitem__(index: Item, val: Scalar[dtype])"
+                    ),
+                )
             )
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.__setitem__(index: Item,"
-                        " val: Scalar[dtype])`: `index` exceeds the size! For"
-                        " {}-th dimension: The index value is {}. The size of"
-                        " the corresponding dimension is {}"
-                    ).format(i, index[i], self.shape[i])
+                    IndexError(
+                        message=String(
+                            "Index out of range at dim {}: got {}; valid range"
+                            " is [0, {})."
+                        ).format(i, index[i], self.shape[i]),
+                        suggestion=String(
+                            "Clamp or validate indices against the dimension"
+                            " size ({})."
+                        ).format(self.shape[i]),
+                        location=String(
+                            "NDArray.__setitem__(index: Item, val:"
+                            " Scalar[dtype])"
+                        ),
+                    )
                 )
+            if index[i] < 0:
+                index[i] += self.shape[i]
+
         var idx: Int = _get_offset(index, self.strides)
         self._buf.ptr.store(idx, val)
 
@@ -1794,12 +1847,19 @@ struct NDArray[dtype: DType = DType.float64](
             mask.shape != self.shape
         ):  # this behavious could be removed potentially
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(mask:"
-                    " NDArray[DType.bool], value: Scalar[dtype])`:\nMask and"
-                    " array must have the same shape.\nThe mask shape is"
-                    " {}.\nThe array shape is {}."
-                ).format(mask.shape, self.shape)
+                ShapeError(
+                    message=String(
+                        "Mask shape {} does not match array shape {}."
+                    ).format(mask.shape, self.shape),
+                    suggestion=String(
+                        "Provide a boolean mask with exactly the same shape"
+                        " ({})."
+                    ).format(self.shape),
+                    location=String(
+                        "NDArray.__setitem__(mask: NDArray[DType.bool], value:"
+                        " Scalar[dtype])"
+                    ),
+                )
             )
 
         for i in range(mask.size):
@@ -1873,20 +1933,25 @@ struct NDArray[dtype: DType = DType.float64](
                 or slice_list[i].end.value() > self.shape[i]
             ):
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.__setitem__(slices:"
-                        " List[Slice], val: Self)`: Slice value exceeds the"
-                        " array shape! The {}-th dimension is of size {}. The"
-                        " slice goes from {} to {}"
-                    ).format(
-                        i,
-                        self.shape[i],
-                        slice_list[i].start.value(),
-                        slice_list[i].end.value(),
+                    IndexError(
+                        message=String(
+                            "Slice out of range at dim {}: start={}, end={},"
+                            " valid bounds are [0, {}]."
+                        ).format(
+                            i,
+                            slice_list[i].start.value(),
+                            slice_list[i].end.value(),
+                            self.shape[i],
+                        ),
+                        suggestion=String(
+                            "Adjust the slice to lie within [0, {})."
+                        ).format(self.shape[i]),
+                        location=String(
+                            "NDArray.__setitem__(slices: List[Slice], val:"
+                            " Self)"
+                        ),
                     )
                 )
-            # if slice_list[i].step is None:
-            #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
                 (slice_list[i].end.value() - slice_list[i].start.value())
                 / slice_list[i].step.or_else(1)
@@ -1927,12 +1992,20 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(ndims):
             if nshape[i] != val.shape[i]:
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.__setitem__(slices:"
-                        " List[Slice], val: Self)`: Shape mismatch! For {}-th"
-                        " dimension: The size of the array is {}. The size"
-                        " of the input value is {}."
-                    ).format(i, nshape[i], val.shape[i])
+                    ShapeError(
+                        message=String(
+                            "Shape mismatch at dim {}: destination has {},"
+                            " value has {}."
+                        ).format(i, nshape[i], val.shape[i]),
+                        suggestion=String(
+                            "Make the value shape match the destination slice"
+                            " shape."
+                        ),
+                        location=String(
+                            "NDArray.__setitem__(slices: List[Slice], val:"
+                            " Self)"
+                        ),
+                    )
                 )
 
         var noffset: Int = 0
@@ -1995,12 +2068,19 @@ struct NDArray[dtype: DType = DType.float64](
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(*slices:"
-                    " Variant[Slice, Int], val: Self)`: No of slices greater"
-                    " than rank of array. The number of slices is {}. The"
-                    " rank of the array is {}."
-                ).format(n_slices, self.ndim)
+                IndexError(
+                    message=String(
+                        "Too many indices or slices: received {} but array has"
+                        " only {} dimensions."
+                    ).format(n_slices, self.ndim),
+                    suggestion=String(
+                        "Pass at most {} indices/slices (one per dimension)."
+                    ).format(self.ndim),
+                    location=String(
+                        "NDArray.__setitem__(*slices: Variant[Slice, Int], val:"
+                        " Self)"
+                    ),
+                )
             )
         var slice_list: List[Slice] = List[Slice]()
 
@@ -2048,21 +2128,37 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if index.ndim != 1:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(index:"
-                    " NDArray[DType.index], val: NDArray)`: Index array must be"
-                    " 1-D. The index {} is {}D."
-                ).format(index.ndim)
+                IndexError(
+                    message=String(
+                        "Advanced index array must be 1D, got {}D."
+                    ).format(index.ndim),
+                    suggestion=String(
+                        "Use a 1D index array. For multi-axis indexing, index"
+                        " each axis separately."
+                    ),
+                    location=String(
+                        "NDArray.__setitem__(index: NDArray[DType.index], val:"
+                        " NDArray)"
+                    ),
+                )
             )
 
         if index.size > self.shape[0]:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__setitem__(index:"
-                    " NDArray[DType.index], val: NDArray)`: Index array size {}"
-                    " is greater than the first dimension of the array {}. The"
-                    " index array must be smaller than the array."
-                ).format(index.size, self.shape[0])
+                IndexError(
+                    message=String(
+                        "Index array has {} elements; first dimension size"
+                        " is {}."
+                    ).format(index.size, self.shape[0]),
+                    suggestion=String(
+                        "Truncate or reshape the index array to fit within the"
+                        " first dimension ({})."
+                    ).format(self.shape[0]),
+                    location=String(
+                        "NDArray.__setitem__(index: NDArray[DType.index], val:"
+                        " NDArray)"
+                    ),
+                )
             )
 
         # var output_shape_list: List[Int] = List[Int]()
@@ -2074,16 +2170,23 @@ struct NDArray[dtype: DType = DType.float64](
         # print("output_shape\n", output_shape.__str__())
 
         for i in range(index.size):
-            if index.item(i) > self.shape[0]:
+            if index.item(i) >= self.shape[0] or index.item(i) < 0:
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.__setitem__(index:"
-                        " NDArray[DType.index], val: NDArray)`: Index {} is out"
-                        " of bounds. The array has {} elements."
-                    ).format(index.item(i), self.shape[0])
+                    IndexError(
+                        message=String(
+                            "Index out of range at position {}: got {}; valid"
+                            " range is [0, {})."
+                        ).format(i, index.item(i), self.shape[0]),
+                        suggestion=String(
+                            "Validate indices against the first dimension size"
+                            " ({})."
+                        ).format(self.shape[0]),
+                        location=String(
+                            "NDArray.__setitem__(index: NDArray[DType.index],"
+                            " val: NDArray)"
+                        ),
+                    )
                 )
-            if index.item(i) < 0:
-                index.item(i) += self.shape[0]
 
         # var new_arr: NDArray[dtype] = NDArray[dtype](output_shape)
         for i in range(index.size):
@@ -2199,11 +2302,18 @@ struct NDArray[dtype: DType = DType.float64](
                 self._buf.ptr.store(idx, item)
             else:
                 raise Error(
-                    String(
-                        "\nError in `numojo.NDArray.itemset(index: Variant[Int,"
-                        " List[Int]], item: Scalar[dtype])`:\nElements of"
-                        " `index` ({}) \nexceed the array size ({})."
-                    ).format(idx, self.size)
+                    IndexError(
+                        message=String(
+                            "Index {} exceeds the array size ({})."
+                        ).format(idx, self.size),
+                        suggestion=String(
+                            "Ensure the index is within the valid range [0,"
+                            " {})."
+                        ).format(self.size),
+                        location=String(
+                            "NDArray.itemset(index: Int, item: Scalar[dtype])"
+                        ),
+                    )
                 )
 
         else:
@@ -2211,16 +2321,36 @@ struct NDArray[dtype: DType = DType.float64](
             # If more than one index is given
             if indices.__len__() != self.ndim:
                 raise Error(
-                    "\nError in `numojo.NDArray.itemset(index: Variant[Int,"
-                    " List[Int]], item: Scalar[dtype])`:\nLength of Indices do"
-                    " not match the shape"
+                    IndexError(
+                        message=String(
+                            "Invalid index length: expected {} but got {}."
+                        ).format(self.ndim, indices.__len__()),
+                        suggestion=String(
+                            "Pass exactly {} indices (one per dimension)."
+                        ).format(self.ndim),
+                        location=String(
+                            "NDArray.itemset(index: List[Int], item:"
+                            " Scalar[dtype])"
+                        ),
+                    )
                 )
             for i in range(indices.__len__()):
                 if indices[i] >= self.shape[i]:
                     raise Error(
-                        "\nError in `numojo.NDArray.itemset(index: Variant[Int,"
-                        " List[Int]], item: Scalar[dtype])`:\nElements of"
-                        " `index` exceed the array shape"
+                        IndexError(
+                            message=String(
+                                "Index out of range at dim {}: got {}; valid"
+                                " range is [0, {})."
+                            ).format(i, indices[i], self.shape[i]),
+                            suggestion=String(
+                                "Clamp or validate indices against the"
+                                " dimension size ({})."
+                            ).format(self.shape[i]),
+                            location=String(
+                                "NDArray.itemset(index: List[Int], item:"
+                                " Scalar[dtype])"
+                            ),
+                        )
                     )
             self._buf.ptr.store(_get_offset(indices, self.strides), item)
 
@@ -2251,11 +2381,18 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index >= self.size) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.store(index: Int, val:"
-                    " Scalar[dtype])`:\nInvalid index: index out of bound [0,"
-                    " {})."
-                ).format(self.size)
+                IndexError(
+                    message=String(
+                        "Index out of range: got {}; valid range is [0, {})."
+                    ).format(index, self.size),
+                    suggestion=String(
+                        "Clamp or validate the index against the array size"
+                        " ({})."
+                    ).format(self.size),
+                    location=String(
+                        "NDArray.store(index: Int, val: Scalar[dtype])"
+                    ),
+                )
             )
 
         self._buf.ptr[index] = val
@@ -2284,11 +2421,19 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.store[width: Int](index: Int,"
-                    " val: SIMD[dtype, width])`:\nInvalid index: index out of"
-                    " bound [0, {})."
-                ).format(self.size)
+                IndexError(
+                    message=String(
+                        "Index out of range: got {}; valid range is [0, {})."
+                    ).format(index, self.size),
+                    suggestion=String(
+                        "Clamp or validate the index against the array size"
+                        " ({})."
+                    ).format(self.size),
+                    location=String(
+                        "NDArray.store[width: Int](index: Int, val: SIMD[dtype,"
+                        " width])"
+                    ),
+                )
             )
 
         self._buf.ptr.store(index, val)
@@ -2322,12 +2467,10 @@ struct NDArray[dtype: DType = DType.float64](
             raise Error(
                 IndexError(
                     message=String(
-                        "Mismatch in number of indices: expected {} indices"
-                        " (one per dimension) but received {}."
+                        "Invalid number of indices: expected {} but got {}."
                     ).format(self.ndim, len(indices)),
                     suggestion=String(
-                        "Provide exactly {} indices to correctly index into the"
-                        " array."
+                        "Pass exactly {} indices (one per dimension)."
                     ).format(self.ndim),
                     location=String(
                         "NDArray.store[width: Int](*indices: Int, val:"
@@ -2345,8 +2488,8 @@ struct NDArray[dtype: DType = DType.float64](
                             " bounds [0, {})."
                         ).format(i, indices[i], self.shape[i]),
                         suggestion=String(
-                            "Ensure that index is within the valid range"
-                            " [0, {})"
+                            "Clamp or validate indices against the dimension"
+                            " size ({})."
                         ).format(self.shape[i]),
                         location=String(
                             "NDArray.store[width: Int](*indices: Int, val:"
@@ -3530,15 +3673,36 @@ struct NDArray[dtype: DType = DType.float64](
 
             # Validate step
             if step == 0:
-                raise Error("\nError: Slice step cannot be zero")
+                raise Error(
+                    ValueError(
+                        message=String(
+                            "Slice step cannot be zero for dimension {}."
+                        ).format(i),
+                        suggestion=String(
+                            "Use a nonzero step value when slicing arrays."
+                        ),
+                        location=String(
+                            "NDArray._adjust_slice (step validation)"
+                        ),
+                    )
+                )
 
             # Check for negative indices
             if start < 0 or end < 0:
                 raise Error(
-                    String(
-                        "\nError: Negative indexing not supported in"
-                        " dimension {}"
-                    ).format(i)
+                    IndexError(
+                        message=String(
+                            "Negative indexing is not supported in"
+                            " dimension {}."
+                        ).format(i),
+                        suggestion=String(
+                            "Use only non-negative indices for slicing. Support"
+                            " for negative indices may be added in the future."
+                        ),
+                        location=String(
+                            "NDArray._adjust_slice (negative index check)"
+                        ),
+                    )
                 )
                 # Future implementation:
                 # start = self.shape[i] + start if start < 0 else start
@@ -4650,10 +4814,17 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.ndim > 2:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.row(self, id)`: "
-                    "The number of dimension is {}.\nIt should be 2."
-                ).format(self.ndim)
+                ShapeError(
+                    message=String(
+                        "Cannot extract row from array with {} dimensions."
+                    ).format(self.ndim),
+                    suggestion=String(
+                        "The row() method only works with 1D or 2D arrays."
+                        " Consider using slice operations for higher"
+                        " dimensional arrays."
+                    ),
+                    location=String("NDArray.row(id: Int)"),
+                )
             )
 
         var width = self.shape[1]
@@ -4680,10 +4851,16 @@ struct NDArray[dtype: DType = DType.float64](
             normalized_axis += self.ndim
         if (normalized_axis >= self.ndim) or (normalized_axis < 0):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.sort()`: "
-                    "Axis ({}) is not in valid range [-{}, {})."
-                ).format(axis, self.ndim, self.ndim)
+                IndexError(
+                    message=String(
+                        "Invalid axis {}: must be in range [-{}, {})."
+                    ).format(axis, self.ndim, self.ndim),
+                    suggestion=String(
+                        "Use an axis value between -{} and {} (exclusive). "
+                        "Negative indices count from the last axis."
+                    ).format(self.ndim, self.ndim),
+                    location=String("NDArray.sort(axis: Int)"),
+                )
             )
         numojo.sorting.sort_inplace(self, axis=normalized_axis, stable=stable)
 
@@ -4923,7 +5100,20 @@ struct NDArray[dtype: DType = DType.float64](
             The inner product of the two vectors.
         """
         if self.size != other.size:
-            raise Error("The lengths of two vectors do not match.")
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "The lengths of the two vectors do not match: {} vs {}."
+                    ).format(self.size, other.size),
+                    suggestion=String(
+                        "Ensure both vectors have the same length before"
+                        " performing this operation."
+                    ),
+                    location=String(
+                        "NDArray.dot/inner/related (vector length check)"
+                    ),
+                )
+            )
 
         var sum = Scalar[dtype](0)
         for i in range(self.size):
@@ -4936,13 +5126,12 @@ struct NDArray[dtype: DType = DType.float64](
 # ===----------------------------------------------------------------------===#
 
 
-@value
 struct _NDArrayIter[
     is_mutable: Bool, //,
     origin: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
-]:
+](Copyable, Movable):
     # TODO:
     # Return a view instead of copy where possible
     # (when Bufferable is supported).
@@ -4979,7 +5168,17 @@ struct _NDArrayIter[
         """
 
         if dimension < 0 or dimension >= a.ndim:
-            raise Error("Axis must be in the range of [0, ndim).")
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Axis {} is out of range for array with {} dimensions."
+                    ).format(dimension, a.ndim),
+                    suggestion=String(
+                        "Choose an axis in the range [0, {})."
+                    ).format(a.ndim),
+                    location=String("NDArrayIterator.__init__ (axis check)"),
+                )
+            )
 
         self.ptr = a._buf.ptr
         self.dimension = dimension
@@ -5082,13 +5281,12 @@ struct _NDArrayIter[
             return res
 
 
-@value
 struct _NDAxisIter[
     is_mutable: Bool, //,
     origin: Origin[is_mutable],
     dtype: DType,
     forward: Bool = True,
-]():
+](Copyable, Movable):
     # TODO:
     # Return a view instead of copy where possible
     # (when Bufferable is supported).
@@ -5159,7 +5357,17 @@ struct _NDAxisIter[
             order: Order to traverse the array.
         """
         if axis < 0 or axis >= a.ndim:
-            raise Error("Axis must be in the range of [0, ndim).")
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Axis {} is out of range for array with {} dimensions."
+                    ).format(axis, a.ndim),
+                    suggestion=String(
+                        "Choose an axis in the range [0, {})."
+                    ).format(a.ndim),
+                    location=String("NDAxisIter.__init__ (axis check)"),
+                )
+            )
 
         self.size = a.size
         self.size_of_item = a.shape[axis]
@@ -5396,10 +5604,9 @@ struct _NDAxisIter[
         return Tuple(offsets, elements)
 
 
-@value
-struct _NDIter[
-    is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType
-]():
+struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
+    Copyable, Movable
+):
     """
     An iterator yielding the array elements according to the order.
     It can be constructed by `NDArray.nditer()` method.

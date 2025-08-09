@@ -288,10 +288,9 @@ struct Item(Copyable, Movable, Stringable, Writable):
         return offset
 
 
-@value
 struct _ItemIter[
     forward: Bool = True,
-]:
+](Copyable, Movable):
     """Iterator for Item.
 
     Parameters:

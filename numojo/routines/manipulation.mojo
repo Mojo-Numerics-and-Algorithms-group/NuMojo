@@ -143,10 +143,11 @@ fn reshape[
     if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
-    var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var array_order: String = String("C") if A.flags.C_CONTIGUOUS else String(
+        "F"
+    )
 
     if array_order != order:
-        # Read in this order from the original array
         A = ravel(A, order=order)
 
     # Write in this order into the new array

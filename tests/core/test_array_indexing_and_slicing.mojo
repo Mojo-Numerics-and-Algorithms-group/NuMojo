@@ -146,7 +146,9 @@ def test_getitem_single_axis_basic():
     # positive index
     check(a[1], anp[1], "__getitem__(idx: Int) positive index row slice broken")
     # negative index
-    check(a[-1], anp[-1], "__getitem__(idx: Int) negative index row slice broken")
+    check(
+        a[-1], anp[-1], "__getitem__(idx: Int) negative index row slice broken"
+    )
 
 
 def test_getitem_single_axis_1d_scalar():
@@ -199,7 +201,9 @@ def test_setitem_single_axis_shape_mismatch_error():
         a[0] = bad
     except e:
         raised = True
-    assert_true(raised, "__setitem__(idx: Int, val) did not raise on shape mismatch")
+    assert_true(
+        raised, "__setitem__(idx: Int, val) did not raise on shape mismatch"
+    )
 
 
 def test_setitem_single_axis_index_oob_error():

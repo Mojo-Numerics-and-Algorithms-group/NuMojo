@@ -484,7 +484,6 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = _get_offset(index, self.strides)
         return self._buf.ptr.load[width=1](idx)
 
-
     # Can be faster if we only return a view since we are not copying the data.
     fn __getitem__(self, idx: Int) raises -> Self:
         """
@@ -565,14 +564,14 @@ struct NDArray[dtype: DType = DType.float64](
             alloc_order = String("F")
         var result = NDArray[dtype](shape=out_shape, order=alloc_order)
 
-    # Fast path for C-contiguous arrays
+        # Fast path for C-contiguous arrays
         if self.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
             memcpy(result._buf.ptr, self._buf.ptr + norm * block, block)
             return result^
 
-    # (F-order or arbitrary stride layout)
-    # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
+        # (F-order or arbitrary stride layout)
+        # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
         self._copy_first_axis_slice[dtype](self, norm, result)
         return result^
 
@@ -4750,7 +4749,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
         return new_matrix
 
-    # TODO: make it inplace? 
+    # TODO: make it inplace?
     fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
         """
         Returns an array of the same data with a new shape.

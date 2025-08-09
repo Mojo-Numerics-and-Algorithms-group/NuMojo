@@ -524,13 +524,17 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             real and imaginary parts is copied with single `memcpy` calls.
             For F-contiguous or arbitrary stride layouts, a generic
             stride-based copier is used for both components. (Future: return
-            a non-owning view.)
+            a non-owning view).
         """
         if self.ndim == 0:
             raise Error(
                 IndexError(
-                    message=String("Cannot slice a 0D ComplexNDArray (scalar)."),
-                    suggestion=String("Use `A[]` or `A.item(0)` to read its value."),
+                    message=String(
+                        "Cannot slice a 0D ComplexNDArray (scalar)."
+                    ),
+                    suggestion=String(
+                        "Use `A[]` or `A.item(0)` to read its value."
+                    ),
                     location=String("ComplexNDArray.__getitem__(idx: Int)"),
                 )
             )
@@ -541,9 +545,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         if (norm < 0) or (norm >= self.shape[0]):
             raise Error(
                 IndexError(
-                    message=String("Index {} out of bounds for axis 0 (size {}).").format(idx, self.shape[0]),
+                    message=String(
+                        "Index {} out of bounds for axis 0 (size {})."
+                    ).format(idx, self.shape[0]),
                     suggestion=String(
-                        "Valid indices: 0 <= i < {} or -{} <= i < 0 (negative wrap)."
+                        "Valid indices: 0 <= i < {} or -{} <= i < 0 (negative"
+                        " wrap)."
                     ).format(self.shape[0], self.shape[0]),
                     location=String("ComplexNDArray.__getitem__(idx: Int)"),
                 )
@@ -562,9 +569,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var alloc_order = String("C")
         if self.flags.F_CONTIGUOUS:
             alloc_order = String("F")
-        var result = ComplexNDArray[Self.dtype](shape=out_shape, order=alloc_order)
+        var result = ComplexNDArray[Self.dtype](
+            shape=out_shape, order=alloc_order
+        )
 
-        # Fast path for C-contiguous 
+        # Fast path for C-contiguous
         if self.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
             memcpy(result._re._buf.ptr, self._re._buf.ptr + norm * block, block)
@@ -1420,8 +1429,13 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             raise Error(
                 IndexError(
                     message=String("Cannot assign slice on 0D ComplexNDArray."),
-                    suggestion=String("Assign to its scalar value with `A[] = ...` once supported."),
-                    location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                    suggestion=String(
+                        "Assign to its scalar value with `A[] = ...` once"
+                        " supported."
+                    ),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
                 )
             )
 
@@ -1431,9 +1445,15 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         if (norm < 0) or (norm >= self.shape[0]):
             raise Error(
                 IndexError(
-                    message=String("Index {} out of bounds for axis 0 (size {}).").format(idx, self.shape[0]),
-                    suggestion=String("Valid indices: 0 <= i < {} or -{} <= i < 0.").format(self.shape[0], self.shape[0]),
-                    location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                    message=String(
+                        "Index {} out of bounds for axis 0 (size {})."
+                    ).format(idx, self.shape[0]),
+                    suggestion=String(
+                        "Valid indices: 0 <= i < {} or -{} <= i < 0."
+                    ).format(self.shape[0], self.shape[0]),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
                 )
             )
 
@@ -1442,9 +1462,16 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             if val.ndim != 0:
                 raise Error(
                     ShapeError(
-                        message=String("Shape mismatch: expected 0D value for 1D target slice."),
-                        suggestion=String("Provide a 0D ComplexNDArray (scalar wrapper)."),
-                        location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                        message=String(
+                            "Shape mismatch: expected 0D value for 1D target"
+                            " slice."
+                        ),
+                        suggestion=String(
+                            "Provide a 0D ComplexNDArray (scalar wrapper)."
+                        ),
+                        location=String(
+                            "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                        ),
                     )
                 )
             self._re._buf.ptr.store(norm, val._re._buf.ptr.load[width=1](0))
@@ -1454,25 +1481,33 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         if val.ndim != self.ndim - 1:
             raise Error(
                 ShapeError(
-                    message=String("Shape mismatch: expected {} dims in source but got {}.").format(self.ndim - 1, val.ndim),
-                    suggestion=String("Ensure RHS has shape {}.").format(self.shape[1:]),
-                    location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                    message=String(
+                        "Shape mismatch: expected {} dims in source but got {}."
+                    ).format(self.ndim - 1, val.ndim),
+                    suggestion=String("Ensure RHS has shape {}.").format(
+                        self.shape[1:]
+                    ),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
                 )
             )
 
         if val.shape != self.shape[1:]:
             raise Error(
-            ShapeError(
-                message=String(
-                "Shape mismatch for slice assignment: expected {} but got {}."
-                ).format(self.shape[1:], val.shape),
-                suggestion=String(
-                "Provide RHS slice with exact shape {}; broadcasting not yet supported."
-                ).format(self.shape[1:]),
-                location=String(
-                "ComplexNDArray.__setitem__(idx: Int, val: Self)"
-                ),
-            )
+                ShapeError(
+                    message=String(
+                        "Shape mismatch for slice assignment: expected {} but"
+                        " got {}."
+                    ).format(self.shape[1:], val.shape),
+                    suggestion=String(
+                        "Provide RHS slice with exact shape {}; broadcasting"
+                        " not yet supported."
+                    ).format(self.shape[1:]),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
+                )
             )
 
         if self.flags.C_CONTIGUOUS & val.flags.C_CONTIGUOUS:
@@ -1480,9 +1515,16 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             if val.size != block:
                 raise Error(
                     ShapeError(
-                        message=String("Internal mismatch: computed block {} but val.size {}." ).format(block, val.size),
-                        suggestion=String("Report this issue; unexpected size mismatch."),
-                        location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                        message=String(
+                            "Internal mismatch: computed block {} but"
+                            " val.size {}."
+                        ).format(block, val.size),
+                        suggestion=String(
+                            "Report this issue; unexpected size mismatch."
+                        ),
+                        location=String(
+                            "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                        ),
                     )
                 )
             memcpy(self._re._buf.ptr + norm * block, val._re._buf.ptr, block)
@@ -2411,7 +2453,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var idx: Int = _get_offset(indices, self.strides)
         self._re._buf.ptr.store(idx, val.re)
         self._im._buf.ptr.store(idx, val.im)
-    
+
     fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
         """
         Returns an array of the same data with a new shape.
@@ -2423,8 +2465,10 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Returns:
             Array of the same data with a new shape.
         """
-        var result: Self = ComplexNDArray[dtype](re=numojo.reshape(self._re, shape=shape, order=order),
-        im=numojo.reshape(self._im, shape=shape, order=order))
+        var result: Self = ComplexNDArray[dtype](
+            re=numojo.reshape(self._re, shape=shape, order=order),
+            im=numojo.reshape(self._im, shape=shape, order=order),
+        )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags
         return result^

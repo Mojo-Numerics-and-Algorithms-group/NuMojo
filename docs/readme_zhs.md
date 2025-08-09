@@ -53,34 +53,116 @@ NuMojo 也可为其他需要高速数值计算、多维数组运算等功能的 
 
 ## 使用方法
 
-以下为部分代码实例：
+n维数组（`NDArray` 类型）的示例如下：
 
 ```mojo
 import numojo as nm
 from numojo.prelude import *
 
-fn main() raises:
-    # 生成两个 1000x1000 矩阵，数值随机且为 64 位浮点数
-    var A = nm.random.randn[f64](shape=List[Int](1000, 1000))
-    var B = nm.random.randn[f64](shape=List[Int](1000, 1000))
 
-    # 根据字符串生成 3x2 矩阵，数据类型为 32 位浮点数
+fn main() raises:
+    # 生成两个 1000x1000 矩阵，使用随机 float64 值
+    var A = nm.random.randn(Shape(1000, 1000))
+    var B = nm.random.randn(Shape(1000, 1000))
+
+    # 从字符串表示生成 3x2 矩阵
     var X = nm.fromstring[f32]("[[1.1, -0.32, 1], [0.1, -3, 2.124]]")
 
-    # 打印矩阵
+    # 打印数组
     print(A)
 
-    # 矩阵相乘
+    # 数组乘法
     var C = A @ B
 
-    # 矩阵求逆
+    # 数组求逆
     var I = nm.inv(A)
+
+    # 数组切片
+    var A_slice = A[1:3, 4:19]
+
+    # 从数组获取标量
+    var A_item = A[item(291, 141)]
+    var A_item_2 = A.item(291, 141)
+```
+
+矩阵（`Matrix` 类型）的示例如下：
+
+```mojo
+from numojo import Matrix
+from numojo.prelude import *
+
+
+fn main() raises:
+    # 生成两个 1000x1000 矩阵，使用随机 float64 值
+    var A = Matrix.rand(shape=(1000, 1000))
+    var B = Matrix.rand(shape=(1000, 1000))
+
+    # 生成 1000x1 矩阵（列向量），使用随机 float64 值
+    var C = Matrix.rand(shape=(1000, 1))
+
+    # 从字符串表示生成 4x3 矩阵
+    var F = Matrix.fromstring[i8](
+        "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
+    )
 
     # 矩阵切片
     var A_slice = A[1:3, 4:19]
+    var B_slice = B[255, 103:241:2]
 
-    # 提取矩阵元素
-    var A_item = A.item(291, 141)
+    # 从矩阵获取标量
+    var A_item = A[291, 141]
+
+    # 翻转列向量
+    print(C[::-1, :])
+
+    # 沿轴排序和 argsort
+    print(nm.sort(A, axis=1))
+    print(nm.argsort(A, axis=0))
+
+    # 矩阵求和
+    print(nm.sum(B))
+    print(nm.sum(B, axis=1))
+
+    # 矩阵乘法
+    print(A @ B)
+
+    # 矩阵求逆
+    print(A.inv())
+
+    # 求解线性代数方程
+    print(nm.solve(A, B))
+
+    # 最小二乘法
+    print(nm.lstsq(A, C))
+```
+
+`ComplexNDArray` 的示例如下：
+
+```mojo
+import numojo as nm
+from numojo.prelude import *
+
+
+fn main() raises:
+    # 创建复数标量 5 + 5j
+    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    # 创建复数数组
+    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
+    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+
+    # 打印数组
+    print(A)
+
+    # 数组切片
+    var A_slice = A[1:3, 4:19]
+
+    # 数组乘法
+    var C = A * B
+
+    # 从数组获取标量
+    var A_item = A[item(291, 141)]
+    # 设置数组元素
+    A[item(291, 141)] = complexscalar
 ```
 
 请在 [此文档](./features.md) 中查询所有可用的函数。

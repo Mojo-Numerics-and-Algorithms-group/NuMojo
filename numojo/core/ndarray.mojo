@@ -3777,7 +3777,7 @@ struct NDArray[dtype: DType = DType.float64](
             var n_items = self.shape[dimension]
             var edge = edge_items
             if edge * 2 >= n_items:
-                edge = n_items  
+                edge = n_items
 
             var out: String = String("[") + padding
             if (not summarize) or (n_items == edge):
@@ -3928,7 +3928,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         constrained[
             self.dtype is DType.bool or self.dtype.is_integral(),
-            "NDArray.all(): invalid dtype. Expected a boolean or integral dtype (e.g. bool, i8, i16, i32, i64); floating and other non-integral types are not supported."
+            (
+                "NDArray.all(): invalid dtype. Expected a boolean or integral"
+                " dtype (e.g. bool, i8, i16, i32, i64); floating and other"
+                " non-integral types are not supported."
+            ),
         ]()
         # We might need to figure out how we want to handle truthyness before can do this
         var result: Bool = True

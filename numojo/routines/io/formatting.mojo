@@ -504,9 +504,7 @@ fn format_value[
     if dtype.is_floating_point():
         if isnan(value.im):
             imag_mag_str = nan_string
-            imag_sign_char = ( 
-                "+"
-            )
+            imag_sign_char = "+"
         elif isinf(value.im):
             if value.im < 0:
                 imag_sign_char = "-"
@@ -521,7 +519,7 @@ fn format_value[
                 imag_mag_str = format_floating_scientific(
                     abs_im,
                     print_options.precision,
-                    False,  
+                    False,
                     suppress_scientific,
                     exponent_threshold,
                     formatted_width,

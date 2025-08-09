@@ -4,13 +4,13 @@ from utils.numerics import isnan, isinf
 
 from numojo.core.utility import is_inttype, is_floattype
 
-alias DEFAULT_PRECISION = 4
+alias DEFAULT_PRECISION = 3
 alias DEFAULT_SUPPRESS_SMALL = False
 alias DEFAULT_SEPARATOR = " "
 alias DEFAULT_PADDING = ""
-alias DEFAULT_EDGE_ITEMS = 3
+alias DEFAULT_EDGE_ITEMS = 2
 alias DEFAULT_THRESHOLD = 10
-alias DEFAULT_LINE_WIDTH = 75
+alias DEFAULT_LINE_WIDTH = 50
 alias DEFAULT_SIGN = False
 alias DEFAULT_FLOAT_FORMAT = "fixed"
 alias DEFAULT_COMPLEX_FORMAT = "parentheses"
@@ -20,8 +20,24 @@ alias DEFAULT_FORMATTED_WIDTH = 8
 alias DEFAULT_EXPONENT_THRESHOLD = 4
 alias DEFAULT_SUPPRESS_SCIENTIFIC = False
 
-alias GLOBAL_PRINT_OPTIONS = PrintOptions()
-
+# placeholder, we can use this glocal var option in future when Mojo supports global options
+alias GLOBAL_PRINT_OPTIONS = PrintOptions(
+    precision=DEFAULT_PRECISION,
+    suppress_small=DEFAULT_SUPPRESS_SMALL,
+    separator=DEFAULT_SEPARATOR,
+    padding=DEFAULT_PADDING,
+    threshold=DEFAULT_THRESHOLD,
+    line_width=DEFAULT_LINE_WIDTH,
+    edge_items=DEFAULT_EDGE_ITEMS,
+    sign=DEFAULT_SIGN,
+    float_format=DEFAULT_FLOAT_FORMAT,
+    complex_format=DEFAULT_COMPLEX_FORMAT,
+    nan_string=DEFAULT_NAN_STRING,
+    inf_string=DEFAULT_INF_STRING,
+    formatted_width=DEFAULT_FORMATTED_WIDTH,
+    exponent_threshold=DEFAULT_EXPONENT_THRESHOLD,
+    suppress_scientific=DEFAULT_SUPPRESS_SCIENTIFIC,
+)
 
 struct PrintOptions(Copyable, Movable):
     var precision: Int
@@ -113,7 +129,7 @@ struct PrintOptions(Copyable, Movable):
         self.precision = precision
         self.suppress_small = suppress_small
         self.separator = separator
-        self.padding = padding
+        sel[48;25;80;850;1280tf.padding = padding
         self.threshold = threshold
         self.line_width = line_width
         self.edge_items = edge_items
@@ -396,6 +412,9 @@ fn format_value[
     var nan_string = print_options.nan_string
     var inf_string = print_options.inf_string
     var formatted_width = print_options.formatted_width
+    var suppress_small = print_options.suppress_small
+    var suppress_scientific = print_options.suppress_scientific
+    var exponent_threshold = print_options.exponent_threshold
 
     @parameter
     if is_floattype[dtype]():
@@ -405,11 +424,19 @@ fn format_value[
             return inf_string.rjust(formatted_width)
         if float_format == "scientific":
             return format_floating_scientific(
-                value, print_options.precision, sign
+                value,
+                print_options.precision,
+                sign,
+                suppress_scientific,
+                exponent_threshold,
+                formatted_width,
             )
         else:
             return format_floating_precision(
-                value, print_options.precision, sign
+                value,
+                print_options.precision,
+                sign,
+                suppress_small,
             ).rjust(formatted_width)
     else:
         var formatted = String(value)
@@ -438,6 +465,9 @@ fn format_value[
     var inf_string = print_options.inf_string
     var formatted_width = print_options.formatted_width
     var complex_format = print_options.complex_format
+    var suppress_small = print_options.suppress_small
+    var suppress_scientific = print_options.suppress_scientific
+    var exponent_threshold = print_options.exponent_threshold
 
     var re_str: String
     var im_str: String
@@ -450,11 +480,19 @@ fn format_value[
         else:
             if float_format == "scientific":
                 re_str = format_floating_scientific(
-                    value.re, print_options.precision, sign
+                    value.re,
+                    print_options.precision,
+                    sign,
+                    suppress_scientific,
+                    exponent_threshold,
+                    formatted_width,
                 )
             else:
                 re_str = format_floating_precision(
-                    value.re, print_options.precision, sign
+                    value.re,
+                    print_options.precision,
+                    sign,
+                    suppress_small,
                 )
 
         if isnan(value.im):
@@ -464,11 +502,19 @@ fn format_value[
         else:
             if float_format == "scientific":
                 im_str = format_floating_scientific(
-                    value.im, print_options.precision, sign
+                    value.im,
+                    print_options.precision,
+                    sign,
+                    suppress_scientific,
+                    exponent_threshold,
+                    formatted_width,
                 )
             else:
                 im_str = format_floating_precision(
-                    value.im, print_options.precision, sign
+                    value.im,
+                    print_options.precision,
+                    sign,
+                    suppress_small,
                 )
 
         if value.re == 0 and value.im == 0:

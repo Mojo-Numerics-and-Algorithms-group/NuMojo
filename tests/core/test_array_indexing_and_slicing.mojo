@@ -139,6 +139,85 @@ def test_slicing_getter6():
     check(b[mask], bnp[masknp], "Get by mask array fails")
 
 
+def test_getitem_single_axis_basic():
+    var np = Python.import_module("numpy")
+    var a = nm.arange[i32](0, 12, 1).reshape(Shape(3, 4))
+    var anp = np.arange(12, dtype=np.int32).reshape(3, 4)
+    # positive index
+    check(a[1], anp[1], "__getitem__(idx: Int) positive index row slice broken")
+    # negative index
+    check(
+        a[-1], anp[-1], "__getitem__(idx: Int) negative index row slice broken"
+    )
+
+
+def test_getitem_single_axis_1d_scalar():
+    var np = Python.import_module("numpy")
+    var a = nm.arange[i16](0, 6, 1).reshape(Shape(6))
+    var anp = np.arange(6, dtype=np.int16)
+    # 1-D -> 0-D scalar wrapper
+    check(a[2], anp[2], "__getitem__(idx: Int) 1-D to scalar (0-D) broken")
+
+
+def test_getitem_single_axis_f_order():
+    var np = Python.import_module("numpy")
+    var a = nm.arange[i32](0, 12, 1).reshape(Shape(3, 4), order="F")
+    var anp = np.arange(12, dtype=np.int32).reshape(3, 4, order="F")
+    check(a[0], anp[0], "__getitem__(idx: Int) F-order first row broken")
+    check(a[2], anp[2], "__getitem__(idx: Int) F-order last row broken")
+
+
+def test_setitem_single_axis_basic():
+    var np = Python.import_module("numpy")
+    var a = nm.arange[i32](0, 12, 1).reshape(Shape(3, 4))
+    var anp = np.arange(12, dtype=np.int32).reshape(3, 4)
+    var row = nm.full[i32](Shape(4), fill_value=Scalar[i32](999))
+    a[1] = row
+    anp[1] = 999
+    check(a, anp, "__setitem__(idx: Int, val) C-order assignment broken")
+    # negative index assignment
+    var row2 = nm.full[i32](Shape(4), fill_value=Scalar[i32](-5))
+    a[-1] = row2
+    anp[-1] = -5
+    check(a, anp, "__setitem__(idx: Int, val) negative index assignment broken")
+
+
+def test_setitem_single_axis_f_order():
+    var np = Python.import_module("numpy")
+    var a = nm.arange[i32](0, 12, 1).reshape(Shape(3, 4), order="F")
+    var anp = np.arange(12, dtype=np.int32).reshape(3, 4, order="F")
+    var row = nm.full[i32](Shape(4), fill_value=Scalar[i32](111))
+    a[0] = row
+    anp[0] = 111
+    check(a, anp, "__setitem__(idx: Int, val) F-order assignment broken")
+
+
+def test_setitem_single_axis_shape_mismatch_error():
+    # Ensure shape mismatch raises an error (val shape != self.shape[1:])
+    var a = nm.arange[i32](0, 12, 1).reshape(Shape(3, 4))
+    var bad = nm.full[i32](Shape(5), fill_value=Scalar[i32](1))  # wrong length
+    var raised: Bool = False
+    try:
+        a[0] = bad
+    except e:
+        raised = True
+    assert_true(
+        raised, "__setitem__(idx: Int, val) did not raise on shape mismatch"
+    )
+
+
+def test_setitem_single_axis_index_oob_error():
+    # Ensure out-of-bounds index raises an error
+    var a = nm.arange[i32](0, 12, 1).reshape(Shape(3, 4))
+    var row = nm.full[i32](Shape(4), fill_value=Scalar[i32](7))
+    var raised: Bool = False
+    try:
+        a[3] = row  # out of bounds
+    except e:
+        raised = True
+    assert_true(raised, "__setitem__(idx: Int, val) did not raise on OOB index")
+
+
 # def test_slicing_setter1():
 #     var np = Python.import_module("numpy")
 

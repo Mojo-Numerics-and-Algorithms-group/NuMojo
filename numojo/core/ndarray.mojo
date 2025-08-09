@@ -484,55 +484,6 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = _get_offset(index, self.strides)
         return self._buf.ptr.load[width=1](idx)
 
-    # fn __getitem__(self, idx: Int) raises -> Self:
-    #     """
-    #     Retrieve a slice of the array corresponding to the index at the first dimension.
-
-    #     Args:
-    #         idx: Index to get the slice.
-
-    #     Returns:
-    #         A slice of the array.
-
-    #     Raises:
-    #         Error: If the array is 0-d.
-
-    #     Examples:
-
-    #     ```console
-    #     >>>import numojo
-    #     >>>var a = numojo.arange(0, 10, 1).reshape(numojo.Shape(2, 5))
-    #     >>>print(a[1]) # returns the second row of the array.
-    #     ```.
-    #     """
-
-    #     var slice_list = List[Slice]()
-    #     slice_list.append(Slice(idx, idx + 1, 1))
-
-    #     # If the ndim is 0, then it is a numojo scalar (0-D array).
-    #     if self.ndim == 0:
-    #         raise Error(
-    #             IndexError(
-    #                 message=String("Cannot slice a 0D array."),
-    #                 suggestion=String(
-    #                     "Use `a.item()` or `a[]` to read its scalar value."
-    #                 ),
-    #                 location=String("NDArray.__getitem__(self, idx: Int)"),
-    #             )
-    #         )
-
-    #     var narr: Self
-    #     if self.ndim == 1:
-    #         narr = creation._0darray[dtype](self._buf.ptr[idx])
-
-    #     else:
-    #         for i in range(1, self.ndim):
-    #             var size_at_dim: Int = self.shape[i]
-    #             slice_list.append(Slice(0, size_at_dim, 1))
-
-    #         narr = self.__getitem__(slice_list)
-
-    # return narr
 
     # Can be faster if we only return a view since we are not copying the data.
     fn __getitem__(self, idx: Int) raises -> Self:
@@ -557,11 +508,13 @@ struct NDArray[dtype: DType = DType.float64](
             IndexError: If `idx` is out of bounds after normalization.
 
         Notes:
-            Performance fast path: For C-contiguous arrays the slice is a
-            single contiguous block and is copied with one `memcpy`. For
-            F-contiguous or arbitrary strided layouts a unified stride-based
-            element loop is used. (Future enhancement: return a non-owning
-            view instead of copying.)
+            Order preservation: The resulting copy preserves the source
+            array's memory order (C or F). Performance fast path: For
+            C-contiguous arrays the slice is a single contiguous block and is
+            copied with one `memcpy`. For F-contiguous or arbitrary
+            strided layouts a unified stride-based element loop is used.
+            (Future enhancement: return a non-owning view instead of
+            copying.)
 
         Examples:
             ```mojo
@@ -607,16 +560,19 @@ struct NDArray[dtype: DType = DType.float64](
             return creation._0darray[dtype](self._buf.ptr[norm])
 
         var out_shape = self.shape[1:]
-        var result = NDArray[dtype](shape=out_shape, order="C")
+        var alloc_order = String("C")
+        if self.flags.F_CONTIGUOUS:
+            alloc_order = String("F")
+        var result = NDArray[dtype](shape=out_shape, order=alloc_order)
 
-        # Fast path for C-contiguous arrays
+    # Fast path for C-contiguous arrays
         if self.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
             memcpy(result._buf.ptr, self._buf.ptr + norm * block, block)
             return result^
 
-        # (F-order)
-        # TODO: Need to think if we can optimize this further to bring C and F performance closer
+    # (F-order or arbitrary stride layout)
+    # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
         self._copy_first_axis_slice[dtype](self, norm, result)
         return result^
 
@@ -643,7 +599,10 @@ struct NDArray[dtype: DType = DType.float64](
             var off = base
             for d in range(out_ndim):
                 off += coords[d] * src.strides._buf[d + 1]
-            dst._buf.ptr[lin] = src._buf.ptr[off]
+            var dst_off = 0
+            for d in range(out_ndim):
+                dst_off += coords[d] * dst.strides._buf[d]
+            dst._buf.ptr[dst_off] = src._buf.ptr[off]
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """

@@ -501,59 +501,80 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         )
 
     fn __getitem__(self, idx: Int) raises -> Self:
-        """
-        Retreive a slice of the ComplexNDArray corresponding to the index at the first dimension.
+        """Single-axis integer slice (first dimension).
+        Returns a slice of the complex array taken at axis 0 position `idx`.
+        Dimensionality is reduced by exactly one; a 1-D source produces a
+        0-D ComplexNDArray (scalar wrapper). Negative indices are supported
+        and normalized. The result preserves the source memory order (C/F).
 
         Args:
-            idx: Index to get the slice.
+            idx: Integer index along the first (axis 0) dimension. Supports
+                negative indices in [-shape[0], shape[0]).
 
         Returns:
-            A slice of the array.
+            ComplexNDArray with shape `self.shape[1:]` when `self.ndim > 1`,
+            otherwise a 0-D ComplexNDArray scalar wrapper.
 
         Raises:
-            Error: If the array is 0-d.
+            IndexError: If the array is 0-D.
+            IndexError: If `idx` (after normalization) is out of bounds.
 
-        Examples:
-
-        ```console
-        >>>import numojo as nm
-        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-        >>>print(a[1]) # returns the second row of the array.
-        ```.
+        Notes:
+            Performance fast path: For C-contiguous arrays the slice for both
+            real and imaginary parts is copied with single `memcpy` calls.
+            For F-contiguous or arbitrary stride layouts, a generic
+            stride-based copier is used for both components. (Future: return
+            a non-owning view.)
         """
-
-        var slice_list = List[Slice]()
-        slice_list.append(Slice(idx, idx + 1))
-
         if self.ndim == 0:
             raise Error(
                 IndexError(
-                    message=String(
-                        "Cannot slice a 0D ComplexNDArray (scalar)."
-                    ),
-                    suggestion=String(
-                        "Use `A[]` or `A.item(0)` to read the scalar value."
-                    ),
+                    message=String("Cannot slice a 0D ComplexNDArray (scalar)."),
+                    suggestion=String("Use `A[]` or `A.item(0)` to read its value."),
                     location=String("ComplexNDArray.__getitem__(idx: Int)"),
                 )
             )
 
-        var narr: Self
-        if self.ndim == 1:
-            narr = creation._0darray[Self.dtype](
-                ComplexSIMD[Self.dtype](
-                    re=self._re._buf.ptr[idx],
-                    im=self._im._buf.ptr[idx],
-                ),
+        var norm = idx
+        if norm < 0:
+            norm += self.shape[0]
+        if (norm < 0) or (norm >= self.shape[0]):
+            raise Error(
+                IndexError(
+                    message=String("Index {} out of bounds for axis 0 (size {}).").format(idx, self.shape[0]),
+                    suggestion=String(
+                        "Valid indices: 0 <= i < {} or -{} <= i < 0 (negative wrap)."
+                    ).format(self.shape[0], self.shape[0]),
+                    location=String("ComplexNDArray.__getitem__(idx: Int)"),
+                )
             )
-        else:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
 
-            narr = self[slice_list]
+        # 1-D -> complex scalar (0-D ComplexNDArray wrapper)
+        if self.ndim == 1:
+            return creation._0darray[Self.dtype](
+                ComplexSIMD[Self.dtype](
+                    re=self._re._buf.ptr[norm],
+                    im=self._im._buf.ptr[norm],
+                )
+            )
 
-        return narr
+        var out_shape = self.shape[1:]
+        var alloc_order = String("C")
+        if self.flags.F_CONTIGUOUS:
+            alloc_order = String("F")
+        var result = ComplexNDArray[Self.dtype](shape=out_shape, order=alloc_order)
+
+        # Fast path for C-contiguous 
+        if self.flags.C_CONTIGUOUS:
+            var block = self.size // self.shape[0]
+            memcpy(result._re._buf.ptr, self._re._buf.ptr + norm * block, block)
+            memcpy(result._im._buf.ptr, self._im._buf.ptr + norm * block, block)
+            return result^
+
+        # F layout
+        self._re._copy_first_axis_slice[Self.dtype](self._re, norm, result._re)
+        self._im._copy_first_axis_slice[Self.dtype](self._im, norm, result._im)
+        return result^
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
@@ -1379,122 +1400,98 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._im._buf.ptr[index_of_buffer] = val.im
 
     fn __setitem__(mut self, idx: Int, val: Self) raises:
+        """Assign a single first-axis slice.
+        Replaces the sub-array at axis 0 position `idx` with `val`.
+        The shape of `val` must exactly match `self.shape[1:]` and its
+        dimensionality must be `self.ndim - 1` (or be a 0-D complex scalar
+        when assigning into a 1-D array). Negative indices are supported.
+        Fast path: contiguous memcpy for C-order; otherwise a stride-based
+        generic copy is performed for both real and imaginary parts.
+
+        Args:
+            idx: Integer index along first dimension (supports negatives).
+            val: ComplexNDArray slice data to assign.
+
+        Raises:
+            IndexError: If array is 0-D or idx out of bounds.
+            ShapeError: If `val` shape/dim mismatch with target slice.
         """
-        Set a slice of ComplexNDArray with given ComplexNDArray.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var A = nm.random.rand[nm.i16](3, 2)
-        var B = nm.random.rand[nm.i16](3)
-        A[1:4] = B
-        ```
-        """
-        if self.ndim == 0 and val.ndim == 0:
-            self._re._buf.ptr.store(0, val._re._buf.ptr.load(0))
-            self._im._buf.ptr.store(0, val._im._buf.ptr.load(0))
-
-        var slice_list = List[Slice]()
-        if idx >= self.shape[0]:
-            var message = String(
-                "Error: Slice value exceeds the array shape!\n"
-                "The {}-th dimension is of size {}.\n"
-                "The slice goes from {} to {}"
-            ).format(
-                0,
-                self.shape[0],
-                idx,
-                idx + 1,
+        if self.ndim == 0:
+            raise Error(
+                IndexError(
+                    message=String("Cannot assign slice on 0D ComplexNDArray."),
+                    suggestion=String("Assign to its scalar value with `A[] = ...` once supported."),
+                    location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                )
             )
-            raise Error(message)
-        slice_list.append(Slice(idx, idx + 1))
-        if self.ndim > 1:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
 
-        var n_slices: Int = len(slice_list)
-        var ndims: Int = 0
-        var count: Int = 0
-        var spec: List[Int] = List[Int]()
-        for i in range(n_slices):
-            if slice_list[i].step is None:
-                raise Error(String("Step of slice is None."))
-            var slice_len: Int = (
-                (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step.or_else(1)
-            ).__int__()
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
-            else:
-                count += 1
-        if count == slice_list.__len__():
-            ndims = 1
-
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
-
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = (
-                (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step.or_else(1)
-            ).__int__()
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(
-                self.strides[j] * slice_list[j].step.or_else(1)
+        var norm = idx
+        if norm < 0:
+            norm += self.shape[0]
+        if (norm < 0) or (norm >= self.shape[0]):
+            raise Error(
+                IndexError(
+                    message=String("Index {} out of bounds for axis 0 (size {}).").format(idx, self.shape[0]),
+                    suggestion=String("Valid indices: 0 <= i < {} or -{} <= i < 0.").format(self.shape[0], self.shape[0]),
+                    location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                )
             )
-            j += 1
 
-        # TODO: We can remove this check after we have support for broadcasting
-        for i in range(ndims):
-            if nshape[i] != val.shape[i]:
-                var message = String(
-                    "Error: Shape mismatch!\n"
-                    "Cannot set the array values with given array.\n"
-                    "The {}-th dimension of the array is of shape {}.\n"
-                    "The {}-th dimension of the value is of shape {}."
-                ).format(nshape[i], val.shape[i])
-                raise Error(message)
+        # 1-D target: expect 0-D complex scalar wrapper (val.ndim == 0)
+        if self.ndim == 1:
+            if val.ndim != 0:
+                raise Error(
+                    ShapeError(
+                        message=String("Shape mismatch: expected 0D value for 1D target slice."),
+                        suggestion=String("Provide a 0D ComplexNDArray (scalar wrapper)."),
+                        location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                    )
+                )
+            self._re._buf.ptr.store(norm, val._re._buf.ptr.load[width=1](0))
+            self._im._buf.ptr.store(norm, val._im._buf.ptr.load[width=1](0))
+            return
 
-        var noffset: Int = 0
-        if self.flags["C_CONTIGUOUS"]:
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
-        elif self.flags["F_CONTIGUOUS"]:
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
+        if val.ndim != self.ndim - 1:
+            raise Error(
+                ShapeError(
+                    message=String("Shape mismatch: expected {} dims in source but got {}.").format(self.ndim - 1, val.ndim),
+                    suggestion=String("Ensure RHS has shape {}.").format(self.shape[1:]),
+                    location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                )
+            )
 
-        var index = List[Int]()
-        for _ in range(ndims):
-            index.append(0)
+        if val.shape != self.shape[1:]:
+            raise Error(
+            ShapeError(
+                message=String(
+                "Shape mismatch for slice assignment: expected {} but got {}."
+                ).format(self.shape[1:], val.shape),
+                suggestion=String(
+                "Provide RHS slice with exact shape {}; broadcasting not yet supported."
+                ).format(self.shape[1:]),
+                location=String(
+                "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                ),
+            )
+            )
 
-        _traverse_iterative_setter[dtype](
-            val._re, self._re, nshape, ncoefficients, nstrides, noffset, index
-        )
-        _traverse_iterative_setter[dtype](
-            val._im, self._im, nshape, ncoefficients, nstrides, noffset, index
-        )
+        if self.flags.C_CONTIGUOUS & val.flags.C_CONTIGUOUS:
+            var block = self.size // self.shape[0]
+            if val.size != block:
+                raise Error(
+                    ShapeError(
+                        message=String("Internal mismatch: computed block {} but val.size {}." ).format(block, val.size),
+                        suggestion=String("Report this issue; unexpected size mismatch."),
+                        location=String("ComplexNDArray.__setitem__(idx: Int, val: Self)"),
+                    )
+                )
+            memcpy(self._re._buf.ptr + norm * block, val._re._buf.ptr, block)
+            memcpy(self._im._buf.ptr + norm * block, val._im._buf.ptr, block)
+            return
+
+        # F order
+        self._re._write_first_axis_slice[Self.dtype](self._re, norm, val._re)
+        self._im._write_first_axis_slice[Self.dtype](self._im, norm, val._im)
 
     fn __setitem__(mut self, index: Item, val: ComplexSIMD[Self.dtype]) raises:
         """
@@ -2414,6 +2411,23 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var idx: Int = _get_offset(indices, self.strides)
         self._re._buf.ptr.store(idx, val.re)
         self._im._buf.ptr.store(idx, val.im)
+    
+    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
+        """
+        Returns an array of the same data with a new shape.
+
+        Args:
+            shape: Shape of returned array.
+            order: Order of the array - Row major `C` or Column major `F`.
+
+        Returns:
+            Array of the same data with a new shape.
+        """
+        var result: Self = ComplexNDArray[dtype](re=numojo.reshape(self._re, shape=shape, order=order),
+        im=numojo.reshape(self._im, shape=shape, order=order))
+        result._re.flags = self._re.flags
+        result._im.flags = self._im.flags
+        return result^
 
     fn __iter__(
         self,

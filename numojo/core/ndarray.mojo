@@ -4750,6 +4750,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
         return new_matrix
 
+    # TODO: make it inplace? 
     fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
         """
         Returns an array of the same data with a new shape.

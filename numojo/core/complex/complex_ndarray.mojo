@@ -66,7 +66,6 @@ from numojo.routines.io.formatting import (
     format_floating_scientific,
     format_value,
     PrintOptions,
-    GLOBAL_PRINT_OPTIONS,
 )
 import numojo.routines.linalg as linalg
 from numojo.routines.linalg.products import matmul
@@ -127,6 +126,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     """Contains offset, strides."""
     var flags: Flags
     "Information about the memory layout of the array."
+    var print_options: PrintOptions
 
     # ===-------------------------------------------------------------------===#
     # Life cycle methods
@@ -164,6 +164,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = re.size
         self.strides = re.strides
         self.flags = re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -193,6 +196,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -214,6 +220,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -235,6 +244,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     fn __init__(
         out self,
@@ -252,6 +264,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     fn __init__(
         out self,
@@ -281,6 +296,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.flags = flags
         self._re = NDArray[Self.dtype](shape, strides, ndim, size, flags)
         self._im = NDArray[Self.dtype](shape, strides, ndim, size, flags)
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     fn __init__(
         out self,
@@ -308,6 +326,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
@@ -321,6 +342,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = other.size
         self.strides = other.strides
         self.flags = other.flags
+        self.print_options = other.print_options
 
     @always_inline("nodebug")
     fn __moveinit__(out self, owned existing: Self):
@@ -334,6 +356,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = existing.size
         self.strides = existing.strides
         self.flags = existing.flags
+        self.print_options = existing.print_options
 
     # Explicit deallocation
     # @always_inline("nodebug")
@@ -2206,7 +2229,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         var res: String
         try:
-            res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
+            res = self._array_to_string(0, 0)
         except e:
             res = String("Cannot convert array to string") + String(e)
 
@@ -2215,7 +2238,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     fn write_to[W: Writer](self, mut writer: W):
         try:
             writer.write(
-                self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
+                self._array_to_string(0, 0)
                 + "\n"
                 + String(self.ndim)
                 + "D-array  Shape"
@@ -2276,7 +2299,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self,
         dimension: Int,
         offset: Int,
-        print_options: PrintOptions,
+        owned summarize: Bool = False,
     ) raises -> String:
         """
         Convert the array to a string.
@@ -2284,106 +2307,109 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Args:
             dimension: The current dimension.
             offset: The offset of the current dimension.
-            print_options: The print options.
+            summarize: Internal flag indicating summarization already chosen.
         """
-        var seperator = print_options.separator
-        var padding = print_options.padding
-        var edge_items = print_options.edge_items
+        var options: PrintOptions = self._re.print_options
 
+        # 0-D array
         if self.ndim == 0:
             return String(self.item(0))
+
+        var separator = options.separator
+        var padding = options.padding
+        var edge_items = options.edge_items
+
+        # Root-level summarize decision
+        if dimension == 0 and (not summarize) and self.size > options.threshold:
+            summarize = True
+
+        # Last dimension: actual elements
         if dimension == self.ndim - 1:
-            var result: String = String("[") + padding
-            var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
-                for i in range(number_of_items):
+            var n_items = self.shape[dimension]
+            var edge = edge_items
+            if edge * 2 >= n_items:
+                edge = n_items
+
+            var out: String = String("[") + padding
+            if (not summarize) or (n_items == edge):
+                for i in range(n_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = format_value(value, print_options)
-                    result = result + formatted_value
-                    if i < (number_of_items - 1):
-                        result = result + seperator
-                result = result + padding
-            else:  # Print first 3 and last 3 items
-                for i in range(edge_items):
+                    out += format_value(value, options)
+                    if i < n_items - 1:
+                        out += separator
+                out += padding + "]"
+            else:
+                for i in range(edge):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = format_value(value, print_options)
-                    result = result + formatted_value
-                    if i < (edge_items - 1):
-                        result = result + seperator
-                result = result + seperator + "..." + seperator
-                for i in range(number_of_items - edge_items, number_of_items):
+                    out += format_value(value, options)
+                    if i < edge - 1:
+                        out += separator
+                out += separator + String("...") + separator
+                for i in range(n_items - edge, n_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = format_value(value, print_options)
-                    result = result + formatted_value
-                    if i < (number_of_items - 1):
-                        result = result + seperator
-                result = result + padding
-            result = result + "]"
-            return result
+                    out += format_value(value, options)
+                    if i < n_items - 1:
+                        out += separator
+                out += padding + "]"
+
+            # Greedy line wrapping
+            if len(out) > options.line_width:
+                var wrapped: String = String("")
+                var line_len: Int = 0
+                for c in out.codepoint_slices():
+                    if c == String("\n"):
+                        wrapped += c
+                        line_len = 0
+                    else:
+                        if line_len >= options.line_width and c != String(" "):
+                            wrapped += "\n"
+                            line_len = 0
+                        wrapped += c
+                        line_len += 1
+                out = wrapped
+            return out
+
+        # Higher dimensions
+        var n_items_outer = self.shape[dimension]
+        var edge_outer = edge_items
+        if edge_outer * 2 >= n_items_outer:
+            edge_outer = n_items_outer
+
+        var result: String = String("[")
+        if (not summarize) or (n_items_outer == edge_outer):
+            for i in range(n_items_outer):
+                if i > 0:
+                    result += "\n" + String(" ") * (dimension)
+                result += self._array_to_string(
+                    dimension + 1,
+                    offset + i * self.strides[dimension].__int__(),
+                    summarize=summarize,
+                )
         else:
-            var result: String = String("[")
-            var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
-                for i in range(number_of_items):
-                    if i == 0:
-                        result = result + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.strides[dimension].__int__(),
-                            print_options,
-                        )
-                    if i > 0:
-                        result = (
-                            result
-                            + String(" ") * (dimension + 1)
-                            + self._array_to_string(
-                                dimension + 1,
-                                offset + i * self.strides[dimension].__int__(),
-                                print_options,
-                            )
-                        )
-                    if i < (number_of_items - 1):
-                        result = result + "\n"
-            else:  # Print first 3 and last 3 items
-                for i in range(edge_items):
-                    if i == 0:
-                        result = result + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.strides[dimension].__int__(),
-                            print_options,
-                        )
-                    if i > 0:
-                        result = (
-                            result
-                            + String(" ") * (dimension + 1)
-                            + self._array_to_string(
-                                dimension + 1,
-                                offset + i * self.strides[dimension].__int__(),
-                                print_options,
-                            )
-                        )
-                    if i < (number_of_items - 1):
-                        result += "\n"
-                result = result + "...\n"
-                for i in range(number_of_items - edge_items, number_of_items):
-                    result = (
-                        result
-                        + String(" ") * (dimension + 1)
-                        + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.strides[dimension].__int__(),
-                            print_options,
-                        )
-                    )
-                    if i < (number_of_items - 1):
-                        result = result + "\n"
-            result = result + "]"
-            return result
+            for i in range(edge_outer):
+                if i > 0:
+                    result += "\n" + String(" ") * (dimension)
+                result += self._array_to_string(
+                    dimension + 1,
+                    offset + i * self.strides[dimension].__int__(),
+                    summarize=summarize,
+                )
+            result += "\n" + String(" ") * (dimension) + "..."
+            for i in range(n_items_outer - edge_outer, n_items_outer):
+                result += "\n" + String(" ") * (dimension)
+                result += self._array_to_string(
+                    dimension + 1,
+                    offset + i * self.strides[dimension].__int__(),
+                    summarize=summarize,
+                )
+        result += "]"
+        return result
 
     fn __len__(self) -> Int:
         return Int(self._re.size)

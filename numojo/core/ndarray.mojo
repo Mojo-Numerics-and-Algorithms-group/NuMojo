@@ -66,6 +66,8 @@ import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
+import numojo.routines.math._array_funcs as _af
+from numojo.routines.math._math_funcs import Vectorized
 from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
@@ -562,6 +564,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
+        # 1-D -> scalar (0-D array wrapper)
         # 1-D -> scalar (0-D array wrapper)
         if self.ndim == 1:
             return creation._0darray[dtype](self._buf.ptr[norm])

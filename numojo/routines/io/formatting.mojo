@@ -22,6 +22,7 @@ alias DEFAULT_SUPPRESS_SCIENTIFIC = False
 
 alias GLOBAL_PRINT_OPTIONS = PrintOptions()
 
+
 struct PrintOptions(Copyable, Movable):
     var precision: Int
     """

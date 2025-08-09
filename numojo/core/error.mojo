@@ -3,10 +3,10 @@ Error handling for Numojo library operations.
 
 This module provides a simple, unified error system for the Numojo library.
 All errors use a single NumojoError type with different categories for
-better organization while keeping the implementation simple. This provides a better user experience by 
+better organization while keeping the implementation simple. This provides a better user experience by
 providing clear error message and suggestions for fixing the error.
 
-Currently we have a few common error categories like 
+Currently we have a few common error categories like
 - IndexError
 - ShapeError
 - BroadcastError

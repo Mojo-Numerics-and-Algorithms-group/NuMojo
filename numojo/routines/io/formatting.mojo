@@ -470,7 +470,6 @@ fn format_value[
     var suppress_scientific = print_options.suppress_scientific
     var exponent_threshold = print_options.exponent_threshold
 
-    # Format real part
     var re_str: String
     if dtype.is_floating_point():
         if isnan(value.re):
@@ -505,11 +504,10 @@ fn format_value[
     if dtype.is_floating_point():
         if isnan(value.im):
             imag_mag_str = nan_string
-            imag_sign_char = (  # NaN sign ambiguous; default to plus for readability
+            imag_sign_char = ( 
                 "+"
             )
         elif isinf(value.im):
-            # Preserve sign of infinity
             if value.im < 0:
                 imag_sign_char = "-"
             imag_mag_str = inf_string
@@ -523,7 +521,7 @@ fn format_value[
                 imag_mag_str = format_floating_scientific(
                     abs_im,
                     print_options.precision,
-                    False,  # no extra leading + inside magnitude
+                    False,  
                     suppress_scientific,
                     exponent_threshold,
                     formatted_width,
@@ -548,7 +546,7 @@ fn format_value[
     imag_mag_str = imag_mag_str.rjust(formatted_width)
 
     if complex_format == "parentheses":
-        # Compact representation: trim leading spaces and remove interior gaps -> (a+bj) / (a-bj)
+        # (a+bj) / (a-bj)
         var trim_re: String = String("")
         var seen: Bool = False
         for ch in re_str.codepoint_slices():

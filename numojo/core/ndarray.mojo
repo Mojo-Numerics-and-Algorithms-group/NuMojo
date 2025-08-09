@@ -3769,7 +3769,6 @@ struct NDArray[dtype: DType = DType.float64](
         var padding = options.padding
         var edge_items = options.edge_items
 
-        # Decide summarization only once at the root
         if dimension == 0 and (not summarize) and self.size > options.threshold:
             summarize = True
 
@@ -3778,11 +3777,10 @@ struct NDArray[dtype: DType = DType.float64](
             var n_items = self.shape[dimension]
             var edge = edge_items
             if edge * 2 >= n_items:
-                edge = n_items  # print all
+                edge = n_items  
 
             var out: String = String("[") + padding
             if (not summarize) or (n_items == edge):
-                # full print
                 for i in range(n_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
@@ -3792,7 +3790,6 @@ struct NDArray[dtype: DType = DType.float64](
                         out += separator
                 out += padding + "]"
             else:
-                # summarized: head ... tail
                 for i in range(edge):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
@@ -3810,7 +3807,6 @@ struct NDArray[dtype: DType = DType.float64](
                         out += separator
                 out += padding + "]"
 
-            # Basic line width wrapping (greedy)
             if len(out) > options.line_width:
                 var wrapped: String = String("")
                 var line_len: Int = 0
@@ -3930,12 +3926,10 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If the array elements are not Boolean or Integer.
         """
-        # make this a compile time check when they become more readable
-        if not (self.dtype is DType.bool or self.dtype.is_integral()):
-            raise Error(
-                "\nError in `numojo.NDArray.all(self)`: "
-                "Array elements must be Boolean or Integer."
-            )
+        constrained[
+            self.dtype is DType.bool or self.dtype.is_integral(),
+            "NDArray.all(): invalid dtype. Expected a boolean or integral dtype (e.g. bool, i8, i16, i32, i64); floating and other non-integral types are not supported."
+        ]()
         # We might need to figure out how we want to handle truthyness before can do this
         var result: Bool = True
 

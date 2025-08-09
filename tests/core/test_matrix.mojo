@@ -5,7 +5,9 @@ from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 from sys import is_defined
 
-alias order = "F" if is_defined["F_CONTIGUOUS"]() else "C"
+alias order: String = String("F") if is_defined["F_CONTIGUOUS"]() else String(
+    "C"
+)
 
 # ===-----------------------------------------------------------------------===#
 # Main functions

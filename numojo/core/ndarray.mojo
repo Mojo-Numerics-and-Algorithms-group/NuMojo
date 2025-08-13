@@ -564,7 +564,6 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         # 1-D -> scalar (0-D array wrapper)
-        # 1-D -> scalar (0-D array wrapper)
         if self.ndim == 1:
             return creation._0darray[dtype](self._buf.ptr[norm])
 

@@ -20,7 +20,7 @@ alias DEFAULT_FORMATTED_WIDTH = 6
 alias DEFAULT_EXPONENT_THRESHOLD = 4
 alias DEFAULT_SUPPRESS_SCIENTIFIC = False
 
-# placeholder, we can use this glocal var option in future when Mojo supports global options
+# placeholder, we can use this global var option in future when Mojo supports global options
 alias GLOBAL_PRINT_OPTIONS = PrintOptions(
     precision=DEFAULT_PRECISION,
     suppress_small=DEFAULT_SUPPRESS_SMALL,
@@ -543,36 +543,34 @@ fn format_value[
     re_str = re_str.rjust(formatted_width)
     imag_mag_str = imag_mag_str.rjust(formatted_width)
 
+    return _trim_paranthesis_strings_cnumbers(
+        complex_format, re_str, imag_mag_str, imag_sign_char
+    )
+
+
+fn _trim_paranthesis_strings_cnumbers(
+    complex_format: String,
+    re_str: String,
+    imag_mag_str: String,
+    imag_sign_char: String,
+) raises -> String:
+    # (a+bj) / (a-bj)
+    var trim_re: String = String("")
+    var seen: Bool = False
+    for ch in re_str.codepoint_slices():
+        if (not seen) and ch == String(" "):
+            continue
+        seen = True
+        trim_re += ch
+    var trim_im: String = String("")
+    seen = False
+    for ch in imag_mag_str.codepoint_slices():
+        if (not seen) and ch == String(" "):
+            continue
+        seen = True
+        trim_im += ch
+
     if complex_format == "parentheses":
-        # (a+bj) / (a-bj)
-        var trim_re: String = String("")
-        var seen: Bool = False
-        for ch in re_str.codepoint_slices():
-            if (not seen) and ch == String(" "):
-                continue
-            seen = True
-            trim_re += ch
-        var trim_im: String = String("")
-        seen = False
-        for ch in imag_mag_str.codepoint_slices():
-            if (not seen) and ch == String(" "):
-                continue
-            seen = True
-            trim_im += ch
         return String("({0} {1} {2}j)").format(trim_re, imag_sign_char, trim_im)
-    else:
-        var trim_re2: String = String("")
-        var seen2: Bool = False
-        for ch in re_str.codepoint_slices():
-            if (not seen2) and ch == String(" "):
-                continue
-            seen2 = True
-            trim_re2 += ch
-        var trim_im2: String = String("")
-        seen2 = False
-        for ch in imag_mag_str.codepoint_slices():
-            if (not seen2) and ch == String(" "):
-                continue
-            seen2 = True
-            trim_im2 += ch
-        return String("{0} {1} {2}j").format(trim_re2, imag_sign_char, trim_im2)
+
+    return String("{0} {1} {2}j").format(trim_re, imag_sign_char, trim_im)

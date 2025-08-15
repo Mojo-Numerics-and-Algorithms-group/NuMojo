@@ -95,7 +95,8 @@ struct Item(Copyable, Movable, Stringable, Writable):
                         "Invalid ndim: got {}; must be >= 0."
                     ).format(ndim),
                     suggestion=String(
-                        "Pass a non-negative dimension count when constructing Item."
+                        "Pass a non-negative dimension count when constructing"
+                        " Item."
                     ),
                     location=String("Item.__init__(ndim: Int)"),
                 )
@@ -138,7 +139,9 @@ struct Item(Copyable, Movable, Stringable, Writable):
                     suggestion=String(
                         "Ensure 0 <= idx < total size ({})."
                     ).format(shape.size_of_array()),
-                    location=String("Item.__init__(idx: Int, shape: NDArrayShape)"),
+                    location=String(
+                        "Item.__init__(idx: Int, shape: NDArrayShape)"
+                    ),
                 )
             )
 
@@ -197,9 +200,9 @@ struct Item(Copyable, Movable, Stringable, Writable):
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
                 IndexError(
-                    message=String(
-                        "Index {} out of range [{} , {})."
-                    ).format(Int(idx), -self.ndim, self.ndim),
+                    message=String("Index {} out of range [{} , {}).").format(
+                        Int(idx), -self.ndim, self.ndim
+                    ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."
                     ),
@@ -229,9 +232,9 @@ struct Item(Copyable, Movable, Stringable, Writable):
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
                 IndexError(
-                    message=String(
-                        "Index {} out of range [{} , {})."
-                    ).format(Int(idx), -self.ndim, self.ndim),
+                    message=String("Index {} out of range [{} , {}).").format(
+                        Int(idx), -self.ndim, self.ndim
+                    ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."
                     ),

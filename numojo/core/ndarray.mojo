@@ -49,25 +49,19 @@ Implements basic object methods for working with N-Dimensional Array.
 # TODO: Special checks for 0d array (numojo scalar).
 # ===----------------------------------------------------------------------===#
 
+# === Stdlib ===
 from algorithm import parallelize, vectorize
-import builtin.math as builtin_math
 import builtin.bool as builtin_bool
+import builtin.math as builtin_math
 from builtin.type_aliases import Origin
 from collections.optional import Optional
-from memory import UnsafePointer, memset_zero, memcpy
 from math import log10
+from memory import UnsafePointer, memset_zero, memcpy
 from python import PythonObject
 from sys import simdwidthof
-
-# from tensor import Tensor
 from utils import Variant
 
-import numojo.routines.math._array_funcs as _af
-from numojo.routines.math._math_funcs import Vectorized
-import numojo.routines.math._array_funcs as _af
-from numojo.routines.math._math_funcs import Vectorized
-import numojo.routines.math._array_funcs as _af
-from numojo.routines.math._math_funcs import Vectorized
+# === numojo core ===
 from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
@@ -80,7 +74,6 @@ from numojo.core.utility import (
     _traverse_iterative,
     _traverse_iterative_setter,
     to_numpy,
-    # to_tensor,
     bool_to_numeric,
 )
 from numojo.core.error import (
@@ -91,13 +84,19 @@ from numojo.core.error import (
     ValueError,
     ArithmeticError,
 )
-import numojo.routines.bitwise as bitwise
+
+# === numojo routines (creation / io / logic) ===
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
     format_value,
     PrintOptions,
 )
 import numojo.routines.logic.comparison as comparison
+
+# === numojo routines (math / bitwise / searching) ===
+import numojo.routines.bitwise as bitwise
+import numojo.routines.math._array_funcs as _af
+from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
@@ -156,7 +155,6 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
 
     # default constructor
-
     @always_inline("nodebug")
     fn __init__(
         out self,

@@ -556,6 +556,17 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             For F-contiguous or arbitrary stride layouts, a generic
             stride-based copier is used for both components. (Future: return
             a non-owning view).
+
+        Examples:
+            ```mojo
+            import numojo as nm
+            var a = nm.arangeC(nm.ComplexScalar[nm.f32](0, 0), nm.ComplexScalar[nm.f32](12, 12), nm.ComplexScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
+            print(a.shape)        # (3,4)
+            print(a[1].shape)     # (4,)  -- 1-D slice
+            print(a[-1].shape)    # (4,)  -- negative index
+            var b = nm.arangeC(nm.ComplexScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
+            print(b[2])           # 0-D array (scalar wrapper)
+            ```
         """
         if self.ndim == 0:
             raise Error(
@@ -618,26 +629,48 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
-        Retreive slices of a ComplexNDArray from variadic slices.
+        Retrieves a slice or sub-array from the current array using variadic slice arguments.
 
         Args:
-            slices: Variadic slices.
+            slices: Variadic list of `Slice` objects, one for each dimension to be sliced.
+
+        Constraints:
+            - The number of slices provided must not exceed the number of array dimensions.
+            - Each slice must be valid for its corresponding dimension.
 
         Returns:
-            A slice of the array.
+            Self: A new array instance representing the sliced view of the original array.
+
+        Raises:
+            IndexError: If any slice is out of bounds for its corresponding dimension.
+            ValueError: If the number of slices does not match the array's dimensions.
+
+        NOTES:
+            - This method creates a new array; Views are not currently supported.
+            - Negative indices and step sizes are supported as per standard slicing semantics.
 
         Examples:
-
-        ```console
-        >>>import numojo as nm
-        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-        >>>var b = a[:, 2:4]
-        >>>print(b) # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
-        ```.
+            ```mojo
+            import numojo as nm
+            var a = numojo.arange(10).reshape(nm.Shape(2, 5))
+            var b = a[:, 2:4]
+            print(b) # Output: 2x2 sliced array corresponding to columns 2 and 3 of each row.
+            ```
         """
-
         var n_slices: Int = slices.__len__()
-        var slice_list: List[Slice] = List[Slice]()
+        if n_slices > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Too many slices provided: expected at most {} but got {}."
+                    ).format(self.ndim, n_slices),
+                    suggestion=String(
+                        "Provide at most {} slices for an array with {} dimensions."
+                    ).format(self.ndim, self.ndim),
+                    location=String("NDArray.__getitem__(slices: Slice)"),
+                )
+            )
+        var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
         for i in range(len(slices)):
             slice_list.append(slices[i])
 
@@ -646,33 +679,40 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 slice_list.append(Slice(0, self.shape[i], 1))
 
         var narr: Self = self[slice_list]
-        return narr
+        return narr^
 
     fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
         """
-        Retrieve slices of a ComplexNDArray from a list of slices.
+        Retrieves a sub-array from the current array using a list of slice objects, enabling advanced slicing operations across multiple dimensions.
 
         Args:
-            slice_list: List of slices.
+            slice_list: List of Slice objects, where each Slice defines the start, stop, and step for the corresponding dimension.
+
+        Constraints:
+            - The length of slice_list must not exceed the number of dimensions in the array.
+            - Each Slice in slice_list must be valid for its respective dimension.
 
         Returns:
-            A slice of the array.
+            Self: A new array instance representing the sliced view of the original array.
 
         Raises:
-            Error: If the slice list is empty.
+            Error: If slice_list is empty or contains invalid slices.
+
+        NOTES:
+            - This method supports advanced slicing similar to NumPy's multi-dimensional slicing.
+            - The returned array shares data with the original array if possible.
 
         Examples:
-
-        ```console
-        >>>import numojo as nm
-        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-        >>>var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
-        >>>print(b)
-        ```.
+            ```mojo
+            import numojo as nm
+            var a = nm.arangeC(nm.CScalar(10.0)).reshape(nm.Shape(2, 5))
+            var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
+            print(b)
+            ```
         """
-
+        var n_slices: Int = slice_list.__len__()
         # Check error cases
-        if slice_list.__len__() == 0:
+        if n_slices == 0:
             raise Error(
                 IndexError(
                     message=String("Empty slice list provided."),
@@ -686,7 +726,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 )
             )
 
-        if slice_list.__len__() < self.ndim:
+        if n_slices < self.ndim:
             for i in range(slice_list.__len__(), self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
@@ -1355,55 +1395,32 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
         """
-        Adjusts the slice values to lie within 0 and dim.
+        Adjusts slice values to handle all possible slicing scenarios including:
+        - Negative indices (Python-style wrapping)
+        - Out-of-bounds clamping
+        - Negative steps (reverse slicing)
+        - Empty slices
+        - Default start/end values based on step direction
         """
         var n_slices: Int = slice_list.__len__()
-        var slices = List[Slice]()
+        if n_slices > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Too many slice dimensions: got {} but array has {} dims."
+                    ).format(n_slices, self.ndim),
+                    suggestion=String(
+                        "Provide at most {} slices for this array."
+                    ).format(self.ndim),
+                    location=String("ComplexNDArray._adjust_slice"),
+                )
+            ) 
+
+        var slices = List[Slice](capacity=self.ndim)
         for i in range(n_slices):
-            if i >= self.ndim:
-                raise Error("Error: Number of slices exceeds array dimensions")
-                # Could consider ShapeError, but keep generic until slice API stabilized.
-
-            var start: Int = 0
-            var end: Int = self.shape[i]
-            var step: Int
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    # start += self.shape[i]
-                    raise Error(
-                        IndexError(
-                            message=String(
-                                "Negative slice start not supported (dimension"
-                                " {} start {})."
-                            ).format(i, start),
-                            suggestion=String(
-                                "Use non-negative starts; add self.shape[dim]"
-                                " if you intended python-style negative"
-                                " indexing."
-                            ),
-                            location=String("ComplexNDArray._adjust_slice"),
-                        )
-                    )
-
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    # end += self.shape[i] + 1
-                    raise Error(
-                        IndexError(
-                            message=String(
-                                "Negative slice end not supported (dimension {}"
-                                " end {})."
-                            ).format(i, end),
-                            suggestion=String(
-                                "Use non-negative ends; add self.shape[dim] if"
-                                " you intended python-style negative indexing."
-                            ),
-                            location=String("ComplexNDArray._adjust_slice"),
-                        )
-                    )
-            step = slice_list[i].step.or_else(1)
+            var dim_size = self.shape[i]
+            var step = slice_list[i].step.or_else(1)
+            
             if step == 0:
                 raise Error(
                     ValueError(
@@ -1411,12 +1428,43 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                             "Slice step cannot be zero (dimension {})."
                         ).format(i),
                         suggestion=String(
-                            "Use positive or negative non-zero step to define"
-                            " slice progression."
+                            "Use positive or negative non-zero step."
                         ),
                         location=String("ComplexNDArray._adjust_slice"),
                     )
                 )
+
+            # defaults
+            var start: Int
+            var end: Int
+            if step > 0:
+                start = 0
+                end = dim_size
+            else:  
+                start = dim_size - 1
+                end = -1
+
+            # start
+            if slice_list[i].start is not None:
+                start = slice_list[i].start.value()
+                if start < 0:
+                    start += dim_size
+                # Clamp to valid bounds once
+                if step > 0:
+                    start = 0 if start < 0 else (dim_size if start > dim_size else start)
+                else:
+                    start = -1 if start < -1 else (dim_size - 1 if start >= dim_size else start)
+
+            # end 
+            if slice_list[i].end is not None:
+                end = slice_list[i].end.value()
+                if end < 0:
+                    end += dim_size
+                # Clamp to valid bounds once
+                if step > 0:
+                    end = 0 if end < 0 else (dim_size if end > dim_size else end)
+                else:
+                    end = -1 if end < -1 else (dim_size if end > dim_size else end)
 
             slices.append(
                 Slice(

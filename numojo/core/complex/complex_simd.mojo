@@ -1,6 +1,7 @@
 from math import sqrt
 
-alias ComplexScalar = ComplexSIMD[_, width=1]
+alias ComplexScalar[dtype: DType] = ComplexSIMD[dtype, width = 1]
+alias CScalar[dtype: DType] = ComplexSIMD[dtype, width =1]
 
 
 @register_passable("trivial")

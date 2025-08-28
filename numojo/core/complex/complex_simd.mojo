@@ -1,7 +1,7 @@
 from math import sqrt
 
-alias ComplexScalar[dtype: DType] = ComplexSIMD[dtype, width = 1]
-alias CScalar[dtype: DType] = ComplexSIMD[dtype, width =1]
+alias ComplexScalar[dtype: DType] = ComplexSIMD[dtype, width=1]
+alias CScalar[dtype: DType] = ComplexSIMD[dtype, width=1]
 
 
 @register_passable("trivial")
@@ -40,8 +40,9 @@ struct ComplexSIMD[dtype: DType, width: Int = 1](Stringable, Writable):
 
         Example:
         ```mojo
-        var A = ComplexSIMD[f32](SIMD[f32, 1](1.0), SIMD[f32, 1](2.0))
-        var B = ComplexSIMD[f32](SIMD[f32, 1](3.0), SIMD[f32, 1](4.0))
+        import numojo as nm
+        var A = nm.ComplexSIMD[nm.f32](1.0, 2.0)
+        var B = nm.ComplexSIMD[nm.f32](3.0, 4.0)
         var C = A + B
         print(C)
         ```

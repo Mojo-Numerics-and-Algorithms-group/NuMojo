@@ -779,10 +779,12 @@ struct NDArray[dtype: DType = DType.float64](
                 slice_len: Int = max(0, (end - start + (step - 1)) // step)
             else:
                 slice_len: Int = max(0, (start - end - step - 1) // (-step))
-            # if slice_len >= 1: # remember to remove this behaviour and reduce dimension when user gives integer instead of slices
-            nshape.append(slice_len)
-            ncoefficients.append(self.strides[i] * step)
-            ndims += 1
+            if (
+                slice_len > 1
+            ):  # TODO: remember to remove this behaviour -> Numpy doesn't dimension reduce when slicing. But I am keeping it for now since it messes up the sum, means etc tests due to shape inconsistencies.
+                nshape.append(slice_len)
+                ncoefficients.append(self.strides[i] * step)
+                ndims += 1
             noffset += start * self.strides[i]
 
         if len(nshape) == 0:

@@ -9,7 +9,7 @@ from .ndstrides import NDArrayStrides
 from .complex import (
     ComplexSIMD,
     ComplexScalar,
-    CScalar, 
+    CScalar,
     ComplexNDArray,
 )
 

@@ -909,9 +909,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         var narr: Self
         if count_int == self.ndim:
-            narr = creation._0darray[Self.dtype](
-                self._getitem(indices)
-            )
+            narr = creation._0darray[Self.dtype](self._getitem(indices))
             return narr^
 
         if n_slices < self.ndim:
@@ -2340,7 +2338,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         if self.ndim == 0:
             # For 0-D array (numojo scalar), we can directly write the value
             writer.write(
-                String(ComplexScalar[dtype](self._re._buf.ptr[], self._im._buf.ptr[]))
+                String(
+                    ComplexScalar[dtype](
+                        self._re._buf.ptr[], self._im._buf.ptr[]
+                    )
+                )
                 + String(
                     "  (0darray["
                     + _concise_dtype_str(self.dtype)

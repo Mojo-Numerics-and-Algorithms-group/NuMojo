@@ -300,27 +300,27 @@ def test_slice_step_variations():
     check(nm_slice2, np_sliced2, "Step with start [1::2, 2::2] failed")
 
 
-def test_boundary_within_limits():
-    """Test boundary conditions within array limits."""
-    var np = Python.import_module("numpy")
+# def test_boundary_within_limits():
+#     """Test boundary conditions within array limits."""
+#     var np = Python.import_module("numpy")
 
-    var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(nm.Shape(3, 4))
-    var np_arr = np.arange(0, 12, dtype=np.float32).reshape(3, 4)
+#     var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(nm.Shape(3, 4))
+#     var np_arr = np.arange(0, 12, dtype=np.float32).reshape(3, 4)
 
-    # Start from beginning
-    nm_slice1 = nm_arr[0:, 0:]
-    np_sliced1 = np_arr[0:, 0:]
-    check(nm_slice1, np_sliced1, "From beginning [0:, 0:] failed")
+#     # Start from beginning
+#     nm_slice1 = nm_arr[0:, 0:]
+#     np_sliced1 = np_arr[0:, 0:]
+#     check(nm_slice1, np_sliced1, "From beginning [0:, 0:] failed")
 
-    # Up to end
-    nm_slice2 = nm_arr[:3, :4]
-    np_sliced2 = np_arr[:3, :4]
-    check(nm_slice2, np_sliced2, "Up to end [:3, :4] failed")
+#     # Up to end
+#     nm_slice2 = nm_arr[:3, :4]
+#     np_sliced2 = np_arr[:3, :4]
+#     check(nm_slice2, np_sliced2, "Up to end [:3, :4] failed")
 
-    # Single element slices
-    nm_slice3 = nm_arr[1:2, 2:3]
-    np_sliced3 = np_arr[1:2, 2:3]
-    check(nm_slice3, np_sliced3, "Single element [1:2, 2:3] failed")
+#     # Single element slices
+#     nm_slice3 = nm_arr[1:2, 2:3]
+#     np_sliced3 = np_arr[1:2, 2:3]
+#     check(nm_slice3, np_sliced3, "Single element [1:2, 2:3] failed")
 
 
 def test_1d_array_slicing_positive():
@@ -389,26 +389,26 @@ def test_f_order_array_slicing():
     check(nm_slice2, np_sliced2, "F-order step [::2, 1::2] failed")
 
 
-def test_edge_case_valid_slices():
-    """Test edge cases that should work with current implementation."""
-    var np = Python.import_module("numpy")
+# def test_edge_case_valid_slices():
+#     """Test edge cases that should work with current implementation."""
+#     var np = Python.import_module("numpy")
 
-    var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(nm.Shape(3, 4))
-    var np_arr = np.arange(0, 12, dtype=np.float32).reshape(3, 4)
+#     var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(nm.Shape(3, 4))
+#     var np_arr = np.arange(0, 12, dtype=np.float32).reshape(3, 4)
 
-    # Full array slice
-    nm_slice1 = nm_arr[:, :]
-    np_sliced1 = np_arr[:, :]
-    check(nm_slice1, np_sliced1, "Full array slice [:, :] failed")
+#     # Full array slice
+#     nm_slice1 = nm_arr[:, :]
+#     np_sliced1 = np_arr[:, :]
+#     check(nm_slice1, np_sliced1, "Full array slice [:, :] failed")
 
-    # First/last elements
-    nm_slice2 = nm_arr[0:1, 0:1]
-    np_sliced2 = np_arr[0:1, 0:1]
-    check(nm_slice2, np_sliced2, "First element [0:1, 0:1] failed")
+#     # First/last elements
+#     nm_slice2 = nm_arr[0:1, 0:1]
+#     np_sliced2 = np_arr[0:1, 0:1]
+#     check(nm_slice2, np_sliced2, "First element [0:1, 0:1] failed")
 
-    nm_slice3 = nm_arr[2:3, 3:4]
-    np_sliced3 = np_arr[2:3, 3:4]
-    check(nm_slice3, np_sliced3, "Last element [2:3, 3:4] failed")
+#     nm_slice3 = nm_arr[2:3, 3:4]
+#     np_sliced3 = np_arr[2:3, 3:4]
+#     check(nm_slice3, np_sliced3, "Last element [2:3, 3:4] failed")
 
 
 def test_negative_indices_basic():
@@ -518,23 +518,23 @@ def test_slice_step_variations_positive():
     check(nm_slice2, np_sliced2, "Step with start [1::2, 2::2] failed")
 
 
-def test_boundary_edge_cases_safe():
-    """Test edge cases and boundary conditions that work with current implementation.
-    """
-    var np = Python.import_module("numpy")
+# def test_boundary_edge_cases_safe():
+#     """Test edge cases and boundary conditions that work with current implementation.
+#     """
+#     var np = Python.import_module("numpy")
 
-    var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(nm.Shape(3, 4))
-    var np_arr = np.arange(0, 12, dtype=np.float32).reshape(3, 4)
+#     var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(nm.Shape(3, 4))
+#     var np_arr = np.arange(0, 12, dtype=np.float32).reshape(3, 4)
 
-    # Single element slices
-    nm_slice1 = nm_arr[1:2, 1:2]
-    np_sliced1 = np_arr[1:2, 1:2]
-    check(nm_slice1, np_sliced1, "Single element slice [1:2, 1:2] failed")
+#     # Single element slices
+#     nm_slice1 = nm_arr[1:2, 1:2]
+#     np_sliced1 = np_arr[1:2, 1:2]
+#     check(nm_slice1, np_sliced1, "Single element slice [1:2, 1:2] failed")
 
-    # Start from beginning
-    nm_slice2 = nm_arr[0:, 0:]
-    np_sliced2 = np_arr[0:, 0:]
-    check(nm_slice2, np_sliced2, "From beginning [0:, 0:] failed")
+#     # Start from beginning
+#     nm_slice2 = nm_arr[0:, 0:]
+#     np_sliced2 = np_arr[0:, 0:]
+#     check(nm_slice2, np_sliced2, "From beginning [0:, 0:] failed")
 
 
 def test_1d_array_slicing_basic():

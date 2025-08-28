@@ -37,15 +37,12 @@ Implements basic object methods for working with N-Dimensional Array.
 # (Items marked with * are flavored in "Mojo docstring style guide")
 #
 # ===----------------------------------------------------------------------===#
-# TODO: Consider whether we should add vectorization for _get_offset.
-# TODO: Create NDArrayView that points to the buffer of the raw array.
+# TODO: Return views that points to the buffer of the raw array.
 #       This requires enhancement of functionalities of traits from Mojo's side.
 #       The data buffer can implement an ArrayData trait (RawData or RefData)
 #       RawData type is just a wrapper of `UnsafePointer`.
 #       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
 # TODO: Rename some variables or methods that should not be exposed to users.
-# TODO: Remove some methods, `mdot()`, `rdot()`, `row()`, `col()`, etc,
-#       that does not belong to the NDArray type.
 # TODO: Special checks for 0d array (numojo scalar).
 # ===----------------------------------------------------------------------===#
 
@@ -775,7 +772,7 @@ struct NDArray[dtype: DType = DType.float64](
             self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
         )
 
-        return narr
+        return narr^
 
     fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
         """

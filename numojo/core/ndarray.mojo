@@ -348,6 +348,7 @@ struct NDArray[dtype: DType = DType.float64](
     #
     # 1. Basic Indexing Operations
     # fn _getitem(self, *indices: Int) -> Scalar[dtype]                         # Direct unsafe getter
+    # fn _getitem(self, indices: List[Int]) -> Scalar[dtype]                    # Direct unsafe getter
     # fn __getitem__(self) raises -> SIMD[dtype, 1]                             # Get 0d array value
     # fn __getitem__(self, index: Item) raises -> SIMD[dtype, 1]                # Get by coordinate list
     #
@@ -393,6 +394,33 @@ struct NDArray[dtype: DType = DType.float64](
         import numojo
         var A = numojo.ones(numojo.Shape(2,3,4))
         print(A._getitem(1,2,3))
+        ```
+        """
+        var index_of_buffer: Int = 0
+        for i in range(self.ndim):
+            index_of_buffer += indices[i] * self.strides._buf[i]
+        return self._buf.ptr[index_of_buffer]
+
+    fn _getitem(self, indices: List[Int]) -> Scalar[dtype]:
+        """
+        Get item at indices and bypass all boundary checks.
+        ***UNSAFE!*** No boundary checks made, for internal use only.
+
+        Args:
+            indices: Indices to get the value.
+
+        Returns:
+            The element of the array at the indices.
+
+        Notes:
+            This function is unsafe and should be used only on internal use.
+
+        Examples:
+
+        ```mojo
+        import numojo
+        var A = numojo.ones(numojo.Shape(2,3,4))
+        print(A._getitem(List[Int](1,2,3)))
         ```
         """
         var index_of_buffer: Int = 0
@@ -951,7 +979,7 @@ struct NDArray[dtype: DType = DType.float64](
         -105
         ```.
         """
-        var n_slices: Int = slices.__len__()
+        var n_slices: Int = len(slices)
         if n_slices > self.ndim:
             raise Error(
                 IndexError(
@@ -968,30 +996,49 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
         var slice_list: List[Slice] = List[Slice]()
-
         var count_int: Int = 0  # Count the number of Int in the argument
+        var indices: List[Int] = List[Int]()
+
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
-                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+                slice_list.append(slices[i][Slice])
             elif slices[i].isa[Int]():
+                var norm: Int = slices[i][Int]
+                if norm >= self.shape[i] or norm < -self.shape[i]:
+                    raise Error(
+                        IndexError(
+                            message=String(
+                                "Integer index {} out of bounds for axis {}"
+                                " (size {})."
+                            ).format(slices[i][Int], i, self.shape[i]),
+                            suggestion=String(
+                                "Valid indices: 0 <= i < {} or negative -{}"
+                                " <= i < 0 (negative indices wrap from the"
+                                " end)."
+                            ).format(self.shape[i], self.shape[i]),
+                            location=String(
+                                "NDArray.__getitem__(*slices: Variant[Slice,"
+                                " Int])"
+                            ),
+                        )
+                    )
+                if norm < 0:
+                    norm += self.shape[i]
                 count_int += 1
-                var int: Int = slices[i]._get_ptr[Int]()[0]
-                slice_list.append(Slice(int, int + 1, 1))
-
-        if n_slices < self.ndim:
-            for i in range(n_slices, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim, 1))
+                indices.append(norm)
+                slice_list.append(Slice(norm, norm + 1, 1))
 
         var narr: Self
         if count_int == self.ndim:
-            narr = creation._0darray[dtype](
-                self.__getitem__(slice_list)._buf.ptr[]
-            )
-        else:
-            narr = self.__getitem__(slice_list)
+            narr = creation._0darray[dtype](self._getitem(indices))
+            return narr^
 
-        return narr
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                slice_list.append(Slice(0, self.shape[i], 1))
+
+        narr = self.__getitem__(slice_list)
+        return narr^
 
     fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
         """
@@ -3785,11 +3832,6 @@ struct NDArray[dtype: DType = DType.float64](
             summarize: Internal flag indicating summarization already chosen.
         """
         var options: PrintOptions = self.print_options
-
-        # 0-D array (scalar wrapper)
-        if self.ndim == 0:
-            return String(self._buf.ptr[0])
-
         var separator = options.separator
         var padding = options.padding
         var edge_items = options.edge_items

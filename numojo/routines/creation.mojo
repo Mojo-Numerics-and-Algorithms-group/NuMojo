@@ -2380,7 +2380,7 @@ fn _0darray[
     b._buf = OwnData[dtype](1)
     b._buf.ptr.init_pointee_copy(val)
     b.flags.OWNDATA = True
-    return b
+    return b^
 
 
 fn _0darray[
@@ -2408,4 +2408,4 @@ fn _0darray[
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True
-    return b
+    return b^

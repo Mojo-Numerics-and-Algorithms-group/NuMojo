@@ -27,7 +27,7 @@ from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import Shape, NDArrayShape
 
-from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar
+from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 
 from numojo.core.datatypes import (

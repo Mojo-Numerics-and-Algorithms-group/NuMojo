@@ -34,23 +34,26 @@ Last updated: 2025-03-10
 # (Items marked with * are flavored in "Mojo docstring style guide")
 #
 # ===----------------------------------------------------------------------===#
+# === Stdlib ===
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 import builtin.math as builtin_math
 from builtin.type_aliases import Origin
-from collections import Dict
 from collections.optional import Optional
+from math import log10
 from memory import UnsafePointer, memset_zero, memcpy
-from python import Python, PythonObject
+from python import PythonObject
 from sys import simdwidthof
 from utils import Variant
 
-from numojo.core.complex.complex_simd import ComplexSIMD
+# === numojo core ===
 from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
+from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
+from numojo.core.own_data import OwnData
 from numojo.core.utility import (
     _get_offset,
     _transfer_offset,
@@ -59,27 +62,6 @@ from numojo.core.utility import (
     to_numpy,
     bool_to_numeric,
 )
-from numojo.routines.math._math_funcs import Vectorized
-import numojo.routines.bitwise as bitwise
-from numojo.routines.io.formatting import (
-    format_floating_precision,
-    format_floating_scientific,
-    format_value,
-    PrintOptions,
-    GLOBAL_PRINT_OPTIONS,
-)
-import numojo.routines.linalg as linalg
-from numojo.routines.linalg.products import matmul
-import numojo.routines.logic.comparison as comparison
-from numojo.routines.logic.truth import any
-from numojo.routines.manipulation import reshape, ravel
-import numojo.routines.math.rounding as rounding
-import numojo.routines.math.arithmetic as arithmetic
-from numojo.routines.math.extrema import max, min
-from numojo.routines.math.products import prod, cumprod
-from numojo.routines.math.sums import sum, cumsum
-import numojo.routines.sorting as sorting
-from numojo.routines.statistics.averages import mean
 from numojo.core.error import (
     IndexError,
     ShapeError,
@@ -88,6 +70,22 @@ from numojo.core.error import (
     ValueError,
     ArithmeticError,
 )
+
+# === numojo routines (creation / io / logic) ===
+import numojo.routines.creation as creation
+from numojo.routines.io.formatting import (
+    format_value,
+    PrintOptions,
+)
+import numojo.routines.logic.comparison as comparison
+
+# === numojo routines (math / bitwise / searching) ===
+import numojo.routines.bitwise as bitwise
+import numojo.routines.math._array_funcs as _af
+from numojo.routines.math._math_funcs import Vectorized
+import numojo.routines.math.arithmetic as arithmetic
+import numojo.routines.math.rounding as rounding
+import numojo.routines.searching as searching
 
 
 # ===----------------------------------------------------------------------===#
@@ -119,6 +117,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     """Contains offset, strides."""
     var flags: Flags
     "Information about the memory layout of the array."
+    var print_options: PrintOptions
 
     # ===-------------------------------------------------------------------===#
     # Life cycle methods
@@ -156,6 +155,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = re.size
         self.strides = re.strides
         self.flags = re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -185,6 +187,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -206,6 +211,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -227,6 +235,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     fn __init__(
         out self,
@@ -244,6 +255,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     fn __init__(
         out self,
@@ -273,6 +287,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.flags = flags
         self._re = NDArray[Self.dtype](shape, strides, ndim, size, flags)
         self._im = NDArray[Self.dtype](shape, strides, ndim, size, flags)
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     fn __init__(
         out self,
@@ -300,6 +317,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = self._re.size
         self.strides = self._re.strides
         self.flags = self._re.flags
+        self.print_options = PrintOptions(
+            precision=2, edge_items=2, line_width=80, formatted_width=6
+        )
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
@@ -313,6 +333,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = other.size
         self.strides = other.strides
         self.flags = other.flags
+        self.print_options = other.print_options
 
     @always_inline("nodebug")
     fn __moveinit__(out self, owned existing: Self):
@@ -326,6 +347,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.size = existing.size
         self.strides = existing.strides
         self.flags = existing.flags
+        self.print_options = existing.print_options
 
     # Explicit deallocation
     # @always_inline("nodebug")
@@ -351,6 +373,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     #
     # 1. Basic Indexing Operations
     # fn _getitem(self, *indices: Int) -> ComplexSIMD[Self.dtype]                         # Direct unsafe getter
+    # fn _getitem(self, indices: List[Int]) -> ComplexSIMD[Self.dtype]                         # Direct unsafe getter
     # fn __getitem__(self) raises -> ComplexSIMD[Self.dtype]                             # Get 0d array value
     # fn __getitem__(self, index: Item) raises -> ComplexSIMD[Self.dtype]                # Get by coordinate list
     #
@@ -394,8 +417,38 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         ```mojo
         import numojo as nm
-        var A = nm.ones[nm.f32](nm.Shape(2,3,4))
+        var A = nm.onesC[nm.f32](nm.Shape(2,3,4))
         print(A._getitem(1,2,3))
+        ```
+        """
+        var index_of_buffer: Int = 0
+        for i in range(self.ndim):
+            index_of_buffer += indices[i] * self.strides._buf[i]
+        return ComplexSIMD[Self.dtype](
+            re=self._re._buf.ptr.load[width=1](index_of_buffer),
+            im=self._im._buf.ptr.load[width=1](index_of_buffer),
+        )
+
+    fn _getitem(self, indices: List[Int]) -> ComplexScalar[dtype]:
+        """
+        Get item at indices and bypass all boundary checks.
+        ***UNSAFE!*** No boundary checks made, for internal use only.
+
+        Args:
+            indices: Indices to get the value.
+
+        Returns:
+            The element of the array at the indices.
+
+        Notes:
+            This function is unsafe and should be used only on internal use.
+
+        Examples:
+
+        ```mojo
+        import numojo
+        var A = numojo.onesC(numojo.Shape(2,3,4))
+        print(A._getitem(List[Int](1,2,3)))
         ```
         """
         var index_of_buffer: Int = 0
@@ -501,30 +554,42 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         )
 
     fn __getitem__(self, idx: Int) raises -> Self:
-        """
-        Retreive a slice of the ComplexNDArray corresponding to the index at the first dimension.
+        """Single-axis integer slice (first dimension).
+        Returns a slice of the complex array taken at axis 0 position `idx`.
+        Dimensionality is reduced by exactly one; a 1-D source produces a
+        0-D ComplexNDArray (scalar wrapper). Negative indices are supported
+        and normalized. The result preserves the source memory order (C/F).
 
         Args:
-            idx: Index to get the slice.
+            idx: Integer index along the first (axis 0) dimension. Supports
+                negative indices in [-shape[0], shape[0]).
 
         Returns:
-            A slice of the array.
+            ComplexNDArray with shape `self.shape[1:]` when `self.ndim > 1`,
+            otherwise a 0-D ComplexNDArray scalar wrapper.
 
         Raises:
-            Error: If the array is 0-d.
+            IndexError: If the array is 0-D.
+            IndexError: If `idx` (after normalization) is out of bounds.
+
+        Notes:
+            Performance fast path: For C-contiguous arrays the slice for both
+            real and imaginary parts is copied with single `memcpy` calls.
+            For F-contiguous or arbitrary stride layouts, a generic
+            stride-based copier is used for both components. (Future: return
+            a non-owning view).
 
         Examples:
-
-        ```console
-        >>>import numojo as nm
-        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-        >>>print(a[1]) # returns the second row of the array.
-        ```.
+            ```mojo
+            import numojo as nm
+            var a = nm.arangeC(nm.ComplexScalar[nm.f32](0, 0), nm.ComplexScalar[nm.f32](12, 12), nm.ComplexScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
+            print(a.shape)        # (3,4)
+            print(a[1].shape)     # (4,)  -- 1-D slice
+            print(a[-1].shape)    # (4,)  -- negative index
+            var b = nm.arangeC(nm.ComplexScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
+            print(b[2])           # 0-D array (scalar wrapper)
+            ```
         """
-
-        var slice_list = List[Slice]()
-        slice_list.append(Slice(idx, idx + 1))
-
         if self.ndim == 0:
             raise Error(
                 IndexError(
@@ -532,51 +597,104 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                         "Cannot slice a 0D ComplexNDArray (scalar)."
                     ),
                     suggestion=String(
-                        "Use `A[]` or `A.item(0)` to read the scalar value."
+                        "Use `A[]` or `A.item(0)` to read its value."
                     ),
                     location=String("ComplexNDArray.__getitem__(idx: Int)"),
                 )
             )
 
-        var narr: Self
-        if self.ndim == 1:
-            narr = creation._0darray[Self.dtype](
-                ComplexSIMD[Self.dtype](
-                    re=self._re._buf.ptr[idx],
-                    im=self._im._buf.ptr[idx],
-                ),
+        var norm = idx
+        if norm < 0:
+            norm += self.shape[0]
+        if (norm < 0) or (norm >= self.shape[0]):
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Index {} out of bounds for axis 0 (size {})."
+                    ).format(idx, self.shape[0]),
+                    suggestion=String(
+                        "Valid indices: 0 <= i < {} or -{} <= i < 0 (negative"
+                        " wrap)."
+                    ).format(self.shape[0], self.shape[0]),
+                    location=String("ComplexNDArray.__getitem__(idx: Int)"),
+                )
             )
-        else:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
 
-            narr = self[slice_list]
+        # 1-D -> complex scalar (0-D ComplexNDArray wrapper)
+        if self.ndim == 1:
+            return creation._0darray[Self.dtype](
+                ComplexSIMD[Self.dtype](
+                    re=self._re._buf.ptr[norm],
+                    im=self._im._buf.ptr[norm],
+                )
+            )
 
-        return narr
+        var out_shape = self.shape[1:]
+        var alloc_order = String("C")
+        if self.flags.F_CONTIGUOUS:
+            alloc_order = String("F")
+        var result = ComplexNDArray[Self.dtype](
+            shape=out_shape, order=alloc_order
+        )
+
+        # Fast path for C-contiguous
+        if self.flags.C_CONTIGUOUS:
+            var block = self.size // self.shape[0]
+            memcpy(result._re._buf.ptr, self._re._buf.ptr + norm * block, block)
+            memcpy(result._im._buf.ptr, self._im._buf.ptr + norm * block, block)
+            return result^
+
+        # F layout
+        self._re._copy_first_axis_slice[Self.dtype](self._re, norm, result._re)
+        self._im._copy_first_axis_slice[Self.dtype](self._im, norm, result._im)
+        return result^
 
     fn __getitem__(self, owned *slices: Slice) raises -> Self:
         """
-        Retreive slices of a ComplexNDArray from variadic slices.
+        Retrieves a slice or sub-array from the current array using variadic slice arguments.
 
         Args:
-            slices: Variadic slices.
+            slices: Variadic list of `Slice` objects, one for each dimension to be sliced.
+
+        Constraints:
+            - The number of slices provided must not exceed the number of array dimensions.
+            - Each slice must be valid for its corresponding dimension.
 
         Returns:
-            A slice of the array.
+            Self: A new array instance representing the sliced view of the original array.
+
+        Raises:
+            IndexError: If any slice is out of bounds for its corresponding dimension.
+            ValueError: If the number of slices does not match the array's dimensions.
+
+        NOTES:
+            - This method creates a new array; Views are not currently supported.
+            - Negative indices and step sizes are supported as per standard slicing semantics.
 
         Examples:
-
-        ```console
-        >>>import numojo as nm
-        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-        >>>var b = a[:, 2:4]
-        >>>print(b) # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
-        ```.
+            ```mojo
+            import numojo as nm
+            var a = numojo.arange(10).reshape(nm.Shape(2, 5))
+            var b = a[:, 2:4]
+            print(b) # Output: 2x2 sliced array corresponding to columns 2 and 3 of each row.
+            ```
         """
-
         var n_slices: Int = slices.__len__()
-        var slice_list: List[Slice] = List[Slice]()
+        if n_slices > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Too many slices provided: expected at most {} but"
+                        " got {}."
+                    ).format(self.ndim, n_slices),
+                    suggestion=String(
+                        "Provide at most {} slices for an array with {}"
+                        " dimensions."
+                    ).format(self.ndim, self.ndim),
+                    location=String("NDArray.__getitem__(slices: Slice)"),
+                )
+            )
+        var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
         for i in range(len(slices)):
             slice_list.append(slices[i])
 
@@ -585,39 +703,70 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 slice_list.append(Slice(0, self.shape[i], 1))
 
         var narr: Self = self[slice_list]
-        return narr
+        return narr^
+
+    fn _calculate_strides_efficient(self, shape: List[Int]) -> List[Int]:
+        var strides = List[Int](capacity=len(shape))
+
+        if self.flags.C_CONTIGUOUS:  # C_CONTIGUOUS
+            var temp_strides = List[Int](capacity=len(shape))
+            var stride = 1
+            for i in range(len(shape) - 1, -1, -1):
+                temp_strides.append(stride)
+                stride *= shape[i]
+
+            for i in range(len(temp_strides) - 1, -1, -1):
+                strides.append(temp_strides[i])
+        else:  # F_CONTIGUOUS
+            var stride = 1
+            for i in range(len(shape)):
+                strides.append(stride)
+                stride *= shape[i]
+
+        return strides^
 
     fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
         """
-        Retrieve slices of a ComplexNDArray from a list of slices.
+        Retrieves a sub-array from the current array using a list of slice objects, enabling advanced slicing operations across multiple dimensions.
 
         Args:
-            slice_list: List of slices.
+            slice_list: List of Slice objects, where each Slice defines the start, stop, and step for the corresponding dimension.
+
+        Constraints:
+            - The length of slice_list must not exceed the number of dimensions in the array.
+            - Each Slice in slice_list must be valid for its respective dimension.
 
         Returns:
-            A slice of the array.
+            Self: A new array instance representing the sliced view of the original array.
 
         Raises:
-            Error: If the slice list is empty.
+            Error: If slice_list is empty or contains invalid slices.
+
+        NOTES:
+            - This method supports advanced slicing similar to NumPy's multi-dimensional slicing.
+            - The returned array shares data with the original array if possible.
 
         Examples:
-
-        ```console
-        >>>import numojo as nm
-        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-        >>>var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))] # `arr[:, 2:4]` returns the corresponding sliced array (2 x 2).
-        >>>print(b)
-        ```.
+            ```mojo
+            import numojo as nm
+            var a = nm.arangeC(nm.ComplexScalar(10.0, 10.0)).reshape(nm.Shape(2, 5))
+            var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
+            print(b)
+            ```
         """
-
+        var n_slices: Int = slice_list.__len__()
         # Check error cases
-        if slice_list.__len__() == 0:
+        # I think we can remove this since it seems redundant.
+        if n_slices == 0:
             raise Error(
                 IndexError(
-                    message=String("Empty slice list provided."),
+                    message=String(
+                        "Empty slice list provided to"
+                        " ComplexNDArray.__getitem__."
+                    ),
                     suggestion=String(
-                        "Provide at least one Slice; e.g. use [:] or Slice(0,"
-                        " n, 1)."
+                        "Provide a List with at least one slice to index the"
+                        " array."
                     ),
                     location=String(
                         "ComplexNDArray.__getitem__(slice_list: List[Slice])"
@@ -625,67 +774,44 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 )
             )
 
-        if slice_list.__len__() < self.ndim:
-            for i in range(slice_list.__len__(), self.ndim):
-                slice_list.append(Slice(0, self.shape[i], 1))
+        var slices: List[Slice] = self._adjust_slice(slice_list)
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                slices.append(Slice(0, self.shape[i], 1))
 
-        # Adjust slice
-        var slices = self._adjust_slice(slice_list)
-        var spec = List[Int]()
-        var ndims = 0
+        var ndims: Int = 0
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var noffset: Int = 0
 
-        # Calculate output shape and validate slices in one pass
         for i in range(self.ndim):
             var start: Int = slices[i].start.value()
             var end: Int = slices[i].end.value()
             var step: Int = slices[i].step.or_else(1)
 
-            var slice_len: Int = len(range(start, end, step))
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
+            var slice_len: Int
+            if step > 0:
+                slice_len: Int = max(0, (end - start + (step - 1)) // step)
+            else:
+                slice_len: Int = max(0, (start - end - step - 1) // (-step))
+            # if slice_len >= 1: # remember to remove this behaviour and reduce dimension when user gives integer instead of slices
+            nshape.append(slice_len)
+            ncoefficients.append(self.strides[i] * step)
+            ndims += 1
+            noffset += start * self.strides[i]
 
-        ndims = 1 if ndims == 0 else ndims
-
-        # Calculate new slices array shape, coefficients, and offset
-        var nshape = List[Int]()
-        var ncoefficients = List[Int]()
-        var noffset = 0
-        var nnum_elements: Int = 1
-
-        for i in range(self.ndim):
-            if spec[i] != 1:
-                nshape.append(spec[i])
-                nnum_elements *= spec[i]
-                ncoefficients.append(self.strides[i] * slices[i].step.value())
-            noffset += slices[i].start.value() * self.strides[i]
-
-        if nshape.__len__() == 0:
+        if len(nshape) == 0:
             nshape.append(1)
-            # nnum_elements = 1
             ncoefficients.append(1)
 
-        # Calculate strides based on memory layout: only C & F order are supported
-        var nstrides = List[Int]()
-        if self.flags.C_CONTIGUOUS:
-            var temp_stride = 1
-            for i in range(nshape.__len__() - 1, -1, -1):
-                nstrides.insert(0, temp_stride)
-                temp_stride *= nshape[i]
-        else:  # F_CONTIGUOUS
-            var temp_stride = 1
-            for i in range(nshape.__len__()):
-                nstrides.append(temp_stride)
-                temp_stride *= nshape[i]
-
-        # Create and iteratively set values in the new array
+        # only C & F order are supported
+        var nstrides: List[Int] = self._calculate_strides_efficient(
+            nshape,
+        )
         var narr = ComplexNDArray[Self.dtype](
             offset=noffset, shape=nshape, strides=nstrides
         )
-        var index_re = List[Int]()
-        for _ in range(ndims):
-            index_re.append(0)
-
+        var index_re: List[Int] = List[Int](length=ndims, fill=0)
         _traverse_iterative[dtype](
             self._re,
             narr._re,
@@ -696,11 +822,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             index_re,
             0,
         )
-
-        var index_im = List[Int]()
-        for _ in range(ndims):
-            index_im.append(0)
-
+        var index_im: List[Int] = List[Int](length=ndims, fill=0)
         _traverse_iterative[dtype](
             self._im,
             narr._im,
@@ -712,7 +834,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             0,
         )
 
-        return narr
+        return narr^
 
     fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
         """
@@ -729,58 +851,73 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         Examples:
 
-        ```console
-        >>>import numojo as nm
-        >>>var a = nm.full[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-        >>>var b = a[1, 2:4]
-        >>>print(b)
-        ```.
+        ```mojo
+            import numojo as nm
+            var a = nm.fullC[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
+            var b = a[1, 2:4]
+            print(b)
+        ```
         """
-        var n_slices: Int = slices.__len__()
+        var n_slices: Int = len(slices)
         if n_slices > self.ndim:
             raise Error(
                 IndexError(
                     message=String(
-                        "Too many indices/slices: received {} but array has {}"
-                        " dimensions."
+                        "Too many indices or slices: received {} but array has"
+                        " only {} dimensions."
                     ).format(n_slices, self.ndim),
                     suggestion=String(
-                        "Use at most {} indices/slices (one per dimension)."
+                        "Pass at most {} indices/slices (one per dimension)."
                     ).format(self.ndim),
                     location=String(
-                        "ComplexNDArray.__getitem__(*slices: Variant[Slice,"
-                        " Int])"
+                        "NDArray.__getitem__(*slices: Variant[Slice, Int])"
                     ),
                 )
             )
         var slice_list: List[Slice] = List[Slice]()
-
         var count_int: Int = 0  # Count the number of Int in the argument
+        var indices: List[Int] = List[Int]()
+
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
-                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+                slice_list.append(slices[i][Slice])
             elif slices[i].isa[Int]():
+                var norm: Int = slices[i][Int]
+                if norm >= self.shape[i] or norm < -self.shape[i]:
+                    raise Error(
+                        IndexError(
+                            message=String(
+                                "Integer index {} out of bounds for axis {}"
+                                " (size {})."
+                            ).format(slices[i][Int], i, self.shape[i]),
+                            suggestion=String(
+                                "Valid indices: 0 <= i < {} or negative -{}"
+                                " <= i < 0 (negative indices wrap from the"
+                                " end)."
+                            ).format(self.shape[i], self.shape[i]),
+                            location=String(
+                                "ComplexNDArray.__getitem__(*slices:"
+                                " Variant[Slice, Int])"
+                            ),
+                        )
+                    )
+                if norm < 0:
+                    norm += self.shape[i]
                 count_int += 1
-                var int: Int = slices[i]._get_ptr[Int]()[0]
-                slice_list.append(Slice(int, int + 1))
-
-        if n_slices < self.ndim:
-            for i in range(n_slices, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
+                indices.append(norm)
+                slice_list.append(Slice(norm, norm + 1, 1))
 
         var narr: Self
         if count_int == self.ndim:
-            narr = creation._0darray[Self.dtype](
-                ComplexSIMD[Self.dtype](
-                    re=self._re._buf.ptr[],
-                    im=self._im._buf.ptr[],
-                ),
-            )
-        else:
-            narr = self[slice_list]
+            narr = creation._0darray[Self.dtype](self._getitem(indices))
+            return narr^
 
-        return narr
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                slice_list.append(Slice(0, self.shape[i], 1))
+
+        narr = self.__getitem__(slice_list)
+        return narr^
 
     fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
         """
@@ -1294,55 +1431,33 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
         """
-        Adjusts the slice values to lie within 0 and dim.
+        Adjusts slice values to handle all possible slicing scenarios including:
+        - Negative indices (Python-style wrapping)
+        - Out-of-bounds clamping
+        - Negative steps (reverse slicing)
+        - Empty slices
+        - Default start/end values based on step direction
         """
         var n_slices: Int = slice_list.__len__()
-        var slices = List[Slice]()
+        if n_slices > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Too many slice dimensions: got {} but array has {}"
+                        " dims."
+                    ).format(n_slices, self.ndim),
+                    suggestion=String(
+                        "Provide at most {} slices for this array."
+                    ).format(self.ndim),
+                    location=String("ComplexNDArray._adjust_slice"),
+                )
+            )
+
+        var slices = List[Slice](capacity=self.ndim)
         for i in range(n_slices):
-            if i >= self.ndim:
-                raise Error("Error: Number of slices exceeds array dimensions")
-                # Could consider ShapeError, but keep generic until slice API stabilized.
+            var dim_size = self.shape[i]
+            var step = slice_list[i].step.or_else(1)
 
-            var start: Int = 0
-            var end: Int = self.shape[i]
-            var step: Int
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    # start += self.shape[i]
-                    raise Error(
-                        IndexError(
-                            message=String(
-                                "Negative slice start not supported (dimension"
-                                " {} start {})."
-                            ).format(i, start),
-                            suggestion=String(
-                                "Use non-negative starts; add self.shape[dim]"
-                                " if you intended python-style negative"
-                                " indexing."
-                            ),
-                            location=String("ComplexNDArray._adjust_slice"),
-                        )
-                    )
-
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    # end += self.shape[i] + 1
-                    raise Error(
-                        IndexError(
-                            message=String(
-                                "Negative slice end not supported (dimension {}"
-                                " end {})."
-                            ).format(i, end),
-                            suggestion=String(
-                                "Use non-negative ends; add self.shape[dim] if"
-                                " you intended python-style negative indexing."
-                            ),
-                            location=String("ComplexNDArray._adjust_slice"),
-                        )
-                    )
-            step = slice_list[i].step.or_else(1)
             if step == 0:
                 raise Error(
                     ValueError(
@@ -1350,12 +1465,51 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                             "Slice step cannot be zero (dimension {})."
                         ).format(i),
                         suggestion=String(
-                            "Use positive or negative non-zero step to define"
-                            " slice progression."
+                            "Use positive or negative non-zero step."
                         ),
                         location=String("ComplexNDArray._adjust_slice"),
                     )
                 )
+
+            # defaults
+            var start: Int
+            var end: Int
+            if step > 0:
+                start = 0
+                end = dim_size
+            else:
+                start = dim_size - 1
+                end = -1
+
+            # start
+            if slice_list[i].start is not None:
+                start = slice_list[i].start.value()
+                if start < 0:
+                    start += dim_size
+                # Clamp to valid bounds once
+                if step > 0:
+                    start = 0 if start < 0 else (
+                        dim_size if start > dim_size else start
+                    )
+                else:
+                    start = -1 if start < -1 else (
+                        dim_size - 1 if start >= dim_size else start
+                    )
+
+            # end
+            if slice_list[i].end is not None:
+                end = slice_list[i].end.value()
+                if end < 0:
+                    end += dim_size
+                # Clamp to valid bounds once
+                if step > 0:
+                    end = 0 if end < 0 else (
+                        dim_size if end > dim_size else end
+                    )
+                else:
+                    end = -1 if end < -1 else (
+                        dim_size if end > dim_size else end
+                    )
 
             slices.append(
                 Slice(
@@ -1379,122 +1533,131 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._im._buf.ptr[index_of_buffer] = val.im
 
     fn __setitem__(mut self, idx: Int, val: Self) raises:
+        """Assign a single first-axis slice.
+        Replaces the sub-array at axis 0 position `idx` with `val`.
+        The shape of `val` must exactly match `self.shape[1:]` and its
+        dimensionality must be `self.ndim - 1` (or be a 0-D complex scalar
+        when assigning into a 1-D array). Negative indices are supported.
+        Fast path: contiguous memcpy for C-order; otherwise a stride-based
+        generic copy is performed for both real and imaginary parts.
+
+        Args:
+            idx: Integer index along first dimension (supports negatives).
+            val: ComplexNDArray slice data to assign.
+
+        Raises:
+            IndexError: If array is 0-D or idx out of bounds.
+            ShapeError: If `val` shape/dim mismatch with target slice.
         """
-        Set a slice of ComplexNDArray with given ComplexNDArray.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var A = nm.random.rand[nm.i16](3, 2)
-        var B = nm.random.rand[nm.i16](3)
-        A[1:4] = B
-        ```
-        """
-        if self.ndim == 0 and val.ndim == 0:
-            self._re._buf.ptr.store(0, val._re._buf.ptr.load(0))
-            self._im._buf.ptr.store(0, val._im._buf.ptr.load(0))
-
-        var slice_list = List[Slice]()
-        if idx >= self.shape[0]:
-            var message = String(
-                "Error: Slice value exceeds the array shape!\n"
-                "The {}-th dimension is of size {}.\n"
-                "The slice goes from {} to {}"
-            ).format(
-                0,
-                self.shape[0],
-                idx,
-                idx + 1,
+        if self.ndim == 0:
+            raise Error(
+                IndexError(
+                    message=String("Cannot assign slice on 0D ComplexNDArray."),
+                    suggestion=String(
+                        "Assign to its scalar value with `A[] = ...` once"
+                        " supported."
+                    ),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
+                )
             )
-            raise Error(message)
-        slice_list.append(Slice(idx, idx + 1))
-        if self.ndim > 1:
-            for i in range(1, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim))
 
-        var n_slices: Int = len(slice_list)
-        var ndims: Int = 0
-        var count: Int = 0
-        var spec: List[Int] = List[Int]()
-        for i in range(n_slices):
-            if slice_list[i].step is None:
-                raise Error(String("Step of slice is None."))
-            var slice_len: Int = (
-                (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step.or_else(1)
-            ).__int__()
-            spec.append(slice_len)
-            if slice_len != 1:
-                ndims += 1
-            else:
-                count += 1
-        if count == slice_list.__len__():
-            ndims = 1
-
-        var nshape: List[Int] = List[Int]()
-        var ncoefficients: List[Int] = List[Int]()
-        var nstrides: List[Int] = List[Int]()
-        var nnum_elements: Int = 1
-
-        var j: Int = 0
-        count = 0
-        for _ in range(ndims):
-            while spec[j] == 1:
-                count += 1
-                j += 1
-            if j >= self.ndim:
-                break
-            var slice_len: Int = (
-                (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step.or_else(1)
-            ).__int__()
-            nshape.append(slice_len)
-            nnum_elements *= slice_len
-            ncoefficients.append(
-                self.strides[j] * slice_list[j].step.or_else(1)
+        var norm = idx
+        if norm < 0:
+            norm += self.shape[0]
+        if (norm < 0) or (norm >= self.shape[0]):
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Index {} out of bounds for axis 0 (size {})."
+                    ).format(idx, self.shape[0]),
+                    suggestion=String(
+                        "Valid indices: 0 <= i < {} or -{} <= i < 0."
+                    ).format(self.shape[0], self.shape[0]),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
+                )
             )
-            j += 1
 
-        # TODO: We can remove this check after we have support for broadcasting
-        for i in range(ndims):
-            if nshape[i] != val.shape[i]:
-                var message = String(
-                    "Error: Shape mismatch!\n"
-                    "Cannot set the array values with given array.\n"
-                    "The {}-th dimension of the array is of shape {}.\n"
-                    "The {}-th dimension of the value is of shape {}."
-                ).format(nshape[i], val.shape[i])
-                raise Error(message)
+        # 1-D target: expect 0-D complex scalar wrapper (val.ndim == 0)
+        if self.ndim == 1:
+            if val.ndim != 0:
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Shape mismatch: expected 0D value for 1D target"
+                            " slice."
+                        ),
+                        suggestion=String(
+                            "Provide a 0D ComplexNDArray (scalar wrapper)."
+                        ),
+                        location=String(
+                            "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                        ),
+                    )
+                )
+            self._re._buf.ptr.store(norm, val._re._buf.ptr.load[width=1](0))
+            self._im._buf.ptr.store(norm, val._im._buf.ptr.load[width=1](0))
+            return
 
-        var noffset: Int = 0
-        if self.flags["C_CONTIGUOUS"]:
-            noffset = 0
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
-        elif self.flags["F_CONTIGUOUS"]:
-            noffset = 0
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
+        if val.ndim != self.ndim - 1:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Shape mismatch: expected {} dims in source but got {}."
+                    ).format(self.ndim - 1, val.ndim),
+                    suggestion=String("Ensure RHS has shape {}.").format(
+                        self.shape[1:]
+                    ),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
+                )
+            )
 
-        var index = List[Int]()
-        for _ in range(ndims):
-            index.append(0)
+        if val.shape != self.shape[1:]:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Shape mismatch for slice assignment: expected {} but"
+                        " got {}."
+                    ).format(self.shape[1:], val.shape),
+                    suggestion=String(
+                        "Provide RHS slice with exact shape {}; broadcasting"
+                        " not yet supported."
+                    ).format(self.shape[1:]),
+                    location=String(
+                        "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                    ),
+                )
+            )
 
-        _traverse_iterative_setter[dtype](
-            val._re, self._re, nshape, ncoefficients, nstrides, noffset, index
-        )
-        _traverse_iterative_setter[dtype](
-            val._im, self._im, nshape, ncoefficients, nstrides, noffset, index
-        )
+        if self.flags.C_CONTIGUOUS & val.flags.C_CONTIGUOUS:
+            var block = self.size // self.shape[0]
+            if val.size != block:
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Internal mismatch: computed block {} but"
+                            " val.size {}."
+                        ).format(block, val.size),
+                        suggestion=String(
+                            "Report this issue; unexpected size mismatch."
+                        ),
+                        location=String(
+                            "ComplexNDArray.__setitem__(idx: Int, val: Self)"
+                        ),
+                    )
+                )
+            memcpy(self._re._buf.ptr + norm * block, val._re._buf.ptr, block)
+            memcpy(self._im._buf.ptr + norm * block, val._im._buf.ptr, block)
+            return
+
+        # F order
+        self._re._write_first_axis_slice[Self.dtype](self._re, norm, val._re)
+        self._im._write_first_axis_slice[Self.dtype](self._im, norm, val._im)
 
     fn __setitem__(mut self, index: Item, val: ComplexSIMD[Self.dtype]) raises:
         """
@@ -2159,33 +2322,54 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         var res: String
         try:
-            res = self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
+            res = self._array_to_string(0, 0)
         except e:
             res = String("Cannot convert array to string") + String(e)
 
         return res
 
     fn write_to[W: Writer](self, mut writer: W):
-        try:
+        """
+        Writes the array to a writer.
+
+        Args:
+            writer: The writer to write the array to.
+        """
+        if self.ndim == 0:
+            # For 0-D array (numojo scalar), we can directly write the value
             writer.write(
-                self._array_to_string(0, 0, GLOBAL_PRINT_OPTIONS)
-                + "\n"
-                + String(self.ndim)
-                + "D-array  Shape"
-                + String(self.shape)
-                + "  Strides"
-                + String(self.strides)
-                + "  DType: "
-                + _concise_dtype_str(self.dtype)
-                + "  C-cont: "
-                + String(self.flags["C_CONTIGUOUS"])
-                + "  F-cont: "
-                + String(self.flags["F_CONTIGUOUS"])
-                + "  own data: "
-                + String(self.flags["OWNDATA"])
+                String(
+                    ComplexScalar[dtype](
+                        self._re._buf.ptr[], self._im._buf.ptr[]
+                    )
+                )
+                + String(
+                    "  (0darray["
+                    + _concise_dtype_str(self.dtype)
+                    + "], use `[]` or `.item()` to unpack)"
+                )
             )
-        except e:
-            writer.write("Cannot convert array to string" + String(e))
+        else:
+            try:
+                writer.write(
+                    self._array_to_string(0, 0)
+                    + "\n"
+                    + String(self.ndim)
+                    + "D-array  Shape"
+                    + String(self.shape)
+                    + "  Strides"
+                    + String(self.strides)
+                    + "  DType: "
+                    + _concise_dtype_str(self.dtype)
+                    + "  C-cont: "
+                    + String(self.flags.C_CONTIGUOUS)
+                    + "  F-cont: "
+                    + String(self.flags.F_CONTIGUOUS)
+                    + "  own data: "
+                    + String(self.flags.OWNDATA)
+                )
+            except e:
+                writer.write("Cannot convert array to string.\n" + String(e))
 
     fn __repr__(self) -> String:
         """
@@ -2229,7 +2413,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self,
         dimension: Int,
         offset: Int,
-        print_options: PrintOptions,
+        owned summarize: Bool = False,
     ) raises -> String:
         """
         Convert the array to a string.
@@ -2237,106 +2421,104 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Args:
             dimension: The current dimension.
             offset: The offset of the current dimension.
-            print_options: The print options.
+            summarize: Internal flag indicating summarization already chosen.
         """
-        var seperator = print_options.separator
-        var padding = print_options.padding
-        var edge_items = print_options.edge_items
+        var options: PrintOptions = self._re.print_options
+        var separator = options.separator
+        var padding = options.padding
+        var edge_items = options.edge_items
 
-        if self.ndim == 0:
-            return String(self.item(0))
+        # Root-level summarize decision
+        if dimension == 0 and (not summarize) and self.size > options.threshold:
+            summarize = True
+
+        # Last dimension: actual elements
         if dimension == self.ndim - 1:
-            var result: String = String("[") + padding
-            var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
-                for i in range(number_of_items):
+            var n_items = self.shape[dimension]
+            var edge = edge_items
+            if edge * 2 >= n_items:
+                edge = n_items
+
+            var out: String = String("[") + padding
+            if (not summarize) or (n_items == edge):
+                for i in range(n_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = format_value(value, print_options)
-                    result = result + formatted_value
-                    if i < (number_of_items - 1):
-                        result = result + seperator
-                result = result + padding
-            else:  # Print first 3 and last 3 items
-                for i in range(edge_items):
+                    out += format_value(value, options)
+                    if i < n_items - 1:
+                        out += separator
+                out += padding + "]"
+            else:
+                for i in range(edge):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = format_value(value, print_options)
-                    result = result + formatted_value
-                    if i < (edge_items - 1):
-                        result = result + seperator
-                result = result + seperator + "..." + seperator
-                for i in range(number_of_items - edge_items, number_of_items):
+                    out += format_value(value, options)
+                    if i < edge - 1:
+                        out += separator
+                out += separator + String("...") + separator
+                for i in range(n_items - edge, n_items):
                     var value = self.load[width=1](
                         offset + i * self.strides[dimension]
                     )
-                    var formatted_value = format_value(value, print_options)
-                    result = result + formatted_value
-                    if i < (number_of_items - 1):
-                        result = result + seperator
-                result = result + padding
-            result = result + "]"
-            return result
+                    out += format_value(value, options)
+                    if i < n_items - 1:
+                        out += separator
+                out += padding + "]"
+
+            # Greedy line wrapping
+            if len(out) > options.line_width:
+                var wrapped: String = String("")
+                var line_len: Int = 0
+                for c in out.codepoint_slices():
+                    if c == String("\n"):
+                        wrapped += c
+                        line_len = 0
+                    else:
+                        if line_len >= options.line_width and c != String(" "):
+                            wrapped += "\n"
+                            line_len = 0
+                        wrapped += c
+                        line_len += 1
+                out = wrapped
+            return out
+
+        # Higher dimensions
+        var n_items_outer = self.shape[dimension]
+        var edge_outer = edge_items
+        if edge_outer * 2 >= n_items_outer:
+            edge_outer = n_items_outer
+
+        var result: String = String("[")
+        if (not summarize) or (n_items_outer == edge_outer):
+            for i in range(n_items_outer):
+                if i > 0:
+                    result += "\n" + String(" ") * (dimension)
+                result += self._array_to_string(
+                    dimension + 1,
+                    offset + i * self.strides[dimension].__int__(),
+                    summarize=summarize,
+                )
         else:
-            var result: String = String("[")
-            var number_of_items = self.shape[dimension]
-            if number_of_items <= edge_items:  # Print all items
-                for i in range(number_of_items):
-                    if i == 0:
-                        result = result + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.strides[dimension].__int__(),
-                            print_options,
-                        )
-                    if i > 0:
-                        result = (
-                            result
-                            + String(" ") * (dimension + 1)
-                            + self._array_to_string(
-                                dimension + 1,
-                                offset + i * self.strides[dimension].__int__(),
-                                print_options,
-                            )
-                        )
-                    if i < (number_of_items - 1):
-                        result = result + "\n"
-            else:  # Print first 3 and last 3 items
-                for i in range(edge_items):
-                    if i == 0:
-                        result = result + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.strides[dimension].__int__(),
-                            print_options,
-                        )
-                    if i > 0:
-                        result = (
-                            result
-                            + String(" ") * (dimension + 1)
-                            + self._array_to_string(
-                                dimension + 1,
-                                offset + i * self.strides[dimension].__int__(),
-                                print_options,
-                            )
-                        )
-                    if i < (number_of_items - 1):
-                        result += "\n"
-                result = result + "...\n"
-                for i in range(number_of_items - edge_items, number_of_items):
-                    result = (
-                        result
-                        + String(" ") * (dimension + 1)
-                        + self._array_to_string(
-                            dimension + 1,
-                            offset + i * self.strides[dimension].__int__(),
-                            print_options,
-                        )
-                    )
-                    if i < (number_of_items - 1):
-                        result = result + "\n"
-            result = result + "]"
-            return result
+            for i in range(edge_outer):
+                if i > 0:
+                    result += "\n" + String(" ") * (dimension)
+                result += self._array_to_string(
+                    dimension + 1,
+                    offset + i * self.strides[dimension].__int__(),
+                    summarize=summarize,
+                )
+            result += "\n" + String(" ") * (dimension) + "..."
+            for i in range(n_items_outer - edge_outer, n_items_outer):
+                result += "\n" + String(" ") * (dimension)
+                result += self._array_to_string(
+                    dimension + 1,
+                    offset + i * self.strides[dimension].__int__(),
+                    summarize=summarize,
+                )
+        result += "]"
+        return result
 
     fn __len__(self) -> Int:
         return Int(self._re.size)
@@ -2414,6 +2596,25 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var idx: Int = _get_offset(indices, self.strides)
         self._re._buf.ptr.store(idx, val.re)
         self._im._buf.ptr.store(idx, val.im)
+
+    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
+        """
+        Returns an array of the same data with a new shape.
+
+        Args:
+            shape: Shape of returned array.
+            order: Order of the array - Row major `C` or Column major `F`.
+
+        Returns:
+            Array of the same data with a new shape.
+        """
+        var result: Self = ComplexNDArray[dtype](
+            re=numojo.reshape(self._re, shape=shape, order=order),
+            im=numojo.reshape(self._im, shape=shape, order=order),
+        )
+        result._re.flags = self._re.flags
+        result._im.flags = self._im.flags
+        return result^
 
     fn __iter__(
         self,

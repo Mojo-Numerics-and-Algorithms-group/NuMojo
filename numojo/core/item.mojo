@@ -90,8 +90,16 @@ struct Item(Copyable, Movable, Stringable, Writable):
         """
         if ndim < 0:
             raise Error(
-                "\nError in `Item.__init__()`: "
-                "Number of dimensions must be non-negative."
+                IndexError(
+                    message=String(
+                        "Invalid ndim: got {}; must be >= 0."
+                    ).format(ndim),
+                    suggestion=String(
+                        "Pass a non-negative dimension count when constructing"
+                        " Item."
+                    ),
+                    location=String("Item.__init__(ndim: Int)"),
+                )
             )
 
         self.ndim = ndim
@@ -124,10 +132,17 @@ struct Item(Copyable, Movable, Stringable, Writable):
 
         if (idx < 0) or (idx >= shape.size_of_array()):
             raise Error(
-                String(
-                    "\nError in `Item.__init__(out self, idx: Int, shape:"
-                    " NDArrayShape)`: idx {} out of range [{}, {})."
-                ).format(idx, 0, shape.size_of_array())
+                IndexError(
+                    message=String(
+                        "Linear index {} out of range [0, {})."
+                    ).format(idx, shape.size_of_array()),
+                    suggestion=String(
+                        "Ensure 0 <= idx < total size ({})."
+                    ).format(shape.size_of_array()),
+                    location=String(
+                        "Item.__init__(idx: Int, shape: NDArrayShape)"
+                    ),
+                )
             )
 
         self.ndim = shape.ndim
@@ -184,10 +199,15 @@ struct Item(Copyable, Movable, Stringable, Writable):
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String(
-                    "Error in `numojo.Item.__getitem__()`: \n"
-                    "Index ({}) out of range [{}, {})\n"
-                ).format(Int(idx), -self.ndim, self.ndim - 1)
+                IndexError(
+                    message=String("Index {} out of range [{} , {}).").format(
+                        Int(idx), -self.ndim, self.ndim
+                    ),
+                    suggestion=String(
+                        "Use indices in [-ndim, ndim) (negative indices wrap)."
+                    ),
+                    location=String("Item.__getitem__"),
+                )
             )
 
         return self._buf[normalized_idx]
@@ -211,10 +231,15 @@ struct Item(Copyable, Movable, Stringable, Writable):
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
-                String(
-                    "Error in `numojo.Item.__getitem__()`: \n"
-                    "Index ({}) out of range [{}, {})\n"
-                ).format(Int(idx), -self.ndim, self.ndim - 1)
+                IndexError(
+                    message=String("Index {} out of range [{} , {}).").format(
+                        Int(idx), -self.ndim, self.ndim
+                    ),
+                    suggestion=String(
+                        "Use indices in [-ndim, ndim) (negative indices wrap)."
+                    ),
+                    location=String("Item.__setitem__"),
+                )
             )
 
         self._buf[normalized_idx] = Int(val)

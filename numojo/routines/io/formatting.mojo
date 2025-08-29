@@ -8,19 +8,36 @@ alias DEFAULT_PRECISION = 4
 alias DEFAULT_SUPPRESS_SMALL = False
 alias DEFAULT_SEPARATOR = " "
 alias DEFAULT_PADDING = ""
-alias DEFAULT_EDGE_ITEMS = 3
-alias DEFAULT_THRESHOLD = 10
+alias DEFAULT_EDGE_ITEMS = 2
+alias DEFAULT_THRESHOLD = 15
 alias DEFAULT_LINE_WIDTH = 75
 alias DEFAULT_SIGN = False
 alias DEFAULT_FLOAT_FORMAT = "fixed"
 alias DEFAULT_COMPLEX_FORMAT = "parentheses"
 alias DEFAULT_NAN_STRING = "nan"
 alias DEFAULT_INF_STRING = "inf"
-alias DEFAULT_FORMATTED_WIDTH = 8
+alias DEFAULT_FORMATTED_WIDTH = 6
 alias DEFAULT_EXPONENT_THRESHOLD = 4
 alias DEFAULT_SUPPRESS_SCIENTIFIC = False
 
-alias GLOBAL_PRINT_OPTIONS = PrintOptions()
+# placeholder, we can use this global var option in future when Mojo supports global options
+alias GLOBAL_PRINT_OPTIONS = PrintOptions(
+    precision=DEFAULT_PRECISION,
+    suppress_small=DEFAULT_SUPPRESS_SMALL,
+    separator=DEFAULT_SEPARATOR,
+    padding=DEFAULT_PADDING,
+    threshold=DEFAULT_THRESHOLD,
+    line_width=DEFAULT_LINE_WIDTH,
+    edge_items=DEFAULT_EDGE_ITEMS,
+    sign=DEFAULT_SIGN,
+    float_format=DEFAULT_FLOAT_FORMAT,
+    complex_format=DEFAULT_COMPLEX_FORMAT,
+    nan_string=DEFAULT_NAN_STRING,
+    inf_string=DEFAULT_INF_STRING,
+    formatted_width=DEFAULT_FORMATTED_WIDTH,
+    exponent_threshold=DEFAULT_EXPONENT_THRESHOLD,
+    suppress_scientific=DEFAULT_SUPPRESS_SCIENTIFIC,
+)
 
 
 struct PrintOptions(Copyable, Movable):
@@ -396,6 +413,9 @@ fn format_value[
     var nan_string = print_options.nan_string
     var inf_string = print_options.inf_string
     var formatted_width = print_options.formatted_width
+    var suppress_small = print_options.suppress_small
+    var suppress_scientific = print_options.suppress_scientific
+    var exponent_threshold = print_options.exponent_threshold
 
     @parameter
     if is_floattype[dtype]():
@@ -405,11 +425,19 @@ fn format_value[
             return inf_string.rjust(formatted_width)
         if float_format == "scientific":
             return format_floating_scientific(
-                value, print_options.precision, sign
+                value,
+                print_options.precision,
+                sign,
+                suppress_scientific,
+                exponent_threshold,
+                formatted_width,
             )
         else:
             return format_floating_precision(
-                value, print_options.precision, sign
+                value,
+                print_options.precision,
+                sign,
+                suppress_small,
             ).rjust(formatted_width)
     else:
         var formatted = String(value)
@@ -438,10 +466,11 @@ fn format_value[
     var inf_string = print_options.inf_string
     var formatted_width = print_options.formatted_width
     var complex_format = print_options.complex_format
+    var suppress_small = print_options.suppress_small
+    var suppress_scientific = print_options.suppress_scientific
+    var exponent_threshold = print_options.exponent_threshold
 
     var re_str: String
-    var im_str: String
-
     if dtype.is_floating_point():
         if isnan(value.re):
             re_str = nan_string
@@ -450,47 +479,98 @@ fn format_value[
         else:
             if float_format == "scientific":
                 re_str = format_floating_scientific(
-                    value.re, print_options.precision, sign
+                    value.re,
+                    print_options.precision,
+                    sign,
+                    suppress_scientific,
+                    exponent_threshold,
+                    formatted_width,
                 )
             else:
                 re_str = format_floating_precision(
-                    value.re, print_options.precision, sign
+                    value.re,
+                    print_options.precision,
+                    sign,
+                    suppress_small,
                 )
-
-        if isnan(value.im):
-            im_str = nan_string
-        elif isinf(value.im):
-            im_str = inf_string
-        else:
-            if float_format == "scientific":
-                im_str = format_floating_scientific(
-                    value.im, print_options.precision, sign
-                )
-            else:
-                im_str = format_floating_precision(
-                    value.im, print_options.precision, sign
-                )
-
-        if value.re == 0 and value.im == 0:
-            im_str = "+" + im_str
     else:
         re_str = String(value.re)
-        im_str = String(value.im)
-        if sign:
-            if value.re >= 0:
-                re_str = "+" + re_str
-            if value.im >= 0:
-                im_str = "+" + im_str
-            elif value.im <= 0:
-                im_str = "-" + im_str.replace("-", "")
-        else:
-            if value.im <= 0:
-                im_str = "-" + im_str.replace("-", "")
+        if sign and value.re >= 0:
+            re_str = "+" + re_str
 
+    # Decide sign for imaginary component and format magnitude
+    var imag_sign_char: String = "+"
+    var imag_mag_str: String
+    if dtype.is_floating_point():
+        if isnan(value.im):
+            imag_mag_str = nan_string
+            imag_sign_char = "+"
+        elif isinf(value.im):
+            if value.im < 0:
+                imag_sign_char = "-"
+            imag_mag_str = inf_string
+        else:
+            if value.im < 0:
+                imag_sign_char = "-"
+            var abs_im = value.im
+            if abs_im < 0:
+                abs_im = -abs_im
+            if float_format == "scientific":
+                imag_mag_str = format_floating_scientific(
+                    abs_im,
+                    print_options.precision,
+                    False,
+                    suppress_scientific,
+                    exponent_threshold,
+                    formatted_width,
+                )
+            else:
+                imag_mag_str = format_floating_precision(
+                    abs_im,
+                    print_options.precision,
+                    False,
+                    suppress_small,
+                )
+    else:
+        if value.im < 0:
+            imag_sign_char = "-"
+        var abs_im_int = value.im
+        if abs_im_int < 0:
+            abs_im_int = -abs_im_int
+        imag_mag_str = String(abs_im_int)
+
+    # Right justify parts
     re_str = re_str.rjust(formatted_width)
-    im_str = im_str.rjust(formatted_width)
+    imag_mag_str = imag_mag_str.rjust(formatted_width)
+
+    return _trim_paranthesis_strings_cnumbers(
+        complex_format, re_str, imag_mag_str, imag_sign_char
+    )
+
+
+fn _trim_paranthesis_strings_cnumbers(
+    complex_format: String,
+    re_str: String,
+    imag_mag_str: String,
+    imag_sign_char: String,
+) raises -> String:
+    # (a+bj) / (a-bj)
+    var trim_re: String = String("")
+    var seen: Bool = False
+    for ch in re_str.codepoint_slices():
+        if (not seen) and ch == String(" "):
+            continue
+        seen = True
+        trim_re += ch
+    var trim_im: String = String("")
+    seen = False
+    for ch in imag_mag_str.codepoint_slices():
+        if (not seen) and ch == String(" "):
+            continue
+        seen = True
+        trim_im += ch
 
     if complex_format == "parentheses":
-        return String("({0} {1}j)").format(re_str, im_str)
-    else:
-        return String("{0} {1}j").format(re_str, im_str)
+        return String("({0} {1} {2}j)").format(trim_re, imag_sign_char, trim_im)
+
+    return String("{0} {1} {2}j").format(trim_re, imag_sign_char, trim_im)

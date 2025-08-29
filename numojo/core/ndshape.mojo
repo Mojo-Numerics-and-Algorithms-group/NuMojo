@@ -129,8 +129,8 @@ struct NDArrayShape(Sized, Stringable & Representable, Writable):
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            if shape[i] < 1:
-                raise Error("Items of shape must be positive.")
+            if shape[i] < 0:
+                raise Error("Items of shape must be non negative.")
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
@@ -320,6 +320,86 @@ struct NDArrayShape(Sized, Stringable & Representable, Writable):
             )
 
         return self._buf[normalized_index]
+
+    # TODO: Check the negative steps result
+    @always_inline("nodebug")
+    fn _compute_slice_params(
+        self, slice_index: Slice
+    ) raises -> (Int, Int, Int):
+        var n = self.ndim
+        if n == 0:
+            return (0, 1, 0)
+
+        var step = slice_index.step.or_else(1)
+        if step == 0:
+            raise Error("Slice step cannot be zero.")
+
+        var start: Int
+        var stop: Int
+        if step > 0:
+            start = slice_index.start.or_else(0)
+            stop = slice_index.end.or_else(n)
+        else:
+            start = slice_index.start.or_else(n - 1)
+            stop = slice_index.end.or_else(-1)
+
+        if start < 0:
+            start += n
+        if stop < 0:
+            stop += n
+
+        if step > 0:
+            if start < 0:
+                start = 0
+            if start > n:
+                start = n
+            if stop < 0:
+                stop = 0
+            if stop > n:
+                stop = n
+        else:
+            if start >= n:
+                start = n - 1
+            if start < -1:
+                start = -1
+            if stop >= n:
+                stop = n - 1
+            if stop < -1:
+                stop = -1
+
+        var length: Int = 0
+        if step > 0:
+            if start < stop:
+                length = Int((stop - start + step - 1) / step)
+        else:
+            if start > stop:
+                var neg_step = -step
+                length = Int((start - stop + neg_step - 1) / neg_step)
+
+        return (start, step, length)
+
+    @always_inline("nodebug")
+    fn __getitem__(self, slice_index: Slice) raises -> NDArrayShape:
+        """
+        Return a sliced view of the dimension tuple as a new NDArrayShape.
+        Delegates normalization & validation to _compute_slice_params.
+        """
+        var updated_slice: Tuple[Int, Int, Int] = self._compute_slice_params(
+            slice_index
+        )
+        var start = updated_slice[0]
+        var step = updated_slice[1]
+        var length = updated_slice[2]
+
+        if length <= 0:
+            return NDArrayShape(ndim=0, initialized=False)
+
+        var result = NDArrayShape(ndim=length, initialized=False)
+        var idx = start
+        for i in range(length):
+            (result._buf + i).init_pointee_copy(self._buf[idx])
+            idx += step
+        return result^
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:

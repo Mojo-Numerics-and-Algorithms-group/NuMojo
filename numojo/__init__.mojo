@@ -13,7 +13,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides, Strides
 from numojo.core.item import Item, item
-from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar
+from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.matrix import Matrix
 from numojo.core.datatypes import (
@@ -154,19 +154,31 @@ from numojo.routines.bitwise import invert
 from numojo.routines import creation
 from numojo.routines.creation import (
     arange,
+    arangeC,
     linspace,
+    linspaceC,
     logspace,
+    logspaceC,
     geomspace,
+    geomspaceC,
     empty,
     empty_like,
     eye,
+    eyeC,
     identity,
+    identityC,
     ones,
+    onesC,
     ones_like,
+    ones_likeC,
     zeros,
+    zerosC,
     zeros_like,
+    zeros_likeC,
     full,
+    fullC,
     full_like,
+    full_likeC,
     diag,
     diagflat,
     tri,
@@ -174,7 +186,6 @@ from numojo.routines.creation import (
     triu,
     vander,
     fromstring,
-    # from_tensor,
     array,
 )
 

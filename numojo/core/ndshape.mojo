@@ -129,8 +129,8 @@ struct NDArrayShape(Sized, Stringable & Representable, Writable):
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            if shape[i] < 1:
-                raise Error("Items of shape must be positive.")
+            if shape[i] < 0:
+                raise Error("Items of shape must be non negative.")
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")

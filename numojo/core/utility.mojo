@@ -427,21 +427,6 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         return PythonObject()
 
 
-# fn to_tensor[dtype: DType](a: NDArray[dtype]) raises -> Tensor[dtype]:
-#     """
-#     Convert to a tensor.
-#     """
-#     pass
-
-#     var shape = List[Int]()
-#     for i in range(a.ndim):
-#         shape.append(a.shape[i])
-#     var t = Tensor[dtype](TensorShape(shape))
-#     memcpy(t._ptr, a._buf.ptr, a.size)
-
-# return t
-
-
 # ===----------------------------------------------------------------------=== #
 # Type checking functions
 # ===----------------------------------------------------------------------=== #

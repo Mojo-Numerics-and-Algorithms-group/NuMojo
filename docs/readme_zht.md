@@ -57,6 +57,8 @@ NuMojo 也可為其他需要高速數值計算、多維數組運算等功能的 
 
 ```mojo
 import numojo as nm
+from numojo.prelude import *
+
 
 fn main() raises:
     # 生成兩個 1000x1000 矩陣，數值隨機且爲 64 位浮點數
@@ -75,11 +77,92 @@ fn main() raises:
     # 矩陣求逆
     var I = nm.inv(A)
 
-    # 矩陣切片
+    # 數組切片
     var A_slice = A[1:3, 4:19]
 
     # 提取矩陣元素
     var A_item = A.at(291, 141)
+    var A_item_2 = A.item(291, 141)
+```
+
+矩陣（`Matrix` 類型）的示例如下：
+
+```mojo
+from numojo import Matrix
+from numojo.prelude import *
+
+
+fn main() raises:
+    # 生成兩個 1000x1000 矩陣，使用隨機 float64 值
+    var A = Matrix.rand(shape=(1000, 1000))
+    var B = Matrix.rand(shape=(1000, 1000))
+
+    # 生成 1000x1 矩陣（列向量），使用隨機 float64 值
+    var C = Matrix.rand(shape=(1000, 1))
+
+    # 從字符串表示生成 4x3 矩陣
+    var F = Matrix.fromstring[i8](
+        "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
+    )
+
+    # 矩陣切片
+    var A_slice = A[1:3, 4:19]
+    var B_slice = B[255, 103:241:2]
+
+    # 從矩陣獲取標量
+    var A_item = A[291, 141]
+
+    # 翻轉列向量
+    print(C[::-1, :])
+
+    # 沿軸排序和 argsort
+    print(nm.sort(A, axis=1))
+    print(nm.argsort(A, axis=0))
+
+    # 矩陣求和
+    print(nm.sum(B))
+    print(nm.sum(B, axis=1))
+
+    # 矩陣乘法
+    print(A @ B)
+
+    # 矩陣求逆
+    print(A.inv())
+
+    # 求解線性代數方程
+    print(nm.solve(A, B))
+
+    # 最小二乘法
+    print(nm.lstsq(A, C))
+```
+
+`ComplexNDArray` 的示例如下：
+
+```mojo
+import numojo as nm
+from numojo.prelude import *
+
+
+fn main() raises:
+    # 創建複數標量 5 + 5j
+    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    # 創建複數數組
+    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
+    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+
+    # 打印數組
+    print(A)
+
+    # 數組切片
+    var A_slice = A[1:3, 4:19]
+
+    # 數組乘法
+    var C = A * B
+
+    # 從數組獲取標量
+    var A_item = A[item(291, 141)]
+    # 設置數組元素
+    A[item(291, 141)] = complexscalar
 ```
 
 請在 [此文檔](./features.md) 中查詢所有可用的函數。

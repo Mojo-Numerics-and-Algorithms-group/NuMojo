@@ -11,6 +11,21 @@ from .complex import (
     ComplexScalar,
     CScalar,
     ComplexNDArray,
+    ComplexDType,
+    ci8,
+    ci16,
+    ci32,
+    ci64,
+    cisize,
+    cintp,
+    cu8,
+    cu16,
+    cu32,
+    cu64,
+    cf16,
+    cf32,
+    cf64,
+    cboolean,
 )
 
 from .datatypes import (

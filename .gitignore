@@ -10,13 +10,9 @@
 # MacOs Desktop Service file
 *.DS_Store
 
-# magic environments
-.magic
-magic.lock
-pixi.lock
-
 # pixi environments
 .pixi
+pixi.lock
 /venv
 
 

@@ -30,24 +30,24 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
     "https://prefix.dev/conda-forge",
 ]}
 
-[package.build.configuration.pkg]
+[package.build.config.pkg]
 name = "numojo"
 
 [package.host-dependencies]
-max = "=25.5.0"
+modular = "=25.5.0"
 
 [package.build-dependencies]
-max = "=25.5.0"
+modular = "=25.5.0"
 
 [package.run-dependencies]
-max = "=25.5.0"
+modular = "=25.5.0"
 
 [dependencies]
 python = ">=3.13.5,<3.14"
 numpy = ">=2.3.2,<3"
 scipy = ">=1.16.0,<2"
 modular = ">=25.5.0,<26"
-numojo = { path = "." }
+# numojo = { path = "." }
 
 [tasks]
 # compile the package and copy it to the tests folder

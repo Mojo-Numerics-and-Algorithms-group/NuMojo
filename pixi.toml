@@ -31,8 +31,6 @@ channels = [
     "https://prefix.dev/conda-forge",
 ]
 
-[tasks]
-
 [package.build.configuration.pkg]
 name = "numojo"
 

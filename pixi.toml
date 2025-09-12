@@ -25,11 +25,10 @@ name = "numojo"
 version = "0.7.0"
 
 [package.build]
-backend = { name = "pixi-build-mojo", version = "0.*" }
-channels = [
+backend = {name = "pixi-build-mojo", version = "0.*", channels = [
     "https://prefix.dev/pixi-build-backends",
     "https://prefix.dev/conda-forge",
-]
+]}
 
 [package.build.configuration.pkg]
 name = "numojo"

@@ -47,7 +47,6 @@ python = ">=3.13.5,<3.14"
 numpy = ">=2.3.2,<3"
 scipy = ">=1.16.0,<2"
 modular = ">=25.5.0,<26"
-# numojo = { path = "." }
 
 [tasks]
 # compile the package and copy it to the tests folder

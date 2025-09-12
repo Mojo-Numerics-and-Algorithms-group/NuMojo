@@ -1,12 +1,13 @@
 # ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+
 # Portions of this code are derived from the Modular Mojo repository
-# Copyright (c) 2024, Modular Inc. All rights reserved.
+# Copyright (c) 2025, Modular Inc. All rights reserved.
 # Original source: https://github.com/modularml/mojo
 # ===----------------------------------------------------------------------=== #
-
-"""
-Implements the Complex Datatype.
-"""
 
 from hashlib.hasher import Hasher
 from os import abort
@@ -50,6 +51,11 @@ alias cboolean = ComplexDType.bool
 """Data type alias cfor ComplexDType.bool"""
 
 
+# ===----------------------------------------------------------------------=== #
+# Implements the Complex Datatype.
+# ===----------------------------------------------------------------------=== #
+
+
 @register_passable("trivial")
 struct ComplexDType(
     Copyable,
@@ -81,29 +87,21 @@ struct ComplexDType(
     ```
     """
 
-    alias _mlir_type = __mlir_type.`!kgen.dtype`
-    var _dtype: DType
-    """The underlying storage for the ComplexDType value."""
+    # ===-------------------------------------------------------------------===#
+    # Aliases
+    # ===-------------------------------------------------------------------===#
 
-    # ===-------------------------------------------------------------------===#
-    # Aliases for all supported ComplexDType values
-    # ===-------------------------------------------------------------------===#
+    alias _mlir_type = __mlir_type.`!kgen.dtype`
+
     alias invalid = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<invalid> : !kgen.dtype`
     )
-    """Represents an invalid or unknown data type."""
-
     alias bool = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<bool> : !kgen.dtype`
     )
-    """Represents a boolean data type."""
-
     alias index = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<index> : !kgen.dtype`
     )
-    """Represents an integral type whose bitwidth is the maximum integral value
-    on the system."""
-
     alias uint1 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui1> : !kgen.dtype`
     )
@@ -177,9 +175,17 @@ struct ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f64> : !kgen.dtype`
     )
 
+    # ===----------------------------------------------------------------------=== #
+    # Fields.
+    # ===----------------------------------------------------------------------=== #
+
+    var _dtype: DType
+    """The underlying storage for the ComplexDType value."""
+
     # ===-------------------------------------------------------------------===#
     # Life cycle methods
     # ===-------------------------------------------------------------------===#
+
     @always_inline("builtin")
     fn __init__(out self, *, mlir_value: Self._mlir_type):
         """Construct a ComplexDType from MLIR ComplexDType.
@@ -187,7 +193,6 @@ struct ComplexDType(
         Args:
             mlir_value: The MLIR ComplexDType.
         """
-        # self._mlir_value = mlir_value
         self._dtype = DType(mlir_value)
 
     @staticmethod
@@ -344,7 +349,6 @@ struct ComplexDType(
             The kgen.ComplexDType value.
         """
         return self._dtype.get_value()
-        # return self._mlir_value
 
     @doc_private
     @staticmethod

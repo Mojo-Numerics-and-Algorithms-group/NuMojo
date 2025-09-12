@@ -4,21 +4,18 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implements N-Dimensional Complex Array
-Last updated: 2025-03-10
-"""
+
 # ===----------------------------------------------------------------------===#
 # SECTIONS OF THE FILE:
-#
+
 # `ComplexNDArray` type
 # 1. Life cycle methods.
 # 2. Indexing and slicing (get and set dunders and relevant methods).
 # 3. Operator dunders.
 # 4. IO, trait, and iterator dunders.
 # 5. Other methods (Sorted alphabetically).
+# ===----------------------------------------------------------------------===#
 
-#
 # ===----------------------------------------------------------------------===#
 # FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
 # 1. Description *
@@ -32,9 +29,11 @@ Last updated: 2025-03-10
 # 8) REFERENCES
 # 9) Examples *
 # (Items marked with * are flavored in "Mojo docstring style guide")
-#
+# ===----------------------------------------------------------------------===#
+
 # ===----------------------------------------------------------------------===#
 # === Stdlib ===
+# ===----------------------------------------------------------------------===#
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 import builtin.math as builtin_math
@@ -46,7 +45,9 @@ from python import PythonObject
 from sys import simdwidthof
 from utils import Variant
 
+# ===----------------------------------------------------------------------===#
 # === numojo core ===
+# ===----------------------------------------------------------------------===#
 from numojo.core.complex.complex_dtype import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
@@ -72,7 +73,9 @@ from numojo.core.error import (
     ArithmeticError,
 )
 
+# ===----------------------------------------------------------------------===#
 # === numojo routines (creation / io / logic) ===
+# ===----------------------------------------------------------------------===#
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
     format_value,
@@ -80,7 +83,9 @@ from numojo.routines.io.formatting import (
 )
 import numojo.routines.logic.comparison as comparison
 
+# ===----------------------------------------------------------------------===#
 # === numojo routines (math / bitwise / searching) ===
+# ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
 import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
@@ -89,10 +94,9 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
 
-# ===----------------------------------------------------------------------===#
-# ComplexNDArray
-# ===----------------------------------------------------------------------===#
-# TODO: Add SIMD width as a parameter.
+# ===----------------------------------------------------------------------=== #
+# Implements N-Dimensional Complex Array
+# ===----------------------------------------------------------------------=== #
 struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     Copyable, Movable, Representable, Sized, Stringable, Writable
 ):
@@ -103,13 +107,19 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         cdtype: Complex data type.
     """
 
+    # ===----------------------------------------------------------------------===#
+    # Aliases
+    # ===----------------------------------------------------------------------===#
+
     alias dtype: DType = cdtype._dtype  # corresponding real data type
 
+    # ===----------------------------------------------------------------------===#
     # FIELDS
+    # ===----------------------------------------------------------------------===#
+
     var _re: NDArray[Self.dtype]
     var _im: NDArray[Self.dtype]
-
-    # It's redundant, but better to have it as fields.
+    # It's redundant, but better to have the following as fields.
     var ndim: Int
     """Number of Dimensions."""
     var shape: NDArrayShape
@@ -363,17 +373,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
-    # Getter and setter dunders and other methods
-    # ===-------------------------------------------------------------------===#
-
-    # ===-------------------------------------------------------------------===#
-    # Indexing and slicing
-    # Getter and setter dunders and other methods
-    # ===-------------------------------------------------------------------===#
-
-    # ===-------------------------------------------------------------------===#
     # Getter dunders and other getter methods
-    #
+
     # 1. Basic Indexing Operations
     # fn _getitem(self, *indices: Int) -> ComplexSIMD[cdtype]                         # Direct unsafe getter
     # fn _getitem(self, indices: List[Int]) -> ComplexSIMD[cdtype]                         # Direct unsafe getter
@@ -585,11 +586,11 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arangeC(nm.ComplexScalar[nm.f32](0, 0), nm.ComplexScalar[nm.f32](12, 12), nm.ComplexScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
+            var a = nm.arange[nm.cf32](nm.CScalar[nm.f32](0, 0), nm.CScalar[nm.f32](12, 12), nm.CScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
             print(a.shape)        # (3,4)
             print(a[1].shape)     # (4,)  -- 1-D slice
             print(a[-1].shape)    # (4,)  -- negative index
-            var b = nm.arangeC(nm.ComplexScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
+            var b = nm.arange[nm.cf32](nm.CScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
             print(b[2])           # 0-D array (scalar wrapper)
             ```
         """
@@ -750,7 +751,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arangeC(nm.ComplexScalar(10.0, 10.0)).reshape(nm.Shape(2, 5))
+            var a = nm.arange[nm.cf32](nm.ComplexScalar(10.0, 10.0)).reshape(nm.Shape(2, 5))
             var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
             print(b)
             ```

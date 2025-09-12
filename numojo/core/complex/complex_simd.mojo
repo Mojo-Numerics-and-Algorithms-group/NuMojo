@@ -24,8 +24,6 @@ from numojo.core.complex.complex_dtype import ComplexDType
 alias ComplexScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 # CScalar is short alias for ComplexScalar for user convenience
 alias CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
-# CSIMD is short alias for ComplexSIMD with width=1 for user convenience
-alias CSIMD[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 
 
 @register_passable("trivial")

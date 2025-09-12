@@ -53,7 +53,7 @@ NuMojo 也可為其他需要高速數值計算、多維數組運算等功能的 
 
 ## 使用方法
 
-n維數組（`NDArray` 類型）的示例如下：
+以下爲部分代碼實例：
 
 ```mojo
 import numojo as nm
@@ -61,27 +61,27 @@ from numojo.prelude import *
 
 
 fn main() raises:
-    # 生成兩個 1000x1000 矩陣，使用隨機 float64 值
-    var A = nm.random.randn(Shape(1000, 1000))
-    var B = nm.random.randn(Shape(1000, 1000))
+    # 生成兩個 1000x1000 矩陣，數值隨機且爲 64 位浮點數
+    var A = nm.random.randn[f64](shape=List[Int](1000, 1000))
+    var B = nm.random.randn[f64](shape=List[Int](1000, 1000))
 
-    # 從字符串表示生成 3x2 矩陣
+    # 根據字符串生成 3x2 矩陣，数據類型爲 32 位浮點數
     var X = nm.fromstring[f32]("[[1.1, -0.32, 1], [0.1, -3, 2.124]]")
 
-    # 打印數組
+    # 打印矩陣
     print(A)
 
-    # 數組乘法
+    # 矩陣相乘
     var C = A @ B
 
-    # 數組求逆
+    # 矩陣求逆
     var I = nm.inv(A)
 
     # 數組切片
     var A_slice = A[1:3, 4:19]
 
-    # 從數組獲取標量
-    var A_item = A[item(291, 141)]
+    # 提取矩陣元素
+    var A_item = A.at(291, 141)
     var A_item_2 = A.item(291, 141)
 ```
 

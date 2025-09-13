@@ -378,7 +378,7 @@ fn _linspace_serial[
                 ),
             )
 
-    return result
+    return result^
 
 
 fn _linspace_parallel[
@@ -1492,10 +1492,9 @@ fn diag[
     Returns:
         A 1-D ComplexNDArray with the diagonal of the input ComplexNDArray.
     """
-    alias dtype: DType = cdtype._dtype
     return ComplexNDArray[cdtype](
-        re=diag[dtype](v._re, k),
-        im=diag[dtype](v._im, k),
+        re=diag[cdtype._dtype](v._re, k),
+        im=diag[cdtype._dtype](v._im, k),
     )
 
 
@@ -1547,10 +1546,9 @@ fn diagflat[
     Returns:
         A 2-D ComplexNDArray with the flattened input as the diagonal.
     """
-    alias dtype: DType = cdtype._dtype
     return ComplexNDArray[cdtype](
-        re=diagflat[dtype](v._re, k),
-        im=diagflat[dtype](v._im, k),
+        re=diagflat[cdtype._dtype](v._re, k),
+        im=diagflat[cdtype._dtype](v._im, k),
     )
 
 
@@ -1596,10 +1594,9 @@ fn tri[
     Returns:
         A 2-D ComplexNDArray with ones on and below the k-th diagonal.
     """
-    alias dtype: DType = cdtype._dtype
     return ComplexNDArray[cdtype](
-        re=tri[dtype](N, M, k),
-        im=tri[dtype](N, M, k),
+        re=tri[cdtype._dtype](N, M, k),
+        im=tri[cdtype._dtype](N, M, k),
     )
 
 
@@ -1661,10 +1658,9 @@ fn tril[
     Returns:
         A ComplexNDArray with elements above the k-th diagonal zeroed out.
     """
-    alias dtype: DType = cdtype._dtype
     return ComplexNDArray[cdtype](
-        re=tril[dtype](m._re, k),
-        im=tril[dtype](m._im, k),
+        re=tril[cdtype._dtype](m._re, k),
+        im=tril[cdtype._dtype](m._im, k),
     )
 
 
@@ -1726,10 +1722,9 @@ fn triu[
     Returns:
         A ComplexNDArray with elements below the k-th diagonal zeroed out.
     """
-    alias dtype: DType = cdtype._dtype
     return ComplexNDArray[cdtype](
-        re=triu[dtype](m._re, k),
-        im=triu[dtype](m._im, k),
+        re=triu[cdtype._dtype](m._re, k),
+        im=triu[cdtype._dtype](m._im, k),
     )
 
 
@@ -1790,10 +1785,9 @@ fn vander[
     Returns:
         A Complex Vandermonde matrix.
     """
-    alias dtype: DType = cdtype._dtype
     return ComplexNDArray[cdtype](
-        re=vander[dtype](x._re, N, increasing),
-        im=vander[dtype](x._im, N, increasing),
+        re=vander[cdtype._dtype](x._re, N, increasing),
+        im=vander[cdtype._dtype](x._im, N, increasing),
     )
 
 
@@ -2102,7 +2096,7 @@ fn array[
 fn array[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
-    real: List[Scalar[cdtype._dtype,]],
+    real: List[Scalar[cdtype._dtype]],
     imag: List[Scalar[cdtype._dtype]],
     shape: List[Int],
     order: String = "C",
@@ -2139,8 +2133,6 @@ fn array[
         )
     A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        # A._re._buf.ptr[i] = rebind[Scalar[return_dtype]](real[i])
-        # A._im._buf.ptr[i] = rebind[Scalar[return_dtype]](imag[i])
         A._re._buf.ptr[i] = real[i]
         A._im._buf.ptr[i] = imag[i]
     return A^
@@ -2408,7 +2400,6 @@ fn _0darray[
     The strides is unitialized (0-element strides).
     The size is 1 (`=0!`).
     """
-    alias dtype: DType = cdtype._dtype
     var b = ComplexNDArray[cdtype](
         shape=NDArrayShape(ndim=0, initialized=False),
         strides=NDArrayStrides(ndim=0, initialized=False),
@@ -2418,8 +2409,8 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._re._buf = OwnData[dtype](1)
-    b._im._buf = OwnData[dtype](1)
+    b._re._buf = OwnData[cdtype._dtype](1)
+    b._im._buf = OwnData[cdtype._dtype](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True

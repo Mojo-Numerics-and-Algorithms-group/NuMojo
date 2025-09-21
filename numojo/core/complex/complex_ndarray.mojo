@@ -201,7 +201,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     @always_inline("nodebug")
@@ -225,7 +225,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     @always_inline("nodebug")
@@ -249,7 +249,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     fn __init__(
@@ -269,7 +269,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     fn __init__(
@@ -301,7 +301,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self._re = NDArray[Self.dtype](shape, strides, ndim, size, flags)
         self._im = NDArray[Self.dtype](shape, strides, ndim, size, flags)
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     fn __init__(
@@ -331,7 +331,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     @always_inline("nodebug")
@@ -2451,7 +2451,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             offset: The offset of the current dimension.
             summarize: Internal flag indicating summarization already chosen.
         """
-        var options: PrintOptions = self._re.print_options
+        var options: PrintOptions = self.print_options
         var separator = options.separator
         var padding = options.padding
         var edge_items = options.edge_items

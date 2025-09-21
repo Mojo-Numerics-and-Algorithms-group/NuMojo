@@ -779,9 +779,132 @@ struct NDArray[dtype: DType = DType.float64](
                 slice_len: Int = max(0, (end - start + (step - 1)) // step)
             else:
                 slice_len: Int = max(0, (start - end - step - 1) // (-step))
-            if (
-                slice_len > 1
-            ):  # TODO: remember to remove this behaviour -> Numpy doesn't dimension reduce when slicing. But I am keeping it for now since it messes up the sum, means etc tests due to shape inconsistencies.
+            nshape.append(slice_len)
+            ncoefficients.append(self.strides[i] * step)
+            ndims += 1
+            noffset += start * self.strides[i]
+
+        if len(nshape) == 0:
+            nshape.append(1)
+            ncoefficients.append(1)
+
+        # only C & F order are supported
+        var nstrides: List[Int] = self._calculate_strides_efficient(
+            nshape,
+        )
+        var narr: Self = Self(offset=noffset, shape=nshape, strides=nstrides)
+        var index: List[Int] = List[Int](length=ndims, fill=0)
+
+        _traverse_iterative[dtype](
+            self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
+        )
+
+        return narr^
+
+    fn _getitem_variadic_slices(self, owned *slices: Slice) raises -> Self:
+        """
+        Alternative implementation of `__getitem__(self, owned *slices: Slice)` which reduces dimension unlike the original one which is compatible with numpy slicing.
+
+        Args:
+            slices: Variadic list of `Slice` objects, one for each dimension to be sliced.
+
+        Constraints:
+            - The number of slices provided must not exceed the number of array dimensions.
+            - Each slice must be valid for its corresponding dimension.
+
+        Returns:
+            Self: A new array instance representing the sliced view of the original array.
+
+        Raises:
+            IndexError: If any slice is out of bounds for its corresponding dimension.
+            ValueError: If the number of slices does not match the array's dimensions.
+
+        NOTES:
+            - This method is for internal purposes only and is not exposed to users.
+        """
+        var n_slices: Int = slices.__len__()
+        if n_slices > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Too many slices provided: expected at most {} but"
+                        " got {}."
+                    ).format(self.ndim, n_slices),
+                    suggestion=String(
+                        "Provide at most {} slices for an array with {}"
+                        " dimensions."
+                    ).format(self.ndim, self.ndim),
+                    location=String("NDArray.__getitem__(slices: Slice)"),
+                )
+            )
+        var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
+        for i in range(len(slices)):
+            slice_list.append(slices[i])
+
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                slice_list.append(Slice(0, self.shape[i], 1))
+
+        var narr: Self = self[slice_list]
+        return narr^
+
+    fn _getitem_list_slices(self, owned slice_list: List[Slice]) raises -> Self:
+        """
+        Alternative implementation of `__getitem__(self, owned slice_list: List[Slice])` for which reduces dimension unlike the original one which is compatible with numpy slicing.
+
+        Args:
+            slice_list: List of Slice objects, where each Slice defines the start, stop, and step for the corresponding dimension.
+
+        Returns:
+            Self: A new array instance representing the sliced view of the original array.
+
+        Raises:
+            Error: If slice_list is empty or contains invalid slices.
+            Error: The length of slice_list must not exceed the number of dimensions in the array.
+            Error: Each Slice in slice_list must be valid for its respective dimension.
+
+        Notes:
+            This function is only for internal use since it's not compatible with numpy slicing.
+        """
+        var n_slices: Int = slice_list.__len__()
+        if n_slices == 0:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Empty slice list provided to NDArray.__getitem__."
+                    ),
+                    suggestion=String(
+                        "Provide a List with at least one slice to index the"
+                        " array."
+                    ),
+                    location=String(
+                        "NDArray.__getitem__(slice_list: List[Slice])"
+                    ),
+                )
+            )
+
+        # adjust slice values for user provided slices
+        var slices: List[Slice] = self._adjust_slice(slice_list)
+        if n_slices < self.ndim:
+            for i in range(n_slices, self.ndim):
+                slices.append(Slice(0, self.shape[i], 1))
+
+        var ndims: Int = 0
+        var nshape: List[Int] = List[Int]()
+        var ncoefficients: List[Int] = List[Int]()
+        var noffset: Int = 0
+
+        for i in range(self.ndim):
+            var start: Int = slices[i].start.value()
+            var end: Int = slices[i].end.value()
+            var step: Int = slices[i].step.or_else(1)
+
+            var slice_len: Int
+            if step > 0:
+                slice_len: Int = max(0, (end - start + (step - 1)) // step)
+            else:
+                slice_len: Int = max(0, (start - end - step - 1) // (-step))
+            if slice_len > 1:
                 nshape.append(slice_len)
                 ncoefficients.append(self.strides[i] * step)
                 ndims += 1
@@ -5138,6 +5261,48 @@ struct NDArray[dtype: DType = DType.float64](
             sum = sum + self.load(i) * other.load(i)
         return sum
 
+    fn squeeze(mut self, axis: Int) raises:
+        """
+        Remove (squeeze) a single dimension of size 1 from the array shape.
+
+        Args:
+            axis: The axis to squeeze. Supports negative indices.
+
+        Raises:
+            IndexError: If the axis is out of range.
+            ShapeError: If the dimension at the given axis is not of size 1.
+        """
+        var normalized_axis: Int = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis < 0) or (normalized_axis >= self.ndim):
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Axis {} is out of range for array with {} dimensions."
+                    ).format(axis, self.ndim),
+                    suggestion=String(
+                        "Use an axis value in the range [-{}, {})."
+                    ).format(self.ndim, self.ndim),
+                    location=String("NDArray.squeeze(axis: Int)"),
+                )
+            )
+
+        if self.shape[normalized_axis] != 1:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Cannot squeeze axis {} with size {}."
+                    ).format(normalized_axis, self.shape[normalized_axis]),
+                    suggestion=String(
+                        "Only axes with length 1 can be removed."
+                    ),
+                    location=String("NDArray.squeeze(axis: Int)"),
+                )
+            )
+        self.shape = self.shape._pop(normalized_axis)
+        self.strides = self.strides._pop(normalized_axis)
+        self.ndim -= 1
 
 # ===----------------------------------------------------------------------===#
 # NDArrayIterator

@@ -71,13 +71,13 @@ fn prod[
             slices.append(Slice(0, A.shape[i]))
         else:
             slices.append(Slice(0, 0))  # Temp value
-    var result = ones[dtype](NDArrayShape(result_shape))
+    var result: NDArray[dtype] = ones[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[axis] = Slice(i, i + 1)
-        var arr_slice = A[slices]
+        var arr_slice: NDArray[dtype] = A._getitem_list_slices(slices) # not the numpy slicing behaviour. The alternative would be to use default getter followed by a squeeze.
         result *= arr_slice
 
-    return result
+    return result^
 
 
 fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:

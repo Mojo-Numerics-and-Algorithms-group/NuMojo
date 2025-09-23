@@ -180,55 +180,101 @@ fn main() raises:
     A[item(291, 141)] = complexscalar
 ```
 
-## How to install
+## Installation
 
-There are three approaches to install and use the NuMojo package.
+NuMojo offers several installation methods to suit different development needs. Choose the method that best fits your workflow:
 
-### Add `numojo` in `pixi.toml`
+### Method 1: Git Installation with pixi-build-mojo
 
-You can add the package `numojo` (pin to an exact version for reproducibility) in the dependencies section of your `pixi.toml` file.
+Install NuMojo directly from the GitHub repository to access both stable releases and cutting-edge features. This method is perfect for developers who want the latest functionality or need to work with the most recent stable version.
+
+Add the following to your `pixi.toml`:
+
+```toml
+[package.build]
+backend = {name = "pixi-build-mojo", version = "0.*", channels = [
+    "https://prefix.dev/pixi-build-backends",
+    "https://prefix.dev/conda-forge",
+]}
+
+[dependencies]
+max = "=25.5.0"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+```
+
+Then run:
+```bash
+pixi install
+```
+
+**Branch Selection:**
+- **`main` branch**: Provides stable release. Currently supports NuMojo v0.7.0, compatible with Mojo 25.3.0. For earlier NuMojo versions, use Method 2.
+- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently 25.5.0). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
+
+The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
+
+### Method 2: Stable Release via Pixi (Recommended)
+
+For most users, we recommend installing a stable release through Pixi for guaranteed compatibility and reproducibility.
+
+Add the following to your `pixi.toml` file:
 
 ```toml
 [dependencies]
 numojo = "=0.7.0"
 ```
 
-Then run `pixi install` to install the package.
-
-The following table shows the version of `numojo` and the corresponding version of `mojo` that is required.
-
-| `numojo` | `mojo` |
-| -------- | ------ |
-| v0.7.0   | ==25.3 |
-| v0.6.1   | ==25.2 |
-| v0.6.0   | ==25.2 |
-
-### Build package
-
-This approach builds a standalone package file `numojo.mojopkg` that you can copy into other projects (useful for offline or hermetic builds and for using the latest NuMojo branch).
-
-1. Clone the repository.
-2. Build the package using `pixi run package`.
-3. Move `numojo.mojopkg` into the directory containing your code (or add its parent directory to your include paths).
-
-### Include NuMojo's path for compiler and LSP
-
-This approach does not require building a package file. When compiling, include the NuMojo source path directly:
-
-```console
-mojo run -I "../NuMojo" example.mojo
+Then run:
+```bash
+pixi install
 ```
 
-This is more flexible as you are able to edit the NuMojo source files when testing your code.
+**Version Compatibility:**
 
-To allow VSCode's Mojo LSP to resolve the imported `numojo` package:
+| NuMojo Version | Required Mojo Version |
+| -------------- | -------------------- |
+| v0.7.0         | ==25.3              |
+| v0.6.1         | ==25.2              |
+| v0.6.0         | ==25.2              |
 
-1. Go to preference page of VSCode.
-2. Go to `Mojo › Lsp: Include Dirs`
-3. Click `add item` and write the path where the Numojo repository is located, e.g. `/Users/Name/Programs/NuMojo`.
-4. Restart the Mojo LSP server.
+### Method 3: Build Standalone Package
 
-Now VSCode can show function hints for the Numojo package!
+This method creates a portable `numojo.mojopkg` file that you can use across multiple projects, perfect for offline development or hermetic builds.
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   cd NuMojo
+   ```
+
+2. Build the package:
+   ```bash
+   pixi run package
+   ```
+
+3. Copy `numojo.mojopkg` to your project directory or add its parent directory to your include paths.
+
+### Method 4: Direct Source Integration
+
+For maximum flexibility and the ability to modify NuMojo source code during development:
+
+1. Clone the repository to your desired location:
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   ```
+
+2. When compiling your code, include the NuMojo source path:
+   ```bash
+   mojo run -I "/path/to/NuMojo" your_program.mojo
+   ```
+
+3. **VSCode LSP Setup** (for code hints and autocompletion):
+   - Open VSCode preferences
+   - Navigate to `Mojo › Lsp: Include Dirs`
+   - Click `Add Item` and enter the full path to your NuMojo directory (e.g., `/Users/YourName/Projects/NuMojo`)
+   - Restart the Mojo LSP server
+
+After setup, VSCode will provide intelligent code completion and hints for NuMojo functions!
 
 ## Contributing
 

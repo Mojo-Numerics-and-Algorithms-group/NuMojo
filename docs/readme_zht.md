@@ -79,9 +79,10 @@ fn main() raises:
 
     # 數組切片
     var A_slice = A[1:3, 4:19]
+    var B_slice = B[255, 103:241:2]
 
-    # 從數組獲取標量
-    var A_item = A[item(291, 141)]
+    # 提取矩陣元素
+    var A_item = A.at(291, 141)
     var A_item_2 = A.item(291, 141)
 ```
 

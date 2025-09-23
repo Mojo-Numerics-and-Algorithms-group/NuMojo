@@ -35,7 +35,7 @@ struct Constants(AnyType, Copyable, Movable):
         """
         pass
 
-    fn __del__(owned self):
+    fn __del__(deinit self):
         """
         Deletes the constants.
         """

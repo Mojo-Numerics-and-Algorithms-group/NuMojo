@@ -7,7 +7,7 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 **[Explore the docs»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
 
 **[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_jp.md)**    |
-**[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_kr.md)** 
+**[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_kr.md)**
 
 **Table of Contents**
 
@@ -160,10 +160,10 @@ from numojo.prelude import *
 
 fn main() raises:
     # Create a complex scalar 5 + 5j
-    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    var complexscalar: CScalar[cf32] = CScalar[cf32](re=5, im=5) # Equivalently ComplexSIMD[cf32](5, 5)
     # Create complex arrays
-    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
-    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # filled with (5+5j)
+    var B = nm.ones[cf32](Shape(1000, 1000))                            # filled with (1+1j)
 
     # Print array
     print(A)
@@ -188,14 +188,32 @@ NuMojo offers several installation methods to suit different development needs. 
 
 Install NuMojo directly from the GitHub repository to access both stable releases and cutting-edge features. This method is perfect for developers who want the latest functionality or need to work with the most recent stable version.
 
-Add the following to your `pixi.toml`:
+Add the following to your existing `pixi.toml`:
 
 ```toml
+[workspace]
+preview = ["pixi-build"]
+
+[package]
+name = "your_project_name"
+version = "0.1.0"
+
 [package.build]
-backend = {name = "pixi-build-mojo", version = "0.*", channels = [
-    "https://prefix.dev/pixi-build-backends",
-    "https://prefix.dev/conda-forge",
-]}
+backend = {name = "pixi-build-mojo", version = "0.*"}
+
+[package.build.config.pkg]
+name = "your_package_name"
+
+[package.host-dependencies]
+modular = ">=25.5.0,<26"
+
+[package.build-dependencies]
+modular = ">=25.5.0,<26"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+
+[package.run-dependencies]
+modular = ">=25.5.0,<26"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
 max = "=25.5.0"

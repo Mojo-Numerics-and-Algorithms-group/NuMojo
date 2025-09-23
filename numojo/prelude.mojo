@@ -2,16 +2,16 @@
 prelude
 =======
 
-NuMojo comes a wide range of functions, types, and constants. 
-If you manually import everything, 
-it will make the header of the file too long. 
-On the other hand, using `from numojo import *` would import a lot of functions 
+NuMojo comes a wide range of functions, types, and constants.
+If you manually import everything,
+it will make the header of the file too long.
+On the other hand, using `from numojo import *` would import a lot of functions
 that you never use and would pollute the naming space.
 
-This module tries to find out a balance by providing a list of things 
-that can be imported at one time. 
-The list contains the functions or types 
-that are the most essential for a user. 
+This module tries to find out a balance by providing a list of things
+that can be imported at one time.
+The list contains the functions or types
+that are the most essential for a user.
 
 You can use the following code to import them:
 
@@ -26,10 +26,24 @@ from numojo.core.item import Item, item
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import Shape, NDArrayShape
-
-from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
+from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
-
+from numojo.core.complex.complex_dtype import (
+    ci8,
+    ci16,
+    ci32,
+    ci64,
+    cisize,
+    cintp,
+    cu8,
+    cu16,
+    cu32,
+    cu64,
+    cf16,
+    cf32,
+    cf64,
+    cboolean,
+)
 from numojo.core.datatypes import (
     i8,
     i16,

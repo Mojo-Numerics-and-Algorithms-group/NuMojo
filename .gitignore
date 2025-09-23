@@ -29,6 +29,7 @@ numojo.mojopkg
 /test*.mojo
 /test*.ipynb
 /tempCodeRunnerFile.mojo
+kgen.*
 
 # Auto docs
 docs/readthedocs/docs.json

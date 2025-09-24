@@ -43,7 +43,7 @@ from collections.optional import Optional
 from math import log10
 from memory import UnsafePointer, memset_zero, memcpy
 from python import PythonObject
-from sys import simdwidthof
+from sys import simd_width_of
 from utils import Variant
 
 # === numojo core ===
@@ -125,7 +125,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        out self, owned re: NDArray[Self.dtype], owned im: NDArray[Self.dtype]
+        out self, var re: NDArray[Self.dtype], var im: NDArray[Self.dtype]
     ) raises:
         """
         Initialize a ComplexNDArray with given real and imaginary parts.
@@ -336,7 +336,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.print_options = other.print_options
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, owned existing: Self):
+    fn __moveinit__(out self, deinit existing: Self):
         """
         Move other into self.
         """
@@ -351,7 +351,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     # Explicit deallocation
     # @always_inline("nodebug")
-    # fn __del__(owned self):
+    # fn __del__(var self):
     #     """
     #     Deallocate memory.
     #     """
@@ -392,9 +392,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     # fn __getitem__(self, mask: List[Bool]) raises -> Self                     # Get by boolean list
     #
     # 5. Low-level Access
-    # fn item(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Get item by linear index
+    # fn item(self, var index: Int) raises -> ComplexSIMD[Self.dtype]                   # Get item by linear index
     # fn item(self, *index: Int) raises -> ComplexSIMD[Self.dtype]                        # Get item by coordinates
-    # fn load(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Load with bounds check
+    # fn load(self, var index: Int) raises -> ComplexSIMD[Self.dtype]                   # Load with bounds check
     # fn load[width: Int](self, index: Int) raises -> ComplexSIMD[Self.dtype, width]        # Load SIMD value
     # fn load[width: Int](self, *indices: Int) raises -> ComplexSIMD[Self.dtype, width]     # Load SIMD at coordinates
     # ===-------------------------------------------------------------------===#
@@ -649,7 +649,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._im._copy_first_axis_slice[Self.dtype](self._im, norm, result._im)
         return result^
 
-    fn __getitem__(self, owned *slices: Slice) raises -> Self:
+    fn __getitem__(self, var *slices: Slice) raises -> Self:
         """
         Retrieves a slice or sub-array from the current array using variadic slice arguments.
 
@@ -725,7 +725,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         return strides^
 
-    fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
+    fn __getitem__(self, var slice_list: List[Slice]) raises -> Self:
         """
         Retrieves a sub-array from the current array using a list of slice objects, enabling advanced slicing operations across multiple dimensions.
 
@@ -836,7 +836,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         return narr^
 
-    fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
+    fn __getitem__(self, var *slices: Variant[Slice, Int]) raises -> Self:
         """
         Get items of ComplexNDArray with a series of either slices or integers.
 
@@ -1135,7 +1135,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         return self[mask_array]
 
-    fn item(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]:
+    fn item(self, var index: Int) raises -> ComplexSIMD[Self.dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the complex array (not buffer).
@@ -1282,7 +1282,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             im=(self._im._buf.ptr + _get_offset(index, self.strides))[],
         )
 
-    fn load(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]:
+    fn load(self, var index: Int) raises -> ComplexSIMD[Self.dtype]:
         """
         Safely retrieve i-th item from the underlying buffer.
 
@@ -1703,7 +1703,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             if mask._im._buf.ptr.load[width=1](i):
                 self._im._buf.ptr.store(i, value.im)
 
-    fn __setitem__(mut self, owned *slices: Slice, val: Self) raises:
+    fn __setitem__(mut self, var *slices: Slice, val: Self) raises:
         """
         Retreive slices of an ComplexNDArray from variadic slices.
 
@@ -1716,7 +1716,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         # self.__setitem__(slices=slice_list, val=val)
         self[slice_list] = val
 
-    fn __setitem__(mut self, owned slices: List[Slice], val: Self) raises:
+    fn __setitem__(mut self, var slices: List[Slice], val: Self) raises:
         """
         Sets the slices of an ComplexNDArray from list of slices and ComplexNDArray.
 
@@ -1823,7 +1823,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         )
 
     ### compiler doesn't accept this.
-    # fn __setitem__(self, owned *slices: Variant[Slice, Int], val: NDArray[dtype]) raises:
+    # fn __setitem__(self, var *slices: Variant[Slice, Int], val: NDArray[dtype]) raises:
     #     """
     #     Get items by a series of either slices or integers.
     #     """
@@ -2413,7 +2413,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self,
         dimension: Int,
         offset: Int,
-        owned summarize: Bool = False,
+        var summarize: Bool = False,
     ) raises -> String:
         """
         Convert the array to a string.

@@ -158,7 +158,7 @@ fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
 
 fn sort[
     dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Sort the Matrix along the given axis.
     """
@@ -293,7 +293,7 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
 
 fn argsort[
     dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+](var A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
     """
     Argsort the Matrix along the given axis.
     """

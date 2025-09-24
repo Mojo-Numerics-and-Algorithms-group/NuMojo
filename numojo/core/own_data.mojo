@@ -37,7 +37,7 @@ struct OwnData[dtype: DType]:  # TODO: implement `Bufferable` trait
         """
         self.ptr = ptr
 
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, deinit other: Self):
         self.ptr = other.ptr
 
     fn get_ptr(self) -> UnsafePointer[Scalar[dtype]]:

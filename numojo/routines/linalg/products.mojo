@@ -9,7 +9,7 @@ Matrix and vector products
 import math
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
-from sys import simdwidthof
+from sys import simd_width_of
 from memory import memcpy
 
 import numojo.routines.math._math_funcs as _mf
@@ -85,7 +85,7 @@ fn dot[
         The dot product of two arrays.
     """
 
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
     if array1.ndim == array2.ndim == 1:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
 
@@ -123,7 +123,7 @@ fn matmul_tiled_unrolled_parallelized[
     """
     Matrix multiplication vectorized, tiled, unrolled, and parallelized.
     """
-    alias width = max(simdwidthof[dtype](), 16)
+    alias width = max(simd_width_of[dtype](), 16)
     var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
     var t0 = A.shape[0]
     var t1 = A.shape[1]
@@ -212,7 +212,7 @@ fn matmul_2darray[
         matrices.
     """
 
-    alias width = max(simdwidthof[dtype](), 16)
+    alias width = max(simd_width_of[dtype](), 16)
 
     if A.ndim * B.ndim == 1:
         return matmul_1darray(A, B)
@@ -368,7 +368,7 @@ fn matmul[
     ```
     """
 
-    alias width = max(simdwidthof[dtype](), 16)
+    alias width = max(simd_width_of[dtype](), 16)
 
     if A.shape[1] != B.shape[0]:
         raise Error(

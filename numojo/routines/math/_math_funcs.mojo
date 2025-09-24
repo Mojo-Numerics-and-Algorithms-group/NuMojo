@@ -10,7 +10,7 @@ Implements backend functions for mathematics
 from testing import assert_raises
 from algorithm.functional import parallelize, vectorize
 from sys.info import num_physical_cores
-from sys import simdwidthof
+from sys import simd_width_of
 from memory import UnsafePointer
 
 from numojo.core.traits.backend import Backend
@@ -64,7 +64,7 @@ struct Vectorized(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         # var op_count:Int =0
         @parameter
@@ -112,7 +112,7 @@ struct Vectorized(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -153,7 +153,7 @@ struct Vectorized(Backend):
             return result_array
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -203,7 +203,7 @@ struct Vectorized(Backend):
             ](array1, array2[])
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -246,7 +246,7 @@ struct Vectorized(Backend):
             return result_array
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -289,7 +289,7 @@ struct Vectorized(Backend):
             return result_array
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -325,7 +325,7 @@ struct Vectorized(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -361,7 +361,7 @@ struct Vectorized(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -383,7 +383,7 @@ struct Vectorized(Backend):
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -400,7 +400,7 @@ struct Vectorized(Backend):
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -480,7 +480,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -524,7 +524,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -558,7 +558,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -600,7 +600,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -637,7 +637,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         """
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -674,7 +674,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         """
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -702,7 +702,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -731,7 +731,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -753,7 +753,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -770,7 +770,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -1258,7 +1258,7 @@ struct Parallelized(Backend):
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -1314,7 +1314,7 @@ struct VectorizedParallelized(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array1.size // num_cores
         var comps_remainder: Int = array1.size % num_cores
@@ -1452,7 +1452,7 @@ struct VectorizedParallelized(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array.size // num_cores
         var comps_remainder: Int = array.size % num_cores
@@ -1516,7 +1516,7 @@ struct VectorizedParallelized(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array1.size // num_cores
         var comps_remainder: Int = array1.size % num_cores
@@ -1581,7 +1581,7 @@ struct VectorizedParallelized(Backend):
         """
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array.size // num_cores
         var comps_remainder: Int = array.size % num_cores
@@ -1642,7 +1642,7 @@ struct VectorizedParallelized(Backend):
         """
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array.size // num_cores
         var comps_remainder: Int = array.size % num_cores
@@ -1694,7 +1694,7 @@ struct VectorizedParallelized(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array1.size // num_cores
         var comps_remainder: Int = array1.size % num_cores
@@ -1756,7 +1756,7 @@ struct VectorizedParallelized(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array1.size // num_cores
         var comps_remainder: Int = array1.size % num_cores
@@ -1802,7 +1802,7 @@ struct VectorizedParallelized(Backend):
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
         var comps_per_core: Int = array.size // num_cores
         var comps_remainder: Int = array.size % num_cores
@@ -1842,7 +1842,7 @@ struct VectorizedParallelized(Backend):
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         @parameter
         fn closure[simdwidth: Int](i: Int):
@@ -1903,7 +1903,7 @@ struct VectorizedParallelized(Backend):
 #                 "Shape Mismatch error shapes must match for this function"
 #             )
 #         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 #         # #var num_cores: Int = num_physical_cores()
 #         # var simd_ops_per_core: Int = width * (array1.size // width) // num_cores
 #         var comps_per_core: Int = array1.size // num_cores
@@ -2036,7 +2036,7 @@ struct VectorizedParallelized(Backend):
 #             A a new NDArray that is NDArray with the function func applied.
 #         """
 #         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 #         # var num_cores: Int = num_physical_cores()
 #         var comps_per_core: Int = array.size // num_cores
 #         var comps_remainder: Int = array.size % num_cores
@@ -2098,7 +2098,7 @@ struct VectorizedParallelized(Backend):
 #                 "Shape Mismatch error shapes must match for this function"
 #             )
 #         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 #         # var num_cores: Int = num_physical_cores()
 #         var comps_per_core: Int = array1.size // num_cores
 #         var comps_remainder: Int = array1.size % num_cores
@@ -2158,7 +2158,7 @@ struct VectorizedParallelized(Backend):
 #             A a new NDArray that is NDArray with the function func applied.
 #         """
 #         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 #         var comps_per_core: Int = array.size // num_cores
 #         var comps_remainder: Int = array.size % num_cores
 #         var remainder_offset: Int = num_cores * comps_per_core
@@ -2207,7 +2207,7 @@ struct VectorizedParallelized(Backend):
 #         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
 #             array1.shape
 #         )
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 #         # var num_cores: Int = num_physical_cores()
 #         var comps_per_core: Int = array1.size // num_cores
 #         var comps_remainder: Int = array1.size % num_cores
@@ -2265,7 +2265,7 @@ struct VectorizedParallelized(Backend):
 #         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
 #             array1.shape
 #         )
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 #         # var num_cores: Int = num_physical_cores()
 #         var comps_per_core: Int = array1.size // num_cores
 #         var comps_remainder: Int = array1.size % num_cores
@@ -2311,7 +2311,7 @@ struct VectorizedParallelized(Backend):
 #         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
 #             array.shape
 #         )
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 #         # var num_cores: Int = num_physical_cores()
 #         var comps_per_core: Int = array.size // num_cores
 #         var comps_remainder: Int = array.size % num_cores
@@ -2349,7 +2349,7 @@ struct VectorizedParallelized(Backend):
 #         ],
 #     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
 #         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-#         alias width = simdwidthof[dtype]()
+#         alias width = simd_width_of[dtype]()
 
 #         @parameter
 #         fn closure[simdwidth: Int](i: Int):
@@ -2404,7 +2404,7 @@ struct Naive(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         for i in range(array1.size):
             var simd_data1 = array1._buf.ptr.load[width=1](i)
@@ -2445,7 +2445,7 @@ struct Naive(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
 
         for i in range(array1.size):
             var simd_data1 = array1._buf.ptr.load[width=1](i)
@@ -2704,7 +2704,7 @@ struct VectorizedVerbose(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array1.size // width), width):
             var simd_data1 = array1._buf.ptr.load[width=width](i)
             var simd_data2 = array2._buf.ptr.load[width=width](i)
@@ -2756,7 +2756,7 @@ struct VectorizedVerbose(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array1.size // width), width):
             var simd_data1 = array1._buf.ptr.load[width=width](i)
             var simd_data2 = array2._buf.ptr.load[width=width](i)
@@ -2798,7 +2798,7 @@ struct VectorizedVerbose(Backend):
             A new NDArray that is NDArray with the function func applied.
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
             var simd_data = array._buf.ptr.load[width=width](i)
             result_array.store[width=width](i, func[dtype, width](simd_data))
@@ -2843,7 +2843,7 @@ struct VectorizedVerbose(Backend):
                 "Shape Mismatch error shapes must match for this function"
             )
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array1.size // width), width):
             var simd_data1 = array1._buf.ptr.load[width=width](i)
             var simd_data2 = array2._buf.ptr.load[width=width](i)
@@ -2886,7 +2886,7 @@ struct VectorizedVerbose(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
             var simd_data1 = array._buf.ptr.load[width=width](i)
             var simd_data2 = scalar
@@ -2929,7 +2929,7 @@ struct VectorizedVerbose(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
             var simd_data1 = array._buf.ptr.load[width=width](i)
             var simd_data2 = scalar
@@ -2964,7 +2964,7 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array1.size // width), width):
             var simd_data1 = array1._buf.ptr.load[width=width](i)
             var simd_data2 = array2._buf.ptr.load[width=width](i)
@@ -3004,7 +3004,7 @@ struct VectorizedVerbose(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array1.size // width), width):
             var simd_data1 = array1._buf.ptr.load[width=width](i)
             var simd_data2 = SIMD[dtype, width](scalar)
@@ -3034,7 +3034,7 @@ struct VectorizedVerbose(Backend):
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
             var simd_data = array._buf.ptr.load[width=width](i)
             result_array.store[width=width](i, func[dtype, width](simd_data))
@@ -3055,7 +3055,7 @@ struct VectorizedVerbose(Backend):
         ],
     ](self, array1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simdwidthof[dtype]()
+        alias width = simd_width_of[dtype]()
         for i in range(0, width * (array1.size // width), width):
             var simd_data1 = array1._buf.ptr.load[width=width](i)
 

@@ -13,7 +13,7 @@ from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 import builtin.math as builtin_math
 import stdlib.math.math as stdlib_math
-from sys import simdwidthof
+from sys import simd_width_of
 from utils import Variant
 
 import numojo.routines.math._math_funcs as _mf

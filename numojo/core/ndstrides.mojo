@@ -15,7 +15,7 @@ alias Strides = NDArrayStrides
 
 
 @register_passable
-struct NDArrayStrides(Sized, Stringable, Writable):
+struct NDArrayStrides(Sized, Stringable, Writable, ImplicitlyCopyable):
     """
     Presents the strides of `NDArray` type.
 
@@ -453,7 +453,7 @@ struct NDArrayStrides(Sized, Stringable, Writable):
             strides._buf[i] = self._buf[self.ndim - 1 - i]
         return strides
 
-    fn _move_axis_to_end(self, owned axis: Int) -> Self:
+    fn _move_axis_to_end(self, var axis: Int) -> Self:
         """
         Returns a new strides by moving the value of axis to the end.
         ***UNSAFE!*** No boundary check!

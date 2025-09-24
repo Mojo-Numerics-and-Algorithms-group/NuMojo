@@ -9,7 +9,7 @@
 # Miscellaneous Linear Algebra Routines
 # ===----------------------------------------------------------------------=== #
 
-from sys import simdwidthof
+from sys import simd_width_of
 from algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray

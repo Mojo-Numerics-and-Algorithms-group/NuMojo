@@ -23,7 +23,7 @@ from algorithm.functional import vectorize, parallelize
 from collections import Dict
 from memory import UnsafePointer, memcpy
 from python import Python, PythonObject
-from sys import simdwidthof
+from sys import simd_width_of
 
 # from tensor import Tensor, TensorShape
 
@@ -340,14 +340,14 @@ fn bool_to_numeric[
         The converted NDArray of type `dtype` with 1s (True) and 0s (False).
     """
     # Can't use simd becuase of bit packing error
-    var res: NDArray[dtype] = NDArray[dtype](array.shape)
+    var result: NDArray[dtype] = NDArray[dtype](array.shape)
     for i in range(array.size):
         var t: Bool = array.item(i)
         if t:
-            res._buf.ptr[i] = 1
+            result._buf.ptr[i] = 1
         else:
-            res._buf.ptr[i] = 0
-    return res
+            result._buf.ptr[i] = 0
+    return result^
 
 
 # ===----------------------------------------------------------------------=== #
@@ -559,10 +559,10 @@ fn _list_of_range(n: Int) -> List[Int]:
     Generate a list of integers starting from 0 and of size n.
     """
 
-    var l = List[Int]()
+    var list_of_range: List[Int] = List[Int]()
     for i in range(n):
-        l.append(i)
-    return l
+        list_of_range.append(i)
+    return list_of_range^
 
 
 fn _list_of_flipped_range(n: Int) -> List[Int]:
@@ -570,7 +570,7 @@ fn _list_of_flipped_range(n: Int) -> List[Int]:
     Generate a list of integers starting from n-1 to 0 and of size n.
     """
 
-    var l = List[Int]()
+    var list_of_range: List[Int] = List[Int]()
     for i in range(n - 1, -1, -1):
-        l.append(i)
-    return l
+        list_of_range.append(i)
+    return list_of_range^

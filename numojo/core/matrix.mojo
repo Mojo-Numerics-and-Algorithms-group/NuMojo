@@ -10,7 +10,7 @@
 from algorithm import parallelize, vectorize
 from memory import UnsafePointer, memcpy, memset_zero
 from random import random_float64
-from sys import simdwidthof
+from sys import simd_width_of
 from python import PythonObject, Python
 
 from numojo.core.flags import Flags
@@ -89,7 +89,7 @@ struct Matrix[dtype: DType = DType.float64](
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
-    alias width: Int = simdwidthof[dtype]()  #
+    alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
 
     var _buf: OwnData[dtype]
@@ -199,7 +199,7 @@ struct Matrix[dtype: DType = DType.float64](
         self.flags = other.flags
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, deinit other: Self):
         """
         Move other into self.
         """
@@ -210,7 +210,7 @@ struct Matrix[dtype: DType = DType.float64](
         self.flags = other.flags^
 
     @always_inline("nodebug")
-    fn __del__(owned self):
+    fn __del__(deinit self):
         var owndata: Bool
         try:
             owndata = self.flags["OWNDATA"]
@@ -224,7 +224,7 @@ struct Matrix[dtype: DType = DType.float64](
     # Slicing and indexing methods
     # ===-------------------------------------------------------------------===#
 
-    fn __getitem__(self, owned x: Int, owned y: Int) raises -> Scalar[dtype]:
+    fn __getitem__(self, var x: Int, var y: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the index.
 
@@ -251,7 +251,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
-    fn __getitem__(self, owned x: Int) raises -> Self:
+    fn __getitem__(self, var x: Int) raises -> Self:
         """
         Return the corresponding row at the index.
 
@@ -311,7 +311,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         return B
 
-    fn __getitem__(self, x: Slice, owned y: Int) -> Self:
+    fn __getitem__(self, x: Slice, var y: Int) -> Self:
         """
         Get item from one slice and one int.
         """
@@ -335,7 +335,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         return B
 
-    fn __getitem__(self, owned x: Int, y: Slice) -> Self:
+    fn __getitem__(self, var x: Int, y: Slice) -> Self:
         """
         Get item from one int and one slice.
         """
@@ -399,7 +399,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], value)
 
-    fn __setitem__(self, owned x: Int, value: Self) raises:
+    fn __setitem__(self, var x: Int, value: Self) raises:
         """
         Set the corresponding row at the index with the given matrix.
 
@@ -1626,7 +1626,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
 
     For example: `__add__`, `__sub__`, etc.
     """
-    alias simd_width = simdwidthof[dtype]()
+    alias simd_width = simd_width_of[dtype]()
     if A.order() != B.order():
         raise Error(
             String("Matrix order {} does not match {}.").format(
@@ -1669,9 +1669,9 @@ fn _arithmetic_func_matrix_to_matrix[
 
     For example: `sin`, `cos`, etc.
     """
-    alias simd_width = simdwidthof[dtype]()
+    alias simd_width: Int = simd_width_of[dtype]()
 
-    var C = Matrix[dtype](shape=A.shape, order=A.order())
+    var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
     @parameter
     fn vec_func[simd_width: Int](i: Int):
@@ -1691,7 +1691,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     """
     Matrix[dtype] & Matrix[dtype] -> Matrix[bool]
     """
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
 
     if A.order() != B.order():
         raise Error(
@@ -1727,7 +1727,7 @@ fn _logic_func_matrix_matrix_to_matrix[
 
     var _t0 = t0
     var _t1 = t1
-    var _A = A
-    var _B = B
+    var _A = A.copy() # ! perhaps remove this explicit copy if we don't need to extend it's lifetime.
+    var _B = B.copy()
 
     return C^

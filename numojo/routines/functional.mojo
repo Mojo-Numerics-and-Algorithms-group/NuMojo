@@ -10,7 +10,7 @@ Functional programming.
 
 from algorithm.functional import vectorize, parallelize
 from memory import memcpy
-from sys import simdwidthof
+from sys import simd_width_of
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
@@ -212,7 +212,7 @@ fn apply_along_axis[
     # The iterator along the axis
     var iterator = a.iter_along_axis(axis=axis)
     # The final output array will have the same shape as the input array
-    var res = NDArray[dtype](a.shape)
+    var result: NDArray[dtype]  = NDArray[dtype](a.shape)
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
@@ -221,7 +221,7 @@ fn apply_along_axis[
             try:
                 var elements: NDArray[dtype] = func1d[dtype](iterator.ith(i))
                 memcpy(
-                    res._buf.ptr + i * elements.size,
+                    result._buf.ptr + i * elements.size,
                     elements._buf.ptr,
                     elements.size,
                 )
@@ -240,12 +240,15 @@ fn apply_along_axis[
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_offsets(i)
+                var indices_elements = iterator.ith_with_offsets(i)
+                indices = indices_elements[0].copy()
+                elements = indices_elements[1].copy()
+                # indices, elements = iterator.ith_with_offsets(i)
 
                 var res_along_axis: NDArray[dtype] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (res._buf.ptr + Int(indices[j])).init_pointee_copy(
+                    (result._buf.ptr + Int(indices[j])).init_pointee_copy(
                         (res_along_axis._buf.ptr + j)[]
                     )
             except e:
@@ -253,7 +256,7 @@ fn apply_along_axis[
 
         parallelize[parallelized_func](a.size // a.shape[axis])
 
-    return res^
+    return result^
 
 
 # The following overloads of `apply_along_axis` are for the case when the
@@ -309,7 +312,9 @@ fn apply_along_axis[
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_offsets(i)
+                var indices_elements = iterator.ith_with_offsets(i)
+                indices = indices_elements[0].copy()
+                elements = indices_elements[1].copy()
 
                 func1d[dtype](elements)
 
@@ -382,7 +387,9 @@ fn apply_along_axis[
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_offsets(i)
+                var indices_elements = iterator.ith_with_offsets(i)
+                indices = indices_elements[0].copy()
+                elements = indices_elements[1].copy()
 
                 var res_along_axis: NDArray[DType.index] = func1d[dtype](
                     elements

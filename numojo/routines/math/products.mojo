@@ -1,5 +1,5 @@
 from algorithm.functional import parallelize, vectorize
-from sys import simdwidthof
+from sys import simd_width_of
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
@@ -30,7 +30,7 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
         Scalar.
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
     var res = Scalar[dtype](1)
 
     @parameter
@@ -43,7 +43,7 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
 
 fn prod[
     dtype: DType
-](A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns products of array elements over a given axis.
 
@@ -88,7 +88,7 @@ fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](1)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_vec[width: Int](i: Int):
@@ -115,7 +115,7 @@ fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.ones[dtype](shape=(1, A.shape[1]))
@@ -181,7 +181,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
 
 fn cumprod[
     dtype: DType
-](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](var A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns cumprod of array by axis.
 
@@ -220,7 +220,7 @@ fn cumprod[
     return A^
 
 
-fn cumprod[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
+fn cumprod[dtype: DType](var A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 
@@ -252,7 +252,7 @@ fn cumprod[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
 
 fn cumprod[
     dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumprod of Matrix along the axis.
 
@@ -268,7 +268,7 @@ fn cumprod[
     print(mat.cumprod(A, axis=1))
     ```
     """
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         if A.flags.C_CONTIGUOUS:

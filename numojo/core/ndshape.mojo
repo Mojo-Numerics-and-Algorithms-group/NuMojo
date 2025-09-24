@@ -15,7 +15,7 @@ alias Shape = NDArrayShape
 
 
 @register_passable
-struct NDArrayShape(Sized, Stringable & Representable, Writable):
+struct NDArrayShape(Sized, Stringable & Representable, Writable, ImplicitlyCopyable):
     """
     Presents the shape of `NDArray` type.
 
@@ -638,7 +638,7 @@ struct NDArrayShape(Sized, Stringable & Representable, Writable):
             shape._buf[i] = self._buf[self.ndim - 1 - i]
         return shape
 
-    fn _move_axis_to_end(self, owned axis: Int) -> Self:
+    fn _move_axis_to_end(self, var axis: Int) -> Self:
         """
         Returns a new shape by moving the value of axis to the end.
         ***UNSAFE!*** No boundary check!

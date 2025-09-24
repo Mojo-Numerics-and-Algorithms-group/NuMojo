@@ -55,7 +55,7 @@ from collections.optional import Optional
 from math import log10
 from memory import UnsafePointer, memset_zero, memcpy
 from python import PythonObject
-from sys import simdwidthof
+from sys import simd_width_of
 from utils import Variant
 
 # === numojo core ===
@@ -129,7 +129,7 @@ struct NDArray[dtype: DType = DType.float64](
         - The order of the array: Row vs Columns major
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
     """Vector size of the data type."""
 
     var _buf: OwnData[dtype]
@@ -315,7 +315,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.print_options = other.print_options
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, owned existing: Self):
+    fn __moveinit__(out self, deinit existing: Self):
         """
         Move other into self.
 
@@ -331,7 +331,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.print_options = existing.print_options
 
     @always_inline("nodebug")
-    fn __del__(owned self):
+    fn __del__(deinit self):
         """
         Destroys all elements in the list and free its memory.
         """
@@ -367,9 +367,9 @@ struct NDArray[dtype: DType = DType.float64](
     # fn __getitem__(self, mask: List[Bool]) raises -> Self                     # Get by boolean list
     #
     # 5. Low-level Access
-    # fn item(self, owned index: Int) raises -> Scalar[dtype]                   # Get item by linear index
+    # fn item(self, var index: Int) raises -> Scalar[dtype]                   # Get item by linear index
     # fn item(self, *index: Int) raises -> Scalar[dtype]                        # Get item by coordinates
-    # fn load(self, owned index: Int) raises -> Scalar[dtype]                   # Load with bounds check
+    # fn load(self, var index: Int) raises -> Scalar[dtype]                   # Load with bounds check
     # fn load[width: Int](self, index: Int) raises -> SIMD[dtype, width]        # Load SIMD value
     # fn load[width: Int](self, *indices: Int) raises -> SIMD[dtype, width]     # Load SIMD at coordinates
     # ===-------------------------------------------------------------------===#
@@ -635,7 +635,7 @@ struct NDArray[dtype: DType = DType.float64](
                 dst_off += coords[d] * dst.strides._buf[d]
             dst._buf.ptr[dst_off] = src._buf.ptr[off]
 
-    fn __getitem__(self, owned *slices: Slice) raises -> Self:
+    fn __getitem__(self, var *slices: Slice) raises -> Self:
         """
         Retrieves a slice or sub-array from the current array using variadic slice arguments.
 
@@ -711,7 +711,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return strides^
 
-    fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
+    fn __getitem__(self, var slice_list: List[Slice]) raises -> Self:
         """
         Retrieves a sub-array from the current array using a list of slice objects, enabling advanced slicing operations across multiple dimensions.
 
@@ -804,7 +804,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr^
 
-    fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
+    fn __getitem__(self, var *slices: Variant[Slice, Int]) raises -> Self:
         """
         Get items of NDArray with a series of either slices or integers.
 
@@ -1332,7 +1332,7 @@ struct NDArray[dtype: DType = DType.float64](
         return self[mask_array]
 
     fn item(
-        self, owned index: Int
+        self, var index: Int
     ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
         dtype
     ]:
@@ -1496,7 +1496,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
         return (self._buf.ptr + _get_offset(index, self.strides))[]
 
-    fn load(self, owned index: Int) raises -> Scalar[dtype]:
+    fn load(self, var index: Int) raises -> Scalar[dtype]:
         """
         Safely retrieve i-th item from the underlying buffer.
 
@@ -1549,7 +1549,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn load[
         width: Int = 1
-    ](self, owned index: Int) raises -> SIMD[dtype, width]:
+    ](self, var index: Int) raises -> SIMD[dtype, width]:
         """
         Safely loads a SIMD element of size `width` at `index`
         from the underlying buffer.
@@ -1678,7 +1678,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     # Helper Methods
     # fn itemset(mut self, index: Variant[Int, List[Int]], item: Scalar[dtype]) # Set single item
-    # fn store(self, owned index: Int, val: Scalar[dtype]) raises               # Store with bounds checking
+    # fn store(self, var index: Int, val: Scalar[dtype]) raises               # Store with bounds checking
     # fn store[width: Int](mut self, index: Int, val: SIMD[dtype, width])       # Store SIMD value
     # fn store[width: Int = 1](mut self, *indices: Int, val: SIMD[dtype, width])# Store SIMD at coordinates
     # ===-------------------------------------------------------------------===#
@@ -1843,7 +1843,7 @@ struct NDArray[dtype: DType = DType.float64](
                 src_off += c * stride_src
             dst._buf.ptr[dst_off] = src._buf.ptr[src_off]
 
-    fn __setitem__(mut self, owned index: Item, val: Scalar[dtype]) raises:
+    fn __setitem__(mut self, var index: Item, val: Scalar[dtype]) raises:
         """
         Sets the value at the index list.
 
@@ -2435,7 +2435,7 @@ struct NDArray[dtype: DType = DType.float64](
                     )
             self._buf.ptr.store(_get_offset(indices, self.strides), item)
 
-    fn store(self, owned index: Int, val: Scalar[dtype]) raises:
+    fn store(self, var index: Int, val: Scalar[dtype]) raises:
         """
         Safely store a scalar to i-th item of the underlying buffer.
 
@@ -3823,7 +3823,7 @@ struct NDArray[dtype: DType = DType.float64](
         self,
         dimension: Int,
         offset: Int,
-        owned summarize: Bool = False,
+        var summarize: Bool = False,
     ) raises -> String:
         """
         Convert the array to a string.
@@ -4202,43 +4202,16 @@ struct NDArray[dtype: DType = DType.float64](
             buffer.store(i, self._buf.ptr.load[width=1](id + i * width))
         return buffer
 
-    fn copy(self) raises -> Self:
-        # TODO: Add logics for non-contiguous arrays when views are implemented.
-        """
-        Returns a copy of the array that owns the data.
-        The returned array will be contiguous in memory.
+    # fn copy(self) raises -> Self:
+    #     # TODO: Add logics for non-contiguous arrays when views are implemented.
+    #     """
+    #     Returns a copy of the array that owns the data.
+    #     The returned array will be contiguous in memory.
 
-        Returns:
-            A copy of the array.
-        """
-
-        if (self.strides == NDArrayStrides(shape=self.shape)) or (
-            self.strides == NDArrayStrides(shape=self.shape, order="F")
-        ):
-            # The strides and shape are matched.
-            # It either owns the data or it is a contiguous view of another array.
-            # The array is contiguous in memory. Nothing needs to be changed.
-            var result = self
-            return result
-        else:
-            # The strides and shape are not matched.
-            # It is a view of another array with different shape and strides.
-            if self.flags.C_CONTIGUOUS:
-                # The array is C-contiguous in memory.
-                # Can be copied by the last dimension.
-                var result = self
-                return result
-
-            elif self.flags.F_CONTIGUOUS:
-                # The array is F-contiguous in memory.
-                # Can be copied by the first dimension.
-                var result = self
-                return result
-            else:
-                # The array is not contiguous in memory.
-                # Can be copied by item.
-                var result = self
-                return result
+    #     Returns:
+    #         A copy of the array.
+    #     """
+    #     return Self.__copyinit__(self)
 
     fn cumprod(self) raises -> NDArray[dtype]:
         """

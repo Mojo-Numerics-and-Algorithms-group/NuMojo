@@ -4,7 +4,7 @@ Implementing backend for array keeping it simple for now
 # from ..traits.NDArrayTraits import NDArrayBackend
 from algorithm.functional import parallelize, vectorize
 from sys.info import num_physical_cores
-from sys import simdwidthof
+from sys import simd_width_of
 
 from numojo.core.ndarray import NDArray
 
@@ -29,7 +29,7 @@ fn math_func_1_array_in_one_array_out[
         A new NDArray that is the result of applying the function to the NDArray.
     """
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
 
     @parameter
     fn closure[simd_width: Int](i: Int):
@@ -69,7 +69,7 @@ fn math_func_2_array_in_one_array_out[
         raise Error("Shape Mismatch error shapes must match for this function")
 
     var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
 
     @parameter
     fn closure[simd_width: Int](i: Int):
@@ -106,7 +106,7 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
     """
 
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
 
     @parameter
     fn closure[simd_width: Int](i: Int):

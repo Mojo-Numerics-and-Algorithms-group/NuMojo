@@ -186,7 +186,7 @@ fn add[
 fn add[
     dtype: DType,
     backend: Backend = _mf.Vectorized,
-](owned *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
+](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
     dtype
 ]:
     """
@@ -646,7 +646,7 @@ fn mul[
 fn mul[
     dtype: DType,
     backend: Backend = _mf.Vectorized,
-](owned *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
+](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
     dtype
 ]:
     """

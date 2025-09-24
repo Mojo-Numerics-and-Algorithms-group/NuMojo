@@ -10,13 +10,13 @@ Array creation routine.
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
-3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and 
+3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and
     reduce the number of function reloads.
 4) Simplify complex overloads into sum of real methods.
 
 ---
 
-Use more uniformed way of calling functions, i.e., using one specific 
+Use more uniformed way of calling functions, i.e., using one specific
 overload for each function. This makes maintenance easier. Example:
 
 - `NDArray.__init__` takes in `ShapeLike` and initialize an `NDArray` container.
@@ -24,8 +24,8 @@ overload for each function. This makes maintenance easier. Example:
 - `zeros`, `ones` calls `full`.
 - Other functions calls `zeros`, `ones`, `full`.
 
-If overloads are needed, it is better to call the default signature in other 
-overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this 
+If overloads are needed, it is better to call the default signature in other
+overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this
 function. So it is easy for modification.
 
 """
@@ -38,7 +38,7 @@ from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
 from algorithm.memory import parallel_memcpy
 from python import PythonObject, Python
-from sys import simdwidthof
+from sys import simd_width_of
 
 # from tensor import Tensor, TensorShape
 
@@ -83,7 +83,7 @@ fn arange[
     for idx in range(num):
         result._buf.ptr[idx] = start + step * idx
 
-    return result
+    return result^
 
 
 fn arange[
@@ -93,12 +93,12 @@ fn arange[
     (Overload) When start is 0 and step is 1.
     """
 
-    var size = Int(stop)
+    var size: Int = Int(stop) # TODO: handle negative values.
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
         (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
 
-    return result
+    return result^
 
 
 fn arangeC[
@@ -271,7 +271,7 @@ fn _linspace_parallel[
         A NDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-    alias nelts = simdwidthof[dtype]()
+    alias nelts = simd_width_of[dtype]()
 
     if endpoint:
         var denominator: SIMD[dtype, 1] = Scalar[dtype](num) - 1.0
@@ -378,7 +378,7 @@ fn _linspace_serial[
                 ),
             )
 
-    return result
+    return result^
 
 
 fn _linspace_parallel[
@@ -405,7 +405,7 @@ fn _linspace_parallel[
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
     var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](Shape(num))
-    alias nelts = simdwidthof[dtype]()
+    alias nelts = simd_width_of[dtype]()
 
     if endpoint:
         var denominator: Scalar[dtype] = Scalar[dtype](num) - 1.0
@@ -535,7 +535,7 @@ fn _logspace_serial[
         var step: Scalar[dtype] = (stop - start) / num
         for i in range(num):
             result._buf.ptr[i] = base ** (start + step * i)
-    return result
+    return result^
 
 
 fn _logspace_parallel[
@@ -583,7 +583,7 @@ fn _logspace_parallel[
 
         parallelize[parallelized_logspace1](num)
 
-    return result
+    return result^
 
 
 fn logspaceC[
@@ -794,7 +794,7 @@ fn geomspace[
         var r: Scalar[dtype] = base**power
         for i in range(num):
             result._buf.ptr[i] = a * r**i
-        return result
+        return result^
 
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
@@ -803,7 +803,7 @@ fn geomspace[
         var r: Scalar[dtype] = base**power
         for i in range(num):
             result._buf.ptr[i] = a * r**i
-        return result
+        return result^
 
 
 fn geomspaceC[
@@ -1610,7 +1610,7 @@ fn tril[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m
+    var result: NDArray[dtype] = m.copy() # * We should move this to be inplace operation perhaps.
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
@@ -1674,7 +1674,7 @@ fn triu[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m
+    var result: NDArray[dtype] = m.copy()
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
@@ -1788,8 +1788,6 @@ fn vanderC[
 # ===------------------------------------------------------------------------===#
 
 
-# TODO: Technically we should allow for runtime type inference here,
-# but NDArray doesn't support it yet.
 # TODO: Check whether inplace cast is needed.
 fn astype[
     dtype: DType, //, target: DType
@@ -1808,15 +1806,15 @@ fn astype[
         A NDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    var array_order = "C" if a.flags.C_CONTIGUOUS else "F"
-    var res = NDArray[target](a.shape, order=array_order)
+    var array_order: String = "C" if a.flags.C_CONTIGUOUS else "F"
+    var result: NDArray[target] = NDArray[target](a.shape, order=array_order)
 
     @parameter
     if target == DType.bool:
 
         @parameter
         fn vectorized_astype[simd_width: Int](idx: Int) -> None:
-            (res.unsafe_ptr() + idx).strided_store[width=simd_width](
+            (result.unsafe_ptr() + idx).strided_store[width=simd_width](
                 a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
             )
 
@@ -1829,7 +1827,7 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
+                result._buf.ptr.store(
                     idx,
                     (a._buf.ptr + idx)
                     .strided_load[width=simd_width](1)
@@ -1842,13 +1840,13 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
+                result._buf.ptr.store(
                     idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )
 
             vectorize[vectorized_astypenb, a.width](a.size)
 
-    return res
+    return result^
 
 
 fn astype[
@@ -2072,16 +2070,16 @@ fn array[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+        var arr = nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
         ```
 
     Returns:
         An Array of given data, shape and order.
     """
-    A = NDArray[dtype](NDArrayShape(shape), order)
-    for i in range(A.size):
-        A._buf.ptr[i] = data[i]
-    return A
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(shape), order)
+    for i in range(result.size):
+        result._buf.ptr[i] = data[i]
+    return result^
 
 
 fn arrayC[

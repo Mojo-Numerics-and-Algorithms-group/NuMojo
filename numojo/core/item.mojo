@@ -7,7 +7,7 @@ Implements Item type.
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
 from os import abort
-from sys import simdwidthof
+from sys import simd_width_of
 from utils import Variant
 
 from numojo.core.traits.indexer_collection_element import (
@@ -167,7 +167,7 @@ struct Item(Copyable, Movable, Stringable, Writable):
         memcpy(self._buf, other._buf, self.ndim)
 
     @always_inline("nodebug")
-    fn __del__(owned self):
+    fn __del__(deinit self):
         self._buf.free()
 
     @always_inline("nodebug")

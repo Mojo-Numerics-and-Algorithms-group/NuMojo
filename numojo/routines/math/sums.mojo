@@ -1,4 +1,4 @@
-from sys import simdwidthof
+from sys import simd_width_of
 from algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray
@@ -28,7 +28,7 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
         Scalar.
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
     var res = Scalar[dtype](0)
 
     @parameter
@@ -123,7 +123,7 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     ```
     """
     var res = Scalar[dtype](0)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_vec[width: Int](i: Int):
@@ -150,7 +150,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
@@ -236,10 +236,10 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     else:
         return cumsum(A.flatten(), axis=-1)
 
-
+# Why do we do in inplace operation here?
 fn cumsum[
     dtype: DType
-](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](var A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns cumsum of array by axis.
 
@@ -280,7 +280,7 @@ fn cumsum[
     return A^
 
 
-fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
+fn cumsum[dtype: DType](var A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 
@@ -312,7 +312,7 @@ fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
 
 fn cumsum[
     dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 
@@ -329,7 +329,7 @@ fn cumsum[
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         if A.flags.C_CONTIGUOUS:

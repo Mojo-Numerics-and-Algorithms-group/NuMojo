@@ -1,7 +1,7 @@
 # ===----------------------------------------------------------------------=== #
 # Decompositions
 # ===----------------------------------------------------------------------=== #
-from sys import simdwidthof
+from sys import simd_width_of
 from algorithm import parallelize, vectorize
 
 import math as builtin_math
@@ -15,7 +15,7 @@ from numojo.routines.creation import zeros, eye, full
 fn _compute_householder[
     dtype: DType
 ](mut H: Matrix[dtype], mut R: Matrix[dtype], work_index: Int) raises -> None:
-    alias simd_width = simdwidthof[dtype]()
+    alias simd_width = simd_width_of[dtype]()
     alias sqrt2: Scalar[dtype] = 1.4142135623730951
     var rRows = R.shape[0]
 
@@ -82,7 +82,7 @@ fn _apply_householder[
 ) raises -> None:
     var aRows = A.shape[0]
     var aCols = A.shape[1]
-    alias simdwidth = simdwidthof[dtype]()
+    alias simdwidth = simd_width_of[dtype]()
     for j in range(column_start, aCols):
         var dot: SIMD[dtype, 1] = 0.0
 
@@ -252,7 +252,7 @@ fn lu_decomposition[
 
 fn partial_pivoting[
     dtype: DType
-](owned A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype], Int]:
+](var A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype], Int]:
     """
     Perform partial pivoting for a square matrix.
 
@@ -301,7 +301,7 @@ fn partial_pivoting[
 
 fn partial_pivoting[
     dtype: DType
-](owned A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
+](var A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
     """
     Perform partial pivoting for matrix.
     """

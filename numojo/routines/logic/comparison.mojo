@@ -35,9 +35,7 @@ fn greater[
 
     An element of the result NDArray will be True if the corresponding element in x is greater than the corresponding element in y, and False otherwise.
     """
-    return backend().math_func_compare_2_arrays[dtype, SIMD.__gt__](
-        array1, array2
-    )
+    return backend().math_func_compare_2_arrays[dtype, SIMD.gt](array1, array2)
 
 
 fn greater[
@@ -59,7 +57,7 @@ fn greater[
 
     An element of the result NDArray will be True if the element in x is greater than the scalar, and False otherwise.
     """
-    return backend().math_func_compare_array_and_scalar[dtype, SIMD.__gt__](
+    return backend().math_func_compare_array_and_scalar[dtype, SIMD.gt](
         array1, scalar
     )
 
@@ -83,9 +81,7 @@ fn greater_equal[
 
     An element of the result NDArray will be True if the corresponding element in x is greater than or equal to the corresponding element in y, and False otherwise.
     """
-    return backend().math_func_compare_2_arrays[dtype, SIMD.__ge__](
-        array1, array2
-    )
+    return backend().math_func_compare_2_arrays[dtype, SIMD.ge](array1, array2)
 
 
 fn greater_equal[
@@ -107,7 +103,7 @@ fn greater_equal[
 
     An element of the result NDArray will be True if the element in x is greater than or equal to the scalar, and False otherwise.
     """
-    return backend().math_func_compare_array_and_scalar[dtype, SIMD.__ge__](
+    return backend().math_func_compare_array_and_scalar[dtype, SIMD.ge](
         array1, scalar
     )
 
@@ -131,9 +127,7 @@ fn less[
 
     An element of the result NDArray will be True if the corresponding element in x is or equal to the corresponding element in y, and False otherwise.
     """
-    return backend().math_func_compare_2_arrays[dtype, SIMD.__lt__](
-        array1, array2
-    )
+    return backend().math_func_compare_2_arrays[dtype, SIMD.lt](array1, array2)
 
 
 fn less[
@@ -155,7 +149,7 @@ fn less[
 
     An element of the result NDArray will be True if the element in x is or equal to the scalar, and False otherwise.
     """
-    return backend().math_func_compare_array_and_scalar[dtype, SIMD.__lt__](
+    return backend().math_func_compare_array_and_scalar[dtype, SIMD.lt](
         array1, scalar
     )
 
@@ -179,9 +173,7 @@ fn less_equal[
 
     An element of the result NDArray will be True if the corresponding element in x is less than or equal to the corresponding element in y, and False otherwise.
     """
-    return backend().math_func_compare_2_arrays[dtype, SIMD.__le__](
-        array1, array2
-    )
+    return backend().math_func_compare_2_arrays[dtype, SIMD.le](array1, array2)
 
 
 fn less_equal[
@@ -203,7 +195,7 @@ fn less_equal[
 
     An element of the result NDArray will be True if the element in x is less than or equal to the scalar, and False otherwise.
     """
-    return backend().math_func_compare_array_and_scalar[dtype, SIMD.__le__](
+    return backend().math_func_compare_array_and_scalar[dtype, SIMD.le](
         array1, scalar
     )
 
@@ -227,9 +219,7 @@ fn equal[
 
     An element of the result NDArray will be True if the corresponding element in x is equal to the corresponding element in y, and False otherwise.
     """
-    return backend().math_func_compare_2_arrays[dtype, SIMD.__eq__](
-        array1, array2
-    )
+    return backend().math_func_compare_2_arrays[dtype, SIMD.eq](array1, array2)
     # if array1.shape != array2.shape:
     #         raise Error(
     #             "Shape Mismatch error shapes must match for this function"
@@ -259,7 +249,7 @@ fn equal[
 
     An element of the result NDArray will be True if the element in x is equal to the scalar, and False otherwise.
     """
-    return backend().math_func_compare_array_and_scalar[dtype, SIMD.__eq__](
+    return backend().math_func_compare_array_and_scalar[dtype, SIMD.eq](
         array1, scalar
     )
 
@@ -283,9 +273,7 @@ fn not_equal[
 
     An element of the result NDArray will be True if the corresponding element in x is not equal to the corresponding element in y, and False otherwise.
     """
-    return backend().math_func_compare_2_arrays[dtype, SIMD.__ne__](
-        array1, array2
-    )
+    return backend().math_func_compare_2_arrays[dtype, SIMD.ne](array1, array2)
     # if array1.shape != array2.shape:
     #         raise Error(
     #             "Shape Mismatch error shapes must match for this function"
@@ -315,6 +303,6 @@ fn not_equal[
 
     An element of the result NDArray will be True if the element in x is not equal to the scalar, and False otherwise.
     """
-    return backend().math_func_compare_array_and_scalar[dtype, SIMD.__ne__](
+    return backend().math_func_compare_array_and_scalar[dtype, SIMD.ne](
         array1, scalar
     )

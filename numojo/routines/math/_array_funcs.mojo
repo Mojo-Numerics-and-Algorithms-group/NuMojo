@@ -38,7 +38,7 @@ fn math_func_1_array_in_one_array_out[
 
     vectorize[closure, width](array.size)
 
-    return result_array
+    return result_array^
 
 
 fn math_func_2_array_in_one_array_out[
@@ -81,7 +81,7 @@ fn math_func_2_array_in_one_array_out[
 
     vectorize[closure, width](result_array.size)
 
-    return result_array
+    return result_array^
 
 
 fn math_func_one_array_one_SIMD_in_one_array_out[
@@ -116,4 +116,4 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
         )
 
     vectorize[closure, width](result_array.size)
-    return result_array
+    return result_array^

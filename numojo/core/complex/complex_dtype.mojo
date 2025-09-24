@@ -12,7 +12,7 @@
 from hashlib.hasher import Hasher
 from os import abort
 from sys import CompilationTarget
-from sys.info import bitwidthof, sizeof
+from sys.info import bitwidthof, size_of
 from sys.intrinsics import _type_is_eq
 
 alias _mIsSigned = UInt8(1)
@@ -528,7 +528,7 @@ struct ComplexDType(
         return self.is_integral() or self.is_floating_point()
 
     @always_inline
-    fn sizeof(self) -> Int:
+    fn size_of(self) -> Int:
         """Returns the size in bytes of the current ComplexDType.
 
         Returns:
@@ -555,33 +555,33 @@ struct ComplexDType(
             )
 
         elif self is ComplexDType.bool:
-            return sizeof[DType.bool]()
+            return size_of[DType.bool]()
         elif self is ComplexDType.index:
-            return sizeof[DType.index]()
+            return size_of[DType.index]()
 
         elif self is ComplexDType.float8_e3m4:
-            return sizeof[DType.float8_e3m4]()
+            return size_of[DType.float8_e3m4]()
         elif self is ComplexDType.float8_e4m3fn:
-            return sizeof[DType.float8_e4m3fn]()
+            return size_of[DType.float8_e4m3fn]()
         elif self is ComplexDType.float8_e4m3fnuz:
-            return sizeof[DType.float8_e4m3fnuz]()
+            return size_of[DType.float8_e4m3fnuz]()
         elif self is ComplexDType.float8_e5m2:
-            return sizeof[DType.float8_e5m2]()
+            return size_of[DType.float8_e5m2]()
         elif self is ComplexDType.float8_e5m2fnuz:
-            return sizeof[DType.float8_e5m2fnuz]()
+            return size_of[DType.float8_e5m2fnuz]()
 
         elif self is ComplexDType.bfloat16:
-            return sizeof[DType.bfloat16]()
+            return size_of[DType.bfloat16]()
         elif self is ComplexDType.float16:
-            return sizeof[DType.float16]()
+            return size_of[DType.float16]()
 
         elif self is ComplexDType.float32:
-            return sizeof[DType.float32]()
+            return size_of[DType.float32]()
 
         elif self is ComplexDType.float64:
-            return sizeof[DType.float64]()
+            return size_of[DType.float64]()
 
-        return sizeof[DType.invalid]()
+        return size_of[DType.invalid]()
 
     @always_inline
     fn bitwidth(self) -> Int:
@@ -591,7 +591,7 @@ struct ComplexDType(
             Returns the size in bits of the current ComplexDType.
         """
         return (
-            2 * 8 * self.sizeof()
+            2 * 8 * self.size_of()
         )  # 2 * because complex number has real and imaginary parts
 
     # ===-------------------------------------------------------------------===#

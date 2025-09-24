@@ -54,10 +54,10 @@ fn cross[
             2,
             (array1.load(0) * array2.load(1) - array1.load(1) * array2.load(0)),
         )
-        return array3
+        return array3^
     else:
         raise Error(
-            "Cross product is not supported for arrays of shape "
+            "resultross product is not supported for arrays of shape "
             + array1.shape.__str__()
             + " and "
             + array2.shape.__str__()
@@ -101,7 +101,7 @@ fn dot[
         return result^
     else:
         raise Error(
-            "Cross product is not supported for arrays of shape "
+            "resultross product is not supported for arrays of shape "
             + array1.shape.__str__()
             + " and "
             + array2.shape.__str__()
@@ -124,7 +124,7 @@ fn matmul_tiled_unrolled_parallelized[
     Matrix multiplication vectorized, tiled, unrolled, and parallelized.
     """
     alias width = max(simd_width_of[dtype](), 16)
-    var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
+    var result: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
     var t0 = A.shape[0]
     var t1 = A.shape[1]
     var t2 = B.shape[1]
@@ -137,9 +137,11 @@ fn matmul_tiled_unrolled_parallelized[
 
                 @parameter
                 fn dot[simd_width: Int](n: Int):
-                    C._buf.ptr.store(
+                    result._buf.ptr.store(
                         m * t2 + (n + x),
-                        val=C._buf.ptr.load[width=simd_width](m * t2 + (n + x))
+                        val=result._buf.ptr.load[width=simd_width](
+                            m * t2 + (n + x)
+                        )
                         + A._buf.ptr.load(m * t1 + k)
                         * B._buf.ptr.load[width=simd_width](k * t2 + (n + x)),
                     )
@@ -153,7 +155,7 @@ fn matmul_tiled_unrolled_parallelized[
         tile[calc_tile, width * tile_size, tile_size](t1, t2)
 
     parallelize[calculate_A_rows](t0, t0)
-    return C
+    return result^
 
 
 fn matmul_1darray[
@@ -163,7 +165,7 @@ fn matmul_1darray[
     Array multiplication for 1-d arrays (inner dot).
     """
 
-    var C = NDArray[dtype](Shape(1, 1))
+    var result = NDArray[dtype](Shape(1, 1))
 
     if A.ndim * B.ndim != 1:
         raise Error("The dimensions of the arrays should be 1.")
@@ -175,9 +177,9 @@ fn matmul_1darray[
             ).format(A.size, B.size)
         )
     else:
-        C._buf.ptr.init_pointee_copy(sum(A * B))
+        result._buf.ptr.init_pointee_copy(sum(A * B))
 
-    return C^
+    return result^
 
 
 fn matmul_2darray[
@@ -204,7 +206,7 @@ fn matmul_2darray[
 
     References:
         [1] https://docs.modular.com/mojo/notebooks/Matmul.
-        Compared to the reference, we increases the size of
+        resultompared to the reference, we increases the size of
         the SIMD vector from the default width to 16. The purpose is to
         increase the performance via SIMD.
         This reduces the execution time by ~50 percent compared to
@@ -241,7 +243,7 @@ fn matmul_2darray[
             ).format(A.shape[1], B.shape[0])
         )
 
-    var C: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
+    var result: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
     var t0 = A.shape[0]
     var t1 = A.shape[1]
     var t2 = B.shape[1]
@@ -252,9 +254,9 @@ fn matmul_2darray[
 
             @parameter
             fn dot[simd_width: Int](n: Int):
-                C._buf.ptr.store(
+                result._buf.ptr.store(
                     m * t2 + n,
-                    val=C._buf.ptr.load[width=simd_width](m * t2 + n)
+                    val=result._buf.ptr.load[width=simd_width](m * t2 + n)
                     + A._buf.ptr.load[width=simd_width](m * t1 + k)
                     * B._buf.ptr.load[width=simd_width](k * t2 + n),
                 )
@@ -263,7 +265,7 @@ fn matmul_2darray[
 
     parallelize[calculate_A_rows](t0, t0)
 
-    return C^
+    return result^
 
 
 fn matmul[
@@ -328,12 +330,14 @@ fn matmul[
     shape_as_list.append(A.shape[-2])
     shape_as_list.append(B.shape[-1])
 
-    var C = NDArray[dtype](Shape(shape_as_list))
+    var result = NDArray[dtype](Shape(shape_as_list))
     var A_sub_matrix = NDArray[dtype](Shape(A.shape[-2], A.shape[-1]))
     var B_sub_matrix = NDArray[dtype](Shape(B.shape[-2], B.shape[-1]))
-    var C_sub_matrix = NDArray[dtype](Shape(C.shape[-2], C.shape[-1]))
+    var result_sub_matrix = NDArray[dtype](
+        Shape(result.shape[-2], result.shape[-1])
+    )
 
-    for i in range(C.size // C_sub_matrix.size):
+    for i in range(result.size // result_sub_matrix.size):
         memcpy(
             A_sub_matrix._buf.ptr,
             A._buf.ptr + (i * A_sub_matrix.size),
@@ -344,13 +348,13 @@ fn matmul[
             B._buf.ptr + (i * B_sub_matrix.size),
             B_sub_matrix.size,
         )
-        C_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
+        result_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
         memcpy(
-            C._buf.ptr + (i * C_sub_matrix.size),
-            C_sub_matrix._buf.ptr,
-            C_sub_matrix.size,
+            result._buf.ptr + (i * result_sub_matrix.size),
+            result_sub_matrix._buf.ptr,
+            result_sub_matrix.size,
         )
-    return C^
+    return result^
 
 
 fn matmul[
@@ -364,7 +368,7 @@ fn matmul[
     from numojo import Matrix
     var A = Matrix.rand(shape=(1000, 1000))
     var B = Matrix.rand(shape=(1000, 1000))
-    var C = mat.matmul(A, B)
+    var result = mat.matmul(A, B)
     ```
     """
 
@@ -372,34 +376,38 @@ fn matmul[
 
     if A.shape[1] != B.shape[0]:
         raise Error(
-            String("Cannot matmul {}x{} matrix with {}x{} matrix.").format(
+            String("resultannot matmul {}x{} matrix with {}x{} matrix.").format(
                 A.shape[0], A.shape[1], B.shape[0], B.shape[1]
             )
         )
 
-    var C: Matrix[dtype]
+    var result: Matrix[dtype]
 
     if A.flags.C_CONTIGUOUS and B.flags.C_CONTIGUOUS:
-        C = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]), order=B.order())
+        result = Matrix.zeros[dtype](
+            shape=(A.shape[0], B.shape[1]), order=B.order()
+        )
 
         @parameter
-        fn calculate_CC(m: Int):
+        fn calculate_resultresult(m: Int):
             for k in range(A.shape[1]):
 
                 @parameter
                 fn dot[simd_width: Int](n: Int):
-                    C._store[simd_width](
+                    result._store[simd_width](
                         m,
                         n,
-                        C._load[simd_width](m, n)
+                        result._load[simd_width](m, n)
                         + A._load(m, k) * B._load[simd_width](k, n),
                     )
 
                 vectorize[dot, width](B.shape[1])
 
-        parallelize[calculate_CC](A.shape[0], A.shape[0])
+        parallelize[calculate_resultresult](A.shape[0], A.shape[0])
     elif A.flags.F_CONTIGUOUS and B.flags.F_CONTIGUOUS:
-        C = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]), order=B.order())
+        result = Matrix.zeros[dtype](
+            shape=(A.shape[0], B.shape[1]), order=B.order()
+        )
 
         @parameter
         fn calculate_FF(n: Int):
@@ -407,10 +415,10 @@ fn matmul[
 
                 @parameter
                 fn dot_F[simd_width: Int](m: Int):
-                    C._store[simd_width](
+                    result._store[simd_width](
                         m,
                         n,
-                        C._load[simd_width](m, n)
+                        result._load[simd_width](m, n)
                         + A._load[simd_width](m, k) * B._load(k, n),
                     )
 
@@ -418,10 +426,12 @@ fn matmul[
 
         parallelize[calculate_FF](B.shape[1], B.shape[1])
     elif A.flags.C_CONTIGUOUS and B.flags.F_CONTIGUOUS:
-        C = Matrix.zeros[dtype](shape=(A.shape[0], B.shape[1]), order=B.order())
+        result = Matrix.zeros[dtype](
+            shape=(A.shape[0], B.shape[1]), order=B.order()
+        )
 
         @parameter
-        fn calculate_CF(m: Int):
+        fn calculate_resultF(m: Int):
             for n in range(B.shape[1]):
                 var sum: Scalar[dtype] = 0.0
 
@@ -432,16 +442,16 @@ fn matmul[
                     ).reduce_add()
 
                 vectorize[dot_product, width](A.shape[1])
-                C._store(m, n, sum)
+                result._store(m, n, sum)
 
-        parallelize[calculate_CF](A.shape[0], A.shape[0])
+        parallelize[calculate_resultF](A.shape[0], A.shape[0])
 
     else:
-        C = matmul(A.reorder_layout(), B)
-    var _A = A
-    var _B = B
+        result = matmul(A.reorder_layout(), B)
+    # var _A = A
+    # var _B = B
 
-    return C^
+    return result^
 
 
 fn matmul_naive[
@@ -450,21 +460,23 @@ fn matmul_naive[
     """
     Matrix multiplication with three nested loops.
     """
-    var C: NDArray[dtype]
+    var result: NDArray[dtype]
     if B.ndim == 1:
-        C = zeros[dtype](NDArrayShape(A.shape[0]))
-        for m in range(C.shape[0]):
+        result = zeros[dtype](NDArrayShape(A.shape[0]))
+        for m in range(result.shape[0]):
             for k in range(A.shape[1]):
-                C.store(m, val=C.load(m) + A.load(m, k) * B.load(k))
+                result.store(m, val=result.load(m) + A.load(m, k) * B.load(k))
     elif B.ndim != 1:
-        C = zeros[dtype](NDArrayShape(A.shape[0], B.shape[1]))
-        for m in range(C.shape[0]):
+        result = zeros[dtype](NDArrayShape(A.shape[0], B.shape[1]))
+        for m in range(result.shape[0]):
             for k in range(A.shape[1]):
-                for n in range(C.shape[1]):
-                    C.store(
-                        m, n, val=C.load(m, n) + A.load(m, k) * B.load(k, n)
+                for n in range(result.shape[1]):
+                    result.store(
+                        m,
+                        n,
+                        val=result.load(m, n) + A.load(m, k) * B.load(k, n),
                     )
     else:
         raise Error("Invalid shape for B")
 
-    return C^
+    return result^

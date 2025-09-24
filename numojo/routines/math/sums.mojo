@@ -29,14 +29,14 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
     """
 
     alias width: Int = simd_width_of[dtype]()
-    var res = Scalar[dtype](0)
+    var result: Scalar[dtype] = Scalar[dtype](0)
 
     @parameter
     fn cal_vec[width: Int](i: Int):
-        res += A._buf.ptr.load[width=width](i).reduce_add()
+        result += A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[cal_vec, width](A.size)
-    return res
+    return result
 
 
 fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -102,10 +102,10 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     var result = zeros[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[normalized_axis] = Slice(i, i + 1)
-        var arr_slice = A[slices]
+        var arr_slice = A[slices.copy()]
         result += arr_slice
 
-    return result
+    return result^
 
 
 fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
@@ -228,7 +228,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A
+        var B = A.copy()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] += B._buf.ptr[i]
         return B^
@@ -281,7 +281,7 @@ fn cumsum[
     return A^
 
 
-fn cumsum[dtype: DType](var A: Matrix[dtype]) -> Matrix[dtype]:
+fn cumsum[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 

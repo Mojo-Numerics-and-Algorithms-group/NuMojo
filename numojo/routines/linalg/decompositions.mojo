@@ -158,10 +158,10 @@ fn lu_decomposition[
         raise ("The array is not 2-dimensional!")
 
     # Check whether the matrix is square
-    var shape_of_array = A.shape
+    var shape_of_array: NDArrayShape = A.shape
     if shape_of_array[0] != shape_of_array[1]:
         raise ("The matrix is not square!")
-    var n = shape_of_array[0]
+    var n: Int = shape_of_array[0]
 
     # Check whether the matrix is singular
     # if singular:
@@ -171,8 +171,12 @@ fn lu_decomposition[
     # var A = array.astype[dtype]()
 
     # Initiate upper and lower triangular matrices
-    var U = full[dtype](shape=shape_of_array, fill_value=SIMD[dtype, 1](0))
-    var L = full[dtype](shape=shape_of_array, fill_value=SIMD[dtype, 1](0))
+    var U: NDArray[dtype] = full[dtype](
+        shape=shape_of_array, fill_value=SIMD[dtype, 1](0)
+    )
+    var L: NDArray[dtype] = full[dtype](
+        shape=shape_of_array, fill_value=SIMD[dtype, 1](0)
+    )
 
     # Fill in L and U
     # @parameter
@@ -204,7 +208,7 @@ fn lu_decomposition[
 
     # parallelize[calculate](n, n)
 
-    return L, U
+    return L^, U^
 
 
 fn lu_decomposition[
@@ -219,11 +223,11 @@ fn lu_decomposition[
             String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
         )
 
-    var n = A.shape[0]
+    var n: Int = A.shape[0]
 
     # Initiate upper and lower triangular matrices
-    var U = Matrix.full[dtype](shape=(n, n), order=A.order())
-    var L = Matrix.full[dtype](shape=(n, n), order=A.order())
+    var U: Matrix[dtype] = Matrix.full[dtype](shape=(n, n), order=A.order())
+    var L: Matrix[dtype] = Matrix.full[dtype](shape=(n, n), order=A.order())
 
     # Fill in L and U
     for i in range(0, n):
@@ -247,7 +251,7 @@ fn lu_decomposition[
                 sum_of_products_for_U += L._load(i, k) * U._load(k, j)
             U._store(i, j, A._load(i, j) - sum_of_products_for_U)
 
-    return L, U
+    return L^, U^
 
 
 fn partial_pivoting[
@@ -372,7 +376,7 @@ fn qr[
     if reorder:
         R = A.reorder_layout()
     else:
-        R = A
+        R = A.copy()
 
     var H = Matrix.zeros[dtype](shape=(m, min_n), order="F")
 
@@ -441,14 +445,18 @@ fn eig[
     if A.flags.C_CONTIGUOUS:
         T = A.reorder_layout()
     else:
-        T = A
+        T = A.copy()
 
     var Q_total = Matrix.identity[dtype](n)
 
     for _k in range(max_iter):
         var Qk: Matrix[dtype]
         var Rk: Matrix[dtype]
-        Qk, Rk = qr(T, mode="complete")
+        var matrices: Tuple[Matrix[dtype], Matrix[dtype]] = qr(
+            T, mode="complete"
+        )
+        Qk = matrices[0].copy()
+        Rk = matrices[1].copy()
 
         T = Rk @ Qk
         Q_total = Q_total @ Qk

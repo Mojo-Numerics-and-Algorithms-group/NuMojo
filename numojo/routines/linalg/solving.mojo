@@ -51,7 +51,7 @@ fn forward_substitution[
 
         x.store(i, value_on_hold)
 
-    return x
+    return x^
 
 
 fn back_substitution[
@@ -83,7 +83,7 @@ fn back_substitution[
         value_on_hold = value_on_hold / U.item(i, i)
         x.store(i, value_on_hold)
 
-    return x
+    return x^
 
 
 fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -157,7 +157,11 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
     var U: NDArray[dtype]
     var L: NDArray[dtype]
-    L, U = lu_decomposition[dtype](array)
+    var L_U: Tuple[NDArray[dtype], NDArray[dtype]] = lu_decomposition[dtype](
+        array
+    )
+    L = L_U[0].copy()
+    U = L_U[1].copy()
 
     var m = array.shape[0]
 
@@ -191,11 +195,11 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
     # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
     # This is disadvantage of Mojo's ASAP policy
-    var _Y = Y^
-    var _L = L^
-    var _U = U^
+    # var _Y = Y^
+    # var _L = L^
+    # var _U = U^
 
-    return X
+    return X^
 
 
 fn lstsq[
@@ -284,7 +288,9 @@ fn solve[
 
     var U: NDArray[dtype]
     var L: NDArray[dtype]
-    L, U = lu_decomposition[dtype](A)
+    var L_U: Tuple[NDArray[dtype], NDArray[dtype]] = lu_decomposition[dtype](A)
+    L = L_U[0].copy()
+    U = L_U[1].copy()
 
     var m = A.shape[0]
     var n = Y.shape[1]
@@ -373,14 +379,22 @@ fn solve[
     var U: Matrix[dtype]
     var L: Matrix[dtype]
 
-    A_pivoted, P, _ = partial_pivoting(A)
-    L, U = lu_decomposition[dtype](A_pivoted)
+    var A_pivoted_Pair: Tuple[
+        Matrix[dtype], Matrix[dtype], Int
+    ] = partial_pivoting(A.copy())
+    A_pivoted = A_pivoted_Pair[0].copy()
+    P = A_pivoted_Pair[1].copy()
+    var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
+        A_pivoted
+    )
+    L = L_U[0].copy()
+    U = L_U[1].copy()
 
-    var m = A.shape[0]
-    var n = Y.shape[1]
+    var m: Int = A.shape[0]
+    var n: Int = Y.shape[1]
 
-    var Z = Matrix.full[dtype]((m, n), order=A.order())
-    var X = Matrix.full[dtype]((m, n), order=A.order())
+    var Z: Matrix[dtype] = Matrix.full[dtype]((m, n), order=A.order())
+    var X: Matrix[dtype] = Matrix.full[dtype]((m, n), order=A.order())
 
     var PY = P @ Y
 
@@ -424,7 +438,9 @@ fn solve_lu[
     """
     var U: Matrix[dtype]
     var L: Matrix[dtype]
-    L, U = lu_decomposition[dtype](A)
+    var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](A)
+    L = L_U[0].copy()
+    U = L_U[1].copy()
 
     var m = A.shape[0]
     var n = Y.shape[1]

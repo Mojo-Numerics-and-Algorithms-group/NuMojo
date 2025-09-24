@@ -220,7 +220,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
     """
 
     if a.ndim == 1:
-        a_flattened = a
+        a_flattened = a.copy()
     else:
         a_flattened = ravel(a)
 
@@ -233,7 +233,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
 
 fn argsort[
     dtype: DType
-](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+](mut a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
     """
     Returns the indices that would sort an array.
     It is not guaranteed to be unstable.
@@ -254,7 +254,7 @@ fn argsort[
 
     """
 
-    var normalized_axis = axis
+    var normalized_axis: Int = axis
     if normalized_axis < 0:
         normalized_axis += a.ndim
     if (normalized_axis >= a.ndim) or (normalized_axis < 0):
@@ -347,14 +347,14 @@ fn argsort[
 
 
 fn binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
-    var res = a
-    for end in range(res.size, 1, -1):
+    var result: NDArray[dtype] = a.copy()
+    for end in range(result.size, 1, -1):
         for i in range(1, end):
-            if res._buf.ptr[i - 1] > res._buf.ptr[i]:
-                var temp = res._buf.ptr[i - 1]
-                res._buf.ptr[i - 1] = res._buf.ptr[i]
-                res._buf.ptr[i] = temp
-    return res
+            if result._buf.ptr[i - 1] > result._buf.ptr[i]:
+                var temp = result._buf.ptr[i - 1]
+                result._buf.ptr[i - 1] = result._buf.ptr[i]
+                result._buf.ptr[i] = temp
+    return result^
 
 
 fn binary_sort[
@@ -395,7 +395,7 @@ fn binary_sort[
                 var temp: Scalar[dtype] = result.load(i - 1)
                 result.store(i - 1, result.load(i))
                 result.store(i, temp)
-    return result
+    return result^
 
 
 ###############
@@ -426,8 +426,9 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The sorted NDArray.
     """
-    var result: NDArray[dtype] = ndarray
-    var length = ndarray.size
+    # * We can make it into a in place operation to avoid copy.
+    var result: NDArray[dtype] = ndarray.copy()
+    var length: Int = ndarray.size
 
     for i in range(length):
         for j in range(length - i - 1):
@@ -438,7 +439,7 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
                 result._buf.ptr.store(j, result._buf.ptr.load[width=1](j + 1))
                 result._buf.ptr.store(j + 1, temp)
 
-    return result
+    return result^
 
 
 ##############
@@ -458,15 +459,16 @@ fn quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     Args:
         a: An 1-d array.
     """
-    var res: NDArray[dtype]
+    # * copies are temporary solution for now.
+    var result: NDArray[dtype]
     if a.ndim == 1:
-        res = a
+        result = a.copy()
     else:
-        res = ravel(a)
+        result = ravel(a)
 
-    _quick_sort_inplace(res)
+    _quick_sort_inplace(result)
 
-    return res^
+    return result^
 
 
 fn quick_sort_stable_1d[
@@ -483,15 +485,15 @@ fn quick_sort_stable_1d[
     Args:
         a: An 1-d array.
     """
-    var res: NDArray[dtype]
+    var result: NDArray[dtype]
     if a.ndim == 1:
-        res = a
+        result = a.copy()
     else:
-        res = ravel(a)
+        result = ravel(a)
 
-    _quick_sort_stable_inplace(res, res.size)
+    _quick_sort_stable_inplace(result, result.size)
 
-    return res^
+    return result^
 
 
 fn quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
@@ -556,9 +558,9 @@ fn argsort_quick_sort_1d[
         Indices that would sort an array.
     """
 
-    var res = a
-    var indices = arange[DType.index](res.size)
-    _quick_sort_inplace(res, indices)
+    var result: NDArray[dtype] = a.copy()
+    var indices = arange[DType.index](result.size)
+    _quick_sort_inplace(result, indices)
     return indices^
 
 

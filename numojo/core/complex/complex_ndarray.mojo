@@ -163,11 +163,11 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             )
         self._re = re^
         self._im = im^
-        self.ndim = re.ndim
-        self.shape = re.shape
-        self.size = re.size
-        self.strides = re.strides
-        self.flags = re.flags
+        self.ndim = self._re.ndim
+        self.shape = self._re.shape
+        self.size = self._re.size
+        self.strides = self._re.strides
+        self.flags = self._re.flags
         self.print_options = PrintOptions(
             precision=2, edge_items=2, line_width=80, formatted_width=6
         )
@@ -704,7 +704,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        var narr: Self = self[slice_list]
+        var narr: Self = self[slice_list^]
         return narr^
 
     fn _calculate_strides_efficient(self, shape: List[Int]) -> List[Int]:
@@ -918,7 +918,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        narr = self.__getitem__(slice_list)
+        narr = self.__getitem__(slice_list^)
         return narr^
 
     fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
@@ -973,7 +973,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 size_per_item,
             )
 
-        return result
+        return result^
 
     fn __getitem__(self, indices: List[Int]) raises -> Self:
         """
@@ -1044,7 +1044,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     )
                     offset += 1
 
-            return result
+            return result^
 
         # CASE 2:
         # if array shape is not equal to mask shape,
@@ -1113,7 +1113,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
                 offset += 1
 
-        return result
+        return result^
 
     fn __getitem__(self, mask: List[Bool]) raises -> Self:
         """
@@ -1714,7 +1714,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
         # self.__setitem__(slices=slice_list, val=val)
-        self[slice_list] = val
+        self[slice_list^] = val
 
     fn __setitem__(mut self, var slices: List[Slice], val: Self) raises:
         """
@@ -1894,7 +1894,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 "complex_ndarray:ComplexNDArray:__pos__: pos does not accept"
                 " bool type arrays"
             )
-        return self
+        return self.copy()
 
     fn __neg__(self) raises -> Self:
         """
@@ -1955,7 +1955,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other.re)
         var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other.im)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __add__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -1963,7 +1963,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __add__(self, other: Self) raises -> Self:
         """
@@ -1976,7 +1976,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var imag: NDArray[Self.dtype] = math.add[Self.dtype](
             self._im, other._im
         )
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __add__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
@@ -1984,7 +1984,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __radd__(mut self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
@@ -1992,7 +1992,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other.re)
         var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other.im)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __radd__(mut self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -2000,7 +2000,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __radd__(mut self, other: NDArray[Self.dtype]) raises -> Self:
         """
@@ -2008,7 +2008,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __iadd__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
@@ -2044,7 +2044,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](self._re, other.re)
         var imag: NDArray[Self.dtype] = math.sub[Self.dtype](self._im, other.im)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __sub__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -2056,7 +2056,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var imag: NDArray[Self.dtype] = math.sub[Self.dtype](
             self._im, other.cast[Self.dtype]()
         )
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __sub__(self, other: Self) raises -> Self:
         """
@@ -2068,7 +2068,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var imag: NDArray[Self.dtype] = math.sub[Self.dtype](
             self._im, other._im
         )
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __sub__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
@@ -2076,7 +2076,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.sub[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rsub__(mut self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
@@ -2084,7 +2084,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](other.re, self._re)
         var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other.im, self._im)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rsub__(mut self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -2092,7 +2092,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._re)
         var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._im)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rsub__(mut self, other: NDArray[Self.dtype]) raises -> Self:
         """
@@ -2100,7 +2100,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._re)
         var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._im)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __isub__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
@@ -2169,7 +2169,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __mul__(self, other: Self) raises -> Self:
         """
@@ -2195,7 +2195,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rmul__(self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
@@ -2203,7 +2203,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other.re)
         var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other.re)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rmul__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -2211,7 +2211,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rmul__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
@@ -2219,7 +2219,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __imul__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
@@ -2263,7 +2263,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.div[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.div[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __truediv__(self, other: ComplexNDArray[cdtype]) raises -> Self:
         """
@@ -2273,7 +2273,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var numer = self * other.conj()
         var real = numer._re / denom._re
         var imag = numer._im / denom._re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __truediv__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
@@ -2281,7 +2281,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var real: NDArray[Self.dtype] = math.div[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.div[Self.dtype](self._im, other)
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rtruediv__(mut self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
@@ -2291,7 +2291,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var numer = self * other.conj()
         var real = numer._re / denom.re
         var imag = numer._im / denom.re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rtruediv__(mut self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -2301,7 +2301,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var numer = self.conj() * other
         var real = numer._re / denom._re
         var imag = numer._im / denom._re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __rtruediv__(mut self, other: NDArray[Self.dtype]) raises -> Self:
         """
@@ -2311,7 +2311,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var numer = self.conj() * other
         var real = numer._re / denom._re
         var imag = numer._im / denom._re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __itruediv__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
@@ -2432,7 +2432,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             for i in range(self._re.shape.ndim):
                 result = result + String(self._re.shape._buf[i]) + ","
             result = result + String("))")
-            return result
+            return result^
         except e:
             print("Cannot convert array to string", e)
             return ""
@@ -2546,7 +2546,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     summarize=summarize,
                 )
         result += "]"
-        return result
+        return result^
 
     fn __len__(self) -> Int:
         return Int(self._re.size)
@@ -2637,8 +2637,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Array of the same data with a new shape.
         """
         var result: Self = ComplexNDArray[cdtype](
-            re=numojo.reshape(self._re, shape=shape, order=order),
-            im=numojo.reshape(self._im, shape=shape, order=order),
+            re=numojo.reshape(self._re.copy(), shape=shape, order=order),
+            im=numojo.reshape(self._im.copy(), shape=shape, order=order),
         )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags
@@ -2696,7 +2696,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         # If one index is given
         if index.isa[Int]():
-            var idx = index._get_ptr[Int]()[]
+            var idx: Int = index[Int]
             if idx < self.size:
                 if self.flags[
                     "F_CONTIGUOUS"
@@ -2731,8 +2731,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     )
                 )
 
-        else:
-            var indices = index._get_ptr[List[Int]]()[]
+        elif index.isa[List[Int]]():
+            var indices: List[Int] = index[List[Int]].copy()
             if indices.__len__() != self.ndim:
                 raise Error(
                     IndexError(
@@ -2768,7 +2768,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Return the complex conjugate of the ComplexNDArray.
         """
-        return Self(self._re, -self._im)
+        return Self(self._re.copy(), -self._im.copy())
 
     fn to_ndarray(
         self, type: String = "re"
@@ -2873,10 +2873,10 @@ struct _ComplexNDArrayIter[
         self.index = 0 if forward else a.shape[dimension] - 1
 
     fn __iter__(self) -> Self:
-        return self
+        return self.copy()
 
     fn __next__(mut self) raises -> ComplexNDArray[cdtype]:
-        var res = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
+        var result = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
         var current_index = self.index
 
         @parameter
@@ -2898,13 +2898,13 @@ struct _ComplexNDArrayIter[
                         current_index
                     )
 
-            (res._re._buf.ptr + offset).init_pointee_copy(
+            (result._re._buf.ptr + offset).init_pointee_copy(
                 self.re_ptr[_get_offset(item, self.strides)]
             )
-            (res._im._buf.ptr + offset).init_pointee_copy(
+            (result._im._buf.ptr + offset).init_pointee_copy(
                 self.im_ptr[_get_offset(item, self.strides)]
             )
-        return res
+        return result^
 
     @always_inline
     fn __has_next__(self) -> Bool:
@@ -2946,7 +2946,7 @@ struct _ComplexNDArrayIter[
             )
 
         if self.ndim > 1:
-            var res = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
+            var result = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
 
             for offset in range(self.size_of_item):
                 var remainder = offset
@@ -2961,16 +2961,16 @@ struct _ComplexNDArrayIter[
                     else:
                         (item._buf + self.dimension).init_pointee_copy(index)
 
-                (res._re._buf.ptr + offset).init_pointee_copy(
+                (result._re._buf.ptr + offset).init_pointee_copy(
                     self.re_ptr[_get_offset(item, self.strides)]
                 )
-                (res._im._buf.ptr + offset).init_pointee_copy(
+                (result._im._buf.ptr + offset).init_pointee_copy(
                     self.im_ptr[_get_offset(item, self.strides)]
                 )
-            return res
+            return result^
 
         else:  # 0-D array
-            var res = numojo.creation._0darray[cdtype](
+            var result = numojo.creation._0darray[cdtype](
                 ComplexSIMD[cdtype](self.re_ptr[index], self.im_ptr[index])
             )
-            return res
+            return result^

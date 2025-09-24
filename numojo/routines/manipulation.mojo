@@ -284,7 +284,7 @@ fn transpose[
 
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.index](Shape(A.size), order=array_order)
-    var ptr: UnsafePointer[Scalar[dtype]] = I._buf.ptr
+    var ptr: UnsafePointer[Scalar[DType.index]] = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
@@ -342,7 +342,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return B^
 
 
-fn reorder_layout[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+fn reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -351,18 +351,21 @@ fn reorder_layout[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Copy data into the new layout.
     """
 
-    var rows: Matrix[dtype] = A.shape[0]
-    var cols: Matrix[dtype] = A.shape[1]
+    var rows: Int = A.shape[0]
+    var cols: Int = A.shape[1]
 
     var new_order: String
-
-    try:
-        if A.flags["C_CONTIGUOUS"]:
-            new_order = "F"
-        elif A.flags["F_CONTIGUOUS"]:
-            new_order = "C"
-    except Error:
-        raise Error("Matrix is neither C-contiguous nor F-contiguous!")
+    if A.flags["C_CONTIGUOUS"]:
+        new_order = "F"
+    elif A.flags["F_CONTIGUOUS"]:
+        new_order = "C"
+    else:
+        raise Error(
+            String(
+                "Matrix is neither C-contiguous nor F-contiguous. Cannot"
+                " reorder layout!"
+            )
+        )
 
     var B: Matrix[dtype] = Matrix[dtype](Tuple(rows, cols), new_order)
 
@@ -443,7 +446,7 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    A: Matrix[dtype], shape: Tuple[Int, Int], override_order: String = ""
+    var A: Matrix[dtype], shape: Tuple[Int, Int], override_order: String = ""
 ) raises -> Matrix[dtype]:
     """
     Broadcasts the vector to the given shape.
@@ -483,7 +486,7 @@ fn broadcast_to[
 
     var B = Matrix[dtype](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        return A
+        return A^
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
         B = Matrix.full[dtype](shape, A[0, 0], order=ord)
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):

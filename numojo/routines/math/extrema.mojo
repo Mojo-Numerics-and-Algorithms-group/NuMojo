@@ -473,7 +473,7 @@ fn minimum[
         )
 
     vectorize[vectorized_min, width](array1.size)
-    return result
+    return result^
 
 
 fn maximum[
@@ -508,4 +508,4 @@ fn maximum[
         )
 
     vectorize[vectorized_max, width](array1.size)
-    return result
+    return result^

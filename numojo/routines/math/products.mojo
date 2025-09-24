@@ -74,10 +74,10 @@ fn prod[
     var result = ones[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[axis] = Slice(i, i + 1)
-        var arr_slice = A[slices]
+        var arr_slice = A[slices.copy()]
         result *= arr_slice
 
-    return result
+    return result^
 
 
 fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
@@ -170,7 +170,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A
+        var B = A.copy()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] *= B._buf.ptr[i]
         return B^
@@ -220,7 +220,7 @@ fn cumprod[
     return A^
 
 
-fn cumprod[dtype: DType](var A: Matrix[dtype]) -> Matrix[dtype]:
+fn cumprod[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 

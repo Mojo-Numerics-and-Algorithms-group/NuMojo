@@ -19,7 +19,7 @@ alias item = Item
 
 
 @register_passable
-struct Item(Copyable, Movable, Stringable, Writable):
+struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
     """
     Specifies the indices of an item of an array.
     """
@@ -316,7 +316,7 @@ struct Item(Copyable, Movable, Stringable, Writable):
 
 struct _ItemIter[
     forward: Bool = True,
-](Copyable, Movable):
+](ImplicitlyCopyable, Movable):
     """Iterator for Item.
 
     Parameters:

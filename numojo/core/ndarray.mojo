@@ -1557,9 +1557,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self._buf.ptr[index]
 
-    fn load[
-        width: Int = 1
-    ](self, var index: Int) raises -> SIMD[dtype, width]:
+    fn load[width: Int = 1](self, var index: Int) raises -> SIMD[dtype, width]:
         """
         Safely loads a SIMD element of size `width` at `index`
         from the underlying buffer.

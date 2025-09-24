@@ -15,7 +15,9 @@ alias Shape = NDArrayShape
 
 
 @register_passable
-struct NDArrayShape(Sized, Stringable & Representable, Writable, ImplicitlyCopyable):
+struct NDArrayShape(
+    ImplicitlyCopyable, Sized, Stringable & Representable, Writable
+):
     """
     Presents the shape of `NDArray` type.
 

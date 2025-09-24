@@ -212,7 +212,7 @@ fn apply_along_axis[
     # The iterator along the axis
     var iterator = a.iter_along_axis(axis=axis)
     # The final output array will have the same shape as the input array
-    var result: NDArray[dtype]  = NDArray[dtype](a.shape)
+    var result: NDArray[dtype] = NDArray[dtype](a.shape)
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
         # The memory layout is C-contiguous

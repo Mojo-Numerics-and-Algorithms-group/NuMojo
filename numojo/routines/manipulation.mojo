@@ -294,6 +294,7 @@ fn transpose[
         B._buf.ptr[i] = A._buf.ptr[I._buf.ptr[i]]
     return B^
 
+
 # TODO: Make this operation in place to match numpy.
 fn transpose[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
     """

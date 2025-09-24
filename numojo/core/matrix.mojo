@@ -1727,7 +1727,9 @@ fn _logic_func_matrix_matrix_to_matrix[
 
     var _t0 = t0
     var _t1 = t1
-    var _A = A.copy() # ! perhaps remove this explicit copy if we don't need to extend it's lifetime.
+    var _A = (
+        A.copy()
+    )  # ! perhaps remove this explicit copy if we don't need to extend it's lifetime.
     var _B = B.copy()
 
     return C^

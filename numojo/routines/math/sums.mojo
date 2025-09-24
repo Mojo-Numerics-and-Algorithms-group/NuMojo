@@ -236,6 +236,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     else:
         return cumsum(A.flatten(), axis=-1)
 
+
 # Why do we do in inplace operation here?
 fn cumsum[
     dtype: DType

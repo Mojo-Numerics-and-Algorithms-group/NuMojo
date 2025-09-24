@@ -193,7 +193,7 @@ struct ComplexDType(
         Args:
             mlir_value: The MLIR ComplexDType.
         """
-        self._dtype = DType(mlir_value)
+        self._dtype = DType(mlir_value=mlir_value)
 
     @staticmethod
     fn _from_str(str: StringSlice) -> ComplexDType:
@@ -370,10 +370,10 @@ struct ComplexDType(
     @always_inline("nodebug")
     fn _match(self, mask: UInt8) -> Bool:
         var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred ne>`](
-            __mlir_op.`pop.simd.and`(self._as_ui8(), mask.value),
+            __mlir_op.`pop.simd.and`(self._as_ui8(), mask._mlir_value),
             __mlir_attr.`#pop.simd<0> : !pop.scalar<ui8>`,
         )
-        return Bool(res)
+        return Bool(mlir_value=res)
 
     @always_inline("nodebug")
     fn __is__(self, rhs: ComplexDType) -> Bool:
@@ -412,7 +412,7 @@ struct ComplexDType(
         var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred eq>`](
             self._as_ui8(), rhs._as_ui8()
         )
-        return Bool(res)
+        return Bool(mlir_value=res)
 
     @always_inline("nodebug")
     fn __ne__(self, rhs: ComplexDType) -> Bool:
@@ -427,7 +427,7 @@ struct ComplexDType(
         var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred ne>`](
             self._as_ui8(), rhs._as_ui8()
         )
-        return Bool(res)
+        return Bool(mlir_value=res)
 
     fn __hash__[H: Hasher](self, mut hasher: H):
         """Updates hasher with this `ComplexDType` value.
@@ -438,7 +438,7 @@ struct ComplexDType(
         Args:
             hasher: The hasher instance.
         """
-        hasher._update_with_simd(UInt8(self._as_ui8()))
+        hasher._update_with_simd(UInt8(mlir_value=self._as_ui8()))
 
     @always_inline("nodebug")
     fn is_unsigned(self) -> Bool:
@@ -538,17 +538,17 @@ struct ComplexDType(
         if self._is_non_index_integral():
             return Int(
                 UInt8(
-                    __mlir_op.`pop.shl`(
-                        UInt8(1).value,
+                    mlir_value=__mlir_op.`pop.shl`(
+                        UInt8(1)._mlir_value,
                         __mlir_op.`pop.sub`(
                             __mlir_op.`pop.shr`(
                                 __mlir_op.`pop.simd.and`(
                                     self._as_ui8(),
-                                    _mIsNotInteger.value,
+                                    _mIsNotInteger._mlir_value,
                                 ),
-                                UInt8(1).value,
+                                UInt8(1)._mlir_value,
                             ),
-                            UInt8(3).value,
+                            UInt8(3)._mlir_value,
                         ),
                     )
                 )

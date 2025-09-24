@@ -186,9 +186,7 @@ fn add[
 fn add[
     dtype: DType,
     backend: Backend = _mf.Vectorized,
-](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
-    dtype
-]:
+](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[dtype]:
     """
     Perform addition on a list of arrays and a scalars.
 
@@ -646,9 +644,7 @@ fn mul[
 fn mul[
     dtype: DType,
     backend: Backend = _mf.Vectorized,
-](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
-    dtype
-]:
+](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[dtype]:
     """
     Perform multiplication on a list of arrays an arrays and a scalars.
 

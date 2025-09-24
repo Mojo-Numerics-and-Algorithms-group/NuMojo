@@ -44,10 +44,10 @@ from algorithm.memory import parallel_memcpy
 from python import PythonObject, Python
 from sys import simd_width_of
 
-# from tensor import Tensor, TensorShape
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
+from numojo.core.complex import ComplexScalar
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
 from numojo.core.own_data import OwnData
@@ -97,7 +97,7 @@ fn arange[
     (Overload) When start is 0 and step is 1.
     """
 
-    var size: Int = Int(stop) # TODO: handle negative values.
+    var size: Int = Int(stop)  # TODO: handle negative values.
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
         (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
@@ -409,8 +409,8 @@ fn _linspace_parallel[
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
     alias dtype: DType = cdtype._dtype
+    alias nelts = simd_width_of[dtype]()
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
-    alias nelts = simdwidthof[dtype]()
 
     if endpoint:
         var denominator: Scalar[dtype] = Scalar[dtype](num) - 1.0
@@ -1369,7 +1369,7 @@ fn full[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        var a = nm.fullC[f32](Shape(2,3,4), fill_value=ComplexSIMD[f32](10, 10))
+        var a = nm.full[nm.cf32](Shape(2,3,4), fill_value=CScalar[nm.cf32](10, 10))
         ```
     """
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
@@ -1622,7 +1622,9 @@ fn tril[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m.copy() # * We should move this to be inplace operation perhaps.
+    var result: NDArray[
+        dtype
+    ] = m.copy()  # * We should move this to be inplace operation perhaps.
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
@@ -2098,8 +2100,7 @@ fn array[
 fn array[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
-    real: List[Scalar[cdtype._dtype]],
-    imag: List[Scalar[cdtype._dtype]],
+    data: List[ComplexScalar[cdtype]],
     shape: List[Int],
     order: String = "C",
 ) raises -> ComplexNDArray[cdtype]:
@@ -2110,8 +2111,7 @@ fn array[
         cdtype: Complex datatype of the ComplexNDArray elements.
 
     Args:
-        real: List of real data.
-        imag: List of imaginary data.
+        data: List of complex data.
         shape: List of shape.
         order: Memory order C or F.
 
@@ -2119,9 +2119,11 @@ fn array[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.array[nm.cf32](
-            real=List[Scalar[nm.f32]](1, 2, 3, 4),
-            imag=List[Scalar[nm.f32]](5, 6, 7, 8),
+        var array = nm.array[cf64](
+            data=List[CScalar[cf64]](CScalar[cf64](1, 1),
+            CScalar[cf64](2, 2),
+            CScalar[cf64](3, 3),
+            CScalar[cf64](4, 4)),
             shape=List[Int](2, 2),
         )
         ```
@@ -2129,14 +2131,17 @@ fn array[
     Returns:
         A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
-    if len(real) != len(imag):
+    var size: Int = 1
+    for i in range(len(shape)):
+        size = size * shape[i]
+    if len(data) != size:
         raise Error(
             "Error in array: Real and imaginary data must have the same length!"
         )
     A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        A._re._buf.ptr[i] = real[i]
-        A._im._buf.ptr[i] = imag[i]
+        A._re._buf.ptr[i] = data[i].re
+        A._im._buf.ptr[i] = data[i].im
     return A^
 
 

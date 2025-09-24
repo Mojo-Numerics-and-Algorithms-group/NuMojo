@@ -156,9 +156,7 @@ fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return B^
 
 
-fn sort[
-    dtype: DType
-](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Sort the Matrix along the given axis.
     """

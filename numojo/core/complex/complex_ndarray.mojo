@@ -161,8 +161,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     location=String("ComplexNDArray.__init__(re, im)"),
                 )
             )
-        self._re = re
-        self._im = im
+        self._re = re^
+        self._im = im^
         self.ndim = re.ndim
         self.shape = re.shape
         self.size = re.size
@@ -339,8 +339,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Copy other into self.
         """
-        self._re = other._re
-        self._im = other._im
+        self._re = other._re.copy()
+        self._im = other._im.copy()
         self.ndim = other.ndim
         self.shape = other.shape
         self.size = other.size
@@ -1135,7 +1135,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         return self[mask_array]
 
-    fn item(self, owned index: Int) raises -> ComplexSIMD[cdtype]:
+    fn item(self, var index: Int) raises -> ComplexSIMD[cdtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the complex array (not buffer).
@@ -1282,7 +1282,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             im=(self._im._buf.ptr + _get_offset(index, self.strides))[],
         )
 
-    fn load(self, owned index: Int) raises -> ComplexSIMD[cdtype]:
+    fn load(self, var index: Int) raises -> ComplexSIMD[cdtype]:
         """
         Safely retrieve i-th item from the underlying buffer.
 
@@ -1823,7 +1823,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         )
 
     ### compiler doesn't accept this.
-    # fn __setitem__(self, owned *slices: Variant[Slice, Int], val: NDArray[Self.dtype]) raises:
+    # fn __setitem__(self, var *slices: Variant[Slice, Int], val: NDArray[Self.dtype]) raises:
     #     """
     #     Get items by a series of either slices or integers.
     #     """

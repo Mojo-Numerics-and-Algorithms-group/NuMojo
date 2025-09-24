@@ -147,7 +147,9 @@ fn compress[
     shape_of_res[normalized_axis] = number_of_true
 
     var result: NDArray[dtype] = NDArray[dtype](Shape(shape_of_res))
-    var res_strides: NDArrayStrides = NDArrayStrides(ndim=result.ndim, initialized=False)
+    var res_strides: NDArrayStrides = NDArrayStrides(
+        ndim=result.ndim, initialized=False
+    )
     var temp: Int = 1
     for i in range(result.ndim - 1, -1, -1):
         if i != normalized_axis:
@@ -300,7 +302,9 @@ fn take_along_axis[
     # When broadcasting, the shape of indices must match the shape of arr
     # except along the axis
 
-    var broadcasted_indices: NDArray[DType.index] = indices.copy() # make this owned and don't copy
+    var broadcasted_indices: NDArray[
+        DType.index
+    ] = indices.copy()  # make this owned and don't copy
 
     if arr.shape != indices.shape:
         var arr_shape_new = arr.shape
@@ -329,7 +333,9 @@ fn take_along_axis[
         for i in range(length_of_iterator):
             var arr_slice = arr_iterator.ith(i)
             var indices_slice = indices_iterator.ith(i)
-            var arr_slice_after_applying_indices: NDArray[dtype] = arr_slice[indices_slice]
+            var arr_slice_after_applying_indices: NDArray[dtype] = arr_slice[
+                indices_slice
+            ]
             memcpy(
                 result._buf.ptr + i * result.shape[normalized_axis],
                 arr_slice_after_applying_indices._buf.ptr,
@@ -340,7 +346,9 @@ fn take_along_axis[
         for i in range(length_of_iterator):
             var indices_slice_offsets: NDArray[DType.index]
             var indices_slice: NDArray[DType.index]
-            var indices_slice_offsets_slice = indices_iterator.ith_with_offsets(i)
+            var indices_slice_offsets_slice = indices_iterator.ith_with_offsets(
+                i
+            )
             indices_slice_offsets = indices_slice_offsets_slice[0].copy()
             indices_slice = indices_slice_offsets_slice[1].copy()
             var arr_slice = arr_iterator.ith(i)

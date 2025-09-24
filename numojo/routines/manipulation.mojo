@@ -121,7 +121,11 @@ fn size[
 # ===----------------------------------------------------------------------=== #
 
 
-fn reshape[dtype: DType](A: NDArray[dtype], shape: NDArrayShape, order: String = "C") raises -> NDArray[dtype]:
+fn reshape[
+    dtype: DType
+](
+    A: NDArray[dtype], shape: NDArrayShape, order: String = "C"
+) raises -> NDArray[dtype]:
     """
     Returns an array of the same data with a new shape.
 

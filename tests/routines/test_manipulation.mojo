@@ -17,7 +17,9 @@ fn test_arr_manipulation() raises:
     var Bnp = B.to_numpy()
 
     # Test flip
-    check_is_close(nm.flip(B.copy()), np.flip(Bnp), "`flip` without `axis` fails.")
+    check_is_close(
+        nm.flip(B.copy()), np.flip(Bnp), "`flip` without `axis` fails."
+    )
     for i in range(3):
         check_is_close(
             nm.flip(B.copy(), axis=i),

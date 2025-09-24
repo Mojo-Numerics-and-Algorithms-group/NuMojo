@@ -4,24 +4,22 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implements basic object methods for working with N-Dimensional Array.
-"""
+
 # ===----------------------------------------------------------------------===#
 # SECTIONS OF THE FILE:
-#
 # `NDArray` type
 # 1. Life cycle methods.
 # 2. Indexing and slicing (get and set dunders and relevant methods).
 # 3. Operator dunders.
 # 4. IO, trait, and iterator dunders.
 # 5. Other methods (Sorted alphabetically).
-#
+
 # Iterators of `NDArray`:
 # 1. `_NDArrayIter` type
 # 2. `_NDAxisIter` type
 # 3. `_NDIter` type
-#
+# ===----------------------------------------------------------------------===#
+
 # ===----------------------------------------------------------------------===#
 # FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
 # 1. Description *
@@ -35,7 +33,8 @@ Implements basic object methods for working with N-Dimensional Array.
 # 8) REFERENCES
 # 9) Examples *
 # (Items marked with * are flavored in "Mojo docstring style guide")
-#
+# ===----------------------------------------------------------------------===#
+
 # ===----------------------------------------------------------------------===#
 # TODO: Return views that points to the buffer of the raw array.
 #       This requires enhancement of functionalities of traits from Mojo's side.
@@ -46,7 +45,9 @@ Implements basic object methods for working with N-Dimensional Array.
 # TODO: Special checks for 0d array (numojo scalar).
 # ===----------------------------------------------------------------------===#
 
+# ===----------------------------------------------------------------------===#
 # === Stdlib ===
+# ===----------------------------------------------------------------------===#
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 import builtin.math as builtin_math
@@ -58,7 +59,9 @@ from python import PythonObject
 from sys import simd_width_of
 from utils import Variant
 
+# ===----------------------------------------------------------------------===#
 # === numojo core ===
+# ===----------------------------------------------------------------------===#
 from numojo.core.datatypes import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
@@ -82,7 +85,9 @@ from numojo.core.error import (
     ArithmeticError,
 )
 
+# ===----------------------------------------------------------------------===#
 # === numojo routines (creation / io / logic) ===
+# ===----------------------------------------------------------------------===#
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
     format_value,
@@ -90,7 +95,9 @@ from numojo.routines.io.formatting import (
 )
 import numojo.routines.logic.comparison as comparison
 
+# ===----------------------------------------------------------------------===#
 # === numojo routines (math / bitwise / searching) ===
+# ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
 import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
@@ -99,6 +106,9 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
 
+# ===-----------------------------------------------------------------------===#
+# Implements the N-Dimensional Array.
+# ===-----------------------------------------------------------------------===#
 struct NDArray[dtype: DType = DType.float64](
     Absable,
     Copyable,
@@ -660,7 +670,7 @@ struct NDArray[dtype: DType = DType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = numojo.arange(10).reshape(nm.Shape(2, 5))
+            var a = nm.arange[nm.f32](10).reshape(nm.Shape(2, 5))
             var b = a[:, 2:4]
             print(b) # Output: 2x2 sliced array corresponding to columns 2 and 3 of each row.
             ```
@@ -1660,7 +1670,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     # ===-------------------------------------------------------------------===#
     # Setter dunders and other setter methods
-    #
+
     # Basic Setter Methods
     # fn _setitem(self, *indices: Int, val: Scalar[dtype])                      # Direct unsafe setter
     # fn __setitem__(mut self, idx: Int, val: Self) raises                      # Set by single index

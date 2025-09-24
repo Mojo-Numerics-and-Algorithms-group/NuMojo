@@ -3,7 +3,7 @@ NuMojo is a library for numerical computing in Mojo 🔥
 similar to NumPy, SciPy in Python.
 """
 
-alias __version__ = "V0.7.0"
+alias __version__: String = "V0.8.0"
 
 # ===----------------------------------------------------------------------=== #
 # Import core types
@@ -13,9 +13,26 @@ from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides, Strides
 from numojo.core.item import Item, item
-from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
-from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.matrix import Matrix
+from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
+from numojo.core.complex.complex_ndarray import ComplexNDArray
+from numojo.core.complex.complex_dtype import (
+    ComplexDType,
+    ci8,
+    ci16,
+    ci32,
+    ci64,
+    cisize,
+    cintp,
+    cu8,
+    cu16,
+    cu32,
+    cu64,
+    cf16,
+    cf32,
+    cf64,
+    cboolean,
+)
 from numojo.core.datatypes import (
     i8,
     i16,
@@ -154,31 +171,19 @@ from numojo.routines.bitwise import invert
 from numojo.routines import creation
 from numojo.routines.creation import (
     arange,
-    arangeC,
     linspace,
-    linspaceC,
     logspace,
-    logspaceC,
     geomspace,
-    geomspaceC,
     empty,
     empty_like,
     eye,
-    eyeC,
     identity,
-    identityC,
     ones,
-    onesC,
     ones_like,
-    ones_likeC,
     zeros,
-    zerosC,
     zeros_like,
-    zeros_likeC,
     full,
-    fullC,
     full_like,
-    full_likeC,
     diag,
     diagflat,
     tri,

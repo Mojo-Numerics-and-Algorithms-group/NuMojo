@@ -48,7 +48,7 @@ fn ndim[dtype: DType](array: NDArray[dtype]) -> Int:
     return array.ndim
 
 
-fn ndim[dtype: DType](array: ComplexNDArray[dtype]) -> Int:
+fn ndim[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> Int:
     """
     Returns the number of dimensions of the NDArray.
 
@@ -74,7 +74,7 @@ fn shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
     return array.shape
 
 
-fn shape[dtype: DType](array: ComplexNDArray[dtype]) -> NDArrayShape:
+fn shape[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> NDArrayShape:
     """
     Returns the shape of the NDArray.
 
@@ -100,7 +100,9 @@ fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
     return array.shape[axis]
 
 
-fn size[dtype: DType](array: ComplexNDArray[dtype], axis: Int) raises -> Int:
+fn size[
+    cdtype: ComplexDType
+](array: ComplexNDArray[cdtype], axis: Int) raises -> Int:
     """
     Returns the size of the NDArray.
 

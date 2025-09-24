@@ -223,7 +223,9 @@ def test_qr_decomposition():
 
     var np = Python.import_module("numpy")
 
-    Q, R = nm.linalg.qr(A)
+    var Q_R = nm.linalg.qr(A)
+    Q = Q_R[0].copy()
+    R = Q_R[1].copy()
 
     # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
     var id = Q.transpose() @ Q
@@ -240,7 +242,9 @@ def test_qr_decomposition():
 def test_qr_decomposition_asym_reduced():
     var np = Python.import_module("numpy")
     var A = Matrix.rand[f64]((12, 5), order=order)
-    Q, R = nm.linalg.qr(A, mode="reduced")
+    var Q_R = nm.linalg.qr(A, mode="reduced")
+    Q = Q_R[0].copy()
+    R = Q_R[1].copy()
 
     assert_true(
         Q.shape[0] == 12 and Q.shape[1] == 5,
@@ -268,7 +272,9 @@ def test_qr_decomposition_asym_reduced():
 def test_qr_decomposition_asym_complete():
     var np = Python.import_module("numpy")
     var A = Matrix.rand[f64]((12, 5), order=order)
-    Q, R = nm.linalg.qr(A, mode="complete")
+    var Q_R = nm.linalg.qr(A, mode="complete")
+    var Q = Q_R[0].copy()
+    var R = Q_R[1].copy()
 
     assert_true(
         Q.shape[0] == 12 and Q.shape[1] == 12,
@@ -296,7 +302,9 @@ def test_qr_decomposition_asym_complete():
 def test_qr_decomposition_asym_complete2():
     var np = Python.import_module("numpy")
     var A = Matrix.rand[f64]((5, 12), order=order)
-    Q, R = nm.linalg.qr(A, mode="complete")
+    var Q_R = nm.linalg.qr(A, mode="complete")
+    var Q = Q_R[0].copy()
+    var R = Q_R[1].copy()
 
     assert_true(
         Q.shape[0] == 5 and Q.shape[1] == 5,
@@ -330,7 +338,9 @@ def test_eigen_decomposition():
     var Anp = A.to_numpy()
 
     # Compute eigendecomposition
-    Q, Lambda = nm.linalg.eig(A)
+    var Q_Lambda = nm.linalg.eig(A)
+    var Q = Q_Lambda[0].copy()
+    var Lambda = Q_Lambda[1].copy()
 
     # Use NumPy for comparison
     namedtuple = np.linalg.eig(Anp)
@@ -427,25 +437,25 @@ def test_math():
         )
 
     check_matrices_close(
-        nm.cumsum(A),
+        nm.cumsum(A.copy()),
         np.cumsum(Anp),
         "`cumsum` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            nm.cumsum(A, axis=i),
+            nm.cumsum(A.copy(), axis=i),
             np.cumsum(Anp, axis=i),
             String("`cumsum` by axis {i} is broken"),
         )
 
     check_matrices_close(
-        nm.cumprod(A),
+        nm.cumprod(A.copy()),
         np.cumprod(Anp),
         "`cumprod` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            nm.cumprod(A, axis=i),
+            nm.cumprod(A.copy(), axis=i),
             np.cumprod(Anp, axis=i),
             String("`cumprod` by axis {i} is broken"),
         )
@@ -495,7 +505,7 @@ def test_sorting():
     )
     for i in range(2):
         check_matrices_close(
-            nm.sort(A, axis=i),
+            nm.sort(A.copy(), axis=i),
             np.sort(Anp, axis=i),
             String("Sort by axis {} is broken").format(i),
         )
@@ -505,7 +515,7 @@ def test_sorting():
     )
     for i in range(2):
         check_matrices_close(
-            nm.argsort(A, axis=i),
+            nm.argsort(A.copy(), axis=i),
             np.argsort(Anp, axis=i),
             String("Argsort by axis {} is broken").format(i),
         )

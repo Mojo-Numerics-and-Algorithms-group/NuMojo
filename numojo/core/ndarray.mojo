@@ -4752,7 +4752,7 @@ struct NDArray[dtype: DType = DType.float64](
         return new_matrix^
 
     # TODO: make it inplace?
-    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
+    fn reshape(self, shape: NDArrayShape, order: String = "C") raises -> NDArray[dtype]:
         """
         Returns an array of the same data with a new shape.
 
@@ -4763,7 +4763,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Array of the same data with a new shape.
         """
-        return numojo.reshape(self.copy(), shape=shape, order=order)
+        print("WTF IS HAPPENING")
+        return numojo.reshape(self, shape=shape, order=order)
 
     fn resize(mut self, shape: NDArrayShape) raises:
         """

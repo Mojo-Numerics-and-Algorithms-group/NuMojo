@@ -181,7 +181,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
 
 fn cumprod[
     dtype: DType
-](var A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
+](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns cumprod of array by axis.
 
@@ -195,7 +195,8 @@ fn cumprod[
     Returns:
         Cumprod of array by axis.
     """
-
+    # TODO: reduce copies if possible
+    var B: NDArray[dtype] = A.copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
@@ -206,18 +207,18 @@ fn cumprod[
     var I = NDArray[DType.index](Shape(A.size))
     var ptr = I._buf.ptr
 
-    var _shape = A.shape._move_axis_to_end(axis)
-    var _strides = A.strides._move_axis_to_end(axis)
+    var _shape = B.shape._move_axis_to_end(axis)
+    var _strides = B.strides._move_axis_to_end(axis)
 
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, _shape, _strides
     )
 
-    for i in range(0, A.size, A.shape[axis]):
-        for j in range(A.shape[axis] - 1):
-            A._buf.ptr[I._buf.ptr[i + j + 1]] *= A._buf.ptr[I._buf.ptr[i + j]]
+    for i in range(0, B.size, B.shape[axis]):
+        for j in range(B.shape[axis] - 1):
+            B._buf.ptr[I._buf.ptr[i + j + 1]] *= B._buf.ptr[I._buf.ptr[i + j]]
 
-    return A^
+    return B^
 
 
 fn cumprod[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:

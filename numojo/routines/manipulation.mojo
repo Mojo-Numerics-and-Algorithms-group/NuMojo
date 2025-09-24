@@ -121,13 +121,9 @@ fn size[
 # ===----------------------------------------------------------------------=== #
 
 
-fn reshape[
-    dtype: DType
-](
-    var A: NDArray[dtype], shape: NDArrayShape, order: String = "C"
-) raises -> NDArray[dtype]:
+fn reshape[dtype: DType](A: NDArray[dtype], shape: NDArrayShape, order: String = "C") raises -> NDArray[dtype]:
     """
-        Returns an array of the same data with a new shape.
+    Returns an array of the same data with a new shape.
 
     Raises:
         Error: If the number of elements do not match.
@@ -141,7 +137,7 @@ fn reshape[
     Returns:
         Array of the same data with a new shape.
     """
-
+    print("HOLY")
     if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
@@ -149,12 +145,15 @@ fn reshape[
         "F"
     )
 
+    var B: NDArray[dtype]
     if array_order != order:
-        A = ravel(A, order=order)
-
-    # Write in this order into the new array
-    var B = NDArray[dtype](shape=shape, order=order)
-    memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+        var temp: NDArray[dtype] = ravel(A, order=order)
+        B = NDArray[dtype](shape=shape, order=order)
+        memcpy(dest=B._buf.ptr, src=temp._buf.ptr, count=A.size)
+    else:
+        # Write in this order into the new array
+        B = NDArray[dtype](shape=shape, order=order)
+        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
 
     return B^
 
@@ -183,7 +182,7 @@ fn ravel[
             String("\nError in `ravel()`: Invalid order: {}").format(order)
         )
     var iterator = a.iter_along_axis(axis=axis, order=order)
-    var res = NDArray[dtype](Shape(a.size))
+    var res: NDArray[dtype] = NDArray[dtype](Shape(a.size))
     var length_of_elements = a.shape[axis]
     var length_of_iterator = a.size // length_of_elements
 

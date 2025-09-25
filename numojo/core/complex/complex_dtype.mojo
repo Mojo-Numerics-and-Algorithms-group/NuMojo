@@ -22,34 +22,55 @@ alias _mIsFloat = UInt8(1 << 6)
 
 # rust like aliases for complex data types.
 alias ci8 = ComplexDType.int8
-"""Data type alias cfor ComplexDType.int8"""
+"""Data type alias for ComplexDType.int8"""
 alias ci16 = ComplexDType.int16
-"""Data type alias cfor ComplexDType.int16"""
+"""Data type alias for ComplexDType.int16"""
 alias ci32 = ComplexDType.int32
-"""Data type alias cfor ComplexDType.int32"""
+"""Data type alias for ComplexDType.int32"""
 alias ci64 = ComplexDType.int64
-"""Data type alias cfor ComplexDType.int64"""
-alias cisize = ComplexDType.index
-"""Data type alias cfor ComplexDType.index"""
-alias cintp = ComplexDType.index
-"""Data type alias cfor ComplexDType.index"""
+"""Data type alias for ComplexDType.int64"""
+alias ci128 = ComplexDType.int128
+"""Data type alias for ComplexDType.int128"""
+alias ci256 = ComplexDType.int256
+"""Data type alias for ComplexDType.int256"""
+alias cint = ComplexDType.int
+"""Data type alias for ComplexDType.int"""
 alias cu8 = ComplexDType.uint8
-"""Data type alias cfor ComplexDType.uint8"""
+"""Data type alias for ComplexDType.uint8"""
 alias cu16 = ComplexDType.uint16
-"""Data type alias cfor ComplexDType.uint16"""
+"""Data type alias for ComplexDType.uint16"""
 alias cu32 = ComplexDType.uint32
-"""Data type alias cfor ComplexDType.uint32"""
+"""Data type alias for ComplexDType.uint32"""
 alias cu64 = ComplexDType.uint64
-"""Data type alias cfor ComplexDType.uint64"""
+"""Data type alias for ComplexDType.uint64"""
+alias cu128 = ComplexDType.uint128
+"""Data type alias for ComplexDType.uint128"""
+alias cu256 = ComplexDType.uint256
+"""Data type alias for ComplexDType.uint256"""
+alias cuint = ComplexDType.uint
+"""Data type alias for ComplexDType.uint"""
+alias cf8e3m4 = ComplexDType.float8_e3m4
+"""Data type alias for ComplexDType.float8_e3m4"""
+alias cf8e4m3fn = ComplexDType.float8_e4m3fn
+"""Data type alias for ComplexDType.float8_e4m3fn"""
+alias cf8e4m3fnuz = ComplexDType.float8_e4m3fnuz
+"""Data type alias for ComplexDType.float8_e4m3fnuz"""
+alias cf8e5m2 = ComplexDType.float8_e5m2
+"""Data type alias for ComplexDType.float8_e5m2"""
+alias cf8e5m2fnuz = ComplexDType.float8_e5m2fnuz
+"""Data type alias for ComplexDType.float8_e5m2fnuz"""
+alias cbf16 = ComplexDType.bfloat16
+"""Data type alias for ComplexDType.bfloat16"""
 alias cf16 = ComplexDType.float16
-"""Data type alias cfor ComplexDType.float16"""
+"""Data type alias for ComplexDType.float16"""
 alias cf32 = ComplexDType.float32
-"""Data type alias cfor ComplexDType.float32"""
+"""Data type alias for ComplexDType.float32"""
 alias cf64 = ComplexDType.float64
-"""Data type alias cfor ComplexDType.float64"""
+"""Data type alias for ComplexDType.float64"""
 alias cboolean = ComplexDType.bool
-"""Data type alias cfor ComplexDType.bool"""
-
+"""Data type alias for ComplexDType.bool"""
+alias cinvalid = ComplexDType.invalid
+"""Data type alias for ComplexDType.invalid"""
 
 # ===----------------------------------------------------------------------=== #
 # Implements the Complex Datatype.
@@ -90,25 +111,27 @@ struct ComplexDType(
     # ===-------------------------------------------------------------------===#
     # Aliases
     # ===-------------------------------------------------------------------===#
-
+    # Refer to DType documentation for details on each data type.
     alias _mlir_type = __mlir_type.`!kgen.dtype`
-
     alias invalid = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<invalid> : !kgen.dtype`
     )
     alias bool = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<bool> : !kgen.dtype`
     )
-    alias index = ComplexDType(
+    alias int = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<index> : !kgen.dtype`
     )
-    alias uint1 = ComplexDType(
+    alias uint = ComplexDType(
+        mlir_value=__mlir_attr.`#kgen.dtype.constant<uindex> : !kgen.dtype`
+    )
+    alias _uint1 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui1> : !kgen.dtype`
     )
-    alias uint2 = ComplexDType(
+    alias _uint2 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui2> : !kgen.dtype`
     )
-    alias uint4 = ComplexDType(
+    alias _uint4 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui4> : !kgen.dtype`
     )
     alias uint8 = ComplexDType(
@@ -204,36 +227,30 @@ struct ComplexDType(
         """
         if str.startswith("ComplexDType."):
             return Self._from_str(str.removeprefix("ComplexDType."))
-        elif str == "bool":
-            return ComplexDType.bool
-        elif str == "index":
-            return ComplexDType.index
-
-        elif str == "uint8":
-            return ComplexDType.uint8
         elif str == "int8":
             return ComplexDType.int8
-        elif str == "uint16":
-            return ComplexDType.uint16
-        elif str == "int16":
-            return ComplexDType.int16
-        elif str == "uint32":
-            return ComplexDType.uint32
-        elif str == "int32":
-            return ComplexDType.int32
-        elif str == "uint64":
-            return ComplexDType.uint64
         elif str == "int64":
             return ComplexDType.int64
-        elif str == "uint128":
-            return ComplexDType.uint128
         elif str == "int128":
             return ComplexDType.int128
-        elif str == "uint256":
-            return ComplexDType.uint256
         elif str == "int256":
             return ComplexDType.int256
-
+        elif str == "int":
+            return ComplexDType.int
+        elif str == "uint8":
+            return ComplexDType.uint8
+        elif str == "uint16":
+            return ComplexDType.uint16
+        elif str == "uint32":
+            return ComplexDType.uint32
+        elif str == "uint64":
+            return ComplexDType.uint64
+        elif str == "uint128":
+            return ComplexDType.uint128
+        elif str == "uint256":
+            return ComplexDType.uint256
+        elif str == "uint":
+            return ComplexDType.uint
         elif str == "float8_e3m4":
             return ComplexDType.float8_e3m4
         elif str == "float8_e4m3fn":
@@ -244,7 +261,6 @@ struct ComplexDType(
             return ComplexDType.float8_e5m2
         elif str == "float8_e5m2fnuz":
             return ComplexDType.float8_e5m2fnuz
-
         elif str == "bfloat16":
             return ComplexDType.bfloat16
         elif str == "float16":
@@ -253,7 +269,8 @@ struct ComplexDType(
             return ComplexDType.float32
         elif str == "float64":
             return ComplexDType.float64
-
+        elif str == "bool":
+            return ComplexDType.bool
         else:
             return ComplexDType.invalid
 
@@ -276,35 +293,30 @@ struct ComplexDType(
             writer: The object to write to.
         """
 
-        if self is ComplexDType.bool:
-            return writer.write("bool")
-        elif self is ComplexDType.index:
-            return writer.write("index")
-        elif self is ComplexDType.uint8:
-            return writer.write("uint8")
-        elif self is ComplexDType.int8:
+        if self is ComplexDType.int8:
             return writer.write("int8")
-        elif self is ComplexDType.uint16:
-            return writer.write("uint16")
-        elif self is ComplexDType.int16:
-            return writer.write("int16")
-        elif self is ComplexDType.uint32:
-            return writer.write("uint32")
-        elif self is ComplexDType.int32:
-            return writer.write("int32")
-        elif self is ComplexDType.uint64:
-            return writer.write("uint64")
         elif self is ComplexDType.int64:
             return writer.write("int64")
-        elif self is ComplexDType.uint128:
-            return writer.write("uint128")
         elif self is ComplexDType.int128:
             return writer.write("int128")
-        elif self is ComplexDType.uint256:
-            return writer.write("uint256")
         elif self is ComplexDType.int256:
             return writer.write("int256")
-
+        elif self is ComplexDType.int:
+            return writer.write("int")
+        elif self is ComplexDType.uint8:
+            return writer.write("uint8")
+        elif self is ComplexDType.uint16:
+            return writer.write("uint16")
+        elif self is ComplexDType.uint32:
+            return writer.write("uint32")
+        elif self is ComplexDType.uint64:
+            return writer.write("uint64")
+        elif self is ComplexDType.uint128:
+            return writer.write("uint128")
+        elif self is ComplexDType.uint256:
+            return writer.write("uint256")
+        elif self is ComplexDType.uint:
+            return writer.write("uint")
         elif self is ComplexDType.float8_e3m4:
             return writer.write("float8_e3m4")
         elif self is ComplexDType.float8_e4m3fn:
@@ -315,18 +327,16 @@ struct ComplexDType(
             return writer.write("float8_e5m2")
         elif self is ComplexDType.float8_e5m2fnuz:
             return writer.write("float8_e5m2fnuz")
-
         elif self is ComplexDType.bfloat16:
             return writer.write("bfloat16")
         elif self is ComplexDType.float16:
             return writer.write("float16")
-
         elif self is ComplexDType.float32:
             return writer.write("float32")
-
         elif self is ComplexDType.float64:
             return writer.write("float64")
-
+        elif self is ComplexDType.bool:
+            return writer.write("bool")
         elif self is ComplexDType.invalid:
             return writer.write("invalid")
 
@@ -476,7 +486,7 @@ struct ComplexDType(
         Returns:
             Returns True if the input type parameter is an integer.
         """
-        return self is ComplexDType.index or self._is_non_index_integral()
+        return self in (DType.int, DType.uint) or self._is_non_index_integral()
 
     @always_inline("nodebug")
     fn is_floating_point(self) -> Bool:
@@ -529,10 +539,10 @@ struct ComplexDType(
 
     @always_inline
     fn size_of(self) -> Int:
-        """Returns the size in bytes of the current ComplexDType.
+        """Returns the size in bytes of the current DType.
 
         Returns:
-            Returns the size in bytes of the current ComplexDType.
+            Returns the size in bytes of the current DType.
         """
 
         if self._is_non_index_integral():
@@ -548,10 +558,6 @@ struct ComplexDType(
                                 ),
                                 UInt8(1)._mlir_value,
                             ),
-                                    _mIsNotInteger._mlir_value,
-                                ),
-                                UInt8(1)._mlir_value,
-                            ),
                             UInt8(3)._mlir_value,
                         ),
                     )
@@ -559,35 +565,11 @@ struct ComplexDType(
             )
 
         elif self is ComplexDType.bool:
-            return sizeof[DType.bool]()
-        elif self is ComplexDType.index:
-            return size_of[DType.index]()
-
-        elif self is ComplexDType.float8_e3m4:
-            return size_of[DType.float8_e3m4]()
-        elif self is ComplexDType.float8_e4m3fn:
-            return size_of[DType.float8_e4m3fn]()
-        elif self is ComplexDType.float8_e4m3fnuz:
-            return size_of[DType.float8_e4m3fnuz]()
-        elif self is ComplexDType.float8_e5m2:
-            return size_of[DType.float8_e5m2]()
-        elif self is ComplexDType.float8_e5m2fnuz:
-            return size_of[DType.float8_e5m2fnuz]()
-
-        elif self is ComplexDType.bfloat16:
-            return size_of[DType.bfloat16]()
-        elif self is ComplexDType.float16:
-            return size_of[DType.float16]()
-
-        elif self is ComplexDType.float32:
-            return size_of[DType.float32]()
-
-        elif self is ComplexDType.float64:
-            return size_of[DType.float64]()
-
             return size_of[DType.bool]()
-        elif self is ComplexDType.index:
-            return size_of[DType.index]()
+        elif self is ComplexDType.int:
+            return size_of[DType.int]()
+        elif self is ComplexDType.uint:
+            return size_of[DType.uint]()
 
         elif self is ComplexDType.float8_e3m4:
             return size_of[DType.float8_e3m4]()
@@ -629,7 +611,7 @@ struct ComplexDType(
     # ===-------------------------------------------------------------------===#
     @always_inline("nodebug")
     fn __mlir_type(self) -> __mlir_type.`!kgen.deferred`:
-        """Returns the MLIR type of the current ComplexDType as an MLIR type.
+        """Returns the MLIR type of the current DType as an MLIR type.
 
         Returns:
             The MLIR type of the current ComplexDType.
@@ -637,7 +619,7 @@ struct ComplexDType(
         if self is ComplexDType.bool:
             return __mlir_attr.i1
 
-        if self is ComplexDType.index:
+        if self is ComplexDType.int:
             return __mlir_attr.index
 
         if self is ComplexDType.uint8:
@@ -687,97 +669,21 @@ struct ComplexDType(
         if self is ComplexDType.float64:
             return __mlir_attr.f64
 
-        return abort[__mlir_type.`!kgen.deferred`]("invalid ComplexDType")
-
-    @parameter
-    fn compare_dtype(self, dtype: DType) -> Bool:
-        if self.to_dtype() == dtype:
-            return True
-        return False
-
-    @parameter
-    fn to_dtype(self) -> DType:
-        # Floating point types
-        if self == ComplexDType.float16:
-            return DType.float16
-        elif self == ComplexDType.float32:
-            return DType.float32
-        elif self == ComplexDType.float64:
-            return DType.float64
-        elif self == ComplexDType.bfloat16:
-            return DType.bfloat16
-
-        # Float8 types
-        elif self == ComplexDType.float8_e3m4:
-            return DType.float8_e3m4
-        elif self == ComplexDType.float8_e4m3fn:
-            return DType.float8_e4m3fn
-        elif self == ComplexDType.float8_e4m3fnuz:
-            return DType.float8_e4m3fnuz
-        elif self == ComplexDType.float8_e5m2:
-            return DType.float8_e5m2
-        elif self == ComplexDType.float8_e5m2fnuz:
-            return DType.float8_e5m2fnuz
-
-        # Signed integer types
-        elif self == ComplexDType.int8:
-            return DType.int8
-        elif self == ComplexDType.int16:
-            return DType.int16
-        elif self == ComplexDType.int32:
-            return DType.int32
-        elif self == ComplexDType.int64:
-            return DType.int64
-        elif self == ComplexDType.int128:
-            return DType.int128
-        elif self == ComplexDType.int256:
-            return DType.int256
-
-        # Unsigned integer types
-        # elif self == ComplexDType.uint1:
-        #     return DType.uint1
-        # elif self == ComplexDType.uint2:
-        #     return DType.uint2
-        # elif self == ComplexDType.uint4:
-        # return DType.uint4
-        elif self == ComplexDType.uint8:
-            return DType.uint8
-        elif self == ComplexDType.uint16:
-            return DType.uint16
-        elif self == ComplexDType.uint32:
-            return DType.uint32
-        elif self == ComplexDType.uint64:
-            return DType.uint64
-        elif self == ComplexDType.uint128:
-            return DType.uint128
-        elif self == ComplexDType.uint256:
-            return DType.uint256
-
-        # Special types
-        elif self == ComplexDType.bool:
-            return DType.bool
-        elif self == ComplexDType.index:
-            return DType.index
-        elif self == ComplexDType.invalid:
-            return DType.invalid
-
-        # Default case
-        else:
-            return DType.invalid
+        return abort[__mlir_type.`!kgen.deferred`]("invalid dtype")
 
 
 fn _concise_dtype_str(cdtype: ComplexDType) -> String:
     """Returns a concise string representation of the complex data type."""
     if cdtype == ci8:
         return "ci8"
-    elif cdtype == ci16:
-        return "ci16"
-    elif cdtype == ci32:
-        return "ci32"
     elif cdtype == ci64:
         return "ci64"
-    elif cdtype == cisize:
-        return "cindex"
+    elif cdtype == ci128:
+        return "ci128"
+    elif cdtype == ci256:
+        return "ci256"
+    elif cdtype == cint:
+        return "cint"
     elif cdtype == cu8:
         return "cu8"
     elif cdtype == cu16:
@@ -786,6 +692,24 @@ fn _concise_dtype_str(cdtype: ComplexDType) -> String:
         return "cu32"
     elif cdtype == cu64:
         return "cu64"
+    elif cdtype == cu128:
+        return "cu128"
+    elif cdtype == cu256:
+        return "cu256"
+    elif cdtype == cuint:
+        return "cuint"
+    elif cdtype == cf8e3m4:
+        return "cf8e3m4"
+    elif cdtype == cf8e4m3fn:
+        return "cf8e4m3fn"
+    elif cdtype == cf8e4m3fnuz:
+        return "cf8e4m3fnuz"
+    elif cdtype == cf8e5m2:
+        return "cf8e5m2"
+    elif cdtype == cf8e5m2fnuz:
+        return "cf8e5m2fnuz"
+    elif cdtype == cbf16:
+        return "cbf16"
     elif cdtype == cf16:
         return "cf16"
     elif cdtype == cf32:
@@ -794,7 +718,7 @@ fn _concise_dtype_str(cdtype: ComplexDType) -> String:
         return "cf64"
     elif cdtype == cboolean:
         return "cboolean"
-    elif cdtype == cisize:
-        return "cisize"
+    elif cdtype == cinvalid:
+        return "cinvalid"
     else:
         return "Unknown"

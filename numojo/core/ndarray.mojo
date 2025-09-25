@@ -811,7 +811,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr^
 
-    fn _getitem_variadic_slices(self, owned *slices: Slice) raises -> Self:
+    fn _getitem_variadic_slices(self, var *slices: Slice) raises -> Self:
         """
         Alternative implementation of `__getitem__(self, owned *slices: Slice)` which reduces dimension unlike the original one which is compatible with numpy slicing.
 
@@ -855,10 +855,10 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        var narr: Self = self[slice_list]
+        var narr: Self = self[slice_list^]
         return narr^
 
-    fn _getitem_list_slices(self, owned slice_list: List[Slice]) raises -> Self:
+    fn _getitem_list_slices(self, var slice_list: List[Slice]) raises -> Self:
         """
         Alternative implementation of `__getitem__(self, owned slice_list: List[Slice])` for which reduces dimension unlike the original one which is compatible with numpy slicing.
 
@@ -5288,6 +5288,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = self.shape._pop(normalized_axis)
         self.strides = self.strides._pop(normalized_axis)
         self.ndim -= 1
+
 
 # ===----------------------------------------------------------------------===#
 # NDArrayIterator

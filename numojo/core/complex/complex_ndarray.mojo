@@ -2800,6 +2800,49 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
+    fn squeeze(mut self, axis: Int) raises:
+        """
+        Remove (squeeze) a single dimension of size 1 from the array shape.
+
+        Args:
+            axis: The axis to squeeze. Supports negative indices.
+
+        Raises:
+            IndexError: If the axis is out of range.
+            ShapeError: If the dimension at the given axis is not of size 1.
+        """
+        var normalized_axis: Int = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis < 0) or (normalized_axis >= self.ndim):
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Axis {} is out of range for array with {} dimensions."
+                    ).format(axis, self.ndim),
+                    suggestion=String(
+                        "Use an axis value in the range [-{}, {})."
+                    ).format(self.ndim, self.ndim),
+                    location=String("NDArray.squeeze(axis: Int)"),
+                )
+            )
+
+        if self.shape[normalized_axis] != 1:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Cannot squeeze axis {} with size {}."
+                    ).format(normalized_axis, self.shape[normalized_axis]),
+                    suggestion=String(
+                        "Only axes with length 1 can be removed."
+                    ),
+                    location=String("NDArray.squeeze(axis: Int)"),
+                )
+            )
+        self.shape = self.shape._pop(normalized_axis)
+        self.strides = self.strides._pop(normalized_axis)
+        self.ndim -= 1
+
 
 struct _ComplexNDArrayIter[
     is_mutable: Bool, //,

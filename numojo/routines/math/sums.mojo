@@ -62,7 +62,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         An NDArray.
     """
 
-    var normalized_axis = axis
+    var normalized_axis: Int = axis
     if normalized_axis < 0:
         normalized_axis += A.ndim
 
@@ -99,10 +99,10 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             slices.append(Slice(0, A.shape[i]))
         else:
             slices.append(Slice(0, 0))  # Temp value
-    var result = zeros[dtype](NDArrayShape(result_shape))
+    var result: NDArray[dtype] = zeros[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[normalized_axis] = Slice(i, i + 1)
-        var arr_slice = A[slices.copy()]
+        var arr_slice: NDArray[dtype] = A._getitem_list_slices(slices.copy())
         result += arr_slice
 
     return result^

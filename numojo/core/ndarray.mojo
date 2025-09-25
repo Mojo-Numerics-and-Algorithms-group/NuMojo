@@ -401,8 +401,9 @@ struct NDArray[dtype: DType = DType.float64](
         Examples:
 
         ```mojo
-        import numojo
-        var A = numojo.ones(numojo.Shape(2,3,4))
+        import numojo as nm
+        from numojo.prelude import *
+        var A = nm.ones[f32](nm.Shape(2,3,4))
         print(A._getitem(1,2,3))
         ```
         """
@@ -428,8 +429,9 @@ struct NDArray[dtype: DType = DType.float64](
         Examples:
 
         ```mojo
-        import numojo
-        var A = numojo.ones(numojo.Shape(2,3,4))
+        import numojo as nm
+        from numojo.prelude import *
+        var A = nm.ones[f32](nm.Shape(2,3,4))
         print(A._getitem(List[Int](1,2,3)))
         ```
         """
@@ -1829,8 +1831,9 @@ struct NDArray[dtype: DType = DType.float64](
         Examples:
 
         ```mojo
-        import numojo
-        var A = numojo.ones(numojo.Shape(2,3,4))
+        import numojo as nm
+        from numojo.prelude import *
+        var A = nm.ones[f32](nm.Shape(2,3,4))
         A._setitem(1,2,3, val=10)
         ```
         """

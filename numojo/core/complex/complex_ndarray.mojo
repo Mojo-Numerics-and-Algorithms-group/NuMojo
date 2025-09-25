@@ -586,11 +586,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arange[nm.cf32](nm.CScalar[nm.f32](0, 0), nm.CScalar[nm.f32](12, 12), nm.CScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
+            from numojo.prelude import *
+            var a = nm.arange[cf32](CScalar[cf32](0, 0), CScalar[cf32](12, 12), CScalar[cf32](1, 1)).reshape(nm.Shape(3, 4))
             print(a.shape)        # (3,4)
             print(a[1].shape)     # (4,)  -- 1-D slice
             print(a[-1].shape)    # (4,)  -- negative index
-            var b = nm.arange[nm.cf32](nm.CScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
+            var b = nm.arange[cf32](CScalar[cf32](6, 6)).reshape(nm.Shape(6))
             print(b[2])           # 0-D array (scalar wrapper)
             ```
         """
@@ -751,7 +752,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arange[nm.cf32](nm.ComplexScalar(10.0, 10.0)).reshape(nm.Shape(2, 5))
+            from numojo.prelude import *
+            var a = nm.arange[cf32](CScalar[cf32](10.0, 10.0)).reshape(nm.Shape(2, 5))
             var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
             print(b)
             ```
@@ -855,8 +857,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         ```mojo
             import numojo as nm
-            var a = nm.fullC[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-            var b = a[1, 2:4]
+            from numojo.prelude import *
+            var a = nm.full[cf32](nm.Shape(2, 5), CScalar[cf32](1.0, 1.0))
+            var b = a[1, Slice(2,4)]
             print(b)
         ```
         """

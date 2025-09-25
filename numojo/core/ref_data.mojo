@@ -37,7 +37,7 @@ struct RefData[is_mutable: Bool, //, origin: Origin[is_mutable]](Bufferable):
         """
         self.ptr = ptr
 
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, deinit other: Self):
         self.ptr = other.ptr
 
     fn get_ptr(self) -> UnsafePointer[Float16]:

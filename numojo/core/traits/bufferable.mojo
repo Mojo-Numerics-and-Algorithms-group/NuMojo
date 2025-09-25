@@ -22,7 +22,7 @@ trait Bufferable:
     fn __init__(out self, ptr: UnsafePointer[Float16]):
         ...
 
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, deinit other: Self):
         ...
 
     fn get_ptr(self) -> UnsafePointer[Float16]:

@@ -10,8 +10,7 @@ Array creation routine.
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
-3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and
-    reduce the number of function reloads.
+3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and reduce the number of function reloads.
 4) Simplify complex overloads into sum of real methods.
 
 ---
@@ -24,9 +23,7 @@ overload for each function. This makes maintenance easier. Example:
 - `zeros`, `ones` calls `full`.
 - Other functions calls `zeros`, `ones`, `full`.
 
-If overloads are needed, it is better to call the default signature in other
-overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this
-function. So it is easy for modification.
+If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
 
 """
 
@@ -38,12 +35,12 @@ from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
 from algorithm.memory import parallel_memcpy
 from python import PythonObject, Python
-from sys import simdwidthof
+from sys import simd_width_of
 
-# from tensor import Tensor, TensorShape
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
+from numojo.core.complex import ComplexScalar
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
 from numojo.core.own_data import OwnData
@@ -83,7 +80,7 @@ fn arange[
     for idx in range(num):
         result._buf.ptr[idx] = start + step * idx
 
-    return result
+    return result^
 
 
 fn arange[
@@ -93,12 +90,12 @@ fn arange[
     (Overload) When start is 0 and step is 1.
     """
 
-    var size = Int(stop)
+    var size: Int = Int(stop)  # TODO: handle negative values.
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
         (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
 
-    return result
+    return result^
 
 
 fn arange[
@@ -270,7 +267,7 @@ fn _linspace_parallel[
         A NDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-    alias nelts = simdwidthof[dtype]()
+    alias nelts = simd_width_of[dtype]()
 
     if endpoint:
         var denominator: SIMD[dtype, 1] = Scalar[dtype](num) - 1.0
@@ -405,8 +402,8 @@ fn _linspace_parallel[
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
     alias dtype: DType = cdtype._dtype
+    alias nelts = simd_width_of[dtype]()
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
-    alias nelts = simdwidthof[dtype]()
 
     if endpoint:
         var denominator: Scalar[dtype] = Scalar[dtype](num) - 1.0
@@ -536,7 +533,7 @@ fn _logspace_serial[
         var step: Scalar[dtype] = (stop - start) / num
         for i in range(num):
             result._buf.ptr[i] = base ** (start + step * i)
-    return result
+    return result^
 
 
 fn _logspace_parallel[
@@ -584,7 +581,7 @@ fn _logspace_parallel[
 
         parallelize[parallelized_logspace1](num)
 
-    return result
+    return result^
 
 
 fn logspace[
@@ -801,7 +798,7 @@ fn geomspace[
         var r: Scalar[dtype] = base**power
         for i in range(num):
             result._buf.ptr[i] = a * r**i
-        return result
+        return result^
 
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
@@ -810,7 +807,7 @@ fn geomspace[
         var r: Scalar[dtype] = base**power
         for i in range(num):
             result._buf.ptr[i] = a * r**i
-        return result
+        return result^
 
 
 fn geomspace[
@@ -1365,7 +1362,7 @@ fn full[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        var a = nm.fullC[f32](Shape(2,3,4), fill_value=ComplexSIMD[f32](10, 10))
+        var a = nm.full[nm.cf32](Shape(2,3,4), fill_value=CScalar[nm.cf32](10, 10))
         ```
     """
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
@@ -1618,7 +1615,9 @@ fn tril[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m
+    var result: NDArray[
+        dtype
+    ] = m.copy()  # * We should move this to be inplace operation perhaps.
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
@@ -1682,7 +1681,7 @@ fn triu[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m
+    var result: NDArray[dtype] = m.copy()
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
@@ -1796,8 +1795,6 @@ fn vander[
 # ===------------------------------------------------------------------------===#
 
 
-# TODO: Technically we should allow for runtime type inference here,
-# but NDArray doesn't support it yet.
 # TODO: Check whether inplace cast is needed.
 fn astype[
     dtype: DType, //, target: DType
@@ -1816,15 +1813,15 @@ fn astype[
         A NDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    var array_order = "C" if a.flags.C_CONTIGUOUS else "F"
-    var res = NDArray[target](a.shape, order=array_order)
+    var array_order: String = "C" if a.flags.C_CONTIGUOUS else "F"
+    var result: NDArray[target] = NDArray[target](a.shape, order=array_order)
 
     @parameter
     if target == DType.bool:
 
         @parameter
         fn vectorized_astype[simd_width: Int](idx: Int) -> None:
-            (res.unsafe_ptr() + idx).strided_store[width=simd_width](
+            (result.unsafe_ptr() + idx).strided_store[width=simd_width](
                 a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
             )
 
@@ -1837,7 +1834,7 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
+                result._buf.ptr.store(
                     idx,
                     (a._buf.ptr + idx)
                     .strided_load[width=simd_width](1)
@@ -1850,13 +1847,13 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
+                result._buf.ptr.store(
                     idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )
 
             vectorize[vectorized_astypenb, a.width](a.size)
 
-    return res
+    return result^
 
 
 fn astype[
@@ -2081,23 +2078,27 @@ fn array[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+        var arr = nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
         ```
 
     Returns:
         An Array of given data, shape and order.
     """
-    A = NDArray[dtype](NDArrayShape(shape), order)
-    for i in range(A.size):
-        A._buf.ptr[i] = data[i]
-    return A
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(shape), order)
+    for i in range(result.size):
+        result._buf.ptr[i] = data[i]
+    return result^
 
 
 fn array[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
+<<<<<<< HEAD
     real: List[Scalar[cdtype._dtype]],
     imag: List[Scalar[cdtype._dtype]],
+=======
+    data: List[ComplexScalar[cdtype]],
+>>>>>>> upstream/pre-0.8
     shape: List[Int],
     order: String = "C",
 ) raises -> ComplexNDArray[cdtype]:
@@ -2108,8 +2109,7 @@ fn array[
         cdtype: Complex datatype of the ComplexNDArray elements.
 
     Args:
-        real: List of real data.
-        imag: List of imaginary data.
+        data: List of complex data.
         shape: List of shape.
         order: Memory order C or F.
 
@@ -2117,9 +2117,11 @@ fn array[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.array[nm.cf32](
-            real=List[Scalar[nm.f32]](1, 2, 3, 4),
-            imag=List[Scalar[nm.f32]](5, 6, 7, 8),
+        var array = nm.array[cf64](
+            data=List[CScalar[cf64]](CScalar[cf64](1, 1),
+            CScalar[cf64](2, 2),
+            CScalar[cf64](3, 3),
+            CScalar[cf64](4, 4)),
             shape=List[Int](2, 2),
         )
         ```
@@ -2127,14 +2129,17 @@ fn array[
     Returns:
         A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
-    if len(real) != len(imag):
+    var size: Int = 1
+    for i in range(len(shape)):
+        size = size * shape[i]
+    if len(data) != size:
         raise Error(
             "Error in array: Real and imaginary data must have the same length!"
         )
     A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        A._re._buf.ptr[i] = real[i]
-        A._im._buf.ptr[i] = imag[i]
+        A._re._buf.ptr[i] = data[i].re
+        A._im._buf.ptr[i] = data[i].im
     return A^
 
 

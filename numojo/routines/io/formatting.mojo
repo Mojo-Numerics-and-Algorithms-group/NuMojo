@@ -40,7 +40,7 @@ alias GLOBAL_PRINT_OPTIONS = PrintOptions(
 )
 
 
-struct PrintOptions(Copyable, Movable):
+struct PrintOptions(Copyable, ImplicitlyCopyable, Movable):
     var precision: Int
     """
     The number of decimal places to include in the formatted string.

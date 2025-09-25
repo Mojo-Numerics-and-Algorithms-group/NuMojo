@@ -7,18 +7,19 @@ Implements Item type.
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
 from os import abort
-from sys import simdwidthof
+from sys import simd_width_of
 from utils import Variant
 
 from numojo.core.traits.indexer_collection_element import (
     IndexerCollectionElement,
 )
 
+# simple alias for users. Use `Item` internally.
 alias item = Item
 
 
 @register_passable
-struct Item(Copyable, Movable, Stringable, Writable):
+struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
     """
     Specifies the indices of an item of an array.
     """
@@ -39,7 +40,7 @@ struct Item(Copyable, Movable, Stringable, Writable):
         self._buf = UnsafePointer[Int]().alloc(args.__len__())
         self.ndim = args.__len__()
         for i in range(args.__len__()):
-            self._buf[i] = Int(args[i])
+            self._buf[i] = index(args[i])
 
     @always_inline("nodebug")
     fn __init__[T: IndexerCollectionElement](out self, args: List[T]) raises:
@@ -54,7 +55,7 @@ struct Item(Copyable, Movable, Stringable, Writable):
         self.ndim = len(args)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(Int(args[i]))
+            (self._buf + i).init_pointee_copy(index(args[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, args: VariadicList[Int]) raises:
@@ -167,7 +168,7 @@ struct Item(Copyable, Movable, Stringable, Writable):
         memcpy(self._buf, other._buf, self.ndim)
 
     @always_inline("nodebug")
-    fn __del__(owned self):
+    fn __del__(deinit self):
         self._buf.free()
 
     @always_inline("nodebug")
@@ -193,15 +194,15 @@ struct Item(Copyable, Movable, Stringable, Writable):
             The value at the specified index.
         """
 
-        var normalized_idx: Int = Int(idx)
+        var normalized_idx: Int = index(idx)
         if normalized_idx < 0:
-            normalized_idx = Int(idx) + self.ndim
+            normalized_idx = index(idx) + self.ndim
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{} , {}).").format(
-                        Int(idx), -self.ndim, self.ndim
+                        index(idx), -self.ndim, self.ndim
                     ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."
@@ -225,15 +226,15 @@ struct Item(Copyable, Movable, Stringable, Writable):
             val: The value to set.
         """
 
-        var normalized_idx: Int = Int(idx)
+        var normalized_idx: Int = index(idx)
         if normalized_idx < 0:
-            normalized_idx = Int(idx) + self.ndim
+            normalized_idx = index(idx) + self.ndim
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{} , {}).").format(
-                        Int(idx), -self.ndim, self.ndim
+                        index(idx), -self.ndim, self.ndim
                     ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."
@@ -242,7 +243,7 @@ struct Item(Copyable, Movable, Stringable, Writable):
                 )
             )
 
-        self._buf[normalized_idx] = Int(val)
+        self._buf[normalized_idx] = index(val)
 
     fn __iter__(self) raises -> _ItemIter:
         """Iterate over elements of the NDArray, returning copied value.
@@ -315,7 +316,7 @@ struct Item(Copyable, Movable, Stringable, Writable):
 
 struct _ItemIter[
     forward: Bool = True,
-](Copyable, Movable):
+](ImplicitlyCopyable, Movable):
     """Iterator for Item.
 
     Parameters:

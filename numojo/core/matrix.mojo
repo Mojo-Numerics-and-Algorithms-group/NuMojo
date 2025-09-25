@@ -10,7 +10,7 @@
 from algorithm import parallelize, vectorize
 from memory import UnsafePointer, memcpy, memset_zero
 from random import random_float64
-from sys import simdwidthof
+from sys import simd_width_of
 from python import PythonObject, Python
 
 from numojo.core.flags import Flags
@@ -89,7 +89,7 @@ struct Matrix[dtype: DType = DType.float64](
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
-    alias width: Int = simdwidthof[dtype]()  #
+    alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
 
     var _buf: OwnData[dtype]
@@ -137,16 +137,17 @@ struct Matrix[dtype: DType = DType.float64](
             self.shape, self.strides, owndata=True, writeable=True
         )
 
+    # * Should we take var ref and transfer ownership or take a read ref and copy it?
     @always_inline("nodebug")
     fn __init__(
         out self,
-        data: Self,
+        var data: Self,
     ):
         """
         Construct a matrix from matrix.
         """
 
-        self = data
+        self = data^
 
     @always_inline("nodebug")
     fn __init__(
@@ -199,7 +200,7 @@ struct Matrix[dtype: DType = DType.float64](
         self.flags = other.flags
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, deinit other: Self):
         """
         Move other into self.
         """
@@ -210,7 +211,7 @@ struct Matrix[dtype: DType = DType.float64](
         self.flags = other.flags^
 
     @always_inline("nodebug")
-    fn __del__(owned self):
+    fn __del__(deinit self):
         var owndata: Bool
         try:
             owndata = self.flags["OWNDATA"]
@@ -224,7 +225,7 @@ struct Matrix[dtype: DType = DType.float64](
     # Slicing and indexing methods
     # ===-------------------------------------------------------------------===#
 
-    fn __getitem__(self, owned x: Int, owned y: Int) raises -> Scalar[dtype]:
+    fn __getitem__(self, var x: Int, var y: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the index.
 
@@ -251,7 +252,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
-    fn __getitem__(self, owned x: Int) raises -> Self:
+    fn __getitem__(self, var x: Int) raises -> Self:
         """
         Return the corresponding row at the index.
 
@@ -278,7 +279,7 @@ struct Matrix[dtype: DType = DType.float64](
             for j in range(self.shape[1]):
                 res[0, j] = self[x, j]
 
-        return res
+        return res^
 
     fn __getitem__(self, x: Slice, y: Slice) -> Self:
         """
@@ -309,9 +310,9 @@ struct Matrix[dtype: DType = DType.float64](
                 col += 1
             row += 1
 
-        return B
+        return B^
 
-    fn __getitem__(self, x: Slice, owned y: Int) -> Self:
+    fn __getitem__(self, x: Slice, var y: Int) -> Self:
         """
         Get item from one slice and one int.
         """
@@ -333,9 +334,9 @@ struct Matrix[dtype: DType = DType.float64](
             B._store(row, 0, self._load(i, y))
             row += 1
 
-        return B
+        return B^
 
-    fn __getitem__(self, owned x: Int, y: Slice) -> Self:
+    fn __getitem__(self, var x: Int, y: Slice) -> Self:
         """
         Get item from one int and one slice.
         """
@@ -357,7 +358,7 @@ struct Matrix[dtype: DType = DType.float64](
             B._store(0, col, self._load(x, j))
             col += 1
 
-        return B
+        return B^
 
     fn __getitem__(self, indices: List[Int]) raises -> Self:
         """
@@ -399,7 +400,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], value)
 
-    fn __setitem__(self, owned x: Int, value: Self) raises:
+    fn __setitem__(self, var x: Int, value: Self) raises:
         """
         Set the corresponding row at the index with the given matrix.
 
@@ -577,11 +578,11 @@ struct Matrix[dtype: DType = DType.float64](
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
-            ](broadcast_to(self, other.shape, self.order()), other)
+            ](broadcast_to(self.copy(), other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
-            ](self, broadcast_to(other, self.shape, self.order()))
+            ](self, broadcast_to(other.copy(), self.shape, self.order()))
 
     fn __add__(self, other: Scalar[dtype]) raises -> Self:
         """Add matrix to scalar.
@@ -618,11 +619,11 @@ struct Matrix[dtype: DType = DType.float64](
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__sub__
-            ](broadcast_to(self, other.shape, self.order()), other)
+            ](broadcast_to(self.copy(), other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__sub__
-            ](self, broadcast_to(other, self.shape, self.order()))
+            ](self, broadcast_to(other.copy(), self.shape, self.order()))
 
     fn __sub__(self, other: Scalar[dtype]) raises -> Self:
         """Subtract matrix by scalar.
@@ -659,11 +660,11 @@ struct Matrix[dtype: DType = DType.float64](
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__mul__
-            ](broadcast_to(self, other.shape, self.order()), other)
+            ](broadcast_to(self.copy(), other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__mul__
-            ](self, broadcast_to(other, self.shape, self.order()))
+            ](self, broadcast_to(other.copy(), self.shape, self.order()))
 
     fn __mul__(self, other: Scalar[dtype]) raises -> Self:
         """Mutiply matrix by scalar.
@@ -700,39 +701,40 @@ struct Matrix[dtype: DType = DType.float64](
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__truediv__
-            ](broadcast_to(self, other.shape, self.order()), other)
+            ](broadcast_to(self.copy(), other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__truediv__
-            ](self, broadcast_to(other, self.shape, self.order()))
+            ](self, broadcast_to(other.copy(), self.shape, self.order()))
 
     fn __truediv__(self, other: Scalar[dtype]) raises -> Self:
         """Divide matrix by scalar."""
         return self / broadcast_to[dtype](other, self.shape, order=self.order())
 
+    # Shouldn't we do the operation inplace?
     fn __pow__(self, rhs: Scalar[dtype]) raises -> Self:
         """Power of items."""
-        var res = self
+        var result: Self = self.copy()
         for i in range(self.size):
-            res._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
-        return res^
+            result._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
+        return result^
 
     fn __lt__(self, other: Self) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__lt__](
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__lt__](
-                broadcast_to(self, other.shape, self.order()), other
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
+                broadcast_to(self.copy(), other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__lt__](
-                self, broadcast_to(other, self.shape, self.order())
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
+                self, broadcast_to(other.copy(), self.shape, self.order())
             )
 
     fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
@@ -750,18 +752,18 @@ struct Matrix[dtype: DType = DType.float64](
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__le__](
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__le__](
-                broadcast_to(self, other.shape, self.order()), other
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
+                broadcast_to(self.copy(), other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__le__](
-                self, broadcast_to(other, self.shape, self.order())
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
+                self, broadcast_to(other.copy(), self.shape, self.order())
             )
 
     fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
@@ -779,18 +781,18 @@ struct Matrix[dtype: DType = DType.float64](
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__gt__](
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__gt__](
-                broadcast_to(self, other.shape, self.order()), other
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
+                broadcast_to(self.copy(), other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__gt__](
-                self, broadcast_to(other, self.shape, self.order())
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
+                self, broadcast_to(other.copy(), self.shape, self.order())
             )
 
     fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
@@ -808,18 +810,18 @@ struct Matrix[dtype: DType = DType.float64](
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__ge__](
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__ge__](
-                broadcast_to(self, other.shape, self.order()), other
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
+                broadcast_to(self.copy(), other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__ge__](
-                self, broadcast_to(other, self.shape, self.order())
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
+                self, broadcast_to(other.copy(), self.shape, self.order())
             )
 
     fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
@@ -837,18 +839,18 @@ struct Matrix[dtype: DType = DType.float64](
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__eq__](
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__eq__](
-                broadcast_to(self, other.shape, self.order()), other
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
+                broadcast_to(self.copy(), other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__eq__](
-                self, broadcast_to(other, self.shape, self.order())
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
+                self, broadcast_to(other.copy(), self.shape, self.order())
             )
 
     fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
@@ -866,18 +868,18 @@ struct Matrix[dtype: DType = DType.float64](
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__ne__](
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__ne__](
-                broadcast_to(self, other.shape, self.order()), other
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
+                broadcast_to(self.copy(), other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.__ne__](
-                self, broadcast_to(other, self.shape, self.order())
+            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
+                self, broadcast_to(other.copy(), self.shape, self.order())
             )
 
     fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
@@ -956,7 +958,7 @@ struct Matrix[dtype: DType = DType.float64](
         """
         Argsort the Matrix along the given axis.
         """
-        return numojo.math.argsort(self, axis=axis)
+        return numojo.math.argsort(self.copy(), axis=axis)
 
     fn astype[asdtype: DType](self) -> Matrix[asdtype]:
         """
@@ -969,7 +971,7 @@ struct Matrix[dtype: DType = DType.float64](
             res._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
         return res^
 
-    fn cumprod(self) -> Matrix[dtype]:
+    fn cumprod(self) raises -> Matrix[dtype]:
         """
         Cumprod of flattened matrix.
 
@@ -980,7 +982,7 @@ struct Matrix[dtype: DType = DType.float64](
         print(A.cumprod())
         ```
         """
-        return numojo.math.cumprod(self)
+        return numojo.math.cumprod(self.copy())
 
     fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
         """
@@ -997,13 +999,13 @@ struct Matrix[dtype: DType = DType.float64](
         print(A.cumprod(axis=1))
         ```
         """
-        return numojo.math.cumprod(self, axis=axis)
+        return numojo.math.cumprod(self.copy(), axis=axis)
 
-    fn cumsum(self) -> Matrix[dtype]:
-        return numojo.math.cumsum(self)
+    fn cumsum(self) raises -> Matrix[dtype]:
+        return numojo.math.cumsum(self.copy())
 
     fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
-        return numojo.math.cumsum(self, axis=axis)
+        return numojo.math.cumsum(self.copy(), axis=axis)
 
     fn fill(self, fill_value: Scalar[dtype]):
         """
@@ -1122,7 +1124,7 @@ struct Matrix[dtype: DType = DType.float64](
             memcpy(res._buf.ptr, self._buf.ptr, res.size)
         return res^
 
-    fn resize(mut self, shape: Tuple[Int, Int]):
+    fn resize(mut self, shape: Tuple[Int, Int]) raises:
         """
         Change shape and size of matrix in-place.
         """
@@ -1143,7 +1145,7 @@ struct Matrix[dtype: DType = DType.float64](
                         ]
                         idx += 1
                 other = other.reorder_layout()
-            self = other
+            self = other^
         else:
             self.shape[0] = shape[0]
             self.shape[1] = shape[1]
@@ -1155,7 +1157,7 @@ struct Matrix[dtype: DType = DType.float64](
                 self.strides[1] = shape[0]
 
     fn round(self, decimals: Int) raises -> Self:
-        return numojo.math.rounding.round(self, decimals=decimals)
+        return numojo.math.rounding.round(self.copy(), decimals=decimals)
 
     fn std[
         returned_dtype: DType = DType.float64
@@ -1228,7 +1230,7 @@ struct Matrix[dtype: DType = DType.float64](
         """
         return transpose(self)
 
-    fn reorder_layout(self) -> Self:
+    fn reorder_layout(self) raises -> Self:
         """
         Reorder_layout matrix.
         """
@@ -1272,12 +1274,12 @@ struct Matrix[dtype: DType = DType.float64](
         It makes a copy of the buffer of the matrix.
         """
 
-        var ndarray = NDArray[dtype](
+        var ndarray: NDArray[dtype] = NDArray[dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order="C"
         )
         memcpy(ndarray._buf.ptr, self._buf.ptr, ndarray.size)
 
-        return ndarray
+        return ndarray^
 
     fn to_numpy(self) raises -> PythonObject:
         """See `numojo.core.utility.to_numpy`."""
@@ -1552,6 +1554,7 @@ struct Matrix[dtype: DType = DType.float64](
 # ===-----------------------------------------------------------------------===#
 
 
+# ! Should the iterator be mutable or not?
 struct _MatrixIter[
     is_mutable: Bool, //,
     lifetime: Origin[is_mutable],
@@ -1578,10 +1581,10 @@ struct _MatrixIter[
     ):
         self.index = 0 if forward else length
         self.length = length
-        self.matrix = matrix
+        self.matrix = matrix.copy()
 
     fn __iter__(self) -> Self:
-        return self
+        return self.copy()
 
     fn __next__(mut self) raises -> Matrix[dtype]:
         @parameter
@@ -1626,7 +1629,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
 
     For example: `__add__`, `__sub__`, etc.
     """
-    alias simd_width = simdwidthof[dtype]()
+    alias simd_width = simd_width_of[dtype]()
     if A.order() != B.order():
         raise Error(
             String("Matrix order {} does not match {}.").format(
@@ -1669,9 +1672,9 @@ fn _arithmetic_func_matrix_to_matrix[
 
     For example: `sin`, `cos`, etc.
     """
-    alias simd_width = simdwidthof[dtype]()
+    alias simd_width: Int = simd_width_of[dtype]()
 
-    var C = Matrix[dtype](shape=A.shape, order=A.order())
+    var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
     @parameter
     fn vec_func[simd_width: Int](i: Int):
@@ -1691,7 +1694,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     """
     Matrix[dtype] & Matrix[dtype] -> Matrix[bool]
     """
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
 
     if A.order() != B.order():
         raise Error(
@@ -1727,7 +1730,9 @@ fn _logic_func_matrix_matrix_to_matrix[
 
     var _t0 = t0
     var _t1 = t1
-    var _A = A
-    var _B = B
+    var _A = (
+        A.copy()
+    )  # ! perhaps remove this explicit copy if we don't need to extend it's lifetime.
+    var _B = B.copy()
 
     return C^

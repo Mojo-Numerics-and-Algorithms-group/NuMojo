@@ -4,7 +4,7 @@
 
 import math
 from algorithm import vectorize, parallelize
-from sys import simdwidthof
+from sys import simd_width_of
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
@@ -19,7 +19,7 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](1)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_and[width: Int](i: Int):
@@ -34,7 +34,7 @@ fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     Test whether all array elements evaluate to True along axis.
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.ones[dtype](shape=(1, A.shape[1]))
@@ -83,7 +83,7 @@ fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
         A boolean scalar
     """
     var result = Scalar[DType.bool](True)
-    # alias opt_nelts: Int = simdwidthof[DType.bool]()
+    # alias opt_nelts: Int = simd_width_of[DType.bool]()
 
     # @parameter
     # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
@@ -107,7 +107,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
         A boolean scalar
     """
     var result = Scalar[DType.bool](False)
-    # alias opt_nelts: Int = simdwidthof[DType.bool]()
+    # alias opt_nelts: Int = simd_width_of[DType.bool]()
 
     # @parameter
     # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
@@ -129,7 +129,7 @@ fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](0)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_and[width: Int](i: Int):
@@ -144,7 +144,7 @@ fn any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     Test whether any array elements evaluate to True along axis.
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]))

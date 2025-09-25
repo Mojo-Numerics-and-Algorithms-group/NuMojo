@@ -12,7 +12,7 @@
 from hashlib.hasher import Hasher
 from os import abort
 from sys import CompilationTarget
-from sys.info import bitwidthof, sizeof
+from sys.info import bit_width_of, size_of
 from sys.intrinsics import _type_is_eq
 
 alias _mIsSigned = UInt8(1)
@@ -193,7 +193,11 @@ struct ComplexDType(
         Args:
             mlir_value: The MLIR ComplexDType.
         """
+<<<<<<< HEAD
         self._dtype = DType(mlir_value)
+=======
+        self._dtype = DType(mlir_value=mlir_value)
+>>>>>>> upstream/pre-0.8
 
     @staticmethod
     fn _from_str(str: StringSlice) -> ComplexDType:
@@ -370,10 +374,17 @@ struct ComplexDType(
     @always_inline("nodebug")
     fn _match(self, mask: UInt8) -> Bool:
         var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred ne>`](
+<<<<<<< HEAD
             __mlir_op.`pop.simd.and`(self._as_ui8(), mask.value),
             __mlir_attr.`#pop.simd<0> : !pop.scalar<ui8>`,
         )
         return Bool(res)
+=======
+            __mlir_op.`pop.simd.and`(self._as_ui8(), mask._mlir_value),
+            __mlir_attr.`#pop.simd<0> : !pop.scalar<ui8>`,
+        )
+        return Bool(mlir_value=res)
+>>>>>>> upstream/pre-0.8
 
     @always_inline("nodebug")
     fn __is__(self, rhs: ComplexDType) -> Bool:
@@ -412,7 +423,11 @@ struct ComplexDType(
         var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred eq>`](
             self._as_ui8(), rhs._as_ui8()
         )
+<<<<<<< HEAD
         return Bool(res)
+=======
+        return Bool(mlir_value=res)
+>>>>>>> upstream/pre-0.8
 
     @always_inline("nodebug")
     fn __ne__(self, rhs: ComplexDType) -> Bool:
@@ -427,7 +442,11 @@ struct ComplexDType(
         var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred ne>`](
             self._as_ui8(), rhs._as_ui8()
         )
+<<<<<<< HEAD
         return Bool(res)
+=======
+        return Bool(mlir_value=res)
+>>>>>>> upstream/pre-0.8
 
     fn __hash__[H: Hasher](self, mut hasher: H):
         """Updates hasher with this `ComplexDType` value.
@@ -438,7 +457,11 @@ struct ComplexDType(
         Args:
             hasher: The hasher instance.
         """
+<<<<<<< HEAD
         hasher._update_with_simd(UInt8(self._as_ui8()))
+=======
+        hasher._update_with_simd(UInt8(mlir_value=self._as_ui8()))
+>>>>>>> upstream/pre-0.8
 
     @always_inline("nodebug")
     fn is_unsigned(self) -> Bool:
@@ -528,7 +551,11 @@ struct ComplexDType(
         return self.is_integral() or self.is_floating_point()
 
     @always_inline
+<<<<<<< HEAD
     fn sizeof(self) -> Int:
+=======
+    fn size_of(self) -> Int:
+>>>>>>> upstream/pre-0.8
         """Returns the size in bytes of the current ComplexDType.
 
         Returns:
@@ -538,23 +565,37 @@ struct ComplexDType(
         if self._is_non_index_integral():
             return Int(
                 UInt8(
+<<<<<<< HEAD
                     __mlir_op.`pop.shl`(
                         UInt8(1).value,
+=======
+                    mlir_value=__mlir_op.`pop.shl`(
+                        UInt8(1)._mlir_value,
+>>>>>>> upstream/pre-0.8
                         __mlir_op.`pop.sub`(
                             __mlir_op.`pop.shr`(
                                 __mlir_op.`pop.simd.and`(
                                     self._as_ui8(),
+<<<<<<< HEAD
                                     _mIsNotInteger.value,
                                 ),
                                 UInt8(1).value,
                             ),
                             UInt8(3).value,
+=======
+                                    _mIsNotInteger._mlir_value,
+                                ),
+                                UInt8(1)._mlir_value,
+                            ),
+                            UInt8(3)._mlir_value,
+>>>>>>> upstream/pre-0.8
                         ),
                     )
                 )
             )
 
         elif self is ComplexDType.bool:
+<<<<<<< HEAD
             return sizeof[DType.bool]()
         elif self is ComplexDType.index:
             return sizeof[DType.index]()
@@ -582,6 +623,35 @@ struct ComplexDType(
             return sizeof[DType.float64]()
 
         return sizeof[DType.invalid]()
+=======
+            return size_of[DType.bool]()
+        elif self is ComplexDType.index:
+            return size_of[DType.index]()
+
+        elif self is ComplexDType.float8_e3m4:
+            return size_of[DType.float8_e3m4]()
+        elif self is ComplexDType.float8_e4m3fn:
+            return size_of[DType.float8_e4m3fn]()
+        elif self is ComplexDType.float8_e4m3fnuz:
+            return size_of[DType.float8_e4m3fnuz]()
+        elif self is ComplexDType.float8_e5m2:
+            return size_of[DType.float8_e5m2]()
+        elif self is ComplexDType.float8_e5m2fnuz:
+            return size_of[DType.float8_e5m2fnuz]()
+
+        elif self is ComplexDType.bfloat16:
+            return size_of[DType.bfloat16]()
+        elif self is ComplexDType.float16:
+            return size_of[DType.float16]()
+
+        elif self is ComplexDType.float32:
+            return size_of[DType.float32]()
+
+        elif self is ComplexDType.float64:
+            return size_of[DType.float64]()
+
+        return size_of[DType.invalid]()
+>>>>>>> upstream/pre-0.8
 
     @always_inline
     fn bitwidth(self) -> Int:
@@ -591,7 +661,11 @@ struct ComplexDType(
             Returns the size in bits of the current ComplexDType.
         """
         return (
+<<<<<<< HEAD
             2 * 8 * self.sizeof()
+=======
+            2 * 8 * self.size_of()
+>>>>>>> upstream/pre-0.8
         )  # 2 * because complex number has real and imaginary parts
 
     # ===-------------------------------------------------------------------===#

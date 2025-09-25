@@ -13,7 +13,7 @@ from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 import builtin.math as builtin_math
 import stdlib.math.math as stdlib_math
-from sys import simdwidthof
+from sys import simd_width_of
 from utils import Variant
 
 import numojo.routines.math._math_funcs as _mf
@@ -65,15 +65,15 @@ fn clip[
         An array with the clipped values.
     """
 
-    var res = a  # Deep copy of the array
+    var result = a.copy()  # Deep copy of the array
 
-    for i in range(res.size):
-        if res._buf.ptr[i] < a_min:
-            res._buf.ptr[i] = a_min
-        if res._buf.ptr[i] > a_max:
-            res._buf.ptr[i] = a_max
+    for i in range(result.size):
+        if result._buf.ptr[i] < a_min:
+            result._buf.ptr[i] = a_min
+        if result._buf.ptr[i] > a_max:
+            result._buf.ptr[i] = a_max
 
-    return res
+    return result^
 
 
 fn _mt_rsqrt[

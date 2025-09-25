@@ -256,9 +256,7 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](Stringable, Writable):
         Returns:
             Bool: True if the instances are equal, False otherwise.
         """
-        return (self.re == other.re).reduce_and() and (
-            self.im == other.im
-        ).reduce_add()
+        return (self.re == other.re) and (self.im == other.im)
 
     fn __ne__(self, other: Self) -> Bool:
         """
@@ -271,9 +269,7 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](Stringable, Writable):
         Returns:
             Bool: True if the instances are not equal, False otherwise.
         """
-        return (self.re != other.re).reduce_or() or (
-            self.im != other.im
-        ).reduce_or()
+        return ~(self == other)
 
     fn __str__(self) -> String:
         """

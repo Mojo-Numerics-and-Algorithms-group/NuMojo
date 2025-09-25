@@ -12,7 +12,7 @@
 from hashlib.hasher import Hasher
 from os import abort
 from sys import CompilationTarget
-from sys.info import bitwidthof, size_of
+from sys.info import bit_width_of, size_of
 from sys.intrinsics import _type_is_eq
 
 alias _mIsSigned = UInt8(1)
@@ -548,6 +548,10 @@ struct ComplexDType(
                                 ),
                                 UInt8(1)._mlir_value,
                             ),
+                                    _mIsNotInteger._mlir_value,
+                                ),
+                                UInt8(1)._mlir_value,
+                            ),
                             UInt8(3)._mlir_value,
                         ),
                     )
@@ -555,6 +559,32 @@ struct ComplexDType(
             )
 
         elif self is ComplexDType.bool:
+            return sizeof[DType.bool]()
+        elif self is ComplexDType.index:
+            return size_of[DType.index]()
+
+        elif self is ComplexDType.float8_e3m4:
+            return size_of[DType.float8_e3m4]()
+        elif self is ComplexDType.float8_e4m3fn:
+            return size_of[DType.float8_e4m3fn]()
+        elif self is ComplexDType.float8_e4m3fnuz:
+            return size_of[DType.float8_e4m3fnuz]()
+        elif self is ComplexDType.float8_e5m2:
+            return size_of[DType.float8_e5m2]()
+        elif self is ComplexDType.float8_e5m2fnuz:
+            return size_of[DType.float8_e5m2fnuz]()
+
+        elif self is ComplexDType.bfloat16:
+            return size_of[DType.bfloat16]()
+        elif self is ComplexDType.float16:
+            return size_of[DType.float16]()
+
+        elif self is ComplexDType.float32:
+            return size_of[DType.float32]()
+
+        elif self is ComplexDType.float64:
+            return size_of[DType.float64]()
+
             return size_of[DType.bool]()
         elif self is ComplexDType.index:
             return size_of[DType.index]()

@@ -184,14 +184,14 @@ fn _concise_dtype_str(dtype: DType) -> String:
     """Returns a concise string representation of the data type."""
     if dtype == i8:
         return "i8"
-    elif dtype == i16:
-        return "i16"
-    elif dtype == i32:
-        return "i32"
     elif dtype == i64:
         return "i64"
-    elif dtype == isize:
-        return "index"
+    elif dtype == i128:
+        return "i128"
+    elif dtype == i256:
+        return "i256"
+    elif dtype == int:
+        return "int"
     elif dtype == u8:
         return "u8"
     elif dtype == u16:
@@ -200,6 +200,14 @@ fn _concise_dtype_str(dtype: DType) -> String:
         return "u32"
     elif dtype == u64:
         return "u64"
+    elif dtype == u128:
+        return "u128"
+    elif dtype == u256:
+        return "u256"
+    elif dtype == uint:
+        return "uint"
+    elif dtype == bf16:
+        return "bf16"
     elif dtype == f16:
         return "f16"
     elif dtype == f32:
@@ -208,8 +216,6 @@ fn _concise_dtype_str(dtype: DType) -> String:
         return "f64"
     elif dtype == boolean:
         return "boolean"
-    elif dtype == isize:
-        return "isize"
     else:
         return "Unknown"
 

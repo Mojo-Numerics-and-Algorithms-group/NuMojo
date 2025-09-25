@@ -688,16 +688,6 @@ fn _concise_dtype_str(cdtype: ComplexDType) -> String:
         return "cu256"
     elif cdtype == cuint:
         return "cuint"
-    elif cdtype == cf8e3m4:
-        return "cf8e3m4"
-    elif cdtype == cf8e4m3fn:
-        return "cf8e4m3fn"
-    elif cdtype == cf8e4m3fnuz:
-        return "cf8e4m3fnuz"
-    elif cdtype == cf8e5m2:
-        return "cf8e5m2"
-    elif cdtype == cf8e5m2fnuz:
-        return "cf8e5m2fnuz"
     elif cdtype == cbf16:
         return "cbf16"
     elif cdtype == cf16:

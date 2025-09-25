@@ -28,8 +28,15 @@ fn det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var U: NDArray[dtype]
     var L: NDArray[dtype]
     var s: Int
-    A_pivoted, _, s = partial_pivoting(A)
-    L, U = lu_decomposition[dtype](A_pivoted)
+    var A_pivoted_s = partial_pivoting(A.copy())
+    A_pivoted = A_pivoted_s[0].copy()
+    s = A_pivoted_s[2].copy()
+
+    var L_U: Tuple[NDArray[dtype], NDArray[dtype]] = lu_decomposition[dtype](
+        A_pivoted
+    )
+    L = L_U[0].copy()
+    U = L_U[1].copy()
 
     for i in range(n):
         det_L = det_L * L.item(i, i)
@@ -51,8 +58,14 @@ fn det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
 
     var U: Matrix[dtype]
     var L: Matrix[dtype]
-    A_pivoted, _, s = partial_pivoting(A)
-    L, U = lu_decomposition[dtype](A_pivoted)
+    var A_pivoted_s = partial_pivoting(A.copy())
+    A_pivoted = A_pivoted_s[0].copy()
+    s = A_pivoted_s[2].copy()
+    var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
+        A_pivoted
+    )
+    L = L_U[0].copy()
+    U = L_U[1].copy()
 
     for i in range(n):
         det_L = det_L * L[i, i]
@@ -103,7 +116,7 @@ fn trace[
             0, result._buf.ptr.load(0) + array._buf.ptr[row * cols + col]
         )
 
-    return result
+    return result^
 
 
 fn trace[
@@ -114,19 +127,19 @@ fn trace[
 
     Similar to `numpy.trace`.
     """
-    var m = A.shape[0]
-    var n = A.shape[1]
+    var m: Int = A.shape[0]
+    var n: Int = A.shape[1]
 
     if offset >= max(m, n):  # Offset beyond the shape of the matrix
         return 0
 
-    var res = Scalar[dtype](0)
+    var result: Scalar[dtype] = Scalar[dtype](0)
 
     if offset >= 0:
         for i in range(n - offset):
-            res = res + A[i, i + offset]
+            result = result + A[i, i + offset]
     else:
         for i in range(m + offset):
-            res = res + A[i - offset, i]
+            result = result + A[i - offset, i]
 
-    return res
+    return result

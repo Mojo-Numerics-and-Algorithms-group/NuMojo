@@ -13,7 +13,7 @@ from numojo.core.ndstrides import NDArrayStrides
 
 
 @register_passable
-struct Flags:
+struct Flags(ImplicitlyCopyable):
     """
     Information about the memory layout of the array.
     The Flags object can be accessed dictionary-like.
@@ -33,8 +33,8 @@ struct Flags:
     The data area can be written to.
     If it is False, the data is read-only and be blocked from writing.
     The WRITEABLE field of a view or slice is inherited from the array where
-    it is derived. If the parent object is not writeable, the child object is 
-    also not writeable. If the parent object is writeable, the child object may 
+    it is derived. If the parent object is not writeable, the child object is
+    also not writeable. If the parent object is writeable, the child object may
     be not writeable.
     """
     var FORC: Bool

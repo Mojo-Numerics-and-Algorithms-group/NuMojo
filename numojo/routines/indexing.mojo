@@ -14,7 +14,7 @@ Implement indexing routines.
 """
 
 from memory import memcpy
-from sys import simdwidthof
+from sys import simd_width_of
 from algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.ndstrides import NDArrayStrides
@@ -109,7 +109,7 @@ fn compress[
         An array.
     """
 
-    var normalized_axis = axis
+    var normalized_axis: Int = axis
     if normalized_axis < 0:
         normalized_axis = a.ndim + normalized_axis
     if (normalized_axis >= a.ndim) or (normalized_axis < 0):
@@ -143,28 +143,30 @@ fn compress[
             String("\nError in `compress`: Condition contains no True values.")
         )
 
-    var shape_of_res = a.shape
+    var shape_of_res: NDArrayShape = a.shape
     shape_of_res[normalized_axis] = number_of_true
 
-    var res = NDArray[dtype](Shape(shape_of_res))
-    var res_strides = NDArrayStrides(ndim=res.ndim, initialized=False)
-    var temp = 1
-    for i in range(res.ndim - 1, -1, -1):
+    var result: NDArray[dtype] = NDArray[dtype](Shape(shape_of_res))
+    var res_strides: NDArrayStrides = NDArrayStrides(
+        ndim=result.ndim, initialized=False
+    )
+    var temp: Int = 1
+    for i in range(result.ndim - 1, -1, -1):
         if i != normalized_axis:
             (res_strides._buf + i).init_pointee_copy(temp)
-            temp *= res.shape[i]
+            temp *= result.shape[i]
     (res_strides._buf + normalized_axis).init_pointee_copy(temp)
 
     var iterator = a.iter_over_dimension(normalized_axis)
 
-    var count = 0
+    var count: Int = 0
     for i in range(len(condition)):
         if condition.item(i):
             var current_slice = iterator.ith(i)
             for offset in range(current_slice.size):
-                var remainder = count
+                var remainder: Int = count
 
-                var item = Item(ndim=res.ndim, initialized=False)
+                var item: Item = Item(ndim=result.ndim, initialized=False)
 
                 # First along the axis
                 var j = normalized_axis
@@ -174,7 +176,7 @@ fn compress[
                 remainder %= res_strides._buf[j]
 
                 # Then along other axes
-                for j in range(res.ndim):
+                for j in range(result.ndim):
                     if j != normalized_axis:
                         (item._buf + j).init_pointee_copy(
                             remainder // res_strides._buf[j]
@@ -182,12 +184,12 @@ fn compress[
                         remainder %= res_strides._buf[j]
 
                 (
-                    res._buf.ptr + utility._get_offset(item, res.strides)
+                    result._buf.ptr + utility._get_offset(item, result.strides)
                 ).init_pointee_copy(current_slice._buf.ptr[offset])
 
                 count += 1
 
-    return res
+    return result^
 
 
 fn compress[
@@ -300,7 +302,9 @@ fn take_along_axis[
     # When broadcasting, the shape of indices must match the shape of arr
     # except along the axis
 
-    var broadcasted_indices = indices
+    var broadcasted_indices: NDArray[
+        DType.index
+    ] = indices.copy()  # make this owned and don't copy
 
     if arr.shape != indices.shape:
         var arr_shape_new = arr.shape
@@ -322,14 +326,16 @@ fn take_along_axis[
 
     var arr_iterator = arr.iter_along_axis(normalized_axis)
     var indices_iterator = broadcasted_indices.iter_along_axis(normalized_axis)
-    var length_of_iterator = result.size // result.shape[normalized_axis]
+    var length_of_iterator: Int = result.size // result.shape[normalized_axis]
 
     if normalized_axis == arr.ndim - 1:
         # If axis is the last axis, the data is contiguous.
         for i in range(length_of_iterator):
             var arr_slice = arr_iterator.ith(i)
             var indices_slice = indices_iterator.ith(i)
-            var arr_slice_after_applying_indices = arr_slice[indices_slice]
+            var arr_slice_after_applying_indices: NDArray[dtype] = arr_slice[
+                indices_slice
+            ]
             memcpy(
                 result._buf.ptr + i * result.shape[normalized_axis],
                 arr_slice_after_applying_indices._buf.ptr,
@@ -340,9 +346,11 @@ fn take_along_axis[
         for i in range(length_of_iterator):
             var indices_slice_offsets: NDArray[DType.index]
             var indices_slice: NDArray[DType.index]
-            indices_slice_offsets, indices_slice = (
-                indices_iterator.ith_with_offsets(i)
+            var indices_slice_offsets_slice = indices_iterator.ith_with_offsets(
+                i
             )
+            indices_slice_offsets = indices_slice_offsets_slice[0].copy()
+            indices_slice = indices_slice_offsets_slice[1].copy()
             var arr_slice = arr_iterator.ith(i)
             var arr_slice_after_applying_indices = arr_slice[indices_slice]
             for j in range(arr_slice_after_applying_indices.size):
@@ -352,4 +360,4 @@ fn take_along_axis[
                     arr_slice_after_applying_indices._buf.ptr[j]
                 )
 
-    return result
+    return result^

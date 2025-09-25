@@ -1,5 +1,5 @@
 from algorithm.functional import parallelize, vectorize
-from sys import simdwidthof
+from sys import simd_width_of
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
@@ -30,7 +30,7 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
         Scalar.
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
     var res = Scalar[dtype](1)
 
     @parameter
@@ -43,7 +43,7 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
 
 fn prod[
     dtype: DType
-](A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns products of array elements over a given axis.
 
@@ -74,10 +74,10 @@ fn prod[
     var result = ones[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[axis] = Slice(i, i + 1)
-        var arr_slice = A[slices]
+        var arr_slice = A[slices.copy()]
         result *= arr_slice
 
-    return result
+    return result^
 
 
 fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
@@ -88,7 +88,7 @@ fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](1)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_vec[width: Int](i: Int):
@@ -115,7 +115,7 @@ fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.ones[dtype](shape=(1, A.shape[1]))
@@ -170,7 +170,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A
+        var B = A.copy()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] *= B._buf.ptr[i]
         return B^
@@ -181,7 +181,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
 
 fn cumprod[
     dtype: DType
-](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns cumprod of array by axis.
 
@@ -195,7 +195,8 @@ fn cumprod[
     Returns:
         Cumprod of array by axis.
     """
-
+    # TODO: reduce copies if possible
+    var B: NDArray[dtype] = A.copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
@@ -206,21 +207,21 @@ fn cumprod[
     var I = NDArray[DType.index](Shape(A.size))
     var ptr = I._buf.ptr
 
-    var _shape = A.shape._move_axis_to_end(axis)
-    var _strides = A.strides._move_axis_to_end(axis)
+    var _shape = B.shape._move_axis_to_end(axis)
+    var _strides = B.strides._move_axis_to_end(axis)
 
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, _shape, _strides
     )
 
-    for i in range(0, A.size, A.shape[axis]):
-        for j in range(A.shape[axis] - 1):
-            A._buf.ptr[I._buf.ptr[i + j + 1]] *= A._buf.ptr[I._buf.ptr[i + j]]
+    for i in range(0, B.size, B.shape[axis]):
+        for j in range(B.shape[axis] - 1):
+            B._buf.ptr[I._buf.ptr[i + j + 1]] *= B._buf.ptr[I._buf.ptr[i + j]]
 
-    return A^
+    return B^
 
 
-fn cumprod[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
+fn cumprod[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 
@@ -252,7 +253,7 @@ fn cumprod[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
 
 fn cumprod[
     dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumprod of Matrix along the axis.
 
@@ -268,7 +269,7 @@ fn cumprod[
     print(mat.cumprod(A, axis=1))
     ```
     """
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         if A.flags.C_CONTIGUOUS:

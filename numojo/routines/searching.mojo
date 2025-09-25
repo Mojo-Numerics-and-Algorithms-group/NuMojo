@@ -5,7 +5,7 @@
 import builtin.math as builtin_math
 import math
 from algorithm import vectorize
-from sys import simdwidthof
+from sys import simd_width_of
 from collections.optional import Optional
 
 from numojo.core.ndarray import NDArray

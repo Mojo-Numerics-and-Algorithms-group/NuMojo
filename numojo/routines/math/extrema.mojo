@@ -25,7 +25,7 @@ import math.math as stdlib_math
 from builtin.math import max as builtin_max
 from builtin.math import min as builtin_min
 from collections.optional import Optional
-from sys import simdwidthof
+from sys import simd_width_of
 
 from numojo.core.matrix import Matrix
 import numojo.core.matrix as matrix
@@ -59,7 +59,7 @@ fn extrema_1d[
         Max value.
     """
 
-    alias simd_width = builtin_max(simdwidthof[dtype](), 64)
+    alias simd_width = builtin_max(simd_width_of[dtype](), 64)
     var value = a._buf.ptr[0]
 
     @parameter
@@ -458,7 +458,7 @@ fn minimum[
     """
     var result: NDArray[dtype] = NDArray[dtype](array1.shape)
 
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
     if array1.shape != array2.shape:
         raise Error("array shapes are not the same")
 
@@ -473,7 +473,7 @@ fn minimum[
         )
 
     vectorize[vectorized_min, width](array1.size)
-    return result
+    return result^
 
 
 fn maximum[
@@ -493,7 +493,7 @@ fn maximum[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](array1.shape)
-    alias width = simdwidthof[dtype]()
+    alias width = simd_width_of[dtype]()
     if array1.shape != array2.shape:
         raise Error("array shapes are not the same")
 
@@ -508,4 +508,4 @@ fn maximum[
         )
 
     vectorize[vectorized_max, width](array1.size)
-    return result
+    return result^

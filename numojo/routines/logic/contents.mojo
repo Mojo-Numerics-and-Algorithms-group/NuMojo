@@ -50,7 +50,7 @@ fn isinf[
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size):
         result_array.store(i, math.isinf(array.load(i)))
-    return result_array
+    return result_array^
 
 
 fn isfinite[
@@ -73,7 +73,7 @@ fn isfinite[
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size):
         result_array.store(i, math.isfinite(array.load(i)))
-    return result_array
+    return result_array^
 
 
 fn isnan[
@@ -96,4 +96,4 @@ fn isnan[
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size):
         result_array.store(i, math.isnan(array.load(i)))
-    return result_array
+    return result_array^

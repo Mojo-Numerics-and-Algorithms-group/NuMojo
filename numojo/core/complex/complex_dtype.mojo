@@ -49,16 +49,6 @@ alias cu256 = ComplexDType.uint256
 """Data type alias for ComplexDType.uint256"""
 alias cuint = ComplexDType.uint
 """Data type alias for ComplexDType.uint"""
-alias cf8e3m4 = ComplexDType.float8_e3m4
-"""Data type alias for ComplexDType.float8_e3m4"""
-alias cf8e4m3fn = ComplexDType.float8_e4m3fn
-"""Data type alias for ComplexDType.float8_e4m3fn"""
-alias cf8e4m3fnuz = ComplexDType.float8_e4m3fnuz
-"""Data type alias for ComplexDType.float8_e4m3fnuz"""
-alias cf8e5m2 = ComplexDType.float8_e5m2
-"""Data type alias for ComplexDType.float8_e5m2"""
-alias cf8e5m2fnuz = ComplexDType.float8_e5m2fnuz
-"""Data type alias for ComplexDType.float8_e5m2fnuz"""
 alias cbf16 = ComplexDType.bfloat16
 """Data type alias for ComplexDType.bfloat16"""
 alias cf16 = ComplexDType.float16

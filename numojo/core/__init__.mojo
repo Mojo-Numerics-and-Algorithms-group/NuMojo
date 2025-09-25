@@ -24,11 +24,6 @@ from .complex import (
     cu128,
     cu256,
     cuint,
-    cf8e3m4,
-    cf8e4m3fn,
-    cf8e4m3fnuz,
-    cf8e5m2,
-    cf8e5m2fnuz,
     cbf16,
     cf16,
     cf32,
@@ -39,16 +34,22 @@ from .complex import (
 
 from .datatypes import (
     i8,
-    i16,
-    i32,
     i64,
+    i128,
+    i256,
+    int,
     u8,
     u16,
     u32,
     u64,
+    u128,
+    u256,
+    uint,
+    bf16,
     f16,
     f32,
     f64,
+    boolean,
 )
 
 from .error import (

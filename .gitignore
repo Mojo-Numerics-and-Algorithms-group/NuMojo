@@ -10,13 +10,9 @@
 # MacOs Desktop Service file
 *.DS_Store
 
-# magic environments
-.magic
-magic.lock
-pixi.lock
-
 # pixi environments
 .pixi
+pixi.lock
 /venv
 
 
@@ -33,6 +29,7 @@ numojo.mojopkg
 /test*.mojo
 /test*.ipynb
 /tempCodeRunnerFile.mojo
+kgen.trace.*
 
 # Auto docs
 docs/readthedocs/docs.json

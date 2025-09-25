@@ -1,4 +1,4 @@
-from sys import simdwidthof
+from sys import simd_width_of
 from algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray
@@ -28,15 +28,15 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
         Scalar.
     """
 
-    alias width: Int = simdwidthof[dtype]()
-    var res = Scalar[dtype](0)
+    alias width: Int = simd_width_of[dtype]()
+    var result: Scalar[dtype] = Scalar[dtype](0)
 
     @parameter
     fn cal_vec[width: Int](i: Int):
-        res += A._buf.ptr.load[width=width](i).reduce_add()
+        result += A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[cal_vec, width](A.size)
-    return res
+    return result
 
 
 fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -102,7 +102,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = zeros[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[normalized_axis] = Slice(i, i + 1)
-        var arr_slice: NDArray[dtype] = A._getitem_list_slices(slices) # note: This internal function returns a slicing with one dimension reduced which is not the numpy behaviour. The alternative would be to do default slicing and do a squeeze() operation.
+        var arr_slice: NDArray[dtype] = A._getitem_list_slices(slices.copy())
         result += arr_slice
 
     return result^
@@ -123,7 +123,7 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     ```
     """
     var res = Scalar[dtype](0)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_vec[width: Int](i: Int):
@@ -150,7 +150,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
@@ -228,7 +228,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A
+        var B = A.copy()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] += B._buf.ptr[i]
         return B^
@@ -237,9 +237,10 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return cumsum(A.flatten(), axis=-1)
 
 
+# Why do we do in inplace operation here?
 fn cumsum[
     dtype: DType
-](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns cumsum of array by axis.
 
@@ -253,7 +254,8 @@ fn cumsum[
     Returns:
         Cumsum of array by axis.
     """
-
+    # TODO: reduce copies if possible
+    var B: NDArray[dtype] = A.copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
@@ -264,23 +266,23 @@ fn cumsum[
     var I = NDArray[DType.index](Shape(A.size))
     var ptr = I._buf.ptr
 
-    var _shape = A.shape._move_axis_to_end(axis)
-    var _strides = A.strides._move_axis_to_end(axis)
+    var _shape = B.shape._move_axis_to_end(axis)
+    var _strides = B.strides._move_axis_to_end(axis)
 
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, _shape, _strides
     )
 
-    for i in range(0, A.size, A.shape[axis]):
-        for j in range(A.shape[axis] - 1):
-            A._buf.ptr[Int(I._buf.ptr[i + j + 1])] += A._buf.ptr[
+    for i in range(0, B.size, B.shape[axis]):
+        for j in range(B.shape[axis] - 1):
+            B._buf.ptr[Int(I._buf.ptr[i + j + 1])] += B._buf.ptr[
                 Int(I._buf.ptr[i + j])
             ]
 
-    return A^
+    return B^
 
 
-fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
+fn cumsum[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 
@@ -312,7 +314,7 @@ fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
 
 fn cumsum[
     dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 
@@ -329,7 +331,7 @@ fn cumsum[
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         if A.flags.C_CONTIGUOUS:

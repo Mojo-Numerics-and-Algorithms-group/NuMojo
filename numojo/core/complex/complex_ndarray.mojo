@@ -4,21 +4,18 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implements N-Dimensional Complex Array
-Last updated: 2025-03-10
-"""
+
 # ===----------------------------------------------------------------------===#
 # SECTIONS OF THE FILE:
-#
+
 # `ComplexNDArray` type
 # 1. Life cycle methods.
 # 2. Indexing and slicing (get and set dunders and relevant methods).
 # 3. Operator dunders.
 # 4. IO, trait, and iterator dunders.
 # 5. Other methods (Sorted alphabetically).
+# ===----------------------------------------------------------------------===#
 
-#
 # ===----------------------------------------------------------------------===#
 # FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
 # 1. Description *
@@ -32,9 +29,11 @@ Last updated: 2025-03-10
 # 8) REFERENCES
 # 9) Examples *
 # (Items marked with * are flavored in "Mojo docstring style guide")
-#
+# ===----------------------------------------------------------------------===#
+
 # ===----------------------------------------------------------------------===#
 # === Stdlib ===
+# ===----------------------------------------------------------------------===#
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 import builtin.math as builtin_math
@@ -43,16 +42,19 @@ from collections.optional import Optional
 from math import log10
 from memory import UnsafePointer, memset_zero, memcpy
 from python import PythonObject
-from sys import simdwidthof
+from sys import simd_width_of
 from utils import Variant
 
+# ===----------------------------------------------------------------------===#
 # === numojo core ===
-from numojo.core.datatypes import _concise_dtype_str
+# ===----------------------------------------------------------------------===#
+from numojo.core.complex.complex_dtype import _concise_dtype_str
 from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
+from numojo.core.complex.complex_dtype import ComplexDType
 from numojo.core.own_data import OwnData
 from numojo.core.utility import (
     _get_offset,
@@ -71,7 +73,9 @@ from numojo.core.error import (
     ArithmeticError,
 )
 
+# ===----------------------------------------------------------------------===#
 # === numojo routines (creation / io / logic) ===
+# ===----------------------------------------------------------------------===#
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
     format_value,
@@ -79,7 +83,9 @@ from numojo.routines.io.formatting import (
 )
 import numojo.routines.logic.comparison as comparison
 
+# ===----------------------------------------------------------------------===#
 # === numojo routines (math / bitwise / searching) ===
+# ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
 import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
@@ -88,25 +94,32 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
 
-# ===----------------------------------------------------------------------===#
-# ComplexNDArray
-# ===----------------------------------------------------------------------===#
-# TODO: Add SIMD width as a parameter.
-struct ComplexNDArray[dtype: DType = DType.float64](
+# ===----------------------------------------------------------------------=== #
+# Implements N-Dimensional Complex Array
+# ===----------------------------------------------------------------------=== #
+struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     Copyable, Movable, Representable, Sized, Stringable, Writable
 ):
     """
     Represents a Complex N-Dimensional Array.
 
     Parameters:
-        dtype: Complex data type.
+        cdtype: Complex data type.
     """
 
+    # ===----------------------------------------------------------------------===#
+    # Aliases
+    # ===----------------------------------------------------------------------===#
+
+    alias dtype: DType = cdtype._dtype  # corresponding real data type
+
+    # ===----------------------------------------------------------------------===#
     # FIELDS
+    # ===----------------------------------------------------------------------===#
+
     var _re: NDArray[Self.dtype]
     var _im: NDArray[Self.dtype]
-
-    # It's redundant, but better to have it as fields.
+    # It's redundant, but better to have the following as fields.
     var ndim: Int
     """Number of Dimensions."""
     var shape: NDArrayShape
@@ -125,7 +138,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     @always_inline("nodebug")
     fn __init__(
-        out self, owned re: NDArray[Self.dtype], owned im: NDArray[Self.dtype]
+        out self, var re: NDArray[Self.dtype], var im: NDArray[Self.dtype]
     ) raises:
         """
         Initialize a ComplexNDArray with given real and imaginary parts.
@@ -148,13 +161,13 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     location=String("ComplexNDArray.__init__(re, im)"),
                 )
             )
-        self._re = re
-        self._im = im
-        self.ndim = re.ndim
-        self.shape = re.shape
-        self.size = re.size
-        self.strides = re.strides
-        self.flags = re.flags
+        self._re = re^
+        self._im = im^
+        self.ndim = self._re.ndim
+        self.shape = self._re.shape
+        self.size = self._re.size
+        self.strides = self._re.strides
+        self.flags = self._re.flags
         self.print_options = PrintOptions(
             precision=2, edge_items=2, line_width=80, formatted_width=6
         )
@@ -177,7 +190,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Example:
         ```mojo
         from numojo.prelude import *
-        var A = nm.ComplexNDArray[f32](Shape(2,3,4))
+        var A = nm.ComplexNDArray[cf32](Shape(2,3,4))
         ```
         """
         self._re = NDArray[Self.dtype](shape, order)
@@ -326,8 +339,8 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         Copy other into self.
         """
-        self._re = other._re
-        self._im = other._im
+        self._re = other._re.copy()
+        self._im = other._im.copy()
         self.ndim = other.ndim
         self.shape = other.shape
         self.size = other.size
@@ -336,7 +349,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self.print_options = other.print_options
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, owned existing: Self):
+    fn __moveinit__(out self, deinit existing: Self):
         """
         Move other into self.
         """
@@ -351,7 +364,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     # Explicit deallocation
     # @always_inline("nodebug")
-    # fn __del__(owned self):
+    # fn __del__(var self):
     #     """
     #     Deallocate memory.
     #     """
@@ -360,22 +373,13 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
-    # Getter and setter dunders and other methods
-    # ===-------------------------------------------------------------------===#
-
-    # ===-------------------------------------------------------------------===#
-    # Indexing and slicing
-    # Getter and setter dunders and other methods
-    # ===-------------------------------------------------------------------===#
-
-    # ===-------------------------------------------------------------------===#
     # Getter dunders and other getter methods
-    #
+
     # 1. Basic Indexing Operations
-    # fn _getitem(self, *indices: Int) -> ComplexSIMD[Self.dtype]                         # Direct unsafe getter
-    # fn _getitem(self, indices: List[Int]) -> ComplexSIMD[Self.dtype]                         # Direct unsafe getter
-    # fn __getitem__(self) raises -> ComplexSIMD[Self.dtype]                             # Get 0d array value
-    # fn __getitem__(self, index: Item) raises -> ComplexSIMD[Self.dtype]                # Get by coordinate list
+    # fn _getitem(self, *indices: Int) -> ComplexSIMD[cdtype]                         # Direct unsafe getter
+    # fn _getitem(self, indices: List[Int]) -> ComplexSIMD[cdtype]                         # Direct unsafe getter
+    # fn __getitem__(self) raises -> ComplexSIMD[cdtype]                             # Get 0d array value
+    # fn __getitem__(self, index: Item) raises -> ComplexSIMD[cdtype]                # Get by coordinate list
     #
     # 2. Single Index Slicing
     # fn __getitem__(self, idx: Int) raises -> Self                             # Get by single index
@@ -392,14 +396,14 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     # fn __getitem__(self, mask: List[Bool]) raises -> Self                     # Get by boolean list
     #
     # 5. Low-level Access
-    # fn item(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Get item by linear index
+    # fn item(self, var index: Int) raises -> ComplexSIMD[Self.dtype]                   # Get item by linear index
     # fn item(self, *index: Int) raises -> ComplexSIMD[Self.dtype]                        # Get item by coordinates
-    # fn load(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]                   # Load with bounds check
+    # fn load(self, var index: Int) raises -> ComplexSIMD[Self.dtype]                   # Load with bounds check
     # fn load[width: Int](self, index: Int) raises -> ComplexSIMD[Self.dtype, width]        # Load SIMD value
     # fn load[width: Int](self, *indices: Int) raises -> ComplexSIMD[Self.dtype, width]     # Load SIMD at coordinates
     # ===-------------------------------------------------------------------===#
 
-    fn _getitem(self, *indices: Int) -> ComplexSIMD[Self.dtype]:
+    fn _getitem(self, *indices: Int) -> ComplexSIMD[cdtype]:
         """
         Get item at indices and bypass all boundary checks.
         ***UNSAFE!*** No boundary checks made, for internal use only.
@@ -417,19 +421,19 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         ```mojo
         import numojo as nm
-        var A = nm.onesC[nm.f32](nm.Shape(2,3,4))
+        var A = nm.ones[nm.cf32](nm.Shape(2,3,4))
         print(A._getitem(1,2,3))
         ```
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
             index_of_buffer += indices[i] * self.strides._buf[i]
-        return ComplexSIMD[Self.dtype](
+        return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](index_of_buffer),
             im=self._im._buf.ptr.load[width=1](index_of_buffer),
         )
 
-    fn _getitem(self, indices: List[Int]) -> ComplexScalar[dtype]:
+    fn _getitem(self, indices: List[Int]) -> ComplexScalar[cdtype]:
         """
         Get item at indices and bypass all boundary checks.
         ***UNSAFE!*** No boundary checks made, for internal use only.
@@ -446,20 +450,20 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Examples:
 
         ```mojo
-        import numojo
-        var A = numojo.onesC(numojo.Shape(2,3,4))
+        import numojo as nm
+        var A = nm.ones[nm.cf32](numojo.Shape(2,3,4))
         print(A._getitem(List[Int](1,2,3)))
         ```
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
             index_of_buffer += indices[i] * self.strides._buf[i]
-        return ComplexSIMD[Self.dtype](
+        return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](index_of_buffer),
             im=self._im._buf.ptr.load[width=1](index_of_buffer),
         )
 
-    fn __getitem__(self) raises -> ComplexSIMD[Self.dtype]:
+    fn __getitem__(self) raises -> ComplexSIMD[cdtype]:
         """
         Gets the value of the 0-D Complex array.
 
@@ -491,12 +495,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     location=String("ComplexNDArray.__getitem__()"),
                 )
             )
-        return ComplexSIMD[Self.dtype](
+        return ComplexSIMD[cdtype](
             re=self._re._buf.ptr[],
             im=self._im._buf.ptr[],
         )
 
-    fn __getitem__(self, index: Item) raises -> ComplexSIMD[Self.dtype]:
+    fn __getitem__(self, index: Item) raises -> ComplexSIMD[cdtype]:
         """
         Get the value at the index list.
 
@@ -548,7 +552,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 )
 
         var idx: Int = _get_offset(index, self.strides)
-        return ComplexSIMD[Self.dtype](
+        return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](idx),
             im=self._im._buf.ptr.load[width=1](idx),
         )
@@ -582,11 +586,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arangeC(nm.ComplexScalar[nm.f32](0, 0), nm.ComplexScalar[nm.f32](12, 12), nm.ComplexScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
+            var a = nm.arange[nm.cf32](nm.CScalar[nm.f32](0, 0), nm.CScalar[nm.f32](12, 12), nm.CScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
             print(a.shape)        # (3,4)
             print(a[1].shape)     # (4,)  -- 1-D slice
             print(a[-1].shape)    # (4,)  -- negative index
-            var b = nm.arangeC(nm.ComplexScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
+            var b = nm.arange[nm.cf32](nm.CScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
             print(b[2])           # 0-D array (scalar wrapper)
             ```
         """
@@ -622,8 +626,8 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         # 1-D -> complex scalar (0-D ComplexNDArray wrapper)
         if self.ndim == 1:
-            return creation._0darray[Self.dtype](
-                ComplexSIMD[Self.dtype](
+            return creation._0darray[cdtype](
+                ComplexSIMD[cdtype](
                     re=self._re._buf.ptr[norm],
                     im=self._im._buf.ptr[norm],
                 )
@@ -633,9 +637,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var alloc_order = String("C")
         if self.flags.F_CONTIGUOUS:
             alloc_order = String("F")
-        var result = ComplexNDArray[Self.dtype](
-            shape=out_shape, order=alloc_order
-        )
+        var result = ComplexNDArray[cdtype](shape=out_shape, order=alloc_order)
 
         # Fast path for C-contiguous
         if self.flags.C_CONTIGUOUS:
@@ -649,7 +651,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._im._copy_first_axis_slice[Self.dtype](self._im, norm, result._im)
         return result^
 
-    fn __getitem__(self, owned *slices: Slice) raises -> Self:
+    fn __getitem__(self, var *slices: Slice) raises -> Self:
         """
         Retrieves a slice or sub-array from the current array using variadic slice arguments.
 
@@ -702,7 +704,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        var narr: Self = self[slice_list]
+        var narr: Self = self[slice_list^]
         return narr^
 
     fn _calculate_strides_efficient(self, shape: List[Int]) -> List[Int]:
@@ -725,7 +727,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         return strides^
 
-    fn __getitem__(self, owned slice_list: List[Slice]) raises -> Self:
+    fn __getitem__(self, var slice_list: List[Slice]) raises -> Self:
         """
         Retrieves a sub-array from the current array using a list of slice objects, enabling advanced slicing operations across multiple dimensions.
 
@@ -749,7 +751,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arangeC(nm.ComplexScalar(10.0, 10.0)).reshape(nm.Shape(2, 5))
+            var a = nm.arange[nm.cf32](nm.ComplexScalar(10.0, 10.0)).reshape(nm.Shape(2, 5))
             var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
             print(b)
             ```
@@ -808,11 +810,11 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var nstrides: List[Int] = self._calculate_strides_efficient(
             nshape,
         )
-        var narr = ComplexNDArray[Self.dtype](
+        var narr = ComplexNDArray[cdtype](
             offset=noffset, shape=nshape, strides=nstrides
         )
         var index_re: List[Int] = List[Int](length=ndims, fill=0)
-        _traverse_iterative[dtype](
+        _traverse_iterative[Self.dtype](
             self._re,
             narr._re,
             nshape,
@@ -823,7 +825,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             0,
         )
         var index_im: List[Int] = List[Int](length=ndims, fill=0)
-        _traverse_iterative[dtype](
+        _traverse_iterative[Self.dtype](
             self._im,
             narr._im,
             nshape,
@@ -836,7 +838,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         return narr^
 
-    fn __getitem__(self, owned *slices: Variant[Slice, Int]) raises -> Self:
+    fn __getitem__(self, var *slices: Variant[Slice, Int]) raises -> Self:
         """
         Get items of ComplexNDArray with a series of either slices or integers.
 
@@ -909,14 +911,14 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         var narr: Self
         if count_int == self.ndim:
-            narr = creation._0darray[Self.dtype](self._getitem(indices))
+            narr = creation._0darray[cdtype](self._getitem(indices))
             return narr^
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        narr = self.__getitem__(slice_list)
+        narr = self.__getitem__(slice_list^)
         return narr^
 
     fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
@@ -938,9 +940,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         # Get the shape of resulted array
         var shape = indices.shape.join(self.shape._pop(0))
 
-        var result: ComplexNDArray[Self.dtype] = ComplexNDArray[Self.dtype](
-            shape
-        )
+        var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](shape)
         var size_per_item = self.size // self.shape[0]
 
         # Fill in the values
@@ -973,7 +973,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 size_per_item,
             )
 
-        return result
+        return result^
 
     fn __getitem__(self, indices: List[Int]) raises -> Self:
         """
@@ -1028,7 +1028,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     len_of_result += 1
 
             # Change the first number of the ndshape
-            var result = ComplexNDArray[Self.dtype](
+            var result = ComplexNDArray[cdtype](
                 shape=NDArrayShape(len_of_result)
             )
 
@@ -1044,7 +1044,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     )
                     offset += 1
 
-            return result
+            return result^
 
         # CASE 2:
         # if array shape is not equal to mask shape,
@@ -1094,7 +1094,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var shape = self.shape
         shape._buf[0] = len_of_result
 
-        var result = ComplexNDArray[Self.dtype](shape)
+        var result = ComplexNDArray[cdtype](shape)
         var size_per_item = self.size // self.shape[0]
 
         # Fill in the values
@@ -1113,7 +1113,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 )
                 offset += 1
 
-        return result
+        return result^
 
     fn __getitem__(self, mask: List[Bool]) raises -> Self:
         """
@@ -1135,7 +1135,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         return self[mask_array]
 
-    fn item(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]:
+    fn item(self, var index: Int) raises -> ComplexSIMD[cdtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the complex array (not buffer).
@@ -1196,7 +1196,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             )
 
         if self.flags.F_CONTIGUOUS:
-            return ComplexSIMD[Self.dtype](
+            return ComplexSIMD[cdtype](
                 re=(
                     self._re._buf.ptr + _transfer_offset(index, self.strides)
                 )[],
@@ -1206,12 +1206,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             )
 
         else:
-            return ComplexSIMD[Self.dtype](
+            return ComplexSIMD[cdtype](
                 re=(self._re._buf.ptr + index)[],
                 im=(self._im._buf.ptr + index)[],
             )
 
-    fn item(self, *index: Int) raises -> ComplexSIMD[Self.dtype]:
+    fn item(self, *index: Int) raises -> ComplexSIMD[cdtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the complex array (not buffer).
@@ -1253,7 +1253,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             )
 
         if self.ndim == 0:
-            return ComplexSIMD[Self.dtype](
+            return ComplexSIMD[cdtype](
                 re=self._re._buf.ptr[],
                 im=self._im._buf.ptr[],
             )
@@ -1277,12 +1277,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                         location=String("ComplexNDArray.item(*index: Int)"),
                     )
                 )
-        return ComplexSIMD[Self.dtype](
+        return ComplexSIMD[cdtype](
             re=(self._re._buf.ptr + _get_offset(index, self.strides))[],
             im=(self._im._buf.ptr + _get_offset(index, self.strides))[],
         )
 
-    fn load(self, owned index: Int) raises -> ComplexSIMD[Self.dtype]:
+    fn load(self, var index: Int) raises -> ComplexSIMD[cdtype]:
         """
         Safely retrieve i-th item from the underlying buffer.
 
@@ -1323,12 +1323,12 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 )
             )
 
-        return ComplexSIMD[Self.dtype](
+        return ComplexSIMD[cdtype](
             re=self._re._buf.ptr[index],
             im=self._im._buf.ptr[index],
         )
 
-    fn load[width: Int = 1](self, index: Int) raises -> ComplexSIMD[Self.dtype]:
+    fn load[width: Int = 1](self, index: Int) raises -> ComplexSIMD[cdtype]:
         """
         Safely loads a ComplexSIMD element of size `width` at `index`
         from the underlying buffer.
@@ -1358,14 +1358,14 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 )
             )
 
-        return ComplexSIMD[Self.dtype](
+        return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](index),
             im=self._im._buf.ptr.load[width=1](index),
         )
 
     fn load[
         width: Int = 1
-    ](self, *indices: Int) raises -> ComplexSIMD[Self.dtype, width=width]:
+    ](self, *indices: Int) raises -> ComplexSIMD[cdtype, width=width]:
         """
         Safely loads a ComplexSIMD element of size `width` at given variadic indices
         from the underlying buffer.
@@ -1424,7 +1424,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 )
 
         var idx: Int = _get_offset(indices, self.strides)
-        return ComplexSIMD[Self.dtype, width=width](
+        return ComplexSIMD[cdtype, width=width](
             re=self._re._buf.ptr.load[width=width](idx),
             im=self._im._buf.ptr.load[width=width](idx),
         )
@@ -1521,7 +1521,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         return slices^
 
-    fn _setitem(self, *indices: Int, val: ComplexSIMD[Self.dtype]):
+    fn _setitem(self, *indices: Int, val: ComplexSIMD[cdtype]):
         """
         (UNSAFE! for internal use only.)
         Get item at indices and bypass all boundary checks.
@@ -1659,7 +1659,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._re._write_first_axis_slice[Self.dtype](self._re, norm, val._re)
         self._im._write_first_axis_slice[Self.dtype](self._im, norm, val._im)
 
-    fn __setitem__(mut self, index: Item, val: ComplexSIMD[Self.dtype]) raises:
+    fn __setitem__(mut self, index: Item, val: ComplexSIMD[cdtype]) raises:
         """
         Set the value at the index list.
         """
@@ -1686,8 +1686,8 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     fn __setitem__(
         mut self,
-        mask: ComplexNDArray[Self.dtype],
-        value: ComplexSIMD[Self.dtype],
+        mask: ComplexNDArray[cdtype],
+        value: ComplexSIMD[cdtype],
     ) raises:
         """
         Set the value of the array at the indices where the mask is true.
@@ -1703,7 +1703,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             if mask._im._buf.ptr.load[width=1](i):
                 self._im._buf.ptr.store(i, value.im)
 
-    fn __setitem__(mut self, owned *slices: Slice, val: Self) raises:
+    fn __setitem__(mut self, var *slices: Slice, val: Self) raises:
         """
         Retreive slices of an ComplexNDArray from variadic slices.
 
@@ -1714,9 +1714,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
         # self.__setitem__(slices=slice_list, val=val)
-        self[slice_list] = val
+        self[slice_list^] = val
 
-    fn __setitem__(mut self, owned slices: List[Slice], val: Self) raises:
+    fn __setitem__(mut self, var slices: List[Slice], val: Self) raises:
         """
         Sets the slices of an ComplexNDArray from list of slices and ComplexNDArray.
 
@@ -1815,15 +1815,15 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         for _ in range(ndims):
             index.append(0)
 
-        _traverse_iterative_setter[dtype](
+        _traverse_iterative_setter[Self.dtype](
             val._re, self._re, nshape, ncoefficients, nstrides, noffset, index
         )
-        _traverse_iterative_setter[dtype](
+        _traverse_iterative_setter[Self.dtype](
             val._im, self._im, nshape, ncoefficients, nstrides, noffset, index
         )
 
     ### compiler doesn't accept this.
-    # fn __setitem__(self, owned *slices: Variant[Slice, Int], val: NDArray[dtype]) raises:
+    # fn __setitem__(self, var *slices: Variant[Slice, Int], val: NDArray[Self.dtype]) raises:
     #     """
     #     Get items by a series of either slices or integers.
     #     """
@@ -1857,16 +1857,16 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         for i in range(len(index)):
             self._re.store(
-                Int(index.load(i)), rebind[Scalar[dtype]](val._re.load(i))
+                Int(index.load(i)), rebind[Scalar[Self.dtype]](val._re.load(i))
             )
             self._im.store(
-                Int(index.load(i)), rebind[Scalar[dtype]](val._im.load(i))
+                Int(index.load(i)), rebind[Scalar[Self.dtype]](val._im.load(i))
             )
 
     fn __setitem__(
         mut self,
-        mask: ComplexNDArray[Self.dtype],
-        val: ComplexNDArray[Self.dtype],
+        mask: ComplexNDArray[cdtype],
+        val: ComplexNDArray[cdtype],
     ) raises:
         """
         Set the value of the ComplexNDArray at the indices where the mask is true.
@@ -1894,7 +1894,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 "complex_ndarray:ComplexNDArray:__pos__: pos does not accept"
                 " bool type arrays"
             )
-        return self
+        return self.copy()
 
     fn __neg__(self) raises -> Self:
         """
@@ -1907,117 +1907,117 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                 "complex_ndarray:ComplexNDArray:__neg__: neg does not accept"
                 " bool type arrays"
             )
-        return self * ComplexSIMD[Self.dtype](-1.0, -1.0)
+        return self * ComplexSIMD[cdtype](-1.0, -1.0)
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
         """
         Itemwise equivalence.
         """
-        return comparison.equal[dtype](
+        return comparison.equal[Self.dtype](
             self._re, other._re
-        ) and comparison.equal[dtype](self._im, other._im)
+        ) and comparison.equal[Self.dtype](self._im, other._im)
 
     @always_inline("nodebug")
-    fn __eq__(
-        self, other: ComplexSIMD[Self.dtype]
-    ) raises -> NDArray[DType.bool]:
+    fn __eq__(self, other: ComplexSIMD[cdtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise equivalence between scalar and ComplexNDArray.
         """
-        return comparison.equal[dtype](self._re, other.re) and comparison.equal[
-            dtype
-        ](self._im, other.im)
+        return comparison.equal[Self.dtype](
+            self._re, other.re
+        ) and comparison.equal[Self.dtype](self._im, other.im)
 
     @always_inline("nodebug")
     fn __ne__(self, other: Self) raises -> NDArray[DType.bool]:
         """
         Itemwise non-equivalence.
         """
-        return comparison.not_equal[dtype](
+        return comparison.not_equal[Self.dtype](
             self._re, other._re
-        ) and comparison.not_equal[dtype](self._im, other._im)
+        ) and comparison.not_equal[Self.dtype](self._im, other._im)
 
     @always_inline("nodebug")
-    fn __ne__(
-        self, other: ComplexSIMD[Self.dtype]
-    ) raises -> NDArray[DType.bool]:
+    fn __ne__(self, other: ComplexSIMD[cdtype]) raises -> NDArray[DType.bool]:
         """
         Itemwise non-equivalence between scalar and ComplexNDArray.
         """
-        return comparison.not_equal[dtype](
+        return comparison.not_equal[Self.dtype](
             self._re, other.re
-        ) and comparison.not_equal[dtype](self._im, other.im)
+        ) and comparison.not_equal[Self.dtype](self._im, other.im)
 
     # ===------------------------------------------------------------------=== #
     # ARITHMETIC OPERATIONS
     # ===------------------------------------------------------------------=== #
 
-    fn __add__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __add__(self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexNDArray + ComplexSIMD`.
         """
-        var real: NDArray[dtype] = math.add[dtype](self._re, other.re)
-        var imag: NDArray[dtype] = math.add[dtype](self._im, other.im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other.re)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other.im)
+        return Self(real^, imag^)
 
-    fn __add__(self, other: Scalar[dtype]) raises -> Self:
+    fn __add__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray + Scalar`.
         """
-        var real: NDArray[dtype] = math.add[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.add[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
     fn __add__(self, other: Self) raises -> Self:
         """
         Enables `ComplexNDArray + ComplexNDArray`.
         """
         print("add complex arrays")
-        var real: NDArray[dtype] = math.add[dtype](self._re, other._re)
-        var imag: NDArray[dtype] = math.add[dtype](self._im, other._im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.add[Self.dtype](
+            self._re, other._re
+        )
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](
+            self._im, other._im
+        )
+        return Self(real^, imag^)
 
-    fn __add__(self, other: NDArray[dtype]) raises -> Self:
+    fn __add__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray + NDArray`.
         """
-        var real: NDArray[dtype] = math.add[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.add[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __radd__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __radd__(mut self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexSIMD + ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.add[dtype](self._re, other.re)
-        var imag: NDArray[dtype] = math.add[dtype](self._im, other.im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other.re)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other.im)
+        return Self(real^, imag^)
 
-    fn __radd__(mut self, other: Scalar[dtype]) raises -> Self:
+    fn __radd__(mut self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `Scalar + ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.add[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.add[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __radd__(mut self, other: NDArray[dtype]) raises -> Self:
+    fn __radd__(mut self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `NDArray + ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.add[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.add[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __iadd__(mut self, other: ComplexSIMD[Self.dtype]) raises:
+    fn __iadd__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
         Enables `ComplexNDArray += ComplexSIMD`.
         """
         self._re += other.re
         self._im += other.im
 
-    fn __iadd__(mut self, other: Scalar[dtype]) raises:
+    fn __iadd__(mut self, other: Scalar[Self.dtype]) raises:
         """
         Enables `ComplexNDArray += Scalar`.
         """
@@ -2031,81 +2031,85 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._re += other._re
         self._im += other._im
 
-    fn __iadd__(mut self, other: NDArray[dtype]) raises:
+    fn __iadd__(mut self, other: NDArray[Self.dtype]) raises:
         """
         Enables `ComplexNDArray += NDArray`.
         """
         self._re += other
         self._im += other
 
-    fn __sub__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __sub__(self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexNDArray - ComplexSIMD`.
         """
-        var real: NDArray[dtype] = math.sub[dtype](self._re, other.re)
-        var imag: NDArray[dtype] = math.sub[dtype](self._im, other.im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.sub[Self.dtype](self._re, other.re)
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](self._im, other.im)
+        return Self(real^, imag^)
 
-    fn __sub__(self, other: Scalar[dtype]) raises -> Self:
+    fn __sub__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray - Scalar`.
         """
-        var real: NDArray[dtype] = math.sub[dtype](
-            self._re, other.cast[dtype]()
+        var real: NDArray[Self.dtype] = math.sub[Self.dtype](
+            self._re, other.cast[Self.dtype]()
         )
-        var imag: NDArray[dtype] = math.sub[dtype](
-            self._im, other.cast[dtype]()
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](
+            self._im, other.cast[Self.dtype]()
         )
-        return Self(real, imag)
+        return Self(real^, imag^)
 
     fn __sub__(self, other: Self) raises -> Self:
         """
         Enables `ComplexNDArray - ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.sub[dtype](self._re, other._re)
-        var imag: NDArray[dtype] = math.sub[dtype](self._im, other._im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.sub[Self.dtype](
+            self._re, other._re
+        )
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](
+            self._im, other._im
+        )
+        return Self(real^, imag^)
 
-    fn __sub__(self, other: NDArray[dtype]) raises -> Self:
+    fn __sub__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray - NDArray`.
         """
-        var real: NDArray[dtype] = math.sub[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.sub[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.sub[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __rsub__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __rsub__(mut self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexSIMD - ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.sub[dtype](other.re, self._re)
-        var imag: NDArray[dtype] = math.sub[dtype](other.im, self._im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.sub[Self.dtype](other.re, self._re)
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other.im, self._im)
+        return Self(real^, imag^)
 
-    fn __rsub__(mut self, other: Scalar[dtype]) raises -> Self:
+    fn __rsub__(mut self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `Scalar - ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.sub[dtype](other, self._re)
-        var imag: NDArray[dtype] = math.sub[dtype](other, self._im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._re)
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._im)
+        return Self(real^, imag^)
 
-    fn __rsub__(mut self, other: NDArray[dtype]) raises -> Self:
+    fn __rsub__(mut self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `NDArray - ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.sub[dtype](other, self._re)
-        var imag: NDArray[dtype] = math.sub[dtype](other, self._im)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._re)
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._im)
+        return Self(real^, imag^)
 
-    fn __isub__(mut self, other: ComplexSIMD[Self.dtype]) raises:
+    fn __isub__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
         Enables `ComplexNDArray -= ComplexSIMD`.
         """
         self._re -= other.re
         self._im -= other.im
 
-    fn __isub__(mut self, other: Scalar[dtype]) raises:
+    fn __isub__(mut self, other: Scalar[Self.dtype]) raises:
         """
         Enables `ComplexNDArray -= Scalar`.
         """
@@ -2119,7 +2123,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._re -= other._re
         self._im -= other._im
 
-    fn __isub__(mut self, other: NDArray[dtype]) raises:
+    fn __isub__(mut self, other: NDArray[Self.dtype]) raises:
         """
         Enables `ComplexNDArray -= NDArray`.
         """
@@ -2127,80 +2131,104 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._im -= other
 
     fn __matmul__(self, other: Self) raises -> Self:
-        var re_re: NDArray[dtype] = linalg.matmul[dtype](self._re, other._re)
-        var im_im: NDArray[dtype] = linalg.matmul[dtype](self._im, other._im)
-        var re_im: NDArray[dtype] = linalg.matmul[dtype](self._re, other._im)
-        var im_re: NDArray[dtype] = linalg.matmul[dtype](self._im, other._re)
+        var re_re: NDArray[Self.dtype] = linalg.matmul[Self.dtype](
+            self._re, other._re
+        )
+        var im_im: NDArray[Self.dtype] = linalg.matmul[Self.dtype](
+            self._im, other._im
+        )
+        var re_im: NDArray[Self.dtype] = linalg.matmul[Self.dtype](
+            self._re, other._im
+        )
+        var im_re: NDArray[Self.dtype] = linalg.matmul[Self.dtype](
+            self._im, other._re
+        )
         return Self(re_re - im_im, re_im + im_re)
 
-    fn __mul__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __mul__(self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexNDArray * ComplexSIMD`.
         """
-        var re_re: NDArray[dtype] = math.mul[dtype](self._re, other.re)
-        var im_im: NDArray[dtype] = math.mul[dtype](self._im, other.re)
-        var re_im: NDArray[dtype] = math.mul[dtype](self._re, other.im)
-        var im_re: NDArray[dtype] = math.mul[dtype](self._im, other.im)
+        var re_re: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._re, other.re
+        )
+        var im_im: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._im, other.re
+        )
+        var re_im: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._re, other.im
+        )
+        var im_re: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._im, other.im
+        )
         return Self(re_re - im_im, re_im + im_re)
 
-    fn __mul__(self, other: Scalar[dtype]) raises -> Self:
+    fn __mul__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray * Scalar`.
         """
-        var real: NDArray[dtype] = math.mul[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.mul[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
     fn __mul__(self, other: Self) raises -> Self:
         """
         Enables `ComplexNDArray * ComplexNDArray`.
         """
-        var re_re: NDArray[dtype] = math.mul[dtype](self._re, other._re)
-        var im_im: NDArray[dtype] = math.mul[dtype](self._im, other._im)
-        var re_im: NDArray[dtype] = math.mul[dtype](self._re, other._im)
-        var im_re: NDArray[dtype] = math.mul[dtype](self._im, other._re)
+        var re_re: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._re, other._re
+        )
+        var im_im: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._im, other._im
+        )
+        var re_im: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._re, other._im
+        )
+        var im_re: NDArray[Self.dtype] = math.mul[Self.dtype](
+            self._im, other._re
+        )
         return Self(re_re - im_im, re_im + im_re)
 
-    fn __mul__(self, other: NDArray[dtype]) raises -> Self:
+    fn __mul__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray * NDArray`.
         """
-        var real: NDArray[dtype] = math.mul[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.mul[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __rmul__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __rmul__(self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexSIMD * ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.mul[dtype](self._re, other.re)
-        var imag: NDArray[dtype] = math.mul[dtype](self._im, other.re)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other.re)
+        var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other.re)
+        return Self(real^, imag^)
 
-    fn __rmul__(self, other: Scalar[dtype]) raises -> Self:
+    fn __rmul__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `Scalar * ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.mul[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.mul[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __rmul__(self, other: NDArray[dtype]) raises -> Self:
+    fn __rmul__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `NDArray * ComplexNDArray`.
         """
-        var real: NDArray[dtype] = math.mul[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.mul[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __imul__(mut self, other: ComplexSIMD[Self.dtype]) raises:
+    fn __imul__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
         Enables `ComplexNDArray *= ComplexSIMD`.
         """
         self._re *= other.re
         self._im *= other.im
 
-    fn __imul__(mut self, other: Scalar[dtype]) raises:
+    fn __imul__(mut self, other: Scalar[Self.dtype]) raises:
         """
         Enables `ComplexNDArray *= Scalar`.
         """
@@ -2214,14 +2242,14 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._re *= other._re
         self._im *= other._im
 
-    fn __imul__(mut self, other: NDArray[dtype]) raises:
+    fn __imul__(mut self, other: NDArray[Self.dtype]) raises:
         """
         Enables `ComplexNDArray *= NDArray`.
         """
         self._re *= other
         self._im *= other
 
-    fn __truediv__(self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __truediv__(self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexSIMD`.
         """
@@ -2229,15 +2257,15 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var result = self * other.conj() * (1.0 / other_square.re)
         return result^
 
-    fn __truediv__(self, other: Scalar[dtype]) raises -> Self:
+    fn __truediv__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexSIMD`.
         """
-        var real: NDArray[dtype] = math.div[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.div[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.div[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.div[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __truediv__(self, other: ComplexNDArray[Self.dtype]) raises -> Self:
+    fn __truediv__(self, other: ComplexNDArray[cdtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexNDArray`.
         """
@@ -2245,17 +2273,17 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var numer = self * other.conj()
         var real = numer._re / denom._re
         var imag = numer._im / denom._re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
-    fn __truediv__(self, other: NDArray[dtype]) raises -> Self:
+    fn __truediv__(self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `ComplexNDArray / NDArray`.
         """
-        var real: NDArray[dtype] = math.div[dtype](self._re, other)
-        var imag: NDArray[dtype] = math.div[dtype](self._im, other)
-        return Self(real, imag)
+        var real: NDArray[Self.dtype] = math.div[Self.dtype](self._re, other)
+        var imag: NDArray[Self.dtype] = math.div[Self.dtype](self._im, other)
+        return Self(real^, imag^)
 
-    fn __rtruediv__(mut self, other: ComplexSIMD[Self.dtype]) raises -> Self:
+    fn __rtruediv__(mut self, other: ComplexSIMD[cdtype]) raises -> Self:
         """
         Enables `ComplexSIMD / ComplexNDArray`.
         """
@@ -2263,9 +2291,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var numer = self * other.conj()
         var real = numer._re / denom.re
         var imag = numer._im / denom.re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
-    fn __rtruediv__(mut self, other: Scalar[dtype]) raises -> Self:
+    fn __rtruediv__(mut self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `Scalar / ComplexNDArray`.
         """
@@ -2273,9 +2301,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var numer = self.conj() * other
         var real = numer._re / denom._re
         var imag = numer._im / denom._re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
-    fn __rtruediv__(mut self, other: NDArray[dtype]) raises -> Self:
+    fn __rtruediv__(mut self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `NDArray / ComplexNDArray`.
         """
@@ -2283,16 +2311,16 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         var numer = self.conj() * other
         var real = numer._re / denom._re
         var imag = numer._im / denom._re
-        return Self(real, imag)
+        return Self(real^, imag^)
 
-    fn __itruediv__(mut self, other: ComplexSIMD[Self.dtype]) raises:
+    fn __itruediv__(mut self, other: ComplexSIMD[cdtype]) raises:
         """
         Enables `ComplexNDArray /= ComplexSIMD`.
         """
         self._re /= other.re
         self._im /= other.im
 
-    fn __itruediv__(mut self, other: Scalar[dtype]) raises:
+    fn __itruediv__(mut self, other: Scalar[Self.dtype]) raises:
         """
         Enables `ComplexNDArray /= Scalar`.
         """
@@ -2306,7 +2334,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self._re /= other._re
         self._im /= other._im
 
-    fn __itruediv__(mut self, other: NDArray[dtype]) raises:
+    fn __itruediv__(mut self, other: NDArray[Self.dtype]) raises:
         """
         Enables `ComplexNDArray /= NDArray`.
         """
@@ -2339,13 +2367,13 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             # For 0-D array (numojo scalar), we can directly write the value
             writer.write(
                 String(
-                    ComplexScalar[dtype](
+                    ComplexScalar[cdtype](
                         self._re._buf.ptr[], self._im._buf.ptr[]
                     )
                 )
                 + String(
                     "  (0darray["
-                    + _concise_dtype_str(self.dtype)
+                    + _concise_dtype_str(cdtype)
                     + "], use `[]` or `.item()` to unpack)"
                 )
             )
@@ -2360,7 +2388,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     + "  Strides"
                     + String(self.strides)
                     + "  DType: "
-                    + _concise_dtype_str(self.dtype)
+                    + _concise_dtype_str(cdtype)
                     + "  C-cont: "
                     + String(self.flags.C_CONTIGUOUS)
                     + "  F-cont: "
@@ -2404,7 +2432,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             for i in range(self._re.shape.ndim):
                 result = result + String(self._re.shape._buf[i]) + ","
             result = result + String("))")
-            return result
+            return result^
         except e:
             print("Cannot convert array to string", e)
             return ""
@@ -2413,7 +2441,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         self,
         dimension: Int,
         offset: Int,
-        owned summarize: Bool = False,
+        var summarize: Bool = False,
     ) raises -> String:
         """
         Convert the array to a string.
@@ -2518,14 +2546,14 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     summarize=summarize,
                 )
         result += "]"
-        return result
+        return result^
 
     fn __len__(self) -> Int:
         return Int(self._re.size)
 
     fn store[
         width: Int = 1
-    ](mut self, index: Int, val: ComplexSIMD[Self.dtype]) raises:
+    ](mut self, index: Int, val: ComplexSIMD[cdtype]) raises:
         """
         Safely stores SIMD element of size `width` at `index`
         of the underlying buffer.
@@ -2555,7 +2583,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     fn store[
         width: Int = 1
-    ](mut self, *indices: Int, val: ComplexSIMD[Self.dtype]) raises:
+    ](mut self, *indices: Int, val: ComplexSIMD[cdtype]) raises:
         """
         Safely stores SIMD element of size `width` at given variadic indices
         of the underlying buffer.
@@ -2608,9 +2636,9 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         Returns:
             Array of the same data with a new shape.
         """
-        var result: Self = ComplexNDArray[dtype](
-            re=numojo.reshape(self._re, shape=shape, order=order),
-            im=numojo.reshape(self._im, shape=shape, order=order),
+        var result: Self = ComplexNDArray[cdtype](
+            re=numojo.reshape(self._re.copy(), shape=shape, order=order),
+            im=numojo.reshape(self._im.copy(), shape=shape, order=order),
         )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags
@@ -2618,7 +2646,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
     fn __iter__(
         self,
-    ) raises -> _ComplexNDArrayIter[__origin_of(self._re), Self.dtype]:
+    ) raises -> _ComplexNDArrayIter[__origin_of(self._re), cdtype]:
         """
         Iterates over elements of the ComplexNDArray and return sub-arrays as view.
 
@@ -2626,7 +2654,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
             An iterator of ComplexNDArray elements.
         """
 
-        return _ComplexNDArrayIter[__origin_of(self._re), Self.dtype](
+        return _ComplexNDArrayIter[__origin_of(self._re), cdtype](
             self,
             dimension=0,
         )
@@ -2634,7 +2662,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     fn __reversed__(
         self,
     ) raises -> _ComplexNDArrayIter[
-        __origin_of(self._re), Self.dtype, forward=False
+        __origin_of(self._re), cdtype, forward=False
     ]:
         """
         Iterates backwards over elements of the ComplexNDArray, returning
@@ -2645,7 +2673,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
 
         return _ComplexNDArrayIter[
-            __origin_of(self._re), Self.dtype, forward=False
+            __origin_of(self._re), cdtype, forward=False
         ](
             self,
             dimension=0,
@@ -2654,7 +2682,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
     fn itemset(
         mut self,
         index: Variant[Int, List[Int]],
-        item: ComplexSIMD[Self.dtype],
+        item: ComplexSIMD[cdtype],
     ) raises:
         """Set the scalar at the coordinates.
 
@@ -2668,7 +2696,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 
         # If one index is given
         if index.isa[Int]():
-            var idx = index._get_ptr[Int]()[]
+            var idx: Int = index[Int]
             if idx < self.size:
                 if self.flags[
                     "F_CONTIGUOUS"
@@ -2703,8 +2731,8 @@ struct ComplexNDArray[dtype: DType = DType.float64](
                     )
                 )
 
-        else:
-            var indices = index._get_ptr[List[Int]]()[]
+        elif index.isa[List[Int]]():
+            var indices: List[Int] = index[List[Int]].copy()
             if indices.__len__() != self.ndim:
                 raise Error(
                     IndexError(
@@ -2740,15 +2768,21 @@ struct ComplexNDArray[dtype: DType = DType.float64](
         """
         Return the complex conjugate of the ComplexNDArray.
         """
-        return Self(self._re, -self._im)
+        return Self(self._re.copy(), -self._im.copy())
 
-    fn to_ndarray(self, type: String = "re") raises -> NDArray[dtype=dtype]:
+    fn to_ndarray(
+        self, type: String = "re"
+    ) raises -> NDArray[dtype = Self.dtype]:
         if type == "re":
-            var result: NDArray[dtype=dtype] = NDArray[dtype=dtype](self.shape)
+            var result: NDArray[dtype = Self.dtype] = NDArray[
+                dtype = Self.dtype
+            ](self.shape)
             memcpy(result._buf.ptr, self._re._buf.ptr, self.size)
             return result^
         elif type == "im":
-            var result: NDArray[dtype=dtype] = NDArray[dtype=dtype](self.shape)
+            var result: NDArray[dtype = Self.dtype] = NDArray[
+                dtype = Self.dtype
+            ](self.shape)
             memcpy(result._buf.ptr, self._im._buf.ptr, self.size)
             return result^
         else:
@@ -2813,7 +2847,7 @@ struct ComplexNDArray[dtype: DType = DType.float64](
 struct _ComplexNDArrayIter[
     is_mutable: Bool, //,
     origin: Origin[is_mutable],
-    dtype: DType,
+    cdtype: ComplexDType,
     forward: Bool = True,
 ](Copyable, Movable):
     # TODO:
@@ -2828,13 +2862,16 @@ struct _ComplexNDArrayIter[
     Parameters:
         is_mutable: Whether the iterator is mutable.
         origin: The lifetime of the underlying NDArray data.
-        dtype: The data type of the item.
+        cdtype: The complex data type of the item.
         forward: The iteration direction. `False` is backwards.
     """
+    # The equivalent DType of the ComplexDType
+    alias dtype: DType = cdtype._dtype
 
+    # FIELDS
     var index: Int
-    var re_ptr: UnsafePointer[Scalar[dtype]]
-    var im_ptr: UnsafePointer[Scalar[dtype]]
+    var re_ptr: UnsafePointer[Scalar[Self.dtype]]
+    var im_ptr: UnsafePointer[Scalar[Self.dtype]]
     var dimension: Int
     var length: Int
     var shape: NDArrayShape
@@ -2844,7 +2881,7 @@ struct _ComplexNDArrayIter[
     var size_of_item: Int
 
     fn __init__(
-        out self, read a: ComplexNDArray[dtype], read dimension: Int
+        out self, read a: ComplexNDArray[cdtype], read dimension: Int
     ) raises:
         """
         Initialize the iterator.
@@ -2879,10 +2916,10 @@ struct _ComplexNDArrayIter[
         self.index = 0 if forward else a.shape[dimension] - 1
 
     fn __iter__(self) -> Self:
-        return self
+        return self.copy()
 
-    fn __next__(mut self) raises -> ComplexNDArray[dtype]:
-        var res = ComplexNDArray[dtype](self.shape._pop(self.dimension))
+    fn __next__(mut self) raises -> ComplexNDArray[cdtype]:
+        var result = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
         var current_index = self.index
 
         @parameter
@@ -2904,13 +2941,13 @@ struct _ComplexNDArrayIter[
                         current_index
                     )
 
-            (res._re._buf.ptr + offset).init_pointee_copy(
+            (result._re._buf.ptr + offset).init_pointee_copy(
                 self.re_ptr[_get_offset(item, self.strides)]
             )
-            (res._im._buf.ptr + offset).init_pointee_copy(
+            (result._im._buf.ptr + offset).init_pointee_copy(
                 self.im_ptr[_get_offset(item, self.strides)]
             )
-        return res
+        return result^
 
     @always_inline
     fn __has_next__(self) -> Bool:
@@ -2927,7 +2964,7 @@ struct _ComplexNDArrayIter[
         else:
             return self.index
 
-    fn ith(self, index: Int) raises -> ComplexNDArray[dtype]:
+    fn ith(self, index: Int) raises -> ComplexNDArray[cdtype]:
         """
         Gets the i-th array of the iterator.
 
@@ -2952,7 +2989,7 @@ struct _ComplexNDArrayIter[
             )
 
         if self.ndim > 1:
-            var res = ComplexNDArray[dtype](self.shape._pop(self.dimension))
+            var result = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
 
             for offset in range(self.size_of_item):
                 var remainder = offset
@@ -2967,16 +3004,16 @@ struct _ComplexNDArrayIter[
                     else:
                         (item._buf + self.dimension).init_pointee_copy(index)
 
-                (res._re._buf.ptr + offset).init_pointee_copy(
+                (result._re._buf.ptr + offset).init_pointee_copy(
                     self.re_ptr[_get_offset(item, self.strides)]
                 )
-                (res._im._buf.ptr + offset).init_pointee_copy(
+                (result._im._buf.ptr + offset).init_pointee_copy(
                     self.im_ptr[_get_offset(item, self.strides)]
                 )
-            return res
+            return result^
 
         else:  # 0-D array
-            var res = numojo.creation._0darray[dtype](
-                ComplexSIMD[dtype](self.re_ptr[index], self.im_ptr[index])
+            var result = numojo.creation._0darray[cdtype](
+                ComplexSIMD[cdtype](self.re_ptr[index], self.im_ptr[index])
             )
-            return res
+            return result^

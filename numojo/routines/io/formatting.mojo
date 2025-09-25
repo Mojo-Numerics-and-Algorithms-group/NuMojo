@@ -40,7 +40,7 @@ alias GLOBAL_PRINT_OPTIONS = PrintOptions(
 )
 
 
-struct PrintOptions(Copyable, Movable):
+struct PrintOptions(Copyable, ImplicitlyCopyable, Movable):
     var precision: Int
     """
     The number of decimal places to include in the formatted string.
@@ -362,9 +362,9 @@ fn format_floating_precision[
 
 
 fn format_floating_precision[
-    dtype: DType
+    cdtype: ComplexDType
 ](
-    value: ComplexSIMD[dtype],
+    value: ComplexSIMD[cdtype],
     precision: Int = 4,
     sign: Bool = False,
 ) raises -> String:
@@ -447,8 +447,8 @@ fn format_value[
 
 
 fn format_value[
-    dtype: DType
-](value: ComplexSIMD[dtype], print_options: PrintOptions,) raises -> String:
+    cdtype: ComplexDType
+](value: ComplexSIMD[cdtype], print_options: PrintOptions,) raises -> String:
     """
     Format a complex value based on the print options.
 
@@ -471,7 +471,7 @@ fn format_value[
     var exponent_threshold = print_options.exponent_threshold
 
     var re_str: String
-    if dtype.is_floating_point():
+    if cdtype.is_floating_point():
         if isnan(value.re):
             re_str = nan_string
         elif isinf(value.re):
@@ -501,7 +501,7 @@ fn format_value[
     # Decide sign for imaginary component and format magnitude
     var imag_sign_char: String = "+"
     var imag_mag_str: String
-    if dtype.is_floating_point():
+    if cdtype.is_floating_point():
         if isnan(value.im):
             imag_mag_str = nan_string
             imag_sign_char = "+"

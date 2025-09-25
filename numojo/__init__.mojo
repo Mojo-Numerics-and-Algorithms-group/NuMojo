@@ -39,6 +39,8 @@ from numojo.core.complex.complex_dtype import (
 )
 from numojo.core.datatypes import (
     i8,
+    i16,
+    i32,
     i64,
     i128,
     i256,

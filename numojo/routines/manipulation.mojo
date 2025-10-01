@@ -141,7 +141,6 @@ fn reshape[
     Returns:
         Array of the same data with a new shape.
     """
-    print("HOLY")
     if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 

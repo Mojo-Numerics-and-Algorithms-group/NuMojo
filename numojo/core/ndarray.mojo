@@ -4891,7 +4891,6 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Array of the same data with a new shape.
         """
-        print("WTF IS HAPPENING")
         return numojo.reshape(self, shape=shape, order=order)
 
     fn resize(mut self, shape: NDArrayShape) raises:

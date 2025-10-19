@@ -109,7 +109,7 @@ import numojo.routines.searching as searching
 # ===-----------------------------------------------------------------------===#
 # Implements the N-Dimensional Array.
 # ===-----------------------------------------------------------------------===#
-struct NDArray[dtype: DType = DType.float64](
+struct NDArray[dtype: DType = DType.float64,](
     Absable,
     Copyable,
     FloatableRaising,

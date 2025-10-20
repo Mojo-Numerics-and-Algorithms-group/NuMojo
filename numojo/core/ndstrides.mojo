@@ -277,17 +277,122 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
            Stride value at the given index.
         """
 
-        var normalized_index: Int = index
-        if normalized_index < 0:
-            normalized_index += self.ndim
-        if (normalized_index >= self.ndim) or (normalized_index < 0):
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
             raise Error(
                 String("Index {} out of bound [{}, {})").format(
                     -self.ndim, self.ndim
                 )
             )
 
-        return self._buf[normalized_index]
+        return self._buf[normalized_idx]
+
+    @always_inline("nodebug")
+    fn _compute_slice_params(
+        self, slice_index: Slice
+    ) raises -> (Int, Int, Int):
+        """
+        Compute normalized slice parameters (start, step, length).
+
+        Args:
+            slice_index: The slice to compute parameters for.
+
+        Returns:
+            A tuple of (start, step, length).
+
+        Raises:
+            Error: If the slice step is zero.
+        """
+        var n = self.ndim
+        if n == 0:
+            return (0, 1, 0)
+
+        var step = slice_index.step.or_else(1)
+        if step == 0:
+            raise Error("Slice step cannot be zero.")
+
+        var start: Int
+        var stop: Int
+        if step > 0:
+            start = slice_index.start.or_else(0)
+            stop = slice_index.end.or_else(n)
+        else:
+            start = slice_index.start.or_else(n - 1)
+            stop = slice_index.end.or_else(-1)
+
+        if start < 0:
+            start += n
+        if stop < 0:
+            stop += n
+
+        if step > 0:
+            if start < 0:
+                start = 0
+            if start > n:
+                start = n
+            if stop < 0:
+                stop = 0
+            if stop > n:
+                stop = n
+        else:
+            if start >= n:
+                start = n - 1
+            if start < -1:
+                start = -1
+            if stop >= n:
+                stop = n - 1
+            if stop < -1:
+                stop = -1
+
+        var length: Int = 0
+        if step > 0:
+            if start < stop:
+                length = Int((stop - start + step - 1) / step)
+        else:
+            if start > stop:
+                var neg_step = -step
+                length = Int((start - stop + neg_step - 1) / neg_step)
+
+        return (start, step, length)
+
+    @always_inline("nodebug")
+    fn __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
+        """
+        Return a sliced view of the strides as a new NDArrayStrides.
+        Delegates normalization & validation to _compute_slice_params.
+
+        Args:
+            slice_index: The slice to extract.
+
+        Returns:
+            A new NDArrayStrides containing the sliced values.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var strides = nm.Strides(12, 4, 1)
+        print(strides[1:])  # Strides: (4, 1)
+        ```
+        """
+        var updated_slice: Tuple[Int, Int, Int] = self._compute_slice_params(
+            slice_index
+        )
+        var start = updated_slice[0]
+        var step = updated_slice[1]
+        var length = updated_slice[2]
+
+        if length <= 0:
+            var empty_result = NDArrayStrides(ndim=0, initialized=False)
+            return empty_result
+
+        var result = NDArrayStrides(ndim=length, initialized=False)
+        var idx = start
+        for i in range(length):
+            (result._buf + i).init_pointee_copy(self._buf[idx])
+            idx += step
+        return result^
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:
@@ -303,17 +408,17 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
           val: Value to set at the given index.
         """
 
-        var normalized_index: Int = index
-        if normalized_index < 0:
-            normalized_index += self.ndim
-        if (normalized_index >= self.ndim) or (normalized_index < 0):
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
             raise Error(
                 String("Index {} out of bound [{}, {})").format(
                     -self.ndim, self.ndim
                 )
             )
 
-        self._buf[normalized_index] = val
+        self._buf[normalized_idx] = val
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:
@@ -422,14 +527,84 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
         Returns:
             A new strides with the given axes swapped.
         """
-        var res = self
+        var res = Self(ndim=self.ndim, initialized=False)
+        memcpy(res._buf, self._buf, self.ndim)
         res[axis1] = self[axis2]
         res[axis2] = self[axis1]
-        return res
+        return res^
+
+    fn join(self, *strides: Self) raises -> Self:
+        """
+        Join multiple strides into a single strides.
+
+        Args:
+            strides: Variable number of NDArrayStrides objects.
+
+        Returns:
+            A new NDArrayStrides object with all values concatenated.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var s1 = nm.Strides(12, 4)
+        var s2 = nm.Strides(1)
+        var joined = s1.join(s2)
+        print(joined)  # Strides: (12, 4, 1)
+        ```
+        """
+        var total_dims: Int = self.ndim
+        for i in range(len(strides)):
+            total_dims += strides[i].ndim
+
+        var new_strides: Self = Self(ndim=total_dims, initialized=False)
+
+        var index: UInt = 0
+        for i in range(self.ndim):
+            (new_strides._buf + index).init_pointee_copy(self[i])
+            index += 1
+
+        for i in range(len(strides)):
+            for j in range(strides[i].ndim):
+                (new_strides._buf + index).init_pointee_copy(strides[i][j])
+                index += 1
+
+        return new_strides
 
     # ===-------------------------------------------------------------------===#
     # Other private methods
     # ===-------------------------------------------------------------------===#
+
+    fn _extend(self, *values: Int) raises -> Self:
+        """
+        Extend the strides by additional values.
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            values: Additional stride values to append.
+
+        Returns:
+            A new NDArrayStrides object with the extended values.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var strides = nm.Strides(12, 4)
+        var extended = strides._extend(1)
+        print(extended)  # Strides: (12, 4, 1)
+        ```
+        """
+        var total_dims: Int = self.ndim + len(values)
+        var new_strides: Self = Self(ndim=total_dims, initialized=False)
+
+        var offset: UInt = 0
+        for i in range(self.ndim):
+            (new_strides._buf + offset).init_pointee_copy(self[i])
+            offset += 1
+        for value in values:
+            (new_strides._buf + offset).init_pointee_copy(value)
+            offset += 1
+
+        return new_strides^
 
     fn _flip(self) -> Self:
         """

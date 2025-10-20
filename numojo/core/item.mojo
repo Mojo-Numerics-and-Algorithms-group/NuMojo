@@ -6,6 +6,7 @@ Implements Item type.
 
 from builtin.type_aliases import Origin
 from memory import UnsafePointer, memset_zero, memcpy
+from memory import memcmp
 from os import abort
 from sys import simd_width_of
 from utils import Variant
@@ -214,6 +215,44 @@ struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
         return self._buf[normalized_idx]
 
     @always_inline("nodebug")
+    fn __getitem__(self, slice_index: Slice) raises -> Self:
+        """
+        Return a sliced view of the item as a new Item.
+        Delegates normalization & validation to _compute_slice_params.
+
+        Args:
+            slice_index: The slice to extract.
+
+        Returns:
+            A new Item containing the sliced values.
+
+        Example:
+        ```mojo
+        from numojo.prelude import *
+        var item = Item(10, 20, 30, 40, 50)
+        print(item[1:4])  # Item: (20, 30, 40)
+        print(item[::2])  # Item: (10, 30, 50)
+        ```
+        """
+        var updated_slice: Tuple[Int, Int, Int] = self._compute_slice_params(
+            slice_index
+        )
+        var start = updated_slice[0]
+        var step = updated_slice[1]
+        var length = updated_slice[2]
+
+        if length <= 0:
+            var empty_result = Self(ndim=0, initialized=False)
+            return empty_result
+
+        var result = Self(ndim=length, initialized=False)
+        var idx = start
+        for i in range(length):
+            (result._buf + i).init_pointee_copy(self._buf[idx])
+            idx += step
+        return result^
+
+    @always_inline("nodebug")
     fn __setitem__[T: Indexer, U: Indexer](self, idx: T, val: U) raises:
         """Set the value at the specified index.
 
@@ -282,9 +321,122 @@ struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
             + String(self.ndim)
         )
 
+    @always_inline("nodebug")
+    fn __eq__(self, other: Self) -> Bool:
+        """
+        Checks if two items have identical dimensions and values.
+
+        Args:
+            other: The item to compare with.
+
+        Returns:
+            True if both items have identical dimensions and values.
+        """
+        if self.ndim != other.ndim:
+            return False
+        if memcmp(self._buf, other._buf, self.ndim) != 0:
+            return False
+        return True
+
+    @always_inline("nodebug")
+    fn __ne__(self, other: Self) -> Bool:
+        """
+        Checks if two items have different dimensions or values.
+
+        Args:
+            other: The item to compare with.
+
+        Returns:
+            True if both items do not have identical dimensions or values.
+        """
+        return not self.__eq__(other)
+
+    @always_inline("nodebug")
+    fn __contains__(self, val: Int) -> Bool:
+        """
+        Checks if the given value is present in the item.
+
+        Args:
+            val: The value to search for.
+
+        Returns:
+            True if the given value is present in the item.
+        """
+        for i in range(self.ndim):
+            if self._buf[i] == val:
+                return True
+        return False
+
     # ===-------------------------------------------------------------------===#
     # Other methods
     # ===-------------------------------------------------------------------===#
+
+    @always_inline("nodebug")
+    fn copy(read self) raises -> Self:
+        """
+        Returns a deep copy of the item.
+
+        Returns:
+            A new Item with the same values.
+        """
+        var res = Self(ndim=self.ndim, initialized=False)
+        memcpy(res._buf, self._buf, self.ndim)
+        return res^
+
+    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+        """
+        Returns a new item with the given axes swapped.
+
+        Args:
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            A new item with the given axes swapped.
+        """
+        var res: Self = Self(ndim=self.ndim, initialized=False)
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        res[axis1] = self[axis2]
+        res[axis2] = self[axis1]
+        return res
+
+    fn join(self, *others: Self) raises -> Self:
+        """
+        Join multiple items into a single item.
+
+        Args:
+            others: Variable number of Item objects.
+
+        Returns:
+            A new Item object with all values concatenated.
+
+        Examples:
+        ```mojo
+        from numojo.prelude import *
+        var item1 = Item(1, 2)
+        var item2 = Item(3, 4)
+        var item3 = Item(5)
+        var joined = item1.join(item2, item3)
+        print(joined)  # Item at index: (1,2,3,4,5)
+        ```
+        """
+        var total_dims: Int = self.ndim
+        for i in range(len(others)):
+            total_dims += others[i].ndim
+
+        var new_item: Self = Self(ndim=total_dims, initialized=False)
+
+        var index: UInt = 0
+        for i in range(self.ndim):
+            (new_item._buf + index).init_pointee_copy(self[i])
+            index += 1
+
+        for i in range(len(others)):
+            for j in range(others[i].ndim):
+                (new_item._buf + index).init_pointee_copy(others[i][j])
+                index += 1
+
+        return new_item^
 
     fn offset(self, strides: NDArrayStrides) -> Int:
         """
@@ -312,6 +464,183 @@ struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
         for i in range(self.ndim):
             offset += self._buf[i] * strides._buf[i]
         return offset
+
+    # ===-------------------------------------------------------------------===#
+    # Other private methods
+    # ===-------------------------------------------------------------------===#
+
+    fn _flip(self) raises -> Self:
+        """
+        Returns a new item by flipping the items.
+        ***UNSAFE!*** No boundary check!
+
+        Returns:
+            A new item with the items flipped.
+
+        Example:
+        ```mojo
+        from numojo.prelude import *
+        var item = Item(1, 2, 3)
+        print(item)          # Item: (1, 2, 3)
+        print(item._flip())  # Item: (3, 2, 1)
+        ```
+        """
+        var result: Self = Self(ndim=self.ndim, initialized=False)
+        memcpy(dest=result._buf, src=self._buf, count=self.ndim)
+        for i in range(result.ndim):
+            result._buf[i] = self._buf[self.ndim - 1 - i]
+        return result^
+
+    fn _move_axis_to_end(self, var axis: Int) raises -> Self:
+        """
+        Returns a new item by moving the value of axis to the end.
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            axis: The axis (index) to move. It should be in `[-ndim, ndim)`.
+
+        Returns:
+            A new item with the specified axis moved to the end.
+
+        Example:
+        ```mojo
+        from numojo.prelude import *
+        var item = Item(10, 20, 30)
+        print(item._move_axis_to_end(0))  # Item: (20, 30, 10)
+        print(item._move_axis_to_end(1))  # Item: (10, 30, 20)
+        ```
+        """
+        if axis < 0:
+            axis += self.ndim
+
+        var result: Self = Self(ndim=self.ndim, initialized=False)
+        memcpy(dest=result._buf, src=self._buf, count=self.ndim)
+
+        if axis == self.ndim - 1:
+            return result^
+
+        var value: Int = result._buf[axis]
+        for i in range(axis, result.ndim - 1):
+            result._buf[i] = result._buf[i + 1]
+        result._buf[result.ndim - 1] = value
+        return result^
+
+    fn _pop(self, axis: Int) raises -> Self:
+        """
+        Drops information of certain axis.
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            axis: The axis (index) to drop. It should be in `[0, ndim)`.
+
+        Returns:
+            A new item with the item at the given axis (index) dropped.
+        """
+        var res: Self = Self(ndim=self.ndim - 1, initialized=False)
+        memcpy(dest=res._buf, src=self._buf, count=axis)
+        memcpy(
+            dest=res._buf + axis,
+            src=self._buf.offset(axis + 1),
+            count=self.ndim - axis - 1,
+        )
+        return res^
+
+    fn _extend(self, *values: Int) raises -> Self:
+        """
+        Extend the item by additional values.
+        ***UNSAFE!*** No boundary check!
+
+        Args:
+            values: Additional values to append.
+
+        Returns:
+            A new Item object with the extended values.
+
+        Example:
+        ```mojo
+        from numojo.prelude import *
+        var item = Item(1, 2, 3)
+        var extended = item._extend(4, 5)
+        print(extended)  # Item: (1, 2, 3, 4, 5)
+        ```
+        """
+        var total_dims: Int = self.ndim + len(values)
+        var new_item: Self = Self(ndim=total_dims, initialized=False)
+
+        var offset: UInt = 0
+        for i in range(self.ndim):
+            (new_item._buf + offset).init_pointee_copy(self[i])
+            offset += 1
+        for value in values:
+            (new_item._buf + offset).init_pointee_copy(value)
+            offset += 1
+
+        return new_item^
+
+    fn _compute_slice_params(self, slice_index: Slice) raises -> (Int, Int, Int):
+        """
+        Compute normalized slice parameters (start, step, length).
+
+        Args:
+            slice_index: The slice to compute parameters for.
+
+        Returns:
+            A tuple of (start, step, length).
+
+        Raises:
+            Error: If the slice step is zero.
+        """
+        var n = self.ndim
+        if n == 0:
+            return (0, 1, 0)
+
+        var step = slice_index.step.or_else(1)
+        if step == 0:
+            raise Error("Slice step cannot be zero.")
+
+        var start: Int
+        var stop: Int
+        if step > 0:
+            start = slice_index.start.or_else(0)
+            stop = slice_index.end.or_else(n)
+        else:
+            start = slice_index.start.or_else(n - 1)
+            stop = slice_index.end.or_else(-1)
+
+        if start < 0:
+            start += n
+        if stop < 0:
+            stop += n
+
+        if step > 0:
+            if start < 0:
+                start = 0
+            if start > n:
+                start = n
+            if stop < 0:
+                stop = 0
+            if stop > n:
+                stop = n
+        else:
+            if start >= n:
+                start = n - 1
+            if start < -1:
+                start = -1
+            if stop >= n:
+                stop = n - 1
+            if stop < -1:
+                stop = -1
+
+        var length: Int = 0
+        if step > 0:
+            if start < stop:
+                length = Int((stop - start + step - 1) / step)
+        else:
+            if start > stop:
+                var neg_step = -step
+                length = Int((start - stop + neg_step - 1) / neg_step)
+
+        return (start, step, length)
 
 
 struct _ItemIter[

@@ -311,17 +311,17 @@ struct NDArrayShape(
            Shape value at the given index.
         """
 
-        var normalized_index: Int = index
-        if normalized_index < 0:
-            normalized_index += self.ndim
-        if (normalized_index >= self.ndim) or (normalized_index < 0):
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
             raise Error(
                 String("Index {} out of bound [{}, {})").format(
                     -self.ndim, self.ndim
                 )
             )
 
-        return self._buf[normalized_index]
+        return self._buf[normalized_idx]
 
     # TODO: Check the negative steps result
     @always_inline("nodebug")
@@ -417,10 +417,10 @@ struct NDArrayShape(
           val: Value to set at the given index.
         """
 
-        var normalized_index: Int = index
-        if normalized_index < 0:
-            normalized_index += self.ndim
-        if (normalized_index >= self.ndim) or (normalized_index < 0):
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
             raise Error(
                 String("Index {} out of bound [{}, {})").format(
                     -self.ndim, self.ndim
@@ -435,7 +435,7 @@ struct NDArrayShape(
                 )
             )
 
-        self._buf[normalized_index] = val
+        self._buf[normalized_idx] = val
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:

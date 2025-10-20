@@ -16,7 +16,7 @@ alias Shape = NDArrayShape
 
 @register_passable
 struct NDArrayShape(
-    ImplicitlyCopyable, Sized, Stringable & Representable, Writable
+    ImplicitlyCopyable, Movable, Sized, Stringable & Representable, Writable
 ):
     """
     Presents the shape of `NDArray` type.
@@ -283,6 +283,46 @@ struct NDArrayShape(
                 for i in range(ndim):
                     (self._buf + i).init_pointee_copy(1)
 
+    fn row_major(self) raises -> NDArrayStrides:
+        """
+        Create row-major (C-style) strides from a shape.
+
+        Row-major means the last dimension has stride 1 and strides increase
+        going backwards through dimensions.
+
+        Returns:
+            A new NDArrayStrides object with row-major memory layout.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var shape = nm.Shape(2, 3, 4)
+        var strides = nm.Strides.row_major(shape)
+        print(strides)  # Strides: (12, 4, 1)
+        ```
+        """
+        return NDArrayStrides(shape=self, order="C")
+
+    fn col_major(self) raises -> NDArrayStrides:
+        """
+        Create column-major (Fortran-style) strides from a shape.
+
+        Column-major means the first dimension has stride 1 and strides increase
+        going forward through dimensions.
+
+        Returns:
+            A new NDArrayStrides object with column-major memory layout.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var shape = nm.Shape(2, 3, 4)
+        var strides = nm.Strides.col_major(shape)
+        print(strides)  # Strides: (1, 2, 6)
+        ```
+        """
+        return NDArrayStrides(shape=self, order="F")
+
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """
@@ -295,6 +335,14 @@ struct NDArrayShape(
         self.ndim = other.ndim
         self._buf = UnsafePointer[Int]().alloc(other.ndim)
         memcpy(self._buf, other._buf, other.ndim)
+
+    fn __del__(deinit self):
+        """
+        Destructor for NDArrayShape.
+        Frees the allocated memory for the data buffer.
+        """
+        if self.ndim > 0:
+            self._buf.free()
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
@@ -519,6 +567,26 @@ struct NDArrayShape(
                 return True
         return False
 
+    fn __iter__(self) raises -> _ShapeIter:
+        """
+        Iterate over elements of the NDArrayShape, returning copied values.
+
+        Returns:
+            An iterator of NDArrayShape elements.
+
+        Example:
+        ```mojo
+        from numojo.prelude import *
+        var shape = Shape(2, 3, 4)
+        for dim in shape:
+            print(dim)  # Prints: 2, 3, 4
+        ```
+        """
+        return _ShapeIter(
+            shape=self,
+            length=self.ndim,
+        )
+
     # ===-------------------------------------------------------------------===#
     # Other methods
     # ===-------------------------------------------------------------------===#
@@ -533,19 +601,19 @@ struct NDArrayShape(
         memcpy(res._buf, self._buf, self.ndim)
         return res
 
-    fn join(self, *shapes: Self) raises -> Self:
+    fn join(self, *others: Self) raises -> Self:
         """
         Join multiple shapes into a single shape.
 
         Args:
-            shapes: Variable number of NDArrayShape objects.
+            others: Variable number of NDArrayShape objects.
 
         Returns:
             A new NDArrayShape object.
         """
         var total_dims = self.ndim
-        for i in range(len(shapes)):
-            total_dims += shapes[i].ndim
+        for i in range(len(others)):
+            total_dims += others[i].ndim
 
         var new_shape = Self(ndim=total_dims, initialized=False)
 
@@ -554,9 +622,9 @@ struct NDArrayShape(
             (new_shape._buf + index).init_pointee_copy(self[i])
             index += 1
 
-        for i in range(len(shapes)):
-            for j in range(shapes[i].ndim):
-                (new_shape._buf + index).init_pointee_copy(shapes[i][j])
+        for i in range(len(others)):
+            for j in range(others[i].ndim):
+                (new_shape._buf + index).init_pointee_copy(others[i][j])
                 index += 1
 
         return new_shape
@@ -712,3 +780,54 @@ struct NDArrayShape(
     #     # if index >= self.ndim:
     #     #     raise Error("Index out of bound")
     #     self._buf.ptr.store(index, val)
+
+
+struct _ShapeIter[
+    forward: Bool = True,
+](ImplicitlyCopyable, Movable):
+    """Iterator for NDArrayShape.
+
+    Parameters:
+        forward: The iteration direction. `False` is backwards.
+    """
+
+    var index: Int
+    var shape: NDArrayShape
+    var length: Int
+
+    fn __init__(
+        out self,
+        shape: NDArrayShape,
+        length: Int,
+    ):
+        self.index = 0 if forward else length
+        self.length = length
+        self.shape = shape
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
+
+    fn __next__(mut self) raises -> Scalar[DType.index]:
+        @parameter
+        if forward:
+            var current_index = self.index
+            self.index += 1
+            return self.shape.__getitem__(current_index)
+        else:
+            var current_index = self.index
+            self.index -= 1
+            return self.shape.__getitem__(current_index)
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index

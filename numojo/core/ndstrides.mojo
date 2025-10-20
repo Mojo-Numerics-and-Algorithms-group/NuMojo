@@ -10,12 +10,15 @@ Implements NDArrayStrides type.
 
 from memory import UnsafePointer, memcmp, memcpy
 
+alias strides = NDArrayStrides
 alias Strides = NDArrayStrides
 """An alias of the NDArrayStrides."""
 
 
 @register_passable
-struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
+struct NDArrayStrides(
+    ImplicitlyCopyable, Movable, Representable, Sized, Stringable, Writable
+):
     """
     Presents the strides of `NDArray` type.
 
@@ -249,6 +252,54 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
                 for i in range(ndim):
                     (self._buf + i).init_pointee_copy(0)
 
+    @staticmethod
+    fn row_major(shape: NDArrayShape) raises -> NDArrayStrides:
+        """
+        Create row-major (C-style) strides from a shape.
+
+        Row-major means the last dimension has stride 1 and strides increase
+        going backwards through dimensions.
+
+        Args:
+            shape: The shape of the array.
+
+        Returns:
+            A new NDArrayStrides object with row-major memory layout.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var shape = nm.Shape(2, 3, 4)
+        var strides = nm.Strides.row_major(shape)
+        print(strides)  # Strides: (12, 4, 1)
+        ```
+        """
+        return NDArrayStrides(shape=shape, order="C")
+
+    @staticmethod
+    fn col_major(shape: NDArrayShape) raises -> NDArrayStrides:
+        """
+        Create column-major (Fortran-style) strides from a shape.
+
+        Column-major means the first dimension has stride 1 and strides increase
+        going forward through dimensions.
+
+        Args:
+            shape: The shape of the array.
+
+        Returns:
+            A new NDArrayStrides object with column-major memory layout.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var shape = nm.Shape(2, 3, 4)
+        var strides = nm.Strides.col_major(shape)
+        print(strides)  # Strides: (1, 2, 6)
+        ```
+        """
+        return NDArrayStrides(shape=shape, order="F")
+
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """
@@ -261,6 +312,14 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
         self.ndim = other.ndim
         self._buf = UnsafePointer[Int]().alloc(other.ndim)
         memcpy(self._buf, other._buf, other.ndim)
+
+    fn __del__(deinit self):
+        """
+        Destructor for NDArrayShape.
+        Frees the allocated memory for the data buffer.
+        """
+        if self.ndim > 0:
+            self._buf.free()
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
@@ -502,6 +561,26 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
                 return True
         return False
 
+    fn __iter__(self) raises -> _StrideIter:
+        """
+        Iterate over elements of the NDArrayStrides, returning copied values.
+
+        Returns:
+            An iterator of NDArrayStrides elements.
+
+        Example:
+        ```mojo
+        import numojo as nm
+        var strides = nm.Strides(12, 4, 1)
+        for stride in strides:
+            print(stride)  # Prints: 12, 4, 1
+        ```
+        """
+        return _StrideIter(
+            strides=self,
+            length=self.ndim,
+        )
+
     # ===-------------------------------------------------------------------===#
     # Other methods
     # ===-------------------------------------------------------------------===#
@@ -515,6 +594,8 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
         var res = Self(ndim=self.ndim, initialized=False)
         memcpy(res._buf, self._buf, self.ndim)
         return res
+
+
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
         """
@@ -533,12 +614,12 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
         res[axis2] = self[axis1]
         return res^
 
-    fn join(self, *strides: Self) raises -> Self:
+    fn join(self, *others: Self) raises -> Self:
         """
         Join multiple strides into a single strides.
 
         Args:
-            strides: Variable number of NDArrayStrides objects.
+            others: Variable number of NDArrayStrides objects.
 
         Returns:
             A new NDArrayStrides object with all values concatenated.
@@ -553,22 +634,22 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
         ```
         """
         var total_dims: Int = self.ndim
-        for i in range(len(strides)):
-            total_dims += strides[i].ndim
+        for i in range(len(others)):
+            total_dims += others[i].ndim
 
-        var new_strides: Self = Self(ndim=total_dims, initialized=False)
+        var new_others: Self = Self(ndim=total_dims, initialized=False)
 
         var index: UInt = 0
         for i in range(self.ndim):
-            (new_strides._buf + index).init_pointee_copy(self[i])
+            (new_others._buf + index).init_pointee_copy(self[i])
             index += 1
 
-        for i in range(len(strides)):
-            for j in range(strides[i].ndim):
-                (new_strides._buf + index).init_pointee_copy(strides[i][j])
+        for i in range(len(others)):
+            for j in range(others[i].ndim):
+                (new_others._buf + index).init_pointee_copy(others[i][j])
                 index += 1
 
-        return new_strides
+        return new_others
 
     # ===-------------------------------------------------------------------===#
     # Other private methods
@@ -678,6 +759,7 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
         return res
 
 
+
 # @always_inline("nodebug")
 # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
 #     # if index >= self.ndim:
@@ -701,3 +783,54 @@ struct NDArrayStrides(ImplicitlyCopyable, Sized, Stringable, Writable):
 #     width: Int = 1
 # ](mut self, index: Int, val: SIMD[dtype, width]):
 #     self._buf.ptr.store(index, val)
+
+
+struct _StrideIter[
+    forward: Bool = True,
+](ImplicitlyCopyable, Movable):
+    """Iterator for NDArrayStrides.
+
+    Parameters:
+        forward: The iteration direction. `False` is backwards.
+    """
+
+    var index: Int
+    var strides: NDArrayStrides
+    var length: Int
+
+    fn __init__(
+        out self,
+        strides: NDArrayStrides,
+        length: Int,
+    ):
+        self.index = 0 if forward else length
+        self.length = length
+        self.strides = strides
+
+    fn __iter__(self) -> Self:
+        return self
+
+    fn __has_next__(self) -> Bool:
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
+
+    fn __next__(mut self) raises -> Scalar[DType.index]:
+        @parameter
+        if forward:
+            var current_index = self.index
+            self.index += 1
+            return self.strides.__getitem__(current_index)
+        else:
+            var current_index = self.index
+            self.index -= 1
+            return self.strides.__getitem__(current_index)
+
+    fn __len__(self) -> Int:
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index

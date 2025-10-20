@@ -13,6 +13,8 @@ from .complex import (
     ComplexNDArray,
     ComplexDType,
     ci8,
+    ci16,
+    ci32,
     ci64,
     ci128,
     ci256,

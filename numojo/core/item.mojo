@@ -5,6 +5,7 @@ Implements Item type.
 """
 
 from builtin.type_aliases import Origin
+from builtin.int import index as index_int
 from memory import UnsafePointer, memset_zero, memcpy
 from memory import memcmp
 from os import abort
@@ -106,9 +107,13 @@ struct Item(
                 )
             )
 
+        if ndim == 0:
+            self.ndim = 0
+            self._buf = UnsafePointer[Int]()
+
         self.ndim = ndim
         self._buf = UnsafePointer[Int]().alloc(ndim)
-        if initialized:
+        if initialized and ndim > 0:
             for i in range(ndim):
                 (self._buf + i).init_pointee_copy(0)
 
@@ -184,6 +189,21 @@ struct Item(
         """
         return self.ndim
 
+    fn normalize_index(self, index: Int) -> Int:
+        """
+        Normalizes the given index to be within the valid range.
+
+        Args:
+            index: The index to normalize.
+
+        Returns:
+            The normalized index.
+        """
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        return normalized_idx
+
     @always_inline("nodebug")
     fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
         """Gets the value at the specified index.
@@ -197,16 +217,12 @@ struct Item(
         Returns:
             The value at the specified index.
         """
-
-        var normalized_idx: Int = index(idx)
-        if normalized_idx < 0:
-            normalized_idx = index(idx) + self.ndim
-
-        if normalized_idx < 0 or normalized_idx >= self.ndim:
+        var index: Int = index_int(idx)
+        if index >= self.ndim or index < -self.ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{} , {}).").format(
-                        index(idx), -self.ndim, self.ndim
+                        index_int(idx), -self.ndim, self.ndim
                     ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."
@@ -214,7 +230,7 @@ struct Item(
                     location=String("Item.__getitem__"),
                 )
             )
-
+        var normalized_idx: Int = self.normalize_index(index_int(idx))
         return self._buf[normalized_idx]
 
     @always_inline("nodebug")
@@ -268,15 +284,15 @@ struct Item(
             val: The value to set.
         """
 
-        var normalized_idx: Int = index(idx)
+        var normalized_idx: Int = index_int(idx)
         if normalized_idx < 0:
-            normalized_idx = index(idx) + self.ndim
+            normalized_idx = index_int(idx) + self.ndim
 
         if normalized_idx < 0 or normalized_idx >= self.ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{} , {}).").format(
-                        index(idx), -self.ndim, self.ndim
+                        index_int(idx), -self.ndim, self.ndim
                     ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."

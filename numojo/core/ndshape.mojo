@@ -263,6 +263,10 @@ struct NDArrayShape(
             initialized: Whether the shape is initialized.
                 If yes, the values will be set to 1.
                 If no, the values will be uninitialized.
+
+        Note:
+            After creating the shape with uninitialized values,
+            you must set the values before using it! Otherwise, it may lead to undefined behavior.
         """
         if ndim < 0:
             raise Error(
@@ -344,6 +348,21 @@ struct NDArrayShape(
         if self.ndim > 0:
             self._buf.free()
 
+    fn normalize_index(self, index: Int) -> Int:
+        """
+        Normalizes the given index to be within the valid range.
+
+        Args:
+            index: The index to normalize.
+
+        Returns:
+            The normalized index.
+        """
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        return normalized_idx
+
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         """
@@ -358,17 +377,13 @@ struct NDArrayShape(
         Returns:
            Shape value at the given index.
         """
-
-        var normalized_idx: Int = index
-        if normalized_idx < 0:
-            normalized_idx += self.ndim
-        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
+        if index >= self.ndim or index < -self.ndim:
             raise Error(
                 String("Index {} out of bound [{}, {})").format(
                     -self.ndim, self.ndim
                 )
             )
-
+        var normalized_idx: Int = self.normalize_index(index)
         return self._buf[normalized_idx]
 
     # TODO: Check the negative steps result
@@ -601,30 +616,30 @@ struct NDArrayShape(
         memcpy(res._buf, self._buf, self.ndim)
         return res
 
-    fn join(self, *others: Self) raises -> Self:
+    fn join(self, *shapes: Self) raises -> Self:
         """
         Join multiple shapes into a single shape.
 
         Args:
-            others: Variable number of NDArrayShape objects.
+            shapes: Variable number of NDArrayShape objects.
 
         Returns:
             A new NDArrayShape object.
         """
         var total_dims = self.ndim
-        for i in range(len(others)):
-            total_dims += others[i].ndim
+        for i in range(len(shapes)):
+            total_dims += shapes[i].ndim
 
         var new_shape = Self(ndim=total_dims, initialized=False)
 
-        var index = 0
+        var index: Int = 0
         for i in range(self.ndim):
             (new_shape._buf + index).init_pointee_copy(self[i])
             index += 1
 
-        for i in range(len(others)):
-            for j in range(others[i].ndim):
-                (new_shape._buf + index).init_pointee_copy(others[i][j])
+        for i in range(len(shapes)):
+            for j in range(shapes[i].ndim):
+                (new_shape._buf + index).init_pointee_copy(shapes[i][j])
                 index += 1
 
         return new_shape
@@ -757,7 +772,7 @@ struct NDArrayShape(
             src=self._buf + axis + 1,
             count=self.ndim - axis - 1,
         )
-        return res
+        return res^
 
     # # can be used for vectorized index calculation
     # @always_inline("nodebug")

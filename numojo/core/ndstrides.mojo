@@ -47,7 +47,7 @@ struct NDArrayStrides(
         if len(strides) <= 0:
             raise Error(
                 String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    "\nError in `NDArrayStrides.__init__()`: Number of dimensions"
                     " of array must be positive. However, it is {}."
                 ).format(len(strides))
             )
@@ -71,7 +71,7 @@ struct NDArrayStrides(
         if len(strides) <= 0:
             raise Error(
                 String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    "\nError in `NDArrayStrides.__init__()`: Number of dimensions"
                     " of array must be positive. However, it is {}."
                 ).format(len(strides))
             )
@@ -95,7 +95,7 @@ struct NDArrayStrides(
         if len(strides) <= 0:
             raise Error(
                 String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
+                    "\nError in `NDArrayStrides.__init__()`: Number of dimensions"
                     " of array must be positive. However, it is {}."
                 ).format(len(strides))
             )
@@ -148,6 +148,7 @@ struct NDArrayStrides(
                 temp *= shape[i]
         elif order == "F":
             var temp = 1
+            # Should we check for temp overflow here? Maybe no?
             for i in range(0, self.ndim):
                 (self._buf + i).init_pointee_copy(temp)
                 temp *= shape[i]
@@ -160,7 +161,7 @@ struct NDArrayStrides(
     @always_inline("nodebug")
     fn __init__(out self, *shape: Int, order: String) raises:
         """
-        Overloads the function `__init__(shape: NDArrayShape, order: String)`.
+        Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
 
         Raises:
@@ -177,7 +178,7 @@ struct NDArrayStrides(
     @always_inline("nodebug")
     fn __init__(out self, shape: List[Int], order: String = "C") raises:
         """
-        Overloads the function `__init__(shape: NDArrayShape, order: String)`.
+        Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
 
         Raises:
@@ -198,7 +199,7 @@ struct NDArrayStrides(
         order: String = "C",
     ) raises:
         """
-        Overloads the function `__init__(shape: NDArrayShape, order: String)`.
+        Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
 
         Raises:
@@ -315,11 +316,26 @@ struct NDArrayStrides(
 
     fn __del__(deinit self):
         """
-        Destructor for NDArrayShape.
+        Destructor for NDArrayStrides.
         Frees the allocated memory for the data buffer.
         """
         if self.ndim > 0:
             self._buf.free()
+
+    fn normalize_index(self, index: Int) -> Int:
+        """
+        Normalizes the given index to be within the valid range.
+
+        Args:
+            index: The index to normalize.
+
+        Returns:
+            The normalized index.
+        """
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        return normalized_idx
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
@@ -335,17 +351,13 @@ struct NDArrayStrides(
         Returns:
            Stride value at the given index.
         """
-
-        var normalized_idx: Int = index
-        if normalized_idx < 0:
-            normalized_idx += self.ndim
-        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
+        if index >= self.ndim or index < -self.ndim:
             raise Error(
                 String("Index {} out of bound [{}, {})").format(
-                    -self.ndim, self.ndim
+                    index, -self.ndim, self.ndim
                 )
             )
-
+        var normalized_idx: Int = self.normalize_index(index)
         return self._buf[normalized_idx]
 
     @always_inline("nodebug")
@@ -364,7 +376,7 @@ struct NDArrayStrides(
         Raises:
             Error: If the slice step is zero.
         """
-        var n = self.ndim
+        var n: Int = self.ndim
         if n == 0:
             return (0, 1, 0)
 
@@ -608,18 +620,26 @@ struct NDArrayStrides(
         Returns:
             A new strides with the given axes swapped.
         """
+        var norm_axis1: Int = self.normalize_index(axis1)
+        var norm_axis2: Int = self.normalize_index(axis2)
+
+        if norm_axis1 < 0 or norm_axis1 >= self.ndim:
+            raise Error("axis1 out of bounds")
+        if norm_axis2 < 0 or norm_axis2 >= self.ndim:
+            raise Error("axis2 out of bounds")
+
         var res = Self(ndim=self.ndim, initialized=False)
         memcpy(res._buf, self._buf, self.ndim)
         res[axis1] = self[axis2]
         res[axis2] = self[axis1]
         return res^
 
-    fn join(self, *others: Self) raises -> Self:
+    fn join(self, *strides: Self) raises -> Self:
         """
         Join multiple strides into a single strides.
 
         Args:
-            others: Variable number of NDArrayStrides objects.
+            strides: Variable number of NDArrayStrides objects.
 
         Returns:
             A new NDArrayStrides object with all values concatenated.
@@ -634,22 +654,22 @@ struct NDArrayStrides(
         ```
         """
         var total_dims: Int = self.ndim
-        for i in range(len(others)):
-            total_dims += others[i].ndim
+        for i in range(len(strides)):
+            total_dims += strides[i].ndim
 
-        var new_others: Self = Self(ndim=total_dims, initialized=False)
+        var new_strides: Self = Self(ndim=total_dims, initialized=False)
 
-        var index: UInt = 0
+        var index: Int = 0
         for i in range(self.ndim):
-            (new_others._buf + index).init_pointee_copy(self[i])
+            (new_strides._buf + index).init_pointee_copy(self[i])
             index += 1
 
-        for i in range(len(others)):
-            for j in range(others[i].ndim):
-                (new_others._buf + index).init_pointee_copy(others[i][j])
+        for i in range(len(strides)):
+            for j in range(strides[i].ndim):
+                (new_strides._buf + index).init_pointee_copy(strides[i][j])
                 index += 1
 
-        return new_others
+        return new_strides
 
     # ===-------------------------------------------------------------------===#
     # Other private methods

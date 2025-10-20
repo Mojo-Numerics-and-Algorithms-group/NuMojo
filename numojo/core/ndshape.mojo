@@ -10,6 +10,8 @@ Implements NDArrayShape type.
 
 from memory import UnsafePointer, memcpy, memcmp
 
+from numojo.core.error import IndexError, ShapeError, ValueError
+
 alias Shape = NDArrayShape
 """An alias of the NDArrayShape."""
 
@@ -47,7 +49,15 @@ struct NDArrayShape(
         """
 
         if shape < 1:
-            raise Error(String("Items of shape must be positive."))
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Shape dimension must be positive, got {}."
+                    ).format(shape),
+                    suggestion="Use positive integers for shape dimensions.",
+                    location="NDArrayShape.__init__(shape: Int)",
+                )
+            )
 
         self.ndim = 1
         self._buf = UnsafePointer[Int]().alloc(shape)
@@ -66,17 +76,31 @@ struct NDArrayShape(
         """
         if len(shape) <= 0:
             raise Error(
-                String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
-                    " of array must be positive. However, it is {}."
-                ).format(len(shape))
+                ValueError(
+                    message=String(
+                        "Number of dimensions must be positive, got {}."
+                    ).format(len(shape)),
+                    suggestion="Provide at least one shape dimension.",
+                    location="NDArrayShape.__init__(*shape: Int)",
+                )
             )
 
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
-                raise Error(String("Items of shape must be positive."))
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Shape dimension at index {} must be positive,"
+                            " got {}."
+                        ).format(i, shape[i]),
+                        suggestion=(
+                            "Use positive integers for all shape dimensions."
+                        ),
+                        location="NDArrayShape.__init__(*shape: Int)",
+                    )
+                )
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
@@ -95,19 +119,46 @@ struct NDArrayShape(
         """
         if len(shape) <= 0:
             raise Error(
-                String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
-                    " of array must be positive. However, it is {}."
-                ).format(len(shape))
+                ValueError(
+                    message=String(
+                        "Number of dimensions must be positive, got {}."
+                    ).format(len(shape)),
+                    suggestion="Provide at least one shape dimension.",
+                    location="NDArrayShape.__init__(*shape: Int, size: Int)",
+                )
             )
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
-                raise Error(String("Items of shape must be positive."))
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Shape dimension at index {} must be positive,"
+                            " got {}."
+                        ).format(i, shape[i]),
+                        suggestion=(
+                            "Use positive integers for all shape dimensions."
+                        ),
+                        location=(
+                            "NDArrayShape.__init__(*shape: Int, size: Int)"
+                        ),
+                    )
+                )
             (self._buf + i).init_pointee_copy(shape[i])
         if self.size_of_array() != size:
-            raise Error("Cannot create NDArray: shape and size mismatch")
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Shape size {} does not match provided size {}."
+                    ).format(self.size_of_array(), size),
+                    suggestion=(
+                        "Ensure the product of shape dimensions equals the"
+                        " size."
+                    ),
+                    location="NDArrayShape.__init__(*shape: Int, size: Int)",
+                )
+            )
 
     @always_inline("nodebug")
     fn __init__(out self, shape: List[Int]) raises:
@@ -123,16 +174,30 @@ struct NDArrayShape(
         """
         if len(shape) <= 0:
             raise Error(
-                String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
-                    " of array must be positive. However, it is {}."
-                ).format(len(shape))
+                ValueError(
+                    message=String(
+                        "Number of dimensions must be positive, got {}."
+                    ).format(len(shape)),
+                    suggestion="Provide at least one shape dimension.",
+                    location="NDArrayShape.__init__(shape: List[Int])",
+                )
             )
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 0:
-                raise Error("Items of shape must be non negative.")
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Shape dimension at index {} must be non-negative,"
+                            " got {}."
+                        ).format(i, shape[i]),
+                        suggestion=(
+                            "Use non-negative integers for shape dimensions."
+                        ),
+                        location="NDArrayShape.__init__(shape: List[Int])",
+                    )
+                )
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
@@ -152,20 +217,51 @@ struct NDArrayShape(
 
         if len(shape) <= 0:
             raise Error(
-                String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
-                    " of array must be positive. However, it is {}."
-                ).format(len(shape))
+                ValueError(
+                    message=String(
+                        "Number of dimensions must be positive, got {}."
+                    ).format(len(shape)),
+                    suggestion="Provide at least one shape dimension.",
+                    location=(
+                        "NDArrayShape.__init__(shape: List[Int], size: Int)"
+                    ),
+                )
             )
 
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
-                raise Error("Items of shape must be positive.")
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Shape dimension at index {} must be positive,"
+                            " got {}."
+                        ).format(i, shape[i]),
+                        suggestion=(
+                            "Use positive integers for all shape dimensions."
+                        ),
+                        location=(
+                            "NDArrayShape.__init__(shape: List[Int], size: Int)"
+                        ),
+                    )
+                )
             (self._buf + i).init_pointee_copy(shape[i])
         if self.size_of_array() != size:
-            raise Error("Cannot create NDArray: shape and size mismatch")
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Shape size {} does not match provided size {}."
+                    ).format(self.size_of_array(), size),
+                    suggestion=(
+                        "Ensure the product of shape dimensions equals the"
+                        " size."
+                    ),
+                    location=(
+                        "NDArrayShape.__init__(shape: List[Int], size: Int)"
+                    ),
+                )
+            )
 
     @always_inline("nodebug")
     fn __init__(out self, shape: VariadicList[Int]) raises:
@@ -182,17 +278,33 @@ struct NDArrayShape(
 
         if len(shape) <= 0:
             raise Error(
-                String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
-                    " of array must be positive. However, it is {}."
-                ).format(len(shape))
+                ValueError(
+                    message=String(
+                        "Number of dimensions must be positive, got {}."
+                    ).format(len(shape)),
+                    suggestion="Provide at least one shape dimension.",
+                    location="NDArrayShape.__init__(shape: VariadicList[Int])",
+                )
             )
 
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
-                raise Error("Items of shape must be positive.")
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Shape dimension at index {} must be positive,"
+                            " got {}."
+                        ).format(i, shape[i]),
+                        suggestion=(
+                            "Use positive integers for all shape dimensions."
+                        ),
+                        location=(
+                            "NDArrayShape.__init__(shape: VariadicList[Int])"
+                        ),
+                    )
+                )
             (self._buf + i).init_pointee_copy(shape[i])
 
     @always_inline("nodebug")
@@ -212,21 +324,55 @@ struct NDArrayShape(
 
         if len(shape) <= 0:
             raise Error(
-                String(
-                    "\nError in `NDArrayShape.__init__()`: Number of dimensions"
-                    " of array must be positive. However, it is {}."
-                ).format(len(shape))
+                ValueError(
+                    message=String(
+                        "Number of dimensions must be positive, got {}."
+                    ).format(len(shape)),
+                    suggestion="Provide at least one shape dimension.",
+                    location=(
+                        "NDArrayShape.__init__(shape: VariadicList[Int], size:"
+                        " Int)"
+                    ),
+                )
             )
 
         self.ndim = len(shape)
         self._buf = UnsafePointer[Int]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
-                raise Error("Items of shape must be positive.")
+                raise Error(
+                    ShapeError(
+                        message=String(
+                            "Shape dimension at index {} must be positive,"
+                            " got {}."
+                        ).format(i, shape[i]),
+                        suggestion=(
+                            "Use positive integers for all shape dimensions."
+                        ),
+                        location=(
+                            "NDArrayShape.__init__(shape: VariadicList[Int],"
+                            " size: Int)"
+                        ),
+                    )
+                )
             (self._buf + i).init_pointee_copy(shape[i])
 
         if self.size_of_array() != size:
-            raise Error("Cannot create NDArray: shape and size mismatch")
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Shape size {} does not match provided size {}."
+                    ).format(self.size_of_array(), size),
+                    suggestion=(
+                        "Ensure the product of shape dimensions equals the"
+                        " size."
+                    ),
+                    location=(
+                        "NDArrayShape.__init__(shape: VariadicList[Int], size:"
+                        " Int)"
+                    ),
+                )
+            )
 
     @always_inline("nodebug")
     fn __init__(out self, shape: NDArrayShape):
@@ -270,9 +416,13 @@ struct NDArrayShape(
         """
         if ndim < 0:
             raise Error(
-                "Error in `numojo.NDArrayShape.__init__(out self, ndim:"
-                " Int, initialized: Bool,)`. \n"
-                "Number of dimensions must be non-negative."
+                ValueError(
+                    message=String(
+                        "Number of dimensions must be non-negative, got {}."
+                    ).format(ndim),
+                    suggestion="Provide ndim >= 0.",
+                    location="NDArrayShape.__init__(ndim, initialized)",
+                )
             )
 
         if ndim == 0:
@@ -379,8 +529,12 @@ struct NDArrayShape(
         """
         if index >= self.ndim or index < -self.ndim:
             raise Error(
-                String("Index {} out of bound [{}, {})").format(
-                    -self.ndim, self.ndim
+                IndexError(
+                    message=String("Index {} out of range [{}, {}).").format(
+                        index, -self.ndim, self.ndim
+                    ),
+                    suggestion="Use indices in [-ndim, ndim).",
+                    location="NDArrayShape.__getitem__",
                 )
             )
         var normalized_idx: Int = self.normalize_index(index)
@@ -397,7 +551,13 @@ struct NDArrayShape(
 
         var step = slice_index.step.or_else(1)
         if step == 0:
-            raise Error("Slice step cannot be zero.")
+            raise Error(
+                ValueError(
+                    message="Slice step cannot be zero.",
+                    suggestion="Use a non-zero step value.",
+                    location="NDArrayShape._compute_slice_params",
+                )
+            )
 
         var start: Int
         var stop: Int
@@ -485,16 +645,23 @@ struct NDArrayShape(
             normalized_idx += self.ndim
         if (normalized_idx >= self.ndim) or (normalized_idx < 0):
             raise Error(
-                String("Index {} out of bound [{}, {})").format(
-                    -self.ndim, self.ndim
+                IndexError(
+                    message=String("Index {} out of range [0, {}).").format(
+                        normalized_idx, self.ndim
+                    ),
+                    suggestion="Use indices in [-ndim, ndim).",
+                    location="NDArrayShape.__setitem__",
                 )
             )
 
         if val <= 0:
             raise Error(
-                String(
-                    "\nError in `NDArrayShape.__setitem__`: "
-                    "Value to be set is not positive."
+                ShapeError(
+                    message=String(
+                        "Shape dimension must be positive, got {}."
+                    ).format(val),
+                    suggestion="Use positive integers for shape dimensions.",
+                    location="NDArrayShape.__setitem__",
                 )
             )
 

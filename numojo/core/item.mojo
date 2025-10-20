@@ -12,6 +12,7 @@ from os import abort
 from sys import simd_width_of
 from utils import Variant
 
+from numojo.core.error import IndexError, ValueError
 from numojo.core.traits.indexer_collection_element import (
     IndexerCollectionElement,
 )
@@ -110,12 +111,12 @@ struct Item(
         if ndim == 0:
             self.ndim = 0
             self._buf = UnsafePointer[Int]()
-
-        self.ndim = ndim
-        self._buf = UnsafePointer[Int]().alloc(ndim)
-        if initialized and ndim > 0:
-            for i in range(ndim):
-                (self._buf + i).init_pointee_copy(0)
+        else:
+            self.ndim = ndim
+            self._buf = UnsafePointer[Int]().alloc(ndim)
+            if initialized:
+                for i in range(ndim):
+                    (self._buf + i).init_pointee_copy(0)
 
     fn __init__(out self, idx: Int, shape: NDArrayShape) raises:
         """
@@ -617,7 +618,13 @@ struct Item(
 
         var step = slice_index.step.or_else(1)
         if step == 0:
-            raise Error("Slice step cannot be zero.")
+            raise Error(
+                ValueError(
+                    message="Slice step cannot be zero.",
+                    suggestion="Use a non-zero step value.",
+                    location="Item._compute_slice_params",
+                )
+            )
 
         var start: Int
         var stop: Int

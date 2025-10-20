@@ -20,7 +20,9 @@ alias item = Item
 
 
 @register_passable
-struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
+struct Item(
+    ImplicitlyCopyable, Movable, Representable, Sized, Stringable, Writable
+):
     """
     Specifies the indices of an item of an array.
     """
@@ -170,7 +172,8 @@ struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
 
     @always_inline("nodebug")
     fn __del__(deinit self):
-        self._buf.free()
+        if self.ndim > 0:
+            self._buf.free()
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:
@@ -577,7 +580,9 @@ struct Item(ImplicitlyCopyable, Movable, Stringable, Writable):
 
         return new_item^
 
-    fn _compute_slice_params(self, slice_index: Slice) raises -> (Int, Int, Int):
+    fn _compute_slice_params(
+        self, slice_index: Slice
+    ) raises -> (Int, Int, Int):
         """
         Compute normalized slice parameters (start, step, length).
 

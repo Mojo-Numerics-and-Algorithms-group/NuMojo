@@ -3794,10 +3794,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             result._im._buf.ptr.store(i, self._im._buf.ptr.load(idx))
         return result^
 
-    fn clip(self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]) raises -> Self:
+    fn clip(
+        self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]
+    ) raises -> Self:
         """
         Limit the magnitudes of complex values between [a_min, a_max].
-        
+
         Elements with magnitude less than a_min are scaled to have magnitude a_min.
         Elements with magnitude greater than a_max are scaled to have magnitude a_max.
         The phase (angle) of each complex number is preserved.
@@ -3820,18 +3822,20 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Clips by magnitude while preserving phase angle.
         """
         var result = Self(self.shape)
-        
+
         for i in range(self.size):
             var re = self._re._buf.ptr.load(i)
             var im = self._im._buf.ptr.load(i)
             var mag_sq = re * re + im * im
-            var mag = misc.sqrt[Self.dtype](NDArray[Self.dtype](Shape(1))).__getitem__()
-            
+            var mag = misc.sqrt[Self.dtype](
+                NDArray[Self.dtype](Shape(1))
+            ).__getitem__()
+
             var temp_arr = NDArray[Self.dtype](Shape(1))
             temp_arr._buf.ptr.store(0, mag_sq)
             var mag_arr = misc.sqrt[Self.dtype](temp_arr)
             var mag_val = mag_arr._buf.ptr.load(0)
-            
+
             if mag_val < a_min:
                 if mag_val > 0:
                     var scale = a_min / mag_val
@@ -3847,7 +3851,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             else:
                 result._re._buf.ptr.store(i, re)
                 result._im._buf.ptr.store(i, im)
-        
+
         return result^
 
     fn round(self) raises -> Self:
@@ -3941,7 +3945,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     location=String("ComplexNDArray.diagonal()"),
                 )
             )
-        
+
         var diag_re = self._re.diagonal[Self.dtype](offset)
         var diag_im = self._im.diagonal[Self.dtype](offset)
         return Self(diag_re^, diag_im^)
@@ -3982,10 +3986,11 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var result = List[ComplexSIMD[cdtype]](capacity=self.size)
         for i in range(self.size):
-            result.append(ComplexSIMD[cdtype](
-                self._re._buf.ptr.load(i),
-                self._im._buf.ptr.load(i)
-            ))
+            result.append(
+                ComplexSIMD[cdtype](
+                    self._re._buf.ptr.load(i), self._im._buf.ptr.load(i)
+                )
+            )
         return result
 
     fn num_elements(self) -> Int:

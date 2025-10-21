@@ -39,7 +39,7 @@ import builtin.bool as builtin_bool
 import builtin.math as builtin_math
 from builtin.type_aliases import Origin
 from collections.optional import Optional
-from math import log10
+from math import log10, sqrt
 from memory import UnsafePointer, memset_zero, memcpy
 from python import PythonObject
 from sys import simd_width_of
@@ -91,6 +91,9 @@ import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
+import numojo.routines.math.trig as trig
+import numojo.routines.math.exponents as exponents
+import numojo.routines.math.misc as misc
 import numojo.routines.searching as searching
 
 
@@ -1911,6 +1914,281 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 " bool type arrays"
             )
         return self * ComplexSIMD[cdtype](-1.0, -1.0)
+
+    fn __bool__(self) raises -> Bool:
+        """
+        Check if the complex array is non-zero.
+
+        For a 0-D or length-1 complex array, returns True if the complex number
+        is non-zero (i.e., either real or imaginary part is non-zero).
+
+        Returns:
+            True if the complex number is non-zero, False otherwise.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape())  # 0-D array
+        A._re._buf.ptr[] = 1.0
+        A._im._buf.ptr[] = 0.0
+        var result = A.__bool__()  # True
+        ```
+        """
+        if (self.size == 1) or (self.ndim == 0):
+            var re_val = self._re._buf.ptr[]
+            var im_val = self._im._buf.ptr[]
+            # Return True if either component is non-zero
+            return Bool((re_val != 0.0) or (im_val != 0.0))
+        else:
+            raise Error(
+                "\nError in `ComplexNDArray.__bool__(self)`: "
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to Bool. "
+                "The truth value of an array with more than one element is "
+                "ambiguous. Use a.any() or a.all()."
+            )
+
+    fn __int__(self) raises -> Int:
+        """
+        Gets `Int` representation of the complex array's real part.
+
+        Only 0-D arrays or length-1 arrays can be converted to scalars.
+        The imaginary part is discarded.
+
+        Returns:
+            Int representation of the real part of the array.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape())  # 0-D array
+        A._re._buf.ptr[] = 42.7
+        A._im._buf.ptr[] = 3.14
+        print(A.__int__())  # 42 (only real part)
+        ```
+        """
+        if (self.size == 1) or (self.ndim == 0):
+            return Int(self._re._buf.ptr[])
+        else:
+            raise Error(
+                "\nError in `ComplexNDArray.__int__(self)`: "
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to scalars."
+            )
+
+    fn __float__(self) raises -> Float64:
+        """
+        Gets `Float64` representation of the complex array's magnitude.
+
+        Only 0-D arrays or length-1 arrays can be converted to scalars.
+        Returns the magnitude (absolute value) of the complex number.
+
+        Returns:
+            Float64 representation of the magnitude of the complex number.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape())  # 0-D array
+        A._re._buf.ptr[] = 3.0
+        A._im._buf.ptr[] = 4.0
+        print(A.__float__())  # 5.0 (magnitude)
+        ```
+        """
+        if (self.size == 1) or (self.ndim == 0):
+            var re_val = self._re._buf.ptr[]
+            var im_val = self._im._buf.ptr[]
+            var magnitude_sq = Float64(re_val * re_val + im_val * im_val)
+            return sqrt(magnitude_sq)
+        else:
+            raise Error(
+                "\nError in `ComplexNDArray.__float__(self)`: "
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to scalars."
+            )
+
+    fn __abs__(self) raises -> NDArray[Self.dtype]:
+        """
+        Compute the magnitude (absolute value) of each complex element.
+
+        Returns an NDArray of real values containing the magnitude of each
+        complex number: sqrt(re^2 + im^2).
+
+        Returns:
+            NDArray containing the magnitude of each complex element.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        # Fill with some values
+        var mag = A.__abs__()  # Returns NDArray[f64] with magnitudes
+        ```
+        """
+        var re_sq = self._re * self._re
+        var im_sq = self._im * self._im
+        var sum_sq = re_sq + im_sq
+        return misc.sqrt[Self.dtype](sum_sq)
+
+    fn __pow__(self, p: Int) raises -> Self:
+        """
+        Raise complex array to integer power element-wise.
+
+        Uses De Moivre's formula for complex exponentiation:
+        (r * e^(i*theta))^n = r^n * e^(i*n*theta)
+
+        Args:
+            p: Integer exponent.
+
+        Returns:
+            ComplexNDArray with each element raised to power p.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = A ** 3  # Cube each element
+        ```
+        """
+        if p == 0:
+            # Any complex number to power 0 is 1+0i
+            var ones_re = creation.ones[Self.dtype](self.shape)
+            var zeros_im = creation.zeros[Self.dtype](self.shape)
+            return Self(ones_re^, zeros_im^)
+        elif p == 1:
+            return self.copy()
+        elif p < 0:
+            # For negative powers, compute 1 / (self ** |p|)
+            var pos_pow = self.__pow__(-p)
+            # Compute 1 / complex number: 1/(a+bi) = (a-bi)/(a^2+b^2)
+            var denominator = (
+                pos_pow._re * pos_pow._re + pos_pow._im * pos_pow._im
+            )
+            var result_re = pos_pow._re / denominator
+            var result_im = -pos_pow._im / denominator
+            return Self(result_re^, result_im^)
+        else:
+            # Positive integer power - use repeated multiplication
+            var result = self.copy()
+            for _ in range(p - 1):
+                var temp = result * self
+                result = temp^
+            return result^
+
+    fn __pow__(self, rhs: Scalar[Self.dtype]) raises -> Self:
+        """
+        Raise complex array to real scalar power element-wise.
+
+        Args:
+            rhs: Real scalar exponent.
+
+        Returns:
+            ComplexNDArray with each element raised to power rhs.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = A ** 2.5  # Raise to power 2.5
+        ```
+        """
+        # For complex numbers: (re + im*i)^p
+        # Convert to polar: r^p * e^(i*p*theta)
+        # where r = sqrt(re^2 + im^2), theta = atan2(im, re)
+        var r = misc.sqrt[Self.dtype](self._re * self._re + self._im * self._im)
+        var theta = trig.atan2[Self.dtype](self._im, self._re)
+
+        var r_pow = r.__pow__(rhs)
+        var theta_p = theta * rhs
+
+        var result_re = r_pow * trig.cos[Self.dtype](theta_p)
+        var result_im = r_pow * trig.sin[Self.dtype](theta_p)
+
+        return Self(result_re^, result_im^)
+
+    fn __pow__(self, p: Self) raises -> Self:
+        """
+        Raise complex array to complex array power element-wise.
+
+        Args:
+            p: ComplexNDArray exponent.
+
+        Returns:
+            ComplexNDArray with each element raised to corresponding power.
+
+        Raises:
+            Error: If arrays have different sizes.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var C = A ** B  # Element-wise complex power
+        ```
+        """
+        if self.size != p.size:
+            raise Error(
+                String(
+                    "\nError in `ComplexNDArray.__pow__(self, p)`: "
+                    "Both arrays must have same number of elements! "
+                    "Self array has {} elements. "
+                    "Other array has {} elements"
+                ).format(self.size, p.size)
+            )
+
+        # Complex power: a^b = exp(b * log(a))
+        # log(a) = log|a| + i*arg(a)
+        # For a = re + im*i:
+        var mag = misc.sqrt[Self.dtype](
+            self._re * self._re + self._im * self._im
+        )
+        var arg = trig.atan2[Self.dtype](self._im, self._re)
+
+        # log(a) = log(mag) + i*arg
+        var log_re = exponents.log[Self.dtype](mag)
+        var log_im = arg^
+
+        # b * log(a) = (p_re + i*p_im) * (log_re + i*log_im)
+        #            = (p_re*log_re - p_im*log_im) + i*(p_re*log_im + p_im*log_re)
+        var exponent_re_temp1 = p._re * log_re
+        var exponent_re_temp2 = p._im * log_im
+        var exponent_re = exponent_re_temp1 - exponent_re_temp2
+        var exponent_im_temp1 = p._re * log_im
+        var exponent_im_temp2 = p._im * log_re
+        var exponent_im = exponent_im_temp1 + exponent_im_temp2
+
+        # exp(exponent) = exp(exponent_re) * (cos(exponent_im) + i*sin(exponent_im))
+        var exp_re = exponents.exp[Self.dtype](exponent_re)
+        var result_re = exp_re * trig.cos[Self.dtype](exponent_im)
+        var result_im = exp_re * trig.sin[Self.dtype](exponent_im)
+
+        return Self(result_re^, result_im^)
+
+    fn __ipow__(mut self, p: Int) raises:
+        """
+        In-place raise to integer power.
+
+        Args:
+            p: Integer exponent.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        A **= 3  # Cube in place
+        ```
+        """
+        self = self.__pow__(p)
 
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:

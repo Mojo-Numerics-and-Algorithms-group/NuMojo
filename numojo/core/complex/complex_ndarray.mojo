@@ -1940,7 +1940,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if (self.size == 1) or (self.ndim == 0):
             var re_val = self._re._buf.ptr[]
             var im_val = self._im._buf.ptr[]
-            # Return True if either component is non-zero
             return Bool((re_val != 0.0) or (im_val != 0.0))
         else:
             raise Error(
@@ -2060,16 +2059,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         if p == 0:
-            # Any complex number to power 0 is 1+0i
             var ones_re = creation.ones[Self.dtype](self.shape)
             var zeros_im = creation.zeros[Self.dtype](self.shape)
             return Self(ones_re^, zeros_im^)
         elif p == 1:
             return self.copy()
         elif p < 0:
-            # For negative powers, compute 1 / (self ** |p|)
             var pos_pow = self.__pow__(-p)
-            # Compute 1 / complex number: 1/(a+bi) = (a-bi)/(a^2+b^2)
             var denominator = (
                 pos_pow._re * pos_pow._re + pos_pow._im * pos_pow._im
             )
@@ -2077,7 +2073,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             var result_im = -pos_pow._im / denominator
             return Self(result_re^, result_im^)
         else:
-            # Positive integer power - use repeated multiplication
             var result = self.copy()
             for _ in range(p - 1):
                 var temp = result * self
@@ -2101,9 +2096,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var B = A ** 2.5  # Raise to power 2.5
         ```
         """
-        # For complex numbers: (re + im*i)^p
-        # Convert to polar: r^p * e^(i*p*theta)
-        # where r = sqrt(re^2 + im^2), theta = atan2(im, re)
         var r = misc.sqrt[Self.dtype](self._re * self._re + self._im * self._im)
         var theta = trig.atan2[Self.dtype](self._im, self._re)
 
@@ -2146,20 +2138,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 ).format(self.size, p.size)
             )
 
-        # Complex power: a^b = exp(b * log(a))
-        # log(a) = log|a| + i*arg(a)
-        # For a = re + im*i:
         var mag = misc.sqrt[Self.dtype](
             self._re * self._re + self._im * self._im
         )
         var arg = trig.atan2[Self.dtype](self._im, self._re)
 
-        # log(a) = log(mag) + i*arg
         var log_re = exponents.log[Self.dtype](mag)
         var log_im = arg^
 
-        # b * log(a) = (p_re + i*p_im) * (log_re + i*log_im)
-        #            = (p_re*log_re - p_im*log_im) + i*(p_re*log_im + p_im*log_re)
         var exponent_re_temp1 = p._re * log_re
         var exponent_re_temp2 = p._im * log_im
         var exponent_re = exponent_re_temp1 - exponent_re_temp2
@@ -2167,7 +2153,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var exponent_im_temp2 = p._im * log_re
         var exponent_im = exponent_im_temp1 + exponent_im_temp2
 
-        # exp(exponent) = exp(exponent_re) * (cos(exponent_im) + i*sin(exponent_im))
         var exp_re = exponents.exp[Self.dtype](exponent_re)
         var result_re = exp_re * trig.cos[Self.dtype](exponent_im)
         var result_im = exp_re * trig.sin[Self.dtype](exponent_im)

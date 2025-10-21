@@ -29,8 +29,11 @@ struct NDArrayStrides(
     The number of dimension is checked upon creation of the strides.
     """
 
+    # Aliases
+    alias _type: DType = DType.int
+
     # Fields
-    var _buf: UnsafePointer[Int]
+    var _buf: UnsafePointer[Scalar[Self._type]]
     """Data buffer."""
     var ndim: Int
     """Number of dimensions of array. It must be larger than 0."""
@@ -58,7 +61,7 @@ struct NDArrayStrides(
             )
 
         self.ndim = len(strides)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
@@ -85,7 +88,7 @@ struct NDArrayStrides(
             )
 
         self.ndim = len(strides)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
@@ -114,7 +117,7 @@ struct NDArrayStrides(
             )
 
         self.ndim = len(strides)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
@@ -129,7 +132,7 @@ struct NDArrayStrides(
         """
 
         self.ndim = strides.ndim
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         memcpy(self._buf, strides._buf, strides.ndim)
 
     @always_inline("nodebug")
@@ -152,7 +155,7 @@ struct NDArrayStrides(
         """
 
         self.ndim = shape.ndim
-        self._buf = UnsafePointer[Int]().alloc(shape.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(shape.ndim)
 
         if order == "C":
             var temp = 1
@@ -268,11 +271,11 @@ struct NDArrayStrides(
         if ndim == 0:
             # This is a 0darray (numojo scalar)
             self.ndim = ndim
-            self._buf = UnsafePointer[Int]()
+            self._buf = UnsafePointer[Scalar[Self._type]]()
 
         else:
             self.ndim = ndim
-            self._buf = UnsafePointer[Int]().alloc(ndim)
+            self._buf = UnsafePointer[Scalar[Self._type]]().alloc(ndim)
             if initialized:
                 for i in range(ndim):
                     (self._buf + i).init_pointee_copy(0)
@@ -335,7 +338,7 @@ struct NDArrayStrides(
             other: Strides of the array.
         """
         self.ndim = other.ndim
-        self._buf = UnsafePointer[Int]().alloc(other.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(other.ndim)
         memcpy(self._buf, other._buf, other.ndim)
 
     fn __del__(deinit self):
@@ -362,7 +365,7 @@ struct NDArrayStrides(
         return normalized_idx
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Int:
+    fn __getitem__(self, index: Int) raises -> Scalar[Self._type]:
         """
         Gets stride at specified index.
 
@@ -500,7 +503,7 @@ struct NDArrayStrides(
         return result^
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Int) raises:
+    fn __setitem__(mut self, index: Int, val: Scalar[Self._type]) raises:
         """
         Sets stride at specified index.
 
@@ -512,21 +515,17 @@ struct NDArrayStrides(
           index: Index to get the stride.
           val: Value to set at the given index.
         """
-
-        var normalized_idx: Int = index
-        if normalized_idx < 0:
-            normalized_idx += self.ndim
-        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
-            raise Error(
-                IndexError(
-                    message=String("Index {} out of range [0, {}).").format(
-                        normalized_idx, self.ndim
-                    ),
-                    suggestion="Use indices in [-ndim, ndim).",
-                    location="NDArrayStrides.__setitem__",
-                )
-            )
-
+        if index >= self.ndim or index < -self.ndim:
+                    raise Error(
+                        IndexError(
+                            message=String("Index {} out of range [{}, {}).").format(
+                                index, -self.ndim, self.ndim
+                            ),
+                            suggestion="Use indices in [-ndim, ndim).",
+                            location="NDArrayStrides.__getitem__",
+                        )
+                    )
+        var normalized_idx: Int = self.normalize_index(index)
         self._buf[normalized_idx] = val
 
     @always_inline("nodebug")

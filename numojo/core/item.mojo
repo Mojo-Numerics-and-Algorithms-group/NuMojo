@@ -600,6 +600,97 @@ struct Item(
 
         return (start, step, length)
 
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._type, width]:
+        """
+        Load a SIMD vector from the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+
+        Raises:
+            Error: If the load exceeds the bounds of the Item.
+        """
+        if idx < 0 or idx + width > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Load operation out of bounds: idx={} width={} ndim={}"
+                    ).format(idx, width, self.ndim),
+                    suggestion=(
+                        "Ensure that idx and width are within valid range."
+                    ),
+                    location="Item.load",
+                )
+            )
+
+        return self._buf.load[width=width](idx)
+
+    fn store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self._type, width]) raises:
+        """
+        Store a SIMD vector into the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+
+        Raises:
+            Error: If the store exceeds the bounds of the Item.
+        """
+        if idx < 0 or idx + width > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Store operation out of bounds: idx={} width={} ndim={}"
+                    ).format(idx, width, self.ndim),
+                    suggestion=(
+                        "Ensure that idx and width are within valid range."
+                    ),
+                    location="Item.store",
+                )
+            )
+
+        self._buf.store[width=width](idx, value)
+
+    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._type, width]:
+        """
+        Unsafely load a SIMD vector from the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+        """
+        return self._buf.load[width=width](idx)
+
+    fn unsafe_store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self._type, width]):
+        """
+        Unsafely store a SIMD vector into the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+        """
+        self._buf.store[width=width](idx, value)
 
 struct _ItemIter[
     forward: Bool = True,

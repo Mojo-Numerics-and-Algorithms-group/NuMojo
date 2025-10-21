@@ -201,7 +201,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     @always_inline("nodebug")
@@ -225,7 +225,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     @always_inline("nodebug")
@@ -249,7 +249,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     fn __init__(
@@ -269,7 +269,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     fn __init__(
@@ -301,7 +301,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self._re = NDArray[Self.dtype](shape, strides, ndim, size, flags)
         self._im = NDArray[Self.dtype](shape, strides, ndim, size, flags)
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     fn __init__(
@@ -331,7 +331,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = self._re.strides
         self.flags = self._re.flags
         self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=80, formatted_width=6
+            precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
     @always_inline("nodebug")
@@ -586,11 +586,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arange[nm.cf32](nm.CScalar[nm.f32](0, 0), nm.CScalar[nm.f32](12, 12), nm.CScalar[nm.f32](1, 1)).reshape(nm.Shape(3, 4))
+            from numojo.prelude import *
+            var a = nm.arange[cf32](CScalar[cf32](0, 0), CScalar[cf32](12, 12), CScalar[cf32](1, 1)).reshape(nm.Shape(3, 4))
             print(a.shape)        # (3,4)
             print(a[1].shape)     # (4,)  -- 1-D slice
             print(a[-1].shape)    # (4,)  -- negative index
-            var b = nm.arange[nm.cf32](nm.CScalar[nm.f32](6, 6)).reshape(nm.Shape(6))
+            var b = nm.arange[cf32](CScalar[cf32](6, 6)).reshape(nm.Shape(6))
             print(b[2])           # 0-D array (scalar wrapper)
             ```
         """
@@ -751,7 +752,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arange[nm.cf32](nm.ComplexScalar(10.0, 10.0)).reshape(nm.Shape(2, 5))
+            from numojo.prelude import *
+            var a = nm.arange[cf32](CScalar[cf32](10.0, 10.0)).reshape(nm.Shape(2, 5))
             var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
             print(b)
             ```
@@ -855,8 +857,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         ```mojo
             import numojo as nm
-            var a = nm.fullC[nm.f32](nm.Shape(2, 5), ComplexSIMD[nm.f32](1.0, 1.0))
-            var b = a[1, 2:4]
+            from numojo.prelude import *
+            var a = nm.full[cf32](nm.Shape(2, 5), CScalar[cf32](1.0, 1.0))
+            var b = a[1, Slice(2,4)]
             print(b)
         ```
         """
@@ -2451,7 +2454,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             offset: The offset of the current dimension.
             summarize: Internal flag indicating summarization already chosen.
         """
-        var options: PrintOptions = self._re.print_options
+        var options: PrintOptions = self.print_options
         var separator = options.separator
         var padding = options.padding
         var edge_items = options.edge_items
@@ -2799,6 +2802,49 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     location=String("ComplexNDArray.to_ndarray"),
                 )
             )
+
+    fn squeeze(mut self, axis: Int) raises:
+        """
+        Remove (squeeze) a single dimension of size 1 from the array shape.
+
+        Args:
+            axis: The axis to squeeze. Supports negative indices.
+
+        Raises:
+            IndexError: If the axis is out of range.
+            ShapeError: If the dimension at the given axis is not of size 1.
+        """
+        var normalized_axis: Int = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis < 0) or (normalized_axis >= self.ndim):
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Axis {} is out of range for array with {} dimensions."
+                    ).format(axis, self.ndim),
+                    suggestion=String(
+                        "Use an axis value in the range [-{}, {})."
+                    ).format(self.ndim, self.ndim),
+                    location=String("NDArray.squeeze(axis: Int)"),
+                )
+            )
+
+        if self.shape[normalized_axis] != 1:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Cannot squeeze axis {} with size {}."
+                    ).format(normalized_axis, self.shape[normalized_axis]),
+                    suggestion=String(
+                        "Only axes with length 1 can be removed."
+                    ),
+                    location=String("NDArray.squeeze(axis: Int)"),
+                )
+            )
+        self.shape = self.shape._pop(normalized_axis)
+        self.strides = self.strides._pop(normalized_axis)
+        self.ndim -= 1
 
 
 struct _ComplexNDArrayIter[

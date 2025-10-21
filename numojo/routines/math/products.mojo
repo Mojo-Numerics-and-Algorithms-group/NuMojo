@@ -71,10 +71,11 @@ fn prod[
             slices.append(Slice(0, A.shape[i]))
         else:
             slices.append(Slice(0, 0))  # Temp value
-    var result = ones[dtype](NDArrayShape(result_shape))
+    var result: NDArray[dtype] = ones[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[axis] = Slice(i, i + 1)
-        var arr_slice = A[slices.copy()]
+        # TODO: modify slicing getter to avoid copy.
+        var arr_slice: NDArray[dtype] = A._getitem_list_slices(slices.copy())
         result *= arr_slice
 
     return result^

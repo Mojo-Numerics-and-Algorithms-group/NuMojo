@@ -73,7 +73,7 @@ fn test_take_along_axis() raises:
     # Test 1-D array
     var a1d = nm.arange[i8](10)
     var a1d_np = a1d.to_numpy()
-    var indices1d = nm.array[intp]("[2, 3, 1, 8]")
+    var indices1d = nm.array[int]("[2, 3, 1, 8]")
     var indices1d_np = indices1d.to_numpy()
 
     check(
@@ -85,7 +85,7 @@ fn test_take_along_axis() raises:
     # Test 2-D array with axis=0
     var a2d = nm.arange[i8](12).reshape(Shape(3, 4))
     var a2d_np = a2d.to_numpy()
-    var indices2d_0 = nm.array[intp]("[[0, 1, 2, 0], [1, 2, 0, 1]]")
+    var indices2d_0 = nm.array[int]("[[0, 1, 2, 0], [1, 2, 0, 1]]")
     var indices2d_0_np = indices2d_0.to_numpy()
 
     check(
@@ -95,7 +95,7 @@ fn test_take_along_axis() raises:
     )
 
     # Test 2-D array with axis=1
-    var indices2d_1 = nm.array[intp](
+    var indices2d_1 = nm.array[int](
         "[[3, 0, 2, 1], [1, 3, 0, 0], [2, 1, 0, 3]]"
     )
     var indices2d_1_np = indices2d_1.to_numpy()
@@ -111,7 +111,7 @@ fn test_take_along_axis() raises:
     var a3d_np = a3d.to_numpy()
 
     # Test with axis=0
-    var indices3d_0 = nm.zeros[intp](Shape(1, 3, 4))
+    var indices3d_0 = nm.zeros[int](Shape(1, 3, 4))
     var indices3d_0_np = indices3d_0.to_numpy()
 
     check(
@@ -121,7 +121,7 @@ fn test_take_along_axis() raises:
     )
 
     # Test with axis=1
-    var indices3d_1 = nm.array[intp](
+    var indices3d_1 = nm.array[int](
         "[[[0, 1, 0, 2], [2, 1, 0, 1], [1, 2, 2, 0]], [[1, 0, 1, 2], [0, 2, 1,"
         " 0], [2, 0, 0, 1]]]"
     )
@@ -134,7 +134,7 @@ fn test_take_along_axis() raises:
     )
 
     # Test with axis=2
-    var indices3d_2 = nm.array[intp](
+    var indices3d_2 = nm.array[int](
         "[[[2, 0, 3, 1], [1, 3, 0, 2], [3, 1, 2, 0]], [[0, 2, 1, 3], [2, 0, 3,"
         " 1], [1, 3, 0, 2]]]"
     )
@@ -160,7 +160,7 @@ fn test_take_along_axis() raises:
     var a2d_test_np = a2d_test.to_numpy()
 
     # For axis=0, using indices of shape (2, 4) - different first dim, same second dim
-    var indices2d_axis0 = nm.array[intp]("[[0, 1, 2, 0], [1, 0, 2, 1]]")
+    var indices2d_axis0 = nm.array[int]("[[0, 1, 2, 0], [1, 0, 2, 1]]")
     var indices2d_axis0_np = indices2d_axis0.to_numpy()
 
     check(
@@ -173,7 +173,7 @@ fn test_take_along_axis() raises:
     )
 
     # For axis=1, using indices of shape (3, 2) - same first dim, different second dim
-    var indices2d_axis1 = nm.array[intp]("[[0, 3], [2, 1], [1, 3]]")
+    var indices2d_axis1 = nm.array[int]("[[0, 3], [2, 1], [1, 3]]")
     var indices2d_axis1_np = indices2d_axis1.to_numpy()
 
     check(
@@ -191,7 +191,7 @@ fn test_take_along_axis() raises:
     var a3d_test_np = a3d_test.to_numpy()
 
     # For axis=0, indices of shape (1, 3, 4) - same shape except dim 0
-    var ind_axis0 = nm.zeros[intp](Shape(1, 3, 4))
+    var ind_axis0 = nm.zeros[int](Shape(1, 3, 4))
     var ind_axis0_np = ind_axis0.to_numpy()
 
     check(
@@ -204,7 +204,7 @@ fn test_take_along_axis() raises:
     )
 
     # For axis=2, indices of shape (2, 3, 2) - same shape except dim 2
-    var ind_axis2 = nm.array[intp](
+    var ind_axis2 = nm.array[int](
         "[[[0, 3], [2, 1], [3, 0]], [[1, 2], [0, 3], [2, 1]]]"
     )
     var ind_axis2_np = ind_axis2.to_numpy()
@@ -227,7 +227,7 @@ fn test_take_along_axis_fortran_order() raises:
     var a3d_f_np = a3d_f.to_numpy()
 
     # Test with axis=0
-    var indices3d_0 = nm.zeros[intp](Shape(1, 3, 4))
+    var indices3d_0 = nm.zeros[int](Shape(1, 3, 4))
     var indices3d_0_np = indices3d_0.to_numpy()
 
     check(
@@ -237,7 +237,7 @@ fn test_take_along_axis_fortran_order() raises:
     )
 
     # Test with axis=1
-    var indices3d_1 = nm.array[intp](
+    var indices3d_1 = nm.array[int](
         "[[[0, 1, 0, 2], [2, 1, 0, 1], [1, 2, 2, 0]], [[1, 0, 1, 2], [0, 2, 1,"
         " 0], [2, 0, 0, 1]]]"
     )
@@ -250,7 +250,7 @@ fn test_take_along_axis_fortran_order() raises:
     )
 
     # Test with axis=2
-    var indices3d_2 = nm.array[intp](
+    var indices3d_2 = nm.array[int](
         "[[[2, 0, 3, 1], [1, 3, 0, 2], [3, 1, 2, 0]], [[0, 2, 1, 3], [2, 0, 3,"
         " 1], [1, 3, 0, 2]]]"
     )

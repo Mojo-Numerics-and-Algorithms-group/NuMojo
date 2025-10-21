@@ -141,7 +141,6 @@ fn reshape[
     Returns:
         Array of the same data with a new shape.
     """
-    print("HOLY")
     if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
@@ -255,10 +254,10 @@ fn transpose[
     Examples.
     ```mojo
     import numojo as nm
-    # A is a 2darray
-    print(nm.transpose(A, axes=List(0, 1)))  # equal to transpose of matrix
-    # A is a 3darray
-    print(nm.transpose(A, axes=List(2, 1, 0)))  # transpose 0-th and 2-th dimensions
+    var arr2d = nm.random.rand(2,3)
+    print(nm.transpose(arr2d, axes=List(0, 1)))  # equal to transpose of matrix
+    var arr3d = nm.random.rand(2,3,4)
+    print(nm.transpose(arr3d, axes=List(2, 1, 0)))  # transpose 0-th and 2-th dimensions
     ```
     """
     if len(axes) != A.ndim:
@@ -299,15 +298,14 @@ fn transpose[
 
 
 # TODO: Make this operation in place to match numpy.
-fn transpose[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
+fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     (overload) Transpose the array when `axes` is not given.
     If `axes` is not given, it is equal to flipping the axes.
     See docstring of `transpose`.
     """
-
     if A.ndim == 1:
-        return A^
+        return A.copy()
     if A.ndim == 2:
         var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)

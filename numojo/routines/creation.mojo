@@ -10,9 +10,7 @@ Array creation routine.
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
-3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and
-3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and
-    reduce the number of function reloads.
+3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and reduce the number of function reloads.
 4) Simplify complex overloads into sum of real methods.
 
 ---
@@ -26,11 +24,7 @@ overload for each function. This makes maintenance easier. Example:
 - `zeros`, `ones` calls `full`.
 - Other functions calls `zeros`, `ones`, `full`.
 
-If overloads are needed, it is better to call the default signature in other
-overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this
-If overloads are needed, it is better to call the default signature in other
-overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this
-function. So it is easy for modification.
+If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
 
 """
 

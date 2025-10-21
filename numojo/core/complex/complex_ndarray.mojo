@@ -3991,7 +3991,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     self._re._buf.ptr.load(i), self._im._buf.ptr.load(i)
                 )
             )
-        return result
+        return result^
 
     fn num_elements(self) -> Int:
         """

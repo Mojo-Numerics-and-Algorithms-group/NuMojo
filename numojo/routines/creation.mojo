@@ -16,7 +16,6 @@ Array creation routine.
 ---
 
 Use more uniformed way of calling functions, i.e., using one specific
-Use more uniformed way of calling functions, i.e., using one specific
 overload for each function. This makes maintenance easier. Example:
 
 - `NDArray.__init__` takes in `ShapeLike` and initialize an `NDArray` container.
@@ -28,7 +27,6 @@ If overloads are needed, it is better to call the default signature in other ove
 
 """
 
-from algorithm import parallelize, vectorize
 from algorithm import parallelize, vectorize
 from builtin.math import pow
 from collections import Dict

@@ -389,11 +389,7 @@ struct NDArrayStrides(
                 )
             )
         var normalized_idx: Int = self.normalize_index(index)
-<<<<<<< HEAD
         return Int(self._buf[normalized_idx])
-=======
-        return self._buf[normalized_idx]
->>>>>>> upstream/pre-0.8
 
     @always_inline("nodebug")
     fn _compute_slice_params(
@@ -468,46 +464,6 @@ struct NDArrayStrides(
                 length = Int((start - stop + neg_step - 1) / neg_step)
 
         return (start, step, length)
-<<<<<<< HEAD
-=======
-
-    @always_inline("nodebug")
-    fn __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
-        """
-        Return a sliced view of the strides as a new NDArrayStrides.
-        Delegates normalization & validation to _compute_slice_params.
-
-        Args:
-            slice_index: The slice to extract.
-
-        Returns:
-            A new NDArrayStrides containing the sliced values.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var strides = nm.Strides(12, 4, 1)
-        print(strides[1:])  # Strides: (4, 1)
-        ```
-        """
-        var updated_slice: Tuple[Int, Int, Int] = self._compute_slice_params(
-            slice_index
-        )
-        var start = updated_slice[0]
-        var step = updated_slice[1]
-        var length = updated_slice[2]
-
-        if length <= 0:
-            var empty_result = NDArrayStrides(ndim=0, initialized=False)
-            return empty_result
-
-        var result = NDArrayStrides(ndim=length, initialized=False)
-        var idx = start
-        for i in range(length):
-            (result._buf + i).init_pointee_copy(self._buf[idx])
-            idx += step
-        return result^
->>>>>>> upstream/pre-0.8
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
@@ -559,7 +515,6 @@ struct NDArrayStrides(
           index: Index to get the stride.
           val: Value to set at the given index.
         """
-<<<<<<< HEAD
         if index >= self.ndim or index < -self.ndim:
             raise Error(
                 IndexError(
@@ -571,23 +526,6 @@ struct NDArrayStrides(
                 )
             )
         var normalized_idx: Int = self.normalize_index(index)
-=======
-
-        var normalized_idx: Int = index
-        if normalized_idx < 0:
-            normalized_idx += self.ndim
-        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
-            raise Error(
-                IndexError(
-                    message=String("Index {} out of range [0, {}).").format(
-                        normalized_idx, self.ndim
-                    ),
-                    suggestion="Use indices in [-ndim, ndim).",
-                    location="NDArrayStrides.__setitem__",
-                )
-            )
-
->>>>>>> upstream/pre-0.8
         self._buf[normalized_idx] = val
 
     @always_inline("nodebug")
@@ -904,7 +842,6 @@ struct NDArrayStrides(
         Returns:
             A SIMD vector containing the loaded values.
 
-<<<<<<< HEAD
         Raises:
             Error: If the load exceeds the bounds of the Strides.
         """
@@ -983,13 +920,6 @@ struct NDArrayStrides(
             value: The SIMD vector to store.
         """
         self._buf.store[width=width](idx, value)
-=======
-# @always_inline("nodebug")
-# fn store_unsafe[
-#     width: Int = 1
-# ](mut self, index: Int, val: SIMD[dtype, width]):
-#     self._buf.ptr.store(index, val)
->>>>>>> upstream/pre-0.8
 
 
 struct _StrideIter[

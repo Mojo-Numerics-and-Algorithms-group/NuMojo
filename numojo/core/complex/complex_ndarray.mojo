@@ -427,7 +427,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](index_of_buffer),
             im=self._im._buf.ptr.load[width=1](index_of_buffer),
@@ -457,7 +457,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](index_of_buffer),
             im=self._im._buf.ptr.load[width=1](index_of_buffer),
@@ -1531,7 +1531,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         self._re._buf.ptr[index_of_buffer] = val.re
         self._im._buf.ptr[index_of_buffer] = val.im
 

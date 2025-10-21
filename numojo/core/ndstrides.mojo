@@ -365,7 +365,7 @@ struct NDArrayStrides(
         return normalized_idx
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Scalar[Self._type]:
+    fn __getitem__(self, index: Int) raises -> Int:
         """
         Gets stride at specified index.
 
@@ -389,7 +389,7 @@ struct NDArrayStrides(
                 )
             )
         var normalized_idx: Int = self.normalize_index(index)
-        return self._buf[normalized_idx]
+        return Int(self._buf[normalized_idx])
 
     @always_inline("nodebug")
     fn _compute_slice_params(
@@ -516,15 +516,15 @@ struct NDArrayStrides(
           val: Value to set at the given index.
         """
         if index >= self.ndim or index < -self.ndim:
-                    raise Error(
-                        IndexError(
-                            message=String("Index {} out of range [{}, {}).").format(
-                                index, -self.ndim, self.ndim
-                            ),
-                            suggestion="Use indices in [-ndim, ndim).",
-                            location="NDArrayStrides.__getitem__",
-                        )
-                    )
+            raise Error(
+                IndexError(
+                    message=String("Index {} out of range [{}, {}).").format(
+                        index, -self.ndim, self.ndim
+                    ),
+                    suggestion="Use indices in [-ndim, ndim).",
+                    location="NDArrayStrides.__getitem__",
+                )
+            )
         var normalized_idx: Int = self.normalize_index(index)
         self._buf[normalized_idx] = val
 

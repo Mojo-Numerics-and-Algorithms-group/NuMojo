@@ -163,7 +163,7 @@ struct Item(
         return normalized_idx
 
     @always_inline("nodebug")
-    fn __getitem__[T: Indexer](self, idx: T) raises -> Scalar[Self._type]:
+    fn __getitem__[T: Indexer](self, idx: T) raises -> Int:
         """Gets the value at the specified index.
 
         Parameter:
@@ -189,7 +189,7 @@ struct Item(
                 )
             )
         var normalized_idx: Int = self.normalize_index(index_int(idx))
-        return self._buf[normalized_idx]
+        return Int(self._buf[normalized_idx])
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> Self:
@@ -691,6 +691,7 @@ struct Item(
             value: The SIMD vector to store.
         """
         self._buf.store[width=width](idx, value)
+
 
 struct _ItemIter[
     forward: Bool = True,

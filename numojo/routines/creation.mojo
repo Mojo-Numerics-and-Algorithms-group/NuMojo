@@ -256,6 +256,7 @@ fn linspace[
         ```
     """
     constrained[not dtype.is_integral()]()
+
     @parameter
     if parallel:
         return _linspace_parallel[dtype](start, stop, num, endpoint)
@@ -381,6 +382,7 @@ fn linspace[
         ```
     """
     constrained[not cdtype.is_integral()]()
+
     @parameter
     if parallel:
         return _linspace_parallel[cdtype](start, stop, num, endpoint)
@@ -553,6 +555,7 @@ fn logspace[
         ```
     """
     constrained[not dtype.is_integral()]()
+
     @parameter
     if parallel:
         return _logspace_parallel[dtype](

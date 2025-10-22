@@ -649,7 +649,10 @@ struct NDArrayShape(
                         index, -self.ndim, self.ndim
                     ),
                     suggestion="Use indices in [-ndim, ndim).",
-                    location="NDArrayStrides.__getitem__",
+                    location=(
+                        "NDArrayStrides.__setitem__(index: Int, val:"
+                        " Scalar[DType.int])"
+                    ),
                 )
             )
         var normalized_idx: Int = self.normalize_index(index)

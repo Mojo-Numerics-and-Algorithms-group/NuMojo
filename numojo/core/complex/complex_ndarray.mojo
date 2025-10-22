@@ -3827,14 +3827,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             var re = self._re._buf.ptr.load(i)
             var im = self._im._buf.ptr.load(i)
             var mag_sq = re * re + im * im
-            var mag = misc.sqrt[Self.dtype](
-                NDArray[Self.dtype](Shape(1))
-            ).__getitem__()
-
-            var temp_arr = NDArray[Self.dtype](Shape(1))
-            temp_arr._buf.ptr.store(0, mag_sq)
-            var mag_arr = misc.sqrt[Self.dtype](temp_arr)
-            var mag_val = mag_arr._buf.ptr.load(0)
+            var mag_val = sqrt(mag_sq)
 
             if mag_val < a_min:
                 if mag_val > 0:

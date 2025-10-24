@@ -30,8 +30,11 @@ struct NDArrayShape(
     creation of the shape.
     """
 
+    # Aliases
+    alias _type: DType = DType.int
+
     # Fields
-    var _buf: UnsafePointer[Int]
+    var _buf: UnsafePointer[Scalar[Self._type]]
     """Data buffer."""
     var ndim: Int
     """Number of dimensions of array. It must be larger than 0."""
@@ -60,7 +63,7 @@ struct NDArrayShape(
             )
 
         self.ndim = 1
-        self._buf = UnsafePointer[Int]().alloc(shape)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(shape)
         self._buf.init_pointee_copy(shape)
 
     @always_inline("nodebug")
@@ -86,7 +89,7 @@ struct NDArrayShape(
             )
 
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
                 raise Error(
@@ -128,7 +131,7 @@ struct NDArrayShape(
                 )
             )
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
                 raise Error(
@@ -183,7 +186,7 @@ struct NDArrayShape(
                 )
             )
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 0:
                 raise Error(
@@ -229,7 +232,7 @@ struct NDArrayShape(
             )
 
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
                 raise Error(
@@ -288,7 +291,7 @@ struct NDArrayShape(
             )
 
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
                 raise Error(
@@ -337,7 +340,7 @@ struct NDArrayShape(
             )
 
         self.ndim = len(shape)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
                 raise Error(
@@ -384,7 +387,7 @@ struct NDArrayShape(
             shape: Another NDArrayShape to initialize from.
         """
         self.ndim = shape.ndim
-        self._buf = UnsafePointer[Int]().alloc(shape.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(shape.ndim)
         memcpy(self._buf, shape._buf, shape.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape._buf[i])
@@ -428,11 +431,11 @@ struct NDArrayShape(
         if ndim == 0:
             # This is a 0darray (numojo scalar)
             self.ndim = ndim
-            self._buf = UnsafePointer[Int]()
+            self._buf = UnsafePointer[Scalar[Self._type]]()
 
         else:
             self.ndim = ndim
-            self._buf = UnsafePointer[Int]().alloc(ndim)
+            self._buf = UnsafePointer[Scalar[Self._type]]().alloc(ndim)
             if initialized:
                 for i in range(ndim):
                     (self._buf + i).init_pointee_copy(1)
@@ -487,7 +490,7 @@ struct NDArrayShape(
             other: Another NDArrayShape to initialize from.
         """
         self.ndim = other.ndim
-        self._buf = UnsafePointer[Int]().alloc(other.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(other.ndim)
         memcpy(self._buf, other._buf, other.ndim)
 
     fn __del__(deinit self):
@@ -538,7 +541,7 @@ struct NDArrayShape(
                 )
             )
         var normalized_idx: Int = self.normalize_index(index)
-        return self._buf[normalized_idx]
+        return Int(self._buf[normalized_idx])
 
     # TODO: Check the negative steps result
     @always_inline("nodebug")
@@ -627,7 +630,7 @@ struct NDArrayShape(
         return result^
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Int) raises:
+    fn __setitem__(mut self, index: Int, val: Scalar[Self._type]) raises:
         """
         Sets shape at specified index.
 
@@ -639,32 +642,20 @@ struct NDArrayShape(
           index: Index to get the shape.
           val: Value to set at the given index.
         """
-
-        var normalized_idx: Int = index
-        if normalized_idx < 0:
-            normalized_idx += self.ndim
-        if (normalized_idx >= self.ndim) or (normalized_idx < 0):
+        if index >= self.ndim or index < -self.ndim:
             raise Error(
                 IndexError(
-                    message=String("Index {} out of range [0, {}).").format(
-                        normalized_idx, self.ndim
+                    message=String("Index {} out of range [{}, {}).").format(
+                        index, -self.ndim, self.ndim
                     ),
                     suggestion="Use indices in [-ndim, ndim).",
-                    location="NDArrayShape.__setitem__",
+                    location=(
+                        "NDArrayStrides.__setitem__(index: Int, val:"
+                        " Scalar[DType.int])"
+                    ),
                 )
             )
-
-        if val <= 0:
-            raise Error(
-                ShapeError(
-                    message=String(
-                        "Shape dimension must be positive, got {}."
-                    ).format(val),
-                    suggestion="Use positive integers for shape dimensions.",
-                    location="NDArrayShape.__setitem__",
-                )
-            )
-
+        var normalized_idx: Int = self.normalize_index(index)
         self._buf[normalized_idx] = val
 
     @always_inline("nodebug")
@@ -818,10 +809,10 @@ struct NDArrayShape(
         Returns:
           The total number of elements in the corresponding array.
         """
-        var size = 1
+        var size: Scalar[Self._type] = 1
         for i in range(self.ndim):
             size *= self._buf[i]
-        return size
+        return Int(size)
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
         """
@@ -941,27 +932,97 @@ struct NDArrayShape(
         )
         return res^
 
-    # # can be used for vectorized index calculation
-    # @always_inline("nodebug")
-    # fn load[width: Int = 1](self, index: Int) raises -> SIMD[dtype, width]:
-    #     """
-    #     SIMD load dimensional information.
-    #     """
-    #     if index >= self.ndim:
-    #         raise Error("Index out of bound")
-    #     return self._buf.load[width=width](index)
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._type, width]:
+        """
+        Load a SIMD vector from the Shape at the specified index.
 
-    # # can be used for vectorized index retrieval
-    # @always_inline("nodebug")
-    # fn store[
-    #     width: Int = 1
-    # ](out self, index: Int, val: SIMD[dtype, width]) raises:
-    #     """
-    #     SIMD store dimensional information.
-    #     """
-    #     # if index >= self.ndim:
-    #     #     raise Error("Index out of bound")
-    #     self._buf.ptr.store(index, val)
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+
+        Raises:
+            Error: If the load exceeds the bounds of the Shape.
+        """
+        if idx < 0 or idx + width > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Load operation out of bounds: idx={} width={} ndim={}"
+                    ).format(idx, width, self.ndim),
+                    suggestion=(
+                        "Ensure that idx and width are within valid range."
+                    ),
+                    location="Shape.load",
+                )
+            )
+
+        return self._buf.load[width=width](idx)
+
+    fn store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self._type, width]) raises:
+        """
+        Store a SIMD vector into the Shape at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+
+        Raises:
+            Error: If the store exceeds the bounds of the Shape.
+        """
+        if idx < 0 or idx + width > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Store operation out of bounds: idx={} width={} ndim={}"
+                    ).format(idx, width, self.ndim),
+                    suggestion=(
+                        "Ensure that idx and width are within valid range."
+                    ),
+                    location="Shape.store",
+                )
+            )
+
+        self._buf.store[width=width](idx, value)
+
+    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._type, width]:
+        """
+        Unsafely load a SIMD vector from the Shape at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+        """
+        return self._buf.load[width=width](idx)
+
+    fn unsafe_store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self._type, width]):
+        """
+        Unsafely store a SIMD vector into the Shape at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+        """
+        self._buf.store[width=width](idx, value)
 
 
 struct _ShapeIter[

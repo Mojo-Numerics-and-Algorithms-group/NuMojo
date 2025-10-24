@@ -29,7 +29,11 @@ struct Item(
     Specifies the indices of an item of an array.
     """
 
-    var _buf: UnsafePointer[Int]
+    # Aliases
+    alias _type: DType = DType.int
+
+    # Fields
+    var _buf: UnsafePointer[Scalar[Self._type]]
     var ndim: Int
 
     @always_inline("nodebug")
@@ -42,7 +46,7 @@ struct Item(
         Args:
             args: Initial values.
         """
-        self._buf = UnsafePointer[Int]().alloc(args.__len__())
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(args.__len__())
         self.ndim = args.__len__()
         for i in range(args.__len__()):
             self._buf[i] = index(args[i])
@@ -58,7 +62,7 @@ struct Item(
             args: Initial values.
         """
         self.ndim = len(args)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(index(args[i]))
 
@@ -70,7 +74,7 @@ struct Item(
             args: Initial values.
         """
         self.ndim = len(args)
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(Int(args[i]))
 
@@ -110,60 +114,13 @@ struct Item(
 
         if ndim == 0:
             self.ndim = 0
-            self._buf = UnsafePointer[Int]()
+            self._buf = UnsafePointer[Scalar[Self._type]]()
         else:
             self.ndim = ndim
-            self._buf = UnsafePointer[Int]().alloc(ndim)
+            self._buf = UnsafePointer[Scalar[Self._type]]().alloc(ndim)
             if initialized:
                 for i in range(ndim):
                     (self._buf + i).init_pointee_copy(0)
-
-    fn __init__(out self, idx: Int, shape: NDArrayShape) raises:
-        """
-        Get indices of the i-th item of the array of the given shape.
-        The item traverse the array in C-order.
-
-        Args:
-            idx: The i-th item of the array.
-            shape: The strides of the array.
-
-        Examples:
-
-        The following example demonstrates how to get the indices (coordinates)
-        of the 123-th item of a 3D array with shape (20, 30, 40).
-
-        ```console
-        >>> from numojo.prelude import *
-        >>> var item = Item(123, Shape(20, 30, 40))
-        >>> print(item)
-        Item at index: (0,3,3)  Length: 3
-        ```
-        """
-
-        if (idx < 0) or (idx >= shape.size_of_array()):
-            raise Error(
-                IndexError(
-                    message=String(
-                        "Linear index {} out of range [0, {})."
-                    ).format(idx, shape.size_of_array()),
-                    suggestion=String(
-                        "Ensure 0 <= idx < total size ({})."
-                    ).format(shape.size_of_array()),
-                    location=String(
-                        "Item.__init__(idx: Int, shape: NDArrayShape)"
-                    ),
-                )
-            )
-
-        self.ndim = shape.ndim
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
-
-        var strides = NDArrayStrides(shape, order="C")
-        var remainder = idx
-
-        for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(remainder // strides._buf[i])
-            remainder %= strides._buf[i]
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
@@ -173,7 +130,7 @@ struct Item(
             other: The tuple to copy.
         """
         self.ndim = other.ndim
-        self._buf = UnsafePointer[Int]().alloc(self.ndim)
+        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
         memcpy(self._buf, other._buf, self.ndim)
 
     @always_inline("nodebug")
@@ -232,7 +189,7 @@ struct Item(
                 )
             )
         var normalized_idx: Int = self.normalize_index(index_int(idx))
-        return self._buf[normalized_idx]
+        return Int(self._buf[normalized_idx])
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> Self:
@@ -458,33 +415,6 @@ struct Item(
 
         return new_item^
 
-    fn offset(self, strides: NDArrayStrides) -> Int:
-        """
-        Calculates the offset of the item according to strides.
-
-        Args:
-            strides: The strides of the array.
-
-        Returns:
-            The offset of the item.
-
-        Examples:
-
-        ```mojo
-        from numojo.prelude import *
-        var item = Item(1, 2, 3)
-        var strides = nm.Strides(4, 3, 2)
-        print(item.offset(strides))
-        # This prints `16`.
-        ```
-        .
-        """
-
-        var offset: Int = 0
-        for i in range(self.ndim):
-            offset += self._buf[i] * strides._buf[i]
-        return offset
-
     # ===-------------------------------------------------------------------===#
     # Other private methods
     # ===-------------------------------------------------------------------===#
@@ -539,7 +469,7 @@ struct Item(
         if axis == self.ndim - 1:
             return result^
 
-        var value: Int = result._buf[axis]
+        var value: Scalar[Self._type] = result._buf[axis]
         for i in range(axis, result.ndim - 1):
             result._buf[i] = result._buf[i + 1]
         result._buf[result.ndim - 1] = value
@@ -669,6 +599,98 @@ struct Item(
                 length = Int((start - stop + neg_step - 1) / neg_step)
 
         return (start, step, length)
+
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._type, width]:
+        """
+        Load a SIMD vector from the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+
+        Raises:
+            Error: If the load exceeds the bounds of the Item.
+        """
+        if idx < 0 or idx + width > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Load operation out of bounds: idx={} width={} ndim={}"
+                    ).format(idx, width, self.ndim),
+                    suggestion=(
+                        "Ensure that idx and width are within valid range."
+                    ),
+                    location="Item.load",
+                )
+            )
+
+        return self._buf.load[width=width](idx)
+
+    fn store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self._type, width]) raises:
+        """
+        Store a SIMD vector into the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+
+        Raises:
+            Error: If the store exceeds the bounds of the Item.
+        """
+        if idx < 0 or idx + width > self.ndim:
+            raise Error(
+                IndexError(
+                    message=String(
+                        "Store operation out of bounds: idx={} width={} ndim={}"
+                    ).format(idx, width, self.ndim),
+                    suggestion=(
+                        "Ensure that idx and width are within valid range."
+                    ),
+                    location="Item.store",
+                )
+            )
+
+        self._buf.store[width=width](idx, value)
+
+    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._type, width]:
+        """
+        Unsafely load a SIMD vector from the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+        """
+        return self._buf.load[width=width](idx)
+
+    fn unsafe_store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self._type, width]):
+        """
+        Unsafely store a SIMD vector into the Item at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+        """
+        self._buf.store[width=width](idx, value)
 
 
 struct _ItemIter[

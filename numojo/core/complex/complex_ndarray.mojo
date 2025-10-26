@@ -39,7 +39,7 @@ import builtin.bool as builtin_bool
 import builtin.math as builtin_math
 from builtin.type_aliases import Origin
 from collections.optional import Optional
-from math import log10
+from math import log10, sqrt
 from memory import UnsafePointer, memset_zero, memcpy
 from python import PythonObject
 from sys import simd_width_of
@@ -91,6 +91,9 @@ import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
+import numojo.routines.math.trig as trig
+import numojo.routines.math.exponents as exponents
+import numojo.routines.math.misc as misc
 import numojo.routines.searching as searching
 
 
@@ -427,7 +430,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](index_of_buffer),
             im=self._im._buf.ptr.load[width=1](index_of_buffer),
@@ -457,7 +460,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         return ComplexSIMD[cdtype](
             re=self._re._buf.ptr.load[width=1](index_of_buffer),
             im=self._im._buf.ptr.load[width=1](index_of_buffer),
@@ -1531,7 +1534,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         self._re._buf.ptr[index_of_buffer] = val.re
         self._im._buf.ptr[index_of_buffer] = val.im
 
@@ -1912,6 +1915,266 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             )
         return self * ComplexSIMD[cdtype](-1.0, -1.0)
 
+    fn __bool__(self) raises -> Bool:
+        """
+        Check if the complex array is non-zero.
+
+        For a 0-D or length-1 complex array, returns True if the complex number
+        is non-zero (i.e., either real or imaginary part is non-zero).
+
+        Returns:
+            True if the complex number is non-zero, False otherwise.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape())  # 0-D array
+        A._re._buf.ptr[] = 1.0
+        A._im._buf.ptr[] = 0.0
+        var result = A.__bool__()  # True
+        ```
+        """
+        if (self.size == 1) or (self.ndim == 0):
+            var re_val = self._re._buf.ptr[]
+            var im_val = self._im._buf.ptr[]
+            return Bool((re_val != 0.0) or (im_val != 0.0))
+        else:
+            raise Error(
+                "\nError in `ComplexNDArray.__bool__(self)`: "
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to Bool. "
+                "The truth value of an array with more than one element is "
+                "ambiguous. Use a.any() or a.all()."
+            )
+
+    fn __int__(self) raises -> Int:
+        """
+        Gets `Int` representation of the complex array's real part.
+
+        Only 0-D arrays or length-1 arrays can be converted to scalars.
+        The imaginary part is discarded.
+
+        Returns:
+            Int representation of the real part of the array.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape())  # 0-D array
+        A._re._buf.ptr[] = 42.7
+        A._im._buf.ptr[] = 3.14
+        print(A.__int__())  # 42 (only real part)
+        ```
+        """
+        if (self.size == 1) or (self.ndim == 0):
+            return Int(self._re._buf.ptr[])
+        else:
+            raise Error(
+                "\nError in `ComplexNDArray.__int__(self)`: "
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to scalars."
+            )
+
+    fn __float__(self) raises -> Float64:
+        """
+        Gets `Float64` representation of the complex array's magnitude.
+
+        Only 0-D arrays or length-1 arrays can be converted to scalars.
+        Returns the magnitude (absolute value) of the complex number.
+
+        Returns:
+            Float64 representation of the magnitude of the complex number.
+
+        Raises:
+            Error: If the array is not 0-D or length-1.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape())  # 0-D array
+        A._re._buf.ptr[] = 3.0
+        A._im._buf.ptr[] = 4.0
+        print(A.__float__())  # 5.0 (magnitude)
+        ```
+        """
+        if (self.size == 1) or (self.ndim == 0):
+            var re_val = self._re._buf.ptr[]
+            var im_val = self._im._buf.ptr[]
+            var magnitude_sq = Float64(re_val * re_val + im_val * im_val)
+            return sqrt(magnitude_sq)
+        else:
+            raise Error(
+                "\nError in `ComplexNDArray.__float__(self)`: "
+                "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                "can be converted to scalars."
+            )
+
+    fn __abs__(self) raises -> NDArray[Self.dtype]:
+        """
+        Compute the magnitude (absolute value) of each complex element.
+
+        Returns an NDArray of real values containing the magnitude of each
+        complex number: sqrt(re^2 + im^2).
+
+        Returns:
+            NDArray containing the magnitude of each complex element.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        # Fill with some values
+        var mag = A.__abs__()  # Returns NDArray[f64] with magnitudes
+        ```
+        """
+        var re_sq = self._re * self._re
+        var im_sq = self._im * self._im
+        var sum_sq = re_sq + im_sq
+        return misc.sqrt[Self.dtype](sum_sq)
+
+    fn __pow__(self, p: Int) raises -> Self:
+        """
+        Raise complex array to integer power element-wise.
+
+        Uses De Moivre's formula for complex exponentiation:
+        (r * e^(i*theta))^n = r^n * e^(i*n*theta)
+
+        Args:
+            p: Integer exponent.
+
+        Returns:
+            ComplexNDArray with each element raised to power p.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = A ** 3  # Cube each element
+        ```
+        """
+        if p == 0:
+            var ones_re = creation.ones[Self.dtype](self.shape)
+            var zeros_im = creation.zeros[Self.dtype](self.shape)
+            return Self(ones_re^, zeros_im^)
+        elif p == 1:
+            return self.copy()
+        elif p < 0:
+            var pos_pow = self.__pow__(-p)
+            var denominator = (
+                pos_pow._re * pos_pow._re + pos_pow._im * pos_pow._im
+            )
+            var result_re = pos_pow._re / denominator
+            var result_im = -pos_pow._im / denominator
+            return Self(result_re^, result_im^)
+        else:
+            var result = self.copy()
+            for _ in range(p - 1):
+                var temp = result * self
+                result = temp^
+            return result^
+
+    fn __pow__(self, rhs: Scalar[Self.dtype]) raises -> Self:
+        """
+        Raise complex array to real scalar power element-wise.
+
+        Args:
+            rhs: Real scalar exponent.
+
+        Returns:
+            ComplexNDArray with each element raised to power rhs.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = A ** 2.5  # Raise to power 2.5
+        ```
+        """
+        var r = misc.sqrt[Self.dtype](self._re * self._re + self._im * self._im)
+        var theta = trig.atan2[Self.dtype](self._im, self._re)
+
+        var r_pow = r.__pow__(rhs)
+        var theta_p = theta * rhs
+
+        var result_re = r_pow * trig.cos[Self.dtype](theta_p)
+        var result_im = r_pow * trig.sin[Self.dtype](theta_p)
+
+        return Self(result_re^, result_im^)
+
+    fn __pow__(self, p: Self) raises -> Self:
+        """
+        Raise complex array to complex array power element-wise.
+
+        Args:
+            p: ComplexNDArray exponent.
+
+        Returns:
+            ComplexNDArray with each element raised to corresponding power.
+
+        Raises:
+            Error: If arrays have different sizes.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var C = A ** B  # Element-wise complex power
+        ```
+        """
+        if self.size != p.size:
+            raise Error(
+                String(
+                    "\nError in `ComplexNDArray.__pow__(self, p)`: "
+                    "Both arrays must have same number of elements! "
+                    "Self array has {} elements. "
+                    "Other array has {} elements"
+                ).format(self.size, p.size)
+            )
+
+        var mag = misc.sqrt[Self.dtype](
+            self._re * self._re + self._im * self._im
+        )
+        var arg = trig.atan2[Self.dtype](self._im, self._re)
+
+        var log_re = exponents.log[Self.dtype](mag)
+        var log_im = arg^
+
+        var exponent_re_temp1 = p._re * log_re
+        var exponent_re_temp2 = p._im * log_im
+        var exponent_re = exponent_re_temp1 - exponent_re_temp2
+        var exponent_im_temp1 = p._re * log_im
+        var exponent_im_temp2 = p._im * log_re
+        var exponent_im = exponent_im_temp1 + exponent_im_temp2
+
+        var exp_re = exponents.exp[Self.dtype](exponent_re)
+        var result_re = exp_re * trig.cos[Self.dtype](exponent_im)
+        var result_im = exp_re * trig.sin[Self.dtype](exponent_im)
+
+        return Self(result_re^, result_im^)
+
+    fn __ipow__(mut self, p: Int) raises:
+        """
+        In-place raise to integer power.
+
+        Args:
+            p: Integer exponent.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        A **= 3  # Cube in place
+        ```
+        """
+        self = self.__pow__(p)
+
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
         """
@@ -1947,6 +2210,235 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         return comparison.not_equal[Self.dtype](
             self._re, other.re
         ) and comparison.not_equal[Self.dtype](self._im, other.im)
+
+    @always_inline("nodebug")
+    fn __lt__(self, other: Self) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than comparison by magnitude.
+
+        For complex numbers, compares the magnitudes: |self| < |other|.
+        This provides a natural ordering for complex numbers.
+
+        Args:
+            other: The other ComplexNDArray to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| < |other|.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var result = A < B  # Compare by magnitude
+        ```
+
+        Notes:
+            Complex number ordering is not naturally defined. This implementation
+            compares by magnitude (absolute value) to provide a consistent ordering.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other._re * other._re + other._im * other._im
+        return comparison.less[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __lt__(self, other: ComplexSIMD[cdtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than comparison with scalar by magnitude.
+
+        Args:
+            other: The ComplexSIMD scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| < |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other.re * other.re + other.im * other.im
+        return comparison.less[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __lt__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than comparison with real scalar by magnitude.
+
+        Args:
+            other: The real scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| < |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other * other
+        return comparison.less[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __le__(self, other: Self) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal comparison by magnitude.
+
+        For complex numbers, compares the magnitudes: |self| <= |other|.
+
+        Args:
+            other: The other ComplexNDArray to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| <= |other|.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var result = A <= B  # Compare by magnitude
+        ```
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other._re * other._re + other._im * other._im
+        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __le__(self, other: ComplexSIMD[cdtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal comparison with scalar by magnitude.
+
+        Args:
+            other: The ComplexSIMD scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| <= |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other.re * other.re + other.im * other.im
+        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __le__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise less than or equal comparison with real scalar by magnitude.
+
+        Args:
+            other: The real scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| <= |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other * other
+        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __gt__(self, other: Self) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than comparison by magnitude.
+
+        For complex numbers, compares the magnitudes: |self| > |other|.
+
+        Args:
+            other: The other ComplexNDArray to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| > |other|.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var result = A > B  # Compare by magnitude
+        ```
+
+        Notes:
+            Complex number ordering is not naturally defined. This implementation
+            compares by magnitude (absolute value) to provide a consistent ordering.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other._re * other._re + other._im * other._im
+        return comparison.greater[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __gt__(self, other: ComplexSIMD[cdtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than comparison with scalar by magnitude.
+
+        Args:
+            other: The ComplexSIMD scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| > |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other.re * other.re + other.im * other.im
+        return comparison.greater[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __gt__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than comparison with real scalar by magnitude.
+
+        Args:
+            other: The real scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| > |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other * other
+        return comparison.greater[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __ge__(self, other: Self) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than or equal comparison by magnitude.
+
+        For complex numbers, compares the magnitudes: |self| >= |other|.
+
+        Args:
+            other: The other ComplexNDArray to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| >= |other|.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
+        var result = A >= B  # Compare by magnitude
+        ```
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other._re * other._re + other._im * other._im
+        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __ge__(self, other: ComplexSIMD[cdtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than or equal comparison with scalar by magnitude.
+
+        Args:
+            other: The ComplexSIMD scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| >= |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other.re * other.re + other.im * other.im
+        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+
+    @always_inline("nodebug")
+    fn __ge__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
+        """
+        Itemwise greater than or equal comparison with real scalar by magnitude.
+
+        Args:
+            other: The real scalar to compare with.
+
+        Returns:
+            An array of boolean values indicating where |self| >= |other|.
+        """
+        var self_mag = self._re * self._re + self._im * self._im
+        var other_mag = other * other
+        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
 
     # ===------------------------------------------------------------------=== #
     # ARITHMETIC OPERATIONS
@@ -2845,6 +3337,698 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.shape = self.shape._pop(normalized_axis)
         self.strides = self.strides._pop(normalized_axis)
         self.ndim -= 1
+
+    # ===-------------------------------------------------------------------===#
+    # Statistical and Reduction Methods
+    # ===-------------------------------------------------------------------===#
+
+    fn all(self) raises -> Bool:
+        """
+        Check if all complex elements are non-zero.
+
+        A complex number is considered "true" if either its real or imaginary
+        part is non-zero.
+
+        Returns:
+            True if all elements are non-zero, False otherwise.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        # Fill with non-zero values
+        var result = A.all()  # True if all non-zero
+        ```
+        """
+        var re_nonzero = True
+        var im_nonzero = True
+
+        for i in range(self.size):
+            var re_val = self._re._buf.ptr.load(i)
+            var im_val = self._im._buf.ptr.load(i)
+            if (re_val == 0.0) and (im_val == 0.0):
+                return False
+        return True
+
+    fn any(self) raises -> Bool:
+        """
+        Check if any complex element is non-zero.
+
+        A complex number is considered "true" if either its real or imaginary
+        part is non-zero.
+
+        Returns:
+            True if any element is non-zero, False otherwise.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        # Fill with some values
+        var result = A.any()  # True if any non-zero
+        ```
+        """
+        for i in range(self.size):
+            var re_val = self._re._buf.ptr.load(i)
+            var im_val = self._im._buf.ptr.load(i)
+            if (re_val != 0.0) or (im_val != 0.0):
+                return True
+        return False
+
+    fn sum(self) raises -> ComplexSIMD[cdtype]:
+        """
+        Sum of all complex array elements.
+
+        Returns:
+            Complex scalar containing the sum of all elements.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var total = A.sum()  # Sum of all elements
+        ```
+        """
+        var sum_re = Scalar[Self.dtype](0)
+        var sum_im = Scalar[Self.dtype](0)
+
+        for i in range(self.size):
+            sum_re += self._re._buf.ptr.load(i)
+            sum_im += self._im._buf.ptr.load(i)
+
+        return ComplexSIMD[cdtype](sum_re, sum_im)
+
+    fn prod(self) raises -> ComplexSIMD[cdtype]:
+        """
+        Product of all complex array elements.
+
+        Returns:
+            Complex scalar containing the product of all elements.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var product = A.prod()  # Product of all elements
+        ```
+        """
+        var prod_re = Scalar[Self.dtype](1)
+        var prod_im = Scalar[Self.dtype](0)
+
+        for i in range(self.size):
+            var a_re = self._re._buf.ptr.load(i)
+            var a_im = self._im._buf.ptr.load(i)
+            var new_re = prod_re * a_re - prod_im * a_im
+            var new_im = prod_re * a_im + prod_im * a_re
+            prod_re = new_re
+            prod_im = new_im
+
+        return ComplexSIMD[cdtype](prod_re, prod_im)
+
+    fn mean(self) raises -> ComplexSIMD[cdtype]:
+        """
+        Mean (average) of all complex array elements.
+
+        Returns:
+            Complex scalar containing the mean of all elements.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var average = A.mean()  # Mean of all elements
+        ```
+        """
+        var total = self.sum()
+        var n = Scalar[Self.dtype](self.size)
+        return ComplexSIMD[cdtype](total.re / n, total.im / n)
+
+    fn max(self) raises -> ComplexSIMD[cdtype]:
+        """
+        Find the complex element with maximum magnitude.
+
+        Returns:
+            The complex element with the largest magnitude.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var max_elem = A.max()  # Element with largest magnitude
+        ```
+
+        Notes:
+            Returns the element with maximum |z| = sqrt(re^2 + im^2).
+        """
+        if self.size == 0:
+            raise Error("Cannot find max of empty array")
+
+        var max_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
+            0
+        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
+        var max_idx = 0
+
+        for i in range(1, self.size):
+            var re_val = self._re._buf.ptr.load(i)
+            var im_val = self._im._buf.ptr.load(i)
+            var mag_sq = re_val * re_val + im_val * im_val
+            if mag_sq > max_mag_sq:
+                max_mag_sq = mag_sq
+                max_idx = i
+
+        return ComplexSIMD[cdtype](
+            self._re._buf.ptr.load(max_idx), self._im._buf.ptr.load(max_idx)
+        )
+
+    fn min(self) raises -> ComplexSIMD[cdtype]:
+        """
+        Find the complex element with minimum magnitude.
+
+        Returns:
+            The complex element with the smallest magnitude.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var min_elem = A.min()  # Element with smallest magnitude
+        ```
+
+        Notes:
+            Returns the element with minimum |z| = sqrt(re^2 + im^2).
+        """
+        if self.size == 0:
+            raise Error("Cannot find min of empty array")
+
+        var min_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
+            0
+        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
+        var min_idx = 0
+
+        for i in range(1, self.size):
+            var re_val = self._re._buf.ptr.load(i)
+            var im_val = self._im._buf.ptr.load(i)
+            var mag_sq = re_val * re_val + im_val * im_val
+            if mag_sq < min_mag_sq:
+                min_mag_sq = mag_sq
+                min_idx = i
+
+        return ComplexSIMD[cdtype](
+            self._re._buf.ptr.load(min_idx), self._im._buf.ptr.load(min_idx)
+        )
+
+    fn argmax(self) raises -> Int:
+        """
+        Return the index of the element with maximum magnitude.
+
+        Returns:
+            Index (flattened) of the element with largest magnitude.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var idx = A.argmax()  # Index of element with largest magnitude
+        ```
+
+        Notes:
+            Compares by magnitude: |z| = sqrt(re^2 + im^2).
+        """
+        if self.size == 0:
+            raise Error("Cannot find argmax of empty array")
+
+        var max_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
+            0
+        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
+        var max_idx = 0
+
+        for i in range(1, self.size):
+            var re_val = self._re._buf.ptr.load(i)
+            var im_val = self._im._buf.ptr.load(i)
+            var mag_sq = re_val * re_val + im_val * im_val
+            if mag_sq > max_mag_sq:
+                max_mag_sq = mag_sq
+                max_idx = i
+
+        return max_idx
+
+    fn argmin(self) raises -> Int:
+        """
+        Return the index of the element with minimum magnitude.
+
+        Returns:
+            Index (flattened) of the element with smallest magnitude.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var idx = A.argmin()  # Index of element with smallest magnitude
+        ```
+
+        Notes:
+            Compares by magnitude: |z| = sqrt(re^2 + im^2).
+        """
+        if self.size == 0:
+            raise Error("Cannot find argmin of empty array")
+
+        var min_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
+            0
+        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
+        var min_idx = 0
+
+        for i in range(1, self.size):
+            var re_val = self._re._buf.ptr.load(i)
+            var im_val = self._im._buf.ptr.load(i)
+            var mag_sq = re_val * re_val + im_val * im_val
+            if mag_sq < min_mag_sq:
+                min_mag_sq = mag_sq
+                min_idx = i
+
+        return min_idx
+
+    fn cumsum(self) raises -> Self:
+        """
+        Cumulative sum of complex array elements.
+
+        Returns:
+            ComplexNDArray with cumulative sums.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(5))
+        var cumulative = A.cumsum()
+        ```
+
+        Notes:
+            For array [a, b, c, d], returns [a, a+b, a+b+c, a+b+c+d].
+        """
+        var result = Self(self.shape)
+        var cum_re = Scalar[Self.dtype](0)
+        var cum_im = Scalar[Self.dtype](0)
+
+        for i in range(self.size):
+            cum_re += self._re._buf.ptr.load(i)
+            cum_im += self._im._buf.ptr.load(i)
+            result._re._buf.ptr.store(i, cum_re)
+            result._im._buf.ptr.store(i, cum_im)
+
+        return result^
+
+    fn cumprod(self) raises -> Self:
+        """
+        Cumulative product of complex array elements.
+
+        Returns:
+            ComplexNDArray with cumulative products.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(5))
+        var cumulative = A.cumprod()
+        ```
+
+        Notes:
+            For array [a, b, c, d], returns [a, a*b, a*b*c, a*b*c*d].
+        """
+        var result = Self(self.shape)
+        var cum_re = Scalar[Self.dtype](1)
+        var cum_im = Scalar[Self.dtype](0)
+
+        for i in range(self.size):
+            var a_re = self._re._buf.ptr.load(i)
+            var a_im = self._im._buf.ptr.load(i)
+            var new_re = cum_re * a_re - cum_im * a_im
+            var new_im = cum_re * a_im + cum_im * a_re
+            cum_re = new_re
+            cum_im = new_im
+            result._re._buf.ptr.store(i, cum_re)
+            result._im._buf.ptr.store(i, cum_im)
+
+        return result^
+
+    # ===-------------------------------------------------------------------===#
+    # Array Manipulation Methods
+    # ===-------------------------------------------------------------------===#
+
+    fn flatten(self, order: String = "C") raises -> Self:
+        """
+        Return a copy of the array collapsed into one dimension.
+
+        Args:
+            order: Order of flattening - 'C' for row-major or 'F' for column-major.
+
+        Returns:
+            A 1D ComplexNDArray containing all elements.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 4))
+        var flat = A.flatten()  # Shape(12)
+        ```
+        """
+        var flat_re = self._re.flatten(order)
+        var flat_im = self._im.flatten(order)
+        return Self(flat_re^, flat_im^)
+
+    fn fill(mut self, val: ComplexSIMD[cdtype]):
+        """
+        Fill all items of array with a complex value.
+
+        Args:
+            val: Complex value to fill the array with.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        A.fill(nm.ComplexSIMD[nm.cf64](1.0, 2.0))  # Fill with 1+2i
+        ```
+        """
+        self._re.fill(val.re)
+        self._im.fill(val.im)
+
+    fn row(self, id: Int) raises -> Self:
+        """
+        Get the ith row of the matrix.
+
+        Args:
+            id: The row index.
+
+        Returns:
+            The ith row as a ComplexNDArray.
+
+        Raises:
+            Error: If ndim is greater than 2.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 4))
+        var first_row = A.row(0)  # Get first row
+        ```
+        """
+        if self.ndim > 2:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Cannot extract row from array with {} dimensions."
+                    ).format(self.ndim),
+                    suggestion=String(
+                        "The row() method only works with 1D or 2D arrays."
+                    ),
+                    location=String("ComplexNDArray.row(id: Int)"),
+                )
+            )
+
+        var width: Int = self.shape[1]
+        var result = Self(Shape(width))
+        for i in range(width):
+            var idx = i + id * width
+            result._re._buf.ptr.store(i, self._re._buf.ptr.load(idx))
+            result._im._buf.ptr.store(i, self._im._buf.ptr.load(idx))
+        return result^
+
+    fn col(self, id: Int) raises -> Self:
+        """
+        Get the ith column of the matrix.
+
+        Args:
+            id: The column index.
+
+        Returns:
+            The ith column as a ComplexNDArray.
+
+        Raises:
+            Error: If ndim is greater than 2.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 4))
+        var first_col = A.col(0)  # Get first column
+        ```
+        """
+        if self.ndim > 2:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Cannot extract column from array with {} dimensions."
+                    ).format(self.ndim),
+                    suggestion=String(
+                        "The col() method only works with 1D or 2D arrays."
+                    ),
+                    location=String("ComplexNDArray.col(id: Int)"),
+                )
+            )
+
+        var width: Int = self.shape[1]
+        var height: Int = self.shape[0]
+        var result = Self(Shape(height))
+        for i in range(height):
+            var idx = id + i * width
+            result._re._buf.ptr.store(i, self._re._buf.ptr.load(idx))
+            result._im._buf.ptr.store(i, self._im._buf.ptr.load(idx))
+        return result^
+
+    fn clip(
+        self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]
+    ) raises -> Self:
+        """
+        Limit the magnitudes of complex values between [a_min, a_max].
+
+        Elements with magnitude less than a_min are scaled to have magnitude a_min.
+        Elements with magnitude greater than a_max are scaled to have magnitude a_max.
+        The phase (angle) of each complex number is preserved.
+
+        Args:
+            a_min: The minimum magnitude.
+            a_max: The maximum magnitude.
+
+        Returns:
+            A ComplexNDArray with clipped magnitudes.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(10))
+        var clipped = A.clip(1.0, 5.0)  # Clip magnitudes to [1, 5]
+        ```
+
+        Notes:
+            Clips by magnitude while preserving phase angle.
+        """
+        var result = Self(self.shape)
+
+        for i in range(self.size):
+            var re = self._re._buf.ptr.load(i)
+            var im = self._im._buf.ptr.load(i)
+            var mag_sq = re * re + im * im
+            var mag_val = sqrt(mag_sq)
+
+            if mag_val < a_min:
+                if mag_val > 0:
+                    var scale = a_min / mag_val
+                    result._re._buf.ptr.store(i, re * scale)
+                    result._im._buf.ptr.store(i, im * scale)
+                else:
+                    result._re._buf.ptr.store(i, a_min)
+                    result._im._buf.ptr.store(i, 0.0)
+            elif mag_val > a_max:
+                var scale = a_max / mag_val
+                result._re._buf.ptr.store(i, re * scale)
+                result._im._buf.ptr.store(i, im * scale)
+            else:
+                result._re._buf.ptr.store(i, re)
+                result._im._buf.ptr.store(i, im)
+
+        return result^
+
+    fn round(self) raises -> Self:
+        """
+        Round the real and imaginary parts of each element to the nearest integer.
+
+        Returns:
+            A ComplexNDArray with rounded components.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(10))
+        # A contains e.g. 1.7+2.3i
+        var rounded = A.round()  # Returns 2.0+2.0i
+        ```
+        """
+        var rounded_re = rounding.tround[Self.dtype](self._re)
+        var rounded_im = rounding.tround[Self.dtype](self._im)
+        return Self(rounded_re^, rounded_im^)
+
+    fn T(self) raises -> Self:
+        """
+        Transpose the complex array (reverse all axes).
+
+        Returns:
+            Transposed ComplexNDArray.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 4))
+        var A_T = A.T()  # Shape(4, 3)
+        ```
+        """
+        var transposed_re = self._re.T()
+        var transposed_im = self._im.T()
+        return Self(transposed_re^, transposed_im^)
+
+    fn T(self, axes: List[Int]) raises -> Self:
+        """
+        Transpose the complex array according to the given axes permutation.
+
+        Args:
+            axes: Permutation of axes (e.g., [1, 0, 2]).
+
+        Returns:
+            Transposed ComplexNDArray.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 3, 4))
+        var A_T = A.T(List[Int](2, 0, 1))  # Shape(4, 2, 3)
+        ```
+        """
+        var transposed_re = self._re.T(axes)
+        var transposed_im = self._im.T(axes)
+        return Self(transposed_re^, transposed_im^)
+
+    fn diagonal(self, offset: Int = 0) raises -> Self:
+        """
+        Extract the diagonal from a 2D complex array.
+
+        Args:
+            offset: Offset from the main diagonal (0 for main diagonal).
+
+        Returns:
+            1D ComplexNDArray containing the diagonal elements.
+
+        Raises:
+            Error: If array is not 2D.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(4, 4))
+        var diag = A.diagonal()      # Main diagonal
+        var upper = A.diagonal(1)    # First upper diagonal
+        ```
+        """
+        if self.ndim != 2:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "diagonal() requires a 2D array, got {} dimensions."
+                    ).format(self.ndim),
+                    suggestion=String(
+                        "Use a 2D ComplexNDArray for diagonal extraction."
+                    ),
+                    location=String("ComplexNDArray.diagonal()"),
+                )
+            )
+
+        var diag_re = self._re.diagonal[Self.dtype](offset)
+        var diag_im = self._im.diagonal[Self.dtype](offset)
+        return Self(diag_re^, diag_im^)
+
+    fn trace(self) raises -> ComplexSIMD[cdtype]:
+        """
+        Return the sum of the diagonal elements (trace of the matrix).
+
+        Returns:
+            Complex scalar containing the trace.
+
+        Raises:
+            Error: If array is not 2D.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 3))
+        var tr = A.trace()  # Sum of diagonal elements
+        ```
+        """
+        var diag = self.diagonal()
+        return diag.sum()
+
+    fn tolist(self) -> List[ComplexSIMD[cdtype]]:
+        """
+        Convert the complex array to a List of complex scalars.
+
+        Returns:
+            A List containing all complex elements in row-major order.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 3))
+        var elements = A.tolist()  # List of 6 complex numbers
+        ```
+        """
+        var result = List[ComplexSIMD[cdtype]](capacity=self.size)
+        for i in range(self.size):
+            result.append(
+                ComplexSIMD[cdtype](
+                    self._re._buf.ptr.load(i), self._im._buf.ptr.load(i)
+                )
+            )
+        return result^
+
+    fn num_elements(self) -> Int:
+        """
+        Return the total number of elements in the array.
+
+        Returns:
+            The size of the array (same as self.size).
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(3, 4, 5))
+        print(A.num_elements())  # 60
+        ```
+        """
+        return self.size
+
+    fn resize(mut self, shape: NDArrayShape) raises:
+        """
+        Change shape and size of array in-place.
+
+        If the new shape requires more elements, they are filled with zero.
+        If the new shape requires fewer elements, the array is truncated.
+
+        Args:
+            shape: The new shape for the array.
+
+        Examples:
+        ```mojo
+        import numojo as nm
+        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 3))
+        A.resize(nm.Shape(3, 4))  # Now 3x4, filled with zeros as needed
+        ```
+
+        Notes:
+            This modifies the array in-place. To get a reshaped copy, use reshape().
+        """
+        self._re.resize(shape)
+        self._im.resize(shape)
+        self.shape = shape
+        self.ndim = shape.ndim
+        self.size = shape.size_of_array()
+        var order = "C" if self.flags.C_CONTIGUOUS else "F"
+        self.strides = NDArrayStrides(shape, order=order)
 
 
 struct _ComplexNDArrayIter[

@@ -409,7 +409,7 @@ struct NDArray[dtype: DType = DType.float64,](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         return self._buf.ptr[index_of_buffer]
 
     fn _getitem(self, indices: List[Int]) -> Scalar[dtype]:
@@ -437,7 +437,7 @@ struct NDArray[dtype: DType = DType.float64,](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         return self._buf.ptr[index_of_buffer]
 
     fn __getitem__(self) raises -> SIMD[dtype, 1]:
@@ -636,7 +636,7 @@ struct NDArray[dtype: DType = DType.float64,](
         for lin in range(total):
             var rem = lin
             for d in range(out_ndim - 1, -1, -1):
-                var dim = dst.shape._buf[d]
+                var dim = Int(dst.shape._buf[d])
                 coords[d] = rem % dim
                 rem //= dim
             var off = base
@@ -644,7 +644,7 @@ struct NDArray[dtype: DType = DType.float64,](
                 off += coords[d] * src.strides._buf[d + 1]
             var dst_off = 0
             for d in range(out_ndim):
-                dst_off += coords[d] * dst.strides._buf[d]
+                dst_off += coords[d] * Int(dst.strides._buf[d])
             dst._buf.ptr[dst_off] = src._buf.ptr[off]
 
     fn __getitem__(self, var *slices: Slice) raises -> Self:
@@ -1839,7 +1839,7 @@ struct NDArray[dtype: DType = DType.float64,](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * self.strides._buf[i]
+            index_of_buffer += indices[i] * Int(self.strides._buf[i])
         self._buf.ptr[index_of_buffer] = val
 
     fn __setitem__(self, idx: Int, val: Self) raises:
@@ -1964,14 +1964,14 @@ struct NDArray[dtype: DType = DType.float64,](
         for lin in range(total):
             var rem = lin
             for d in range(out_ndim - 1, -1, -1):
-                var dim = src.shape._buf[d]
+                var dim = Int(src.shape._buf[d])
                 coords[d] = rem % dim
                 rem //= dim
             var dst_off = base
             var src_off = 0
             for d in range(out_ndim):
-                var stride_src = src.strides._buf[d]
-                var stride_dst = dst.strides._buf[d + 1]
+                var stride_src = Int(src.strides._buf[d])
+                var stride_dst = Int(dst.strides._buf[d + 1])
                 var c = coords[d]
                 dst_off += c * stride_dst
                 src_off += c * stride_src
@@ -3815,7 +3815,7 @@ struct NDArray[dtype: DType = DType.float64,](
         """
         Returns length of 0-th dimension.
         """
-        return self.shape._buf[0]
+        return Int(self.shape._buf[0])
 
     fn __iter__(
         self,
@@ -4891,7 +4891,6 @@ struct NDArray[dtype: DType = DType.float64,](
         Returns:
             Array of the same data with a new shape.
         """
-        print("WTF IS HAPPENING")
         return numojo.reshape(self, shape=shape, order=order)
 
     fn resize(mut self, shape: NDArrayShape) raises:
@@ -5852,7 +5851,7 @@ struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
                     (indices._buf + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
-                    remainder %= self.strides_compatible._buf[i]
+                    remainder %= Int(self.strides_compatible._buf[i])
             (indices._buf + self.axis).init_pointee_copy(remainder)
 
         else:
@@ -5861,7 +5860,7 @@ struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
                     (indices._buf + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
-                    remainder %= self.strides_compatible._buf[i]
+                    remainder %= Int(self.strides_compatible._buf[i])
             (indices._buf + self.axis).init_pointee_copy(remainder)
 
         return self.ptr[_get_offset(indices, self.strides)]
@@ -5894,7 +5893,7 @@ struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
                     (indices._buf + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
-                    remainder %= self.strides_compatible._buf[i]
+                    remainder %= Int(self.strides_compatible._buf[i])
             (indices._buf + self.axis).init_pointee_copy(remainder)
         else:
             for i in range(self.ndim - 1, -1, -1):
@@ -5902,7 +5901,7 @@ struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
                     (indices._buf + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
-                    remainder %= self.strides_compatible._buf[i]
+                    remainder %= Int(self.strides_compatible._buf[i])
             (indices._buf + self.axis).init_pointee_copy(remainder)
 
         return self.ptr[_get_offset(indices, self.strides)]

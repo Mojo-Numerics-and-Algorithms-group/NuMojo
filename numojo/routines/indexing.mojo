@@ -173,7 +173,7 @@ fn compress[
                 (item._buf + j).init_pointee_copy(
                     remainder // res_strides._buf[j]
                 )
-                remainder %= res_strides._buf[j]
+                remainder %= Int(res_strides._buf[j])
 
                 # Then along other axes
                 for j in range(result.ndim):
@@ -181,7 +181,7 @@ fn compress[
                         (item._buf + j).init_pointee_copy(
                             remainder // res_strides._buf[j]
                         )
-                        remainder %= res_strides._buf[j]
+                        remainder %= Int(res_strides._buf[j])
 
                 (
                     result._buf.ptr + utility._get_offset(item, result.strides)

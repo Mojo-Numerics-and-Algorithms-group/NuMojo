@@ -397,9 +397,15 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.int64:
             np_dtype = np.int64
         elif dtype == DType.int128:
-            raise Error("NumPy has no native int128 type. Cannot convert NDArray[DType.int128] to numpy array.")
+            raise Error(
+                "NumPy has no native int128 type. Cannot convert"
+                " NDArray[DType.int128] to numpy array."
+            )
         elif dtype == DType.int256:
-            raise Error("NumPy has no native int256 type. Cannot convert NDArray[DType.int256] to numpy array.")
+            raise Error(
+                "NumPy has no native int256 type. Cannot convert"
+                " NDArray[DType.int256] to numpy array."
+            )
         elif dtype == DType.int:
             np_dtype = np.intp
         elif dtype == DType.uint8:
@@ -411,13 +417,22 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         elif dtype == DType.uint64:
             np_dtype = np.uint64
         elif dtype == DType.uint128:
-            raise Error("NumPy has no native uint128 type. Cannot convert NDArray[DType.uint128] to numpy array.")
+            raise Error(
+                "NumPy has no native uint128 type. Cannot convert"
+                " NDArray[DType.uint128] to numpy array."
+            )
         elif dtype == DType.uint256:
-            raise Error("NumPy has no native uint256 type. Cannot convert NDArray[DType.uint256] to numpy array.")
+            raise Error(
+                "NumPy has no native uint256 type. Cannot convert"
+                " NDArray[DType.uint256] to numpy array."
+            )
         elif dtype == DType.uint:
             np_dtype = np.uintp
         elif dtype == DType.bfloat16:
-            raise Error("NumPy has no native bfloat16 type. Cannot convert NDArray[DType.bfloat16] to numpy array.")
+            raise Error(
+                "NumPy has no native bfloat16 type. Cannot convert"
+                " NDArray[DType.bfloat16] to numpy array."
+            )
         elif dtype == DType.float16:
             np_dtype = np.float16
         elif dtype == DType.float32:
@@ -440,6 +455,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     except e:
         print("Error in converting to numpy", e)
         return PythonObject()
+
 
 fn to_numpy[dtype: DType](array: Matrix[dtype]) raises -> PythonObject:
     """
@@ -483,9 +499,15 @@ fn to_numpy[dtype: DType](array: Matrix[dtype]) raises -> PythonObject:
         elif dtype == DType.int64:
             np_dtype = np.int64
         elif dtype == DType.int128:
-            raise Error("NumPy has no native int128 type. Cannot convert Matrix[DType.int128] to numpy array.")
+            raise Error(
+                "NumPy has no native int128 type. Cannot convert"
+                " Matrix[DType.int128] to numpy array."
+            )
         elif dtype == DType.int256:
-            raise Error("NumPy has no native int256 type. Cannot convert Matrix[DType.int256] to numpy array.")
+            raise Error(
+                "NumPy has no native int256 type. Cannot convert"
+                " Matrix[DType.int256] to numpy array."
+            )
         elif dtype == DType.int:
             np_dtype = np.intp
         elif dtype == DType.uint8:
@@ -497,13 +519,22 @@ fn to_numpy[dtype: DType](array: Matrix[dtype]) raises -> PythonObject:
         elif dtype == DType.uint64:
             np_dtype = np.uint64
         elif dtype == DType.uint128:
-            raise Error("NumPy has no native uint128 type. Cannot convert Matrix[DType.uint128] to numpy array.")
+            raise Error(
+                "NumPy has no native uint128 type. Cannot convert"
+                " Matrix[DType.uint128] to numpy array."
+            )
         elif dtype == DType.uint256:
-            raise Error("NumPy has no native uint256 type. Cannot convert Matrix[DType.uint256] to numpy array.")
+            raise Error(
+                "NumPy has no native uint256 type. Cannot convert"
+                " Matrix[DType.uint256] to numpy array."
+            )
         elif dtype == DType.uint:
             np_dtype = np.uintp
         elif dtype == DType.bfloat16:
-            raise Error("NumPy has no native bfloat16 type. Cannot convert Matrix[DType.bfloat16] to numpy array.")
+            raise Error(
+                "NumPy has no native bfloat16 type. Cannot convert"
+                " Matrix[DType.bfloat16] to numpy array."
+            )
         elif dtype == DType.float16:
             np_dtype = np.float16
         elif dtype == DType.float32:
@@ -525,6 +556,7 @@ fn to_numpy[dtype: DType](array: Matrix[dtype]) raises -> PythonObject:
     except e:
         print("Error in converting to numpy", e)
         return PythonObject()
+
 
 # ===----------------------------------------------------------------------=== #
 # Type checking functions

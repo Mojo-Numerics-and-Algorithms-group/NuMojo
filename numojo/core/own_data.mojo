@@ -11,7 +11,9 @@ from memory import UnsafePointer
 from numojo.core.traits.bufferable import Bufferable
 
 
-struct OwnData[dtype: DType]:  # TODO: implement `Bufferable` trait
+struct OwnData[dtype: DType](
+    Copyable, Movable
+):  # TODO: implement `Bufferable` trait
     var ptr: UnsafePointer[Scalar[dtype]]
 
     fn __init__(out self, size: Int):

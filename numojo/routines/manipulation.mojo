@@ -141,7 +141,6 @@ fn reshape[
     Returns:
         Array of the same data with a new shape.
     """
-    print("HOLY")
     if A.size != shape.size_of_array():
         raise Error("Cannot reshape: Number of elements do not match.")
 
@@ -208,7 +207,7 @@ fn ravel[
 # TODO: Remove this one if the following function is working well:
 # `numojo.core.utility._traverse_buffer_according_to_shape_and_strides`
 fn _set_values_according_to_shape_and_strides(
-    mut I: NDArray[DType.index],
+    mut I: NDArray[DType.int],
     mut index: Int,
     current_dim: Int,
     previous_sum: Int,
@@ -255,10 +254,10 @@ fn transpose[
     Examples.
     ```mojo
     import numojo as nm
-    # A is a 2darray
-    print(nm.transpose(A, axes=List(0, 1)))  # equal to transpose of matrix
-    # A is a 3darray
-    print(nm.transpose(A, axes=List(2, 1, 0)))  # transpose 0-th and 2-th dimensions
+    var arr2d = nm.random.rand(2,3)
+    print(nm.transpose(arr2d, axes=List(0, 1)))  # equal to transpose of matrix
+    var arr3d = nm.random.rand(2,3,4)
+    print(nm.transpose(arr3d, axes=List(2, 1, 0)))  # transpose 0-th and 2-th dimensions
     ```
     """
     if len(axes) != A.ndim:
@@ -286,8 +285,8 @@ fn transpose[
         new_strides._buf[i] = A.strides[axes[i]]
 
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
-    var I = NDArray[DType.index](Shape(A.size), order=array_order)
-    var ptr: UnsafePointer[Scalar[DType.index]] = I._buf.ptr
+    var I = NDArray[DType.int](Shape(A.size), order=array_order)
+    var ptr: UnsafePointer[Scalar[DType.int]] = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
@@ -299,20 +298,19 @@ fn transpose[
 
 
 # TODO: Make this operation in place to match numpy.
-fn transpose[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
+fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     (overload) Transpose the array when `axes` is not given.
     If `axes` is not given, it is equal to flipping the axes.
     See docstring of `transpose`.
     """
-
     if A.ndim == 1:
-        return A^
+        return A.copy()
     if A.ndim == 2:
         var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
-            memcpy(B._buf.ptr, A._buf.ptr, A.size)
+            memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
         else:
             for i in range(B.shape[0]):
                 for j in range(B.shape[1]):
@@ -337,7 +335,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)
 
     if A.shape[0] == 1 or A.shape[1] == 1:
-        memcpy(B._buf.ptr, A._buf.ptr, A.size)
+        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     else:
         for i in range(B.shape[0]):
             for j in range(B.shape[1]):
@@ -616,7 +614,7 @@ fn flip[
             String("Invalid index: index out of bound [0, {}).").format(A.ndim)
         )
 
-    var I = NDArray[DType.index](Shape(A.size))
+    var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(

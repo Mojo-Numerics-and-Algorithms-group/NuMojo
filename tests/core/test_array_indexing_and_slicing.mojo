@@ -95,7 +95,7 @@ def test_slicing_getter6():
     var np = Python.import_module("numpy")
 
     var b = nm.arange[i8](60).reshape(nm.Shape(3, 4, 5))
-    var ind = nm.array[isize]("[[2,0,1], [1,0,1]]")
+    var ind = nm.array[int]("[[2,0,1], [1,0,1]]")
     var mask = nm.array[boolean]("[1,0,1]")
 
     var bnp = b.to_numpy()

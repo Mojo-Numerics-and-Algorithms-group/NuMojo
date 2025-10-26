@@ -27,7 +27,9 @@ alias CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 
 
 @register_passable("trivial")
-struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](Stringable, Writable):
+struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
+    ImplicitlyCopyable, Movable, Stringable, Writable
+):
     """
     A SIMD-enabled complex number type that supports vectorized operations.
 

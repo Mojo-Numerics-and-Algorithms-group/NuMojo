@@ -230,7 +230,7 @@ fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 fn _max[
     dtype: DType
 ](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
-    Scalar[dtype], Scalar[DType.index]
+    Scalar[dtype], Scalar[DType.int]
 ]:
     """
     Auxiliary function that find the max value in a range of the buffer.
@@ -243,7 +243,7 @@ fn _max[
             ).format(start, end, A.size)
         )
 
-    var max_index: Scalar[DType.index] = start
+    var max_index: Scalar[DType.int] = start
 
     var rows = A.shape[0]
     var cols = A.shape[1]
@@ -350,7 +350,7 @@ fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 fn _min[
     dtype: DType
 ](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
-    Scalar[dtype], Scalar[DType.index]
+    Scalar[dtype], Scalar[DType.int]
 ]:
     """
     Auxiliary function that find the min value in a range of the buffer.
@@ -363,7 +363,7 @@ fn _min[
             ).format(start, end, A.size)
         )
 
-    var min_index: Scalar[DType.index] = start
+    var min_index: Scalar[DType.int] = start
 
     var rows = A.shape[0]
     var cols = A.shape[1]

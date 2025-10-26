@@ -3827,18 +3827,18 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             var re = self._re._buf.ptr.load(i)
             var im = self._im._buf.ptr.load(i)
             var mag_sq = re * re + im * im
-            var mag = sqrt(mag_sq)
+            var mag_val = sqrt(mag_sq)
 
-            if mag < a_min:
-                if mag > 0:
-                    var scale = a_min / mag
+            if mag_val < a_min:
+                if mag_val > 0:
+                    var scale = a_min / mag_val
                     result._re._buf.ptr.store(i, re * scale)
                     result._im._buf.ptr.store(i, im * scale)
                 else:
                     result._re._buf.ptr.store(i, a_min)
                     result._im._buf.ptr.store(i, 0.0)
-            elif mag > a_max:
-                var scale = a_max / mag
+            elif mag_val > a_max:
+                var scale = a_max / mag_val
                 result._re._buf.ptr.store(i, re * scale)
                 result._im._buf.ptr.store(i, im * scale)
             else:

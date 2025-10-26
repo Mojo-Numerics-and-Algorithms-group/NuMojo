@@ -178,9 +178,9 @@ struct Matrix[dtype: DType = DType.float64](
         if data.flags["C_CONTIGUOUS"]:
             for i in range(data.shape[0]):
                 memcpy(
-                    self._buf.ptr.offset(i * self.shape[0]),
-                    data._buf.ptr.offset(i * data.shape[0]),
-                    self.shape[0],
+                    dest=self._buf.ptr.offset(i * self.shape[0]),
+                    src=data._buf.ptr.offset(i * data.shape[0]),
+                    count=self.shape[0],
                 )
         else:
             for i in range(data.shape[0]):
@@ -196,7 +196,7 @@ struct Matrix[dtype: DType = DType.float64](
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self._buf = OwnData[dtype](other.size)
-        memcpy(self._buf.ptr, other._buf.ptr, other.size)
+        memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
         self.flags = other.flags
 
     @always_inline("nodebug")
@@ -274,7 +274,7 @@ struct Matrix[dtype: DType = DType.float64](
 
         if self.flags.C_CONTIGUOUS:
             var ptr = self._buf.ptr.offset(x * self.strides[0])
-            memcpy(res._buf.ptr, ptr, self.shape[1])
+            memcpy(dest=res._buf.ptr, src=ptr, count=self.shape[1])
         else:
             for j in range(self.shape[1]):
                 res[0, j] = self[x, j]
@@ -437,7 +437,7 @@ struct Matrix[dtype: DType = DType.float64](
             )
 
         var ptr = self._buf.ptr.offset(x * self.shape[1])
-        memcpy(ptr, value._buf.ptr, value.size)
+        memcpy(dest=ptr, src=value._buf.ptr, count=value.size)
 
     fn _store[
         width: Int = 1
@@ -452,7 +452,7 @@ struct Matrix[dtype: DType = DType.float64](
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
 
-    fn __iter__(self) raises -> _MatrixIter[__origin_of(self), dtype]:
+    fn __iter__(self) raises -> _MatrixIter[origin_of(self), dtype]:
         """Iterate over elements of the Matrix, returning copied value.
 
         Example:
@@ -467,7 +467,7 @@ struct Matrix[dtype: DType = DType.float64](
             An iterator of Matrix elements.
         """
 
-        return _MatrixIter[__origin_of(self), dtype](
+        return _MatrixIter[origin_of(self), dtype](
             matrix=self,
             length=self.shape[0],
         )
@@ -480,7 +480,7 @@ struct Matrix[dtype: DType = DType.float64](
 
     fn __reversed__(
         self,
-    ) raises -> _MatrixIter[__origin_of(self), dtype, forward=False]:
+    ) raises -> _MatrixIter[origin_of(self), dtype, forward=False]:
         """Iterate backwards over elements of the Matrix, returning
         copied value.
 
@@ -488,7 +488,7 @@ struct Matrix[dtype: DType = DType.float64](
             A reversed iterator of Matrix elements.
         """
 
-        return _MatrixIter[__origin_of(self), dtype, forward=False](
+        return _MatrixIter[origin_of(self), dtype, forward=False](
             matrix=self,
             length=self.shape[0],
         )
@@ -924,37 +924,37 @@ struct Matrix[dtype: DType = DType.float64](
         """
         return numojo.logic.any(self, axis=axis)
 
-    fn argmax(self) raises -> Scalar[DType.index]:
+    fn argmax(self) raises -> Scalar[DType.int]:
         """
         Index of the max. It is first flattened before sorting.
         """
         return numojo.math.argmax(self)
 
-    fn argmax(self, axis: Int) raises -> Matrix[DType.index]:
+    fn argmax(self, axis: Int) raises -> Matrix[DType.int]:
         """
         Index of the max along the given axis.
         """
         return numojo.math.argmax(self, axis=axis)
 
-    fn argmin(self) raises -> Scalar[DType.index]:
+    fn argmin(self) raises -> Scalar[DType.int]:
         """
         Index of the min. It is first flattened before sorting.
         """
         return numojo.math.argmin(self)
 
-    fn argmin(self, axis: Int) raises -> Matrix[DType.index]:
+    fn argmin(self, axis: Int) raises -> Matrix[DType.int]:
         """
         Index of the min along the given axis.
         """
         return numojo.math.argmin(self, axis=axis)
 
-    fn argsort(self) raises -> Matrix[DType.index]:
+    fn argsort(self) raises -> Matrix[DType.int]:
         """
         Argsort the Matrix. It is first flattened before sorting.
         """
         return numojo.math.argsort(self)
 
-    fn argsort(self, axis: Int) raises -> Matrix[DType.index]:
+    fn argsort(self, axis: Int) raises -> Matrix[DType.int]:
         """
         Argsort the Matrix along the given axis.
         """
@@ -1021,7 +1021,7 @@ struct Matrix[dtype: DType = DType.float64](
         Return a flattened copy of the matrix.
         """
         var res = Self(shape=(1, self.size), order=self.order())
-        memcpy(res._buf.ptr, self._buf.ptr, res.size)
+        memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
         return res^
 
     fn inv(self) raises -> Self:
@@ -1118,10 +1118,10 @@ struct Matrix[dtype: DType = DType.float64](
         var res = Self(shape=shape, order="C")
         if self.flags.F_CONTIGUOUS:
             var temp = self.reorder_layout()
-            memcpy(res._buf.ptr, temp._buf.ptr, res.size)
+            memcpy(dest=res._buf.ptr, src=temp._buf.ptr, count=res.size)
             res = res.reorder_layout()
         else:
-            memcpy(res._buf.ptr, self._buf.ptr, res.size)
+            memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
         return res^
 
     fn resize(mut self, shape: Tuple[Int, Int]) raises:
@@ -1131,7 +1131,7 @@ struct Matrix[dtype: DType = DType.float64](
         if shape[0] * shape[1] > self.size:
             var other = Self(shape=shape)
             if self.flags.C_CONTIGUOUS:
-                memcpy(other._buf.ptr, self._buf.ptr, self.size)
+                memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
                 for i in range(self.size, other.size):
                     other._buf.ptr[i] = 0
             else:
@@ -1277,7 +1277,7 @@ struct Matrix[dtype: DType = DType.float64](
         var ndarray: NDArray[dtype] = NDArray[dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order="C"
         )
-        memcpy(ndarray._buf.ptr, self._buf.ptr, ndarray.size)
+        memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
 
         return ndarray^
 
@@ -1292,6 +1292,7 @@ struct Matrix[dtype: DType = DType.float64](
 
             np.set_printoptions(4)
 
+            # TODO: Add all the new types!
             # Implement a dictionary for this later
             var numpyarray: PythonObject
             var np_dtype = np.float64
@@ -1317,7 +1318,7 @@ struct Matrix[dtype: DType = DType.float64](
                 np_dtype = np.uint8
             elif dtype == DType.bool:
                 np_dtype = np.bool_
-            elif dtype == DType.index:
+            elif dtype == DType.int64:
                 np_dtype = np.int64
 
             var order = "C" if self.flags.C_CONTIGUOUS else "F"
@@ -1325,7 +1326,7 @@ struct Matrix[dtype: DType = DType.float64](
             var pointer_d = numpyarray.__array_interface__["data"][
                 0
             ].unsafe_get_as_pointer[dtype]()
-            memcpy(pointer_d, self._buf.ptr, self.size)
+            memcpy(dest=pointer_d, src=self._buf.ptr, count=self.size)
 
             return numpyarray^
 
@@ -1339,12 +1340,12 @@ struct Matrix[dtype: DType = DType.float64](
 
     @staticmethod
     fn full[
-        dtype: DType = DType.float64
+        datatype: DType = DType.float64
     ](
         shape: Tuple[Int, Int],
-        fill_value: Scalar[dtype] = 0,
+        fill_value: Scalar[datatype] = 0,
         order: String = "C",
-    ) -> Matrix[dtype]:
+    ) -> Matrix[datatype]:
         """Return a matrix with given shape and filled value.
 
         Example:
@@ -1354,7 +1355,7 @@ struct Matrix[dtype: DType = DType.float64](
         ```
         """
 
-        var matrix = Matrix[dtype](shape, order)
+        var matrix = Matrix[datatype](shape, order)
         for i in range(shape[0] * shape[1]):
             matrix._buf.ptr.store(i, fill_value)
 
@@ -1362,8 +1363,8 @@ struct Matrix[dtype: DType = DType.float64](
 
     @staticmethod
     fn zeros[
-        dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+        datatype: DType = DType.float64
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
         """Return a matrix with given shape and filled with zeros.
 
         Example:
@@ -1373,14 +1374,14 @@ struct Matrix[dtype: DType = DType.float64](
         ```
         """
 
-        var M = Matrix[dtype](shape, order)
+        var M = Matrix[datatype](shape, order)
         memset_zero(M._buf.ptr, M.size)
         return M^
 
     @staticmethod
     fn ones[
-        dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+        datatype: DType = DType.float64
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
         """Return a matrix with given shape and filled with ones.
 
         Example:
@@ -1390,12 +1391,12 @@ struct Matrix[dtype: DType = DType.float64](
         ```
         """
 
-        return Matrix.full[dtype](shape=shape, fill_value=1)
+        return Matrix.full[datatype](shape=shape, fill_value=1)
 
     @staticmethod
     fn identity[
-        dtype: DType = DType.float64
-    ](len: Int, order: String = "C") -> Matrix[dtype]:
+        datatype: DType = DType.float64
+    ](len: Int, order: String = "C") -> Matrix[datatype]:
         """Return an identity matrix with given size.
 
         Example:
@@ -1404,7 +1405,7 @@ struct Matrix[dtype: DType = DType.float64](
         var A = Matrix.identity(12)
         ```
         """
-        var matrix = Matrix.zeros[dtype]((len, len), order)
+        var matrix = Matrix.zeros[datatype]((len, len), order)
         for i in range(len):
             matrix._buf.ptr.store(
                 i * matrix.strides[0] + i * matrix.strides[1], 1
@@ -1413,8 +1414,8 @@ struct Matrix[dtype: DType = DType.float64](
 
     @staticmethod
     fn rand[
-        dtype: DType = DType.float64
-    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[dtype]:
+        datatype: DType = DType.float64
+    ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
         """Return a matrix with random values uniformed distributed between 0 and 1.
 
         Example:
@@ -1424,25 +1425,25 @@ struct Matrix[dtype: DType = DType.float64](
         ```
 
         Parameters:
-            dtype: The data type of the NDArray elements.
+            datatype: The data type of the NDArray elements.
 
         Args:
             shape: The shape of the Matrix.
             order: The order of the Matrix. "C" or "F".
         """
-        var result = Matrix[dtype](shape, order)
+        var result = Matrix[datatype](shape, order)
         for i in range(result.size):
-            result._buf.ptr.store(i, random_float64(0, 1).cast[dtype]())
+            result._buf.ptr.store(i, random_float64(0, 1).cast[datatype]())
         return result^
 
     @staticmethod
     fn fromlist[
-        dtype: DType
+        datatype: DType
     ](
-        object: List[Scalar[dtype]],
+        object: List[Scalar[datatype]],
         shape: Tuple[Int, Int] = (0, 0),
         order: String = "C",
-    ) raises -> Matrix[dtype]:
+    ) raises -> Matrix[datatype]:
         """Create a matrix from a 1-dimensional list into given shape.
 
         If no shape is passed, the return matrix will be a row vector.
@@ -1456,8 +1457,8 @@ struct Matrix[dtype: DType = DType.float64](
         """
 
         if (shape[0] == 0) and (shape[1] == 0):
-            var M = Matrix[dtype](shape=(1, len(object)))
-            memcpy(M._buf.ptr, object.unsafe_ptr(), M.size)
+            var M = Matrix[datatype](shape=(1, len(object)))
+            memcpy(dest=M._buf.ptr, src=object.unsafe_ptr(), count=M.size)
             return M^
 
         if shape[0] * shape[1] != len(object):
@@ -1465,18 +1466,18 @@ struct Matrix[dtype: DType = DType.float64](
                 "The input has {} elements, but the target has the shape {}x{}"
             ).format(len(object), shape[0], shape[1])
             raise Error(message)
-        var M = Matrix[dtype](shape=shape, order="C")
-        memcpy(M._buf.ptr, object.unsafe_ptr(), M.size)
+        var M = Matrix[datatype](shape=shape, order="C")
+        memcpy(dest=M._buf.ptr, src=object.unsafe_ptr(), count=M.size)
         if order == "F":
             M = M.reorder_layout()
         return M^
 
     @staticmethod
     fn fromstring[
-        dtype: DType = DType.float64
+        datatype: DType = DType.float64
     ](
         text: String, shape: Tuple[Int, Int] = (0, 0), order: String = "C"
-    ) raises -> Matrix[dtype]:
+    ) raises -> Matrix[datatype]:
         """Matrix initialization from string representation of an matrix.
 
         Comma, right brackets, and whitespace are treated as seperators of numbers.
@@ -1506,7 +1507,7 @@ struct Matrix[dtype: DType = DType.float64](
             order: Order of the matrix. "C" or "F".
         """
 
-        var data = List[Scalar[dtype]]()
+        var data = List[Scalar[datatype]]()
         var bytes = text.as_bytes()
         var number_as_str: String = ""
         var size = shape[0] * shape[1]
@@ -1520,7 +1521,7 @@ struct Matrix[dtype: DType = DType.float64](
             ):
                 number_as_str = number_as_str + chr(Int(b))
                 if i == len(bytes) - 1:  # Last byte
-                    var number = atof(number_as_str).cast[dtype]()
+                    var number = atof(number_as_str).cast[datatype]()
                     data.append(number)  # Add the number to the data buffer
                     number_as_str = ""  # Clean the number cache
             if (
@@ -1529,7 +1530,7 @@ struct Matrix[dtype: DType = DType.float64](
                 or (chr(Int(b)) == " ")
             ):
                 if number_as_str != "":
-                    var number = atof(number_as_str).cast[dtype]()
+                    var number = atof(number_as_str).cast[datatype]()
                     data.append(number)  # Add the number to the data buffer
                     number_as_str = ""  # Clean the number cache
 
@@ -1543,7 +1544,7 @@ struct Matrix[dtype: DType = DType.float64](
             ).format(len(data), shape[0], shape[1])
             raise Error(message)
 
-        var result = Matrix[dtype](shape=shape)
+        var result = Matrix[datatype](shape=shape)
         for i in range(len(data)):
             result._buf.ptr[i] = data[i]
         return result^

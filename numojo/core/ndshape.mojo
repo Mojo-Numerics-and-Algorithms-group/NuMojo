@@ -388,7 +388,7 @@ struct NDArrayShape(
         """
         self.ndim = shape.ndim
         self._buf = UnsafePointer[Scalar[Self._type]]().alloc(shape.ndim)
-        memcpy(self._buf, shape._buf, shape.ndim)
+        memcpy(dest=self._buf, src=shape._buf, count=shape.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(shape._buf[i])
 
@@ -491,7 +491,7 @@ struct NDArrayShape(
         """
         self.ndim = other.ndim
         self._buf = UnsafePointer[Scalar[Self._type]]().alloc(other.ndim)
-        memcpy(self._buf, other._buf, other.ndim)
+        memcpy(dest=self._buf, src=other._buf, count=other.ndim)
 
     fn __del__(deinit self):
         """
@@ -547,7 +547,7 @@ struct NDArrayShape(
     @always_inline("nodebug")
     fn _compute_slice_params(
         self, slice_index: Slice
-    ) raises -> (Int, Int, Int):
+    ) raises -> Tuple[Int, Int, Int]:
         var n = self.ndim
         if n == 0:
             return (0, 1, 0)
@@ -771,7 +771,7 @@ struct NDArrayShape(
         """
 
         var res = Self(ndim=self.ndim, initialized=False)
-        memcpy(res._buf, self._buf, self.ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
         return res
 
     fn join(self, *shapes: Self) raises -> Self:
@@ -1057,7 +1057,7 @@ struct _ShapeIter[
         else:
             return self.index > 0
 
-    fn __next__(mut self) raises -> Scalar[DType.index]:
+    fn __next__(mut self) raises -> Scalar[DType.int]:
         @parameter
         if forward:
             var current_index = self.index

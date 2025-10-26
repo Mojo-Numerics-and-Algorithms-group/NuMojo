@@ -30,6 +30,8 @@ from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.complex.complex_dtype import (
     ci8,
+    ci16,
+    ci32,
     ci64,
     ci128,
     ci256,

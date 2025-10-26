@@ -3,6 +3,8 @@ from .complex_ndarray import ComplexNDArray
 from .complex_dtype import (
     ComplexDType,
     ci8,
+    ci16,
+    ci32,
     ci64,
     ci128,
     ci256,

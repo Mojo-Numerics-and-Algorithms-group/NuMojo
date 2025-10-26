@@ -19,6 +19,8 @@ from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.complex.complex_dtype import (
     ComplexDType,
     ci8,
+    ci16,
+    ci32,
     ci64,
     ci128,
     ci256,

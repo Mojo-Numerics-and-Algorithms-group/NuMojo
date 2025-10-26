@@ -25,11 +25,10 @@ import numojo.core.utility as utility
 # ===----------------------------------------------------------------------=== #
 
 
-fn where[
+# ! It's not properly being formatted by pixi for some reason!
+fn `where`[
     dtype: DType
-](
-    mut x: NDArray[dtype], scalar: SIMD[dtype, 1], mask: NDArray[DType.bool]
-) raises:
+](x: NDArray[dtype], scalar: Scalar[dtype], mask: NDArray[DType.bool]) raises:
     """
     Replaces elements in `x` with `scalar` where `mask` is True.
 
@@ -48,7 +47,7 @@ fn where[
 
 
 # TODO: do it with vectorization
-fn where[
+fn `where`[
     dtype: DType
 ](mut x: NDArray[dtype], y: NDArray[dtype], mask: NDArray[DType.bool]) raises:
     """
@@ -237,7 +236,7 @@ fn compress[
 fn take_along_axis[
     dtype: DType, //,
 ](
-    arr: NDArray[dtype], indices: NDArray[DType.index], axis: Int = 0
+    arr: NDArray[dtype], indices: NDArray[DType.int], axis: Int = 0
 ) raises -> NDArray[dtype]:
     """
     Takes values from the input array along the given axis based on indices.
@@ -303,7 +302,7 @@ fn take_along_axis[
     # except along the axis
 
     var broadcasted_indices: NDArray[
-        DType.index
+        DType.int
     ] = indices.copy()  # make this owned and don't copy
 
     if arr.shape != indices.shape:
@@ -337,15 +336,15 @@ fn take_along_axis[
                 indices_slice
             ]
             memcpy(
-                result._buf.ptr + i * result.shape[normalized_axis],
-                arr_slice_after_applying_indices._buf.ptr,
-                result.shape[normalized_axis],
+                dest=result._buf.ptr + i * result.shape[normalized_axis],
+                src=arr_slice_after_applying_indices._buf.ptr,
+                count=result.shape[normalized_axis],
             )
     else:
         # If axis is not the last axis, the data is not contiguous.
         for i in range(length_of_iterator):
-            var indices_slice_offsets: NDArray[DType.index]
-            var indices_slice: NDArray[DType.index]
+            var indices_slice_offsets: NDArray[DType.int]
+            var indices_slice: NDArray[DType.int]
             var indices_slice_offsets_slice = indices_iterator.ith_with_offsets(
                 i
             )

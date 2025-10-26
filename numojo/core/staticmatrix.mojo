@@ -276,7 +276,6 @@ struct StaticMatrix[dtype: DType = DType.float32, device: Device = Device.CPU](
             mat[i, i] = Scalar[dtype](1)
         return mat^
 
-
     fn __add__(self, other: Self) raises -> Self:
         """Element-wise addition of two matrices."""
         if self.shape[0] != other.shape[0] or self.shape[1] != other.shape[1]:
@@ -330,12 +329,14 @@ struct StaticMatrix[dtype: DType = DType.float32, device: Device = Device.CPU](
             raise Error(
                 ValueError(
                     message="Cannot subtract matrices on different devices",
-                    suggestion="Move matrices to the same device before subtracting",
+                    suggestion=(
+                        "Move matrices to the same device before subtracting"
+                    ),
                     location="StaticMatrix.__sub__",
                 )
             )
 
-
+        return sub[dtype, device](self, other)
 
     # Element-wise multiplication
     fn __mul__(self, other: Self) raises -> Self:
@@ -368,7 +369,8 @@ struct StaticMatrix[dtype: DType = DType.float32, device: Device = Device.CPU](
                 )
             )
 
-        if self._buf.is_cpu():
+        @parameter
+        if device.type == "cpu":
             return self._mul_cpu(other)
         else:
             return self._mul_gpu(other)
@@ -406,7 +408,6 @@ struct StaticMatrix[dtype: DType = DType.float32, device: Device = Device.CPU](
             )
 
         return matmul[dtype, device](self, other)
-
 
     fn _mul_cpu(self, other: Self) raises -> Self:
         """CPU implementation of element-wise multiplication with vectorization.
@@ -587,6 +588,7 @@ fn _add_gpu[
 
     return result^
 
+
 fn _sub_cpu[
     dtype: DType,
     device: Device = Device.CPU,
@@ -644,6 +646,7 @@ fn _sub_gpu[
 
     return result^
 
+
 fn add[
     dtype: DType, device: Device
 ](
@@ -657,6 +660,7 @@ fn add[
     else:
         return _add_gpu[dtype, device](a, b)
 
+
 fn sub[
     dtype: DType, device: Device
 ](
@@ -669,6 +673,7 @@ fn sub[
         return _sub_cpu[dtype, device](a, b)
     else:
         return _sub_gpu[dtype, device](a, b)
+
 
 # ===----------------------------------------------------------------------=== #
 # GPU Matrix Multiplication Kernels

@@ -12,6 +12,7 @@ alias TILE_SIZE = 32
 alias VECTOR_WIDTH = 4
 alias MAX_WARPS_PER_BLOCK = MAX_THREADS_PER_BLOCK // UInt(WARP_SIZE)
 
+
 fn matrix_add_kernel_vectorized[
     dtype: DType
 ](
@@ -88,6 +89,7 @@ fn matrix_add_kernel_vectorized[
         while idx < size:
             output[idx] = a[idx] + b[idx]
             idx += grid_stride
+
 
 fn matrix_sub_kernel_vectorized[
     dtype: DType
@@ -361,6 +363,7 @@ fn matrix_reduce_sum_kernel[
             block_total += warp_shared[i]
             i += 1
         output[block_idx.x] = block_total
+
 
 # TODO: move to compile time and specialize based on dtype.
 fn calculate_1d_launch_params_for_dtype[

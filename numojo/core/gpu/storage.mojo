@@ -20,7 +20,7 @@ from numojo.core.gpu.device import Device, check_accelerator
 
 struct HostStorage[dtype: DType, device: Device](
     Copyable, Movable
-): # similar to owndata 
+):  # similar to owndata
     var ptr: UnsafePointer[Scalar[dtype]]
 
     fn __init__(out self, size: Int):

@@ -1,33 +1,26 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
-
+name: "Bug report"
+about: Report a reproducible bug in the numerics library
+title: "[BUG] <short description>"
+labels: ["bug"]
+assignees: []
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Summary
+Briefly describe the bug.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+## Steps to Reproduce
+List steps or code to reproduce the issue.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Expected vs Actual
+What did you expect? What happened instead?
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+## Environment
+- Provide the system information by running `pixi info`.
+- Provide version information for NuMojo and Mojo.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## Logs / Screenshots
+Paste error messages or screenshots if relevant.
 
-
-**Additional context**
-Add any other context about the problem here.
+## Extra Info
+Anything else that helps (workarounds, related issues).

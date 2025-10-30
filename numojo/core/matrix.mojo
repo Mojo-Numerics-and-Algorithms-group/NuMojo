@@ -284,7 +284,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
-    fn __getitem__(ref self, var x: Int) raises -> Matrix[dtype, RefData[__origin_of(self)]]:
+    fn __getitem__(
+        ref self, var x: Int
+    ) raises -> Matrix[dtype, RefData[__origin_of(self)]]:
         """
         Return the corresponding row at the index.
 
@@ -309,7 +311,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         )
         return res^
 
-    fn _getitem__copy(self,  var x: Int) raises -> Matrix[dtype]:
+    fn _getitem__copy(self, var x: Int) raises -> Matrix[dtype]:
         """
         Return the corresponding row at the index.
 
@@ -338,7 +340,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return result^
 
-    fn __getitem__(ref self, x: Slice, y: Slice) -> Matrix[dtype, RefData[__origin_of(self)]]:
+    fn __getitem__(
+        ref self, x: Slice, y: Slice
+    ) -> Matrix[dtype, RefData[__origin_of(self)]]:
         """
         Get item from two slices.
         """
@@ -563,14 +567,13 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], simd)
 
-    fn _store[
-        width: Int = 1
-    ](mut self, idx: Int, val: SIMD[dtype, width]):
+    fn _store[width: Int = 1](mut self, idx: Int, val: SIMD[dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
         self._buf.ptr.store(idx, val)
+
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
@@ -1711,7 +1714,9 @@ struct _MatrixIter[
     fn __iter__(self) -> Self:
         return self.copy()
 
-    fn __next__(mut self) raises -> Matrix[dtype, RefData[__origin_of(self.matrix)]]:
+    fn __next__(
+        mut self,
+    ) raises -> Matrix[dtype, RefData[__origin_of(self.matrix)]]:
         @parameter
         if forward:
             var current_index = self.index

@@ -11,13 +11,13 @@ from memory import UnsafePointer
 from numojo.core.traits.bufferable import Bufferable
 
 
-
 trait Buffered(ImplicitlyCopyable, Movable):
     fn __init__(out self):
         ...
 
     fn owns_data(self) -> Bool:
         ...
+
 
 struct OwnData(Buffered, ImplicitlyCopyable, Movable):
     alias owns: Bool = True
@@ -29,7 +29,9 @@ struct OwnData(Buffered, ImplicitlyCopyable, Movable):
         return True
 
 
-struct RefData[is_mutable: Bool, //, origin: Origin[is_mutable]](Buffered, ImplicitlyCopyable, Movable):
+struct RefData[is_mutable: Bool, //, origin: Origin[is_mutable]](
+    Buffered, ImplicitlyCopyable, Movable
+):
     alias owns: Bool = False
 
     fn __init__(out self):
@@ -37,6 +39,7 @@ struct RefData[is_mutable: Bool, //, origin: Origin[is_mutable]](Buffered, Impli
 
     fn owns_data(self) -> Bool:
         return False
+
 
 struct DataContainer[dtype: DType]():
     var ptr: UnsafePointer[Scalar[dtype]]

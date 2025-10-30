@@ -1,5 +1,5 @@
 # ===----------------------------------------------------------------------=== #
-# Define `OwnData` type
+# Define `DataContainer` type
 #
 # TODO: fields in traits are not supported yet by Mojo
 # Currently use `get_ptr()` to get pointer, in future, use `ptr` directly.
@@ -11,7 +11,33 @@ from memory import UnsafePointer
 from numojo.core.traits.bufferable import Bufferable
 
 
-struct OwnData[dtype: DType]():  # TODO: implement `Bufferable` trait
+
+trait Buffered(ImplicitlyCopyable, Movable):
+    fn __init__(out self):
+        ...
+
+    fn is_owned_data(self) -> Bool:
+        ...
+
+struct OwnData(Buffered, ImplicitlyCopyable, Movable):
+    alias view: Bool = False
+
+    fn __init__(out self):
+        pass
+
+    fn is_owned_data(self) -> Bool:
+        return True
+
+
+struct RefData[is_mutable: Bool, //, origin: Origin[is_mutable]](Buffered, ImplicitlyCopyable, Movable):
+    alias view: Bool = True
+    fn __init__(out self):
+        pass
+
+    fn is_owned_data(self) -> Bool:
+        return False
+
+struct DataContainer[dtype: DType]():
     var ptr: UnsafePointer[Scalar[dtype]]
 
     fn __init__(out self, size: Int):

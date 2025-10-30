@@ -67,7 +67,7 @@ from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.own_data import OwnData
+from numojo.core.own_data import DataContainer
 from numojo.core.utility import (
     _get_offset,
     _transfer_offset,
@@ -121,7 +121,7 @@ struct NDArray[dtype: DType = DType.float64](
     Writable,
 ):
     # TODO: NDArray[dtype: DType = DType.float64,
-    #               Buffer: Bufferable[dtype] = OwnData[dtype]]
+    #               Buffer: Bufferable[dtype] = DataContainer[dtype]]
     """The N-dimensional array (NDArray).
 
     Parameters:
@@ -142,7 +142,7 @@ struct NDArray[dtype: DType = DType.float64](
     alias width: Int = simd_width_of[dtype]()
     """Vector size of the data type."""
 
-    var _buf: OwnData[dtype]
+    var _buf: DataContainer[dtype]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
     """Number of Dimensions."""
@@ -181,7 +181,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = NDArrayShape(shape)
         self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(shape, order=order)
-        self._buf = OwnData[dtype](self.size)
+        self._buf = DataContainer[dtype](self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -237,7 +237,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = self.shape.ndim
         self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(strides=strides)
-        self._buf = OwnData[dtype](self.size)
+        self._buf = DataContainer[dtype](self.size)
         memset_zero(self._buf.ptr, self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
@@ -270,7 +270,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = ndim
         self.size = size
         self.flags = flags
-        self._buf = OwnData[dtype](self.size)
+        self._buf = DataContainer[dtype](self.size)
         self.print_options = PrintOptions()
 
     # for creating views (unsafe!)
@@ -295,7 +295,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.strides = strides
         self.ndim = self.shape.ndim
         self.size = self.shape.size_of_array()
-        self._buf = OwnData(ptr=buffer.offset(offset))
+        self._buf = DataContainer(ptr=buffer.offset(offset))
         self.flags = Flags(
             self.shape, self.strides, owndata=False, writeable=False
         )
@@ -314,7 +314,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = other.shape
         self.size = other.size
         self.strides = other.strides
-        self._buf = OwnData[dtype](self.size)
+        self._buf = DataContainer[dtype](self.size)
         memcpy(self._buf.ptr, other._buf.ptr, other.size)
         self.flags = Flags(
             c_contiguous=other.flags.C_CONTIGUOUS,

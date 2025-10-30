@@ -16,25 +16,26 @@ trait Buffered(ImplicitlyCopyable, Movable):
     fn __init__(out self):
         ...
 
-    fn is_owned_data(self) -> Bool:
+    fn owns_data(self) -> Bool:
         ...
 
 struct OwnData(Buffered, ImplicitlyCopyable, Movable):
-    alias view: Bool = False
+    alias owns: Bool = True
 
     fn __init__(out self):
         pass
 
-    fn is_owned_data(self) -> Bool:
+    fn owns_data(self) -> Bool:
         return True
 
 
 struct RefData[is_mutable: Bool, //, origin: Origin[is_mutable]](Buffered, ImplicitlyCopyable, Movable):
-    alias view: Bool = True
+    alias owns: Bool = False
+
     fn __init__(out self):
         pass
 
-    fn is_owned_data(self) -> Bool:
+    fn owns_data(self) -> Bool:
         return False
 
 struct DataContainer[dtype: DType]():

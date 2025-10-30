@@ -55,7 +55,7 @@ from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
 from numojo.core.complex.complex_dtype import ComplexDType
-from numojo.core.own_data import OwnData
+from numojo.core.own_data import DataContainer
 from numojo.core.utility import (
     _get_offset,
     _transfer_offset,

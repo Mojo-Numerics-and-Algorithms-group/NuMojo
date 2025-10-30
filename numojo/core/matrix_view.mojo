@@ -33,48 +33,17 @@ from math import ceil
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
+from numojo.core.own_data import DataContainer, Buffered, OwnData, RefData
 from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
 
 
-
-# ===----------------------------------------------------------------------===#
-# Tensor struct
-# ===----------------------------------------------------------------------===#
-trait Viewable(ImplicitlyCopyable, Movable):
-    fn __init__(out self):
-        ...
-
-    fn get(self) -> Bool:
-        ...
-
-struct NonViewData(Viewable, ImplicitlyCopyable, Movable):
-    alias view: Bool = False
-    # var view: Bool
-    fn __init__(out self):
-        pass
-
-    fn get(self) -> Bool:
-        return self.view
-
-
-struct ViewData[is_mutable: Bool, //, origin: Origin[is_mutable]](Viewable, ImplicitlyCopyable, Movable):
-    alias view: Bool = True
-    # var view: Bool
-    fn __init__(out self):
-        pass
-
-
-    fn get(self) -> Bool:
-        return self.view
-
-struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
+struct Tensor[dtype: DType = DType.float64, View: Buffered = OwnData](
     Copyable, Movable, Sized, Stringable, Writable
 ):
     # TODO: Tensor[dtype: DType = DType.float64,
-    #               Buffer: Bufferable[dtype] = OwnData[dtype]]
+    #               Buffer: Bufferable[dtype] = DataContainer[dtype]]
     """
     `Tensor` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
@@ -91,7 +60,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
 
     Parameters:
         dtype: Type of item in NDArray. Default type is DType.float64.
-        View: View type of the Tensor. Default is NonViewData.
+        View: View type of the Tensor. Default is OwnData.
 
     The Tensor can be uniquely defined by the following features:
         1. The data buffer of all items.
@@ -136,7 +105,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
     alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
 
-    var _buf: OwnData[dtype]
+    var _buf: DataContainer[dtype]
     """Data buffer of the items in the NDArray."""
 
     var view: View
@@ -179,7 +148,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
         else:
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
-        self._buf = OwnData[dtype](size=self.size)
+        self._buf = DataContainer[dtype](size=self.size)
         self.view = View()
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
@@ -217,7 +186,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
         else:
             raise Error(String("Shape too large to be a Tensor."))
 
-        self._buf = OwnData[dtype](self.size)
+        self._buf = DataContainer[dtype](self.size)
         self.view = View()
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
@@ -258,7 +227,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
         self.shape = shape
         self.strides = strides
         self.size = shape[0] * shape[1]
-        self._buf = OwnData(ptr=ptr.offset(offset))
+        self._buf = DataContainer(ptr=ptr.offset(offset))
         self.view = View()
         self.flags = Flags(
             self.shape, self.strides, owndata=False, writeable=False
@@ -272,7 +241,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
-        self._buf = OwnData[dtype](other.size)
+        self._buf = DataContainer[dtype](other.size)
         # can move this to compile time.
         self.view = other.view
         memcpy(self._buf.ptr, other._buf.ptr, other.size)
@@ -333,7 +302,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
 
         return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
-    fn __getitem__(ref self, var x: Int) raises -> Tensor[dtype, ViewData[__origin_of(self)]]:
+    fn __getitem__(ref self, var x: Int) raises -> Tensor[dtype, RefData[__origin_of(self)]]:
         """
         Return the corresponding row at the index.
 
@@ -350,7 +319,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
                 )
             )
 
-        var res = Tensor[dtype, ViewData[__origin_of(self)]](
+        var res = Tensor[dtype, RefData[__origin_of(self)]](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
             offset=x * self.strides[0],
@@ -387,14 +356,14 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
 
         return res^
 
-    fn __getitem__(ref self, x: Slice, y: Slice) -> Tensor[dtype, ViewData[__origin_of(self)]]:
+    fn __getitem__(ref self, x: Slice, y: Slice) -> Tensor[dtype, RefData[__origin_of(self)]]:
         """
         Get item from two slices.
         """
         start_x, end_x, step_x = x.indices(self.shape[0])
         start_y, end_y, step_y = y.indices(self.shape[1])
 
-        var res = Tensor[dtype, ViewData[__origin_of(self)]](
+        var res = Tensor[dtype, RefData[__origin_of(self)]](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
                 Int(ceil((end_y - start_y) / step_y)),
@@ -406,7 +375,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
 
         return res^
 
-    fn __getitem__(ref self, x: Slice, var y: Int) -> Tensor[dtype, ViewData[__origin_of(self)]]:
+    fn __getitem__(ref self, x: Slice, var y: Int) -> Tensor[dtype, RefData[__origin_of(self)]]:
         """
         Get item from one slice and one int.
         """
@@ -420,7 +389,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
         var range_x = range(start_x, end_x, step_x)
 
         # The new Tensor with the corresponding shape
-        var B = Tensor[dtype, ViewData[__origin_of(self)]](shape=(len(range_x), 1), order=self.order())
+        var B = Tensor[dtype, RefData[__origin_of(self)]](shape=(len(range_x), 1), order=self.order())
 
         # Fill in the values at the corresponding index
         var row = 0
@@ -430,7 +399,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
 
         return B^
 
-    fn __getitem__(self, var x: Int, y: Slice) -> Tensor[dtype, ViewData[__origin_of(self)]]:
+    fn __getitem__(self, var x: Int, y: Slice) -> Tensor[dtype, RefData[__origin_of(self)]]:
         """
         Get item from one int and one slice.
         """
@@ -444,7 +413,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
         var range_y = range(start_y, end_y, step_y)
 
         # The new Tensor with the corresponding shape
-        var B = Tensor[dtype, ViewData[__origin_of(self)]](shape=(1, len(range_y)), order=self.order())
+        var B = Tensor[dtype, RefData[__origin_of(self)]](shape=(1, len(range_y)), order=self.order())
 
         # Fill in the values at the corresponding index
         var col = 0
@@ -495,7 +464,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
 
         self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], value)
 
-    fn _setitem__[NewView: Viewable](self, var x: Int, value: Tensor[dtype, NewView]) raises:
+    fn _setitem__[NewView: Buffered](self, var x: Int, value: Tensor[dtype, NewView]) raises:
         """
         Set the corresponding row at the index with the given Tensor.
 
@@ -1502,7 +1471,7 @@ struct Tensor[dtype: DType = DType.float64, View: Viewable = NonViewData](
 
     @staticmethod
     fn zeros[
-        dtype: DType = DType.float64, View: Viewable = NonViewData
+        dtype: DType = DType.float64, View: Buffered = OwnData
     ](shape: Tuple[Int, Int], order: String = "C") -> Tensor[dtype, View]:
         """Return a Tensor with given shape and filled with zeros.
 

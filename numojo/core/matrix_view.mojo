@@ -5,6 +5,23 @@
 - `_TensorIter` type (for iteration).
 - Dunder methods for initialization, indexing, slicing, and arithmetics.
 - Auxiliary functions.
+
+Example code that creates a view and is able to modify the original data through the view while avoiding any memory problems.
+```mojo
+from numojo.core.matrix_view import Tensor
+
+fn main() raises:
+    var a = Tensor(Tuple[Int, Int](5, 5))
+    for i in range(25):
+        a._store(i, val=i)
+    print("a: ", a)
+    var b = a[1]
+    print("b :", b)
+    b._store(0, val=42)
+    print("b2: ", b)
+    print(a)
+```.
+
 """
 
 from algorithm import parallelize, vectorize
@@ -20,6 +37,7 @@ from numojo.core.own_data import OwnData
 from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
+
 
 
 # ===----------------------------------------------------------------------===#

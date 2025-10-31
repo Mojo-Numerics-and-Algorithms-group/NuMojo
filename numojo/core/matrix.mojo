@@ -15,7 +15,7 @@ from python import PythonObject, Python
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
+from numojo.core.data_container import DataContainer
 from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
@@ -30,7 +30,7 @@ struct Matrix[dtype: DType = DType.float64](
     Copyable, Movable, Sized, Stringable, Writable
 ):
     # TODO: Matrix[dtype: DType = DType.float64,
-    #               Buffer: Bufferable[dtype] = OwnData[dtype]]
+    #               Buffer: Bufferable[dtype] = DataContainer[dtype]]
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
@@ -92,7 +92,7 @@ struct Matrix[dtype: DType = DType.float64](
     alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
 
-    var _buf: OwnData[dtype]
+    var _buf: DataContainer[dtype]
     """Data buffer of the items in the NDArray."""
 
     var shape: Tuple[Int, Int]
@@ -132,7 +132,7 @@ struct Matrix[dtype: DType = DType.float64](
         else:
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
-        self._buf = OwnData[dtype](size=self.size)
+        self._buf = DataContainer[dtype](size=self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -169,7 +169,7 @@ struct Matrix[dtype: DType = DType.float64](
         else:
             raise Error(String("Shape too large to be a matrix."))
 
-        self._buf = OwnData[dtype](self.size)
+        self._buf = DataContainer[dtype](self.size)
 
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
@@ -195,7 +195,7 @@ struct Matrix[dtype: DType = DType.float64](
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
-        self._buf = OwnData[dtype](other.size)
+        self._buf = DataContainer[dtype](other.size)
         memcpy(self._buf.ptr, other._buf.ptr, other.size)
         self.flags = other.flags
 

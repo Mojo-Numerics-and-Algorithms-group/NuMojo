@@ -42,7 +42,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexScalar
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
-from numojo.core.own_data import DataContainer
+from numojo.core.data_container import DataContainer
 
 
 # ===------------------------------------------------------------------------===#

@@ -67,7 +67,7 @@ from numojo.core.flags import Flags
 from numojo.core.item import Item
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.own_data import DataContainer
+from numojo.core.data_container import DataContainer
 from numojo.core.utility import (
     _get_offset,
     _transfer_offset,

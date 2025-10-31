@@ -16,7 +16,7 @@ from math import ceil
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import DataContainer, Buffered, OwnData, RefData
+from numojo.core.data_container import DataContainer
 from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
@@ -30,8 +30,7 @@ from numojo.routines.linalg.misc import issymmetric
 struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
     Copyable, Movable, Sized, Stringable, Writable
 ):
-    # TODO: Matrix[dtype: DType = DType.float64,
-    #               Buffer: Bufferable[dtype] = DataContainer[dtype]]
+    # TODO: Add buffer_type in the parameters.
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.

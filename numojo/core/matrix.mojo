@@ -17,6 +17,9 @@ from math import ceil
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.data_container import DataContainer
+from numojo.core.traits.buffered import Buffered
+from numojo.core.own_data import OwnData
+from numojo.core.ref_data import RefData
 from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
@@ -249,7 +252,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
     fn __del__(deinit self):
         var owndata: Bool = self.flags.OWNDATA
         # Free the buffer only if it owns the data, but its redudant rn.
-        if owndata and self.buf_type.owns_data():
+        if owndata and self.buf_type.is_own_data():
             self._buf.ptr.free()
 
     # ===-------------------------------------------------------------------===#

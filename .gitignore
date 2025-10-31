@@ -28,6 +28,7 @@ numojo.mojopkg
 /bench.mojo
 /test*.mojo
 /test*.ipynb
+bench_*.mojo
 /tempCodeRunnerFile.mojo
 kgen.trace.*
 

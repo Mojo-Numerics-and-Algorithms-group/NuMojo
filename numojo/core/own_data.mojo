@@ -1,15 +1,18 @@
 # ===----------------------------------------------------------------------=== #
-# Define `OwnData` type to denote arrays that own their data.
-# ===----------------------------------------------------------------------===
+# Define `OwnData` type
+# ===----------------------------------------------------------------------=== #
 
 from numojo.core.traits.buffered import Buffered
 
 
 struct OwnData(Buffered, ImplicitlyCopyable, Movable):
-    alias owns: Bool = True
+    """A type to denote arrays that own their data buffer."""
 
     fn __init__(out self):
         pass
 
-    fn owns_data(self) -> Bool:
+    fn is_own_data(self) -> Bool:
         return True
+
+    fn is_ref_data(self) -> Bool:
+        return False

@@ -29,8 +29,7 @@ from numojo.routines.linalg.misc import issymmetric
 struct Matrix[dtype: DType = DType.float64](
     Copyable, Movable, Sized, Stringable, Writable
 ):
-    # TODO: Matrix[dtype: DType = DType.float64,
-    #               Buffer: Bufferable[dtype] = DataContainer[dtype]]
+    # TODO: Add buffer_type in the parameters.
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.

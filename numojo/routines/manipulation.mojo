@@ -23,7 +23,7 @@ from numojo.core.utility import _list_of_flipped_range, _get_offset
 
 # ===----------------------------------------------------------------------=== #
 # TODO:
-# - When `OwnData` is supported, re-write `broadcast_to()`.`
+# - When `DataContainer` is supported, re-write `broadcast_to()`.`
 # ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
@@ -419,11 +419,11 @@ fn broadcast_to[
         b_strides[i] = 0
 
     # Start broadcasting.
-    # TODO: When `OwnData` is supported, re-write this part.
+    # TODO: When `DataContainer` is supported, re-write this part.
     # We just need to change the shape and strides and re-use the data.
 
     var b = NDArray[dtype](shape)  # Construct array of targeted shape.
-    # TODO: `b.strides = b_strides` when OwnData
+    # TODO: `b.strides = b_strides` when DataContainer
 
     # Iterate all items in the new array and fill in correct values.
     for offset in range(b.size):
@@ -433,12 +433,12 @@ fn broadcast_to[
         for i in range(b.ndim):
             indices[i] = remainder // b.strides[i]
             remainder %= b.strides[i]
-            # TODO: Change b.strides to NDArrayStrides(b.shape) when OwnData
+            # TODO: Change b.strides to NDArrayStrides(b.shape) when DataContainer
 
         (b._buf.ptr + offset).init_pointee_copy(
             a._buf.ptr[
                 _get_offset(indices, b_strides)
-            ]  # TODO: Change b_strides to b.strides when OwnData
+            ]  # TODO: Change b_strides to b.strides when DataContainer
         )
 
     return b^
@@ -531,7 +531,7 @@ fn _broadcast_back_to[
     it has one dimension less than `a`.
     This function can broadcast `b` back to the shape of `a`.
     It is a temporary function and should not be used by users.
-    When `OwnData` is supported, this function will be removed.
+    When `DataContainer` is supported, this function will be removed.
     Whether broadcasting is possible or not is not checked.
     """
 

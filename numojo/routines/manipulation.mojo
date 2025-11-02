@@ -14,6 +14,7 @@ from sys import simd_width_of
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
@@ -447,8 +448,8 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    var A: Matrix[dtype], shape: Tuple[Int, Int], override_order: String = ""
-) raises -> Matrix[dtype]:
+    read A: Matrix[dtype, **_], shape: Tuple[Int, Int], override_order: String = ""
+) raises -> Matrix[dtype, **_]:
     """
     Broadcasts the vector to the given shape.
 
@@ -485,11 +486,14 @@ fn broadcast_to[
     else:
         ord = override_order
 
-    var B = Matrix[dtype](shape, order=ord)
+    var B: Matrix[dtype, OwnData] = Matrix[dtype, OwnData](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        return A^
+        # return A.copy()
+        print("debug: memcpy in broadcast_to")
+        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
         B = Matrix.full[dtype](shape, A[0, 0], order=ord)
+        print("debug: full in broadcast_to")
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(
@@ -497,10 +501,12 @@ fn broadcast_to[
                 src=A._buf.ptr,
                 count=shape[1],
             )
+        print("debug: row broadcast in broadcast_to")
     elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
         for i in range(shape[0]):
             for j in range(shape[1]):
                 B._store(i, j, A._buf.ptr[i])
+        print("debug: column broadcast in broadcast_to")
     else:
         var message = String(
             "Cannot broadcast shape {}x{} to shape {}x{}!"

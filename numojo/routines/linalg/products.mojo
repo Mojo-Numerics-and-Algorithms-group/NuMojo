@@ -359,7 +359,7 @@ fn matmul[
 
 fn matmul[
     dtype: DType
-](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
+](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
     """
     Matrix multiplication.
 

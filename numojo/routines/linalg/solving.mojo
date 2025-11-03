@@ -128,7 +128,7 @@ fn inv[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, OwnData]:
     if A.flags.C_CONTIGUOUS:
         order = "C"
 
-    var I = Matrix.identity[dtype](A.shape[0], order=order)
+    var I = Matrix[dtype].identity(A.shape[0], order=order)
     var B = solve(A, I)
 
     return B^
@@ -370,7 +370,9 @@ fn solve[
 
 fn solve[
     dtype: DType
-](A: Matrix[dtype, **_], Y: Matrix[dtype, **_]) raises -> Matrix[dtype, Owndata]:
+](A: Matrix[dtype, **_], Y: Matrix[dtype, **_]) raises -> Matrix[
+    dtype, OwnData
+]:
     """
     Solve `AX = Y` using LUP decomposition.
     """
@@ -394,8 +396,8 @@ fn solve[
     var m: Int = A.shape[0]
     var n: Int = Y.shape[1]
 
-    var Z: Matrix[dtype] = Matrix.full[dtype]((m, n), order=A.order())
-    var X: Matrix[dtype] = Matrix.full[dtype]((m, n), order=A.order())
+    var Z: Matrix[dtype] = Matrix[dtype].full((m, n), order=A.order())
+    var X: Matrix[dtype] = Matrix[dtype].full((m, n), order=A.order())
 
     var PY = P @ Y
 
@@ -446,8 +448,8 @@ fn solve_lu[
     var m = A.shape[0]
     var n = Y.shape[1]
 
-    var Z = Matrix.full[dtype]((m, n))
-    var X = Matrix.full[dtype]((m, n))
+    var Z = Matrix[dtype].full((m, n))
+    var X = Matrix[dtype].full((m, n))
 
     @parameter
     fn calculate_X(col: Int) -> None:

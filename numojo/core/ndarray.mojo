@@ -315,7 +315,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.size = other.size
         self.strides = other.strides
         self._buf = DataContainer[dtype](self.size)
-        memcpy(self._buf.ptr, other._buf.ptr, other.size)
+        memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
         self.flags = Flags(
             c_contiguous=other.flags.C_CONTIGUOUS,
             f_contiguous=other.flags.F_CONTIGUOUS,
@@ -371,7 +371,7 @@ struct NDArray[dtype: DType = DType.float64](
     # fn __getitem__(self, *slices: Variant[Slice, Int]) raises -> Self         # Get by mix of slices/ints
     #
     # 4. Advanced Indexing
-    # fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self        # Get by index array
+    # fn __getitem__(self, indices: NDArray[DType.int]) raises -> Self        # Get by index array
     # fn __getitem__(self, indices: List[Int]) raises -> Self                   # Get by list of indices
     # fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self            # Get by boolean mask
     # fn __getitem__(self, mask: List[Bool]) raises -> Self                     # Get by boolean list
@@ -611,18 +611,22 @@ struct NDArray[dtype: DType = DType.float64](
         # Fast path for C-contiguous arrays
         if self.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
-            memcpy(result._buf.ptr, self._buf.ptr + norm * block, block)
+            memcpy(
+                dest=result._buf.ptr,
+                src=self._buf.ptr + norm * block,
+                count=block,
+            )
             return result^
 
         # (F-order or arbitrary stride layout)
         # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
-        self._copy_first_axis_slice[dtype](self, norm, result)
+        self._copy_first_axis_slice(self, norm, result)
         return result^
 
     # perhaps move these to a utility module
-    fn _copy_first_axis_slice[
-        dtype: DType
-    ](self, src: NDArray[dtype], norm_idx: Int, mut dst: NDArray[dtype]):
+    fn _copy_first_axis_slice(
+        self, src: NDArray[dtype], norm_idx: Int, mut dst: NDArray[dtype]
+    ):
         """Generic stride-based copier for first-axis slice (works for any layout).
         """
         var out_ndim = dst.ndim
@@ -1177,7 +1181,7 @@ struct NDArray[dtype: DType = DType.float64](
         narr = self.__getitem__(slice_list^)
         return narr^
 
-    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
+    fn __getitem__(self, indices: NDArray[DType.int]) raises -> Self:
         """
         Get items from 0-th dimension of an ndarray of indices.
         If the original array is of shape (i,j,k) and
@@ -1243,14 +1247,14 @@ struct NDArray[dtype: DType = DType.float64](
                             " ({})."
                         ).format(self.shape[0]),
                         location=String(
-                            "NDArray.__getitem__(indices: NDArray[DType.index])"
+                            "NDArray.__getitem__(indices: NDArray[DType.int])"
                         ),
                     )
                 )
             memcpy(
-                result._buf.ptr + i * size_per_item,
-                self._buf.ptr + indices.item(i) * size_per_item,
-                size_per_item,
+                dest=result._buf.ptr + i * size_per_item,
+                src=self._buf.ptr + indices.item(i) * size_per_item,
+                count=size_per_item,
             )
 
         return result^
@@ -1259,7 +1263,7 @@ struct NDArray[dtype: DType = DType.float64](
         # TODO: Use trait IntLike when it is supported by Mojo.
         """
         Get items from 0-th dimension of an array. It is an overload of
-        `__getitem__(self, indices: NDArray[DType.index]) raises -> Self`.
+        `__getitem__(self, indices: NDArray[DType.int]) raises -> Self`.
 
         Args:
             indices: A list of Int.
@@ -1299,7 +1303,7 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
 
-        var indices_array = NDArray[DType.index](shape=Shape(len(indices)))
+        var indices_array = NDArray[DType.int](shape=Shape(len(indices)))
         for i in range(len(indices)):
             (indices_array._buf.ptr + i).init_pointee_copy(indices[i])
 
@@ -1393,9 +1397,9 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(mask.size):
                 if mask.item(i):
                     memcpy(
-                        result._buf.ptr + offset * size_per_item,
-                        self._buf.ptr + i * size_per_item,
-                        size_per_item,
+                        dest=result._buf.ptr + offset * size_per_item,
+                        src=self._buf.ptr + i * size_per_item,
+                        count=size_per_item,
                     )
                     offset += 1
 
@@ -1806,7 +1810,7 @@ struct NDArray[dtype: DType = DType.float64](
     # fn __setitem__(mut self, *slices: Variant[Slice, Int], val: Self) raises  # Set by mix of slices/ints
 
     # Index-based Setters
-    # fn __setitem__(self, indices: NDArray[DType.index], val: NDArray) raises  # Set by index array
+    # fn __setitem__(self, indices: NDArray[DType.int], val: NDArray) raises  # Set by index array
     # fn __setitem__(mut self, mask: NDArray[DType.bool], val: NDArray[dtype])  # Set by boolean mask array
 
     # Helper Methods
@@ -1943,16 +1947,18 @@ struct NDArray[dtype: DType = DType.float64](
         # Fast path for C-contiguous arrays (single block)
         if self.flags.C_CONTIGUOUS and val.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
-            memcpy(self._buf.ptr + norm * block, val._buf.ptr, block)
+            memcpy(
+                dest=self._buf.ptr + norm * block, src=val._buf.ptr, count=block
+            )
             return
 
         # Generic stride path (F-order or irregular)
-        self._write_first_axis_slice[dtype](self, norm, val)
+        self._write_first_axis_slice(self, norm, val)
 
     # perhaps move these to a utility module
-    fn _write_first_axis_slice[
-        dtype: DType
-    ](self, dst: NDArray[dtype], norm_idx: Int, src: NDArray[dtype]):
+    fn _write_first_axis_slice(
+        self, dst: NDArray[dtype], norm_idx: Int, src: NDArray[dtype]
+    ):
         var out_ndim = src.ndim
         var total = src.size
         if total == 0:
@@ -2317,7 +2323,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     # TODO: fix this setter, add bound checks. Not sure about it's use case.
     fn __setitem__(
-        mut self, index: NDArray[DType.index], val: NDArray[dtype]
+        mut self, index: NDArray[DType.int], val: NDArray[dtype]
     ) raises:
         """
         Returns the items of the array from an array of indices.
@@ -2352,7 +2358,7 @@ struct NDArray[dtype: DType = DType.float64](
                         " each axis separately."
                     ),
                     location=String(
-                        "NDArray.__setitem__(index: NDArray[DType.index], val:"
+                        "NDArray.__setitem__(index: NDArray[DType.int], val:"
                         " NDArray)"
                     ),
                 )
@@ -2370,7 +2376,7 @@ struct NDArray[dtype: DType = DType.float64](
                         " first dimension ({})."
                     ).format(self.shape[0]),
                     location=String(
-                        "NDArray.__setitem__(index: NDArray[DType.index], val:"
+                        "NDArray.__setitem__(index: NDArray[DType.int], val:"
                         " NDArray)"
                     ),
                 )
@@ -2397,7 +2403,7 @@ struct NDArray[dtype: DType = DType.float64](
                             " ({})."
                         ).format(self.shape[0]),
                         location=String(
-                            "NDArray.__setitem__(index: NDArray[DType.index],"
+                            "NDArray.__setitem__(index: NDArray[DType.int],"
                             " val: NDArray)"
                         ),
                     )
@@ -3819,7 +3825,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn __iter__(
         self,
-    ) raises -> _NDArrayIter[__origin_of(self), dtype]:
+    ) raises -> _NDArrayIter[origin_of(self), dtype]:
         """
         Iterates over elements of the NDArray and return sub-arrays as view.
 
@@ -3843,14 +3849,14 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
 
-        return _NDArrayIter[__origin_of(self), dtype](
+        return _NDArrayIter[origin_of(self), dtype](
             self,
             dimension=0,
         )
 
     fn __reversed__(
         self,
-    ) raises -> _NDArrayIter[__origin_of(self), dtype, forward=False]:
+    ) raises -> _NDArrayIter[origin_of(self), dtype, forward=False]:
         """
         Iterates backwards over elements of the NDArray, returning
         copied value.
@@ -3859,7 +3865,7 @@ struct NDArray[dtype: DType = DType.float64](
             A reversed iterator of NDArray elements.
         """
 
-        return _NDArrayIter[__origin_of(self), dtype, forward=False](
+        return _NDArrayIter[origin_of(self), dtype, forward=False](
             self,
             dimension=0,
         )
@@ -4177,33 +4183,33 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[vectorized_any, self.width](self.size)
         return result
 
-    fn argmax(self) raises -> Scalar[DType.index]:
+    fn argmax(self) raises -> Scalar[DType.int]:
         """Returns the indices of the maximum values along an axis.
         When no axis is specified, the array is flattened.
         See `numojo.argmax()` for more details.
         """
         return searching.argmax(self)
 
-    fn argmax(self, axis: Int) raises -> NDArray[DType.index]:
+    fn argmax(self, axis: Int) raises -> NDArray[DType.int]:
         """Returns the indices of the maximum values along an axis.
         See `numojo.argmax()` for more details.
         """
         return searching.argmax(self, axis=axis)
 
-    fn argmin(self) raises -> Scalar[DType.index]:
+    fn argmin(self) raises -> Scalar[DType.int]:
         """Returns the indices of the minimum values along an axis.
         When no axis is specified, the array is flattened.
         See `numojo.argmin()` for more details.
         """
         return searching.argmin(self)
 
-    fn argmin(self, axis: Int) raises -> NDArray[DType.index]:
+    fn argmin(self, axis: Int) raises -> NDArray[DType.int]:
         """Returns the indices of the minimum values along an axis.
         See `numojo.argmin()` for more details.
         """
         return searching.argmin(self, axis=axis)
 
-    fn argsort(mut self) raises -> NDArray[DType.index]:
+    fn argsort(mut self) raises -> NDArray[DType.int]:
         """
         Sort the NDArray and return the sorted indices.
         See `numojo.argsort()` for more details.
@@ -4214,7 +4220,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo.sorting.argsort(self)
 
-    fn argsort(mut self, axis: Int) raises -> NDArray[DType.index]:
+    fn argsort(mut self, axis: Int) raises -> NDArray[DType.int]:
         """
         Sort the NDArray and return the sorted indices.
         See `numojo.argsort()` for more details.
@@ -4253,16 +4259,11 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo.clip(self, a_min, a_max)
 
-    fn compress[
-        dtype: DType
-    ](self, condition: NDArray[DType.bool], axis: Int) raises -> Self:
+    fn compress(self, condition: NDArray[DType.bool], axis: Int) raises -> Self:
         # TODO: @forFudan try using parallelization for this function
         """
         Return selected slices of an array along given axis.
         If no axis is provided, the array is flattened before use.
-
-        Parameters:
-            dtype: DType.
 
         Args:
             condition: 1-D array of booleans that selects which entries to return.
@@ -4283,16 +4284,11 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo.compress(condition=condition, a=self, axis=axis)
 
-    fn compress[
-        dtype: DType
-    ](self, condition: NDArray[DType.bool]) raises -> Self:
+    fn compress(self, condition: NDArray[DType.bool]) raises -> Self:
         """
         Return selected slices of an array along given axis.
         If no axis is provided, the array is flattened before use.
         This is a function ***OVERLOAD***.
-
-        Parameters:
-            dtype: DType.
 
         Args:
             condition: 1-D array of booleans that selects which entries to return.
@@ -4392,23 +4388,20 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return numojo.math.cumsum[dtype](self.copy(), axis=axis)
 
-    fn diagonal[dtype: DType](self, offset: Int = 0) raises -> Self:
+    fn diagonal(self, offset: Int = 0) raises -> Self:
         """
         Returns specific diagonals.
         Currently supports only 2D arrays.
-
-        Raises:
-            Error: If the array is not 2D.
-            Error: If the offset is beyond the shape of the array.
-
-        Parameters:
-            dtype: Data type of the array.
 
         Args:
             offset: Offset of the diagonal from the main diagonal.
 
         Returns:
             The diagonal of the NDArray.
+
+        Raises:
+            Error: If the array is not 2D.
+            Error: If the offset is beyond the shape of the array.
         """
         return numojo.linalg.diagonal(self, offset=offset)
 
@@ -4438,7 +4431,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn iter_along_axis[
         forward: Bool = True
     ](self, axis: Int, order: String = "C") raises -> _NDAxisIter[
-        __origin_of(self), dtype, forward
+        origin_of(self), dtype, forward
     ]:
         """
         Returns an iterator yielding 1-d array slices along the given axis.
@@ -4531,7 +4524,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(axis, -self.ndim, self.ndim)
             )
 
-        return _NDAxisIter[__origin_of(self), dtype, forward](
+        return _NDAxisIter[origin_of(self), dtype, forward](
             self,
             axis=normalized_axis,
             order=order,
@@ -4540,7 +4533,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn iter_over_dimension[
         forward: Bool = True
     ](read self, dimension: Int) raises -> _NDArrayIter[
-        __origin_of(self), dtype, forward
+        origin_of(self), dtype, forward
     ]:
         """
         Returns an iterator yielding `ndim-1` arrays over the given dimension.
@@ -4570,7 +4563,7 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(dimension, -self.ndim, self.ndim)
             )
 
-        return _NDArrayIter[__origin_of(self), dtype, forward](
+        return _NDArrayIter[origin_of(self), dtype, forward](
             a=self,
             dimension=normalized_dim,
         )
@@ -4728,7 +4721,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo.math.min(self, axis=axis)
 
-    fn nditer(self) raises -> _NDIter[__origin_of(self), dtype]:
+    fn nditer(self) raises -> _NDIter[origin_of(self), dtype]:
         """
         ***Overload*** Return an iterator yielding the array elements according
         to the memory layout of the array.
@@ -4759,7 +4752,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self.nditer(order=order)
 
-    fn nditer(self, order: String) raises -> _NDIter[__origin_of(self), dtype]:
+    fn nditer(self, order: String) raises -> _NDIter[origin_of(self), dtype]:
         """
         Return an iterator yielding the array elements according to the order.
 
@@ -4798,7 +4791,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             axis = 0
 
-        return _NDIter[__origin_of(self), dtype](a=self, order=order, axis=axis)
+        return _NDIter[origin_of(self), dtype](a=self, order=order, axis=axis)
 
     fn num_elements(self) -> Int:
         """
@@ -4908,7 +4901,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if shape.size_of_array() > self.size:
             var other = Self(shape=shape, order=order)
-            memcpy(other._buf.ptr, self._buf.ptr, self.size)
+            memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
             for i in range(self.size, other.size):
                 (other._buf.ptr + i).init_pointee_copy(0)
             self = other^
@@ -5166,8 +5159,8 @@ struct NDArray[dtype: DType = DType.float64](
         ref self,
     ) -> UnsafePointer[
         Scalar[dtype],
-        mut = Origin(__origin_of(self)).mut,
-        origin = __origin_of(self),
+        mut = Origin(origin_of(self)).mut,
+        origin = origin_of(self),
     ]:
         """
         Retreive pointer without taking ownership.
@@ -5176,9 +5169,9 @@ struct NDArray[dtype: DType = DType.float64](
             Unsafe pointer to the data buffer.
 
         """
-        return self._buf.ptr.origin_cast[
-            Origin(__origin_of(self)).mut, __origin_of(self)
-        ]()
+        return self._buf.ptr.mut_cast[
+            Origin(origin_of(self)).mut
+        ]().unsafe_origin_cast[origin_of(self)]()
 
     fn variance[
         returned_dtype: DType = DType.float64
@@ -5628,9 +5621,9 @@ struct _NDAxisIter[
         ):
             # The memory layout is C-contiguous or F-contiguous
             memcpy(
-                res._buf.ptr,
-                self.ptr + _get_offset(item, self.strides),
-                self.size_of_item,
+                dest=res._buf.ptr,
+                src=self.ptr + _get_offset(item, self.strides),
+                count=self.size_of_item,
             )
 
         else:
@@ -5690,9 +5683,9 @@ struct _NDAxisIter[
         ):
             # The memory layout is C-contiguous or F-contiguous
             memcpy(
-                elements._buf.ptr,
-                self.ptr + _get_offset(item, self.strides),
-                self.size_of_item,
+                dest=elements._buf.ptr,
+                src=self.ptr + _get_offset(item, self.strides),
+                count=self.size_of_item,
             )
         else:
             for j in range(self.size_of_item):
@@ -5705,7 +5698,7 @@ struct _NDAxisIter[
 
     fn ith_with_offsets(
         self, index: Int
-    ) raises -> Tuple[NDArray[DType.index], NDArray[dtype]]:
+    ) raises -> Tuple[NDArray[DType.int], NDArray[dtype]]:
         """
         Gets the i-th 1-d array of the iterator and the offsets (in C-order)
         of its elements.
@@ -5717,7 +5710,7 @@ struct _NDAxisIter[
             Offsets (in C-order) and elements of the i-th 1-d array of the
             iterator.
         """
-        var offsets: NDArray[DType.index] = NDArray[DType.index](
+        var offsets: NDArray[DType.int] = NDArray[DType.int](
             Shape(self.size_of_item)
         )
         var elements: NDArray[dtype] = NDArray[dtype](Shape(self.size_of_item))
@@ -5746,9 +5739,9 @@ struct _NDAxisIter[
         ):
             # The memory layout is C-contiguous
             memcpy(
-                elements._buf.ptr,
-                self.ptr + _get_offset(item, self.strides),
-                self.size_of_item,
+                dest=elements._buf.ptr,
+                src=self.ptr + _get_offset(item, self.strides),
+                count=self.size_of_item,
             )
             var begin_offset = _get_offset(item, new_strides)
             for j in range(self.size_of_item):
@@ -5759,9 +5752,9 @@ struct _NDAxisIter[
         ):
             # The memory layout is F-contiguous
             memcpy(
-                elements._buf.ptr,
-                self.ptr + _get_offset(item, self.strides),
-                self.size_of_item,
+                dest=elements._buf.ptr,
+                src=self.ptr + _get_offset(item, self.strides),
+                count=self.size_of_item,
             )
             for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(

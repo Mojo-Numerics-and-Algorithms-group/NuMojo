@@ -339,20 +339,20 @@ fn matmul[
 
     for i in range(result.size // result_sub_matrix.size):
         memcpy(
-            A_sub_matrix._buf.ptr,
-            A._buf.ptr + (i * A_sub_matrix.size),
-            A_sub_matrix.size,
+            dest=A_sub_matrix._buf.ptr,
+            src=A._buf.ptr + (i * A_sub_matrix.size),
+            count=A_sub_matrix.size,
         )
         memcpy(
-            B_sub_matrix._buf.ptr,
-            B._buf.ptr + (i * B_sub_matrix.size),
-            B_sub_matrix.size,
+            dest=B_sub_matrix._buf.ptr,
+            src=B._buf.ptr + (i * B_sub_matrix.size),
+            count=B_sub_matrix.size,
         )
         result_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
         memcpy(
-            result._buf.ptr + (i * result_sub_matrix.size),
-            result_sub_matrix._buf.ptr,
-            result_sub_matrix.size,
+            dest=result._buf.ptr + (i * result_sub_matrix.size),
+            src=result_sub_matrix._buf.ptr,
+            count=result_sub_matrix.size,
         )
     return result^
 
@@ -384,7 +384,7 @@ fn matmul[
     var result: Matrix[dtype]
 
     if A.flags.C_CONTIGUOUS and B.flags.C_CONTIGUOUS:
-        result = Matrix.zeros[dtype](
+        result = Matrix[dtype].zeros(
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
 
@@ -405,7 +405,7 @@ fn matmul[
 
         parallelize[calculate_resultresult](A.shape[0], A.shape[0])
     elif A.flags.F_CONTIGUOUS and B.flags.F_CONTIGUOUS:
-        result = Matrix.zeros[dtype](
+        result = Matrix[dtype].zeros(
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
 
@@ -426,7 +426,7 @@ fn matmul[
 
         parallelize[calculate_FF](B.shape[1], B.shape[1])
     elif A.flags.C_CONTIGUOUS and B.flags.F_CONTIGUOUS:
-        result = Matrix.zeros[dtype](
+        result = Matrix[dtype].zeros(
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
 

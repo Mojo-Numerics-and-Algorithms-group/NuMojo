@@ -6,7 +6,7 @@
 # var ptr: UnsafePointer[Scalar[dtype]]
 # ===----------------------------------------------------------------------===
 
-from memory import UnsafePointer
+from memory import UnsafePointer, UnsafePointerV2
 
 
 struct DataContainer[dtype: DType]():

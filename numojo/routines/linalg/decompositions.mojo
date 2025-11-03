@@ -3,10 +3,12 @@
 # ===----------------------------------------------------------------------=== #
 from sys import simd_width_of
 from algorithm import parallelize, vectorize
+from memory import UnsafePointer, memcpy, memset_zero
 
 import math as builtin_math
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.matrix import Matrix, issymmetric
 from numojo.routines.creation import zeros, eye, full
 
@@ -226,8 +228,8 @@ fn lu_decomposition[
     var n: Int = A.shape[0]
 
     # Initiate upper and lower triangular matrices
-    var U: Matrix[dtype] = Matrix.full[dtype](shape=(n, n), order=A.order())
-    var L: Matrix[dtype] = Matrix.full[dtype](shape=(n, n), order=A.order())
+    var U: Matrix[dtype] = Matrix[dtype].full(shape=(n, n), order=A.order())
+    var L: Matrix[dtype] = Matrix[dtype].full(shape=(n, n), order=A.order())
 
     # Fill in L and U
     for i in range(0, n):
@@ -305,32 +307,38 @@ fn partial_pivoting[
 
 fn partial_pivoting[
     dtype: DType
-](var A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
+](A: Matrix[dtype, **_]) raises -> Tuple[
+    Matrix[dtype, **_], Matrix[dtype, **_], Int
+]:
     """
     Perform partial pivoting for matrix.
     """
     var n = A.shape[0]
-    var P = Matrix.identity[dtype](n)
-    if A.flags.F_CONTIGUOUS:
-        A = A.reorder_layout()
+    var order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var result = Matrix[dtype].zeros(A.shape, order)
+    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+
+    var P = Matrix[dtype].identity(n)
+    if result.flags.F_CONTIGUOUS:
+        result = result.reorder_layout()
     var s: Int = 0  # Number of exchanges, for determinant
     for col in range(n):
-        var max_p = abs(A[col, col])
+        var max_p = abs(result[col, col])
         var max_p_row = col
         for row in range(col + 1, n):
             if abs(A[row, col]) > max_p:
                 max_p = abs(A[row, col])
                 max_p_row = row
-        A[col], A[max_p_row] = A[max_p_row], A[col]
+        result[col], result[max_p_row] = result[max_p_row], result[col]
         P[col], P[max_p_row] = P[max_p_row], P[col]
 
         if max_p_row != col:
             s = s + 1
-    if A.flags.F_CONTIGUOUS:
-        A = A.reorder_layout()
+    if result.flags.F_CONTIGUOUS:
+        result = result.reorder_layout()
         P = P.reorder_layout()
 
-    return Tuple(A^, P^, s)
+    return Tuple(result^, P^, s)
 
 
 fn qr[
@@ -368,7 +376,7 @@ fn qr[
     else:
         raise Error(String("Invalid mode: {}").format(mode))
 
-    var R: Matrix[dtype]
+    var R: Matrix[dtype, OwnData]
 
     if A.flags.C_CONTIGUOUS:
         reorder = True
@@ -376,15 +384,18 @@ fn qr[
     if reorder:
         R = A.reorder_layout()
     else:
-        R = A.copy()
+        R = Matrix[dtype].zeros(shape=(m, n), order="F")
+        for i in range(m):
+            for j in range(n):
+                R._store(i, j, A._load(i, j))
 
-    var H = Matrix.zeros[dtype](shape=(m, min_n), order="F")
+    var H = Matrix[dtype].zeros(shape=(m, min_n), order="F")
 
     for i in range(min_n):
         _compute_householder(H, R, i)
         _apply_householder(H, i, R, i, i + 1)
 
-    var Q = Matrix.zeros[dtype]((m, inner), order="F")
+    var Q = Matrix[dtype].zeros((m, inner), order="F")
     for i in range(inner):
         Q[i, i] = 1.0
 
@@ -392,16 +403,25 @@ fn qr[
         _apply_householder(H, i, Q, i, i)
 
     if reorder:
-        Q = Q.reorder_layout()
+        var Q_reordered = Q.reorder_layout()
         if reduce:
-            R = R[:inner, :].reorder_layout()
+            var R_reduced = Matrix[dtype].zeros(shape=(inner, n), order="C")
+            for i in range(inner):
+                for j in range(n):
+                    R_reduced._store(i, j, R._load(i, j))
+            return Q_reordered^, R_reduced^
         else:
-            R = R.reorder_layout()
+            var R_reordered = R.reorder_layout()
+            return Q_reordered^, R_reordered^
     else:
         if reduce:
-            R = R[:inner, :]
-
-    return Q^, R^
+            var R_reduced = Matrix[dtype].zeros(shape=(inner, n), order="F")
+            for i in range(inner):
+                for j in range(n):
+                    R_reduced._store(i, j, R._load(i, j))
+            return Q^, R_reduced^
+        else:
+            return Q^, R^
 
 
 # ===----------------------------------------------------------------------=== #
@@ -447,7 +467,7 @@ fn eig[
     else:
         T = A.copy()
 
-    var Q_total = Matrix.identity[dtype](n)
+    var Q_total = Matrix[dtype].identity(n)
 
     for _k in range(max_iter):
         var Qk: Matrix[dtype]
@@ -475,7 +495,7 @@ fn eig[
             )
         )
 
-    var D = Matrix.zeros[dtype](shape=(n, n), order=A.order())
+    var D = Matrix[dtype].zeros(shape=(n, n), order=A.order())
     for i in range(n):
         D._store(i, i, T._load(i, i))
 

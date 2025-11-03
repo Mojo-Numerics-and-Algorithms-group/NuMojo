@@ -13,6 +13,7 @@ Provides:
 from algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.item import Item
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
@@ -113,7 +114,7 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     return solve(A, I)
 
 
-fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn inv[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, OwnData]:
     """
     Inverse of matrix.
     """
@@ -369,7 +370,7 @@ fn solve[
 
 fn solve[
     dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+](A: Matrix[dtype, **_], Y: Matrix[dtype, **_]) raises -> Matrix[dtype, Owndata]:
     """
     Solve `AX = Y` using LUP decomposition.
     """

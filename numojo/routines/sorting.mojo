@@ -23,6 +23,7 @@ import math
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.ndshape import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
@@ -272,7 +273,7 @@ fn argsort[
     )
 
 
-fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
+fn argsort[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[DType.int, OwnData]:
     """
     Argsort the Matrix. It is first flattened before sorting.
     """
@@ -291,14 +292,14 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
 
 fn argsort[
     dtype: DType
-](var A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[DType.int, OwnData]:
     """
     Argsort the Matrix along the given axis.
     """
     var order = A.order()
 
     if axis == 1:
-        var result = Matrix[DType.index](shape=A.shape, order=order)
+        var result = Matrix[DType.int, OwnData](shape=A.shape, order=order)
 
         for i in range(A.shape[0]):
             var row = Matrix[dtype](shape=(1, A.shape[1]), order="C")
@@ -316,7 +317,7 @@ fn argsort[
         return result^
 
     elif axis == 0:
-        var result = Matrix[DType.index](shape=A.shape, order=order)
+        var result = Matrix[DType.int, OwnData](shape=A.shape, order=order)
 
         for j in range(A.shape[1]):
             var col = Matrix[dtype](shape=(A.shape[0], 1), order="C")

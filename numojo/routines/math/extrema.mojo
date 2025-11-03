@@ -1,4 +1,4 @@
-# ===----------------------------------------------------------------------=== #
+# views ===----------------------------------------------------------------------=== #
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
@@ -30,6 +30,7 @@ from sys import simd_width_of
 from numojo.core.matrix import Matrix
 import numojo.core.matrix as matrix
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 import numojo.core.utility as utility
 from numojo.routines.creation import full
 from numojo.routines.sorting import binary_sort
@@ -144,7 +145,7 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
 @always_inline
 fn matrix_extrema[
     dtype: DType, find_max: Bool
-](A: Matrix[dtype]) raises -> Scalar[dtype]:
+](A: Matrix[dtype, **_]) raises -> Scalar[dtype]:
     """
     Generic implementation for finding global min/max in a matrix.
     Works with any memory layout (row-major or column-major).
@@ -167,7 +168,7 @@ fn matrix_extrema[
 @always_inline
 fn matrix_extrema_axis[
     dtype: DType, find_max: Bool
-](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, OwnData]:
     """
     Generic implementation for finding min/max along an axis in a matrix.
     Works with any memory layout (row-major or column-major).
@@ -213,14 +214,14 @@ fn matrix_extrema_axis[
     return B^
 
 
-fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
+fn max[dtype: DType](A: Matrix[dtype, **_]) raises -> Scalar[dtype]:
     """
     Find max item. It is first flattened before sorting.
     """
     return matrix_extrema[dtype, True](A)
 
 
-fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn max[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, OwnData]:
     """
     Find max item along the given axis.
     """

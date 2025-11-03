@@ -1093,7 +1093,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         Argsort the Matrix along the given axis.
         """
-        return numojo.math.argsort(self.copy(), axis=axis)
+        return numojo.math.argsort(self, axis=axis)
 
     fn astype[asdtype: DType](self) -> Matrix[asdtype]:
         """
@@ -1106,7 +1106,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             res._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
         return res^
 
-    fn cumprod(self) raises -> Matrix[dtype]:
+    fn cumprod(self) raises -> Matrix[dtype, OwnData]:
         """
         Cumprod of flattened matrix.
 
@@ -1119,7 +1119,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         return numojo.math.cumprod(self.copy())
 
-    fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
+    fn cumprod(self, axis: Int) raises -> Matrix[dtype, OwnData]:
         """
         Cumprod of Matrix along the axis.
 
@@ -1136,10 +1136,10 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         return numojo.math.cumprod(self.copy(), axis=axis)
 
-    fn cumsum(self) raises -> Matrix[dtype]:
+    fn cumsum(self) raises -> Matrix[dtype, OwnData]:
         return numojo.math.cumsum(self.copy())
 
-    fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
+    fn cumsum(self, axis: Int) raises -> Matrix[dtype, OwnData]:
         return numojo.math.cumsum(self.copy(), axis=axis)
 
     fn fill(self, fill_value: Scalar[dtype]):
@@ -1151,15 +1151,16 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         for i in range(self.size):
             self._buf.ptr[i] = fill_value
 
-    fn flatten(self) -> Self:
+    # * Make it inplace?
+    fn flatten(self) -> Matrix[dtype, OwnData]:
         """
         Return a flattened copy of the matrix.
         """
-        var res = Self(shape=(1, self.size), order=self.order())
+        var res = Matrix[dtype, OwnData](shape=(1, self.size), order=self.order())
         memcpy(res._buf.ptr, self._buf.ptr, res.size)
         return res^
 
-    fn inv(self) raises -> Self:
+    fn inv(self) raises -> Matrix[dtype, OwnData]:
         """
         Inverse of matrix.
         """
@@ -1330,7 +1331,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         return numojo.math.sum(self)
 
-    fn sum(self, axis: Int) raises -> Self:
+    fn sum(self, axis: Int) raises -> Matrix[dtype, OwnData]:
         """
         Sum up the items in a Matrix along the axis.
 

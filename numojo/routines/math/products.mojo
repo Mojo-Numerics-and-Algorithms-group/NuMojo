@@ -2,6 +2,7 @@ from algorithm.functional import parallelize, vectorize
 from sys import simd_width_of
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.routines.creation import ones
@@ -222,7 +223,7 @@ fn cumprod[
     return B^
 
 
-fn cumprod[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn cumprod[dtype: DType](var A: Matrix[dtype, **_]) raises -> Matrix[dtype, OwnData]:
     """
     Cumprod of flattened matrix.
 
@@ -254,7 +255,7 @@ fn cumprod[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
 
 fn cumprod[
     dtype: DType
-](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](var A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, **_]:
     """
     Cumprod of Matrix along the axis.
 

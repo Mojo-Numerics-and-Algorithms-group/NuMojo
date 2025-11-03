@@ -161,7 +161,7 @@ fn argmax[
 @always_inline
 fn find_extrema_index[
     dtype: DType, find_max: Bool
-](A: Matrix[dtype]) raises -> Scalar[DType.index]:
+](A: Matrix[dtype, **_]) raises -> Scalar[DType.int, **_]:
     """Find index of min/max value, either in whole matrix or along an axis."""
 
     var extreme_val = A[0, 0]
@@ -187,7 +187,7 @@ fn find_extrema_index[
 @always_inline
 fn find_extrema_index[
     dtype: DType, find_max: Bool
-](A: Matrix[dtype], axis: Optional[Int]) raises -> Matrix[DType.index]:
+](A: Matrix[dtype, **_], axis: Optional[Int]) raises -> Matrix[DType.int, **_]:
     """Find index of min/max value, either in whole matrix or along an axis."""
 
     if axis != 0 and axis != 1:
@@ -237,14 +237,14 @@ fn find_extrema_index[
     return B^
 
 
-fn argmax[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.index]:
+fn argmax[dtype: DType](A: Matrix[dtype, **_]) raises -> Scalar[DType.int]:
     """Find index of max value in a flattened matrix."""
     return find_extrema_index[dtype, True](A)
 
 
 fn argmax[
     dtype: DType
-](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[DType.int, **_]:
     """Find indices of max values along the given axis."""
     return find_extrema_index[dtype, True](A, axis)
 
@@ -309,7 +309,7 @@ fn argmin[
     return numojo.apply_along_axis[func1d=argmin_1d](a=a, axis=normalized_axis)
 
 
-fn argmin[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.index]:
+fn argmin[dtype: DType](A: Matrix[dtype, **_]) raises -> Scalar[DType.int]:
     """
     Index of the min. It is first flattened before sorting.
     """
@@ -318,7 +318,7 @@ fn argmin[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.index]:
 
 fn argmin[
     dtype: DType
-](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[DType.int, **_]:
     """
     Index of the min along the given axis.
     """

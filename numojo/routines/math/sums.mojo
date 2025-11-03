@@ -2,6 +2,7 @@ from sys import simd_width_of
 from algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.matrix import Matrix
 from numojo.routines.creation import zeros
 
@@ -108,7 +109,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn sum[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     """
     Sum up all items in the Matrix.
 
@@ -133,7 +134,7 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn sum[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, OwnData]:
     """
     Sum up the items in a Matrix along the axis.
 
@@ -282,7 +283,7 @@ fn cumsum[
     return B^
 
 
-fn cumsum[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn cumsum[dtype: DType](var A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
     """
     Cumsum of flattened matrix.
 
@@ -314,7 +315,7 @@ fn cumsum[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
 
 fn cumsum[
     dtype: DType
-](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](var A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, **_]:
     """
     Cumsum of Matrix along the axis.
 

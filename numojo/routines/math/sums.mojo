@@ -157,7 +157,7 @@ fn sum[
     alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
-        var B = Matrix[dtype].zeros(shape=(1, A.shape[1]), order=A.order())
+        var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
 
         if A.flags.F_CONTIGUOUS:
 
@@ -188,7 +188,7 @@ fn sum[
         return B^
 
     elif axis == 1:
-        var B = Matrix[dtype].zeros(shape=(A.shape[0], 1), order=A.order())
+        var B = Matrix.zeros[dtype](shape=(A.shape[0], 1), order=A.order())
 
         if A.flags.C_CONTIGUOUS:
 
@@ -286,7 +286,7 @@ fn cumsum[
     return B^
 
 
-fn cumsum[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
+fn cumsum[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, OwnData]:
     """
     Cumsum of flattened matrix.
 
@@ -302,7 +302,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
     """
     var reorder = False
     var order = "C" if A.flags.C_CONTIGUOUS else "F"
-    var result = Matrix[dtype, OwnData].zeros(A.shape, order)
+    var result: Matrix[dtype, OwnData] = Matrix.zeros[dtype](A.shape, order)
     memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
 
     if A.flags.F_CONTIGUOUS:
@@ -322,7 +322,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
 
 fn cumsum[
     dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, **_]:
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, OwnData]:
     """
     Cumsum of Matrix along the axis.
 
@@ -341,7 +341,8 @@ fn cumsum[
 
     alias width: Int = simd_width_of[dtype]()
     var order = "C" if A.flags.C_CONTIGUOUS else "F"
-    var result = Matrix[dtype, OwnData].zeros(A.shape, order)
+    var result: Matrix[dtype, OwnData] = Matrix.zeros[dtype](A.shape, order)
+    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
 
     if axis == 0:
         if result.flags.C_CONTIGUOUS:
@@ -350,7 +351,7 @@ fn cumsum[
                 @parameter
                 fn cal_vec_sum_column[width: Int](j: Int):
                     result._store[width](
-                        i, j, A._load[width](i - 1, j) + A._load[width](i, j)
+                        i, j, result._load[width](i - 1, j) + result._load[width](i, j)
                     )
 
                 vectorize[cal_vec_sum_column, width](result.shape[1])
@@ -358,14 +359,14 @@ fn cumsum[
         else:
             for j in range(A.shape[1]):
                 for i in range(1, A.shape[0]):
-                    A[i, j] = A[i - 1, j] + A[i, j]
+                    result[i, j] = result[i - 1, j] + result[i, j]
             return result^
 
     elif axis == 1:
         if A.flags.C_CONTIGUOUS:
             for i in range(A.shape[0]):
                 for j in range(1, A.shape[1]):
-                    result[i, j] = A[i, j - 1] + A[i, j]
+                    result[i, j] = result[i, j - 1] + result[i, j]
             return result^
         else:
             for j in range(1, A.shape[1]):
@@ -373,7 +374,7 @@ fn cumsum[
                 @parameter
                 fn cal_vec_sum_row[width: Int](i: Int):
                     result._store[width](
-                        i, j, A._load[width](i, j - 1) + A._load[width](i, j)
+                        i, j, result._load[width](i, j - 1) + result._load[width](i, j)
                     )
 
                 vectorize[cal_vec_sum_row, width](A.shape[0])

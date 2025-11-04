@@ -342,7 +342,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                 )
             )
 
-        var res = Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]](
+        var res = Matrix[
+            dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
+        ](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
             offset=x * self.strides[0],
@@ -667,9 +669,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
     #         for j in range(self.shape[1]):
     #             self._store(x, j, value._load(0, j))
 
-    fn _store[
-        width: Int = 1
-    ](self, x: Int, y: Int, simd: SIMD[dtype, width]):
+    fn _store[width: Int = 1](self, x: Int, y: Int, simd: SIMD[dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!

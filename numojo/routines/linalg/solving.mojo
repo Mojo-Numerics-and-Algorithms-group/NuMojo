@@ -18,7 +18,10 @@ from numojo.core.item import Item
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.routines.creation import zeros, eye, full
-from numojo.routines.linalg.decompositions import partial_pivoting, lu_decomposition
+from numojo.routines.linalg.decompositions import (
+    partial_pivoting,
+    lu_decomposition,
+)
 
 
 fn forward_substitution[
@@ -459,6 +462,7 @@ fn solve_lu[
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y._load(i, col)
+            for j in range(i):  # col of L
                 _temp = _temp - L._load(i, j) * Z._load(j, col)
             _temp = _temp / L._load(i, i)
             Z._store(i, col, _temp)

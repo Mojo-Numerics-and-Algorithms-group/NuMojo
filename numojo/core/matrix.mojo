@@ -819,19 +819,16 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            print("same shape add")
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            print("broadcast self")
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
             ](broadcast_to[dtype](self, other.shape, self.order()), other)
         else:
-            print("broadcast other")
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
             ](self, broadcast_to[dtype](other, self.shape, self.order()))

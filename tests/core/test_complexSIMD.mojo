@@ -1,5 +1,6 @@
 from testing import assert_equal, assert_almost_equal
 from numojo import *
+from testing import TestSuite
 
 
 fn test_complex_init() raises:
@@ -69,3 +70,7 @@ fn test_complex_div() raises:
     var quot = c1 / c2
     assert_almost_equal(quot.re, 0.44, " division failed")
     assert_almost_equal(quot.im, 0.08, " division failed")
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

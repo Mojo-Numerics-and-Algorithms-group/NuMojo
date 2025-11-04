@@ -8,6 +8,7 @@ from utils_for_test import (
     check_values_close,
     check_with_dtype,
 )
+from testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences
@@ -444,3 +445,7 @@ fn test_misc() raises:
         np.clip(cfnp, 0.02, -0.01),
         String("`clip` 3d f-order is broken"),
     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

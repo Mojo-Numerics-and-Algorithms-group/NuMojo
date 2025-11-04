@@ -3,6 +3,7 @@ from numojo.prelude import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
 from python import Python
+from testing import TestSuite
 
 
 def test_getitem_scalar():
@@ -620,3 +621,7 @@ def test_3d_array_basic_slicing():
 #     nm_slice3 = nm_arr[::2, 1::2]
 #     np_sliced3 = np_arr[::2, 1::2]
 #     check(nm_slice3, np_sliced3, "F-order step [::2, 1::2] failed")
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

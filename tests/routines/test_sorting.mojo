@@ -1,6 +1,7 @@
 import numojo as nm
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
+from testing import TestSuite
 
 
 fn test_sorting() raises:
@@ -125,3 +126,7 @@ fn test_sorting() raises:
             np.sort(S.to_numpy(), axis=i, stable=True),
             String("`sort` 6d stably by axis {} is broken").format(i),
         )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

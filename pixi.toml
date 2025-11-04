@@ -86,7 +86,7 @@ rm tests/numojo.mojopkg
 """
 
 # Test science category
-test_science = "pixi run package && pixi run mojo run -I tests/ tests/science/test_signal.mojo && rm tests/numojo.mojopkg"
+test_signal = "pixi run package && pixi run mojo run -I tests/ tests/science/test_signal.mojo && rm tests/numojo.mojopkg"
 
 test = """
 pixi run test_core && \

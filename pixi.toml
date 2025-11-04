@@ -51,22 +51,48 @@ p = "clear && pixi run package"
 # format the package
 format = "pixi run mojo format ./"
 
-# test whether tests pass on the built package
-test = "pixi run package && pixi run mojo test tests -I tests/ && rm tests/numojo.mojopkg"
-t = "clear && pixi run test"
+# to run individual test files
+run-test = { cmd = "pixi run mojo run -I tests/ $TEST_FILE", env = { TEST_FILE = "" } }
 
-# run individual tests to avoid overheat
-test_core = "pixi run package && pixi run mojo test tests/core -I tests/ && rm tests/numojo.mojopkg"
-test_creation = "pixi run package && pixi run mojo test tests/routines/test_creation.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_functional = "pixi run package && pixi run mojo test tests/routines/test_functional.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_indexing = "pixi run package && pixi run mojo test tests/routines/test_indexing.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_linalg = "pixi run package && pixi run mojo test tests/routines/test_linalg.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_manipulation = "pixi run package && pixi run mojo test tests/routines/test_manipulation.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_math = "pixi run package && pixi run mojo test tests/routines/test_math.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_random = "pixi run package && pixi run mojo test tests/routines/test_random.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_statistics = "pixi run package && pixi run mojo test tests/routines/test_statistics.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_sorting = "pixi run package && pixi run mojo test tests/routines/test_sorting.mojo -I tests/ && rm tests/numojo.mojopkg"
-test_searching = "pixi run package && pixi run mojo test tests/routines/test_searching.mojo -I tests/ && rm tests/numojo.mojopkg"
+# Test core category
+test_core = """
+pixi run package && \
+pixi run mojo run -I tests/ tests/core/test_array_indexing_and_slicing.mojo && \
+pixi run mojo run -I tests/ tests/core/test_array_methods.mojo && \
+pixi run mojo run -I tests/ tests/core/test_bool_masks.mojo && \
+pixi run mojo run -I tests/ tests/core/test_complexArray.mojo && \
+pixi run mojo run -I tests/ tests/core/test_complexSIMD.mojo && \
+pixi run mojo run -I tests/ tests/core/test_matrix.mojo && \
+pixi run mojo run -I tests/ -D F_CONTIGUOUS tests/core/test_matrix.mojo && \
+pixi run mojo run -I tests/ tests/core/test_shape_strides_item.mojo && \
+rm tests/numojo.mojopkg
+"""
+
+# Test routines category
+test_routines = """
+pixi run package && \
+pixi run mojo run -I tests/ tests/routines/test_creation.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_functional.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_indexing.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_io.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_linalg.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_manipulation.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_math.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_random.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_statistics.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_sorting.mojo && \
+pixi run mojo run -I tests/ tests/routines/test_searching.mojo && \
+rm tests/numojo.mojopkg
+"""
+
+# Test science category
+test_signal = "pixi run package && pixi run mojo run -I tests/ tests/science/test_signal.mojo && rm tests/numojo.mojopkg"
+
+test = """
+pixi run test_core && \
+pixi run test_routines && \
+pixi run test_signal
+"""
 
 # run all final checks before a commit
 final = "pixi run format && pixi run test"

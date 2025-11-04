@@ -590,7 +590,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         Args:
             x: The row number.
-            value: Matrix (row vector).
+            value: Matrix (row vector). Can be either C or F order.
         """
         if x < 0:
             x = self.shape[0] + x
@@ -619,12 +619,24 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                 ).format(self.shape[1], value.shape[1])
             )
 
-        if self.flags.C_CONTIGUOUS and value.flags.C_CONTIGUOUS:
-            var dest_ptr = self._buf.ptr.offset(x * self.strides[0])
-            memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
+        if self.flags.C_CONTIGUOUS:
+            if value.flags.C_CONTIGUOUS:
+                var dest_ptr = self._buf.ptr.offset(x * self.strides[0])
+                memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
+            else:
+                for j in range(self.shape[1]):
+                    self._store(x, j, value._load(0, j))
+
+        # For F-contiguous
         else:
-            for j in range(self.shape[1]):
-                self._store(x, j, value._load(0, j))
+            if value.flags.F_CONTIGUOUS:
+                for j in range(self.shape[1]):
+                    self._buf.ptr.offset(x + j * self.strides[1]).store(
+                        value._buf.ptr.load(j * value.strides[1])
+                    )
+            else:
+                for j in range(self.shape[1]):
+                    self._store(x, j, value._load(0, j))
 
     # fn __setitem__[is_mut: Bool, //](mut self, var x: Int, read value: Matrix[dtype, RefData[Origin[is_mut].external]]) raises:
     #     """
@@ -807,19 +819,16 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            print("same shape add")
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            print("broadcast self")
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
             ](broadcast_to[dtype](self, other.shape, self.order()), other)
         else:
-            print("broadcast other")
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__add__
             ](self, broadcast_to[dtype](other, self.shape, self.order()))

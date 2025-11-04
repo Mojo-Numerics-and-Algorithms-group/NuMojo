@@ -394,8 +394,6 @@ fn solve[
     )
     L = L_U[0].copy()
     U = L_U[1].copy()
-    # print("L:", L)
-    # print("U:", U)
 
     var m: Int = A.shape[0]
     var n: Int = Y.shape[1]
@@ -404,32 +402,25 @@ fn solve[
     var X: Matrix[dtype] = Matrix.zeros[dtype]((m, n), order=A.order())
     var PY = P @ Y
 
-    # @parameter
-    # fn calculate_X(col: Int) -> None:
-    for col in range(n):
+    @parameter
+    fn calculate_X(col: Int) -> None:
         # Solve `LZ = PY` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = PY._load(i, col)
-            # print("temp before:", _temp)
             for j in range(i):  # col of L
                 _temp = _temp - L._load(i, j) * Z._load(j, col)
             _temp = _temp / L._load(i, i)
-            # print("temp after:", L._load(i, i))
             Z._store(i, col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._load(i, col)
-            print("temp2 before:", _temp2)
             for j in range(i + 1, m):
                 _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
             _temp2 = _temp2 / U._load(i, i)
-            print("X diagonal:", X._load(i, col))
-            print("U diagonal:", U._load(i, i))
-            print("temp2 after:", _temp2)
             X._store(i, col, _temp2)
 
-    # parallelize[calculate_X](n, n)
+    parallelize[calculate_X](n, n)
 
     # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
     # This is disadvantage of Mojo's ASAP policy

@@ -18,7 +18,7 @@ from numojo.core.item import Item
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.routines.creation import zeros, eye, full
-from numojo.routines.linalg.decompositions import partial_pivoting
+from numojo.routines.linalg.decompositions import partial_pivoting, lu_decomposition
 
 
 fn forward_substitution[
@@ -128,7 +128,7 @@ fn inv[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, OwnData]:
     if A.flags.C_CONTIGUOUS:
         order = "C"
 
-    var I = Matrix[dtype].identity(A.shape[0], order=order)
+    var I = Matrix.identity[dtype](A.shape[0], order=order)
     var B = solve(A, I)
 
     return B^
@@ -209,13 +209,13 @@ fn lstsq[
     """Caclulate the OLS estimates.
 
     Example:
-    ```mojo
+    ```text
     from numojo import Matrix
     X = Matrix.rand((1000000, 5))
     y = Matrix.rand((1000000, 1))
-    print(mat.lstsq(X, y))
+    print(lstsq(X, y))
     ```
-    ```console
+    ```text
     [[0.18731374756029967]
      [0.18821352688798607]
      [0.18717162200411439]
@@ -384,42 +384,52 @@ fn solve[
 
     var A_pivoted_Pair: Tuple[
         Matrix[dtype], Matrix[dtype], Int
-    ] = partial_pivoting(A.copy())
-    A_pivoted = A_pivoted_Pair[0].copy()
-    P = A_pivoted_Pair[1].copy()
+    ] = partial_pivoting(A.create_copy())
+
+    var pivoted_A = A_pivoted_Pair[0].copy()
+    var P = A_pivoted_Pair[1].copy()
+
     var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
-        A_pivoted
+        pivoted_A
     )
     L = L_U[0].copy()
     U = L_U[1].copy()
+    # print("L:", L)
+    # print("U:", U)
 
     var m: Int = A.shape[0]
     var n: Int = Y.shape[1]
 
-    var Z: Matrix[dtype] = Matrix[dtype].full((m, n), order=A.order())
-    var X: Matrix[dtype] = Matrix[dtype].full((m, n), order=A.order())
-
+    var Z: Matrix[dtype] = Matrix.zeros[dtype]((m, n), order=A.order())
+    var X: Matrix[dtype] = Matrix.zeros[dtype]((m, n), order=A.order())
     var PY = P @ Y
 
-    @parameter
-    fn calculate_X(col: Int) -> None:
+    # @parameter
+    # fn calculate_X(col: Int) -> None:
+    for col in range(n):
         # Solve `LZ = PY` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = PY._load(i, col)
+            # print("temp before:", _temp)
             for j in range(i):  # col of L
                 _temp = _temp - L._load(i, j) * Z._load(j, col)
             _temp = _temp / L._load(i, i)
+            # print("temp after:", L._load(i, i))
             Z._store(i, col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._load(i, col)
+            print("temp2 before:", _temp2)
             for j in range(i + 1, m):
                 _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
             _temp2 = _temp2 / U._load(i, i)
+            print("X diagonal:", X._load(i, col))
+            print("U diagonal:", U._load(i, i))
+            print("temp2 after:", _temp2)
             X._store(i, col, _temp2)
 
-    parallelize[calculate_X](n, n)
+    # parallelize[calculate_X](n, n)
 
     # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
     # This is disadvantage of Mojo's ASAP policy
@@ -435,7 +445,9 @@ fn solve[
 
 fn solve_lu[
     dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+](A: Matrix[dtype, **_], Y: Matrix[dtype, **_]) raises -> Matrix[
+    dtype, OwnData
+]:
     """
     Solve `AX = Y` using LU decomposition.
     """
@@ -448,20 +460,17 @@ fn solve_lu[
     var m = A.shape[0]
     var n = Y.shape[1]
 
-    var Z = Matrix[dtype].full((m, n))
-    var X = Matrix[dtype].full((m, n))
+    var Z = Matrix.full[dtype]((m, n))
+    var X = Matrix.full[dtype]((m, n))
 
     @parameter
     fn calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y._load(i, col)
-            for j in range(i):  # col of L
                 _temp = _temp - L._load(i, j) * Z._load(j, col)
             _temp = _temp / L._load(i, i)
             Z._store(i, col, _temp)
-
-        # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._load(i, col)
             for j in range(i + 1, m):

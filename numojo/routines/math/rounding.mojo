@@ -20,7 +20,7 @@ fn round[
     # FIXME
     # The built-in `round` function is not working now.
     # It will be fixed in future.
-    var res = Matrix[dtype].zeros(A.shape)
+    var res = Matrix.zeros[dtype](A.shape)
     for i in range(A.size):
         res._buf.ptr[i] = builtin_math.round(A._buf.ptr[i], ndigits=decimals)
     return res^

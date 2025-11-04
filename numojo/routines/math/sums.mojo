@@ -351,7 +351,10 @@ fn cumsum[
                 @parameter
                 fn cal_vec_sum_column[width: Int](j: Int):
                     result._store[width](
-                        i, j, result._load[width](i - 1, j) + result._load[width](i, j)
+                        i,
+                        j,
+                        result._load[width](i - 1, j)
+                        + result._load[width](i, j),
                     )
 
                 vectorize[cal_vec_sum_column, width](result.shape[1])
@@ -374,7 +377,10 @@ fn cumsum[
                 @parameter
                 fn cal_vec_sum_row[width: Int](i: Int):
                     result._store[width](
-                        i, j, result._load[width](i, j - 1) + result._load[width](i, j)
+                        i,
+                        j,
+                        result._load[width](i, j - 1)
+                        + result._load[width](i, j),
                     )
 
                 vectorize[cal_vec_sum_row, width](A.shape[0])

@@ -215,7 +215,7 @@ fn lu_decomposition[
 
 fn lu_decomposition[
     dtype: DType
-](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: Matrix[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     """
     Perform LU (lower-upper) decomposition for matrix.
     """
@@ -228,8 +228,8 @@ fn lu_decomposition[
     var n: Int = A.shape[0]
 
     # Initiate upper and lower triangular matrices
-    var U: Matrix[dtype] = Matrix[dtype].full(shape=(n, n), order=A.order())
-    var L: Matrix[dtype] = Matrix[dtype].full(shape=(n, n), order=A.order())
+    var U: Matrix[dtype] = Matrix.zeros[dtype](shape=(n, n), order=A.order())
+    var L: Matrix[dtype] = Matrix.zeros[dtype](shape=(n, n), order=A.order())
 
     # Fill in L and U
     for i in range(0, n):
@@ -314,29 +314,29 @@ fn partial_pivoting[
     Perform partial pivoting for matrix.
     """
     var n = A.shape[0]
-    var order = "C" if A.flags.C_CONTIGUOUS else "F"
-    var result = Matrix[dtype].zeros(A.shape, order)
-    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    # Work on a copy that preserves the original layout
+    var result = A.create_copy()
+    var P = Matrix.identity[dtype](n, order=A.order())
+    var s: Int = 0  # Number of row exchanges
 
-    var P = Matrix[dtype].identity(n)
-    if result.flags.F_CONTIGUOUS:
-        result = result.reorder_layout()
-    var s: Int = 0  # Number of exchanges, for determinant
     for col in range(n):
         var max_p = abs(result[col, col])
         var max_p_row = col
         for row in range(col + 1, n):
-            if abs(A[row, col]) > max_p:
-                max_p = abs(A[row, col])
+            if abs(result[row, col]) > max_p:
+                max_p = abs(result[row, col])
                 max_p_row = row
-        result[col], result[max_p_row] = result[max_p_row], result[col]
-        P[col], P[max_p_row] = P[max_p_row], P[col]
 
         if max_p_row != col:
+            # Swap rows in result and permutation matrix using element-wise swap
+            for j in range(n):
+                var t = result._load(col, j)
+                result._store(col, j, result._load(max_p_row, j))
+                result._store(max_p_row, j, t)
+                var tp = P._load(col, j)
+                P._store(col, j, P._load(max_p_row, j))
+                P._store(max_p_row, j, tp)
             s = s + 1
-    if result.flags.F_CONTIGUOUS:
-        result = result.reorder_layout()
-        P = P.reorder_layout()
 
     return Tuple(result^, P^, s)
 
@@ -384,18 +384,18 @@ fn qr[
     if reorder:
         R = A.reorder_layout()
     else:
-        R = Matrix[dtype].zeros(shape=(m, n), order="F")
+        R = Matrix.zeros[dtype](shape=(m, n), order="F")
         for i in range(m):
             for j in range(n):
                 R._store(i, j, A._load(i, j))
 
-    var H = Matrix[dtype].zeros(shape=(m, min_n), order="F")
+    var H = Matrix.zeros[dtype](shape=(m, min_n), order="F")
 
     for i in range(min_n):
         _compute_householder(H, R, i)
         _apply_householder(H, i, R, i, i + 1)
 
-    var Q = Matrix[dtype].zeros((m, inner), order="F")
+    var Q = Matrix.zeros[dtype]((m, inner), order="F")
     for i in range(inner):
         Q[i, i] = 1.0
 
@@ -405,7 +405,7 @@ fn qr[
     if reorder:
         var Q_reordered = Q.reorder_layout()
         if reduce:
-            var R_reduced = Matrix[dtype].zeros(shape=(inner, n), order="C")
+            var R_reduced = Matrix.zeros[dtype](shape=(inner, n), order="C")
             for i in range(inner):
                 for j in range(n):
                     R_reduced._store(i, j, R._load(i, j))
@@ -415,7 +415,7 @@ fn qr[
             return Q_reordered^, R_reordered^
     else:
         if reduce:
-            var R_reduced = Matrix[dtype].zeros(shape=(inner, n), order="F")
+            var R_reduced = Matrix.zeros[dtype](shape=(inner, n), order="F")
             for i in range(inner):
                 for j in range(n):
                     R_reduced._store(i, j, R._load(i, j))
@@ -467,7 +467,7 @@ fn eig[
     else:
         T = A.copy()
 
-    var Q_total = Matrix[dtype].identity(n)
+    var Q_total = Matrix.identity[dtype](n)
 
     for _k in range(max_iter):
         var Qk: Matrix[dtype]
@@ -495,7 +495,7 @@ fn eig[
             )
         )
 
-    var D = Matrix[dtype].zeros(shape=(n, n), order=A.order())
+    var D = Matrix.zeros[dtype](shape=(n, n), order=A.order())
     for i in range(n):
         D._store(i, i, T._load(i, i))
 

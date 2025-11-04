@@ -288,7 +288,10 @@ fn cumprod[
                 @parameter
                 fn cal_vec_row[width: Int](j: Int):
                     result._store[width](
-                        i, j, result._load[width](i - 1, j) * result._load[width](i, j)
+                        i,
+                        j,
+                        result._load[width](i - 1, j)
+                        * result._load[width](i, j),
                     )
 
                 vectorize[cal_vec_row, width](A.shape[1])
@@ -311,7 +314,10 @@ fn cumprod[
                 @parameter
                 fn cal_vec_column[width: Int](i: Int):
                     result._store[width](
-                        i, j, result._load[width](i, j - 1) * result._load[width](i, j)
+                        i,
+                        j,
+                        result._load[width](i, j - 1)
+                        * result._load[width](i, j),
                     )
 
                 vectorize[cal_vec_column, width](A.shape[0])

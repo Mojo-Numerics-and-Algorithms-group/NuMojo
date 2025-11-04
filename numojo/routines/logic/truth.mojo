@@ -40,7 +40,7 @@ fn all[
     alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
-        var B = Matrix[dtype].ones(shape=(1, A.shape[1]))
+        var B = Matrix.ones[dtype](shape=(1, A.shape[1]))
 
         for i in range(A.shape[0]):
 
@@ -55,7 +55,7 @@ fn all[
         return B^
 
     elif axis == 1:
-        var B = Matrix[dtype].ones(shape=(A.shape[0], 1))
+        var B = Matrix.ones[dtype](shape=(A.shape[0], 1))
 
         @parameter
         fn cal_rows(i: Int):
@@ -152,7 +152,7 @@ fn any[
     alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
-        var B = Matrix[dtype].zeros(shape=(1, A.shape[1]))
+        var B = Matrix.zeros[dtype](shape=(1, A.shape[1]))
 
         for i in range(A.shape[0]):
 
@@ -167,7 +167,7 @@ fn any[
         return B^
 
     elif axis == 1:
-        var B = Matrix[dtype].zeros(shape=(A.shape[0], 1))
+        var B = Matrix.zeros[dtype](shape=(A.shape[0], 1))
 
         @parameter
         fn cal_rows(i: Int):

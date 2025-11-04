@@ -384,7 +384,7 @@ fn matmul[
     var result: Matrix[dtype]
 
     if A.flags.C_CONTIGUOUS and B.flags.C_CONTIGUOUS:
-        result = Matrix[dtype].zeros(
+        result = Matrix.zeros[dtype](
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
 
@@ -405,7 +405,7 @@ fn matmul[
 
         parallelize[calculate_resultresult](A.shape[0], A.shape[0])
     elif A.flags.F_CONTIGUOUS and B.flags.F_CONTIGUOUS:
-        result = Matrix[dtype].zeros(
+        result = Matrix.zeros[dtype](
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
 
@@ -426,7 +426,7 @@ fn matmul[
 
         parallelize[calculate_FF](B.shape[1], B.shape[1])
     elif A.flags.C_CONTIGUOUS and B.flags.F_CONTIGUOUS:
-        result = Matrix[dtype].zeros(
+        result = Matrix.zeros[dtype](
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
 

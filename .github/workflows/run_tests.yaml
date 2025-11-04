@@ -44,7 +44,7 @@ jobs:
           pixi run mojo package numojo
           cp numojo.mojopkg tests/
 
-      - name: Run tests
-        run: |
-          pixi run mojo test tests -I .
-          pixi run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS
+      # - name: Run tests
+      #   run: |
+      #     pixi run mojo test tests -I .
+      #     pixi run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS

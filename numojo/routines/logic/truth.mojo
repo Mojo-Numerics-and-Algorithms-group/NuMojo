@@ -8,10 +8,11 @@ from sys import simd_width_of
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.matrix import Matrix
 
 
-fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn all[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     """
     Test whether all array elements evaluate to True.
 
@@ -29,7 +30,9 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn all[
+    dtype: DType
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, OwnData]:
     """
     Test whether all array elements evaluate to True along axis.
     """
@@ -121,7 +124,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     return result
 
 
-fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn any[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     """
     Test whether any array elements evaluate to True.
 
@@ -139,7 +142,9 @@ fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn any[
+    dtype: DType
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype, OwnData]:
     """
     Test whether any array elements evaluate to True along axis.
     """

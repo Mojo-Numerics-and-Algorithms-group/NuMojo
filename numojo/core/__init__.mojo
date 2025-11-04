@@ -5,6 +5,8 @@ from .ndarray import NDArray
 from .item import Item
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
+from .own_data import OwnData
+from .ref_data import RefData
 
 from .complex import (
     ComplexSIMD,

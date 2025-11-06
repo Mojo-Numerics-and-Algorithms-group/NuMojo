@@ -37,8 +37,8 @@ def test_randminmax():
 
 def test_randint():
     """Test random int array generation with min and max values."""
-    var arr_low_high = nm.random.randint(Shape(10, 10, 10), 0, 10)
-    var arr_high = nm.random.randint(Shape(10, 10, 10), 6)
+    var arr_low_high = nm.random.randint(Shape(30, 30, 30), 0, 10)
+    var arr_high = nm.random.randint(Shape(30, 30, 30), 6)
     var arr_low_high_mean = nm.mean(arr_low_high)
     var arr_high_mean = nm.mean(arr_high)
     assert_almost_equal(

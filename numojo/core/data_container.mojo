@@ -9,7 +9,7 @@
 from memory import UnsafePointer, UnsafePointerV2
 
 
-struct DataContainer[dtype: DType]():
+struct DataContainer[dtype: DType](ImplicitlyCopyable):
     var ptr: UnsafePointer[Scalar[dtype]]
 
     fn __init__(out self, size: Int):

@@ -33,7 +33,6 @@ from numojo.routines.linalg.misc import issymmetric
 struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
     Copyable, Movable, Sized, Stringable, Writable
 ):
-    # TODO: Add buffer_type in the parameters.
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
@@ -97,10 +96,10 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
     """Vector size of the data type."""
 
     var _buf: DataContainer[dtype]
-    """Data buffer of the items in the NDArray."""
+    """Data buffer of the items in the Matrix."""
 
     var buf_type: BufType
-    """View information of the NDArray."""
+    """View information of the Matrix."""
 
     var shape: Tuple[Int, Int]
     """Shape of Matrix."""
@@ -133,7 +132,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                (Fortran-style) layout. Defaults to "C".
         """
         constrained[
-            BufType().is_own_data(),
+            BufType.is_own_data(),
             "Buffer type must be OwnData to create matrix that owns data.",
         ]()
 
@@ -158,7 +157,10 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         Construct a matrix from matrix.
         """
-
+        constrained[
+            BufType.is_own_data(),
+            "Buffer type must be OwnData to create matrix that owns data.",
+        ]()
         self = data^
 
     @always_inline("nodebug")
@@ -170,7 +172,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         Construct a matrix from array.
         """
         constrained[
-            BufType().is_own_data(),
+            BufType.is_own_data(),
             "Buffer type must be OwnData to create matrix that owns data.",
         ]()
         if data.ndim == 1:
@@ -222,7 +224,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             ptr: Pointer to the data buffer of the original array.
         """
         constrained[
-            BufType().is_ref_data(),
+            BufType.is_ref_data(),
             "Buffer type must be RefData to create matrix view.",
         ]()
         self.shape = shape
@@ -239,18 +241,15 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         Copy other into self.
         """
-        # keep this constraint for now to not allow copying into views.
-        # constrained[
-        #     BufType().is_own_data(),
-        #     "Buffer type must be OwnData to matrix that owns data.",
-        # ]()
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self._buf = DataContainer[dtype](other.size)
         memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
-        self.buf_type = BufType()  # check if this is right.
-        self.flags = other.flags
+        self.buf_type = BufType()
+        self.flags = Flags(
+            other.shape, other.strides, owndata=True, writeable=True
+        )
 
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
@@ -271,20 +270,19 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         if owndata and self.buf_type.is_own_data():
             self._buf.ptr.free()
 
-    fn create_copy(ref self) -> Matrix[dtype, OwnData]:
+    fn create_copy(self) raises -> Matrix[dtype, OwnData]:
         """
         Create a copy of the matrix with OwnData buffer type.
         """
-        var result: Matrix[dtype, OwnData] = Matrix[dtype](
+        var result = Matrix[dtype, OwnData](
             shape=self.shape, order=self.order()
         )
-
         if self.flags.C_CONTIGUOUS:
             memcpy(dest=result._buf.ptr, src=self._buf.ptr, count=self.size)
         else:
             for i in range(self.shape[0]):
                 for j in range(self.shape[1]):
-                    result._store(i, j, self._load(i, j))
+                    result[i, j] = self[i, j]
 
         return result^
 
@@ -292,7 +290,16 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
     # Slicing and indexing methods
     # ===-------------------------------------------------------------------===#
 
-    fn __getitem__(self, var x: Int, var y: Int) raises -> Scalar[dtype]:
+    fn normalize(self, idx: Int, dim: Int) -> Int:
+        """
+        Normalize negative indices.
+        """
+        var idx_norm = idx
+        if idx_norm < 0:
+            idx_norm = dim + idx_norm
+        return idx_norm
+
+    fn __getitem__(self, x: Int, y: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the index.
 
@@ -303,24 +310,23 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         Returns:
             A scalar matching the dtype of the array.
         """
-
-        if x < 0:
-            x = self.shape[0] + x
-
-        if y < 0:
-            y = self.shape[1] + y
-
-        if (x < 0) or (x >= self.shape[0]) or (y < 0) or (y >= self.shape[1]):
+        if (
+            x >= self.shape[0]
+            or x < -self.shape[0]
+            or y >= self.shape[1]
+            or y < -self.shape[1]
+        ):
             raise Error(
                 String(
                     "Index ({}, {}) exceed the matrix shape ({}, {})"
                 ).format(x, y, self.shape[0], self.shape[1])
             )
-
+        var x_norm = self.normalize(x, self.shape[0])
+        var y_norm = self.normalize(y, self.shape[1])
         return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
     fn __getitem__(
-        ref self, var x: Int
+        ref self, x: Int
     ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
         Return the corresponding row at the index.
@@ -332,88 +338,52 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             BufType().is_own_data(),
             "Buffer type must be OwnData to get a reference row.",
         ]()
-        if x < 0:
-            x = self.shape[0] + x
-
-        if x >= self.shape[0]:
+        if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
                 String("Index {} exceed the row number {}").format(
                     x, self.shape[0]
                 )
             )
 
+        var x_norm = self.normalize(x, self.shape[0])
         var res = Matrix[
             dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
         ](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
-            offset=x * self.strides[0],
+            offset=x_norm * self.strides[0],
             ptr=self._buf.get_ptr()
-            .mut_cast[target_mut=True]()
+            .mut_cast[target_mut=False]()
             .unsafe_origin_cast[
-                target_origin = MutOrigin.cast_from[origin_of(self)]
+                target_origin = ImmutOrigin.cast_from[origin_of(self)]
             ](),
         )
         return res^
 
-    # fn __getitem__(
-    #     ref self, var x: Int
-    # ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
-    #     """
-    #     Return the corresponding row at the index.
-
-    #     Args:
-    #         x: The row number.
-    #     """
-    #     constrained[BufType().is_own_data(),
-    #         "Buffer type must be OwnData to get a reference row.",
-    #     ]()
-    #     if x < 0:
-    #         x = self.shape[0] + x
-
-    #     if x >= self.shape[0]:
-    #         raise Error(
-    #             String("Index {} exceed the row number {}").format(
-    #                 x, self.shape[0]
-    #             )
-    #         )
-
-    #     var res = Matrix[
-    #         dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
-    #     ](
-    #         shape=(1, self.shape[1]),
-    #         strides=(self.strides[0], self.strides[1]),
-    #         offset=x * self.strides[0],
-    #         ptr=self._buf.get_ptr()
-    #         .mut_cast[target_mut=False]()
-    #         .unsafe_origin_cast[
-    #             target_origin = ImmutOrigin.cast_from[origin_of(self)]
-    #         ](),
-    #     )
-    #     return res^
-
+    # for creating a copy of the row.
     fn __getitem__copy(self, var x: Int) raises -> Matrix[dtype, OwnData]:
         """
         Return the corresponding row at the index.
 
         Args:
             x: The row number.
-        """
-        var x_norm = x
-        if x_norm < 0:
-            x_norm = self.shape[0] + x_norm
 
-        if x_norm >= self.shape[0]:
+        Returns:
+            A new Matrix (row vector) copied from the original matrix.
+
+        Notes:
+            This function is for interal use only. Users should use `create_copy` to create a copy of the whole matrix instead.
+        """
+        if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index_norm {} ex_normceed the row number {}").format(
-                    x_norm, self.shape[0]
+                String("Index_norm {} exceed the row size {}").format(
+                    x, self.shape[0]
                 )
             )
-
+        var x_norm = self.normalize(x, self.shape[0])
         var result = Matrix[dtype, OwnData](
             shape=(1, self.shape[1]), order=self.order()
         )
-
         if self.flags.C_CONTIGUOUS:
             var ptr = self._buf.ptr.offset(x_norm * self.strides[0])
             memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
@@ -423,106 +393,146 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return result^
 
-    # fn __getitem__(
-    #     ref self, x: Slice, y: Slice
-    # ) -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
-    #     """
-    #     Get item from two slices.
-    #     """
-    #     constrained[
-    #         BufType().is_own_data(),
-    #         "Buffer type must be OwnData to get a reference row.",
-    #     ]()
-    #     start_x, end_x, step_x = x.indices(self.shape[0])
-    #     start_y, end_y, step_y = y.indices(self.shape[1])
+    fn __getitem__(
+        ref self, x: Slice, y: Slice
+    ) -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
+        """
+        Get item from two slices.
+        """
+        constrained[
+            BufType().is_own_data(),
+            "Buffer type must be OwnData to get a reference row.",
+        ]()
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        start_y, end_y, step_y = y.indices(self.shape[1])
 
-    #     var res = Matrix[
-    #         dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
-    #     ](
-    #         shape=(
-    #             Int(ceil((end_x - start_x) / step_x)),
-    #             Int(ceil((end_y - start_y) / step_y)),
-    #         ),
-    #         strides=(step_x * self.strides[0], step_y * self.strides[1]),
-    #         offset=start_x * self.strides[0] + start_y * self.strides[1],
-    #         ptr=self._buf.get_ptr()
-    #         .mut_cast[target_mut=False]()
-    #         .unsafe_origin_cast[
-    #             target_origin = ImmutOrigin.cast_from[origin_of(self)]
-    #         ](),
-    #     )
+        var res = Matrix[
+            dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
+        ](
+            shape=(
+                Int(ceil((end_x - start_x) / step_x)),
+                Int(ceil((end_y - start_y) / step_y)),
+            ),
+            strides=(step_x * self.strides[0], step_y * self.strides[1]),
+            offset=start_x * self.strides[0] + start_y * self.strides[1],
+            ptr=self._buf.get_ptr()
+            .mut_cast[target_mut=False]()
+            .unsafe_origin_cast[
+                target_origin = ImmutOrigin.cast_from[origin_of(self)]
+            ](),
+        )
 
-    #     return res^
+        return res^
 
-    # fn __getitem__copy(self, x: Slice, y: Slice) -> Matrix[dtype]:
-    #     """
-    #     Get item from two slices.
-    #     """
-    #     var start_x: Int
-    #     var end_x: Int
-    #     var step_x: Int
-    #     var start_y: Int
-    #     var end_y: Int
-    #     var step_y: Int
-    #     start_x, end_x, step_x = x.indices(self.shape[0])
-    #     start_y, end_y, step_y = y.indices(self.shape[1])
-    #     var range_x = range(start_x, end_x, step_x)
-    #     var range_y = range(start_y, end_y, step_y)
+    # for creating a copy of the slice.
+    fn __getitem__copy(self, x: Slice, y: Slice) -> Matrix[dtype]:
+        """
+        Get item from two slices.
+        """
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_x = range(start_x, end_x, step_x)
+        var range_y = range(start_y, end_y, step_y)
 
-    #     var B = Matrix[dtype](
-    #         shape=(len(range_x), len(range_y)), order=self.order()
-    #     )
-    #     var row = 0
-    #     for i in range_x:
-    #         var col = 0
-    #         for j in range_y:
-    #             B._store(row, col, self._load(i, j))
-    #             col += 1
-    #         row += 1
+        var B = Matrix[dtype](
+            shape=(len(range_x), len(range_y)), order=self.order()
+        )
+        var row = 0
+        for i in range_x:
+            var col = 0
+            for j in range_y:
+                B._store(row, col, self._load(i, j))
+                col += 1
+            row += 1
 
-    #     return B^
+        return B^
 
-    # fn __getitem__(self, x: Slice, var y: Int) -> Matrix[dtype]:
-    #     """
-    #     Get item from one slice and one int.
-    #     """
-    #     if y < 0:
-    #         y = self.shape[1] + y
+    fn __getitem__(ref self, x: Slice, var y: Int) -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
+        """
+        Get item from one slice and one int.
+        """
+        constrained[
+            BufType().is_own_data(),
+            "Buffer type must be OwnData to get a reference slice.",
+        ]()
+        if y < 0:
+            y = self.shape[1] + y
 
-    #     var start_x: Int
-    #     var end_x: Int
-    #     var step_x: Int
-    #     start_x, end_x, step_x = x.indices(self.shape[0])
-    #     var range_x = range(start_x, end_x, step_x)
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
 
-    #     var B = Matrix[dtype](shape=(len(range_x), 1), order=self.order())
-    #     var row = 0
-    #     for i in range_x:
-    #         B._store(row, 0, self._load(i, y))
-    #         row += 1
+        var res = Matrix[
+            dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
+        ](
+            shape=(
+                Int(ceil((end_x - start_x) / step_x)),
+                1,
+            ),
+            strides=(step_x * self.strides[0], self.strides[1]),
+            offset=start_x * self.strides[0] + y * self.strides[1],
+            ptr=self._buf.get_ptr()
+            .mut_cast[target_mut=False]()
+            .unsafe_origin_cast[
+                target_origin = ImmutOrigin.cast_from[origin_of(self)]
+            ](),
+        )
 
-    #     return B^
+        return res^
 
-    # fn __getitem__(self, var x: Int, y: Slice) -> Matrix[dtype]:
-    #     """
-    #     Get item from one int and one slice.
-    #     """
-    #     if x < 0:
-    #         x = self.shape[0] + x
+    # for creating a copy of the slice.
+    fn __getitem__copy(self, x: Slice, var y: Int) -> Matrix[dtype, OwnData]:
+        """
+        Get item from one slice and one int.
+        """
+        if y < 0:
+            y = self.shape[1] + y
 
-    #     var start_y: Int
-    #     var end_y: Int
-    #     var step_y: Int
-    #     start_y, end_y, step_y = y.indices(self.shape[1])
-    #     var range_y = range(start_y, end_y, step_y)
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        var range_x = range(start_x, end_x, step_x)
+        var res = Matrix[dtype, OwnData](
+            shape=(
+                len(range_x),
+                1,
+            ),
+            order=self.order(),
+        )
+        var row = 0
+        for i in range_x:
+            res._store(row, 0, self._load(i, y))
+            row += 1
+        return res^
 
-    #     var B = Matrix[dtype](shape=(1, len(range_y)), order=self.order())
-    #     var col = 0
-    #     for j in range_y:
-    #         B._store(0, col, self._load(x, j))
-    #         col += 1
+    fn __getitem__(self, var x: Int, y: Slice) -> Matrix[dtype]:
+        """
+        Get item from one int and one slice.
+        """
+        if x < 0:
+            x = self.shape[0] + x
 
-    #     return B^
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_y = range(start_y, end_y, step_y)
+
+        var B = Matrix[dtype](shape=(1, len(range_y)), order=self.order())
+        var col = 0
+        for j in range_y:
+            B._store(0, col, self._load(x, j))
+            col += 1
+
+        return B^
 
     # fn __getitem__(self, indices: List[Int]) raises -> Matrix[dtype]:
     #     """

@@ -323,9 +323,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             )
         var x_norm = self.normalize(x, self.shape[0])
         var y_norm = self.normalize(y, self.shape[1])
-        return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
+        return self._buf.ptr.load(x_norm * self.strides[0] + y_norm * self.strides[1])
 
-    # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a
+    # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get(
         ref self, x: Int
     ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
@@ -336,7 +336,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             x: The row number.
         """
         constrained[
-            BufType().is_own_data(),
+            BufType.is_own_data(),
             "Buffer type must be OwnData to get a reference row.",
         ]()
         if x >= self.shape[0] or x < -self.shape[0]:
@@ -373,11 +373,11 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             A new Matrix (row vector) copied from the original matrix.
 
         Notes:
-            This function is for interal use only. Users should use `create_copy` to create a copy of the whole matrix instead.
+            This function is for internal use only. Users should use `create_copy` to create a copy of the whole matrix instead.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index_norm {} exceed the row size {}").format(
+                String("Index {} exceed the row size {}").format(
                     x, self.shape[0]
                 )
             )
@@ -401,7 +401,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         Get item from two slices.
         """
         constrained[
-            BufType().is_own_data(),
+            BufType.is_own_data(),
             "Buffer type must be OwnData to get a reference row.",
         ]()
         start_x, end_x, step_x = x.indices(self.shape[0])
@@ -462,7 +462,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         # we could remove this constraint if we wanna allow users to create views from views. But that may complicate the origin tracking?
         constrained[
-            BufType().is_own_data(),
+            BufType.is_own_data(),
             "Buffer type must be OwnData to get a reference slice.",
         ]()
         if y >= self.shape[1] or y < -self.shape[1]:
@@ -528,12 +528,12 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         Get item from one int and one slice.
         """
         constrained[
-            BufType().is_own_data(),
+            BufType.is_own_data(),
             "Buffer type must be OwnData to get a reference slice.",
         ]()
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index {} exceed the column number {}").format(
+                String("Index {} exceed the row size {}").format(
                     x, self.shape[0]
                 )
             )
@@ -569,7 +569,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index_norm {} exceed the row size {}").format(
+                String("Index {} exceed the row size {}").format(
                     x, self.shape[0]
                 )
             )
@@ -601,7 +601,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
     fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
         """
-        Returs a SIMD element with width `width` at the given index.
+        Returns a SIMD element with width `width` at the given index.
 
         Parameters:
             width: The width of the SIMD element.
@@ -834,7 +834,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index_norm {} exceed the row size {}").format(
+                String("Index {} exceed the row size {}").format(
                     x, self.shape[0]
                 )
             )
@@ -865,7 +865,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index_norm {} exceed the row size {}").format(
+                String("Index {} exceed the row size {}").format(
                     x, self.shape[0]
                 )
             )

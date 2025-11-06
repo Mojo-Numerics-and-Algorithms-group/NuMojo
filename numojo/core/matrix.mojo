@@ -809,10 +809,8 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                 + String(self.strides[0])
                 + ","
                 + String(self.strides[1])
-                + "  C: "
-                + String(self.flags["C_CONTIGUOUS"])
-                + "  F: "
-                + String(self.flags["F_CONTIGUOUS"])
+                + "  order: "
+                + String("C" if self.flags["C_CONTIGUOUS"] else "F")
                 + "  Own: "
                 + String(self.flags["OWNDATA"])
             )

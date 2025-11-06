@@ -453,17 +453,22 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return B^
 
-    fn __getitem__(ref self, x: Slice, var y: Int) -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
+    fn __getitem__(ref self, x: Slice, var y: Int) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
         Get item from one slice and one int.
         """
+        # we could remove this constraint if we wanna allow users to create views from views. But that may complicate the origin tracking?
         constrained[
             BufType().is_own_data(),
             "Buffer type must be OwnData to get a reference slice.",
         ]()
-        if y < 0:
-            y = self.shape[1] + y
-
+        if y >= self.shape[1] or y < -self.shape[1]:
+            raise Error(
+                String("Index {} exceed the column number {}").format(
+                    y, self.shape[1]
+                )
+            )
+        y = self.normalize(y, self.shape[1])
         var start_x: Int
         var end_x: Int
         var step_x: Int
@@ -513,13 +518,57 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             row += 1
         return res^
 
-    fn __getitem__(self, var x: Int, y: Slice) -> Matrix[dtype]:
+    fn __getitem__(ref self, var x: Int, y: Slice) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
         Get item from one int and one slice.
         """
-        if x < 0:
-            x = self.shape[0] + x
+        constrained[
+            BufType().is_own_data(),
+            "Buffer type must be OwnData to get a reference slice.",
+        ]()
+        if x >= self.shape[0] or x < -self.shape[0]:
+            raise Error(
+                String("Index {} exceed the column number {}").format(
+                    x, self.shape[0]
+                )
+            )
+        x = self.normalize(x, self.shape[0])
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_y = range(start_y, end_y, step_y)
 
+        var res = Matrix[
+            dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
+        ](
+            shape=(
+                1,
+                Int(ceil((end_y - start_y) / step_y)),
+            ),
+            strides=(self.strides[0], step_y * self.strides[1]),
+            offset= x * self.strides[0] + start_y * self.strides[1],
+            ptr=self._buf.get_ptr()
+            .mut_cast[target_mut=False]()
+            .unsafe_origin_cast[
+                target_origin = ImmutOrigin.cast_from[origin_of(self)]
+            ](),
+        )
+
+        return res^
+
+    # for creating a copy of the slice.
+    fn __getitem__copy(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
+        """
+        Get item from one int and one slice.
+        """
+        if x >= self.shape[0] or x < -self.shape[0]:
+            raise Error(
+                String("Index_norm {} exceed the row size {}").format(
+                    x, self.shape[0]
+                )
+            )
+        x = self.normalize(x, self.shape[0])
         var start_y: Int
         var end_y: Int
         var step_y: Int
@@ -534,17 +583,38 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return B^
 
-    # fn __getitem__(self, indices: List[Int]) raises -> Matrix[dtype]:
-    #     """
-    #     Get item by a list of integers.
-    #     """
+    fn __getitem__(self, indices: List[Int]) raises -> Matrix[dtype, OwnData]:
+        """
+        Get item by a list of integers.
+        """
+        var ncol = self.shape[1]
+        var nrow = len(indices)
+        var res = Matrix.zeros[dtype](shape=(nrow, ncol))
+        for i in range(nrow):
+            res.__setitem__(i, self.__getitem__copy(indices[i]))
+        return res^
 
-    #     var ncol = self.shape[1]
-    #     var nrow = len(indices)
-    #     var res = Matrix.zeros[dtype](shape=(nrow, ncol))
-    #     for i in range(nrow):
-    #         res.__setitem__(i, self.__getitem__copy(indices[i]))
-    #     return res^
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
+        """
+        Returs a SIMD element with width `width` at the given index.
+
+        Parameters:
+            width: The width of the SIMD element.
+
+        Args:
+            idx: The linear index.
+
+        Returns:
+            A SIMD element with width `width`.
+        """
+        if idx >= self.size or idx < -self.size:
+            raise Error(
+                String("Index {} exceed the matrix size {}").format(
+                    idx, self.size
+                )
+            )
+        var idx_norm = self.normalize(idx, self.size)
+        return self._buf.ptr.load[width=width](idx_norm)
 
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
         """
@@ -562,7 +632,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         """
         return self._buf.ptr.load[width=width](idx)
 
-    fn __setitem__(mut self, x: Int, y: Int, value: Scalar[dtype]) raises:
+    fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]) raises:
         """
         Return the scalar at the index.
 
@@ -571,24 +641,14 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             y: The column number.
             value: The value to be set.
         """
-        var x_norm = x
-        var y_norm = y
-        if x_norm < 0:
-            x_norm = self.shape[0] + x_norm
-        if y_norm < 0:
-            y_norm = self.shape[1] + y_norm
-        if (
-            (x_norm < 0)
-            or (x_norm >= self.shape[0])
-            or (y_norm < 0)
-            or (y_norm >= self.shape[1])
-        ):
+        if x >= self.shape[0] or x < -self.shape[0] or y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
                 String(
-                    "Index_norm ({}, {}) ex_normceed the matrix_norm shape"
-                    " ({}, {})"
-                ).format(x_norm, y_norm, self.shape[0], self.shape[1])
+                    "Index ({}, {}) exceed the matrix shape ({}, {})"
+                ).format(x, y, self.shape[0], self.shape[1])
             )
+        var x_norm = self.normalize(x, self.shape[0])
+        var y_norm = self.normalize(y, self.shape[1])
 
         self._buf.ptr.store(
             x_norm * self.strides[0] + y_norm * self.strides[1], value

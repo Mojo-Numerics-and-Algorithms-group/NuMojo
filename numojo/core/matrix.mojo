@@ -757,6 +757,192 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
+    fn __setitem__(self, x: Slice, y: Int, value: Matrix[dtype, **_]) raises:
+        """
+        Set item from one slice and one int.
+        """
+        if y >= self.shape[1] or y < -self.shape[1]:
+            raise Error(
+                String("Index {} exceed the column number {}").format(
+                    y, self.shape[1]
+                )
+            )
+        var y_norm = self.normalize(y, self.shape[1])
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        var range_x = range(start_x, end_x, step_x)
+        var len_range_x: Int = len(range_x)
+
+        if len_range_x != value.shape[0] or value.shape[1] != 1:
+            raise Error(
+                String(
+                    "Shape mismatch when assigning to slice: "
+                    "target shape ({}, {}) vs value shape ({}, {})"
+                ).format(len_range_x, 1, value.shape[0], value.shape[1])
+            )
+
+        var row = 0
+        for i in range_x:
+            self._store(i, y_norm, value._load(row, 0))
+            row += 1
+
+    fn set(self, x: Slice, y: Int, value: Matrix[dtype, **_]) raises:
+        """
+        Set item from one slice and one int.
+        """
+        if y >= self.shape[1] or y < -self.shape[1]:
+            raise Error(
+                String("Index {} exceed the column number {}").format(
+                    y, self.shape[1]
+                )
+            )
+        var y_norm = self.normalize(y, self.shape[1])
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        var range_x = range(start_x, end_x, step_x)
+        var len_range_x: Int = len(range_x)
+
+        if len_range_x != value.shape[0] or value.shape[1] != 1:
+            raise Error(
+                String(
+                    "Shape mismatch when assigning to slice: "
+                    "target shape ({}, {}) vs value shape ({}, {})"
+                ).format(len_range_x, 1, value.shape[0], value.shape[1])
+            )
+
+        var row = 0
+        for i in range_x:
+            self._store(i, y_norm, value._load(row, 0))
+            row += 1
+
+    fn __setitem__(self, x: Int, y: Slice, value: Matrix[dtype, **_]) raises:
+        """
+        Set item from one int and one slice.
+        """
+        if x >= self.shape[0] or x < -self.shape[0]:
+            raise Error(
+                String("Index_norm {} exceed the row size {}").format(
+                    x, self.shape[0]
+                )
+            )
+        var x_norm = self.normalize(x, self.shape[0])
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_y = range(start_y, end_y, step_y)
+        var len_range_y: Int = len(range_y)
+
+        if len_range_y != value.shape[1] or value.shape[0] != 1:
+            raise Error(
+                String(
+                    "Shape mismatch when assigning to slice: "
+                    "target shape ({}, {}) vs value shape ({}, {})"
+                ).format(1, len_range_y, value.shape[0], value.shape[1])
+            )
+
+        var col = 0
+        for j in range_y:
+            self._store(x_norm, j, value._load(0, col))
+            col += 1
+
+    fn set(self, x: Int, y: Slice, value: Matrix[dtype, **_]) raises:
+        """
+        Set item from one int and one slice.
+        """
+        if x >= self.shape[0] or x < -self.shape[0]:
+            raise Error(
+                String("Index_norm {} exceed the row size {}").format(
+                    x, self.shape[0]
+                )
+            )
+        var x_norm = self.normalize(x, self.shape[0])
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_y = range(start_y, end_y, step_y)
+        var len_range_y: Int = len(range_y)
+
+        if len_range_y != value.shape[1] or value.shape[0] != 1:
+            raise Error(
+                String(
+                    "Shape mismatch when assigning to slice: "
+                    "target shape ({}, {}) vs value shape ({}, {})"
+                ).format(1, len_range_y, value.shape[0], value.shape[1])
+            )
+
+        var col = 0
+        for j in range_y:
+            self._store(x_norm, j, value._load(0, col))
+            col += 1
+
+    fn __setitem__(self, x: Slice, y: Slice, value: Matrix[dtype, **_]) raises:
+        """
+        Set item from two slices.
+        """
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_x = range(start_x, end_x, step_x)
+        var range_y = range(start_y, end_y, step_y)
+
+        if len(range_x) != value.shape[0] or len(range_y) != value.shape[1]:
+            raise Error(
+                String(
+                    "Shape mismatch when assigning to slice: "
+                    "target shape ({}, {}) vs value shape ({}, {})"
+                ).format(len(range_x), len(range_y), value.shape[0], value.shape[1])
+            )
+
+        var row = 0
+        for i in range_x:
+            var col = 0
+            for j in range_y:
+                self._store(i, j, value._load(row, col))
+                col += 1
+            row += 1
+
+    fn set(self, x: Slice, y: Slice, value: Matrix[dtype, **_]) raises:
+        """
+        Set item from two slices.
+        """
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_x = range(start_x, end_x, step_x)
+        var range_y = range(start_y, end_y, step_y)
+
+        if len(range_x) != value.shape[0] or len(range_y) != value.shape[1]:
+            raise Error(
+                String(
+                    "Shape mismatch when assigning to slice: "
+                    "target shape ({}, {}) vs value shape ({}, {})"
+                ).format(len(range_x), len(range_y), value.shape[0], value.shape[1])
+            )
+
+        var row = 0
+        for i in range_x:
+            var col = 0
+            for j in range_y:
+                self._store(i, j, value._load(row, col))
+                col += 1
+            row += 1
+
     fn _store[width: Int = 1](self, x: Int, y: Int, simd: SIMD[dtype, width]):
         """
         `__setitem__` with width.

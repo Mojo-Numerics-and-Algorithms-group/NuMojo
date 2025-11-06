@@ -705,7 +705,58 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             else:
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
-                    
+
+    fn set(self, var x: Int, value: Matrix[dtype, **_]) raises:
+        """
+        Set the corresponding row at the index with the given matrix.
+
+        Args:
+            x: The row number.
+            value: Matrix (row vector). Can be either C or F order.
+        """
+        if x >= self.shape[0] or x < -self.shape[0]:
+            raise Error(
+                String(
+                    "Error: Elements of `index` ({}) \n"
+                    "exceed the matrix shape ({})."
+                ).format(x, self.shape[0])
+            )
+
+        if value.shape[0] != 1:
+            raise Error(
+                String(
+                    "Error: The value should have only 1 row, "
+                    "but it has {} rows."
+                ).format(value.shape[0])
+            )
+
+        if self.shape[1] != value.shape[1]:
+            raise Error(
+                String(
+                    "Error: Matrix has {} columns, "
+                    "but the value has {} columns."
+                ).format(self.shape[1], value.shape[1])
+            )
+
+        if self.flags.C_CONTIGUOUS:
+            if value.flags.C_CONTIGUOUS:
+                var dest_ptr = self._buf.ptr.offset(x * self.strides[0])
+                memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
+            else:
+                for j in range(self.shape[1]):
+                    self._store(x, j, value._load(0, j))
+
+        # For F-contiguous
+        else:
+            if value.flags.F_CONTIGUOUS:
+                for j in range(self.shape[1]):
+                    self._buf.ptr.offset(x + j * self.strides[1]).store(
+                        value._buf.ptr.load(j * value.strides[1])
+                    )
+            else:
+                for j in range(self.shape[1]):
+                    self._store(x, j, value._load(0, j))
+
     fn _store[width: Int = 1](self, x: Int, y: Int, simd: SIMD[dtype, width]):
         """
         `__setitem__` with width.

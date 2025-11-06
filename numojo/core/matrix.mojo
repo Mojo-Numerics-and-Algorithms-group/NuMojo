@@ -323,7 +323,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             )
         var x_norm = self.normalize(x, self.shape[0])
         var y_norm = self.normalize(y, self.shape[1])
-        return self._buf.ptr.load(x_norm * self.strides[0] + y_norm * self.strides[1])
+        return self._buf.ptr.load(
+            x_norm * self.strides[0] + y_norm * self.strides[1]
+        )
 
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get(

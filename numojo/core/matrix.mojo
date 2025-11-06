@@ -454,7 +454,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return B^
 
-    fn get(ref self, x: Slice, var y: Int) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
+    fn get(
+        ref self, x: Slice, var y: Int
+    ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
         Get item from one slice and one int.
         """
@@ -519,7 +521,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             row += 1
         return res^
 
-    fn get(ref self, var x: Int, y: Slice) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
+    fn get(
+        ref self, var x: Int, y: Slice
+    ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
         Get item from one int and one slice.
         """
@@ -548,7 +552,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                 Int(ceil((end_y - start_y) / step_y)),
             ),
             strides=(self.strides[0], step_y * self.strides[1]),
-            offset= x * self.strides[0] + start_y * self.strides[1],
+            offset=x * self.strides[0] + start_y * self.strides[1],
             ptr=self._buf.get_ptr()
             .mut_cast[target_mut=False]()
             .unsafe_origin_cast[
@@ -642,7 +646,12 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             y: The column number.
             value: The value to be set.
         """
-        if x >= self.shape[0] or x < -self.shape[0] or y >= self.shape[1] or y < -self.shape[1]:
+        if (
+            x >= self.shape[0]
+            or x < -self.shape[0]
+            or y >= self.shape[1]
+            or y < -self.shape[1]
+        ):
             raise Error(
                 String(
                     "Index ({}, {}) exceed the matrix shape ({}, {})"
@@ -901,7 +910,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                 String(
                     "Shape mismatch when assigning to slice: "
                     "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(len(range_x), len(range_y), value.shape[0], value.shape[1])
+                ).format(
+                    len(range_x), len(range_y), value.shape[0], value.shape[1]
+                )
             )
 
         var row = 0
@@ -932,7 +943,9 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
                 String(
                     "Shape mismatch when assigning to slice: "
                     "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(len(range_x), len(range_y), value.shape[0], value.shape[1])
+                ).format(
+                    len(range_x), len(range_y), value.shape[0], value.shape[1]
+                )
             )
 
         var row = 0
@@ -2124,11 +2137,11 @@ struct _MatrixIter[
         if forward:
             var current_index = self.index
             self.index += 1
-            return self.matrix[current_index]
+            return self.matrix.get(current_index)
         else:
             var current_index = self.index
             self.index -= 1
-            return self.matrix[current_index]
+            return self.matrix.get(current_index)
 
     @always_inline
     fn __has_next__(self) -> Bool:

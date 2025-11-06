@@ -325,7 +325,8 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         var y_norm = self.normalize(y, self.shape[1])
         return self._buf.ptr.load(x * self.strides[0] + y * self.strides[1])
 
-    fn __getitem__(
+    # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a
+    fn get(
         ref self, x: Int
     ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
@@ -361,7 +362,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         return res^
 
     # for creating a copy of the row.
-    fn __getitem__copy(self, var x: Int) raises -> Matrix[dtype, OwnData]:
+    fn __getitem__(self, var x: Int) raises -> Matrix[dtype, OwnData]:
         """
         Return the corresponding row at the index.
 
@@ -393,7 +394,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return result^
 
-    fn __getitem__(
+    fn get(
         ref self, x: Slice, y: Slice
     ) -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
@@ -425,7 +426,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         return res^
 
     # for creating a copy of the slice.
-    fn __getitem__copy(self, x: Slice, y: Slice) -> Matrix[dtype]:
+    fn __getitem__(self, x: Slice, y: Slice) -> Matrix[dtype]:
         """
         Get item from two slices.
         """
@@ -453,7 +454,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
 
         return B^
 
-    fn __getitem__(ref self, x: Slice, var y: Int) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
+    fn get(ref self, x: Slice, var y: Int) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
         Get item from one slice and one int.
         """
@@ -493,7 +494,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         return res^
 
     # for creating a copy of the slice.
-    fn __getitem__copy(self, x: Slice, var y: Int) -> Matrix[dtype, OwnData]:
+    fn __getitem__(self, x: Slice, var y: Int) -> Matrix[dtype, OwnData]:
         """
         Get item from one slice and one int.
         """
@@ -518,7 +519,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             row += 1
         return res^
 
-    fn __getitem__(ref self, var x: Int, y: Slice) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
+    fn get(ref self, var x: Int, y: Slice) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
         """
         Get item from one int and one slice.
         """
@@ -558,7 +559,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         return res^
 
     # for creating a copy of the slice.
-    fn __getitem__copy(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
+    fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
         """
         Get item from one int and one slice.
         """
@@ -591,7 +592,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
         var nrow = len(indices)
         var res = Matrix.zeros[dtype](shape=(nrow, ncol))
         for i in range(nrow):
-            res.__setitem__(i, self.__getitem__copy(indices[i]))
+            res.__setitem__(i, self[indices[i]])
         return res^
 
     fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
@@ -662,10 +663,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             x: The row number.
             value: Matrix (row vector). Can be either C or F order.
         """
-        if x < 0:
-            x = self.shape[0] + x
-
-        if x >= self.shape[0]:
+        if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
                 String(
                     "Error: Elements of `index` ({}) \n"
@@ -707,50 +705,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
             else:
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
-
-    # fn __setitem__[is_mut: Bool, //](mut self, var x: Int, read value: Matrix[dtype, RefData[Origin[is_mut].external]]) raises:
-    #     """
-    #     Set the corresponding row at the index with the given matrix.
-
-    #     Args:
-    #         x: The row number.
-    #         value: Matrix (row vector).
-    #     """
-
-    #     if x < 0:
-    #         x = self.shape[0] + x
-
-    #     if x >= self.shape[0]:
-    #         raise Error(
-    #             String(
-    #                 "Error: Elements of `index` ({}) \n"
-    #                 "exceed the matrix shape ({})."
-    #             ).format(x, self.shape[0])
-    #         )
-
-    #     if value.shape[0] != 1:
-    #         raise Error(
-    #             String(
-    #                 "Error: The value should have only 1 row, "
-    #                 "but it has {} rows."
-    #             ).format(value.shape[0])
-    #         )
-
-    #     if self.shape[1] != value.shape[1]:
-    #         raise Error(
-    #             String(
-    #                 "Error: Matrix has {} columns, "
-    #                 "but the value has {} columns."
-    #             ).format(self.shape[1], value.shape[1])
-    #         )
-
-    #     if self.flags.C_CONTIGUOUS and value.flags.C_CONTIGUOUS:
-    #         var dest_ptr = self._buf.ptr.offset(x * self.strides[0])
-    #         memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
-    #     else:
-    #         for j in range(self.shape[1]):
-    #             self._store(x, j, value._load(0, j))
-
+                    
     fn _store[width: Int = 1](self, x: Int, y: Int, simd: SIMD[dtype, width]):
         """
         `__setitem__` with width.

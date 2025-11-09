@@ -42,7 +42,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexScalar
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
-from numojo.core.own_data import OwnData
+from numojo.core.data_container import DataContainer
 
 
 # ===------------------------------------------------------------------------===#
@@ -2556,7 +2556,7 @@ fn array[
         np_dtype = np.int16
     elif dtype == DType.int8:
         np_dtype = np.int8
-    elif dtype == DType.index:
+    elif dtype == DType.int:
         np_dtype = np.intp
     elif dtype == DType.uint64:
         np_dtype = np.uint64
@@ -2575,7 +2575,7 @@ fn array[
         dtype
     ]()
     var A: NDArray[dtype] = NDArray[dtype](array_shape, order)
-    memcpy[Scalar[dtype]](A._buf.ptr, pointer, A.size)
+    memcpy[Scalar[dtype]](dest=A._buf.ptr, src=pointer, count=A.size)
     return A^
 
 
@@ -2634,7 +2634,7 @@ fn array[
         np_dtype = np.int16
     elif dtype == DType.int8:
         np_dtype = np.int8
-    elif dtype == DType.index:
+    elif dtype == DType.int:
         np_dtype = np.intp
     elif dtype == DType.uint64:
         np_dtype = np.uint64
@@ -2657,8 +2657,10 @@ fn array[
         0
     ].unsafe_get_as_pointer[dtype]()
     var A: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](array_shape, order)
-    memcpy[Scalar[dtype]](A._re._buf.ptr, pointer, A._re.size)
-    memcpy[Scalar[dtype]](A._im._buf.ptr, pointer_imag, A._im.size)
+    memcpy[Scalar[dtype]](dest=A._re._buf.ptr, src=pointer, count=A._re.size)
+    memcpy[Scalar[dtype]](
+        dest=A._im._buf.ptr, src=pointer_imag, count=A._im.size
+    )
     return A^
 
 
@@ -2754,7 +2756,7 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._buf = OwnData[dtype](1)
+    b._buf = DataContainer[dtype](1)
     b._buf.ptr.init_pointee_copy(val)
     b.flags.OWNDATA = True
     return b^
@@ -2779,8 +2781,8 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._re._buf = OwnData[cdtype._dtype](1)
-    b._im._buf = OwnData[cdtype._dtype](1)
+    b._re._buf = DataContainer[cdtype._dtype](1)
+    b._im._buf = DataContainer[cdtype._dtype](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True

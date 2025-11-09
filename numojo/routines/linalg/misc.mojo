@@ -67,7 +67,9 @@ fn diagonal[
 fn issymmetric[
     dtype: DType
 ](
-    A: Matrix[dtype], rtol: Scalar[dtype] = 1e-5, atol: Scalar[dtype] = 1e-8
+    A: Matrix[dtype, **_],
+    rtol: Scalar[dtype] = 1e-5,
+    atol: Scalar[dtype] = 1e-8,
 ) -> Bool:
     """
     Returns True if A is symmetric, False otherwise.

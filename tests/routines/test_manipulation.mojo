@@ -3,6 +3,7 @@ from numojo import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
 from python import Python
+from testing import TestSuite
 
 
 fn test_arr_manipulation() raises:
@@ -137,3 +138,7 @@ def test_broadcast():
         np.broadcast_to(a.to_numpy(), Python.tuple(2, 2, 2, 3)),
         "`broadcast_to` fails.",
     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

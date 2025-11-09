@@ -55,7 +55,7 @@ from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
 from numojo.core.complex.complex_dtype import ComplexDType
-from numojo.core.own_data import OwnData
+from numojo.core.data_container import DataContainer
 from numojo.core.utility import (
     _get_offset,
     _transfer_offset,
@@ -393,7 +393,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     # fn __getitem__(self, *slices: Variant[Slice, Int]) raises -> Self         # Get by mix of slices/ints
     #
     # 4. Advanced Indexing
-    # fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self        # Get by index array
+    # fn __getitem__(self, indices: NDArray[DType.int]) raises -> Self        # Get by index array
     # fn __getitem__(self, indices: List[Int]) raises -> Self                   # Get by list of indices
     # fn __getitem__(self, mask: NDArray[DType.bool]) raises -> Self            # Get by boolean mask
     # fn __getitem__(self, mask: List[Bool]) raises -> Self                     # Get by boolean list
@@ -646,13 +646,21 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         # Fast path for C-contiguous
         if self.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
-            memcpy(result._re._buf.ptr, self._re._buf.ptr + norm * block, block)
-            memcpy(result._im._buf.ptr, self._im._buf.ptr + norm * block, block)
+            memcpy(
+                dest=result._re._buf.ptr,
+                src=self._re._buf.ptr + norm * block,
+                count=block,
+            )
+            memcpy(
+                dest=result._im._buf.ptr,
+                src=self._im._buf.ptr + norm * block,
+                count=block,
+            )
             return result^
 
         # F layout
-        self._re._copy_first_axis_slice[Self.dtype](self._re, norm, result._re)
-        self._im._copy_first_axis_slice[Self.dtype](self._im, norm, result._im)
+        self[Self.dtype]._re._copy_first_axis_slice(self._re, norm, result._re)
+        self[Self.dtype]._im._copy_first_axis_slice(self._im, norm, result._im)
         return result^
 
     fn __getitem__(self, var *slices: Slice) raises -> Self:
@@ -927,7 +935,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         narr = self.__getitem__(slice_list^)
         return narr^
 
-    fn __getitem__(self, indices: NDArray[DType.index]) raises -> Self:
+    fn __getitem__(self, indices: NDArray[DType.int]) raises -> Self:
         """
         Get items from 0-th dimension of a ComplexNDArray of indices.
         If the original array is of shape (i,j,k) and
@@ -969,14 +977,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     )
                 )
             memcpy(
-                result._re._buf.ptr + i * size_per_item,
-                self._re._buf.ptr + indices.item(i) * size_per_item,
-                size_per_item,
+                dest=result._re._buf.ptr + i * size_per_item,
+                src=self._re._buf.ptr + indices.item(i) * size_per_item,
+                count=size_per_item,
             )
             memcpy(
-                result._im._buf.ptr + i * size_per_item,
-                self._im._buf.ptr + indices.item(i) * size_per_item,
-                size_per_item,
+                dest=result._im._buf.ptr + i * size_per_item,
+                src=self._im._buf.ptr + indices.item(i) * size_per_item,
+                count=size_per_item,
             )
 
         return result^
@@ -985,7 +993,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Get items from 0-th dimension of a ComplexNDArray of indices.
         It is an overload of
-        `__getitem__(self, indices: NDArray[DType.index]) raises -> Self`.
+        `__getitem__(self, indices: NDArray[DType.int]) raises -> Self`.
 
         Args:
             indices: A list of Int.
@@ -998,7 +1006,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         """
 
-        var indices_array = NDArray[DType.index](shape=Shape(len(indices)))
+        var indices_array = NDArray[DType.int](shape=Shape(len(indices)))
         for i in range(len(indices)):
             (indices_array._buf.ptr + i).init_pointee_copy(indices[i])
 
@@ -1108,14 +1116,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         for i in range(mask.size):
             if mask.item(i):
                 memcpy(
-                    result._re._buf.ptr + offset * size_per_item,
-                    self._re._buf.ptr + i * size_per_item,
-                    size_per_item,
+                    dest=result._re._buf.ptr + offset * size_per_item,
+                    src=self._re._buf.ptr + i * size_per_item,
+                    count=size_per_item,
                 )
                 memcpy(
-                    result._im._buf.ptr + offset * size_per_item,
-                    self._im._buf.ptr + i * size_per_item,
-                    size_per_item,
+                    dest=result._im._buf.ptr + offset * size_per_item,
+                    src=self._im._buf.ptr + i * size_per_item,
+                    count=size_per_item,
                 )
                 offset += 1
 
@@ -1657,13 +1665,21 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                         ),
                     )
                 )
-            memcpy(self._re._buf.ptr + norm * block, val._re._buf.ptr, block)
-            memcpy(self._im._buf.ptr + norm * block, val._im._buf.ptr, block)
+            memcpy(
+                dest=self._re._buf.ptr + norm * block,
+                src=val._re._buf.ptr,
+                count=block,
+            )
+            memcpy(
+                dest=self._im._buf.ptr + norm * block,
+                src=val._im._buf.ptr,
+                count=block,
+            )
             return
 
         # F order
-        self._re._write_first_axis_slice[Self.dtype](self._re, norm, val._re)
-        self._im._write_first_axis_slice[Self.dtype](self._im, norm, val._im)
+        self[Self.dtype]._re._write_first_axis_slice(self._re, norm, val._re)
+        self[Self.dtype]._im._write_first_axis_slice(self._im, norm, val._im)
 
     fn __setitem__(mut self, index: Item, val: ComplexSIMD[cdtype]) raises:
         """
@@ -1854,7 +1870,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     #     self.__setitem__(slices=slice_list, val=val)
 
-    fn __setitem__(self, index: NDArray[DType.index], val: Self) raises:
+    fn __setitem__(self, index: NDArray[DType.int], val: Self) raises:
         """
         Returns the items of the ComplexNDArray from an array of indices.
 
@@ -3141,7 +3157,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     fn __iter__(
         self,
-    ) raises -> _ComplexNDArrayIter[__origin_of(self._re), cdtype]:
+    ) raises -> _ComplexNDArrayIter[origin_of(self._re), cdtype]:
         """
         Iterates over elements of the ComplexNDArray and return sub-arrays as view.
 
@@ -3149,16 +3165,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             An iterator of ComplexNDArray elements.
         """
 
-        return _ComplexNDArrayIter[__origin_of(self._re), cdtype](
+        return _ComplexNDArrayIter[origin_of(self._re), cdtype](
             self,
             dimension=0,
         )
 
     fn __reversed__(
         self,
-    ) raises -> _ComplexNDArrayIter[
-        __origin_of(self._re), cdtype, forward=False
-    ]:
+    ) raises -> _ComplexNDArrayIter[origin_of(self._re), cdtype, forward=False]:
         """
         Iterates backwards over elements of the ComplexNDArray, returning
         copied value.
@@ -3167,9 +3181,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             A reversed iterator of NDArray elements.
         """
 
-        return _ComplexNDArrayIter[
-            __origin_of(self._re), cdtype, forward=False
-        ](
+        return _ComplexNDArrayIter[origin_of(self._re), cdtype, forward=False](
             self,
             dimension=0,
         )
@@ -3272,13 +3284,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             var result: NDArray[dtype = Self.dtype] = NDArray[
                 dtype = Self.dtype
             ](self.shape)
-            memcpy(result._buf.ptr, self._re._buf.ptr, self.size)
+            memcpy(dest=result._buf.ptr, src=self._re._buf.ptr, count=self.size)
             return result^
         elif type == "im":
             var result: NDArray[dtype = Self.dtype] = NDArray[
                 dtype = Self.dtype
             ](self.shape)
-            memcpy(result._buf.ptr, self._im._buf.ptr, self.size)
+            memcpy(dest=result._buf.ptr, src=self._im._buf.ptr, count=self.size)
             return result^
         else:
             raise Error(
@@ -3939,8 +3951,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        var diag_re = self._re.diagonal[Self.dtype](offset)
-        var diag_im = self._im.diagonal[Self.dtype](offset)
+        var diag_re = self[Self.dtype]._re.diagonal(offset)
+        var diag_im = self[Self.dtype]._im.diagonal(offset)
         return Self(diag_re^, diag_im^)
 
     fn trace(self) raises -> ComplexSIMD[cdtype]:

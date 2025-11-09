@@ -14,6 +14,7 @@ from sys import simd_width_of
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
@@ -23,7 +24,7 @@ from numojo.core.utility import _list_of_flipped_range, _get_offset
 
 # ===----------------------------------------------------------------------=== #
 # TODO:
-# - When `OwnData` is supported, re-write `broadcast_to()`.`
+# - When `DataContainer` is supported, re-write `broadcast_to()`.`
 # ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
@@ -207,7 +208,7 @@ fn ravel[
 # TODO: Remove this one if the following function is working well:
 # `numojo.core.utility._traverse_buffer_according_to_shape_and_strides`
 fn _set_values_according_to_shape_and_strides(
-    mut I: NDArray[DType.index],
+    mut I: NDArray[DType.int],
     mut index: Int,
     current_dim: Int,
     previous_sum: Int,
@@ -285,8 +286,8 @@ fn transpose[
         new_strides._buf[i] = A.strides[axes[i]]
 
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
-    var I = NDArray[DType.index](Shape(A.size), order=array_order)
-    var ptr: UnsafePointer[Scalar[DType.index]] = I._buf.ptr
+    var I = NDArray[DType.int](Shape(A.size), order=array_order)
+    var ptr: UnsafePointer[Scalar[DType.int]] = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
@@ -310,7 +311,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
-            memcpy(B._buf.ptr, A._buf.ptr, A.size)
+            memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
         else:
             for i in range(B.shape[0]):
                 for j in range(B.shape[1]):
@@ -324,7 +325,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
@@ -335,7 +336,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)
 
     if A.shape[0] == 1 or A.shape[1] == 1:
-        memcpy(B._buf.ptr, A._buf.ptr, A.size)
+        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     else:
         for i in range(B.shape[0]):
             for j in range(B.shape[1]):
@@ -343,7 +344,9 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return B^
 
 
-fn reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn reorder_layout[
+    dtype: DType
+](A: Matrix[dtype, **_]) raises -> Matrix[dtype, A.BufType]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -368,8 +371,7 @@ fn reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
             )
         )
 
-    var B: Matrix[dtype] = Matrix[dtype](Tuple(rows, cols), new_order)
-
+    var B = Matrix[dtype, A.BufType](Tuple(rows, cols), new_order)
     if new_order == "C":
         for i in range(rows):
             for j in range(cols):
@@ -419,11 +421,11 @@ fn broadcast_to[
         b_strides[i] = 0
 
     # Start broadcasting.
-    # TODO: When `OwnData` is supported, re-write this part.
+    # TODO: When `DataContainer` is supported, re-write this part.
     # We just need to change the shape and strides and re-use the data.
 
     var b = NDArray[dtype](shape)  # Construct array of targeted shape.
-    # TODO: `b.strides = b_strides` when OwnData
+    # TODO: `b.strides = b_strides` when DataContainer
 
     # Iterate all items in the new array and fill in correct values.
     for offset in range(b.size):
@@ -433,12 +435,12 @@ fn broadcast_to[
         for i in range(b.ndim):
             indices[i] = remainder // b.strides[i]
             remainder %= b.strides[i]
-            # TODO: Change b.strides to NDArrayStrides(b.shape) when OwnData
+            # TODO: Change b.strides to NDArrayStrides(b.shape) when DataContainer
 
         (b._buf.ptr + offset).init_pointee_copy(
             a._buf.ptr[
                 _get_offset(indices, b_strides)
-            ]  # TODO: Change b_strides to b.strides when OwnData
+            ]  # TODO: Change b_strides to b.strides when DataContainer
         )
 
     return b^
@@ -447,8 +449,10 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    var A: Matrix[dtype], shape: Tuple[Int, Int], override_order: String = ""
-) raises -> Matrix[dtype]:
+    read A: Matrix[dtype, **_],
+    shape: Tuple[Int, Int],
+    override_order: String = "",
+) raises -> Matrix[dtype, **_]:
     """
     Broadcasts the vector to the given shape.
 
@@ -485,11 +489,12 @@ fn broadcast_to[
     else:
         ord = override_order
 
-    var B = Matrix[dtype](shape, order=ord)
+    var B: Matrix[dtype, OwnData] = Matrix[dtype, OwnData](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        return A^
+        # return A.copy()
+        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = Matrix.full[dtype](shape, A[0, 0], order=ord)
+        B = Matrix[dtype].full(shape, A[0, 0], order=ord)
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(
@@ -518,7 +523,7 @@ fn broadcast_to[
     Broadcasts the scalar to the given shape.
     """
 
-    var B: Matrix[dtype] = Matrix.full[dtype](shape, A, order=order)
+    var B: Matrix[dtype] = Matrix[dtype].full(shape, A, order=order)
     return B^
 
 
@@ -531,7 +536,7 @@ fn _broadcast_back_to[
     it has one dimension less than `a`.
     This function can broadcast `b` back to the shape of `a`.
     It is a temporary function and should not be used by users.
-    When `OwnData` is supported, this function will be removed.
+    When `DataContainer` is supported, this function will be removed.
     Whether broadcasting is possible or not is not checked.
     """
 
@@ -614,7 +619,7 @@ fn flip[
             String("Invalid index: index out of bound [0, {}).").format(A.ndim)
         )
 
-    var I = NDArray[DType.index](Shape(A.size))
+    var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(

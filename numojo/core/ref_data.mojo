@@ -17,8 +17,13 @@ struct RefData[is_mutable: Bool, //, origin: Origin[is_mutable]](
     fn __init__(out self):
         pass
 
-    fn is_own_data(self) -> Bool:
+    @staticmethod
+    fn is_own_data() -> Bool:
         return False
 
-    fn is_ref_data(self) -> Bool:
+    @staticmethod
+    fn is_ref_data() -> Bool:
         return True
+
+    fn __str__(self) -> String:
+        return "RefData"

@@ -15,6 +15,7 @@ from python import PythonObject, Python
 from math import ceil
 
 from numojo.core.flags import Flags
+
 # from numojo.core.ndarray import NDArray
 from numojo.core.data_container import DataContainerNew as DataContainer
 from numojo.core.traits.buffered import Buffered
@@ -30,9 +31,11 @@ from numojo.routines.linalg.misc import issymmetric
 # ===----------------------------------------------------------------------===#
 
 
-struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin: MutOrigin = MutOrigin.external](
-    Copyable, Movable, Sized, Stringable, Writable
-):
+struct Matrix[
+    dtype: DType = DType.float64,
+    BufType: Buffered = OwnData,
+    origin: MutOrigin = MutOrigin.external,
+](Copyable, Movable, Sized, Stringable, Writable):
     """
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
@@ -269,7 +272,13 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
         var owndata: Bool = self.flags.OWNDATA
         # Free the buffer only if it owns the data, but its redudant rn. move buf type checks into compile time and remove redundant check here.
         if owndata and self.buf_type.is_own_data():
-            print("Freeing matrix memory", self.buf_type.is_own_data(), self.size, self.shape[0], self.shape[1])
+            print(
+                "Freeing matrix memory",
+                self.buf_type.is_own_data(),
+                self.size,
+                self.shape[0],
+                self.shape[1],
+            )
             self._buf.ptr.free()
 
     fn create_copy(self) raises -> Matrix[dtype, OwnData]:
@@ -332,7 +341,11 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get(
         ref self, x: Int
-    ) raises -> Matrix[dtype, RefData[MutOrigin.cast_from[origin_of(self)]], MutOrigin.cast_from[origin_of(self)]]:
+    ) raises -> Matrix[
+        dtype,
+        RefData[MutOrigin.cast_from[origin_of(self)]],
+        MutOrigin.cast_from[origin_of(self)],
+    ]:
         """
         Return the corresponding row at the index.
 
@@ -351,14 +364,18 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
             )
 
         var x_norm = self.normalize(x, self.shape[0])
-        var new_ptr = self._buf.ptr.unsafe_origin_cast[MutOrigin.cast_from[origin_of(self)]]()
+        var new_ptr = self._buf.ptr
         var res = Matrix[
-            dtype, RefData[MutOrigin.cast_from[origin_of(self)]], MutOrigin.cast_from[origin_of(self)]
+            dtype,
+            RefData[MutOrigin.cast_from[origin_of(self)]],
+            MutOrigin.cast_from[origin_of(self)],
         ](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
             offset=x_norm * self.strides[0],
-            ptr=new_ptr
+            ptr=new_ptr.unsafe_origin_cast[
+                MutOrigin.cast_from[origin_of(self)]
+            ](),
         )
         return res^
 
@@ -397,7 +414,11 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
 
     fn get(
         ref self, x: Slice, y: Slice
-    ) -> Matrix[dtype, RefData[MutOrigin.cast_from[origin_of(self)]], MutOrigin.cast_from[origin_of(self)]]:
+    ) -> Matrix[
+        dtype,
+        RefData[MutOrigin.cast_from[origin_of(self)]],
+        MutOrigin.cast_from[origin_of(self)],
+    ]:
         """
         Get item from two slices.
         """
@@ -408,10 +429,11 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
         start_x, end_x, step_x = x.indices(self.shape[0])
         start_y, end_y, step_y = y.indices(self.shape[1])
 
-        var new_ptr = self._buf.ptr.unsafe_origin_cast[MutOrigin.cast_from[origin_of(self)]]()
+        var new_ptr = self._buf.ptr
         var res = Matrix[
-            dtype, RefData[MutOrigin.cast_from[origin_of(self)]],
-            MutOrigin.cast_from[origin_of(self)]
+            dtype,
+            RefData[MutOrigin.cast_from[origin_of(self)]],
+            MutOrigin.cast_from[origin_of(self)],
         ](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
@@ -419,13 +441,15 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
             ),
             strides=(step_x * self.strides[0], step_y * self.strides[1]),
             offset=start_x * self.strides[0] + start_y * self.strides[1],
-            ptr=new_ptr
+            ptr=new_ptr.unsafe_origin_cast[
+                MutOrigin.cast_from[origin_of(self)]
+            ](),
         )
 
         return res^
 
     # for creating a copy of the slice.
-    fn __getitem__(self, x: Slice, y: Slice) -> Matrix[dtype]:
+    fn __getitem__(self, x: Slice, y: Slice) -> Matrix[dtype, OwnData]:
         """
         Get item from two slices.
         """
@@ -440,7 +464,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
         var range_x = range(start_x, end_x, step_x)
         var range_y = range(start_y, end_y, step_y)
 
-        var B = Matrix[dtype](
+        var B = Matrix[dtype, OwnData](
             shape=(len(range_x), len(range_y)), order=self.order()
         )
         var row = 0
@@ -453,46 +477,51 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
 
         return B^
 
-    # fn get(
-    #     ref self, x: Slice, var y: Int
-    # ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
-    #     """
-    #     Get item from one slice and one int.
-    #     """
-    #     # we could remove this constraint if we wanna allow users to create views from views. But that may complicate the origin tracking?
-    #     constrained[
-    #         BufType.is_own_data(),
-    #         "Buffer type must be OwnData to get a reference slice.",
-    #     ]()
-    #     if y >= self.shape[1] or y < -self.shape[1]:
-    #         raise Error(
-    #             String("Index {} exceed the column number {}").format(
-    #                 y, self.shape[1]
-    #             )
-    #         )
-    #     y = self.normalize(y, self.shape[1])
-    #     var start_x: Int
-    #     var end_x: Int
-    #     var step_x: Int
-    #     start_x, end_x, step_x = x.indices(self.shape[0])
+    fn get(
+        ref self, x: Slice, var y: Int
+    ) raises -> Matrix[
+        dtype,
+        RefData[MutOrigin.cast_from[origin_of(self)]],
+        MutOrigin.cast_from[origin_of(self)],
+    ]:
+        """
+        Get item from one slice and one int.
+        """
+        # we could remove this constraint if we wanna allow users to create views from views. But that may complicate the origin tracking?
+        constrained[
+            BufType.is_own_data(),
+            "Buffer type must be OwnData to get a reference slice.",
+        ]()
+        if y >= self.shape[1] or y < -self.shape[1]:
+            raise Error(
+                String("Index {} exceed the column number {}").format(
+                    y, self.shape[1]
+                )
+            )
+        y = self.normalize(y, self.shape[1])
+        var start_x: Int
+        var end_x: Int
+        var step_x: Int
+        start_x, end_x, step_x = x.indices(self.shape[0])
 
-    #     var res = Matrix[
-    #         dtype, RefData[MutOrigin.cast_from[origin_of(self)]]
-    #     ](
-    #         shape=(
-    #             Int(ceil((end_x - start_x) / step_x)),
-    #             1,
-    #         ),
-    #         strides=(step_x * self.strides[0], self.strides[1]),
-    #         offset=start_x * self.strides[0] + y * self.strides[1],
-    #         ptr=self._buf.get_ptr()
-    #         .mut_cast[target_mut=False]()
-    #         .unsafe_origin_cast[
-    #             target_origin = ImmutOrigin.cast_from[origin_of(self)]
-    #         ](),
-    #     )
+        var new_ptr = self._buf.ptr
+        var res = Matrix[
+            dtype,
+            RefData[MutOrigin.cast_from[origin_of(self)]],
+            MutOrigin.cast_from[origin_of(self)],
+        ](
+            shape=(
+                Int(ceil((end_x - start_x) / step_x)),
+                1,
+            ),
+            strides=(step_x * self.strides[0], self.strides[1]),
+            offset=start_x * self.strides[0] + y * self.strides[1],
+            ptr=new_ptr.unsafe_origin_cast[
+                MutOrigin.cast_from[origin_of(self)]
+            ](),
+        )
 
-    #     return res^
+        return res^
 
     # for creating a copy of the slice.
     fn __getitem__(self, x: Slice, var y: Int) -> Matrix[dtype, OwnData]:
@@ -520,46 +549,51 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
             row += 1
         return res^
 
-    # fn get(
-    #     ref self, var x: Int, y: Slice
-    # ) raises -> Matrix[dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]]:
-    #     """
-    #     Get item from one int and one slice.
-    #     """
-    #     constrained[
-    #         BufType.is_own_data(),
-    #         "Buffer type must be OwnData to get a reference slice.",
-    #     ]()
-    #     if x >= self.shape[0] or x < -self.shape[0]:
-    #         raise Error(
-    #             String("Index {} exceed the row size {}").format(
-    #                 x, self.shape[0]
-    #             )
-    #         )
-    #     x = self.normalize(x, self.shape[0])
-    #     var start_y: Int
-    #     var end_y: Int
-    #     var step_y: Int
-    #     start_y, end_y, step_y = y.indices(self.shape[1])
-    #     var range_y = range(start_y, end_y, step_y)
+    fn get(
+        ref self, var x: Int, y: Slice
+    ) raises -> Matrix[
+        dtype,
+        RefData[MutOrigin.cast_from[origin_of(self)]],
+        MutOrigin.cast_from[origin_of(self)],
+    ]:
+        """
+        Get item from one int and one slice.
+        """
+        constrained[
+            BufType.is_own_data(),
+            "Buffer type must be OwnData to get a reference slice.",
+        ]()
+        if x >= self.shape[0] or x < -self.shape[0]:
+            raise Error(
+                String("Index {} exceed the row size {}").format(
+                    x, self.shape[0]
+                )
+            )
+        x = self.normalize(x, self.shape[0])
+        var start_y: Int
+        var end_y: Int
+        var step_y: Int
+        start_y, end_y, step_y = y.indices(self.shape[1])
+        var range_y = range(start_y, end_y, step_y)
 
-    #     var res = Matrix[
-    #         dtype, RefData[ImmutOrigin.cast_from[origin_of(self)]]
-    #     ](
-    #         shape=(
-    #             1,
-    #             Int(ceil((end_y - start_y) / step_y)),
-    #         ),
-    #         strides=(self.strides[0], step_y * self.strides[1]),
-    #         offset=x * self.strides[0] + start_y * self.strides[1],
-    #         ptr=self._buf.get_ptr()
-    #         .mut_cast[target_mut=False]()
-    #         .unsafe_origin_cast[
-    #             target_origin = ImmutOrigin.cast_from[origin_of(self)]
-    #         ](),
-    #     )
+        var new_ptr = self._buf.ptr
+        var res = Matrix[
+            dtype,
+            RefData[MutOrigin.cast_from[origin_of(self)]],
+            MutOrigin.cast_from[origin_of(self)],
+        ](
+            shape=(
+                1,
+                Int(ceil((end_y - start_y) / step_y)),
+            ),
+            strides=(self.strides[0], step_y * self.strides[1]),
+            offset=x * self.strides[0] + start_y * self.strides[1],
+            ptr=self._buf.get_ptr().unsafe_origin_cast[
+                MutOrigin.cast_from[origin_of(self)]
+            ](),
+        )
 
-    #     return res^
+        return res^
 
     # for creating a copy of the slice.
     fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
@@ -765,8 +799,6 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
-        print("Set row", x)
-
     fn __setitem__(self, x: Slice, y: Int, value: Matrix[dtype, **_]) raises:
         """
         Set item from one slice and one int.
@@ -923,8 +955,6 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
                 self._store(i, j, value._load(row, col))
                 col += 1
             row += 1
-
-        print("Set slice completed.")
 
     fn set(self, x: Slice, y: Slice, value: Matrix[dtype, **_]) raises:
         """
@@ -1675,7 +1705,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData, origin:
         Change shape and size of matrix in-place.
         """
         if shape[0] * shape[1] > self.size:
-            var other = Matrix[dtype, Self.BufType](shape=shape)
+            var other = Matrix[dtype, Self.BufType, origin](shape=shape)
             if self.flags.C_CONTIGUOUS:
                 memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
                 for i in range(self.size, other.size):
@@ -2134,7 +2164,11 @@ struct _MatrixIter[
     fn __next__(
         mut self,
     ) raises -> Matrix[
-        dtype, RefData[ImmutOrigin.cast_from[origin_of(self.matrix)]]
+        dtype,
+        RefData[
+            MutOrigin.cast_from[origin_of(self.matrix)],
+            MutOrigin.cast_from[origin_of(self.matrix)],
+        ],
     ]:
         @parameter
         if forward:

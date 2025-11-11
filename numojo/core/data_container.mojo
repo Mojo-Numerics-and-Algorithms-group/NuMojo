@@ -21,7 +21,9 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         `ndarray.flags['OWN_DATA']` should be set as True.
         The memory should be freed by `__del__`.
         """
-        self.ptr = alloc[Scalar[dtype]](size).unsafe_origin_cast[MutOrigin.cast_from[origin]]()
+        self.ptr = alloc[Scalar[dtype]](size).unsafe_origin_cast[
+            MutOrigin.cast_from[origin]
+        ]()
 
     fn __init__(out self, ptr: UnsafePointerV2[Scalar[dtype], origin]):
         """
@@ -40,6 +42,7 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
 
     fn get_ptr(self) -> UnsafePointerV2[Scalar[dtype], origin]:
         return self.ptr
+
 
 struct DataContainer[dtype: DType](ImplicitlyCopyable):
     var ptr: UnsafePointer[Scalar[dtype]]

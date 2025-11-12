@@ -574,8 +574,7 @@ struct Matrix[
         var end_y: Int
         var step_y: Int
         start_y, end_y, step_y = y.indices(self.shape[1])
-        var range_y = range(start_y, end_y, step_y)
-
+        # var range_y = range(start_y, end_y, step_y)
         var new_ptr = self._buf.ptr
         var res = Matrix[
             dtype,
@@ -588,7 +587,7 @@ struct Matrix[
             ),
             strides=(self.strides[0], step_y * self.strides[1]),
             offset=x * self.strides[0] + start_y * self.strides[1],
-            ptr=self._buf.get_ptr().unsafe_origin_cast[
+            ptr=new_ptr.unsafe_origin_cast[
                 MutOrigin.cast_from[origin_of(self)]
             ](),
         )
@@ -1007,7 +1006,7 @@ struct Matrix[
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
 
-    fn __iter__(self) raises -> _MatrixIter[origin_of(self), dtype, BufType]:
+    fn __iter__(self) raises -> _MatrixIter[origin, dtype, BufType]:
         """Iterate over elements of the Matrix, returning copied value.
 
         Example:
@@ -1022,7 +1021,7 @@ struct Matrix[
             An iterator of Matrix elements.
         """
 
-        return _MatrixIter[origin_of(self), dtype, BufType](
+        return _MatrixIter[origin, dtype, BufType](
             matrix=self,
             length=self.shape[0],
         )
@@ -2129,8 +2128,7 @@ struct Matrix[
 
 # ! Should the iterator be mutable or not?
 struct _MatrixIter[
-    is_mutable: Bool, //,
-    lifetime: Origin[is_mutable],
+    lifetime: MutOrigin,
     dtype: DType,
     buf_type: Buffered,
     forward: Bool = True,
@@ -2138,7 +2136,6 @@ struct _MatrixIter[
     """Iterator for Matrix.
 
     Parameters:
-        is_mutable: Whether the iterator is mutable.
         lifetime: The lifetime of the underlying Matrix data.
         dtype: The data type of the item.
         buf_type: The buffer type of the underlying Matrix, OwnData or RefData.
@@ -2146,12 +2143,12 @@ struct _MatrixIter[
     """
 
     var index: Int
-    var matrix: Matrix[dtype, buf_type]
+    var matrix: Matrix[dtype, buf_type, lifetime]
     var length: Int
 
     fn __init__(
         out self,
-        matrix: Matrix[dtype, buf_type],
+        matrix: Matrix[dtype, buf_type, lifetime],
         length: Int,
     ):
         self.index = 0 if forward else length
@@ -2165,10 +2162,8 @@ struct _MatrixIter[
         mut self,
     ) raises -> Matrix[
         dtype,
-        RefData[
-            MutOrigin.cast_from[origin_of(self.matrix)],
-            MutOrigin.cast_from[origin_of(self.matrix)],
-        ],
+        RefData[origin_of(self.matrix)],
+        origin_of(self.matrix)
     ]:
         @parameter
         if forward:

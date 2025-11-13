@@ -185,7 +185,11 @@ struct Matrix[
             self.size = data.shape[0]
         elif data.ndim == 2:
             self.shape = (data.shape[0], data.shape[1])
-            self.strides = (data.shape[1], 1)
+            # Set strides based on the order of the input data
+            if data.flags["C_CONTIGUOUS"]:
+                self.strides = (data.shape[1], 1)
+            else:
+                self.strides = (1, data.shape[0])
             self.size = data.shape[0] * data.shape[1]
         else:
             raise Error(String("Shape too large to be a matrix."))
@@ -195,18 +199,11 @@ struct Matrix[
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
-
-        if data.flags["C_CONTIGUOUS"]:
-            for i in range(data.shape[0]):
-                memcpy(
-                    dest=self._buf.ptr.offset(i * self.shape[0]),
-                    src=data._buf.ptr.offset(i * data.shape[0]),
-                    count=self.shape[0],
-                )
-        else:
-            for i in range(data.shape[0]):
-                for j in range(data.shape[1]):
-                    self._store(i, j, data._getitem(i, j))
+        memcpy(
+            dest=self._buf.ptr,
+            src=data._buf.ptr,
+            count=self.size,
+        )
 
     # to construct views
     @always_inline("nodebug")

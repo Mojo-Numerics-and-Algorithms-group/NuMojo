@@ -338,7 +338,7 @@ struct Matrix[
             x_norm * self.strides[0] + y_norm * self.strides[1]
         )
 
-    # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
+    # NOTE: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get(
         ref self, x: Int
     ) raises -> Matrix[
@@ -1006,7 +1006,7 @@ struct Matrix[
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
 
-    fn __iter__(self) raises -> _MatrixIter[origin, dtype, BufType]:
+    fn __iter__(mut self) raises -> _MatrixIter[origin, dtype, BufType]:
         """Iterate over elements of the Matrix, returning copied value.
 
         Example:
@@ -1033,8 +1033,8 @@ struct Matrix[
         return self.shape[0]
 
     fn __reversed__(
-        self,
-    ) raises -> _MatrixIter[origin_of(self), dtype, BufType, forward=False]:
+        mut self,
+    ) raises -> _MatrixIter[origin, dtype, BufType, forward=False]:
         """Iterate backwards over elements of the Matrix, returning
         copied value.
 
@@ -1042,7 +1042,7 @@ struct Matrix[
             A reversed iterator of Matrix elements.
         """
 
-        return _MatrixIter[origin_of(self), dtype, BufType, forward=False](
+        return _MatrixIter[origin, dtype, BufType, forward=False](
             matrix=self,
             length=self.shape[0],
         )
@@ -1175,11 +1175,11 @@ struct Matrix[
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__sub__
-            ](broadcast_to(self.copy(), other.shape, self.order()), other)
+            ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__sub__
-            ](self, broadcast_to(other.copy(), self.shape, self.order()))
+            ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __sub__(self, other: Scalar[dtype]) raises -> Matrix[dtype, **_]:
         """Subtract matrix by scalar.
@@ -1704,22 +1704,26 @@ struct Matrix[
         Change shape and size of matrix in-place.
         """
         if shape[0] * shape[1] > self.size:
-            var other = Matrix[dtype, Self.BufType, origin](shape=shape)
+            var other = Matrix[dtype, Self.BufType, origin](shape=shape, order=self.order())
             if self.flags.C_CONTIGUOUS:
                 memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
                 for i in range(self.size, other.size):
                     other._buf.ptr[i] = 0
             else:
-                var idx = 0
-                for i in range(other.size):
-                    other._buf.ptr.store(i, 0.0)
-                    if idx < self.size:
-                        other._buf.ptr[i] = self._buf.ptr[
-                            (i % self.shape[1]) * self.shape[0]
-                            + (i // self.shape[1])
-                        ]
-                        idx += 1
-                other = other.reorder_layout()
+                var min_rows = min(self.shape[0], shape[0])
+                var min_cols = min(self.shape[1], shape[1])
+
+                for j in range(min_cols):
+                    for i in range(min_rows):
+                        other._buf.ptr[i + j * shape[0]] = self._buf.ptr[i + j * self.shape[0]]
+                    for i in range(min_rows, shape[0]):
+                        other._buf.ptr[i + j * shape[0]] = 0
+
+                # Zero the additional columns
+                for j in range(min_cols, shape[1]):
+                    for i in range(shape[0]):
+                        other._buf.ptr[i + j * shape[0]] = 0
+
             self = other^
         else:
             self.shape[0] = shape[0]
@@ -1805,7 +1809,8 @@ struct Matrix[
         """
         return transpose(self)
 
-    fn reorder_layout(self) raises -> Matrix[dtype, Self.BufType]:
+    # TODO: we should only allow this for owndata. not for views, it'll lead to weird origin behaviours.
+    fn reorder_layout(self) raises -> Matrix[dtype, **_]:
         """
         Reorder_layout matrix.
         """
@@ -2148,12 +2153,12 @@ struct _MatrixIter[
 
     fn __init__(
         out self,
-        matrix: Matrix[dtype, buf_type, lifetime],
+        mut matrix: Matrix[dtype, buf_type, lifetime],
         length: Int,
     ):
         self.index = 0 if forward else length
         self.length = length
-        self.matrix = matrix.copy()
+        self.matrix = matrix
 
     fn __iter__(self) -> Self:
         return self.copy()

@@ -1216,11 +1216,11 @@ struct Matrix[
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__mul__
-            ](broadcast_to(self.copy(), other.shape, self.order()), other)
+            ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__mul__
-            ](self, broadcast_to(other.copy(), self.shape, self.order()))
+            ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __mul__(self, other: Scalar[dtype]) raises -> Matrix[dtype, **_]:
         """Mutiply matrix by scalar.
@@ -1259,11 +1259,11 @@ struct Matrix[
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__truediv__
-            ](broadcast_to(self.copy(), other.shape, self.order()), other)
+            ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
                 dtype, SIMD.__truediv__
-            ](self, broadcast_to(other.copy(), self.shape, self.order()))
+            ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __truediv__(self, other: Scalar[dtype]) raises -> Matrix[dtype, **_]:
         """Divide matrix by scalar."""
@@ -1292,11 +1292,11 @@ struct Matrix[
             self.shape[1] < other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
-                broadcast_to(self.copy(), other.shape, self.order()), other
+                broadcast_to(self, other.shape, self.order()), other
             )
         else:
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
-                self, broadcast_to(other.copy(), self.shape, self.order())
+                self, broadcast_to(other, self.shape, self.order())
             )
 
     fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
@@ -1323,11 +1323,11 @@ struct Matrix[
             self.shape[1] < other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
-                broadcast_to(self.copy(), other.shape, self.order()), other
+                broadcast_to(self, other.shape, self.order()), other
             )
         else:
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
-                self, broadcast_to(other.copy(), self.shape, self.order())
+                self, broadcast_to(other, self.shape, self.order())
             )
 
     fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
@@ -1354,11 +1354,11 @@ struct Matrix[
             self.shape[1] < other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
-                broadcast_to(self.copy(), other.shape, self.order()), other
+                broadcast_to(self, other.shape, self.order()), other
             )
         else:
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
-                self, broadcast_to(other.copy(), self.shape, self.order())
+                self, broadcast_to(other, self.shape, self.order())
             )
 
     fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
@@ -1385,11 +1385,11 @@ struct Matrix[
             self.shape[1] < other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
-                broadcast_to(self.copy(), other.shape, self.order()), other
+                broadcast_to(self, other.shape, self.order()), other
             )
         else:
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
-                self, broadcast_to(other.copy(), self.shape, self.order())
+                self, broadcast_to(other, self.shape, self.order())
             )
 
     fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
@@ -1416,11 +1416,11 @@ struct Matrix[
             self.shape[1] < other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
-                broadcast_to(self.copy(), other.shape, self.order()), other
+                broadcast_to(self, other.shape, self.order()), other
             )
         else:
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
-                self, broadcast_to(other.copy(), self.shape, self.order())
+                self, broadcast_to(other, self.shape, self.order())
             )
 
     fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
@@ -1447,11 +1447,11 @@ struct Matrix[
             self.shape[1] < other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
-                broadcast_to(self.copy(), other.shape, self.order()), other
+                broadcast_to(self, other.shape, self.order()), other
             )
         else:
             return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
-                self, broadcast_to(other.copy(), self.shape, self.order())
+                self, broadcast_to(other, self.shape, self.order())
             )
 
     fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:

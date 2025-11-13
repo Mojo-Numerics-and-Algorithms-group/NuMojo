@@ -267,7 +267,7 @@ struct Matrix[
     @always_inline("nodebug")
     fn __del__(deinit self):
         var owndata: Bool = self.flags.OWNDATA
-        # Free the buffer only if it owns the data, but its redudant rn. move buf type checks into compile time and remove redundant check here.
+        # NOTE: Free the buffer only if it owns the data, but its redudant rn. move buf type checks into compile time and remove redundant check here.
         if owndata and self.buf_type.is_own_data():
             print(
                 "Freeing matrix memory",
@@ -1278,7 +1278,7 @@ struct Matrix[
 
     fn __lt__(
         self, other: Matrix[dtype, **_]
-    ) raises -> Matrix[DType.bool, **_]:
+    ) raises -> Matrix[DType.bool, OwnData, **_]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -2310,12 +2310,5 @@ fn _logic_func_matrix_matrix_to_matrix[
         vectorize[vec_func, width](t1)
 
     parallelize[calculate_CC](t0, t0)
-
-    var _t0 = t0
-    var _t1 = t1
-    var _A = (
-        A.copy()
-    )  # ! perhaps remove this explicit copy if we don't need to extend it's lifetime.
-    var _B = B.copy()
 
     return C^

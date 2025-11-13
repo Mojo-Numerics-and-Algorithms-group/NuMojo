@@ -346,7 +346,7 @@ fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
 
 fn reorder_layout[
     dtype: DType
-](A: Matrix[dtype, **_]) raises -> Matrix[dtype, A.BufType]:
+](A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -371,7 +371,7 @@ fn reorder_layout[
             )
         )
 
-    var B = Matrix[dtype, A.BufType](Tuple(rows, cols), new_order)
+    var B = Matrix[dtype](Tuple(rows, cols), new_order)
     if new_order == "C":
         for i in range(rows):
             for j in range(cols):
@@ -491,7 +491,6 @@ fn broadcast_to[
 
     var B: Matrix[dtype, OwnData] = Matrix[dtype, OwnData](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        # return A.copy()
         memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
         B = Matrix[dtype].full(shape, A[0, 0], order=ord)

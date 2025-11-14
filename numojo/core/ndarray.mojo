@@ -39,7 +39,7 @@
 # TODO: Return views that points to the buffer of the raw array.
 #       This requires enhancement of functionalities of traits from Mojo's side.
 #       The data buffer can implement an ArrayData trait (RawData or RefData)
-#       RawData type is just a wrapper of `UnsafePointer`.
+#       RawData type is just a wrapper of `LegacyUnsafePointer`.
 #       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
 # TODO: Rename some variables or methods that should not be exposed to users.
 # TODO: Special checks for 0d array (numojo scalar).
@@ -54,7 +54,7 @@ import builtin.math as builtin_math
 from builtin.type_aliases import Origin
 from collections.optional import Optional
 from math import log10
-from memory import UnsafePointer, memset_zero, memcpy
+from memory import LegacyUnsafePointer, memset_zero, memcpy
 from python import PythonObject
 from sys import simd_width_of
 from utils import Variant
@@ -277,7 +277,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn __init__(
         out self,
         shape: NDArrayShape,
-        ref buffer: UnsafePointer[Scalar[dtype]],
+        ref buffer: LegacyUnsafePointer[Scalar[dtype]],
         offset: Int,
         strides: NDArrayStrides,
     ) raises:
@@ -5157,7 +5157,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn unsafe_ptr(
         ref self,
-    ) -> UnsafePointer[
+    ) -> LegacyUnsafePointer[
         Scalar[dtype],
         mut = Origin(origin_of(self)).mut,
         origin = origin_of(self),
@@ -5313,7 +5313,7 @@ struct _NDArrayIter[
     """
 
     var index: Int
-    var ptr: UnsafePointer[Scalar[dtype]]
+    var ptr: LegacyUnsafePointer[Scalar[dtype]]
     var dimension: Int
     var length: Int
     var shape: NDArrayShape
@@ -5495,7 +5495,7 @@ struct _NDAxisIter[
     ```
     """
 
-    var ptr: UnsafePointer[Scalar[dtype]]
+    var ptr: LegacyUnsafePointer[Scalar[dtype]]
     var axis: Int
     var order: String
     var length: Int
@@ -5783,7 +5783,7 @@ struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
     It can be constructed by `NDArray.nditer()` method.
     """
 
-    var ptr: UnsafePointer[Scalar[dtype]]
+    var ptr: LegacyUnsafePointer[Scalar[dtype]]
     var length: Int
     var ndim: Int
     var shape: NDArrayShape

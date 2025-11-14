@@ -166,35 +166,26 @@ struct MatrixImpl[
     fn __init__(
         out self,
         var data: Self,
-    ):
+    ) where own_data == True:
         """
         Construct a matrix from matrix.
         """
-        constrained[
-            BufType.is_own_data(),
-            "Buffer type must be OwnData to create matrix that owns data.",
-        ]()
         self = data^
 
     @always_inline("nodebug")
     fn __init__(
         out self,
         data: NDArray[dtype],
-    ) raises:
+    ) raises where own_data == True:
         """
         Construct a matrix from array.
         """
-        constrained[
-            BufType.is_own_data(),
-            "Buffer type must be OwnData to create matrix that owns data.",
-        ]()
         if data.ndim == 1:
             self.shape = (1, data.shape[0])
             self.strides = (data.shape[0], 1)
             self.size = data.shape[0]
         elif data.ndim == 2:
             self.shape = (data.shape[0], data.shape[1])
-            # Set strides based on the order of the input data
             if data.flags["C_CONTIGUOUS"]:
                 self.strides = (data.shape[1], 1)
             else:
@@ -204,7 +195,6 @@ struct MatrixImpl[
             raise Error(String("Shape too large to be a matrix."))
 
         self._buf = DataContainer[dtype, origin](self.size)
-        self.buf_type = BufType()
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -221,8 +211,8 @@ struct MatrixImpl[
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
         offset: Int,
-        ptr: UnsafePointerV2[Scalar[dtype], origin],
-    ):
+        ptr: UnsafePointer[Scalar[dtype], origin],
+    ) where own_data == False:
         """
         Initialize Matrix that does not own the data.
         The data is owned by another Matrix.
@@ -233,21 +223,17 @@ struct MatrixImpl[
             offset: Offset in pointer of the data buffer.
             ptr: Pointer to the data buffer of the original array.
         """
-        constrained[
-            BufType.is_ref_data(),
-            "Buffer type must be RefData to create matrix view.",
-        ]()
         self.shape = shape
         self.strides = strides
         self.size = shape[0] * shape[1]
         self._buf = DataContainer[dtype, origin](ptr=ptr.offset(offset))
-        self.buf_type = BufType()
         self.flags = Flags(
             self.shape, self.strides, owndata=False, writeable=False
         )
 
+    # prevent copying from views to views or views to owning matrices right now.
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, other: Self) where (other.own_data == True and own_data == True):
         """
         Copy other into self.
         """
@@ -256,7 +242,6 @@ struct MatrixImpl[
         self.size = other.size
         self._buf = DataContainer[dtype, origin](other.size)
         memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
-        self.buf_type = BufType()
         self.flags = Flags(
             other.shape, other.strides, owndata=True, writeable=True
         )
@@ -270,42 +255,29 @@ struct MatrixImpl[
         self.strides = other.strides^
         self.size = other.size
         self._buf = other._buf^
-        self.buf_type = other.buf_type^
         self.flags = other.flags^
 
     @always_inline("nodebug")
     fn __del__(deinit self):
-        var owndata: Bool = self.flags.OWNDATA
-        # NOTE: Free the buffer only if it owns the data, but its redudant rn. move buf type checks into compile time and remove redundant check here.
-        if owndata and self.buf_type.is_own_data():
+        # NOTE: Using `where` clause doesn't work here, so use a compile time if check.
+        @parameter
+        if own_data:
             print(
                 "Freeing matrix memory",
-                self.buf_type.is_own_data(),
                 self.size,
                 self.shape[0],
                 self.shape[1],
             )
             self._buf.ptr.free()
 
-    fn create_copy(self) raises -> Matrix[dtype, OwnData]:
-        """
-        Create a copy of the matrix with OwnData buffer type.
-        """
-        var result = Matrix[dtype, OwnData](
-            shape=self.shape, order=self.order()
-        )
-        if self.flags.C_CONTIGUOUS:
-            memcpy(dest=result._buf.ptr, src=self._buf.ptr, count=self.size)
-        else:
-            for i in range(self.shape[0]):
-                for j in range(self.shape[1]):
-                    result[i, j] = self[i, j]
-
-        return result^
-
     # ===-------------------------------------------------------------------===#
     # Slicing and indexing methods
     # ===-------------------------------------------------------------------===#
+
+    @always_inline
+    fn _index(self, row: Int, col: Int) -> Int:
+        """Convert 2D index to 1D index (row-major order)."""
+        return row * self.cols + col
 
     fn normalize(self, idx: Int, dim: Int) -> Int:
         """

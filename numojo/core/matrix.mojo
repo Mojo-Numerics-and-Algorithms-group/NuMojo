@@ -30,13 +30,17 @@ from numojo.routines.linalg.misc import issymmetric
 # Matrix struct
 # ===----------------------------------------------------------------------===#
 
+alias Matrix[dtype: DType = DType.float32] = MatrixParam[dtype, True, MutOrigin.external]
+alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixParam[dtype, False, origin]
 
-struct Matrix[
-    dtype: DType = DType.float64,
-    BufType: Buffered = OwnData,
-    origin: MutOrigin = MutOrigin.external,
+struct MatrixImpl[
+    dtype: DType,
+    own_data: Bool,
+    origin: MutOrigin,
 ](Copyable, Movable, Sized, Stringable, Writable):
     """
+    A 2D matrix that can either own its data or serve as a view into existing data.
+
     `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
     optimization since the number of dimensions is known at the compile time.
     It has simpler indexing and slicing methods, which is very useful when users
@@ -45,15 +49,29 @@ struct Matrix[
     NuMojo's `Matrix` is `NDArray` with fixed `ndim` known at compile time.
     It may be different in some behaviors compared to `numpy.matrix`.
 
+    This struct is parameterized by data type, ownership mode, and memory origin.
+
+    Users should create matrices using the type alias:
+    - `Matrix[dtype]` - For matrices that own their data (standard usage)
+
+    Note: Direct instantiation of `MatrixImpl` and `MatrixView` is not recommended
+    as it may lead to undefined behavior. Always use the provided type alias `Matrix[dtype]`.
+
+    Ownership semantics:
+    - Owning matrices allocate and manage their own memory
+    - View matrices reference existing data without ownership
+    - Views are typically created via methods like `get()`
+
+    Indexing behavior:
     - For `__getitem__`, passing in two `Int` returns a scalar,
     and passing in one `Int` or two `Slice` returns a `Matrix`.
     - We do not need auxiliary types `NDArrayShape` and `NDArrayStrides`
     as the shape and strides information is fixed in length `Tuple[Int,Int]`.
 
     Parameters:
-        dtype: Type of item in NDArray. Default type is DType.float64.
-        BufType: This is only for internal use! The buffer type of the Matrix, denotes whether the instance owns the data or is a view. Default is `OwnData`. Manipulating it can lead to undefined behaviors.
-        origin: This is only for internal use! The mutability origin of the Matrix. Default is `MutOrigin.external`. Manipulating it can lead to undefined behaviors.
+        dtype: The data type of matrix elements (e.g., DType.float32). Default type is DType.float64.
+        own_data: Whether this instance owns and manages its data. Default is `True` (OwnData).
+        origin: Tracks the lifetime and mutability of the underlying data. Default is `MutOrigin.external`.
 
     The matrix can be uniquely defined by the following features:
         1. The data buffer of all items.
@@ -1003,7 +1021,7 @@ struct Matrix[
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
 
-    fn __iter__(mut self) raises -> _MatrixIter[origin, dtype, BufType]:
+    fn __iter__(ref self) raises -> _MatrixIter[origin, dtype]:
         """Iterate over elements of the Matrix, returning copied value.
 
         Example:
@@ -1018,9 +1036,14 @@ struct Matrix[
             An iterator of Matrix elements.
         """
 
-        return _MatrixIter[origin, dtype, BufType](
-            matrix=self,
-            length=self.shape[0],
+        return _MatrixIter[MutOrigin.cast_from[origin], dtype](
+            # matrix=self,
+            buf_ptr=self._buf.ptr.unsafe_origin_cast[
+                MutOrigin.cast_from[origin]
+            ](),
+            # length=self.shape[0],
+            shape=self.shape,
+            strides=self.strides,
         )
 
     fn __len__(self) -> Int:
@@ -1701,7 +1724,9 @@ struct Matrix[
         Change shape and size of matrix in-place.
         """
         if shape[0] * shape[1] > self.size:
-            var other = Matrix[dtype, Self.BufType, origin](shape=shape, order=self.order())
+            var other = Matrix[dtype, Self.BufType, origin](
+                shape=shape, order=self.order()
+            )
             if self.flags.C_CONTIGUOUS:
                 memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
                 for i in range(self.size, other.size):
@@ -1712,7 +1737,9 @@ struct Matrix[
 
                 for j in range(min_cols):
                     for i in range(min_rows):
-                        other._buf.ptr[i + j * shape[0]] = self._buf.ptr[i + j * self.shape[0]]
+                        other._buf.ptr[i + j * shape[0]] = self._buf.ptr[
+                            i + j * self.shape[0]
+                        ]
                     for i in range(min_rows, shape[0]):
                         other._buf.ptr[i + j * shape[0]] = 0
 
@@ -2129,53 +2156,65 @@ struct Matrix[
 
 
 # ! Should the iterator be mutable or not?
+# Iterator struct - simplified, no ref parameter in __init__
 struct _MatrixIter[
-    lifetime: MutOrigin,
+    origin: MutOrigin,
     dtype: DType,
-    buf_type: Buffered,
     forward: Bool = True,
-](Copyable, Movable):
-    """Iterator for Matrix.
+]:
+    """Iterator for Matrix that returns views.
 
     Parameters:
         lifetime: The lifetime of the underlying Matrix data.
         dtype: The data type of the item.
-        buf_type: The buffer type of the underlying Matrix, OwnData or RefData.
         forward: The iteration direction. `False` is backwards.
     """
 
     var index: Int
-    var matrix: Matrix[dtype, buf_type, lifetime]
     var length: Int
+    var buf_ptr: UnsafePointerV2[Scalar[dtype], origin]
+    var shape: Tuple[Int, Int]
+    var strides: Tuple[Int, Int]
 
     fn __init__(
         out self,
-        mut matrix: Matrix[dtype, buf_type, lifetime],
-        length: Int,
+        buf_ptr: UnsafePointerV2[Scalar[dtype], origin],
+        shape: Tuple[Int, Int],
+        strides: Tuple[Int, Int],
     ):
-        self.index = 0 if forward else length
-        self.length = length
-        self.matrix = matrix
+        self.index = 0 if forward else shape[0]
+        self.length = shape[0]
+        self.buf_ptr = buf_ptr
+        self.shape = shape
+        self.strides = strides
 
     fn __iter__(self) -> Self:
-        return self.copy()
+        return self
 
     fn __next__(
         mut self,
-    ) raises -> Matrix[
-        dtype,
-        RefData[origin_of(self.matrix)],
-        origin_of(self.matrix)
+    ) -> Matrix[
+        dtype, RefData[origin_of(self.buf_ptr)], origin_of(self.buf_ptr)
     ]:
+        var current_index: Int
+
         @parameter
         if forward:
-            var current_index = self.index
+            current_index = self.index
             self.index += 1
-            return self.matrix.get(current_index)
         else:
-            var current_index = self.index
             self.index -= 1
-            return self.matrix.get(current_index)
+            current_index = self.index
+
+        # Create view directly
+        return Matrix[
+            dtype, RefData[origin_of(self.buf_ptr)], origin_of(self.buf_ptr)
+        ](
+            shape=(1, self.shape[1]),
+            strides=(self.strides[0], self.strides[1]),
+            offset=current_index * self.strides[0],
+            ptr=self.buf_ptr.unsafe_origin_cast[origin_of(self.buf_ptr)](),
+        )
 
     @always_inline
     fn __has_next__(self) -> Bool:

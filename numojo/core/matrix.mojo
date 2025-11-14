@@ -30,8 +30,8 @@ from numojo.routines.linalg.misc import issymmetric
 # Matrix struct
 # ===----------------------------------------------------------------------===#
 
-alias Matrix[dtype: DType = DType.float32] = MatrixParam[dtype, True, MutOrigin.external]
-alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixParam[dtype, False, origin]
+alias Matrix[dtype: DType = DType.float32] = MatrixImpl[dtype, True, MutOrigin.external]
+alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixImpl[dtype, False, origin]
 
 struct MatrixImpl[
     dtype: DType,
@@ -120,9 +120,6 @@ struct MatrixImpl[
     var _buf: DataContainer[dtype, origin]
     """Data buffer of the items in the Matrix."""
 
-    var buf_type: BufType
-    """View information of the Matrix."""
-
     var shape: Tuple[Int, Int]
     """Shape of Matrix."""
 
@@ -144,7 +141,7 @@ struct MatrixImpl[
         out self,
         shape: Tuple[Int, Int],
         order: String = "C",
-    ):
+    )  where own_data == True:
         """
         Create a new matrix of the given shape, without initializing data.
 
@@ -153,11 +150,6 @@ struct MatrixImpl[
             order: Use "C" for row-major (C-style) layout or "F" for column-major
                (Fortran-style) layout. Defaults to "C".
         """
-        constrained[
-            BufType.is_own_data(),
-            "Buffer type must be OwnData to create matrix that owns data.",
-        ]()
-
         self.shape = (shape[0], shape[1])
         if order == "C":
             self.strides = (shape[1], 1)
@@ -165,7 +157,6 @@ struct MatrixImpl[
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
         self._buf = DataContainer[dtype, origin](size=self.size)
-        self.buf_type = BufType()
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )

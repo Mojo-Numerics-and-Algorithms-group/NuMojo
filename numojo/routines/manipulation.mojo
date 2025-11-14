@@ -19,7 +19,7 @@ from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixImpl
 from numojo.core.utility import _list_of_flipped_range, _get_offset
 
 # ===----------------------------------------------------------------------=== #
@@ -449,10 +449,10 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    read A: Matrix[dtype, **_],
+    A: MatrixImpl[dtype, **_],
     shape: Tuple[Int, Int],
     override_order: String = "",
-) raises -> Matrix[dtype, **_]:
+) raises -> Matrix[dtype]:
     """
     Broadcasts the vector to the given shape.
 
@@ -489,7 +489,7 @@ fn broadcast_to[
     else:
         ord = override_order
 
-    var B: Matrix[dtype, OwnData] = Matrix[dtype, OwnData](shape, order=ord)
+    var B: Matrix[dtype] = Matrix[dtype](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
         memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     elif (A.shape[0] == 1) and (A.shape[1] == 1):

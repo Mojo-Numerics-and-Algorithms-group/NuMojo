@@ -6,11 +6,11 @@
 # var ptr: UnsafePointer[Scalar[dtype]]
 # ===----------------------------------------------------------------------===
 
-from memory import UnsafePointer, UnsafePointerV2
+from memory import UnsafePointer, LegacyUnsafePointer
 
 
 struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
-    var ptr: UnsafePointerV2[Scalar[dtype], origin]
+    var ptr: UnsafePointer[Scalar[dtype], origin]
 
     fn __init__(out self, size: Int):
         """
@@ -25,7 +25,7 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
             MutOrigin.cast_from[origin]
         ]()
 
-    fn __init__(out self, ptr: UnsafePointerV2[Scalar[dtype], origin]):
+    fn __init__(out self, ptr: UnsafePointer[Scalar[dtype], origin]):
         """
         Do not use this if you know what it means.
         If the pointer is associated with another array, it might cause
@@ -38,14 +38,70 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         self.ptr = ptr
 
     fn __moveinit__(out self, deinit other: Self):
+        """
+        Move-initializes this DataContainerNew from another instance.
+
+        Transfers ownership of the pointer from `other` to `self`.
+        After this operation, `other` should not be used.
+        """
         self.ptr = other.ptr
 
-    fn get_ptr(self) -> UnsafePointerV2[Scalar[dtype], origin]:
+    fn get_ptr(self) -> UnsafePointer[Scalar[dtype], origin]:
+        """
+        Returns the internal pointer to the data buffer.
+
+        Returns:
+            UnsafePointer[Scalar[dtype], origin]: The pointer to the underlying data.
+        """
         return self.ptr
+
+    fn __str__(self) -> String:
+        """
+        Returns a string representation of the DataContainerNew.
+
+        Returns:
+            String: A string describing the container and its pointer.
+        """
+        return "DatContainer with ptr: " + String(self.ptr)
+
+    fn __getitem__(self, idx: Int) -> Scalar[dtype]:
+        """
+        Gets the value at the specified index in the data buffer.
+
+        Args:
+            idx: Index of the element to retrieve.
+
+        Returns:
+            Scalar[dtype]: The value at the given index.
+        """
+        return self.ptr[idx]
+
+    fn __setitem__(self, idx: Int, val: Scalar[dtype]):
+        """
+        Sets the value at the specified index in the data buffer.
+
+        Args:
+            idx: Index of the element to set.
+            val: Value to assign.
+        """
+        self.ptr[idx] = val
+
+    fn offset(self, offset: Int) -> UnsafePointer[Scalar[dtype], origin]:
+        """
+        Returns a pointer offset by the given number of elements.
+
+        Args:
+            offset: Number of elements to offset the pointer.
+
+        Returns:
+            UnsafePointer[Scalar[dtype], origin]: The offset pointer.
+        """
+        return self.ptr.offset(offset)
+
 
 
 struct DataContainer[dtype: DType](ImplicitlyCopyable):
-    var ptr: UnsafePointer[Scalar[dtype]]
+    var ptr: LegacyUnsafePointer[Scalar[dtype]]
 
     fn __init__(out self, size: Int):
         """
@@ -56,9 +112,9 @@ struct DataContainer[dtype: DType](ImplicitlyCopyable):
         `ndarray.flags['OWN_DATA']` should be set as True.
         The memory should be freed by `__del__`.
         """
-        self.ptr = UnsafePointer[Scalar[dtype]]().alloc(size)
+        self.ptr = LegacyUnsafePointer[Scalar[dtype]]().alloc(size)
 
-    fn __init__(out self, ptr: UnsafePointerV2[Scalar[dtype]]):
+    fn __init__(out self, ptr: LegacyUnsafePointer[Scalar[dtype]]):
         """
         Do not use this if you know what it means.
         If the pointer is associated with another array, it might cause
@@ -73,5 +129,5 @@ struct DataContainer[dtype: DType](ImplicitlyCopyable):
     fn __moveinit__(out self, deinit other: Self):
         self.ptr = other.ptr
 
-    fn get_ptr(self) -> UnsafePointer[Scalar[dtype]]:
+    fn get_ptr(self) -> LegacyUnsafePointer[Scalar[dtype]]:
         return self.ptr

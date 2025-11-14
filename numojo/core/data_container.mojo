@@ -98,6 +98,28 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         """
         return self.ptr.offset(offset)
 
+    fn load[width: Int](self, offset: Int) -> SIMD[dtype, width]:
+        """
+        Loads a value from the data buffer at the specified offset.
+
+        Args:
+            offset: Offset from the start of the buffer.
+
+        Returns:
+            Scalar[dtype]: The loaded value.
+        """
+        return self.ptr.load[width=width](offset)
+
+    fn store[width: Int](self, offset: Int, value: SIMD[dtype, width]):
+        """
+        Stores a value into the data buffer at the specified offset.
+
+        Args:
+            offset: Offset from the start of the buffer.
+            value: Value to store.
+        """
+        self.ptr.store[width=width](offset, value)
+
 
 
 struct DataContainer[dtype: DType](ImplicitlyCopyable):

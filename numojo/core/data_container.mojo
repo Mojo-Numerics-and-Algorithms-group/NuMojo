@@ -121,7 +121,6 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         self.ptr.store[width=width](offset, value)
 
 
-
 struct DataContainer[dtype: DType](ImplicitlyCopyable):
     var ptr: LegacyUnsafePointer[Scalar[dtype]]
 

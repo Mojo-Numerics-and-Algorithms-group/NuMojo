@@ -8,7 +8,8 @@
 Implements NDArrayStrides type.
 """
 
-from memory import UnsafePointer, memcmp, memcpy
+from memory import memcmp, memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 
 from numojo.core.error import IndexError, ValueError
 

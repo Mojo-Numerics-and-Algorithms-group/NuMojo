@@ -9,7 +9,8 @@
 Array manipulation routines.
 """
 
-from memory import UnsafePointer, memcpy
+from memory import memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 from sys import simd_width_of
 from algorithm import vectorize
 

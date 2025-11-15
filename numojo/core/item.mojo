@@ -6,7 +6,8 @@ Implements Item type.
 
 from builtin.type_aliases import Origin
 from builtin.int import index as index_int
-from memory import UnsafePointer, memset_zero, memcpy
+from memory import memset_zero, memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 from memory import memcmp
 from os import abort
 from sys import simd_width_of

@@ -54,7 +54,8 @@ import builtin.math as builtin_math
 from builtin.type_aliases import Origin
 from collections.optional import Optional
 from math import log10
-from memory import UnsafePointer, memset_zero, memcpy
+from memory import memset_zero, memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 from python import PythonObject
 from sys import simd_width_of
 from utils import Variant

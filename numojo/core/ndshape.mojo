@@ -8,7 +8,8 @@
 Implements NDArrayShape type.
 """
 
-from memory import UnsafePointer, memcpy, memcmp
+from memory import memcpy, memcmp
+from memory import LegacyUnsafePointer as UnsafePointer
 
 from numojo.core.error import IndexError, ShapeError, ValueError
 

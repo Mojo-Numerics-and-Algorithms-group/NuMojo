@@ -971,31 +971,30 @@ struct MatrixImpl[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
+    fn __iter__[
+        is_mutable: Bool, //, view_origin: Origin[is_mutable]
+    ](ref [view_origin]self) raises -> _MatrixIter[MutOrigin.cast_from[view_origin], dtype]:
+        """Iterate over elements of the Matrix, returning copied value.
 
-    # fn __iter__(ref self) raises -> _MatrixIter[origin, dtype]:
-    #     """Iterate over elements of the Matrix, returning copied value.
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand((4,4))
+        for i in A:
+            print(i)
+        ```
 
-    #     Example:
-    #     ```mojo
-    #     from numojo import Matrix
-    #     var A = Matrix.rand((4,4))
-    #     for i in A:
-    #         print(i)
-    #     ```
+        Returns:
+            An iterator of Matrix elements.
+        """
 
-    #     Returns:
-    #         An iterator of Matrix elements.
-    #     """
-
-    #     return _MatrixIter[MutOrigin.cast_from[origin], dtype](
-    #         # matrix=self,
-    #         buf_ptr=self._buf.ptr.unsafe_origin_cast[
-    #             MutOrigin.cast_from[origin]
-    #         ](),
-    #         # length=self.shape[0],
-    #         shape=self.shape,
-    #         strides=self.strides,
-    #     )
+        return _MatrixIter[MutOrigin.cast_from[view_origin], dtype](
+            buf_ptr = self._buf.get_ptr().unsafe_origin_cast[
+                MutOrigin.cast_from[view_origin]
+            ](),
+            shape=self.shape,
+            strides=self.strides,
+        )
 
     fn __len__(self) -> Int:
         """
@@ -1417,8 +1416,8 @@ struct MatrixImpl[
         """
         return self != broadcast_to[dtype](other, self.shape, self.order())
 
-    # fn __matmul__(self, other: MatrixImpl[dtype, **_]) raises -> MatrixImpl[dtype, **_]:
-    #     return numojo.linalg.matmul(self, other)
+    fn __matmul__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+        return numojo.linalg.matmul(self, other)
 
     # # ===-------------------------------------------------------------------===#
     # # Core methods
@@ -1817,57 +1816,57 @@ struct MatrixImpl[
 
     #     return ndarray^
 
-    # fn to_numpy(self) raises -> PythonObject:
-    #     """See `numojo.core.utility.to_numpy`."""
-    #     try:
-    #         var np = Python.import_module("numpy")
+    fn to_numpy(self) raises -> PythonObject where own_data == True:
+        """See `numojo.core.utility.to_numpy`."""
+        try:
+            var np = Python.import_module("numpy")
 
-    #         var np_arr_dim = Python.list()
-    #         np_arr_dim.append(self.shape[0])
-    #         np_arr_dim.append(self.shape[1])
+            var np_arr_dim = Python.list()
+            np_arr_dim.append(self.shape[0])
+            np_arr_dim.append(self.shape[1])
 
-    #         np.set_printoptions(4)
+            np.set_printoptions(4)
 
-    #         # Implement a dictionary for this later
-    #         var numpyarray: PythonObject
-    #         var np_dtype = np.float64
-    #         if dtype == DType.float16:
-    #             np_dtype = np.float16
-    #         elif dtype == DType.float32:
-    #             np_dtype = np.float32
-    #         elif dtype == DType.int64:
-    #             np_dtype = np.int64
-    #         elif dtype == DType.int32:
-    #             np_dtype = np.int32
-    #         elif dtype == DType.int16:
-    #             np_dtype = np.int16
-    #         elif dtype == DType.int8:
-    #             np_dtype = np.int8
-    #         elif dtype == DType.uint64:
-    #             np_dtype = np.uint64
-    #         elif dtype == DType.uint32:
-    #             np_dtype = np.uint32
-    #         elif dtype == DType.uint16:
-    #             np_dtype = np.uint16
-    #         elif dtype == DType.uint8:
-    #             np_dtype = np.uint8
-    #         elif dtype == DType.bool:
-    #             np_dtype = np.bool_
-    #         elif dtype == DType.int:
-    #             np_dtype = np.int64
+            # Implement a dictionary for this later
+            var numpyarray: PythonObject
+            var np_dtype = np.float64
+            if dtype == DType.float16:
+                np_dtype = np.float16
+            elif dtype == DType.float32:
+                np_dtype = np.float32
+            elif dtype == DType.int64:
+                np_dtype = np.int64
+            elif dtype == DType.int32:
+                np_dtype = np.int32
+            elif dtype == DType.int16:
+                np_dtype = np.int16
+            elif dtype == DType.int8:
+                np_dtype = np.int8
+            elif dtype == DType.uint64:
+                np_dtype = np.uint64
+            elif dtype == DType.uint32:
+                np_dtype = np.uint32
+            elif dtype == DType.uint16:
+                np_dtype = np.uint16
+            elif dtype == DType.uint8:
+                np_dtype = np.uint8
+            elif dtype == DType.bool:
+                np_dtype = np.bool_
+            elif dtype == DType.int:
+                np_dtype = np.int64
 
-    #         var order = "C" if self.flags.C_CONTIGUOUS else "F"
-    #         numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
-    #         var pointer_d = numpyarray.__array_interface__["data"][
-    #             0
-    #         ].unsafe_get_as_pointer[dtype]()
-    #         memcpy(dest=pointer_d, src=self._buf.ptr, count=self.size)
+            var order = "C" if self.flags.C_CONTIGUOUS else "F"
+            numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
+            var pointer_d = numpyarray.__array_interface__["data"][
+                0
+            ].unsafe_get_as_pointer[dtype]()
+            memcpy(dest=pointer_d, src=self._buf.ptr, count=self.size)
 
-    #         return numpyarray^
+            return numpyarray^
 
-    #     except e:
-    #         print("Error in converting to numpy", e)
-    #         return PythonObject()
+        except e:
+            print("Error in converting to numpy", e)
+            return PythonObject()
 
     # ===-----------------------------------------------------------------------===#
     # Static methods to construct matrix
@@ -2087,30 +2086,32 @@ struct MatrixImpl[
 # # ===-----------------------------------------------------------------------===#
 
 
-# # ! Should the iterator be mutable or not?
-# # Iterator struct - simplified, no ref parameter in __init__
+# ! Should the iterator be mutable or not?
+# Iterator struct - simplified, no ref parameter in __init__
 # struct _MatrixIter[
 #     origin: MutOrigin,
 #     dtype: DType,
 #     forward: Bool = True,
-# ]:
+# ](Copyable, Movable):
 #     """Iterator for Matrix that returns views.
 
 #     Parameters:
-#         lifetime: The lifetime of the underlying Matrix data.
+#         origin: The origin of the underlying Matrix data.
 #         dtype: The data type of the item.
 #         forward: The iteration direction. `False` is backwards.
 #     """
 
 #     var index: Int
 #     var length: Int
-#     var buf_ptr: UnsafePointerV2[Scalar[dtype], origin]
+#     # var buf_ptr: DataContainer[dtype, origin]
+#     var buf_ptr: UnsafePointer[Scalar[dtype], origin]
 #     var shape: Tuple[Int, Int]
 #     var strides: Tuple[Int, Int]
 
 #     fn __init__(
 #         out self,
-#         buf_ptr: UnsafePointerV2[Scalar[dtype], origin],
+#         # buf_ptr: DataContainer[dtype, origin],
+#         buf_ptr: UnsafePointer[Scalar[dtype], origin],
 #         shape: Tuple[Int, Int],
 #         strides: Tuple[Int, Int],
 #     ):
@@ -2121,32 +2122,71 @@ struct MatrixImpl[
 #         self.strides = strides
 
 #     fn __iter__(self) -> Self:
-#         return self
+#         return self.copy()
 
-#     fn __next__(
-#         mut self,
-#     ) -> Matrix[
-#         dtype, RefData[origin_of(self.buf_ptr)], origin_of(self.buf_ptr)
+#     fn __next_ref__(mut self) -> MatrixView[
+#         dtype, origin
 #     ]:
-#         var current_index: Int
-
-#         @parameter
-#         if forward:
-#             current_index = self.index
-#             self.index += 1
-#         else:
-#             self.index -= 1
-#             current_index = self.index
-
-#         # Create view directly
-#         return Matrix[
-#             dtype, RefData[origin_of(self.buf_ptr)], origin_of(self.buf_ptr)
-#         ](
+#         var curr = self.index
+#         self.index += 1
+#         return MatrixView[dtype, origin](
 #             shape=(1, self.shape[1]),
 #             strides=(self.strides[0], self.strides[1]),
-#             offset=current_index * self.strides[0],
-#             ptr=self.buf_ptr.unsafe_origin_cast[origin_of(self.buf_ptr)](),
+#             offset=curr * self.strides[0],
+#             data=DataContainer[dtype, origin](
+#                 # ptr=self.buf_ptr.get_ptr().unsafe_origin_cast[origin]()
+#                 ptr=self.buf_ptr.unsafe_origin_cast[origin]()
+#             ),
 #         )
+
+#     # fn __next__[
+#     #     is_mutable: Bool, //, view_origin: Origin[is_mutable]
+#     # ](
+#     #     ref [view_origin] self,
+#     # ) -> MatrixView[
+#     #     dtype, MutOrigin.cast_from[view_origin]
+#     # ]:
+#     # fn __next__(
+#     #     mut self,
+#     # ) -> ref [origin] MatrixView[
+#     #     # dtype, MutOrigin.cast_from[lifetime]
+#     #     dtype, origin
+#     # ]:
+#     #     var current_index: Int
+
+#     #     @parameter
+#     #     if forward:
+#     #         current_index = self.index
+#     #         self.index += 1
+#     #     else:
+#     #         self.index -= 1
+#     #         current_index = self.index
+
+#     #     var new_data = DataContainer[dtype, origin](
+#     #         ptr=self.buf_ptr.get_ptr().unsafe_origin_cast[
+#     #             origin
+#     #         ]()
+#     #     )
+
+#     #     # var new_data = DataContainer[dtype, MutOrigin.cast_from[origin]](
+#     #     #     ptr=self.buf_ptr.get_ptr().unsafe_origin_cast[
+#     #     #         MutOrigin.cast_from[origin]
+#     #     #     ]()
+#     #     # )
+#     #     var res = MatrixView[dtype, origin](
+#     #         shape=(1, self.shape[1]),
+#     #         strides=(self.strides[0], self.strides[1]),
+#     #         offset=current_index * self.strides[0],
+#     #         data=new_data,
+#     #     )
+#     #     # var res = MatrixView[dtype, MutOrigin.cast_from[origin]](
+#     #     #     shape=(1, self.shape[1]),
+#     #     #     strides=(self.strides[0], self.strides[1]),
+#     #     #     offset=current_index * self.strides[0],
+#     #     #     data=new_data,
+#     #     # )
+
+#     #     return res^
 
 #     @always_inline
 #     fn __has_next__(self) -> Bool:
@@ -2162,6 +2202,118 @@ struct MatrixImpl[
 #             return self.length - self.index
 #         else:
 #             return self.index
+
+struct _MatrixIter[
+    origin: MutOrigin,
+    dtype: DType,
+    forward: Bool = True,
+](ImplicitlyCopyable, Movable):
+    """Iterator for Matrix that returns mutable views.
+
+    This iterator yields mutable views (MatrixView) of each row in the matrix,
+    allowing modifications to the original matrix through the views.
+
+    Parameters:
+        origin: The origin of the underlying Matrix data (tracks mutability).
+        dtype: The data type of the matrix elements.
+        forward: The iteration direction. `True` for forward, `False` for backward.
+
+    Example:
+        ```mojo
+        var mat = Matrix[DType.float32]((4, 4), order="C")
+        for i in range(mat.size):
+            mat._buf.ptr[i] = Float32(i)
+
+        # Iterate and modify through views
+        for row in mat:
+            row[0, 0] = 99.0  # This modifies the original matrix
+        ```
+    """
+
+    var index: Int
+    var length: Int
+    var buf_ptr: UnsafePointer[Scalar[dtype], origin]
+    var shape: Tuple[Int, Int]
+    var strides: Tuple[Int, Int]
+
+    fn __init__(
+        out self,
+        ref [_] buf_ptr: UnsafePointer[Scalar[dtype], origin],
+        shape: Tuple[Int, Int],
+        strides: Tuple[Int, Int],
+    ):
+        """Initialize the iterator.
+
+        Args:
+            buf_ptr: Pointer to the matrix data buffer.
+            shape: Shape of the matrix (rows, columns).
+            strides: Strides of the matrix for memory layout.
+        """
+        self.index = 0 if forward else shape[0]
+        self.length = shape[0]
+        self.buf_ptr = buf_ptr
+        self.shape = shape
+        self.strides = strides
+
+    fn __iter__(self) -> Self:
+        """Return a copy of the iterator for iteration protocol."""
+        return self.copy()
+
+    fn __next_ref__(mut self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
+        """Return the next row as a mutable view.
+
+        This method is called by the for-loop and returns a MatrixView
+        that shares memory with the original matrix. Modifications to
+        the returned view will affect the original matrix.
+
+        Returns:
+            A mutable MatrixView representing the next row.
+        """
+        var curr = self.index
+
+        @parameter
+        if forward:
+            self.index += 1
+        else:
+            self.index -= 1
+
+        # Create a view for the current row
+        var new_ptr: UnsafePointer[Scalar[dtype], MutOrigin.cast_from[origin]] = self.buf_ptr.unsafe_origin_cast[
+            MutOrigin.cast_from[origin]
+        ]()
+        return MatrixView[dtype, MutOrigin.cast_from[origin]](
+            shape=(1, self.shape[1]),
+            strides=(self.strides[0], self.strides[1]),
+            offset=curr * self.strides[0],
+            data=DataContainer[dtype, MutOrigin.cast_from[origin]](
+                ptr=new_ptr
+            ),
+        )
+
+    @always_inline
+    fn __has_next__(self) -> Bool:
+        """Check if there are more elements to iterate.
+
+        Returns:
+            True if there are more elements, False otherwise.
+        """
+        @parameter
+        if forward:
+            return self.index < self.length
+        else:
+            return self.index > 0
+
+    fn __len__(self) -> Int:
+        """Return the number of remaining elements.
+
+        Returns:
+            The number of rows left to iterate.
+        """
+        @parameter
+        if forward:
+            return self.length - self.index
+        else:
+            return self.index
 
 
 # # ===-----------------------------------------------------------------------===#

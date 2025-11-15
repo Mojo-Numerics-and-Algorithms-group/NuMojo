@@ -15,7 +15,7 @@ from memory import memcpy
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixImpl
 from numojo.routines.creation import zeros
 from numojo.routines.math.sums import sum
 
@@ -359,7 +359,7 @@ fn matmul[
 
 fn matmul[
     dtype: DType
-](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
+](A: MatrixImpl[dtype, **_], B: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
     """
     Matrix multiplication.
 
@@ -448,8 +448,6 @@ fn matmul[
 
     else:
         result = matmul(A.reorder_layout(), B)
-    # var _A = A
-    # var _B = B
 
     return result^
 

@@ -3,7 +3,7 @@
 # ===----------------------------------------------------------------------=== #
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixImpl
 from numojo.routines.linalg.decompositions import (
     lu_decomposition,
     partial_pivoting,
@@ -121,7 +121,7 @@ fn trace[
 
 fn trace[
     dtype: DType
-](A: Matrix[dtype, **_], offset: Int = 0) raises -> Scalar[dtype]:
+](A: MatrixImpl[dtype, **_], offset: Int = 0) raises -> Scalar[dtype]:
     """
     Return the sum along diagonals of the array.
 

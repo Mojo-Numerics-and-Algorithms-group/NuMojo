@@ -21,7 +21,8 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 
 from algorithm.functional import vectorize, parallelize
 from collections import Dict
-from memory import UnsafePointer, memcpy
+from memory import memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 from python import Python, PythonObject
 from sys import simd_width_of
 

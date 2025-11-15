@@ -16,7 +16,7 @@ from math import ceil
 
 from numojo.core.flags import Flags
 
-# from numojo.core.ndarray import NDArray
+from numojo.core.ndarray import NDArray
 from numojo.core.data_container import DataContainerNew as DataContainer
 from numojo.core.traits.buffered import Buffered
 from numojo.core.own_data import OwnData
@@ -227,7 +227,7 @@ struct MatrixImpl[
             shape: Shape of the view.
             strides: Strides of the view.
             offset: Offset in pointer of the data buffer.
-            ptr: Pointer to the data buffer of the original array.
+            data: DataContainer that holds the data buffer.
         """
         self.shape = shape
         self.strides = strides
@@ -259,6 +259,17 @@ struct MatrixImpl[
         self.flags = Flags(
             other.shape, other.strides, owndata=True, writeable=True
         )
+
+    fn create_copy(self) -> Matrix[dtype]:
+        """
+        Create a copy of the matrix.
+
+        Returns:
+            A new Matrix that is a copy of the original.
+        """
+        var result = Matrix[dtype](shape=self.shape, order=self.order())
+        memcpy(dest=result._buf.ptr, src=self._buf.ptr, count=self.size)
+        return result^
 
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
@@ -971,30 +982,30 @@ struct MatrixImpl[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    fn __iter__[
-        is_mutable: Bool, //, view_origin: Origin[is_mutable]
-    ](ref [view_origin]self) raises -> _MatrixIter[MutOrigin.cast_from[view_origin], dtype]:
-        """Iterate over elements of the Matrix, returning copied value.
+    # fn __iter__[
+    #     is_mutable: Bool, //, view_origin: Origin[is_mutable]
+    # ](ref [view_origin]self) raises -> _MatrixIter[MutOrigin.cast_from[view_origin], dtype]:
+    #     """Iterate over elements of the Matrix, returning copied value.
 
-        Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand((4,4))
-        for i in A:
-            print(i)
-        ```
+    #     Example:
+    #     ```mojo
+    #     from numojo import Matrix
+    #     var A = Matrix.rand((4,4))
+    #     for i in A:
+    #         print(i)
+    #     ```
 
-        Returns:
-            An iterator of Matrix elements.
-        """
+    #     Returns:
+    #         An iterator of Matrix elements.
+    #     """
 
-        return _MatrixIter[MutOrigin.cast_from[view_origin], dtype](
-            buf_ptr = self._buf.get_ptr().unsafe_origin_cast[
-                MutOrigin.cast_from[view_origin]
-            ](),
-            shape=self.shape,
-            strides=self.strides,
-        )
+    #     return _MatrixIter[ImmutOrigin.cast_from[view_origin], dtype](
+    #         buf_ptr = self._buf.get_ptr().unsafe_origin_cast[
+    #             ImmutOrigin.cast_from[view_origin]
+    #         ](),
+    #         shape=self.shape,
+    #         strides=self.strides,
+    #     )
 
     fn __len__(self) -> Int:
         """
@@ -1423,138 +1434,136 @@ struct MatrixImpl[
     # # Core methods
     # # ===-------------------------------------------------------------------===#
 
-    # fn all(self) -> Scalar[dtype]:
-    #     """
-    #     Test whether all array elements evaluate to True.
-    #     """
-    #     return numojo.logic.all(self)
+    fn all(self) -> Scalar[dtype]:
+        """
+        Test whether all array elements evaluate to True.
+        """
+        return numojo.logic.all(self)
 
-    # fn all(self, axis: Int) raises -> Matrix[dtype]:
-    #     """
-    #     Test whether all array elements evaluate to True along axis.
-    #     """
-    #     return numojo.logic.all[dtype](self, axis=axis)
+    fn all(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Test whether all array elements evaluate to True along axis.
+        """
+        return numojo.logic.all[dtype](self, axis=axis)
 
-    # fn any(self) -> Scalar[dtype]:
-    #     """
-    #     Test whether any array elements evaluate to True.
-    #     """
-    #     return numojo.logic.any(self)
+    fn any(self) -> Scalar[dtype]:
+        """
+        Test whether any array elements evaluate to True.
+        """
+        return numojo.logic.any(self)
 
-    # fn any(self, axis: Int) raises -> Matrix[dtype]:
-    #     """
-    #     Test whether any array elements evaluate to True along axis.
-    #     """
-    #     return numojo.logic.any(self, axis=axis)
+    fn any(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Test whether any array elements evaluate to True along axis.
+        """
+        return numojo.logic.any(self, axis=axis)
 
-    # fn argmax(self) raises -> Scalar[DType.int]:
-    #     """
-    #     Index of the max. It is first flattened before sorting.
-    #     """
-    #     return numojo.math.argmax(self)
+    fn argmax(self) raises -> Scalar[DType.int]:
+        """
+        Index of the max. It is first flattened before sorting.
+        """
+        return numojo.math.argmax(self)
 
-    # fn argmax(self, axis: Int) raises -> Matrix[DType.int]:
-    #     """
-    #     Index of the max along the given axis.
-    #     """
-    #     return numojo.math.argmax(self, axis=axis)
+    fn argmax(self, axis: Int) raises -> Matrix[DType.int]:
+        """
+        Index of the max along the given axis.
+        """
+        return numojo.math.argmax(self, axis=axis)
 
-    # fn argmin(self) raises -> Scalar[DType.int]:
-    #     """
-    #     Index of the min. It is first flattened before sorting.
-    #     """
-    #     return numojo.math.argmin(self)
+    fn argmin(self) raises -> Scalar[DType.int]:
+        """
+        Index of the min. It is first flattened before sorting.
+        """
+        return numojo.math.argmin(self)
 
-    # fn argmin(self, axis: Int) raises -> Matrix[DType.int]:
-    #     """
-    #     Index of the min along the given axis.
-    #     """
-    #     return numojo.math.argmin(self, axis=axis)
+    fn argmin(self, axis: Int) raises -> Matrix[DType.int]:
+        """
+        Index of the min along the given axis.
+        """
+        return numojo.math.argmin(self, axis=axis)
 
-    # fn argsort(self) raises -> Matrix[DType.int]:
-    #     """
-    #     Argsort the Matrix. It is first flattened before sorting.
-    #     """
-    #     return numojo.math.argsort(self)
+    fn argsort(self) raises -> Matrix[DType.int]:
+        """
+        Argsort the Matrix. It is first flattened before sorting.
+        """
+        return numojo.math.argsort(self)
 
-    # fn argsort(self, axis: Int) raises -> Matrix[DType.int]:
-    #     """
-    #     Argsort the Matrix along the given axis.
-    #     """
-    #     return numojo.math.argsort(self, axis=axis)
+    fn argsort(self, axis: Int) raises -> Matrix[DType.int]:
+        """
+        Argsort the Matrix along the given axis.
+        """
+        return numojo.math.argsort(self, axis=axis)
 
-    # fn astype[asdtype: DType](self) -> Matrix[asdtype]:
-    #     """
-    #     Copy of the matrix, cast to a specified type.
-    #     """
-    #     var res = Matrix[asdtype](
-    #         shape=(self.shape[0], self.shape[1]), order=self.order()
-    #     )
-    #     for i in range(self.size):
-    #         res._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
-    #     return res^
+    fn astype[asdtype: DType](self) -> Matrix[asdtype]:
+        """
+        Copy of the matrix, cast to a specified type.
+        """
+        var res = Matrix[asdtype](
+            shape=(self.shape[0], self.shape[1]), order=self.order()
+        )
+        for i in range(self.size):
+            res._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
+        return res^
 
-    # fn cumprod(self) raises -> Matrix[dtype]:
-    #     """
-    #     Cumprod of flattened matrix.
+    fn cumprod(self) raises -> Matrix[dtype]:
+        """
+        Cumprod of flattened matrix.
 
-    #     Example:
-    #     ```mojo
-    #     from numojo import Matrix
-    #     var A = Matrix.rand(shape=(100, 100))
-    #     print(A.cumprod())
-    #     ```
-    #     """
-    #     return numojo.math.cumprod(self.copy())
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
+        print(A.cumprod())
+        ```
+        """
+        return numojo.math.cumprod(self.copy())
 
-    # fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
-    #     """
-    #     Cumprod of Matrix along the axis.
+    fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Cumprod of Matrix along the axis.
 
-    #     Args:
-    #         axis: 0 or 1.
+        Args:
+            axis: 0 or 1.
 
-    #     Example:
-    #     ```mojo
-    #     from numojo import Matrix
-    #     var A = Matrix.rand(shape=(100, 100))
-    #     print(A.cumprod(axis=0))
-    #     print(A.cumprod(axis=1))
-    #     ```
-    #     """
-    #     return numojo.math.cumprod(self.copy(), axis=axis)
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
+        print(A.cumprod(axis=0))
+        print(A.cumprod(axis=1))
+        ```
+        """
+        return numojo.math.cumprod(self.copy(), axis=axis)
 
-    # fn cumsum(self) raises -> Matrix[dtype]:
-    #     return numojo.math.cumsum(self.copy())
+    fn cumsum(self) raises -> Matrix[dtype]:
+        return numojo.math.cumsum(self.copy())
 
-    # fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
-    #     return numojo.math.cumsum(self.copy(), axis=axis)
+    fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
+        return numojo.math.cumsum(self.copy(), axis=axis)
 
-    # fn fill(self, fill_value: Scalar[dtype]):
-    #     """
-    #     Fill the matrix with value.
+    fn fill(self, fill_value: Scalar[dtype]):
+        """
+        Fill the matrix with value.
 
-    #     See also function `mat.creation.full`.
-    #     """
-    #     for i in range(self.size):
-    #         self._buf.ptr[i] = fill_value
+        See also function `mat.creation.full`.
+        """
+        for i in range(self.size):
+            self._buf.ptr[i] = fill_value
 
-    # # * Make it inplace?
-    # fn flatten(self) -> Matrix[dtype]:
-    #     """
-    #     Return a flattened copy of the matrix.
-    #     """
-    #     var res = Matrix[dtype](
-    #         shape=(1, self.size), order=self.order()
-    #     )
-    #     memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
-    #     return res^
+    # * Make it inplace?
+    fn flatten(self) -> Matrix[dtype]:
+        """
+        Return a flattened copy of the matrix.
+        """
+        var res = Matrix[dtype](shape=(1, self.size), order=self.order())
+        memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
+        return res^
 
-    # fn inv(self) raises -> Matrix[dtype]:
-    #     """
-    #     Inverse of matrix.
-    #     """
-    #     return numojo.linalg.inv(self)
+    fn inv(self) raises -> Matrix[dtype]:
+        """
+        Inverse of matrix.
+        """
+        return numojo.linalg.inv(self)
 
     fn order(self) -> String:
         """
@@ -1565,256 +1574,257 @@ struct MatrixImpl[
             order = "C"
         return order
 
-    # fn max(self) raises -> Scalar[dtype]:
-    #     """
-    #     Find max item. It is first flattened before sorting.
-    #     """
-    #     return numojo.math.extrema.max(self)
+    fn max(self) raises -> Scalar[dtype]:
+        """
+        Find max item. It is first flattened before sorting.
+        """
+        return numojo.math.extrema.max(self)
 
-    # fn max(self, axis: Int) raises -> Matrix[dtype]:
-    #     """
-    #     Find max item along the given axis.
-    #     """
-    #     return numojo.math.extrema.max(self, axis=axis)
+    fn max(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Find max item along the given axis.
+        """
+        return numojo.math.extrema.max(self, axis=axis)
 
-    # fn mean[
-    #     returned_dtype: DType = DType.float64
-    # ](self) raises -> Scalar[returned_dtype]:
-    #     """
-    #     Calculate the arithmetic average of all items in the Matrix.
-    #     """
-    #     return numojo.statistics.mean[returned_dtype](self)
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self) raises -> Scalar[returned_dtype]:
+        """
+        Calculate the arithmetic average of all items in the Matrix.
+        """
+        return numojo.statistics.mean[returned_dtype](self)
 
-    # fn mean[
-    #     returned_dtype: DType = DType.float64
-    # ](self, axis: Int) raises -> Matrix[returned_dtype]:
-    #     """
-    #     Calculate the arithmetic average of a Matrix along the axis.
+    fn mean[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int) raises -> Matrix[returned_dtype]:
+        """
+        Calculate the arithmetic average of a Matrix along the axis.
 
-    #     Args:
-    #         axis: 0 or 1.
-    #     """
-    #     return numojo.statistics.mean[returned_dtype](self, axis=axis)
+        Args:
+            axis: 0 or 1.
+        """
+        return numojo.statistics.mean[returned_dtype](self, axis=axis)
 
-    # fn min(self) raises -> Scalar[dtype]:
-    #     """
-    #     Find min item. It is first flattened before sorting.
-    #     """
-    #     return numojo.math.extrema.min(self)
+    fn min(self) raises -> Scalar[dtype]:
+        """
+        Find min item. It is first flattened before sorting.
+        """
+        return numojo.math.extrema.min(self)
 
-    # fn min(self, axis: Int) raises -> Matrix[dtype]:
-    #     """
-    #     Find min item along the given axis.
-    #     """
-    #     return numojo.math.extrema.min(self, axis=axis)
+    fn min(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Find min item along the given axis.
+        """
+        return numojo.math.extrema.min(self, axis=axis)
 
-    # fn prod(self) -> Scalar[dtype]:
-    #     """
-    #     Product of all items in the Matrix.
-    #     """
-    #     return numojo.math.prod(self)
+    fn prod(self) -> Scalar[dtype]:
+        """
+        Product of all items in the Matrix.
+        """
+        return numojo.math.prod(self)
 
-    # fn prod(self, axis: Int) raises -> Matrix[dtype]:
-    #     """
-    #     Product of items in a Matrix along the axis.
+    fn prod(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Product of items in a Matrix along the axis.
 
-    #     Args:
-    #         axis: 0 or 1.
+        Args:
+            axis: 0 or 1.
 
-    #     Example:
-    #     ```mojo
-    #     from numojo import Matrix
-    #     var A = Matrix.rand(shape=(100, 100))
-    #     print(A.prod(axis=0))
-    #     print(A.prod(axis=1))
-    #     ```
-    #     """
-    #     return numojo.math.prod(self, axis=axis)
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
+        print(A.prod(axis=0))
+        print(A.prod(axis=1))
+        ```
+        """
+        return numojo.math.prod(self, axis=axis)
 
-    # fn reshape(self, shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
-    #     """
-    #     Change shape and size of matrix and return a new matrix.
-    #     """
-    #     if shape[0] * shape[1] != self.size:
-    #         raise Error(
-    #             String(
-    #                 "Cannot reshape matrix of size {} into shape ({}, {})."
-    #             ).format(self.size, shape[0], shape[1])
-    #         )
-    #     var res = Matrix[dtype](shape=shape, order="C")
-    #     if self.flags.F_CONTIGUOUS:
-    #         var temp = self.reorder_layout()
-    #         memcpy(dest=res._buf.ptr, src=temp._buf.ptr, count=res.size)
-    #         res = res.reorder_layout()
-    #     else:
-    #         memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
-    #     return res^
+    fn reshape(self, shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+        """
+        Change shape and size of matrix and return a new matrix.
+        """
+        if shape[0] * shape[1] != self.size:
+            raise Error(
+                String(
+                    "Cannot reshape matrix of size {} into shape ({}, {})."
+                ).format(self.size, shape[0], shape[1])
+            )
+        var res = Matrix[dtype](shape=shape, order="C")
+        if self.flags.F_CONTIGUOUS:
+            var temp = self.reorder_layout()
+            memcpy(dest=res._buf.ptr, src=temp._buf.ptr, count=res.size)
+            res = res.reorder_layout()
+        else:
+            memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
+        return res^
 
-    # fn resize(mut self, shape: Tuple[Int, Int]) raises:
-    #     """
-    #     Change shape and size of matrix in-place.
-    #     """
-    #     if shape[0] * shape[1] > self.size:
-    #         var other = Matrix[dtype, Self.BufType, origin](
-    #             shape=shape, order=self.order()
-    #         )
-    #         if self.flags.C_CONTIGUOUS:
-    #             memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
-    #             for i in range(self.size, other.size):
-    #                 other._buf.ptr[i] = 0
-    #         else:
-    #             var min_rows = min(self.shape[0], shape[0])
-    #             var min_cols = min(self.shape[1], shape[1])
+    # NOTE: not sure if `where` clause works correctly here yet.
+    fn resize(mut self, shape: Tuple[Int, Int]) raises where own_data == True:
+        """
+        Change shape and size of matrix in-place.
+        """
+        if shape[0] * shape[1] > self.size:
+            var other = MatrixImpl[dtype, own_data=own_data, origin=origin](
+                shape=shape, order=self.order()
+            )
+            if self.flags.C_CONTIGUOUS:
+                memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
+                for i in range(self.size, other.size):
+                    other._buf.ptr[i] = 0
+            else:
+                var min_rows = min(self.shape[0], shape[0])
+                var min_cols = min(self.shape[1], shape[1])
 
-    #             for j in range(min_cols):
-    #                 for i in range(min_rows):
-    #                     other._buf.ptr[i + j * shape[0]] = self._buf.ptr[
-    #                         i + j * self.shape[0]
-    #                     ]
-    #                 for i in range(min_rows, shape[0]):
-    #                     other._buf.ptr[i + j * shape[0]] = 0
+                for j in range(min_cols):
+                    for i in range(min_rows):
+                        other._buf.ptr[i + j * shape[0]] = self._buf.ptr[
+                            i + j * self.shape[0]
+                        ]
+                    for i in range(min_rows, shape[0]):
+                        other._buf.ptr[i + j * shape[0]] = 0
 
-    #             # Zero the additional columns
-    #             for j in range(min_cols, shape[1]):
-    #                 for i in range(shape[0]):
-    #                     other._buf.ptr[i + j * shape[0]] = 0
+                # Zero the additional columns
+                for j in range(min_cols, shape[1]):
+                    for i in range(shape[0]):
+                        other._buf.ptr[i + j * shape[0]] = 0
 
-    #         self = other^
-    #     else:
-    #         self.shape[0] = shape[0]
-    #         self.shape[1] = shape[1]
-    #         self.size = shape[0] * shape[1]
+            self = other^
+        else:
+            self.shape[0] = shape[0]
+            self.shape[1] = shape[1]
+            self.size = shape[0] * shape[1]
 
-    #         if self.flags.C_CONTIGUOUS:
-    #             self.strides[0] = shape[1]
-    #         else:
-    #             self.strides[1] = shape[0]
+            if self.flags.C_CONTIGUOUS:
+                self.strides[0] = shape[1]
+            else:
+                self.strides[1] = shape[0]
 
-    # fn round(self, decimals: Int) raises -> Matrix[dtype]:
-    #     return numojo.math.rounding.round(self, decimals=decimals)
+    fn round(self, decimals: Int) raises -> Matrix[dtype]:
+        return numojo.math.rounding.round(self, decimals=decimals)
 
-    # fn std[
-    #     returned_dtype: DType = DType.float64
-    # ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
-    #     """
-    #     Compute the standard deviation.
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+        """
+        Compute the standard deviation.
 
-    #     Args:
-    #         ddof: Delta degree of freedom.
-    #     """
-    #     return numojo.statistics.std[returned_dtype](self, ddof=ddof)
+        Args:
+            ddof: Delta degree of freedom.
+        """
+        return numojo.statistics.std[returned_dtype](self, ddof=ddof)
 
-    # fn std[
-    #     returned_dtype: DType = DType.float64
-    # ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
-    #     """
-    #     Compute the standard deviation along axis.
+    fn std[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
+        """
+        Compute the standard deviation along axis.
 
-    #     Args:
-    #         axis: 0 or 1.
-    #         ddof: Delta degree of freedom.
-    #     """
-    #     return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
+        Args:
+            axis: 0 or 1.
+            ddof: Delta degree of freedom.
+        """
+        return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
 
-    # fn sum(self) -> Scalar[dtype]:
-    #     """
-    #     Sum up all items in the Matrix.
+    fn sum(self) -> Scalar[dtype]:
+        """
+        Sum up all items in the Matrix.
 
-    #     Example:
-    #     ```mojo
-    #     from numojo import Matrix
-    #     var A = Matrix.rand(shape=(100, 100))
-    #     print(A.sum())
-    #     ```
-    #     """
-    #     return numojo.math.sum(self)
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
+        print(A.sum())
+        ```
+        """
+        return numojo.math.sum(self)
 
-    # fn sum(self, axis: Int) raises -> Matrix[dtype]:
-    #     """
-    #     Sum up the items in a Matrix along the axis.
+    fn sum(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Sum up the items in a Matrix along the axis.
 
-    #     Args:
-    #         axis: 0 or 1.
+        Args:
+            axis: 0 or 1.
 
-    #     Example:
-    #     ```mojo
-    #     from numojo import Matrix
-    #     var A = Matrix.rand(shape=(100, 100))
-    #     print(A.sum(axis=0))
-    #     print(A.sum(axis=1))
-    #     ```
-    #     """
-    #     return numojo.math.sum(self, axis=axis)
+        Example:
+        ```mojo
+        from numojo import Matrix
+        var A = Matrix.rand(shape=(100, 100))
+        print(A.sum(axis=0))
+        print(A.sum(axis=1))
+        ```
+        """
+        return numojo.math.sum(self, axis=axis)
 
-    # fn trace(self) raises -> Scalar[dtype]:
-    #     """
-    #     Trace of matrix.
-    #     """
-    #     return numojo.linalg.trace(self)
+    fn trace(self) raises -> Scalar[dtype]:
+        """
+        Trace of matrix.
+        """
+        return numojo.linalg.trace(self)
 
-    # fn issymmetric(self) -> Bool:
-    #     """
-    #     Transpose of matrix.
-    #     """
-    #     return issymmetric(self)
+    fn issymmetric(self) -> Bool:
+        """
+        Transpose of matrix.
+        """
+        return issymmetric(self)
 
-    # fn transpose(self) -> Matrix[dtype]:
-    #     """
-    #     Transpose of matrix.
-    #     """
-    #     return transpose(self)
+    fn transpose(self) -> Matrix[dtype]:
+        """
+        Transpose of matrix.
+        """
+        return transpose(self)
 
-    # # TODO: we should only allow this for owndata. not for views, it'll lead to weird origin behaviours.
-    # fn reorder_layout(self) raises -> MatrixImpl[dtype, **_]:
-    #     """
-    #     Reorder_layout matrix.
-    #     """
-    #     return reorder_layout(self)
+    # TODO: we should only allow this for owndata. not for views, it'll lead to weird origin behaviours.
+    fn reorder_layout(self) raises -> Matrix[dtype]:
+        """
+        Reorder_layout matrix.
+        """
+        return reorder_layout(self)
 
-    # fn T(self) -> Matrix[dtype]:
-    #     return transpose(self)
+    fn T(self) -> Matrix[dtype]:
+        return transpose(self)
 
-    # fn variance[
-    #     returned_dtype: DType = DType.float64
-    # ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
-    #     """
-    #     Compute the variance.
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+        """
+        Compute the variance.
 
-    #     Args:
-    #         ddof: Delta degree of freedom.
-    #     """
-    #     return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
+        Args:
+            ddof: Delta degree of freedom.
+        """
+        return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
 
-    # fn variance[
-    #     returned_dtype: DType = DType.float64
-    # ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
-    #     """
-    #     Compute the variance along axis.
+    fn variance[
+        returned_dtype: DType = DType.float64
+    ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
+        """
+        Compute the variance along axis.
 
-    #     Args:
-    #         axis: 0 or 1.
-    #         ddof: Delta degree of freedom.
-    #     """
-    #     return numojo.statistics.variance[returned_dtype](
-    #         self, axis=axis, ddof=ddof
-    #     )
+        Args:
+            axis: 0 or 1.
+            ddof: Delta degree of freedom.
+        """
+        return numojo.statistics.variance[returned_dtype](
+            self, axis=axis, ddof=ddof
+        )
 
     # # ===-------------------------------------------------------------------===#
     # # To other data types
     # # ===-------------------------------------------------------------------===#
 
-    # fn to_ndarray(self) raises -> NDArray[dtype]:
-    #     """Create `NDArray` from `Matrix`.
+    fn to_ndarray(self) raises -> NDArray[dtype]:
+        """Create `NDArray` from `Matrix`.
 
-    #     It makes a copy of the buffer of the matrix.
-    #     """
+        It makes a copy of the buffer of the matrix.
+        """
 
-    #     var ndarray: NDArray[dtype] = NDArray[dtype](
-    #         shape=List[Int](self.shape[0], self.shape[1]), order="C"
-    #     )
-    #     memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
+        var ndarray: NDArray[dtype] = NDArray[dtype](
+            shape=List[Int](self.shape[0], self.shape[1]), order="C"
+        )
+        memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
 
-    #     return ndarray^
+        return ndarray^
 
     fn to_numpy(self) raises -> PythonObject where own_data == True:
         """See `numojo.core.utility.to_numpy`."""
@@ -2203,117 +2213,116 @@ struct MatrixImpl[
 #         else:
 #             return self.index
 
-struct _MatrixIter[
-    origin: MutOrigin,
-    dtype: DType,
-    forward: Bool = True,
-](ImplicitlyCopyable, Movable):
-    """Iterator for Matrix that returns mutable views.
+# struct _MatrixIter[
+#     is_mut: Bool, //,
+#     origin: Origin[is_mut],
+#     dtype: DType,
+#     forward: Bool = True,
+# ](ImplicitlyCopyable, Movable):
+#     """Iterator for Matrix that returns mutable views.
 
-    This iterator yields mutable views (MatrixView) of each row in the matrix,
-    allowing modifications to the original matrix through the views.
+#     This iterator yields mutable views (MatrixView) of each row in the matrix,
+#     allowing modifications to the original matrix through the views.
 
-    Parameters:
-        origin: The origin of the underlying Matrix data (tracks mutability).
-        dtype: The data type of the matrix elements.
-        forward: The iteration direction. `True` for forward, `False` for backward.
+#     Parameters:
+#         origin: The origin of the underlying Matrix data (tracks mutability).
+#         dtype: The data type of the matrix elements.
+#         forward: The iteration direction. `True` for forward, `False` for backward.
 
-    Example:
-        ```mojo
-        var mat = Matrix[DType.float32]((4, 4), order="C")
-        for i in range(mat.size):
-            mat._buf.ptr[i] = Float32(i)
+#     Example:
+#         ```mojo
+#         var mat = Matrix[DType.float32]((4, 4), order="C")
+#         for i in range(mat.size):
+#             mat._buf.ptr[i] = Float32(i)
 
-        # Iterate and modify through views
-        for row in mat:
-            row[0, 0] = 99.0  # This modifies the original matrix
-        ```
-    """
+#         # Iterate and modify through views
+#         for row in mat:
+#             row[0, 0] = 99.0  # This modifies the original matrix
+#         ```
+#     """
 
-    var index: Int
-    var length: Int
-    var buf_ptr: UnsafePointer[Scalar[dtype], origin]
-    var shape: Tuple[Int, Int]
-    var strides: Tuple[Int, Int]
+#     var index: Int
+#     var length: Int
+#     var buf_ptr: UnsafePointer[Scalar[dtype], origin]
+#     var shape: Tuple[Int, Int]
+#     var strides: Tuple[Int, Int]
 
-    fn __init__(
-        out self,
-        ref [_] buf_ptr: UnsafePointer[Scalar[dtype], origin],
-        shape: Tuple[Int, Int],
-        strides: Tuple[Int, Int],
-    ):
-        """Initialize the iterator.
+#     fn __init__(
+#         out self,
+#         ref [_] buf_ptr: UnsafePointer[Scalar[dtype], origin],
+#         shape: Tuple[Int, Int],
+#         strides: Tuple[Int, Int],
+#     ):
+#         """Initialize the iterator.
 
-        Args:
-            buf_ptr: Pointer to the matrix data buffer.
-            shape: Shape of the matrix (rows, columns).
-            strides: Strides of the matrix for memory layout.
-        """
-        self.index = 0 if forward else shape[0]
-        self.length = shape[0]
-        self.buf_ptr = buf_ptr
-        self.shape = shape
-        self.strides = strides
+#         Args:
+#             buf_ptr: Pointer to the matrix data buffer.
+#             shape: Shape of the matrix (rows, columns).
+#             strides: Strides of the matrix for memory layout.
+#         """
+#         self.index = 0 if forward else shape[0]
+#         self.length = shape[0]
+#         self.buf_ptr = buf_ptr
+#         self.shape = shape
+#         self.strides = strides
 
-    fn __iter__(self) -> Self:
-        """Return a copy of the iterator for iteration protocol."""
-        return self.copy()
+#     fn __iter__(self) -> Self:
+#         """Return a copy of the iterator for iteration protocol."""
+#         return self.copy()
 
-    fn __next_ref__(mut self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
-        """Return the next row as a mutable view.
+#     fn __next_ref__(mut self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
+#         """Return the next row as a mutable view.
 
-        This method is called by the for-loop and returns a MatrixView
-        that shares memory with the original matrix. Modifications to
-        the returned view will affect the original matrix.
+#         This method is called by the for-loop and returns a MatrixView
+#         that shares memory with the original matrix. Modifications to
+#         the returned view will affect the original matrix.
 
-        Returns:
-            A mutable MatrixView representing the next row.
-        """
-        var curr = self.index
+#         Returns:
+#             A mutable MatrixView representing the next row.
+#         """
+#         var curr = self.index
 
-        @parameter
-        if forward:
-            self.index += 1
-        else:
-            self.index -= 1
+#         @parameter
+#         if forward:
+#             self.index += 1
+#         else:
+#             self.index -= 1
 
-        # Create a view for the current row
-        var new_ptr: UnsafePointer[Scalar[dtype], MutOrigin.cast_from[origin]] = self.buf_ptr.unsafe_origin_cast[
-            MutOrigin.cast_from[origin]
-        ]()
-        return MatrixView[dtype, MutOrigin.cast_from[origin]](
-            shape=(1, self.shape[1]),
-            strides=(self.strides[0], self.strides[1]),
-            offset=curr * self.strides[0],
-            data=DataContainer[dtype, MutOrigin.cast_from[origin]](
-                ptr=new_ptr
-            ),
-        )
+#         # Create a view for the current row
+#         var new_ptr = self.buf_ptr.unsafe_origin_cast[origin]()
+#         return MatrixView[dtype, MutOrigin.cast_from[origin]](
+#             shape=(1, self.shape[1]),
+#             strides=(self.strides[0], self.strides[1]),
+#             offset=curr * self.strides[0],
+#             data=DataContainer[dtype, MutOrigin.cast_from[origin]](
+#                 ptr=new_ptr
+#             ),
+#         )
 
-    @always_inline
-    fn __has_next__(self) -> Bool:
-        """Check if there are more elements to iterate.
+#     @always_inline
+#     fn __has_next__(self) -> Bool:
+#         """Check if there are more elements to iterate.
 
-        Returns:
-            True if there are more elements, False otherwise.
-        """
-        @parameter
-        if forward:
-            return self.index < self.length
-        else:
-            return self.index > 0
+#         Returns:
+#             True if there are more elements, False otherwise.
+#         """
+#         @parameter
+#         if forward:
+#             return self.index < self.length
+#         else:
+#             return self.index > 0
 
-    fn __len__(self) -> Int:
-        """Return the number of remaining elements.
+#     fn __len__(self) -> Int:
+#         """Return the number of remaining elements.
 
-        Returns:
-            The number of rows left to iterate.
-        """
-        @parameter
-        if forward:
-            return self.length - self.index
-        else:
-            return self.index
+#         Returns:
+#             The number of rows left to iterate.
+#         """
+#         @parameter
+#         if forward:
+#             return self.length - self.index
+#         else:
+#             return self.index
 
 
 # # ===-----------------------------------------------------------------------===#
@@ -2434,7 +2443,9 @@ fn _logic_func_matrix_matrix_to_matrix[
     # parallelize[calculate_CC](t0, t0)
     for i in range(t0):
         for j in range(t1):
-            C._store[width](i, j, simd_func(A._load[width](i, j), B._load[width](i, j)))
+            C._store[width](
+                i, j, simd_func(A._load[width](i, j), B._load[width](i, j))
+            )
 
     print("C ", C)
     var _t0 = t0

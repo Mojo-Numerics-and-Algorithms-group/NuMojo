@@ -10,11 +10,11 @@ Array manipulation routines.
 """
 
 from memory import UnsafePointer, memcpy
+from memory import LegacyUnsafePointer
 from sys import simd_width_of
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
@@ -287,7 +287,7 @@ fn transpose[
 
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
-    var ptr: UnsafePointer[Scalar[DType.int]] = I._buf.ptr
+    var ptr: LegacyUnsafePointer[Scalar[DType.int]] = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
@@ -325,7 +325,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
+fn transpose[dtype: DType](A: MatrixImpl[dtype, **_]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
@@ -346,7 +346,7 @@ fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
 
 fn reorder_layout[
     dtype: DType
-](A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
+](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.

@@ -3,6 +3,7 @@ from numojo import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check
 from python import Python
+from testing import TestSuite
 
 
 # TODO: there's something wrong with bool comparision even though result looks same.
@@ -65,3 +66,7 @@ def test_bool_masks_eq():
     var np_mask = np_A[np_A > 10]
     var mask = A[A > Scalar[nm.i16](10)]
     check(mask, np_mask, "Masked array")
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

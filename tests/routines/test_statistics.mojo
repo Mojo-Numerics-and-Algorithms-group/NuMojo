@@ -4,6 +4,7 @@ from numojo.core.matrix import Matrix
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 from utils_for_test import check, check_is_close
+from testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Statistics
@@ -74,3 +75,7 @@ def test_mean_median_var_std():
             np.std(Anp, axis),
             String("`std` is broken for axis {}").format(axis),
         )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

@@ -4,6 +4,7 @@ from numojo.core.matrix import Matrix
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 from sys import is_defined
+from testing import assert_equal, TestSuite
 
 alias order: String = String("F") if is_defined["F_CONTIGUOUS"]() else String(
     "C"
@@ -346,9 +347,6 @@ def test_eigen_decomposition():
     namedtuple = np.linalg.eig(Anp)
 
     np_eigenvalues = namedtuple.eigenvalues
-    print(np_eigenvalues)
-    print(Lambda.to_numpy())
-    print(np.diag(Lambda.to_numpy()))
 
     # Sort eigenvalues and eigenvectors for comparison (numpy doesn't guarantee order)
     var np_sorted_eigenvalues = np.sort(np_eigenvalues)
@@ -369,7 +367,6 @@ def test_eigen_decomposition():
 
     # Check that A = Q * Lambda * Q^T (eigendecomposition property)
     var A_reconstructed = Q @ Lambda @ Q.transpose()
-    print(A_reconstructed - A)
     assert_true(
         np.allclose(A_reconstructed.to_numpy(), Anp, atol=1e-10),
         "A ≠ Q * Lambda * Q^T",
@@ -437,19 +434,19 @@ def test_math():
         )
 
     check_matrices_close(
-        nm.cumsum(A.copy()),
+        nm.cumsum(A),
         np.cumsum(Anp),
         "`cumsum` is broken",
     )
     for i in range(2):
         check_matrices_close(
-            nm.cumsum(A.copy(), axis=i),
+            nm.cumsum(A, axis=i),
             np.cumsum(Anp, axis=i),
             String("`cumsum` by axis {i} is broken"),
         )
 
     check_matrices_close(
-        nm.cumprod(A.copy()),
+        nm.cumprod(A),
         np.cumprod(Anp),
         "`cumprod` is broken",
     )
@@ -565,3 +562,7 @@ def test_searching():
             np.argmin(Anp, axis=i),
             String("`argmin` by axis {} is broken").format(i),
         )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

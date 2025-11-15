@@ -224,7 +224,9 @@ fn cumprod[
     return B^
 
 
-fn cumprod[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
+fn cumprod[
+    dtype: DType
+](A: Matrix[dtype, **_]) raises -> Matrix[dtype, OwnData]:
     """
     Cumprod of flattened matrix.
 
@@ -238,23 +240,20 @@ fn cumprod[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype, **_]:
     print(mat.cumprod(A))
     ```
     """
-    var reorder = False
-    var order = "C" if A.flags.C_CONTIGUOUS else "F"
-    var result: Matrix[dtype, OwnData] = Matrix.zeros[dtype](A.shape)
-    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    alias width: Int = simd_width_of[dtype]()
+    var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, "C")
 
-    if result.flags.F_CONTIGUOUS:
-        reorder = True
-        result = result.reorder_layout()
-
-    result.resize(shape=(1, result.size))
+    if A.flags.C_CONTIGUOUS:
+        memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    else:
+        for i in range(A.shape[0]):
+            for j in range(A.shape[1]):
+                result[i, j] = A[i, j]
 
     for i in range(1, A.size):
         result._buf.ptr[i] *= result._buf.ptr[i - 1]
 
-    if reorder:
-        result = result.reorder_layout()
-
+    result.resize(shape=(1, result.size))
     return result^
 
 
@@ -279,7 +278,17 @@ fn cumprod[
     alias width: Int = simd_width_of[dtype]()
     var order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
-    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+
+    if order == "C":
+        memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    else:
+        for j in range(result.shape[1]):
+
+            @parameter
+            fn copy_col[width: Int](i: Int):
+                result._store[width](i, j, A._load[width](i, j))
+
+            vectorize[copy_col, width](A.shape[0])
 
     if axis == 0:
         if A.flags.C_CONTIGUOUS:

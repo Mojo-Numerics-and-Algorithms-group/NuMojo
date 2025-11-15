@@ -11,8 +11,13 @@ struct OwnData(Buffered, ImplicitlyCopyable, Movable):
     fn __init__(out self):
         pass
 
-    fn is_own_data(self) -> Bool:
+    @staticmethod
+    fn is_own_data() -> Bool:
         return True
 
-    fn is_ref_data(self) -> Bool:
+    @staticmethod
+    fn is_ref_data() -> Bool:
         return False
+
+    fn __str__(self) -> String:
+        return "OwnData"

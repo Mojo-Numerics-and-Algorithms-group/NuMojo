@@ -46,7 +46,7 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         """
         self.ptr = other.ptr
 
-    fn get_ptr(self) -> UnsafePointer[Scalar[dtype], origin]:
+    fn get_ptr(self) -> ref [origin_of(self.ptr)] UnsafePointer[Scalar[dtype], origin]:
         """
         Returns the internal pointer to the data buffer.
 

@@ -9,7 +9,10 @@
 from memory import UnsafePointer, LegacyUnsafePointer
 
 
-struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
+# temporary DataContainer to support transition from LegacyUnsafePointer to UnsafePointer.
+struct DataContainerNew[dtype: DType, origin: MutOrigin](
+    ImplicitlyCopyable
+):
     var ptr: UnsafePointer[Scalar[dtype], origin]
 
     fn __init__(out self, size: Int):
@@ -21,9 +24,9 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         `ndarray.flags['OWN_DATA']` should be set as True.
         The memory should be freed by `__del__`.
         """
-        self.ptr = alloc[Scalar[dtype]](size).unsafe_origin_cast[
-            MutOrigin.cast_from[origin]
-        ]()
+        self.ptr: UnsafePointer[Scalar[dtype], origin] = alloc[Scalar[dtype]](
+            size
+        ).unsafe_origin_cast[origin]()
 
     fn __init__(out self, ptr: UnsafePointer[Scalar[dtype], origin]):
         """
@@ -78,7 +81,7 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         """
         return self.ptr[idx]
 
-    fn __setitem__(self, idx: Int, val: Scalar[dtype]):
+    fn __setitem__(mut self, idx: Int, val: Scalar[dtype]):
         """
         Sets the value at the specified index in the data buffer.
 
@@ -112,7 +115,7 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         """
         return self.ptr.load[width=width](offset)
 
-    fn store[width: Int](self, offset: Int, value: SIMD[dtype, width]):
+    fn store[width: Int](mut self, offset: Int, value: SIMD[dtype, width]):
         """
         Stores a value into the data buffer at the specified offset.
 

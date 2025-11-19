@@ -273,9 +273,7 @@ fn argsort[
     )
 
 
-fn argsort[
-    dtype: DType
-](A: MatrixImpl[dtype, **_]) raises -> Matrix[DType.int]:
+fn argsort[dtype: DType](A: MatrixImpl[dtype, **_]) raises -> Matrix[DType.int]:
     """
     Argsort the Matrix. It is first flattened before sorting.
     """

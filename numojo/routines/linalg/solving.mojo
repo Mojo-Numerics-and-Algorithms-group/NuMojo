@@ -373,9 +373,7 @@ fn solve[
 
 fn solve[
     dtype: DType
-](A: MatrixImpl[dtype, **_], Y: MatrixImpl[dtype, **_]) raises -> Matrix[
-    dtype
-]:
+](A: MatrixImpl[dtype, **_], Y: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LUP decomposition.
     """

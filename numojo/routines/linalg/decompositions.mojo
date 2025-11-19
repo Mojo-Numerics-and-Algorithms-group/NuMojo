@@ -306,9 +306,7 @@ fn partial_pivoting[
 
 fn partial_pivoting[
     dtype: DType
-](A: MatrixImpl[dtype, **_]) raises -> Tuple[
-    Matrix[dtype], Matrix[dtype], Int
-]:
+](A: MatrixImpl[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
     """
     Perform partial pivoting for matrix.
     """

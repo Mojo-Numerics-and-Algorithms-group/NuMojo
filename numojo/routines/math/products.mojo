@@ -226,9 +226,7 @@ fn cumprod[
     return B^
 
 
-fn cumprod[
-    dtype: DType
-](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+fn cumprod[dtype: DType](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 

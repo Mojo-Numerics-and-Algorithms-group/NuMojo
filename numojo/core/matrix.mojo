@@ -363,6 +363,17 @@ struct MatrixImpl[
             other.shape, other.strides, owndata=True, writeable=True
         )
 
+    fn create_copy(self) -> Matrix[dtype]:
+        """
+        Create a deep copy of the current matrix.
+
+        Returns:
+            A new Matrix instance that is a copy of the current matrix.
+        """
+        var new_matrix = Matrix[dtype](shape=self.shape, order=self.order())
+        memcpy(dest=new_matrix._buf.ptr, src=self._buf.ptr, count=self.size)
+        return new_matrix^
+
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
         """

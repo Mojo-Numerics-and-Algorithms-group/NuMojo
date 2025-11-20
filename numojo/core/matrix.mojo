@@ -15,7 +15,6 @@ from python import PythonObject, Python
 from math import ceil
 
 from numojo.core.flags import Flags
-
 from numojo.core.ndarray import NDArray
 from numojo.core.data_container import DataContainerNew as DataContainer
 from numojo.core.traits.buffered import Buffered
@@ -32,9 +31,84 @@ from numojo.routines.linalg.misc import issymmetric
 
 
 alias Matrix = MatrixImpl[_, own_data=True, origin = MutOrigin.external]
+"""
+Primary Matrix type for creating and manipulating 2D matrices in NuMojo.
+
+This is the main user-facing type alias for working with matrices. It represents
+a matrix that owns and manages its underlying memory buffer. The data type parameter
+is inferred from context or can be explicitly specified.
+
+The `Matrix` type is designed for standard matrix operations where full ownership
+and control of the data is required. It allocates its own memory and is responsible
+for cleanup when it goes out of scope.
+
+Type Parameters:
+    dtype: The data type of matrix elements.
+
+Usage:
+    ```mojo
+    from numojo.prelude import *
+
+    # Create a matrix with explicit type
+    var mat = Matrix.zeros[nm.f32](shape=Tuple(3, 4))
+
+    # Create with default type DType.float64
+    var mat2 = Matrix.zeros(shape=Tuple(2, 3))
+    ```
+
+Notes:
+    - This matrix owns its data and manages memory allocation/deallocation.
+    - For non-owning views into existing data, use methods like `get()`, `view()` which return `MatrixView`.
+    - Direct instantiation of `MatrixImpl` should be avoided; always use this alias.
+"""
+
 alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixImpl[
     dtype, own_data=False, origin=origin
 ]
+"""
+Non-owning view into matrix data for efficient memory access without copying.
+
+`MatrixView` represents a lightweight reference to matrix data that is owned by
+another `Matrix` instance. It does not allocate or manage its own memory, instead
+pointing to a subset or reinterpretation of existing matrix data. This enables
+efficient slicing, row/column access, and memory sharing without data duplication.
+
+**IMPORTANT**: This type is for internal use and should not be directly instantiated
+by users. Views are created automatically by matrix operations like indexing,
+slicing, through the `get()` method. A full view of the matrix can be obtained via `view()` method.
+
+Type Parameters:
+    dtype: The data type of the matrix elements being viewed.
+    origin: Tracks the lifetime and mutability of the referenced data, ensuring
+            the view doesn't outlive the original data or violate mutability constraints.
+
+Key Characteristics:
+    - Does not own the underlying data buffer.
+    - Cannot be copied (to prevent dangling references) (Will be relaxed in future).
+    - Lifetime is tied to the owning Matrix instance.
+    - May have different shape/strides than the original matrix (e.g., for slices).
+    - Changes to the view affect the original matrix by default.
+
+Common Creation Patterns:
+    Views are typically created through:
+    - `matrix.get(row_idx)` - Get a view of a single row
+    - `matrix.get(row_slice, col_slice)` - Get a view of a submatrix
+    - `matrix.view()` - Get a view of the entire matrix
+
+Example:
+    ```mojo
+    from numojo.prelude import *
+
+    var mat = Matrix.ones(shape=(4, 4))
+    var row_view = mat.get(0)  # Returns MatrixView of first row
+    # Modifying row_view would modify mat
+    ```
+
+Safety Notes:
+    - The view must not outlive the owning Matrix
+    - Origin tracking ensures compile-time lifetime safety
+    - Attempting to use a view after its owner is deallocated is undefined behavior
+"""
 
 
 struct MatrixImpl[
@@ -44,39 +118,65 @@ struct MatrixImpl[
     origin: MutOrigin,
 ](Copyable, Movable, Sized, Stringable, Writable):
     """
-    A 2D matrix that can either own its data or serve as a view into existing data.
+    Core implementation struct for 2D matrix operations with flexible ownership semantics.
 
-    `Matrix` is a special case of `NDArray` (2DArray) but has some targeted
-    optimization since the number of dimensions is known at the compile time.
-    It has simpler indexing and slicing methods, which is very useful when users
-    only want to work with 2-dimensional arrays.
+    `MatrixImpl` is the underlying implementation for both owning matrices (`Matrix`)
+    and non-owning matrix views (`MatrixView`). It provides a complete set of operations
+    for 2D array manipulation with compile-time known dimensions, enabling optimizations
+    not possible with generic N-dimensional arrays.
 
-    NuMojo's `Matrix` is `NDArray` with fixed `ndim` known at compile time.
-    It may be different in some behaviors compared to `numpy.matrix`.
+    This struct represents a specialized case of `NDArray` optimized for 2D operations.
+    The fixed dimensionality allows for simpler, more efficient indexing using direct
+    `(row, col)` access patterns rather than generic coordinate tuples. This makes it
+    particularly suitable for linear algebra, image processing, and other applications
+    where 2D structure is fundamental.
 
-    This struct is parameterized by data type, ownership mode, and memory origin.
+    **Important**: Users should not instantiate `MatrixImpl` directly. Instead, use:
+    - `Matrix[dtype]` for matrices that own their data (standard usage)
+    - Methods like `get()` that return `MatrixView` for non-owning views
 
-    Users should create matrices using the type alias:
-    - `Matrix[dtype]` - For matrices that own their data (standard usage)
+    Direct instantiation of `MatrixImpl` may lead to undefined behavior related to
+    memory management and lifetime tracking.
 
-    Note: Direct instantiation of `MatrixImpl` and `MatrixView` is not recommended
-    as it may lead to undefined behavior. Always use the provided type alias `Matrix[dtype]`.
+    Type Parameters:
+        dtype: The data type of matrix elements (e.g., DType.float32, DType.float64).
+               Default is DType.float32. This is a compile-time parameter that determines
+               the size and interpretation of stored values.
+        own_data: Boolean flag indicating whether this instance owns and manages its
+                  underlying memory buffer. When True, the matrix allocates and frees
+                  its own memory. When False, it's a view into externally-owned data.
+        origin: Tracks the lifetime and mutability of the underlying data buffer,
+                enabling compile-time safety checks to prevent use-after-free and
+                other memory safety issues. Default is MutOrigin.external.
 
-    Ownership semantics:
-    - Owning matrices allocate and manage their own memory
-    - View matrices reference existing data without ownership
-    - Views are typically created via methods like `get()`
+    Memory Layout:
+        Matrices can be stored in either:
+        - Row-major (C-style) layout: consecutive elements in a row are adjacent in memory
+        - Column-major (Fortran-style) layout: consecutive elements in a column are adjacent
 
-    Indexing behavior:
-    - For `__getitem__`, passing in two `Int` returns a scalar,
-    and passing in one `Int` or two `Slice` returns a `Matrix`.
-    - We do not need auxiliary types `NDArrayShape` and `NDArrayStrides`
-    as the shape and strides information is fixed in length `Tuple[Int,Int]`.
+        The layout affects cache efficiency for different access patterns and is tracked
+        via the `strides` and `flags` attributes.
 
-    Parameters:
-        dtype: The data type of matrix elements (e.g., DType.float32). Default type is DType.float64.
-        own_data: Whether this instance owns and manages its data. Default is `True` (OwnData).
-        origin: Tracks the lifetime and mutability of the underlying data. Default is `MutOrigin.external`.
+    Ownership Semantics:
+        **Owning matrices** (own_data=True):
+        - Allocate their own memory buffer during construction
+        - Responsible for freeing memory in destructor
+        - Can be copied (creates new independent matrix with copied data)
+        - Can be moved (transfers ownership efficiently)
+
+        **View matrices** (own_data=False):
+        - Reference existing data from an owning matrix
+        - Do not allocate or free memory
+        - Cannot be copied currently.
+
+    Indexing and Slicing:
+        - `mat[i, j]` - Returns scalar element at row i, column j
+        - `mat[i]` - Returns a copy of row i as a new Matrix
+        - `mat.get(i)` - Returns a MatrixView of row i (no copy)
+        - `mat[row_slice, col_slice]` - Returns a copy of the submatrix
+        - `mat.get(row_slice, col_slice)` - Returns a MatrixView of the submatrix (no copy)
+
+        Negative indices are supported and follow Python conventions (wrap from end).
 
     The matrix can be uniquely defined by the following features:
         1. The data buffer of all items.
@@ -241,7 +341,7 @@ struct MatrixImpl[
             self.shape, self.strides, owndata=False, writeable=False
         )
 
-    # NOTE: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained.
+    # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """
@@ -262,17 +362,6 @@ struct MatrixImpl[
         self.flags = Flags(
             other.shape, other.strides, owndata=True, writeable=True
         )
-
-    fn create_copy(self) -> Matrix[dtype]:
-        """
-        Create a copy of the matrix.
-
-        Returns:
-            A new Matrix that is a copy of the original.
-        """
-        var result = Matrix[dtype](shape=self.shape, order=self.order())
-        memcpy(dest=result._buf.ptr, src=self._buf.ptr, count=self.size)
-        return result^
 
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
@@ -303,7 +392,7 @@ struct MatrixImpl[
     # ===-------------------------------------------------------------------===#
 
     @always_inline
-    fn _index(self, row: Int, col: Int) -> Int:
+    fn linear_index(self, row: Int, col: Int) -> Int:
         """Convert 2D index to 1D index."""
         return row * self.strides[0] + col * self.strides[1]
 
@@ -340,7 +429,7 @@ struct MatrixImpl[
             )
         var x_norm = self.normalize(x, self.shape[0])
         var y_norm = self.normalize(y, self.shape[1])
-        return self._buf[self._index(x_norm, y_norm)]
+        return self._buf[self.linear_index(x_norm, y_norm)]
 
     # NOTE: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get[
@@ -393,9 +482,6 @@ struct MatrixImpl[
 
         Returns:
             A new Matrix (row vector) copied from the original matrix.
-
-        Notes:
-            This function is for internal use only. Users should use `create_copy` to create a copy of the whole matrix instead.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -666,7 +752,7 @@ struct MatrixImpl[
         var x_norm: Int = self.normalize(x, self.shape[0])
         var y_norm: Int = self.normalize(y, self.shape[1])
 
-        self._buf.store(self._index(x_norm, y_norm), value)
+        self._buf.store(self.linear_index(x_norm, y_norm), value)
 
     fn __setitem__(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
         """
@@ -983,7 +1069,7 @@ struct MatrixImpl[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    fn get_view(ref self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
+    fn view(ref self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
         """
         Get a view of the matrix.
 
@@ -1012,7 +1098,9 @@ struct MatrixImpl[
 
     fn __iter__(
         self,
-    ) -> Self.IteratorType[origin, origin_of(self), True] where own_data == True:
+    ) -> Self.IteratorType[origin, origin_of(self), True] where (
+        own_data == True
+    ):
         """Iterate over rows of the Matrix, returning row views.
 
         Returns:
@@ -1039,7 +1127,9 @@ struct MatrixImpl[
 
     fn __reversed__(
         mut self,
-    ) raises -> Self.IteratorType[origin, origin_of(self), False] where own_data == True:
+    ) raises -> Self.IteratorType[origin, origin_of(self), False] where (
+        own_data == True
+    ):
         """Iterate backwards over elements of the Matrix, returning
         copied value.
 
@@ -2118,6 +2208,7 @@ struct MatrixImpl[
 # # ===-----------------------------------------------------------------------===#
 # # MatrixIter struct
 # # ===-----------------------------------------------------------------------===#
+
 
 struct _MatrixIter[
     is_mutable: Bool, //,

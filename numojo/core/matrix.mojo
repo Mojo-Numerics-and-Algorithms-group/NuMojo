@@ -112,7 +112,7 @@ Safety Notes:
 
 
 struct MatrixImpl[
-    dtype: DType = DType.float32,
+    dtype: DType = DType.float64,
     *,
     own_data: Bool,
     origin: MutOrigin,
@@ -224,7 +224,7 @@ struct MatrixImpl[
         matrix_origin: MutOrigin,
         iterator_origin: Origin[is_mutable],
         forward: Bool,
-    ] = _MatrixIter[dtype, matrix_origin, iterator_origin, own_data, forward]
+    ] = _MatrixIter[dtype, matrix_origin, iterator_origin, forward]
 
     alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
@@ -379,12 +379,6 @@ struct MatrixImpl[
         # NOTE: Using `where` clause doesn't work here, so use a compile time if check.
         @parameter
         if own_data:
-            print(
-                "Freeing matrix memory",
-                self.size,
-                self.shape[0],
-                self.shape[1],
-            )
             self._buf.ptr.free()
 
     # ===-------------------------------------------------------------------===#
@@ -392,10 +386,11 @@ struct MatrixImpl[
     # ===-------------------------------------------------------------------===#
 
     @always_inline
-    fn linear_index(self, row: Int, col: Int) -> Int:
+    fn index(self, row: Int, col: Int) -> Int:
         """Convert 2D index to 1D index."""
         return row * self.strides[0] + col * self.strides[1]
 
+    @always_inline
     fn normalize(self, idx: Int, dim: Int) -> Int:
         """
         Normalize negative indices.
@@ -407,14 +402,17 @@ struct MatrixImpl[
 
     fn __getitem__(self, x: Int, y: Int) raises -> Scalar[dtype]:
         """
-        Return the scalar at the index.
+        Retrieve the scalar value at the specified row and column indices.
 
         Args:
-            x: The row number.
-            y: The column number.
+            x: The row index. Can be negative to index from the end.
+            y: The column index. Can be negative to index from the end.
 
         Returns:
-            A scalar matching the dtype of the array.
+            The value at the specified (x, y) position in the matrix.
+
+        Raises:
+            Error: If the provided indices are out of bounds for the matrix.
         """
         if (
             x >= self.shape[0]
@@ -429,7 +427,7 @@ struct MatrixImpl[
             )
         var x_norm = self.normalize(x, self.shape[0])
         var y_norm = self.normalize(y, self.shape[1])
-        return self._buf[self.linear_index(x_norm, y_norm)]
+        return self._buf[self.index(x_norm, y_norm)]
 
     # NOTE: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get[
@@ -437,20 +435,35 @@ struct MatrixImpl[
     ](ref [view_origin]self, x: Int) raises -> MatrixView[
         dtype, MutOrigin.cast_from[view_origin]
     ]:
-        # where (own_data == True)
         """
-        Return the corresponding row at the index as a view.
+        Retrieve a view of the specified row in the matrix.
+
+        This method returns a non-owning `MatrixView` that references the data of the
+        specified row in the original matrix. The view does not allocate new memory
+        and directly points to the existing data buffer of the matrix.
 
         Parameters:
-            is_mutable: Whether the returned view should be mutable.
-            view_origin: The origin tracking the mutability and lifetime of the data.
+            is_mutable: An inferred boolean indicating whether the returned view should allow
+                        modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be
+                         specified directly by users as it can lead to unsafe behavior.
 
         Args:
-            x: The row number.
+            x: The row index to retrieve. Negative indices are supported and follow
+               Python conventions (e.g., -1 refers to the last row).
 
         Returns:
-            A new MatrixView (row vector) referencing the original matrix.
+            A `MatrixView` representing the specified row as a row vector.
+
+        Raises:
+            Error: If the provided row index is out of bounds.
         """
+        constrained[
+            Self.own_data == True,
+            (
+                "Creating views from views is not supported currently to ensure memory safety."
+            ),
+        ]()
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
                 String("Index {} exceed the row number {}").format(
@@ -475,13 +488,19 @@ struct MatrixImpl[
     # for creating a copy of the row.
     fn __getitem__(self, var x: Int) raises -> Matrix[dtype]:
         """
-        Return the corresponding row at the index.
+        Retrieve a copy of the specified row in the matrix.
+
+        This method returns a owning `Matrix` instance.
 
         Args:
-            x: The row number.
+            x: The row index to retrieve. Negative indices are supported and follow
+               Python conventions (e.g., -1 refers to the last row).
 
         Returns:
-            A new Matrix (row vector) copied from the original matrix.
+            A `Matrix` representing the specified row as a row vector.
+
+        Raises:
+            Error: If the provided row index is out of bounds.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -752,7 +771,7 @@ struct MatrixImpl[
         var x_norm: Int = self.normalize(x, self.shape[0])
         var y_norm: Int = self.normalize(y, self.shape[1])
 
-        self._buf.store(self.linear_index(x_norm, y_norm), value)
+        self._buf.store(self.index(x_norm, y_norm), value)
 
     fn __setitem__(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
         """
@@ -1116,7 +1135,7 @@ struct MatrixImpl[
         """
         return Self.IteratorType[origin, origin_of(self), True](
             index=0,
-            src=Pointer(to=self),
+            src=rebind[Pointer[MatrixImpl[dtype, own_data=True, origin=origin], origin_of(self)]](Pointer(to=self)),
         )
 
     fn __len__(self) -> Int:
@@ -1139,7 +1158,7 @@ struct MatrixImpl[
 
         return Self.IteratorType[origin, origin_of(self), False](
             index=0,
-            src=Pointer(to=self),
+            src=rebind[Pointer[MatrixImpl[dtype, own_data=True, origin=origin], origin_of(self)]](Pointer(to=self)),
         )
 
     fn __str__(self) -> String:
@@ -2215,7 +2234,6 @@ struct _MatrixIter[
     dtype: DType,
     matrix_origin: MutOrigin,
     iterator_origin: Origin[is_mutable],
-    own_data: Bool,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for Matrix that returns row views.
@@ -2225,7 +2243,6 @@ struct _MatrixIter[
         dtype: The data type of the matrix elements.
         matrix_origin: The origin of the underlying Matrix data.
         iterator_origin: The origin of the iterator itself.
-        own_data: Whether the underlying Matrix owns its data.
         forward: The iteration direction. `False` is backwards.
     """
 
@@ -2233,7 +2250,7 @@ struct _MatrixIter[
 
     var index: Int
     var matrix_ptr: Pointer[
-        MatrixImpl[dtype, own_data=own_data, origin = Self.matrix_origin],
+        MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
         Self.iterator_origin,
     ]
 
@@ -2241,7 +2258,7 @@ struct _MatrixIter[
         out self,
         index: Int,
         src: Pointer[
-            MatrixImpl[dtype, own_data=own_data, origin = Self.matrix_origin],
+            MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
             Self.iterator_origin,
         ],
     ):

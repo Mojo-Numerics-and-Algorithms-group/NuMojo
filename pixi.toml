@@ -105,7 +105,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
-python = ">=3.13.9,<3.14"
-numpy = ">=2.3.4,<3"
+python = ">=3.14.0,<3.15"
+numpy = ">=2.3.5,<3"
 scipy = ">=1.16.3,<2"
-modular = ">=25.7.0.dev2025111305,<26"
+modular = ">=26.1.0.dev2025111705,<27"

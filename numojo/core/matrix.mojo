@@ -119,6 +119,13 @@ struct MatrixImpl[
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
+    comptime IteratorType[
+        is_mutable: Bool, //,
+        matrix_origin: MutOrigin,
+        iterator_origin: Origin[is_mutable],
+        forward: Bool,
+    ] = _MatrixIter[dtype, matrix_origin, iterator_origin, own_data, forward]
+
     alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
 
@@ -215,8 +222,6 @@ struct MatrixImpl[
         out self,
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
-        offset: Int,
-        # ptr: UnsafePointer[Scalar[dtype], origin],
         data: DataContainer[dtype, origin],
     ) where own_data == False:
         """
@@ -226,13 +231,11 @@ struct MatrixImpl[
         Args:
             shape: Shape of the view.
             strides: Strides of the view.
-            offset: Offset in pointer of the data buffer.
             data: DataContainer that holds the data buffer.
         """
         self.shape = shape
         self.strides = strides
         self.size = shape[0] * shape[1]
-        # self._buf = DataContainer[dtype, origin](ptr=ptr.offset(offset))
         self._buf = data
         self.flags = Flags(
             self.shape, self.strides, owndata=False, writeable=False
@@ -344,7 +347,8 @@ struct MatrixImpl[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Int) raises -> MatrixView[
         dtype, MutOrigin.cast_from[view_origin]
-    ] where (own_data == True):
+    ]:
+        # where (own_data == True)
         """
         Return the corresponding row at the index as a view.
 
@@ -370,14 +374,14 @@ struct MatrixImpl[
             ptr=self._buf.get_ptr().unsafe_origin_cast[
                 MutOrigin.cast_from[view_origin]
             ]()
+            + x_norm * self.strides[0]
         )
-        var res = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
+        var row_view = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
-            offset=x_norm * self.strides[0],
             data=new_data,
         )
-        return res^
+        return row_view^
 
     # for creating a copy of the row.
     fn __getitem__(self, var x: Int) raises -> Matrix[dtype]:
@@ -422,21 +426,19 @@ struct MatrixImpl[
         start_y, end_y, step_y = y.indices(self.shape[1])
 
         var new_data = DataContainer[dtype, MutOrigin.cast_from[view_origin]](
-            ptr=self._buf.get_ptr().unsafe_origin_cast[
-                MutOrigin.cast_from[view_origin]
-            ]()
+            ptr=self._buf.get_ptr()
+            .unsafe_origin_cast[MutOrigin.cast_from[view_origin]]()
+            .offset(start_x * self.strides[0] + start_y * self.strides[1])
         )
-        var res = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
+        var sliced_view = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
                 Int(ceil((end_y - start_y) / step_y)),
             ),
-            strides=(step_x * self.strides[0], step_y * self.strides[1]),
-            offset=start_x * self.strides[0] + start_y * self.strides[1],
+            strides=(self.strides[0] * step_x, self.strides[1] * step_y),
             data=new_data,
         )
-
-        return res^
+        return sliced_view^
 
     # for creating a copy of the slice.
     fn __getitem__(self, x: Slice, y: Slice) -> Matrix[dtype]:
@@ -489,21 +491,20 @@ struct MatrixImpl[
         start_x, end_x, step_x = x.indices(self.shape[0])
 
         var new_data = DataContainer[dtype, MutOrigin.cast_from[view_origin]](
-            ptr=self._buf.get_ptr().unsafe_origin_cast[
-                MutOrigin.cast_from[view_origin]
-            ]()
+            ptr=self._buf.get_ptr()
+            .unsafe_origin_cast[MutOrigin.cast_from[view_origin]]()
+            .offset(start_x * self.strides[0] + y * self.strides[1])
         )
-        var res = MatrixView[dtype, MutOrigin.cast_from[view_origin],](
+        var column_view = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
                 1,
             ),
-            strides=(step_x * self.strides[0], self.strides[1]),
-            offset=start_x * self.strides[0] + y * self.strides[1],
+            strides=(self.strides[0] * step_x, self.strides[1]),
             data=new_data,
         )
 
-        return res^
+        return column_view^
 
     # for creating a copy of the slice.
     fn __getitem__(self, x: Slice, var y: Int) -> Matrix[dtype]:
@@ -551,21 +552,21 @@ struct MatrixImpl[
         var step_y: Int
         start_y, end_y, step_y = y.indices(self.shape[1])
         var new_data = DataContainer[dtype, MutOrigin.cast_from[view_origin]](
-            ptr=self._buf.get_ptr().unsafe_origin_cast[
-                MutOrigin.cast_from[view_origin]
-            ]()
+            ptr=self._buf.get_ptr()
+            .unsafe_origin_cast[MutOrigin.cast_from[view_origin]]()
+            .offset(x * self.strides[0] + start_y * self.strides[1])
         )
-        var res = MatrixView[dtype, MutOrigin.cast_from[view_origin],](
+        var row_slice_view = MatrixView[
+            dtype, MutOrigin.cast_from[view_origin]
+        ](
             shape=(
                 1,
                 Int(ceil((end_y - start_y) / step_y)),
             ),
-            strides=(self.strides[0], step_y * self.strides[1]),
-            offset=x * self.strides[0] + start_y * self.strides[1],
+            strides=(self.strides[0], self.strides[1] * step_y),
             data=new_data,
         )
-
-        return res^
+        return row_slice_view^
 
     # for creating a copy of the slice.
     fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
@@ -597,12 +598,12 @@ struct MatrixImpl[
         """
         Get item by a list of integers.
         """
-        var ncol = self.shape[1]
-        var nrow = len(indices)
-        var res = Matrix.zeros[dtype](shape=(nrow, ncol))
-        for i in range(nrow):
-            res[i] = self[indices[i]]
-        return res^
+        var num_cols = self.shape[1]
+        var num_rows = len(indices)
+        var selected_rows = Matrix.zeros[dtype](shape=(num_rows, num_cols))
+        for i in range(num_rows):
+            selected_rows[i] = self[indices[i]]
+        return selected_rows^
 
     fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
         """
@@ -642,7 +643,7 @@ struct MatrixImpl[
         """
         return self._buf.ptr.load[width=width](idx)
 
-    fn __setitem__(self, x: Int, y: Int, value: Scalar[dtype]) raises:
+    fn __setitem__(mut self, x: Int, y: Int, value: Scalar[dtype]) raises:
         """
         Return the scalar at the index.
 
@@ -982,30 +983,53 @@ struct MatrixImpl[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    # fn __iter__[
-    #     is_mutable: Bool, //, view_origin: Origin[is_mutable]
-    # ](ref [view_origin]self) raises -> _MatrixIter[MutOrigin.cast_from[view_origin], dtype]:
-    #     """Iterate over elements of the Matrix, returning copied value.
+    fn get_view(ref self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
+        """
+        Get a view of the matrix.
 
-    #     Example:
-    #     ```mojo
-    #     from numojo import Matrix
-    #     var A = Matrix.rand((4,4))
-    #     for i in A:
-    #         print(i)
-    #     ```
+            A new MatrixView referencing the original matrix.
+        """
+        var new_data = DataContainer[dtype, MutOrigin.cast_from[origin]](
+            ptr=self._buf.get_ptr().unsafe_origin_cast[
+                MutOrigin.cast_from[origin]
+            ]()
+        )
+        var matrix_view = MatrixView[dtype, MutOrigin.cast_from[origin]](
+            shape=self.shape,
+            strides=self.strides,
+            data=new_data,
+        )
+        return matrix_view^
 
-    #     Returns:
-    #         An iterator of Matrix elements.
-    #     """
+    fn get_shape(self) -> Tuple[Int, Int]:
+        """
+        Get the shape of the matrix.
 
-    #     return _MatrixIter[ImmutOrigin.cast_from[view_origin], dtype](
-    #         buf_ptr = self._buf.get_ptr().unsafe_origin_cast[
-    #             ImmutOrigin.cast_from[view_origin]
-    #         ](),
-    #         shape=self.shape,
-    #         strides=self.strides,
-    #     )
+        Returns:
+            A tuple representing the shape of the matrix.
+        """
+        return self.shape
+
+    fn __iter__(
+        self,
+    ) -> Self.IteratorType[origin, origin_of(self), True] where own_data == True:
+        """Iterate over rows of the Matrix, returning row views.
+
+        Returns:
+            An iterator that yields MatrixView objects for each row.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var mat = Matrix.rand((4, 4))
+            for row in mat:
+                print(row)  # Each row is a MatrixView
+            ```
+        """
+        return Self.IteratorType[origin, origin_of(self), True](
+            index=0,
+            src=Pointer(to=self),
+        )
 
     fn __len__(self) -> Int:
         """
@@ -1013,20 +1037,20 @@ struct MatrixImpl[
         """
         return self.shape[0]
 
-    # fn __reversed__(
-    #     mut self,
-    # ) raises -> _MatrixIter[origin, dtype, BufType, forward=False]:
-    #     """Iterate backwards over elements of the Matrix, returning
-    #     copied value.
+    fn __reversed__(
+        mut self,
+    ) raises -> Self.IteratorType[origin, origin_of(self), False] where own_data == True:
+        """Iterate backwards over elements of the Matrix, returning
+        copied value.
 
-    #     Returns:
-    #         A reversed iterator of Matrix elements.
-    #     """
+        Returns:
+            A reversed iterator of Matrix elements.
+        """
 
-    #     return _MatrixIter[origin, dtype, BufType, forward=False](
-    #         matrix=self,
-    #         length=self.shape[0],
-    #     )
+        return Self.IteratorType[origin, origin_of(self), False](
+            index=0,
+            src=Pointer(to=self),
+        )
 
     fn __str__(self) -> String:
         return String.write(self)
@@ -1498,12 +1522,12 @@ struct MatrixImpl[
         """
         Copy of the matrix, cast to a specified type.
         """
-        var res = Matrix[asdtype](
+        var casted_matrix = Matrix[asdtype](
             shape=(self.shape[0], self.shape[1]), order=self.order()
         )
         for i in range(self.size):
-            res._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
-        return res^
+            casted_matrix._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
+        return casted_matrix^
 
     fn cumprod(self) raises -> Matrix[dtype]:
         """
@@ -2095,234 +2119,96 @@ struct MatrixImpl[
 # # MatrixIter struct
 # # ===-----------------------------------------------------------------------===#
 
+struct _MatrixIter[
+    is_mutable: Bool, //,
+    dtype: DType,
+    matrix_origin: MutOrigin,
+    iterator_origin: Origin[is_mutable],
+    own_data: Bool,
+    forward: Bool = True,
+](ImplicitlyCopyable, Movable):
+    """Iterator for Matrix that returns row views.
 
-# ! Should the iterator be mutable or not?
-# Iterator struct - simplified, no ref parameter in __init__
-# struct _MatrixIter[
-#     origin: MutOrigin,
-#     dtype: DType,
-#     forward: Bool = True,
-# ](Copyable, Movable):
-#     """Iterator for Matrix that returns views.
+    Parameters:
+        is_mutable: Whether the iterator allows mutable access to the matrix.
+        dtype: The data type of the matrix elements.
+        matrix_origin: The origin of the underlying Matrix data.
+        iterator_origin: The origin of the iterator itself.
+        own_data: Whether the underlying Matrix owns its data.
+        forward: The iteration direction. `False` is backwards.
+    """
 
-#     Parameters:
-#         origin: The origin of the underlying Matrix data.
-#         dtype: The data type of the item.
-#         forward: The iteration direction. `False` is backwards.
-#     """
+    comptime Element = MatrixView[dtype, Self.matrix_origin]
 
-#     var index: Int
-#     var length: Int
-#     # var buf_ptr: DataContainer[dtype, origin]
-#     var buf_ptr: UnsafePointer[Scalar[dtype], origin]
-#     var shape: Tuple[Int, Int]
-#     var strides: Tuple[Int, Int]
+    var index: Int
+    var matrix_ptr: Pointer[
+        MatrixImpl[dtype, own_data=own_data, origin = Self.matrix_origin],
+        Self.iterator_origin,
+    ]
 
-#     fn __init__(
-#         out self,
-#         # buf_ptr: DataContainer[dtype, origin],
-#         buf_ptr: UnsafePointer[Scalar[dtype], origin],
-#         shape: Tuple[Int, Int],
-#         strides: Tuple[Int, Int],
-#     ):
-#         self.index = 0 if forward else shape[0]
-#         self.length = shape[0]
-#         self.buf_ptr = buf_ptr
-#         self.shape = shape
-#         self.strides = strides
+    fn __init__(
+        out self,
+        index: Int,
+        src: Pointer[
+            MatrixImpl[dtype, own_data=own_data, origin = Self.matrix_origin],
+            Self.iterator_origin,
+        ],
+    ):
+        """Initialize the iterator.
 
-#     fn __iter__(self) -> Self:
-#         return self.copy()
+        Args:
+            index: The starting index for iteration.
+            src: Pointer to the source Matrix.
+        """
+        self.index = index
+        self.matrix_ptr = src
 
-#     fn __next_ref__(mut self) -> MatrixView[
-#         dtype, origin
-#     ]:
-#         var curr = self.index
-#         self.index += 1
-#         return MatrixView[dtype, origin](
-#             shape=(1, self.shape[1]),
-#             strides=(self.strides[0], self.strides[1]),
-#             offset=curr * self.strides[0],
-#             data=DataContainer[dtype, origin](
-#                 # ptr=self.buf_ptr.get_ptr().unsafe_origin_cast[origin]()
-#                 ptr=self.buf_ptr.unsafe_origin_cast[origin]()
-#             ),
-#         )
+    @always_inline
+    fn __iter__(ref self) -> Self:
+        """Return a copy of the iterator for iteration protocol."""
+        return self.copy()
 
-#     # fn __next__[
-#     #     is_mutable: Bool, //, view_origin: Origin[is_mutable]
-#     # ](
-#     #     ref [view_origin] self,
-#     # ) -> MatrixView[
-#     #     dtype, MutOrigin.cast_from[view_origin]
-#     # ]:
-#     # fn __next__(
-#     #     mut self,
-#     # ) -> ref [origin] MatrixView[
-#     #     # dtype, MutOrigin.cast_from[lifetime]
-#     #     dtype, origin
-#     # ]:
-#     #     var current_index: Int
+    @always_inline
+    fn __has_next__(self) -> Bool:
+        """Check if there are more rows to iterate over."""
 
-#     #     @parameter
-#     #     if forward:
-#     #         current_index = self.index
-#     #         self.index += 1
-#     #     else:
-#     #         self.index -= 1
-#     #         current_index = self.index
+        @parameter
+        if Self.forward:
+            return self.index < self.matrix_ptr[].shape[0]
+        else:
+            return self.index > 0
 
-#     #     var new_data = DataContainer[dtype, origin](
-#     #         ptr=self.buf_ptr.get_ptr().unsafe_origin_cast[
-#     #             origin
-#     #         ]()
-#     #     )
+    fn __next__(
+        mut self,
+    ) raises -> MatrixView[dtype, MutOrigin.cast_from[Self.iterator_origin]]:
+        """Return a view of the next row.
 
-#     #     # var new_data = DataContainer[dtype, MutOrigin.cast_from[origin]](
-#     #     #     ptr=self.buf_ptr.get_ptr().unsafe_origin_cast[
-#     #     #         MutOrigin.cast_from[origin]
-#     #     #     ]()
-#     #     # )
-#     #     var res = MatrixView[dtype, origin](
-#     #         shape=(1, self.shape[1]),
-#     #         strides=(self.strides[0], self.strides[1]),
-#     #         offset=current_index * self.strides[0],
-#     #         data=new_data,
-#     #     )
-#     #     # var res = MatrixView[dtype, MutOrigin.cast_from[origin]](
-#     #     #     shape=(1, self.shape[1]),
-#     #     #     strides=(self.strides[0], self.strides[1]),
-#     #     #     offset=current_index * self.strides[0],
-#     #     #     data=new_data,
-#     #     # )
+        Returns:
+            A MatrixView representing the next row in the iteration.
+        """
 
-#     #     return res^
+        @parameter
+        if Self.forward:
+            var current_index = self.index
+            self.index += 1
+            return self.matrix_ptr[].get(current_index)
+        else:
+            var current_idx = self.index
+            self.index -= 1
+            return self.matrix_ptr[].get(current_idx)
 
-#     @always_inline
-#     fn __has_next__(self) -> Bool:
-#         @parameter
-#         if forward:
-#             return self.index < self.length
-#         else:
-#             return self.index > 0
+    @always_inline
+    fn bounds(self) -> Tuple[Int, Optional[Int]]:
+        """Return the iteration bounds."""
+        var remaining_rows: Int
 
-#     fn __len__(self) -> Int:
-#         @parameter
-#         if forward:
-#             return self.length - self.index
-#         else:
-#             return self.index
+        @parameter
+        if Self.forward:
+            remaining_rows = self.matrix_ptr[].shape[0] - self.index
+        else:
+            remaining_rows = self.index
 
-# struct _MatrixIter[
-#     is_mut: Bool, //,
-#     origin: Origin[is_mut],
-#     dtype: DType,
-#     forward: Bool = True,
-# ](ImplicitlyCopyable, Movable):
-#     """Iterator for Matrix that returns mutable views.
-
-#     This iterator yields mutable views (MatrixView) of each row in the matrix,
-#     allowing modifications to the original matrix through the views.
-
-#     Parameters:
-#         origin: The origin of the underlying Matrix data (tracks mutability).
-#         dtype: The data type of the matrix elements.
-#         forward: The iteration direction. `True` for forward, `False` for backward.
-
-#     Example:
-#         ```mojo
-#         var mat = Matrix[DType.float32]((4, 4), order="C")
-#         for i in range(mat.size):
-#             mat._buf.ptr[i] = Float32(i)
-
-#         # Iterate and modify through views
-#         for row in mat:
-#             row[0, 0] = 99.0  # This modifies the original matrix
-#         ```
-#     """
-
-#     var index: Int
-#     var length: Int
-#     var buf_ptr: UnsafePointer[Scalar[dtype], origin]
-#     var shape: Tuple[Int, Int]
-#     var strides: Tuple[Int, Int]
-
-#     fn __init__(
-#         out self,
-#         ref [_] buf_ptr: UnsafePointer[Scalar[dtype], origin],
-#         shape: Tuple[Int, Int],
-#         strides: Tuple[Int, Int],
-#     ):
-#         """Initialize the iterator.
-
-#         Args:
-#             buf_ptr: Pointer to the matrix data buffer.
-#             shape: Shape of the matrix (rows, columns).
-#             strides: Strides of the matrix for memory layout.
-#         """
-#         self.index = 0 if forward else shape[0]
-#         self.length = shape[0]
-#         self.buf_ptr = buf_ptr
-#         self.shape = shape
-#         self.strides = strides
-
-#     fn __iter__(self) -> Self:
-#         """Return a copy of the iterator for iteration protocol."""
-#         return self.copy()
-
-#     fn __next_ref__(mut self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
-#         """Return the next row as a mutable view.
-
-#         This method is called by the for-loop and returns a MatrixView
-#         that shares memory with the original matrix. Modifications to
-#         the returned view will affect the original matrix.
-
-#         Returns:
-#             A mutable MatrixView representing the next row.
-#         """
-#         var curr = self.index
-
-#         @parameter
-#         if forward:
-#             self.index += 1
-#         else:
-#             self.index -= 1
-
-#         # Create a view for the current row
-#         var new_ptr = self.buf_ptr.unsafe_origin_cast[origin]()
-#         return MatrixView[dtype, MutOrigin.cast_from[origin]](
-#             shape=(1, self.shape[1]),
-#             strides=(self.strides[0], self.strides[1]),
-#             offset=curr * self.strides[0],
-#             data=DataContainer[dtype, MutOrigin.cast_from[origin]](
-#                 ptr=new_ptr
-#             ),
-#         )
-
-#     @always_inline
-#     fn __has_next__(self) -> Bool:
-#         """Check if there are more elements to iterate.
-
-#         Returns:
-#             True if there are more elements, False otherwise.
-#         """
-#         @parameter
-#         if forward:
-#             return self.index < self.length
-#         else:
-#             return self.index > 0
-
-#     fn __len__(self) -> Int:
-#         """Return the number of remaining elements.
-
-#         Returns:
-#             The number of rows left to iterate.
-#         """
-#         @parameter
-#         if forward:
-#             return self.length - self.index
-#         else:
-#             return self.index
+        return (remaining_rows, {remaining_rows})
 
 
 # # ===-----------------------------------------------------------------------===#

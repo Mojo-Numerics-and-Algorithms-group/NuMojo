@@ -342,6 +342,7 @@ struct MatrixImpl[
         )
 
     # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
+    # TODO: Current copyinit creates an instance with same origin. This should be external origin. fix this so that we can use default `.copy()` method and remove `create_copy()` method.
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """

@@ -37,7 +37,7 @@ jobs:
 
       - name: Pixi install
         run: |
-          pixi install
+          pixi install --locked
 
       - name: Build package
         run: |

@@ -461,7 +461,8 @@ struct MatrixImpl[
         constrained[
             Self.own_data == True,
             (
-                "Creating views from views is not supported currently to ensure memory safety."
+                "Creating views from views is not supported currently to ensure"
+                " memory safety."
             ),
         ]()
         if x >= self.shape[0] or x < -self.shape[0]:
@@ -1135,7 +1136,12 @@ struct MatrixImpl[
         """
         return Self.IteratorType[origin, origin_of(self), True](
             index=0,
-            src=rebind[Pointer[MatrixImpl[dtype, own_data=True, origin=origin], origin_of(self)]](Pointer(to=self)),
+            src=rebind[
+                Pointer[
+                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    origin_of(self),
+                ]
+            ](Pointer(to=self)),
         )
 
     fn __len__(self) -> Int:
@@ -1158,7 +1164,12 @@ struct MatrixImpl[
 
         return Self.IteratorType[origin, origin_of(self), False](
             index=0,
-            src=rebind[Pointer[MatrixImpl[dtype, own_data=True, origin=origin], origin_of(self)]](Pointer(to=self)),
+            src=rebind[
+                Pointer[
+                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    origin_of(self),
+                ]
+            ](Pointer(to=self)),
         )
 
     fn __str__(self) -> String:

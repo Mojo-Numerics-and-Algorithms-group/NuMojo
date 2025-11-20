@@ -2464,7 +2464,6 @@ fn _logic_func_matrix_matrix_to_matrix[
                 i, j, simd_func(A._load[width](i, j), B._load[width](i, j))
             )
 
-    print("C ", C)
     var _t0 = t0
     var _t1 = t1
     var _A = A.copy()

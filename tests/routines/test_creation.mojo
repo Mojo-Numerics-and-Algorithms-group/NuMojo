@@ -143,6 +143,7 @@ def test_eye():
         "Eye is broken",
     )
 
+
 # TODO: modify these tests to use assert_equal and check function
 # def test_fromstring():
 #     var A = nm.fromstring("[[[1,2],[3,4]],[[5,6],[7,8]]]")

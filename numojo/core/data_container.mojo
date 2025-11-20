@@ -10,9 +10,7 @@ from memory import UnsafePointer, LegacyUnsafePointer
 
 
 # temporary DataContainer to support transition from LegacyUnsafePointer to UnsafePointer.
-struct DataContainerNew[dtype: DType, origin: MutOrigin](
-    ImplicitlyCopyable
-):
+struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
     var ptr: UnsafePointer[Scalar[dtype], origin]
 
     fn __init__(out self, size: Int):

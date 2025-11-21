@@ -1796,9 +1796,29 @@ struct MatrixImpl[
         """
         return numojo.math.prod(self, axis=axis)
 
-    fn reshape(self, shape: Tuple[Int, Int]) raises -> Matrix[dtype]:
+    fn reshape(
+        self, shape: Tuple[Int, Int], order: String = "C"
+    ) raises -> Matrix[dtype]:
         """
-        Change shape and size of matrix and return a new matrix.
+        Return a new matrix with the specified shape containing the same data.
+
+        Args:
+            shape: Tuple of (rows, columns) specifying the new shape.
+            order: Memory layout order of the new matrix. "C" for C-contiguous, "F" for F-contiguous. Default is "C".
+
+        Returns:
+            Matrix[dtype]: A new matrix with the requested shape.
+
+        Raises:
+            Error: If the total number of elements does not match the original matrix size.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(4, 4))
+            var B = A.reshape((2, 8))
+            print(B)
+            ```
         """
         if shape[0] * shape[1] != self.size:
             raise Error(
@@ -1806,11 +1826,28 @@ struct MatrixImpl[
                     "Cannot reshape matrix of size {} into shape ({}, {})."
                 ).format(self.size, shape[0], shape[1])
             )
-        var res = Matrix[dtype](shape=shape, order="C")
-        if self.flags.F_CONTIGUOUS:
-            var temp = self.reorder_layout()
-            memcpy(dest=res._buf.ptr, src=temp._buf.ptr, count=res.size)
-            res = res.reorder_layout()
+        var res = Matrix[dtype](shape=shape, order=order)
+
+        if self.flags.C_CONTIGUOUS and order == "F":
+            for i in range(shape[0]):
+                for j in range(shape[1]):
+                    var flat_idx = i * shape[1] + j
+                    res._buf[
+                        j * res.strides[1] + i * res.strides[0]
+                    ] = self._buf[flat_idx]
+        elif self.flags.F_CONTIGUOUS and order == "C":
+            var k = 0
+            for row in range(self.shape[0]):
+                for col in range(self.shape[1]):
+                    var val = self._buf.ptr[
+                        row * self.strides[0] + col * self.strides[1]
+                    ]
+                    var dest_row = Int(k // shape[1])
+                    var dest_col = k % shape[1]
+                    res._buf.ptr[
+                        dest_row * res.strides[0] + dest_col * res.strides[1]
+                    ] = val
+                    k += 1
         else:
             memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
         return res^
@@ -2460,8 +2497,8 @@ fn _logic_func_matrix_matrix_to_matrix[
     # parallelize[calculate_CC](t0, t0)
     for i in range(t0):
         for j in range(t1):
-            C._store[width](
-                i, j, simd_func(A._load[width](i, j), B._load[width](i, j))
+            C._store[1](
+                i, j, simd_func(A._load[1](i, j), B._load[1](i, j))
             )
 
     var _t0 = t0

@@ -134,17 +134,13 @@ def test_logic():
     var Anp = np.matrix(A.to_numpy())
     var Bnp = np.matrix(B.to_numpy())
     var Lnp = np.matrix(L.to_numpy())
-    print("A:", A)
-    print("B:", B)
-    print("A > B:", A > B)
-    print("Anp > Bnp:", Anp > Bnp)
 
     var gt_res = A > B
     var gt_res_np = Anp > Bnp
     var lt_res = A < B
     var lt_res_np = Anp < Bnp
-    # check_matrices_equal[DType.bool](gt_res, gt_res_np, "gt is broken")
-    # check_matrices_equal[DType.bool](lt_res, lt_res_np, "lt is broken")
+    check_matrices_equal[DType.bool](gt_res, gt_res_np, "gt is broken")
+    check_matrices_equal[DType.bool](lt_res, lt_res_np, "lt is broken")
 
     assert_true(
         np.equal(nm.all(L), np.all(Lnp)),

@@ -375,11 +375,11 @@ fn reorder_layout[
     if new_order == "C":
         for i in range(rows):
             for j in range(cols):
-                B._buf.ptr[i * cols + j] = A._buf.ptr[i + j * rows]
+                B._buf[i * cols + j] = A._buf[i + j * rows]
     else:
         for j in range(cols):
             for i in range(rows):
-                B._buf.ptr[j * rows + i] = A._buf.ptr[i * cols + j]
+                B._buf[j * rows + i] = A._buf[i * cols + j]
 
     return B^
 

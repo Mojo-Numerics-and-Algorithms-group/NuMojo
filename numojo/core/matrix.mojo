@@ -2984,7 +2984,9 @@ struct MatrixImpl[
         """
         return numojo.math.prod(self, axis=axis)
 
-    fn reshape(self, shape: Tuple[Int, Int], order: String = "C") raises -> Matrix[dtype]:
+    fn reshape(
+        self, shape: Tuple[Int, Int], order: String = "C"
+    ) raises -> Matrix[dtype]:
         """
         Return a new matrix with the specified shape containing the same data.
 
@@ -3018,15 +3020,21 @@ struct MatrixImpl[
             for i in range(shape[0]):
                 for j in range(shape[1]):
                     var flat_idx = i * shape[1] + j
-                    res._buf[j * res.strides[1] + i * res.strides[0]] = self._buf[flat_idx]
+                    res._buf[
+                        j * res.strides[1] + i * res.strides[0]
+                    ] = self._buf[flat_idx]
         elif self.flags.F_CONTIGUOUS and order == "C":
             var k = 0
             for row in range(self.shape[0]):
                 for col in range(self.shape[1]):
-                    var val = self._buf.ptr[row * self.strides[0] + col * self.strides[1]]
+                    var val = self._buf.ptr[
+                        row * self.strides[0] + col * self.strides[1]
+                    ]
                     var dest_row = Int(k // shape[1])
                     var dest_col = k % shape[1]
-                    res._buf.ptr[dest_row * res.strides[0] + dest_col * res.strides[1]] = val
+                    res._buf.ptr[
+                        dest_row * res.strides[0] + dest_col * res.strides[1]
+                    ] = val
                     k += 1
         else:
             memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
@@ -3958,15 +3966,11 @@ fn _logic_func_matrix_matrix_to_matrix[
     if A.flags.C_CONTIGUOUS:
         for i in range(t0):
             for j in range(t1):
-                C._store[1](
-                    i, j, simd_func(A._load[1](i, j), B._load[1](i, j))
-                )
+                C._store[1](i, j, simd_func(A._load[1](i, j), B._load[1](i, j)))
     else:
         for j in range(t1):
             for i in range(t0):
-                C._store[1](
-                    i, j, simd_func(A._load[1](i, j), B._load[1](i, j))
-                )
+                C._store[1](i, j, simd_func(A._load[1](i, j), B._load[1](i, j)))
 
     var _t0 = t0
     var _t1 = t1

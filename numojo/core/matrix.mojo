@@ -2497,9 +2497,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     # parallelize[calculate_CC](t0, t0)
     for i in range(t0):
         for j in range(t1):
-            C._store[1](
-                i, j, simd_func(A._load[1](i, j), B._load[1](i, j))
-            )
+            C._store[1](i, j, simd_func(A._load[1](i, j), B._load[1](i, j)))
 
     var _t0 = t0
     var _t1 = t1

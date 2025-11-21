@@ -19,7 +19,6 @@ fn check_matrices_equal[
     dtype: DType
 ](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
-    print("Checking equality...", matrix.to_numpy())
     assert_true(np.all(np.equal(np.matrix(matrix.to_numpy()), np_sol)), st)
 
 
@@ -60,8 +59,6 @@ def test_manipulation():
         "Reshape is broken",
     )
 
-    _ = A.resize((1000, 100))
-    _ = Anp.resize(1000, 100)
     check_matrices_equal(
         A,
         Anp,

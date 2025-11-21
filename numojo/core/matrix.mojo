@@ -2026,7 +2026,7 @@ struct MatrixImpl[
             var pointer_d = numpyarray.__array_interface__["data"][
                 0
             ].unsafe_get_as_pointer[dtype]()
-            memcpy(dest=pointer_d, src=self._buf.ptr, count=self.size)
+            memcpy(dest=pointer_d, src=self._buf.get_ptr(), count=self.size)
 
             return numpyarray^
 

@@ -138,13 +138,11 @@ struct MatrixImpl[
     Direct instantiation of `MatrixImpl` may lead to undefined behavior related to
     memory management and lifetime tracking.
 
-    Type Parameters:
-        dtype: The data type of matrix elements (e.g., DType.float32, DType.float64).
-               Default is DType.float32. This is a compile-time parameter that determines
-               the size and interpretation of stored values.
-        own_data: Boolean flag indicating whether this instance owns and manages its
-                  underlying memory buffer. When True, the matrix allocates and frees
-                  its own memory. When False, it's a view into externally-owned data.
+    Parameters:
+        dtype: The data type of matrix elements. Default is DType.float64.
+        own_data: Boolean flag indicating whether this instance owns and manages its underlying memory buffer. When True, the matrix allocates and frees
+        its own memory. When False, it's a view into externally-owned data.
+
         origin: Tracks the lifetime and mutability of the underlying data buffer,
                 enabling compile-time safety checks to prevent use-after-free and
                 other memory safety issues. Default is MutOrigin.external.
@@ -154,8 +152,7 @@ struct MatrixImpl[
         - Row-major (C-style) layout: consecutive elements in a row are adjacent in memory
         - Column-major (Fortran-style) layout: consecutive elements in a column are adjacent
 
-        The layout affects cache efficiency for different access patterns and is tracked
-        via the `strides` and `flags` attributes.
+        The layout affects cache efficiency for different access patterns and is tracked via the `strides` and `flags` attributes.
 
     Ownership Semantics:
         **Owning matrices** (own_data=True):
@@ -169,25 +166,11 @@ struct MatrixImpl[
         - Do not allocate or free memory
         - Cannot be copied currently.
 
-    Indexing and Slicing:
-        - `mat[i, j]` - Returns scalar element at row i, column j
-        - `mat[i]` - Returns a copy of row i as a new Matrix
-        - `mat.get(i)` - Returns a MatrixView of row i (no copy)
-        - `mat[row_slice, col_slice]` - Returns a copy of the submatrix
-        - `mat.get(row_slice, col_slice)` - Returns a MatrixView of the submatrix (no copy)
-
-        Negative indices are supported and follow Python conventions (wrap from end).
-
-    The matrix can be uniquely defined by the following features:
-        1. The data buffer of all items.
-        2. The shape of the matrix.
-        3. The data type of the elements (compile-time known).
-
     Attributes:
         - _buf (saved as row-majored, C-type)
         - shape
         - size (shape[0] * shape[1])
-        - strides (shape[1], 1)
+        - strides
 
     Default constructor:
     - [dtype], shape
@@ -225,6 +208,7 @@ struct MatrixImpl[
         iterator_origin: Origin[is_mutable],
         forward: Bool,
     ] = _MatrixIter[dtype, matrix_origin, iterator_origin, forward]
+    """Iterator type for the Matrix."""
 
     alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
@@ -255,13 +239,27 @@ struct MatrixImpl[
         order: String = "C",
     ) where own_data == True:
         """
-        Create a new matrix of the given shape, without initializing data.
+        Initialize a new matrix with the specified shape and memory layout.
+
+        This constructor creates a matrix of the given shape without initializing
+        its data. The memory layout can be specified as either row-major ("C") or
+        column-major ("F").
 
         Args:
-            shape: Tuple representing (rows, columns).
-            order: Use "C" for row-major (C-style) layout or "F" for column-major
-               (Fortran-style) layout. Defaults to "C".
+            shape: A tuple representing the dimensions of the matrix as (rows, columns).
+            order: A string specifying the memory layout. Use "C" for row-major
+                   (C-style) layout or "F" for column-major (Fortran-style) layout. Defaults to "C".
         """
+        self.shape = (shape[0], shape[1])
+        if order == "C":
+            self.strides = (shape[1], 1)
+        else:
+            self.strides = (1, shape[0])
+        self.size = shape[0] * shape[1]
+        self._buf = DataContainer[dtype, origin](size=self.size)
+        self.flags = Flags(
+            self.shape, self.strides, owndata=True, writeable=True
+        )
         self.shape = (shape[0], shape[1])
         if order == "C":
             self.strides = (shape[1], 1)
@@ -280,7 +278,18 @@ struct MatrixImpl[
         var data: Self,
     ) where own_data == True:
         """
-        Construct a matrix from matrix.
+        Initialize a new matrix by transferring ownership from another matrix.
+
+        This constructor creates a new matrix instance by taking ownership of the
+        data from an existing matrix. The source matrix (`data`) will no longer
+        own its data after this operation.
+
+        Args:
+            data: The source matrix from which ownership of the data will be transferred.
+
+        Notes:
+            - This operation is efficient as it avoids copying the data buffer.
+            - The source matrix (`data`) becomes invalid after the transfer and should not be used.
         """
         self = data^
 
@@ -290,7 +299,16 @@ struct MatrixImpl[
         data: NDArray[dtype],
     ) raises where own_data == True:
         """
-        Construct a matrix from array.
+        Initialize a new matrix by copying data from an existing NDArray.
+
+        This constructor creates a matrix instance with the same shape, data, and
+        memory layout as the provided NDArray. The data is copied into a new memory buffer owned by the matrix.
+
+        Args:
+            data: An NDArray instance containing the data to initialize the matrix.
+
+        Raises:
+            Error: If the provided NDArray has more than 2 dimensions, as it cannot be represented as a matrix.
         """
         if data.ndim == 1:
             self.shape = (1, data.shape[0])
@@ -325,13 +343,22 @@ struct MatrixImpl[
         data: DataContainer[dtype, origin],
     ) where own_data == False:
         """
-        Initialize Matrix that does not own the data.
-        The data is owned by another Matrix.
+        Initialize a non-owning `MatrixView`.
+
+        This constructor creates a Matrix instance that acts as a view into an
+        existing data buffer. The view does not allocate or manage memory; it
+        references data owned by another Matrix. It is an unsafe operation and should not be called by users directly.
 
         Args:
-            shape: Shape of the view.
-            strides: Strides of the view.
-            data: DataContainer that holds the data buffer.
+            shape: A tuple representing the dimensions of the view as (rows, columns).
+            strides: A tuple representing the memory strides for accessing elements in the view. Strides determine how to traverse the data buffer to access elements in the matrix.
+            data: A DataContainer instance that holds the data buffer being referenced.
+
+        Notes:
+            - This constructor is intended for internal use to create views into existing matrices! Users should not call this directly.
+            - The view does not own the data and relies on the lifetime of the
+              original data owner.
+            - Modifications to the view affect the original data by default.
         """
         self.shape = shape
         self.strides = strides
@@ -340,13 +367,34 @@ struct MatrixImpl[
         self.flags = Flags(
             self.shape, self.strides, owndata=False, writeable=False
         )
+        self.shape = shape
+        self.strides = strides
+        self.size = shape[0] * shape[1]
+        self._buf = data
+        self.flags = Flags(
+            self.shape, self.strides, owndata=False, writeable=False
+        )
 
-    # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
-    # TODO: Current copyinit creates an instance with same origin. This should be external origin. fix this so that we can use default `.copy()` method and remove `create_copy()` method.
+    # TODO: Prevent copying from views to views or views to owning matrices for now.
+    # FIXME: The `where` clause isn't functioning as expected currently, so we use `constrained` as a workaround. Once the `where` clause is stable, this logic should be moved there.
+    # FIXME: The current `__copyinit__` creates an instance with the same origin as the source. This should instead create an instance with an external origin. Update this behavior so that the default `.copy()` method can be used, and the `create_copy()` method can be removed.
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """
-        Copy other into self.
+        Initialize a new matrix by copying data from another matrix.
+
+        This method creates a deep copy of the `other` matrix into `self`. It ensures that the copied matrix is independent of the source matrix, with its own memory allocation.
+
+        Constraints:
+            - Copying is only allowed between matrices that own their data.
+              Views cannot be copied to ensure memory safety.
+
+        Args:
+            other: The source matrix to copy from. Must be an owning matrix.
+
+        Notes:
+            - This method uses the `constrained` mechanism to enforce the restriction that both the source and destination matrices must own their data.
+            - The copied matrix will have the same shape, strides, and data as the source matrix.
         """
         constrained[
             other.own_data == True and own_data == True,
@@ -368,8 +416,13 @@ struct MatrixImpl[
         """
         Create a deep copy of the current matrix.
 
+        This method creates a new `Matrix` instance with the same shape, data, and
+        memory layout as the original matrix. The data is copied into a new memory
+        buffer owned by the new matrix, ensuring that the original and the copy are completely independent.
+
         Returns:
-            A new Matrix instance that is a copy of the current matrix.
+            A new `Matrix` instance that is an exact copy of the
+            current matrix, including its shape and data.
         """
         var new_matrix = Matrix[dtype](shape=self.shape, order=self.order())
         memcpy(dest=new_matrix._buf.ptr, src=self._buf.ptr, count=self.size)
@@ -378,7 +431,18 @@ struct MatrixImpl[
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
         """
-        Move other into self.
+        Transfer ownership of resources from `other` to `self`.
+
+        This method moves the data and metadata from the `other` matrix instance
+        into the current instance (`self`). After the move, the `other` instance
+        is left in an invalid state and should not be used.
+
+        Args:
+            other: The source matrix instance whose resources will be moved.
+
+        Notes:
+            - This operation is efficient as it avoids copying data.
+            - The `other` instance is deinitialized as part of this operation.
         """
         self.shape = other.shape^
         self.strides = other.strides^
@@ -388,7 +452,15 @@ struct MatrixImpl[
 
     @always_inline("nodebug")
     fn __del__(deinit self):
-        # NOTE: Using `where` clause doesn't work here, so use a compile time if check.
+        """
+        Destructor for the matrix instance.
+
+        This method is called when the matrix instance is deinitialized. It ensures that resources owned by the matrix, such as its memory buffer, are properly released.
+
+        Notes:
+            - This method only frees resources if the matrix owns its data.
+            - The `own_data` flag determines whether the memory buffer is freed.
+        """
         @parameter
         if own_data:
             self._buf.ptr.free()
@@ -399,13 +471,32 @@ struct MatrixImpl[
 
     @always_inline
     fn index(self, row: Int, col: Int) -> Int:
-        """Convert 2D index to 1D index."""
+        """
+        Calculate the linear index in the underlying data buffer for a given
+        2D index (row, col) based on the matrix's strides.
+
+        Args:
+            row: The row index.
+            col: The column index.
+
+        Returns:
+            The corresponding 1D index in the data buffer.
+        """
         return row * self.strides[0] + col * self.strides[1]
 
     @always_inline
     fn normalize(self, idx: Int, dim: Int) -> Int:
         """
-        Normalize negative indices.
+        Normalize a potentially negative index to its positive equivalent
+        within the bounds of the given dimension.
+
+        Args:
+            idx: The index to normalize. Can be negative to indicate indexing
+                 from the end (e.g., -1 refers to the last element).
+            dim: The size of the dimension to normalize against.
+
+        Returns:
+            The normalized index as a non-negative integer.
         """
         var idx_norm = idx
         if idx_norm < 0:
@@ -441,7 +532,7 @@ struct MatrixImpl[
         var y_norm = self.normalize(y, self.shape[1])
         return self._buf[self.index(x_norm, y_norm)]
 
-    # NOTE: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
+    # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Int) raises -> MatrixView[
@@ -450,19 +541,14 @@ struct MatrixImpl[
         """
         Retrieve a view of the specified row in the matrix.
 
-        This method returns a non-owning `MatrixView` that references the data of the
-        specified row in the original matrix. The view does not allocate new memory
-        and directly points to the existing data buffer of the matrix.
+        This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
         Parameters:
-            is_mutable: An inferred boolean indicating whether the returned view should allow
-                        modifications to the underlying data.
-            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be
-                         specified directly by users as it can lead to unsafe behavior.
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
 
         Args:
-            x: The row index to retrieve. Negative indices are supported and follow
-               Python conventions (e.g., -1 refers to the last row).
+            x: The row index to retrieve. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
 
         Returns:
             A `MatrixView` representing the specified row as a row vector.

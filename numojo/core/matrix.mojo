@@ -25,6 +25,7 @@ from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
 
 
+# TODO: currently a lot of the __getitem__ and __setitem__ methods raises if the index is out of bounds. An alternative is to clamp the indices to be within bounds, this will remove a lot of if conditions and improve performance I guess. Need to decide which behavior is preferred.
 # ===----------------------------------------------------------------------===#
 # Matrix struct
 # ===----------------------------------------------------------------------===#
@@ -587,16 +588,13 @@ struct MatrixImpl[
     # for creating a copy of the row.
     fn __getitem__(self, var x: Int) raises -> Matrix[dtype]:
         """
-        Retrieve a copy of the specified row in the matrix.
-
-        This method returns a owning `Matrix` instance.
+        Retrieve a copy of the specified row in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified row of the original matrix. The returned matrix is a row vector with a shape of (1, number_of_columns).
 
         Args:
-            x: The row index to retrieve. Negative indices are supported and follow
-               Python conventions (e.g., -1 refers to the last row).
+            x: The row index to retrieve. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
 
         Returns:
-            A `Matrix` representing the specified row as a row vector.
+            A `Matrix` instance representing the specified row as a row vector.
 
         Raises:
             Error: If the provided row index is out of bounds.
@@ -624,7 +622,23 @@ struct MatrixImpl[
         dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
-        Get item from two slices.
+        Retrieve a view of the specified slice in the matrix.
+
+        This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
+
+        Parameters:
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
+
+        Args:
+            x: The row slice to retrieve.
+            y: The column slice to retrieve.
+
+        Returns:
+            A `MatrixView` representing the specified slice of the matrix.
+
+        Notes:
+            - Out of bounds indices are clamped using the shape of the matrix.
         """
         start_x, end_x, step_x = x.indices(self.shape[0])
         start_y, end_y, step_y = y.indices(self.shape[1])
@@ -647,7 +661,17 @@ struct MatrixImpl[
     # for creating a copy of the slice.
     fn __getitem__(self, x: Slice, y: Slice) -> Matrix[dtype]:
         """
-        Get item from two slices.
+        Retrieve a copy of the specified slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified slice of the original matrix. The returned matrix will have the shape determined by the slice ranges.
+
+        Args:
+            x: The row slice to retrieve. Supports Python slice syntax.
+            y: The column slice to retrieve. Supports Python slice syntax.
+
+        Returns:
+            A `Matrix` instance representing the specified slice of the matrix.
+
+        Notes:
+            - Out of bounds indices are clamped using the shape of the matrix.
         """
         var start_x: Int
         var end_x: Int
@@ -679,9 +703,25 @@ struct MatrixImpl[
         dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
-        Get item from one slice and one int.
+        Retrieve a view of a specific column slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified column slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
+
+        Parameters:
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
+
+        Args:
+            x: The row slice to retrieve. This defines the range of rows to include in the view.
+            y: The column index to retrieve. This specifies the column to include in the view.
+
+        Returns:
+            A `MatrixView` representing the specified column slice of the matrix.
+
+        Raises:
+            Error: If the provided column index `y` is out of bounds.
+
+        Notes:
+            - Out-of-bounds indices for `x` are clamped using the shape of the matrix.
         """
-        # we could remove this constraint if we wanna allow users to create views from views. But that may complicate the origin tracking?
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
                 String("Index {} exceed the column number {}").format(
@@ -710,10 +750,21 @@ struct MatrixImpl[
 
         return column_view^
 
-    # for creating a copy of the slice.
     fn __getitem__(self, x: Slice, var y: Int) -> Matrix[dtype]:
         """
-        Get item from one slice and one int.
+        Retrieve a copy of a specific column slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
+        of the data from the specified and column slice of the original matrix. The returned matrix will have a shape determined by the row slice and a single column.
+
+        Args:
+            x: The row slice to retrieve. This defines the range of rows to include in the copy.
+            y: The column index to retrieve. This specifies the column to include in the copy.
+
+        Returns:
+            A `Matrix` instance representing the specified column slice of the matrix.
+
+        Notes:
+            - Negative indices for `y` are normalized to their positive equivalent.
+            - Out-of-bounds indices for `x` are clamped using the shape of the matrix.
         """
         if y < 0:
             y = self.shape[1] + y
@@ -742,7 +793,24 @@ struct MatrixImpl[
         dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
-        Get item from one int and one slice.
+        Retrieve a view of a specific row slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
+
+        Parameters:
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
+
+        Args:
+            x: The row index to retrieve. This specifies the row to include in the view. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
+            y: The column slice to retrieve. This defines the range of columns to include in the view.
+
+        Returns:
+            A `MatrixView` representing the specified row slice of the matrix.
+
+        Raises:
+            Error: If the provided row index `x` is out of bounds.
+
+        Notes:
+            - Out-of-bounds indices for `y` are clamped using the shape of the matrix.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -772,10 +840,23 @@ struct MatrixImpl[
         )
         return row_slice_view^
 
-    # for creating a copy of the slice.
     fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
         """
-        Get item from one int and one slice.
+        Retrieve a copy of a specific row slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
+        of the data from the specified row and column slice of the original matrix. The returned matrix will have a shape of (1, number_of_columns_in_slice).
+
+        Args:
+            x: The row index to retrieve. This specifies the row to include in the copy. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
+            y: The column slice to retrieve. This defines the range of columns to include in the copy.
+
+        Returns:
+            A `Matrix` instance representing the specified row slice of the matrix.
+
+        Raises:
+            Error: If the provided row index `x` is out of bounds.
+
+        Notes:
+            - Out-of-bounds indices for `y` are clamped using the shape of the matrix.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -800,27 +881,45 @@ struct MatrixImpl[
 
     fn __getitem__(self, indices: List[Int]) raises -> Matrix[dtype]:
         """
-        Get item by a list of integers.
+        Retrieve a copy of specific rows in the matrix based on the provided indices. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified rows of the original matrix. The returned matrix will have a shape of (number_of_indices, number_of_columns).
+
+        Args:
+            indices: A list of row indices to retrieve. Each index specifies a row to include in the resulting matrix. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
+
+        Returns:
+            A `Matrix` instance containing the selected rows as a new matrix.
+
+        Raises:
+            Error: If any of the provided indices are out of bounds.
         """
         var num_cols = self.shape[1]
         var num_rows = len(indices)
         var selected_rows = Matrix.zeros[dtype](shape=(num_rows, num_cols))
         for i in range(num_rows):
+            if indices[i] >= self.shape[0] or indices[i] < -self.shape[0]:
+                raise Error(
+                    String("Index {} exceed the row size {}").format(
+                        indices[i], self.shape[0]
+                    )
+                )
             selected_rows[i] = self[indices[i]]
         return selected_rows^
 
     fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
         """
-        Returns a SIMD element with width `width` at the given index.
+        Load a SIMD element from the matrix at the specified linear index.
 
         Parameters:
-            width: The width of the SIMD element.
+            width: The width of the SIMD element to load. Defaults to 1.
 
         Args:
-            idx: The linear index.
+            idx: The linear index of the element to load. Negative indices are supported and follow Python conventions.
 
         Returns:
-            A SIMD element with width `width`.
+            A SIMD element of the specified width containing the data at the given index.
+
+        Raises:
+            Error: If the provided index is out of bounds.
         """
         if idx >= self.size or idx < -self.size:
             raise Error(
@@ -849,12 +948,15 @@ struct MatrixImpl[
 
     fn __setitem__(mut self, x: Int, y: Int, value: Scalar[dtype]) raises:
         """
-        Return the scalar at the index.
+        Set the value at the specified row and column indices in the matrix.
 
         Args:
-            x: The row number.
-            y: The column number.
-            value: The value to be set.
+            x: The row index. Can be negative to index from the end.
+            y: The column index. Can be negative to index from the end.
+            value: The value to set at the specified position.
+
+        Raises:
+            Error: If the provided indices are out of bounds for the matrix.
         """
         if (
             x >= self.shape[0]
@@ -872,13 +974,24 @@ struct MatrixImpl[
 
         self._buf.store(self.index(x_norm, y_norm), value)
 
-    fn __setitem__(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
+    # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
+    fn __setitem__(self, var x: Int, value: MatrixImpl[dtype, **_]) raises where (Self.own_data == True and value.own_data == True):
         """
-        Set the corresponding row at the index with the given matrix.
+        Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
+        the provided `value` matrix. The `value` matrix must be a row vector with
+        the same number of columns as the target matrix.
 
         Args:
-            x: The row number.
-            value: Matrix (row vector). Can be either C or F order.
+            x: The row index where the data will be assigned. Negative indices are
+               supported and follow Python conventions (e.g., -1 refers to the last row).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix can be in either C-contiguous or F-contiguous order.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the `value` matrix does not have exactly one row.
+            Error: If the number of columns in the `value` matrix does not match
+                   the number of columns in the target matrix.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -925,11 +1038,21 @@ struct MatrixImpl[
 
     fn set(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
         """
-        Set the corresponding row at the index with the given matrix.
+        Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
+        the provided `value` matrix. The `value` matrix must be a row vector with
+        the same number of columns as the target matrix.
 
         Args:
-            x: The row number.
-            value: Matrix (row vector). Can be either C or F order.
+            x: The row index where the data will be assigned. Negative indices are
+               supported and follow Python conventions (e.g., -1 refers to the last row).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix can be in either C-contiguous or F-contiguous order.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the `value` matrix does not have exactly one row.
+            Error: If the number of columns in the `value` matrix does not match
+                   the number of columns in the target matrix.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -978,7 +1101,27 @@ struct MatrixImpl[
         self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]
     ) raises:
         """
-        Set item from one slice and one int.
+        Assign values to a column in the matrix at the specified column index `y`
+        and row slice `x` with the given matrix. This method replaces the values
+        in the specified column and row slice with the data from the provided
+        `value` matrix.
+
+        Args:
+            x: The row slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: The column index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last column).
+            value: A `Matrix` instance representing the column vector to assign.
+                   The `value` matrix must have the same number of rows as the
+                   specified slice `x` and exactly one column.
+
+        Raises:
+            Error: If the column index `y` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `x` is clamped using the shape of the matrix.
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
@@ -1009,7 +1152,27 @@ struct MatrixImpl[
 
     fn set(self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]) raises:
         """
-        Set item from one slice and one int.
+        Assign values to a column in the matrix at the specified column index `y`
+        and row slice `x` with the given matrix. This method replaces the values
+        in the specified column and row slice with the data from the provided
+        `value` matrix.
+
+        Args:
+            x: The row slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: The column index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last column).
+            value: A `Matrix` instance representing the column vector to assign.
+                   The `value` matrix must have the same number of rows as the
+                   specified slice `x` and exactly one column.
+
+        Raises:
+            Error: If the column index `y` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `x` is clamped using the shape of the matrix.
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
@@ -1042,7 +1205,25 @@ struct MatrixImpl[
         self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]
     ) raises:
         """
-        Set item from one int and one slice.
+        Assign values to a row in the matrix at the specified row index `x`
+        and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
+
+        Args:
+            x: The row index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last row).
+            y: The column slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix must have the same number of columns as the
+                   specified slice `y` and exactly one row.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `y` is clamped using the shape of the matrix.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -1073,7 +1254,25 @@ struct MatrixImpl[
 
     fn set(self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]) raises:
         """
-        Set item from one int and one slice.
+        Assign values to a row in the matrix at the specified row index `x`
+        and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
+
+        Args:
+            x: The row index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last row).
+            y: The column slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix must have the same number of columns as the
+                   specified slice `y` and exactly one row.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `y` is clamped using the shape of the matrix.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -1106,7 +1305,18 @@ struct MatrixImpl[
         self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]
     ) raises:
         """
-        Set item from two slices.
+        Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
+
+        Args:
+            x: Row slice specifying which rows to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: Column slice specifying which columns to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance containing the values to assign.
+
+        Raises:
+            Error: If the shape of `value` does not match the shape of the target slice.
+
+        Notes:
+            - Out of bounds slices are clamped using the shape of the matrix.
         """
         var start_x: Int
         var end_x: Int
@@ -1139,7 +1349,18 @@ struct MatrixImpl[
 
     fn set(self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]) raises:
         """
-        Set item from two slices.
+        Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
+
+        Args:
+            x: Row slice specifying which rows to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: Column slice specifying which columns to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance containing the values to assign.
+
+        Raises:
+            Error: If the shape of `value` does not match the shape of the target slice.
+
+        Notes:
+            - Out of bounds slices are clamped using the shape of the matrix.
         """
         var start_x: Int
         var end_x: Int

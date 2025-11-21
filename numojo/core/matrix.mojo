@@ -1,10 +1,16 @@
 """
-`numojo.Matrix` provides:
+NuMojo Matrix Module
 
-- `Matrix` type (2DArray).
-- `_MatrixIter` type (for iteration).
-- Dunder methods for initialization, indexing, slicing, and arithmetics.
-- Auxiliary functions.
+This file implements the core 2D matrix type for the NuMojo numerical computing library. It provides efficient, flexible, and memory-safe matrix operations for scientific and engineering applications.
+
+Features:
+- `Matrix`: The primary 2D array type for owning matrix data.
+- `MatrixView`: Lightweight, non-owning views for fast slicing and submatrix access.
+- Iterators for traversing matrix elements.
+- Comprehensive dunder methods for initialization, indexing, slicing, and arithmetic.
+- Utility functions for broadcasting, memory layout, and linear algebra routines.
+
+Use this module to create, manipulate, and analyze matrices with high performance and safety guarantees.
 """
 
 from algorithm import parallelize, vectorize
@@ -74,9 +80,7 @@ another `Matrix` instance. It does not allocate or manage its own memory, instea
 pointing to a subset or reinterpretation of existing matrix data. This enables
 efficient slicing, row/column access, and memory sharing without data duplication.
 
-**IMPORTANT**: This type is for internal use and should not be directly instantiated
-by users. Views are created automatically by matrix operations like indexing,
-slicing, through the `get()` method. A full view of the matrix can be obtained via `view()` method.
+**IMPORTANT**: This type is for internal use and should not be directly instantiated by users. Views are created automatically by matrix operations like indexing, slicing, through the `get()` method. A full view of the matrix can be obtained via `view()` method.
 
 Type Parameters:
     dtype: The data type of the matrix elements being viewed.
@@ -104,11 +108,6 @@ Example:
     var row_view = mat.get(0)  # Returns MatrixView of first row
     # Modifying row_view would modify mat
     ```
-
-Safety Notes:
-    - The view must not outlive the owning Matrix
-    - Origin tracking ensures compile-time lifetime safety
-    - Attempting to use a view after its owner is deallocated is undefined behavior
 """
 
 
@@ -121,20 +120,13 @@ struct MatrixImpl[
     """
     Core implementation struct for 2D matrix operations with flexible ownership semantics.
 
-    `MatrixImpl` is the underlying implementation for both owning matrices (`Matrix`)
-    and non-owning matrix views (`MatrixView`). It provides a complete set of operations
-    for 2D array manipulation with compile-time known dimensions, enabling optimizations
-    not possible with generic N-dimensional arrays.
+    `MatrixImpl` is the underlying implementation for both owning matrices (`Matrix`) and non-owning matrix views (`MatrixView`). It provides a complete set of operations for 2D array manipulation with compile-time known dimensions, enabling optimizations not possible with generic N-dimensional arrays.
 
-    This struct represents a specialized case of `NDArray` optimized for 2D operations.
-    The fixed dimensionality allows for simpler, more efficient indexing using direct
-    `(row, col)` access patterns rather than generic coordinate tuples. This makes it
-    particularly suitable for linear algebra, image processing, and other applications
-    where 2D structure is fundamental.
+    This struct represents a specialized case of `NDArray` optimized for 2D operations. The fixed dimensionality allows for simpler, more efficient indexing using direct `(row, col)` access patterns rather than generic coordinate tuples. This makes it particularly suitable for linear algebra, image processing, and other applications where 2D structure is fundamental.
 
     **Important**: Users should not instantiate `MatrixImpl` directly. Instead, use:
     - `Matrix[dtype]` for matrices that own their data (standard usage)
-    - Methods like `get()` that return `MatrixView` for non-owning views
+    - Methods like `get()`, `view()` that return `MatrixView` for non-owning views
 
     Direct instantiation of `MatrixImpl` may lead to undefined behavior related to
     memory management and lifetime tracking.
@@ -248,6 +240,13 @@ struct MatrixImpl[
             shape: A tuple representing the dimensions of the matrix as (rows, columns).
             order: A string specifying the memory layout. Use "C" for row-major
                    (C-style) layout or "F" for column-major (Fortran-style) layout. Defaults to "C".
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat_c = Matrix[f32](shape=(3, 4), order="C")  # Row-major
+            var mat_f = Matrix[f32](shape=(3, 4), order="F")  # Column-major
+            ```
         """
         self.shape = (shape[0], shape[1])
         if order == "C":
@@ -270,7 +269,7 @@ struct MatrixImpl[
             self.shape, self.strides, owndata=True, writeable=True
         )
 
-    # * Should we take var ref and transfer ownership or take a read ref and copy it?
+    # * Should we take var ref and transfer ownership or take a read ref and copy the data?
     @always_inline("nodebug")
     fn __init__(
         out self,
@@ -289,8 +288,32 @@ struct MatrixImpl[
         Notes:
             - This operation is efficient as it avoids copying the data buffer.
             - The source matrix (`data`) becomes invalid after the transfer and should not be used.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat1 = Matrix[f32](shape=(2, 3))
+            # ... (initialize mat1 with data) ...
+            var mat2 = Matrix[f32](mat1^)  # Transfer ownership from mat1 to mat2
+            ```
         """
         self = data^
+
+    @always_inline("nodebug")
+    fn __init__(
+        out self,
+        data: Self,
+    ) where own_data == True:
+        """
+        Construct a new matrix by copying from another matrix.
+
+        This initializer creates a new matrix instance by copying the data, shape and order from an existing matrix. The new matrix will have its own independent copy of the data.
+
+        Args:
+            data: The source matrix to copy from.
+        """
+        self = Self(data.shape, data.order())
+        memcpy(dest=self._buf.ptr, src=data._buf.ptr, count=data.size)
 
     @always_inline("nodebug")
     fn __init__(
@@ -308,6 +331,14 @@ struct MatrixImpl[
 
         Raises:
             Error: If the provided NDArray has more than 2 dimensions, as it cannot be represented as a matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var arr = NDArray[f32](Shape(2, 3))
+            # ... (initialize arr with data) ...
+            var mat = Matrix[f32](arr)  # Create a matrix from the NDArray
+            ```
         """
         if data.ndim == 1:
             self.shape = (1, data.shape[0])
@@ -394,6 +425,14 @@ struct MatrixImpl[
         Notes:
             - This method uses the `constrained` mechanism to enforce the restriction that both the source and destination matrices must own their data.
             - The copied matrix will have the same shape, strides, and data as the source matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat1 = Matrix[f32](shape=(2, 3))
+            # ... (initialize mat1 with data) ...
+            var mat2 = mat1 # Calls __copyinit__ to create a copy of mat1
+            ```
         """
         constrained[
             other.own_data == True and own_data == True,
@@ -422,6 +461,14 @@ struct MatrixImpl[
         Returns:
             A new `Matrix` instance that is an exact copy of the
             current matrix, including its shape and data.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat1 = Matrix[f32](shape=(2, 3))
+            # ... (initialize mat1 with data) ...
+            var mat2 = mat1.create_copy()  # Create a deep copy of mat1
+            ```
         """
         var new_matrix = Matrix[dtype](shape=self.shape, order=self.order())
         memcpy(dest=new_matrix._buf.ptr, src=self._buf.ptr, count=self.size)
@@ -460,6 +507,7 @@ struct MatrixImpl[
             - This method only frees resources if the matrix owns its data.
             - The `own_data` flag determines whether the memory buffer is freed.
         """
+
         @parameter
         if own_data:
             self._buf.ptr.free()
@@ -480,6 +528,13 @@ struct MatrixImpl[
 
         Returns:
             The corresponding 1D index in the data buffer.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix[f32](shape=(3, 4))
+            var idx = mat.index(1, 2)  # Calculate linear index for (1, 2)
+            ```
         """
         return row * self.strides[0] + col * self.strides[1]
 
@@ -496,6 +551,13 @@ struct MatrixImpl[
 
         Returns:
             The normalized index as a non-negative integer.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix[f32](shape=(3, 4))
+            var norm_idx = mat.normalize(-1, mat.shape[0])  # Normalize -1 to 2
+            ```
         """
         var idx_norm = idx
         if idx_norm < 0:
@@ -515,6 +577,13 @@ struct MatrixImpl[
 
         Raises:
             Error: If the provided indices are out of bounds for the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(3, 4))
+            var value = mat[1, 2]  # Retrieve value at row 1, column 2
+            ```
         """
         if (
             x >= self.shape[0]
@@ -554,6 +623,13 @@ struct MatrixImpl[
 
         Raises:
             Error: If the provided row index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(3, 4))
+            var row_view = mat.get(1)  # Get a view of the second row
+            ```
         """
         constrained[
             Self.own_data == True,
@@ -596,6 +672,13 @@ struct MatrixImpl[
 
         Raises:
             Error: If the provided row index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(3, 4))
+            var row_copy = mat[1]  # Get a copy of the second row
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -637,6 +720,13 @@ struct MatrixImpl[
 
         Notes:
             - Out of bounds indices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var slice_view = mat.get(Slice(1, 3), Slice(0, 2))  # Get a view of the submatrix
+            ```
         """
         start_x, end_x, step_x = x.indices(self.shape[0])
         start_y, end_y, step_y = y.indices(self.shape[1])
@@ -670,6 +760,13 @@ struct MatrixImpl[
 
         Notes:
             - Out of bounds indices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var slice_copy = mat[1:3, 0:2]  # Get a copy of the submatrix
+            ```
         """
         var start_x: Int
         var end_x: Int
@@ -719,6 +816,13 @@ struct MatrixImpl[
 
         Notes:
             - Out-of-bounds indices for `x` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var column_view = mat.get(Slice(0, 4), 2)  # Get a view of the third column
+            ```
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
@@ -763,6 +867,13 @@ struct MatrixImpl[
         Notes:
             - Negative indices for `y` are normalized to their positive equivalent.
             - Out-of-bounds indices for `x` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var column_copy = mat[0:4, 2]  # Get a copy of the third column
+            ```
         """
         if y < 0:
             y = self.shape[1] + y
@@ -809,6 +920,13 @@ struct MatrixImpl[
 
         Notes:
             - Out-of-bounds indices for `y` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var row_view = mat.get(1, Slice(0, 3))  # Get a view of the second row, columns 0 to 2
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -855,6 +973,13 @@ struct MatrixImpl[
 
         Notes:
             - Out-of-bounds indices for `y` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var row_copy = mat[1, 0:3]  # Get a copy of the second row, columns 0 to 2
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -889,6 +1014,14 @@ struct MatrixImpl[
 
         Raises:
             Error: If any of the provided indices are out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var selected_rows = mat[List[Int](0, 1, 0)]  # Get a copy of the
+            # first and second and first rows in a new matrix with shape (3, 4)
+            ```
         """
         var num_cols = self.shape[1]
         var num_rows = len(indices)
@@ -918,6 +1051,13 @@ struct MatrixImpl[
 
         Raises:
             Error: If the provided index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var simd_element = mat.load[4](2)  # Load a SIMD element of width 4 from index 2
+            ```
         """
         if idx >= self.size or idx < -self.size:
             raise Error(
@@ -955,6 +1095,13 @@ struct MatrixImpl[
 
         Raises:
             Error: If the provided indices are out of bounds for the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(3, 4))
+            mat[1, 2] = 5.0  # Set value at row 1, column 2 to 5.0
+            ```
         """
         if (
             x >= self.shape[0]
@@ -973,7 +1120,9 @@ struct MatrixImpl[
         self._buf.store(self.index(x_norm, y_norm), value)
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
-    fn __setitem__(self, var x: Int, value: MatrixImpl[dtype, **_]) raises where (Self.own_data == True and value.own_data == True):
+    fn __setitem__(
+        self, var x: Int, value: MatrixImpl[dtype, **_]
+    ) raises where Self.own_data == True and value.own_data == True:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
         the provided `value` matrix. The `value` matrix must be a row vector with
@@ -990,6 +1139,14 @@ struct MatrixImpl[
             Error: If the `value` matrix does not have exactly one row.
             Error: If the number of columns in the `value` matrix does not match
                    the number of columns in the target matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(3, 4))
+            var row_vector = Matrix.ones(shape=(1, 4))
+            mat[1] = row_vector  # Set the second row of mat to row_vector
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -1051,6 +1208,17 @@ struct MatrixImpl[
             Error: If the `value` matrix does not have exactly one row.
             Error: If the number of columns in the `value` matrix does not match
                    the number of columns in the target matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(3, 4))
+            var row_vector = Matrix.ones(shape=(1, 4))
+            mat.set(1, row_vector)  # Set the second row of mat to row_vector
+
+            var view = row_vector.view() # create a view of row_vector
+            mat.set(2, view)  # Set the third row of mat to the view
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -1120,6 +1288,14 @@ struct MatrixImpl[
 
         Notes:
             - Out of bound slice `x` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var col_vector = Matrix.ones(shape=(4, 1))
+            mat[0:4, 2] = col_vector  # Set the third column of mat to col_vector
+            ```
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
@@ -1171,6 +1347,17 @@ struct MatrixImpl[
 
         Notes:
             - Out of bound slice `x` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var col_vector = Matrix.ones(shape=(4, 1))
+            mat.set(Slice(0, 4), 2, col_vector)  # Set the third column of mat to col_vector
+
+            var view = col_vector.view() # create a view of col_vector
+            mat.set(Slice(0, 4), 3, view)  # Set the fourth column of mat to the view
+            ```
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
@@ -1222,6 +1409,14 @@ struct MatrixImpl[
 
         Notes:
             - Out of bound slice `y` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var row_vector = Matrix.ones(shape=(1, 3))
+            mat[1, 0:3] = row_vector  # Set the second row, columns 0 to 2 of mat to row_vector
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -1271,6 +1466,17 @@ struct MatrixImpl[
 
         Notes:
             - Out of bound slice `y` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var row_vector = Matrix.ones(shape=(1, 3))
+            mat.set(1, Slice(0, 3), row_vector)  # Set the second row, columns 0 to 2 of mat to row_vector
+
+            var view = row_vector.view() # create a view of row_vector
+            mat.set(2, Slice(0, 3), view)  # Set the third row, columns 0 to 2 of mat to the view
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -1315,6 +1521,14 @@ struct MatrixImpl[
 
         Notes:
             - Out of bounds slices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var submatrix = Matrix.ones(shape=(2, 2))
+            mat[1:3, 1:3] = submatrix  # Set the 2x2 submatrix starting at (1,1) to ones
+            ```
         """
         var start_x: Int
         var end_x: Int
@@ -1359,6 +1573,18 @@ struct MatrixImpl[
 
         Notes:
             - Out of bounds slices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var submatrix = Matrix.ones(shape=(2, 2))
+            mat.set(Slice(1, 3), Slice(1, 3), submatrix)  # Set the 2x2 submatrix starting at (1,1) to ones
+
+            var view = submatrix.view() # create a view of submatrix
+            mat.set(Slice(2, 4), Slice(2, 4), view
+            )  # Set the 2x2 submatrix starting at (2,2) to the view
+            ```
         """
         var start_x: Int
         var end_x: Int
@@ -1412,6 +1638,13 @@ struct MatrixImpl[
 
         Returns:
             A `MatrixView` referencing the original matrix data.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var mat = Matrix.rand((4, 4))
+            var mat_view = mat.view()  # Create a view of the original matrix
+            ```
         """
         var new_data = DataContainer[dtype, MutOrigin.cast_from[origin]](
             ptr=self._buf.get_ptr().unsafe_origin_cast[
@@ -1460,6 +1693,13 @@ struct MatrixImpl[
 
         Returns:
             The number of rows (self.shape[0]).
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var mat = Matrix.rand((4, 4))
+            print(len(mat))  # Outputs: 4
+            ```
         """
         return self.shape[0]
 
@@ -1500,6 +1740,7 @@ struct MatrixImpl[
         Args:
             writer: The writer to output the matrix string to.
         """
+
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
             var result: String = String("[")
             var number_of_sep: Int = 1
@@ -2248,12 +2489,22 @@ struct MatrixImpl[
     # # Core methods
     # # ===-------------------------------------------------------------------===#
 
+    # FIXME: These return types be Scalar[DType.bool] or Matrix[DType.bool] instead to match numpy. Fix the docstring examples too.
     fn all(self) -> Scalar[dtype]:
         """
         Returns True if all elements of the matrix evaluate to True.
 
         Returns:
             Scalar[dtype]: True if all elements are True, otherwise False.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float64](1, 1, 1, 1, 1), (5, 1))
+            print(A.all())  # Outputs: True
+            var B = Matrix.fromlist(List[Float64](1, 0, 2, 3, 4), (5, 1))
+            print(B.all())  # Outputs: False
+            ```
         """
         return numojo.logic.all(self)
 
@@ -2266,6 +2517,16 @@ struct MatrixImpl[
 
         Returns:
             Matrix[dtype]: Matrix of boolean values for each slice along the axis.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(
+                List[Float64](1, 1, 1, 0, 1, 3), (2, 3)
+            )
+            print(A.all(axis=0))  # Outputs: [[0, 1, 1]]
+            print(A.all(axis=1))  # Outputs: [[1], [0]]
+            ```
         """
         return numojo.logic.all[dtype](self, axis=axis)
 
@@ -2275,6 +2536,15 @@ struct MatrixImpl[
 
         Returns:
             Scalar[dtype]: True if any element is True, otherwise False.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float64](0, 0, 0, 0, 0), (5, 1))
+            print(A.any())  # Outputs: False
+            var B = Matrix.fromlist(List[Float64](0, 2, 0, 0, 0), (5, 1))
+            print(B.any())  # Outputs: True
+            ```
         """
         return numojo.logic.any(self)
 
@@ -2296,6 +2566,13 @@ struct MatrixImpl[
 
         Returns:
             Scalar[DType.int]: Index of the maximum element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 3, 2, 5, 4), (5, 1))
+            print(A.argmax())  # Outputs: 3
+            ```
         """
         return numojo.math.argmax(self)
 
@@ -2308,6 +2585,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[DType.int]: Indices of the maximum elements along the axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 3, 2, 5, 4, 6), (2, 3))
+            print(A.argmax(axis=0))  # Outputs: [[1, 1, 1]]
+            print(A.argmax(axis=1))  # Outputs: [[1], [2]]
+            ```
         """
         return numojo.math.argmax(self, axis=axis)
 
@@ -2317,6 +2602,13 @@ struct MatrixImpl[
 
         Returns:
             Scalar[DType.int]: Index of the minimum element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5), (5, 1))
+            print(A.argmin())  # Outputs: 1
+            ```
         """
         return numojo.math.argmin(self)
 
@@ -2329,6 +2621,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[DType.int]: Indices of the minimum elements along the axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5, 0), (2, 3))
+            print(A.argmin(axis=0))  # Outputs: [[1, 1, 1]]
+            print(A.argmin(axis=1))  # Outputs: [[1], [2]]
+            ```
         """
         return numojo.math.argmin(self, axis=axis)
 
@@ -2338,6 +2638,13 @@ struct MatrixImpl[
 
         Returns:
             Matrix[DType.int]: Indices that sort the flattened matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2), (4, 1))
+            print(A.argsort())  # Outputs: [[1, 3, 0, 2]]
+            ```
         """
         return numojo.math.argsort(self)
 
@@ -2350,6 +2657,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[DType.int]: Indices that sort the matrix along the axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5, 0), (2, 3))
+            print(A.argsort(axis=0))  # Outputs: [[1, 1, 1], [0, 0, 0]]
+            print(A.argsort(axis=1))  # Outputs: [[1, 3, 0], [2, 0, 1]]
+            ```
         """
         return numojo.math.argsort(self, axis=axis)
 
@@ -2362,6 +2677,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[asdtype]: A new matrix with elements cast to the specified type.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float32](1.5, 2.5, 3.5), (3, 1))
+            var B = A.astype[i8]()
+            print(B)  # Outputs a Matrix[i8] with values [[1], [2], [3]]
+            ```
         """
         var casted_matrix = Matrix[asdtype](
             shape=(self.shape[0], self.shape[1]), order=self.order()
@@ -2565,6 +2888,13 @@ struct MatrixImpl[
 
         Returns:
             Scalar[returned_dtype]: The mean value of all elements.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.mean())
+            ```
         """
         return numojo.statistics.mean[returned_dtype](self)
 
@@ -2579,6 +2909,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[returned_dtype]: The mean values along the given axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.mean(axis=0))
+            print(A.mean(axis=1))
+            ```
         """
         return numojo.statistics.mean[returned_dtype](self, axis=axis)
 
@@ -2590,6 +2928,13 @@ struct MatrixImpl[
 
         Returns:
             Scalar[dtype]: The minimum value in the matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            print(A.min())
+            ```
         """
         return numojo.math.extrema.min(self)
 
@@ -2602,6 +2947,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[dtype]: The minimum values along the given axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            print(A.min(axis=0))  # Min of each column
+            print(A.min(axis=1))  # Min of each row
+            ```
         """
         return numojo.math.extrema.min(self, axis=axis)
 
@@ -2611,6 +2964,13 @@ struct MatrixImpl[
 
         Returns:
             Scalar[dtype]: The product of all elements.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.prod())
+            ```
         """
         return numojo.math.prod(self)
 
@@ -2646,6 +3006,14 @@ struct MatrixImpl[
 
         Raises:
             Error: If the total number of elements does not match the original matrix size.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(4, 4))
+            var B = A.reshape((2, 8))
+            print(B)
+            ```
         """
         if shape[0] * shape[1] != self.size:
             raise Error(
@@ -2677,6 +3045,14 @@ struct MatrixImpl[
             - If the new shape is larger, the matrix is reallocated and new elements are zero-initialized.
             - If the new shape is smaller, the matrix shape and strides are updated without reallocating memory.
             - Only allowed for matrices with own_data=True.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(2, 3))
+            A.resize((4, 5))
+            print(A)
+            ```
         """
         if shape[0] * shape[1] > self.size:
             var other = MatrixImpl[dtype, own_data=own_data, origin=origin](
@@ -2723,6 +3099,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[dtype]: A new matrix with rounded values.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float64](1.12345, 2.67891, 3.14159), (3, 1))
+            var B = A.round(2)
+            print(B)  # Outputs a Matrix[Float64] with values [[1.12], [2.68], [3.14]]
+            ```
         """
         return numojo.math.rounding.round(self, decimals=decimals)
 
@@ -2737,6 +3121,13 @@ struct MatrixImpl[
 
         Returns:
             Scalar[returned_dtype]: The standard deviation of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.std())
+            ```
         """
         return numojo.statistics.std[returned_dtype](self, ddof=ddof)
 
@@ -2752,6 +3143,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[returned_dtype]: The standard deviation along the given axis.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.std(axis=0))
+            print(A.std(axis=1))
+            ```
         """
         return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
 
@@ -2797,6 +3196,15 @@ struct MatrixImpl[
 
         Returns:
             Scalar[dtype]: The trace value.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(
+                List[Float64](1, 2, 3, 4, 5, 6, 7, 8, 9), (3, 3)
+            )
+            print(A.trace())  # Outputs: 15.0
+            ```
         """
         return numojo.linalg.trace(self)
 
@@ -2806,6 +3214,15 @@ struct MatrixImpl[
 
         Returns:
             Bool: True if the matrix is symmetric, False otherwise.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 2, 2, 1), (2, 2))
+            print(A.issymmetric())  # Outputs: True
+            var B = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            print(B.issymmetric())  # Outputs: False
+            ```
         """
         return issymmetric(self)
 
@@ -2815,21 +3232,34 @@ struct MatrixImpl[
 
         Returns:
             Matrix[dtype]: The transposed matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            print(A.transpose())  # Outputs: [[1, 3], [2, 4]]
+            ```
         """
         return transpose(self)
 
     # TODO: we should only allow this for owndata. not for views, it'll lead to weird origin behaviours.
-    fn reorder_layout(mut self) raises -> Matrix[dtype]:
+    fn reorder_layout(self) raises -> Matrix[dtype]:
         """
-        Reorder the memory layout of the matrix to match its current order ("C" or "F").
-        This method returns a new matrix with the same data but stored in the requested memory layout.
-        Only allowed for matrices with own_data=True.
+        Reorder the memory layout of the matrix to match its current order ("C" or "F"). This method returns a new matrix with the same data but stored in the requested memory layout. Only allowed for matrices with own_data=True.
 
         Returns:
             Matrix[dtype]: A new matrix with reordered memory layout.
 
         Raises:
             Error: If the matrix does not have its own data.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3), order="F")
+            var B = A.reorder_layout()
+            print(B.order())  # Outputs: "F"
+            ```
         """
         return reorder_layout(self)
 
@@ -2839,6 +3269,13 @@ struct MatrixImpl[
 
         Returns:
             Matrix[dtype]: The transposed matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            print(A.T())  # Outputs: [[1, 3], [2, 4]]
+            ```
         """
         return transpose(self)
 
@@ -2853,6 +3290,13 @@ struct MatrixImpl[
 
         Returns:
             Scalar[returned_dtype]: The variance of the matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.variance())
+            ```
         """
         return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
 
@@ -2868,6 +3312,14 @@ struct MatrixImpl[
 
         Returns:
             Matrix[returned_dtype]: The variance along the given axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.variance(axis=0))
+            print(A.variance(axis=1))
+            ```
         """
         return numojo.statistics.variance[returned_dtype](
             self, axis=axis, ddof=ddof
@@ -2882,6 +3334,17 @@ struct MatrixImpl[
 
         Returns a new NDArray with the same shape and data as the Matrix.
         The buffer is copied, so changes to the NDArray do not affect the original Matrix.
+
+        Returns:
+            NDArray[dtype]: A new NDArray containing the same data as the Matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand((3, 3))
+            var ndarray_A = A.to_ndarray()
+            print(ndarray_A)
+            ```
         """
 
         var ndarray: NDArray[dtype] = NDArray[dtype](
@@ -2901,6 +3364,14 @@ struct MatrixImpl[
         Notes:
             - The returned NumPy array is a copy of the Matrix data.
             - The dtype and memory order are matched as closely as possible.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand((3, 3))
+            var np_A = A.to_numpy()
+            print(np_A)
+            ```
         """
         try:
             var np = Python.import_module("numpy")
@@ -2977,8 +3448,8 @@ struct MatrixImpl[
 
         Example:
             ```mojo
-            from numojo import Matrix
-            var A = Matrix.full(shape=(10, 10), fill_value=100)
+            from numojo.prelude import *
+            var A = Matrix.full[f32](shape=(10, 10), fill_value=100)
             ```
         """
 
@@ -3004,8 +3475,8 @@ struct MatrixImpl[
 
         Example:
             ```mojo
-            from numojo import Matrix
-            var A = Matrix.zeros(shape=(10, 10))
+            from numojo.prelude import *
+            var A = Matrix.zeros[i32](shape=(10, 10))
             ```
         """
 
@@ -3029,8 +3500,8 @@ struct MatrixImpl[
 
         Example:
             ```mojo
-            from numojo import Matrix
-            var A = Matrix.ones(shape=(10, 10))
+            from numojo.prelude import *
+            var A = Matrix.ones[f64](shape=(10, 10))
             ```
         """
 
@@ -3052,8 +3523,9 @@ struct MatrixImpl[
 
         Example:
             ```mojo
-            from numojo import Matrix
-            var A = Matrix.identity(12)
+            from numojo.prelude import *
+            var A = Matrix.identity[f16](12)
+            print(A)
             ```
         """
         var matrix = Matrix.zeros[datatype]((len, len), order)
@@ -3079,8 +3551,8 @@ struct MatrixImpl[
 
         Example:
             ```mojo
-            from numojo import Matrix
-            var A = Matrix.rand((12, 12))
+            from numojo.prelude import *
+            var A = Matrix.rand[f64]((12, 12))
             ```
         """
         var result = Matrix[datatype](shape, order)
@@ -3109,9 +3581,9 @@ struct MatrixImpl[
 
         Example:
             ```mojo
-            from numojo import Matrix
-            fn main() raises:
-                print(Matrix.fromlist(List[Float64](1, 2, 3, 4, 5), (5, 1)))
+            from numojo.prelude import *
+            var a = Matrix.fromlist(List[Float64](1, 2, 3, 4, 5), (5, 1))
+            print(a)
             ```
         """
 
@@ -3153,11 +3625,10 @@ struct MatrixImpl[
         Example:
             ```mojo
             from numojo.prelude import *
-            from numojo import Matrix
-            fn main() raises:
-                var A = Matrix[f32].fromstring(
-                    "1 2 .3 4 5 6.5 7 1_323.12 9 10, 11.12, 12 13 14 15 16", (4, 4))
+            var A = Matrix.fromstring[f32]("1 2 .3 4 5 6.5 7 1_323.12 9 10, 11.12, 12 13 14 15 16", (4, 4))
+            print(A)
             ```
+
             Output:
             ```
             [[1.0   2.0     0.30000001192092896     4.0]
@@ -3325,6 +3796,7 @@ struct _MatrixIter[
 # # Backend fucntions using SMID functions
 # # ===-----------------------------------------------------------------------===#
 
+
 # TODO: we can move the checks in these functions to the caller functions to avoid redundant checks.
 fn _arithmetic_func_matrix_matrix_to_matrix[
     dtype: DType,
@@ -3416,6 +3888,7 @@ fn _arithmetic_func_matrix_to_matrix[
     vectorize[vec_func, simd_width](A.size)
 
     return C^
+
 
 fn _logic_func_matrix_matrix_to_matrix[
     dtype: DType,

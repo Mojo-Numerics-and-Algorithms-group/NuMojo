@@ -24,7 +24,6 @@ alias ComplexScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 alias CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 """User-friendly alias for scalar complex numbers."""
 
-
 @register_passable("trivial")
 struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
     ImplicitlyCopyable, Movable, Stringable, Writable
@@ -73,6 +72,11 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
     # --- Constructors ---
     @always_inline
     fn __init__(out self, other: Self):
+        """
+        Copy constructor for ComplexSIMD.
+
+        Initializes a new ComplexSIMD instance by copying the values from another instance.
+        """
         self = other
 
     @always_inline
@@ -81,38 +85,114 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         re: SIMD[Self.dtype, Self.width],
         im: SIMD[Self.dtype, Self.width],
     ):
+        """
+        Constructs a ComplexSIMD from SIMD vectors of real and imaginary parts.
+
+        Args:
+            re: SIMD vector containing the real components.
+            im: SIMD vector containing the imaginary components.
+        """
         self.re = re
         self.im = im
 
     @always_inline
     fn __init__(out self, val: SIMD[Self.dtype, Self.width]):
+        """
+        Constructs a ComplexSIMD where both real and imaginary parts are set to the same SIMD value.
+
+        Args:
+            val: SIMD vector to broadcast to both real and imaginary components.
+        """
         self.re = val
         self.im = val
 
     @always_inline
     fn __init__(out self, re: Scalar[Self.dtype], im: Scalar[Self.dtype]):
+        """
+        Constructs a ComplexSIMD from scalar real and imaginary values.
+
+        Args:
+            re: Scalar value for the real component.
+            im: Scalar value for the imaginary component.
+        """
         self.re = SIMD[Self.dtype, Self.width](re)
         self.im = SIMD[Self.dtype, Self.width](im)
 
     # Factory constructors.
     @staticmethod
     fn zero() -> Self:
+        """
+        Returns a ComplexSIMD instance with all real and imaginary components set to zero.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var comp = ComplexSIMD[cf64].zero()  # (0 + 0j)
+            ```
+        """
         return Self(Self._broadcast(0), Self._broadcast(0))
 
     @staticmethod
     fn one() -> Self:
+        """
+        Returns a ComplexSIMD instance representing the complex number 1 + 0j.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var comp = ComplexSIMD[cf64].one()  # (1 + 0j)
+            ```
+        """
         return Self(Self._broadcast(1), Self._broadcast(0))
 
     @staticmethod
     fn i() -> Self:
+        """
+        Returns a ComplexSIMD instance representing the imaginary unit 0 + 1j.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var comp = ComplexSIMD[cf64].i()  # (0 + 1j)
+            ```
+        """
         return Self(Self._broadcast(0), Self._broadcast(1))
 
     @staticmethod
     fn from_real_imag(re: Scalar[Self.dtype], im: Scalar[Self.dtype]) -> Self:
+        """
+        Constructs a ComplexSIMD instance from scalar real and imaginary values.
+
+        Args:
+            re: Scalar value for the real component.
+            im: Scalar value for the imaginary component.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var comp = ComplexSIMD[cf64].from_real_imag(2.0, 3.0)  # (2.0 + 3.0j)
+            ```
+        """
         return Self(re, im)
 
     @staticmethod
     fn from_polar(r: Scalar[Self.dtype], theta: Scalar[Self.dtype]) -> Self:
+        """
+        Constructs a ComplexSIMD instance from polar coordinates.
+
+        Args:
+            r: Magnitude (radius).
+            theta: Angle (in radians).
+
+        Returns:
+            ComplexSIMD instance with real part r * cos(theta) and imaginary part r * sin(theta).
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var comp = ComplexSIMD[cf64].from_polar(2.0, 0.5)
+            ```
+        """
         return Self(
             Self._broadcast(r * cos(theta)),
             Self._broadcast(r * sin(theta)),
@@ -120,34 +200,86 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
 
     # --- Arithmetic operators ---
     fn __add__(self, other: Self) -> Self:
+        """
+        Returns the element-wise sum of two ComplexSIMD instances.
+
+        Args:
+            other: Another ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance where each lane is the sum of corresponding lanes.
+        """
         return Self(self.re + other.re, self.im + other.im)
 
     fn __iadd__(mut self, other: Self):
+        """
+        In-place addition of another ComplexSIMD instance.
+
+        Args:
+            other: Another ComplexSIMD instance.
+        """
         self.re += other.re
         self.im += other.im
 
     fn __sub__(self, other: Self) -> Self:
+        """
+        Returns the element-wise difference of two ComplexSIMD instances.
+
+        Args:
+            other: Another ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance where each lane is the difference of corresponding lanes.
+        """
         return Self(self.re - other.re, self.im - other.im)
 
     fn __isub__(mut self, other: Self):
+        """
+        In-place subtraction of another ComplexSIMD instance.
+
+        Args:
+            other: Another ComplexSIMD instance.
+        """
         self.re -= other.re
         self.im -= other.im
 
     fn __mul__(self, other: Self) -> Self:
-        # (a+bi)(c+di) = (ac - bd) + (ad + bc)i
+        """
+        Returns the element-wise product of two ComplexSIMD instances.
+
+        Args:
+            other: Another ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance where each lane is the product of corresponding lanes, using complex multiplication: (a+bi)(c+di) = (ac - bd) + (ad + bc)i.
+        """
         return Self(
             self.re * other.re - self.im * other.im,
             self.re * other.im + self.im * other.re,
         )
 
     fn __imul__(mut self, other: Self):
+        """
+        In-place complex multiplication with another ComplexSIMD instance.
+
+        Args:
+            other: Another ComplexSIMD instance.
+        """
         var new_re = self.re * other.re - self.im * other.im
         self.im = self.re * other.im + self.im * other.re
         self.re = new_re
 
     fn __truediv__(self, other: Self) -> Self:
         """
-        Naive complex division.
+        Performs element-wise complex division of two ComplexSIMD instances.
+
+        Args:
+            other: Another ComplexSIMD instance to divide by.
+
+        Returns:
+            ComplexSIMD instance where each lane is the result of dividing the corresponding lanes:
+            (a + bi) / (c + di) = [(ac + bd) / (c^2 + d^2)] + [(bc - ad) / (c^2 + d^2)]i
+            where a, b are self.re, self.im and c, d are other.re, other.im.
         """
         var denom = other.re * other.re + other.im * other.im
         return Self(
@@ -156,38 +288,65 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         )
 
     fn __itruediv__(mut self, other: Self):
+        """
+        Performs in-place element-wise complex division of self by another ComplexSIMD instance.
+
+        Args:
+            other: Another ComplexSIMD instance to divide by.
+        """
         var denom = other.re * other.re + other.im * other.im
         var new_re = (self.re * other.re + self.im * other.im) / denom
         self.im = (self.im * other.re - self.re * other.im) / denom
         self.re = new_re
 
-    fn reciprocal(self) -> Self:
+    fn reciprocal(self) raises -> Self:
         """
-        Returns 1 / self.
+        Returns the element-wise reciprocal (1 / self) of the ComplexSIMD instance.
 
-        If self == 0 (all lanes), division by zero will occur (no guard yet).
+        Returns:
+            ComplexSIMD instance representing the reciprocal of each lane:
+            1 / (a + bi) = (a / (a^2 + b^2)) + (-b / (a^2 + b^2))i
         """
         var d = self.norm()
+        if d == 0:
+            raise Error("Cannot compute reciprocal of zero norm complex number.")
         return Self(self.re / d, -self.im / d)
 
     # --- Power helpers ---
     fn elem_pow(self, other: Self) -> Self:
         """
-        Component-wise power: (re^other.re, im^other.im).
+        Raises each component of this ComplexSIMD to the power of the corresponding component in another ComplexSIMD.
+
+        Args:
+            other: Another ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance where each lane is (re^other.re, im^other.im).
         """
         return Self(self.re**other.re, self.im**other.im)
 
     fn elem_pow(self, exponent: Scalar[Self.dtype]) -> Self:
         """
-        Component-wise scalar exponent applied separately to real and imaginary parts.
+        Raises each component of this ComplexSIMD to a scalar exponent.
+
+        Args:
+            exponent: Scalar exponent to apply to both real and imaginary parts.
+
+        Returns:
+            ComplexSIMD instance where each lane is (re^exponent, im^exponent).
         """
         return Self(self.re**exponent, self.im**exponent)
 
     fn __pow__(self, n: Int) -> Self:
         """
-        Integer power using exponentiation by squaring.
+        Raises this ComplexSIMD to an integer.
 
-        For negative n: returns reciprocal(pow(self, -n)).
+        Args:
+            n: Integer exponent.
+
+        Returns:
+            ComplexSIMD instance raised to the power n.
+            For negative n, returns the reciprocal of self raised to -n.
         """
         if n == 0:
             return Self.one()
@@ -208,9 +367,21 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
 
     # --- Unary operators ---
     fn __pos__(self) -> Self:
+        """
+        Returns the positive value of this ComplexSIMD (identity operation).
+
+        Returns:
+            The same ComplexSIMD instance.
+        """
         return self
 
     fn __neg__(self) -> Self:
+        """
+        Returns the negation of this ComplexSIMD.
+
+        Returns:
+            ComplexSIMD instance with both real and imaginary parts negated.
+        """
         return Self(-self.re, -self.im)
 
     # --- Helpers ---
@@ -223,9 +394,21 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
 
     # --- Equality ---
     fn __eq__(self, other: Self) -> Bool:
+        """
+        Checks if two ComplexSIMD instances are exactly equal.
+
+        Returns:
+            True if both the real and imaginary parts are equal for all lanes, otherwise False.
+        """
         return (self.re == other.re) and (self.im == other.im)
 
     fn __ne__(self, other: Self) -> Bool:
+        """
+        Checks if two ComplexSIMD instances are not equal.
+
+        Returns:
+            True if either the real or imaginary parts differ for any lane, otherwise False.
+        """
         return ~(self == other)
 
     fn allclose(
@@ -236,11 +419,24 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         atol: Scalar[Self.dtype] = 1e-8,
     ) -> Bool:
         """
-        Approximate equality for scalar complexes (width == 1).
+        Checks if two ComplexSIMD instances are approximately equal within given tolerances.
 
-        For SIMD width > 1, each lane must satisfy the tolerance criteria.
-        TODO: Optionally return a SIMD[Bool] mask instead of a single Bool.
+        For each lane, compares the real and imaginary parts using the formula:
+            abs(a - b) <= atol + rtol * abs(b)
+        where a and b are the corresponding components of self and other.
+
+        Args:
+            other: Another ComplexSIMD instance to compare against.
+            rtol: Relative tolerance.
+            atol: Absolute tolerance.
+
+        Returns:
+            True if all lanes of both real and imaginary parts are within the specified tolerances, otherwise False.
+
+        Note:
+            For SIMD width > 1, all lanes must satisfy the tolerance criteria.
         """
+        # TODO: Optionally return a SIMD[Bool] mask instead of a single Bool.
         var diff_re = Self._abs_simd(self.re - other.re)
         var diff_im = Self._abs_simd(self.im - other.im)
         var rtol_b = Self._broadcast(rtol)
@@ -257,9 +453,10 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
 
     fn write_to[W: Writer](self, mut writer: W):
         """
-        String formatting:
-          width == 1: (re + im j)
-          width > 1 : [(re0 + im0 j), (re1 + im1 j), ...]
+        Returns a string representation of the ComplexSIMD instance.
+
+        For width == 1, the format is: (re + im j).
+        For width > 1, the format is: [(re0 + im0 j), (re1 + im1 j), ...].
         """
         try:
             @parameter
@@ -277,12 +474,27 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
             writer.write("<<ComplexSIMD formatting error>>")
 
     fn __repr__(self) raises -> String:
+        """
+        Returns a string representation of the ComplexSIMD instance for debugging. `ComplexSIMD[dtype](re=<real SIMD>, im=<imag SIMD>)`
+        """
         return String("ComplexSIMD[{}](re={}, im={})").format(
             String(Self.dtype), self.re, self.im
         )
 
-    # --- Indexed access to real/imag vectors (NOT per lane complex extraction) ---
+    # --- Indexing ---
     fn __getitem__(self, idx: Int) raises -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the SIMD vector for the specified component.
+
+        Args:
+            idx: Index of the component (0 for real, 1 for imaginary).
+
+        Returns:
+            SIMD vector of the requested component.
+
+        Raises:
+            Error if idx is not 0 or 1.
+        """
         if idx == 0:
             return self.re
         elif idx == 1:
@@ -293,6 +505,16 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
     fn __setitem__(
         mut self, idx: Int, value: SIMD[Self.dtype, Self.width]
     ) raises:
+        """
+        Sets the SIMD vector for the specified component.
+
+        Args:
+            idx: Index of the component (0 for real, 1 for imaginary).
+            value: SIMD vector to assign.
+
+        Raises:
+            Error if idx is not 0 or 1.
+        """
         if idx == 0:
             self.re = value
         elif idx == 1:
@@ -301,6 +523,16 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
             raise Error("Index out of range (0=real,1=imag)")
 
     fn __setitem__(mut self, idx: Int, value: Self) raises:
+        """
+        Sets the real or imaginary component from another ComplexSIMD instance.
+
+        Args:
+            idx: Index of the component (0 for real, 1 for imaginary).
+            value: ComplexSIMD instance whose component will be assigned.
+
+        Raises:
+            Error if idx is not 0 or 1.
+        """
         if idx == 0:
             self.re = value.re
         elif idx == 1:
@@ -309,24 +541,72 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
             raise Error("Index out of range (0=real,1=imag)")
 
     fn item(self, idx: Int) raises -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the SIMD vector for the specified component.
+
+        Args:
+            idx: Index of the component (0 for real, 1 for imaginary).
+
+        Returns:
+            SIMD vector of the requested component.
+
+        Raises:
+            Error if idx is not 0 or 1.
+        """
         return self[idx]
 
     fn itemset(mut self, val: Self):
+        """
+        Sets both the real and imaginary components from another ComplexSIMD instance.
+
+        Args:
+            val: ComplexSIMD instance whose real and imaginary parts will be assigned to self.
+        """
         self.re = val.re
         self.im = val.im
 
     # --- Magnitude / norm / conjugate ---
     fn __abs__(self) -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the magnitude (absolute value) of the complex number(s).
+
+        Returns:
+            SIMD vector containing the magnitude for each lane: sqrt(re^2 + im^2).
+        """
         return sqrt(self.re * self.re + self.im * self.im)
 
     fn norm(self) -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the squared magnitude (norm) of the complex number(s).
+
+        Returns:
+            SIMD vector containing the squared magnitude for each lane: re^2 + im^2.
+        """
         return self.re * self.re + self.im * self.im
 
     fn conj(self) -> Self:
+        """
+        Returns the complex conjugate of the ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance with the imaginary part negated: (re, -im).
+        """
         return Self(self.re, -self.im)
 
     fn real(self) -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the real part(s) of the complex number(s).
+
+        Returns:
+            SIMD vector containing the real components.
+        """
         return self.re
 
     fn imag(self) -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the imaginary part(s) of the complex number(s).
+
+        Returns:
+            SIMD vector containing the imaginary components.
+        """
         return self.im

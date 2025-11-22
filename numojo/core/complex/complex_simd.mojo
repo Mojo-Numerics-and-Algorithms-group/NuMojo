@@ -24,6 +24,7 @@ alias ComplexScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 alias CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 """User-friendly alias for scalar complex numbers."""
 
+
 @register_passable("trivial")
 struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
     ImplicitlyCopyable, Movable, Stringable, Writable
@@ -63,7 +64,7 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
     var re: SIMD[Self.dtype, width]
     var im: SIMD[Self.dtype, width]
 
-    #--- Internal helper for broadcasting scalar to SIMD lanes ---
+    # --- Internal helper for broadcasting scalar to SIMD lanes ---
     @staticmethod
     @always_inline
     fn _broadcast(val: Scalar[Self.dtype]) -> SIMD[Self.dtype, Self.width]:
@@ -105,18 +106,6 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         """
         self.re = val
         self.im = val
-
-    @always_inline
-    fn __init__(out self, re: Scalar[Self.dtype], im: Scalar[Self.dtype]):
-        """
-        Constructs a ComplexSIMD from scalar real and imaginary values.
-
-        Args:
-            re: Scalar value for the real component.
-            im: Scalar value for the imaginary component.
-        """
-        self.re = SIMD[Self.dtype, Self.width](re)
-        self.im = SIMD[Self.dtype, Self.width](im)
 
     # Factory constructors.
     @staticmethod
@@ -309,7 +298,9 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         """
         var d = self.norm()
         if d == 0:
-            raise Error("Cannot compute reciprocal of zero norm complex number.")
+            raise Error(
+                "Cannot compute reciprocal of zero norm complex number."
+            )
         return Self(self.re / d, -self.im / d)
 
     # --- Power helpers ---
@@ -459,6 +450,7 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         For width > 1, the format is: [(re0 + im0 j), (re1 + im1 j), ...].
         """
         try:
+
             @parameter
             if Self.width == 1:
                 writer.write(String("({} + {} j)").format(self.re, self.im))

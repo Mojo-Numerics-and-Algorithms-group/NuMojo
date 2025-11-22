@@ -175,6 +175,15 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: Variadic shape.
             order: Memory order C or F.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            var a = nm.NDArray[nm.f32](nm.Shape(2,3), order="C")
+            ```
+
+        Note:
+            This constructor should not be used by users directly. Use factory functions in `nomojo.routines.creation` module instead.
         """
 
         self.ndim = shape.ndim
@@ -199,6 +208,15 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: List of shape.
             order: Memory order C or F.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            var a = nm.NDArray[nm.f32](List[Int](2,3), order="C")
+            ```
+
+        Note:
+            This constructor should not be used by users directly. Use factory functions in `numojo.routines.creation` module instead.
         """
 
         self = Self(Shape(shape), order)
@@ -215,6 +233,15 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: Variadic List of shape.
             order: Memory order C or F.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = nm.ComplexNDArray[cf32](VariadicList(2,3,4))
+            ```
+
+        Note:
+            This constructor should not be used by users directly. Use factory functions in `numojo.routines.creation` module instead.
         """
 
         self = Self(Shape(shape), order)
@@ -226,12 +253,25 @@ struct NDArray[dtype: DType = DType.float64](
         strides: List[Int],
     ) raises:
         """
-        Extremely specific NDArray initializer.
+        Initialize a NDArray with a specific shape, offset, and strides.
 
         Args:
-            shape: List of shape.
-            offset: Offset value.
-            strides: List of strides.
+            shape: List of integers specifying the shape of the array.
+            offset: Integer offset into the underlying buffer.
+            strides: List of integers specifying the stride for each dimension.
+
+        Notes:
+            - This constructor is intended for advanced use cases requiring precise control over memory layout.
+            - The resulting array is uninitialized and should be filled before use.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var shape = List[Int](2, 3)
+            var offset = 0
+            var strides = List[Int](3, 1)
+            var arr = NDArray[f32](shape, offset, strides)
+            ```
         """
         self.shape = NDArrayShape(shape)
         self.ndim = self.shape.ndim
@@ -253,16 +293,19 @@ struct NDArray[dtype: DType = DType.float64](
         flags: Flags,
     ):
         """
-        Constructs an extremely specific array, with value uninitialized.
-        The properties do not need to be compatible and are not checked.
-        For example, it can construct a 0-D array (numojo scalar).
+        Initialize a NDArray with explicit shape, strides, number of dimensions, size, and flags. This constructor creates an uninitialized NDArray with the provided properties. No compatibility checks are performed between shape, strides, ndim, size, or flags. This allows construction of arrays with arbitrary metadata, including 0-D arrays (scalars).
 
         Args:
-            shape: Shape of array.
-            strides: Strides of array.
+            shape: Shape of the array.
+            strides: Strides for each dimension.
             ndim: Number of dimensions.
-            size: Size of array.
-            flags: Flags of array.
+            size: Total number of elements.
+            flags: Memory layout flags.
+
+        Notes:
+            - This constructor is intended for advanced or internal use cases requiring manual control.
+            - The resulting array is uninitialized; values must be set before use.
+            - No validation is performed on the consistency of the provided arguments.
         """
 
         self.shape = shape
@@ -282,14 +325,25 @@ struct NDArray[dtype: DType = DType.float64](
         strides: NDArrayStrides,
     ) raises:
         """
-        Initialize an NDArray view with given shape, buffer, offset, and strides.
-        ***Unsafe!*** This function is currently unsafe. Only for internal use.
+        Initialize a NDArray view with explicit shape, raw buffers, offset, and strides.
+
+        This constructor creates a view over existing memory buffers for the real and imaginary parts,
+        using the provided shape, offset, and stride information. It is intended for advanced or internal
+        use cases where direct control over memory layout is required.
+
+        ***Unsafe!*** This function is unsafe and should only be used internally. The caller is responsible
+        for ensuring that the buffers are valid and that the shape, offset, and strides are consistent.
 
         Args:
-            shape: Shape of the array.
-            buffer: Unsafe pointer to the buffer.
-            offset: Offset value.
-            strides: Strides of the array.
+            shape: NDArrayShape specifying the dimensions of the array.
+            buffer: Unsafe pointer to the buffer containing the real part data.
+            offset: Integer offset into the buffers.
+            strides: NDArrayStrides specifying the stride for each dimension.
+
+        Notes:
+            - No validation is performed on the buffers or metadata.
+            - The resulting NDArray shares memory with the provided buffers.
+            - Incorrect usage may lead to undefined behavior.
         """
         self.shape = shape
         self.strides = strides
@@ -395,17 +449,16 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The element of the array at the indices.
 
+        Examples:
+            ```mojo
+            import numojo as nm
+            from numojo.prelude import *
+            var A = nm.ones[f32](nm.Shape(2,3,4))
+            print(A._getitem(1,2,3))
+            ```
+
         Notes:
             This function is unsafe and should be used only on internal use.
-
-        Examples:
-
-        ```mojo
-        import numojo as nm
-        from numojo.prelude import *
-        var A = nm.ones[f32](nm.Shape(2,3,4))
-        print(A._getitem(1,2,3))
-        ```
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
@@ -423,9 +476,6 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The element of the array at the indices.
 
-        Notes:
-            This function is unsafe and should be used only on internal use.
-
         Examples:
 
         ```mojo
@@ -434,6 +484,9 @@ struct NDArray[dtype: DType = DType.float64](
         var A = nm.ones[f32](nm.Shape(2,3,4))
         print(A._getitem(List[Int](1,2,3)))
         ```
+
+        Notes:
+            This function is unsafe and should be used only on internal use.
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
@@ -452,10 +505,10 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
 
-        ```console
-        >>>import numojo
-        >>>var a = numojo.arange(3)[0]
-        >>>print(a[]) # gets values of the 0-D array.
+        ```mojo
+        import numojo as nm
+        var a = nm.arange(3)[0]
+        print(a[]) # gets values of the 0-D array.
         ```.
         """
         if self.ndim != 0:

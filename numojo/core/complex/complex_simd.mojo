@@ -294,7 +294,7 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
 
         Returns:
             ComplexSIMD instance representing the reciprocal of each lane:
-            1 / (a + bi) = (a / (a^2 + b^2)) + (-b / (a^2 + b^2))i
+            1 / (a + bi) = (a / (a^2 + b^2)) + (-b / (a^2 + b^2)).
         """
         var d = self.norm()
         if d == 0:
@@ -467,7 +467,7 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
 
     fn __repr__(self) raises -> String:
         """
-        Returns a string representation of the ComplexSIMD instance for debugging. `ComplexSIMD[dtype](re=<real SIMD>, im=<imag SIMD>)`
+        Returns a string representation of the ComplexSIMD instance for debugging. `ComplexSIMD[dtype](re=<real SIMD>, im=<imag SIMD>)`.
         """
         return String("ComplexSIMD[{}](re={}, im={})").format(
             String(Self.dtype), self.re, self.im

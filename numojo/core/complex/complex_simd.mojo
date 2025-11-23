@@ -11,9 +11,6 @@ This module provides a ComplexSIMD type that represents complex numbers using SI
 operations for efficient computation. It supports basic arithmetic operations
 like addition, subtraction, multiplication, and division, as well as other
 complex number operations like conjugation and absolute value.
-
-The implementation allows for vectorized operations on complex numbers which can
-significantly improve performance for numerical computations.
 """
 
 from math import sqrt, sin, cos

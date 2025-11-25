@@ -21,9 +21,12 @@ alias ComplexScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 alias CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 """User-friendly alias for scalar complex numbers."""
 
+alias `1j` = ComplexSIMD[_, width=1].i()
+"""Constant representing the imaginary unit complex number 0 + 1j for cf32 in Python style."""
 
+# TODO: add overloads for arithmetic functions to accept Scalar[dtype].
 @register_passable("trivial")
-struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
+struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
     ImplicitlyCopyable, Movable, Stringable, Writable
 ):
     """
@@ -197,6 +200,18 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         """
         return Self(self.re + other.re, self.im + other.im)
 
+    fn __add__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Returns the sum of this ComplexSIMD instance and a scalar added to the real part.
+
+        Args:
+            other: Scalar value to add to the real component.
+
+        Returns:
+            ComplexSIMD instance where each lane's real part is increased by the scalar.
+        """
+        return Self(self.re + Self._broadcast(other), self.im)
+
     fn __iadd__(mut self, other: Self):
         """
         In-place addition of another ComplexSIMD instance.
@@ -206,6 +221,27 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         """
         self.re += other.re
         self.im += other.im
+
+    fn __iadd__(mut self, other: Scalar[Self.dtype]):
+        """
+        In-place addition of a scalar to the real part of this ComplexSIMD instance.
+
+        Args:
+            other: Scalar value to add to the real component.
+        """
+        self.re += Self._broadcast(other)
+
+    fn __radd__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Returns the sum of a scalar and this ComplexSIMD instance, adding to the real part.
+
+        Args:
+            other: Scalar value to add to the real component.
+
+        Returns:
+            ComplexSIMD instance where each lane's real part is increased by the scalar.
+        """
+        return Self(Self._broadcast(other) + self.re, self.im)
 
     fn __sub__(self, other: Self) -> Self:
         """
@@ -219,6 +255,18 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         """
         return Self(self.re - other.re, self.im - other.im)
 
+    fn __sub__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Returns the difference of this ComplexSIMD instance and a scalar subtracted from the real part.
+
+        Args:
+            other: Scalar value to subtract from the real component.
+
+        Returns:
+            ComplexSIMD instance where each lane's real part is decreased by the scalar.
+        """
+        return Self(self.re - Self._broadcast(other), self.im)
+
     fn __isub__(mut self, other: Self):
         """
         In-place subtraction of another ComplexSIMD instance.
@@ -228,6 +276,27 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         """
         self.re -= other.re
         self.im -= other.im
+
+    fn __isub__(mut self, other: Scalar[Self.dtype]):
+        """
+        In-place subtraction of a scalar from the real part of this ComplexSIMD instance.
+
+        Args:
+            other: Scalar value to subtract from the real component.
+        """
+        self.re -= Self._broadcast(other)
+
+    fn __rsub__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Returns the difference of a scalar and this ComplexSIMD instance, subtracting from the real part.
+
+        Args:
+            other: Scalar value to subtract from the real component.
+
+        Returns:
+            ComplexSIMD instance where each lane's real part is (scalar - self.re).
+        """
+        return Self(Self._broadcast(other) - self.re, -self.im)
 
     fn __mul__(self, other: Self) -> Self:
         """
@@ -244,6 +313,19 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
             self.re * other.im + self.im * other.re,
         )
 
+    fn __mul__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Returns the product of this ComplexSIMD instance and a scalar.
+
+        Args:
+            other: Scalar value to multiply with both real and imaginary parts.
+
+        Returns:
+            ComplexSIMD instance where each lane is scaled by the scalar.
+        """
+        var scalar_simd = Self._broadcast(other)
+        return Self(self.re * scalar_simd, self.im * scalar_simd)
+
     fn __imul__(mut self, other: Self):
         """
         In-place complex multiplication with another ComplexSIMD instance.
@@ -254,6 +336,30 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         var new_re = self.re * other.re - self.im * other.im
         self.im = self.re * other.im + self.im * other.re
         self.re = new_re
+
+    fn __imul__(mut self, other: Scalar[Self.dtype]):
+        """
+        In-place multiplication of this ComplexSIMD instance by a scalar.
+
+        Args:
+            other: Scalar value to multiply with both real and imaginary parts.
+        """
+        var scalar_simd = Self._broadcast(other)
+        self.re *= scalar_simd
+        self.im *= scalar_simd
+
+    fn __rmul__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Returns the product of a scalar and this ComplexSIMD instance.
+
+        Args:
+            other: Scalar value to multiply with both real and imaginary parts.
+
+        Returns:
+            ComplexSIMD instance where each lane is scaled by the scalar.
+        """
+        var scalar_simd = Self._broadcast(other)
+        return Self(scalar_simd * self.re, scalar_simd * self.im)
 
     fn __truediv__(self, other: Self) -> Self:
         """
@@ -273,6 +379,19 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
             (self.im * other.re - self.re * other.im) / denom,
         )
 
+    fn __truediv__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Performs element-wise division of this ComplexSIMD instance by a scalar.
+
+        Args:
+            other: Scalar value to divide both real and imaginary parts by.
+
+        Returns:
+            ComplexSIMD instance where each lane is divided by the scalar.
+        """
+        var scalar_simd = Self._broadcast(other)
+        return Self(self.re / scalar_simd, self.im / scalar_simd)
+
     fn __itruediv__(mut self, other: Self):
         """
         Performs in-place element-wise complex division of self by another ComplexSIMD instance.
@@ -284,6 +403,36 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
         var new_re = (self.re * other.re + self.im * other.im) / denom
         self.im = (self.im * other.re - self.re * other.im) / denom
         self.re = new_re
+
+    fn __itruediv__(mut self, other: Scalar[Self.dtype]):
+        """
+        Performs in-place element-wise division of this ComplexSIMD instance by a scalar.
+
+        Args:
+            other: Scalar value to divide both real and imaginary parts by.
+        """
+        var scalar_simd = Self._broadcast(other)
+        self.re /= scalar_simd
+        self.im /= scalar_simd
+
+    fn __rtruediv__(self, other: Scalar[Self.dtype]) -> Self:
+        """
+        Performs element-wise division of a scalar by this ComplexSIMD instance.
+
+        Args:
+            other: Scalar value to be divided by this ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance where each lane is the result of dividing the scalar by the corresponding lane:
+            other / (a + bi) = [other * a / (a^2 + b^2)] + [-other * b / (a^2 + b^2)]i
+            where a, b are self.re, self.im.
+        """
+        var denom = self.re * self.re + self.im * self.im
+        var scalar_simd = Self._broadcast(other)
+        return Self(
+            (scalar_simd * self.re) / denom,
+            (-scalar_simd * self.im) / denom,
+        )
 
     fn reciprocal(self) raises -> Self:
         """

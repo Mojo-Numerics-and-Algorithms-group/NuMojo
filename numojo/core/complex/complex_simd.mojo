@@ -16,13 +16,15 @@ complex number operations like conjugation and absolute value.
 from math import sqrt, sin, cos
 from numojo.core.complex.complex_dtype import ComplexDType
 
-alias ComplexScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
+alias ComplexScalar = ComplexSIMD[_, width=1]
 """ComplexScalar alias is for internal purposes (width=1 specialization)."""
-alias CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
+
+alias CScalar = ComplexSIMD[_, width=1]
 """User-friendly alias for scalar complex numbers."""
 
-alias `1j` = ComplexSIMD[_, width=1].i()
+alias `1j` = ComplexSIMD[_, width=1](0, 1)
 """Constant representing the imaginary unit complex number 0 + 1j for cf32 in Python style."""
+
 
 # TODO: add overloads for arithmetic functions to accept Scalar[dtype].
 @register_passable("trivial")

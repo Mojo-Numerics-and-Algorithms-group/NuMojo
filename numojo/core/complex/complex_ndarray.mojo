@@ -739,7 +739,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var alloc_order: String = String("C")
         if self.flags.F_CONTIGUOUS:
             alloc_order = String("F")
-        var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](shape=out_shape, order=alloc_order)
+        var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
+            shape=out_shape, order=alloc_order
+        )
 
         # Fast path for C-contiguous
         if self.flags.C_CONTIGUOUS:
@@ -757,8 +759,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return result^
         else:
             # F layout
-            self[Self.dtype]._re._copy_first_axis_slice(self._re, norm, result._re)
-            self[Self.dtype]._im._copy_first_axis_slice(self._im, norm, result._im)
+            self[Self.dtype]._re._copy_first_axis_slice(
+                self._re, norm, result._re
+            )
+            self[Self.dtype]._im._copy_first_axis_slice(
+                self._im, norm, result._im
+            )
             return result^
 
     fn __getitem__(self, var *slices: Slice) raises -> Self:
@@ -1439,7 +1445,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             im=self._im._buf.ptr[index],
         )
 
-    fn load[width: Int = 1](self, index: Int) raises -> ComplexSIMD[cdtype, width]:
+    fn load[
+        width: Int = 1
+    ](self, index: Int) raises -> ComplexSIMD[cdtype, width]:
         """
         Safely loads a ComplexSIMD element of size `width` at `index`
         from the underlying buffer.
@@ -1802,7 +1810,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                         "Pass exactly {} indices (one per dimension)."
                     ).format(self.ndim),
                     location=String(
-                        "ComplexNDArray.__setitem__(index: Item, val: Scalar[dtype])"
+                        "ComplexNDArray.__setitem__(index: Item, val:"
+                        " Scalar[dtype])"
                     ),
                 )
             )
@@ -1849,7 +1858,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             if mask._im._buf.ptr.load[width=1](i):
                 self._im._buf.ptr.store(i, value.im)
 
-    fn __setitem__(mut self, var *slices: Slice, val: ComplexNDArray[cdtype]) raises:
+    fn __setitem__(
+        mut self, var *slices: Slice, val: ComplexNDArray[cdtype]
+    ) raises:
         """
         Retreive slices of an ComplexNDArray from variadic slices.
 
@@ -1862,7 +1873,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         # self.__setitem__(slices=slice_list, val=val)
         self[slice_list^] = val
 
-    fn __setitem__(mut self, slices: List[Slice], val: ComplexNDArray[cdtype]) raises:
+    fn __setitem__(
+        mut self, slices: List[Slice], val: ComplexNDArray[cdtype]
+    ) raises:
         """
         Sets the slices of an ComplexNDArray from list of slices and ComplexNDArray.
 
@@ -1970,7 +1983,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         )
 
     ## compiler doesn't accept this.
-    fn __setitem__(self, var *slices: Variant[Slice, Int], val: ComplexNDArray[cdtype]) raises:
+    fn __setitem__(
+        self, var *slices: Variant[Slice, Int], val: ComplexNDArray[cdtype]
+    ) raises:
         """
         Get items by a series of either slices or integers.
         """

@@ -4,6 +4,7 @@ from numojo.prelude import *
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
 from testing.testing import assert_true, assert_almost_equal
+from testing import TestSuite
 
 
 def test_rand():
@@ -36,8 +37,8 @@ def test_randminmax():
 
 def test_randint():
     """Test random int array generation with min and max values."""
-    var arr_low_high = nm.random.randint(Shape(10, 10, 10), 0, 10)
-    var arr_high = nm.random.randint(Shape(10, 10, 10), 6)
+    var arr_low_high = nm.random.randint(Shape(30, 30, 30), 0, 10)
+    var arr_high = nm.random.randint(Shape(30, 30, 30), 6)
     var arr_low_high_mean = nm.mean(arr_low_high)
     var arr_high_mean = nm.mean(arr_high)
     assert_almost_equal(
@@ -215,3 +216,7 @@ def test_rand_exponential():
             arr_list._buf.ptr[i] >= 0,
             "Exponential distribution should only produce non-negative values",
         )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

@@ -10,6 +10,7 @@ Test indexing module `numojo.routines.indexing`.
 from python import Python
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
+from testing import TestSuite
 
 from numojo.prelude import *
 
@@ -298,3 +299,7 @@ fn test_take_along_axis_fortran_order() raises:
             " array is broken"
         ),
     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

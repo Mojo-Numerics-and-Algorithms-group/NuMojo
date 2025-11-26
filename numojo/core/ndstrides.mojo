@@ -8,7 +8,8 @@
 Implements NDArrayStrides type.
 """
 
-from memory import UnsafePointer, memcmp, memcpy
+from memory import memcmp, memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 
 from numojo.core.error import IndexError, ValueError
 
@@ -133,7 +134,7 @@ struct NDArrayStrides(
 
         self.ndim = strides.ndim
         self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        memcpy(self._buf, strides._buf, strides.ndim)
+        memcpy(dest=self._buf, src=strides._buf, count=strides.ndim)
 
     @always_inline("nodebug")
     fn __init__(
@@ -339,7 +340,7 @@ struct NDArrayStrides(
         """
         self.ndim = other.ndim
         self._buf = UnsafePointer[Scalar[Self._type]]().alloc(other.ndim)
-        memcpy(self._buf, other._buf, other.ndim)
+        memcpy(dest=self._buf, src=other._buf, count=other.ndim)
 
     fn __del__(deinit self):
         """
@@ -394,7 +395,7 @@ struct NDArrayStrides(
     @always_inline("nodebug")
     fn _compute_slice_params(
         self, slice_index: Slice
-    ) raises -> (Int, Int, Int):
+    ) raises -> Tuple[Int, Int, Int]:
         """
         Compute normalized slice parameters (start, step, length).
 
@@ -644,7 +645,7 @@ struct NDArrayStrides(
         """
 
         var res = Self(ndim=self.ndim, initialized=False)
-        memcpy(res._buf, self._buf, self.ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
         return res
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
@@ -683,7 +684,7 @@ struct NDArrayStrides(
             )
 
         var res = Self(ndim=self.ndim, initialized=False)
-        memcpy(res._buf, self._buf, self.ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
         res[axis1] = self[axis2]
         res[axis2] = self[axis1]
         return res^
@@ -957,7 +958,7 @@ struct _StrideIter[
         else:
             return self.index > 0
 
-    fn __next__(mut self) raises -> Scalar[DType.index]:
+    fn __next__(mut self) raises -> Scalar[DType.int]:
         @parameter
         if forward:
             var current_index = self.index

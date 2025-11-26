@@ -2,6 +2,7 @@ import numojo as nm
 from numojo.prelude import *
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close, check_values_close
+from testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Matmul
@@ -117,3 +118,7 @@ def test_misc():
             np.diagonal(np_arr, offset=i),
             String("`diagonal` by axis {} is broken").format(i),
         )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

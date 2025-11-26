@@ -10,6 +10,7 @@ from testing.testing import (
 from python import Python, PythonObject
 import random as builtin_random
 from utils_for_test import check, check_is_close
+from testing import TestSuite
 
 
 def test_arange():
@@ -357,3 +358,7 @@ def test_arr_manipulation():
 #     assert_equal(
 #         image == image_converted_via_array, True, "Tensor conversion is broken"
 #     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

@@ -121,7 +121,7 @@ fn trace[
 
 fn trace[
     dtype: DType
-](A: Matrix[dtype], offset: Int = 0) raises -> Scalar[dtype]:
+](A: Matrix[dtype, **_], offset: Int = 0) raises -> Scalar[dtype]:
     """
     Return the sum along diagonals of the array.
 

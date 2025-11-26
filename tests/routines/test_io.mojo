@@ -2,6 +2,7 @@ from numojo.routines.io.files import load, save, loadtxt, savetxt
 from numojo import ones, full
 from python import Python
 import os
+from testing import TestSuite
 
 
 fn test_save_and_load() raises:
@@ -32,3 +33,7 @@ fn test_savetxt_and_loadtxt() raises:
     np.allclose(arr2.to_numpy(), arr.to_numpy())
     # Clean up
     os.remove(fname)
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

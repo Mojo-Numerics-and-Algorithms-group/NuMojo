@@ -11,7 +11,7 @@ from testing import assert_raises
 from algorithm.functional import parallelize, vectorize
 from sys.info import num_physical_cores
 from sys import simd_width_of
-from memory import UnsafePointer
+from memory import LegacyUnsafePointer as UnsafePointer
 
 from numojo.core.traits.backend import Backend
 from numojo.core.ndarray import NDArray

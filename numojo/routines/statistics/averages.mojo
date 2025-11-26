@@ -15,6 +15,7 @@ from collections.optional import Optional
 import math as mt
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 import numojo.core.utility as utility
@@ -102,7 +103,7 @@ fn mean[
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: Matrix[dtype]) -> Scalar[returned_dtype]:
+](a: Matrix[dtype, **_]) -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in the Matrix.
 
@@ -122,7 +123,7 @@ fn mean[
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: Matrix[dtype], axis: Int) raises -> Matrix[returned_dtype]:
+](a: Matrix[dtype, **_], axis: Int) raises -> Matrix[returned_dtype, OwnData]:
     """
     Calculate the arithmetic average of a Matrix along the axis.
 
@@ -373,7 +374,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the standard deviation.
 
@@ -398,7 +399,9 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
+](A: Matrix[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
+    returned_dtype
+]:
     """
     Compute the standard deviation along axis.
 
@@ -505,7 +508,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the variance.
 
@@ -533,7 +536,9 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
+](A: Matrix[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
+    returned_dtype
+]:
     """
     Compute the variance along axis.
 

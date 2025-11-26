@@ -1427,7 +1427,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
+    fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
         """Matrix less than scalar.
 
         ```mojo
@@ -1456,7 +1456,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
+    fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
         """Matrix less than and equal to scalar.
 
         ```mojo
@@ -1485,7 +1485,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
+    fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
         """Matrix greater than scalar.
 
         ```mojo
@@ -1514,7 +1514,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
+    fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
         """Matrix greater than and equal to scalar.
 
         ```mojo
@@ -1543,7 +1543,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
+    fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
         """Matrix less than and equal to scalar.
 
         ```mojo
@@ -1572,7 +1572,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
+    fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
         """Matrix less than and equal to scalar.
 
         ```mojo

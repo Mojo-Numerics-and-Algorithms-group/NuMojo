@@ -384,6 +384,7 @@ struct MatrixImpl[
         self.strides = other.strides^
         self.size = other.size
         self._buf = other._buf^
+        self.buf_type = other.buf_type^
         self.flags = other.flags^
 
     @always_inline("nodebug")
@@ -392,6 +393,22 @@ struct MatrixImpl[
         @parameter
         if own_data:
             self._buf.ptr.free()
+
+    fn create_copy(self) raises -> Matrix[dtype, OwnData]:
+        """
+        Create a copy of the matrix with OwnData buffer type.
+        """
+        var result = Matrix[dtype, OwnData](
+            shape=self.shape, order=self.order()
+        )
+        if self.flags.C_CONTIGUOUS:
+            memcpy(dest=result._buf.ptr, src=self._buf.ptr, count=self.size)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    result[i, j] = self[i, j]
+
+        return result^
 
     # ===-------------------------------------------------------------------===#
     # Slicing and indexing methods
@@ -722,6 +739,28 @@ struct MatrixImpl[
         for i in range(num_rows):
             selected_rows[i] = self[indices[i]]
         return selected_rows^
+
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
+        """
+        Returns a SIMD element with width `width` at the given index.
+
+        Parameters:
+            width: The width of the SIMD element.
+
+        Args:
+            idx: The linear index.
+
+        Returns:
+            A SIMD element with width `width`.
+        """
+        if idx >= self.size or idx < -self.size:
+            raise Error(
+                String("Index {} exceed the matrix size {}").format(
+                    idx, self.size
+                )
+            )
+        var idx_norm = self.normalize(idx, self.size)
+        return self._buf.ptr.load[width=width](idx_norm)
 
     fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
         """
@@ -1427,7 +1466,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
         """Matrix less than scalar.
 
         ```mojo
@@ -1456,7 +1495,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
         """Matrix less than and equal to scalar.
 
         ```mojo
@@ -1485,7 +1524,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
         """Matrix greater than scalar.
 
         ```mojo
@@ -1514,7 +1553,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
         """Matrix greater than and equal to scalar.
 
         ```mojo
@@ -1543,7 +1582,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
         """Matrix less than and equal to scalar.
 
         ```mojo
@@ -1572,7 +1611,7 @@ struct MatrixImpl[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool, **_]:
         """Matrix less than and equal to scalar.
 
         ```mojo
@@ -1661,7 +1700,7 @@ struct MatrixImpl[
             casted_matrix._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
         return casted_matrix^
 
-    fn cumprod(self) raises -> Matrix[dtype]:
+    fn cumprod(self) raises -> Matrix[dtype, OwnData]:
         """
         Cumprod of flattened matrix.
 
@@ -1674,7 +1713,7 @@ struct MatrixImpl[
         """
         return numojo.math.cumprod(self.copy())
 
-    fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
+    fn cumprod(self, axis: Int) raises -> Matrix[dtype, OwnData]:
         """
         Cumprod of Matrix along the axis.
 
@@ -1691,10 +1730,10 @@ struct MatrixImpl[
         """
         return numojo.math.cumprod(self.copy(), axis=axis)
 
-    fn cumsum(self) raises -> Matrix[dtype]:
+    fn cumsum(self) raises -> Matrix[dtype, OwnData]:
         return numojo.math.cumsum(self.copy())
 
-    fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
+    fn cumsum(self, axis: Int) raises -> Matrix[dtype, OwnData]:
         return numojo.math.cumsum(self.copy(), axis=axis)
 
     fn fill(self, fill_value: Scalar[dtype]):

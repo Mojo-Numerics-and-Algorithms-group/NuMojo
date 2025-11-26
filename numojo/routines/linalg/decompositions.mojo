@@ -373,7 +373,7 @@ fn qr[
     else:
         raise Error(String("Invalid mode: {}").format(mode))
 
-    var R: Matrix[dtype]
+    var R: Matrix[dtype, OwnData]
 
     if A.flags.C_CONTIGUOUS:
         reorder = True

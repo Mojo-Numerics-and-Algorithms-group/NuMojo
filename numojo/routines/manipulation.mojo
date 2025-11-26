@@ -15,6 +15,7 @@ from sys import simd_width_of
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides

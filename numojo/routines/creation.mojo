@@ -48,6 +48,7 @@ from numojo.core.data_container import DataContainer
 # ===------------------------------------------------------------------------===#
 # Numerical ranges
 # ===------------------------------------------------------------------------===#
+# FIXME: a lot of the creation routines uses ._buf.ptr directly. This should be changed to ._buf[idx] once we use the new DataContainer with correct origins.
 fn arange[
     dtype: DType = DType.float64
 ](
@@ -252,10 +253,13 @@ fn linspace[
         print(arr2)  # [0.0, 2.0, 4.0, 6.0, 8.0]
 
         # Parallel computation for large arrays
-        var large = nm.linspace[nm.f64](0.0, 1000.0, 10000, parallel=True)
+        var large = nm.linspace[nm.f64, parallel=True](0.0, 1000.0, 10000)
         ```
     """
-    constrained[not dtype.is_integral()]()
+    constrained[
+        not dtype.is_integral(),
+        "numojo.linspace requires floating-point dtype.",
+    ]()
 
     @parameter
     if parallel:
@@ -1236,7 +1240,7 @@ fn ones[
         ```mojo
         import numojo as nm
 
-        var arr = nm.ones[nm.f64](Shape(2, 3))
+        var arr = nm.ones[nm.f64](nm.Shape(2, 3))
         # [[1, 1, 1],
         #  [1, 1, 1]]
         ```
@@ -1389,7 +1393,7 @@ fn zeros[
         ```mojo
         import numojo as nm
 
-        var arr = nm.zeros[nm.f64](Shape(2, 3))
+        var arr = nm.zeros[nm.f64](nm.Shape(2, 3))
         # [[0, 0, 0],
         #  [0, 0, 0]]
         ```
@@ -1546,7 +1550,7 @@ fn full[
         ```mojo
         import numojo as nm
 
-        var arr = nm.full[nm.f64](Shape(2, 3), fill_value=7.0)
+        var arr = nm.full[nm.f64](nm.Shape(2, 3), fill_value=7.0)
         # [[7, 7, 7],
         #  [7, 7, 7]]
         ```
@@ -1654,7 +1658,7 @@ fn full[
         import numojo as nm
 
         var val = nm.CScalar[nm.cf64](3.0, 4.0)
-        var arr = nm.full[nm.cf64](Shape(2, 2), fill_value=val)
+        var arr = nm.full[nm.cf64](nm.Shape(2, 2), fill_value=val)
         ```
     """
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
@@ -1772,7 +1776,7 @@ fn diag[
         #  [0, 0, 2]]
 
         # Extract diagonal from 2-D array
-        var mat = nm.ones[nm.f64](Shape(3, 3))
+        var mat = nm.ones[nm.f64](nm.Shape(3, 3))
         var d = nm.diag[nm.f64](mat)
         # [1, 1, 1]
         ```
@@ -1852,7 +1856,7 @@ fn diagflat[
         ```mojo
         import numojo as nm
 
-        var v = nm.arange[nm.f64](4.0).reshape(Shape(2, 2))  # 2x2 array
+        var v = nm.arange[nm.f64](4.0).reshape(nm.Shape(2, 2))  # 2x2 array
         var d = nm.diagflat[nm.f64](v)  # Flattens to [0,1,2,3] then creates diagonal
         # [[0, 0, 0, 0],
         #  [0, 1, 0, 0],
@@ -2592,9 +2596,10 @@ fn array[
     import numojo as nm
     from numojo.prelude import *
     from python import Python
+
     var np = Python.import_module("numpy")
     var np_arr = np.array([1, 2, 3, 4])
-    A = nm.array[f32](real=np_arr, imag=np_arr, order="C")
+    A = nm.array[cf32](real=np_arr, imag=np_arr, order="C")
     ```
 
     Parameters:
@@ -2664,72 +2669,96 @@ fn array[
     return A^
 
 
-# fn array[
-#     dtype: DType = DType.float64
-# ](data: Tensor[dtype]) raises -> NDArray[dtype]:
-#     """
-#     Create array from tensor.
+fn meshgrid[dtype: DType = DType.float64, indexing: String = "xy"](
+    *arrays: NDArray[dtype]
+) raises -> List[NDArray[dtype]]:
+    """
+    Generate coordinate matrices from coordinate vectors.
 
-#     Example:
-#     ```mojo
-#     import numojo as nm
-#     from tensor import Tensor, TensorShape
-#     from numojo.prelude import *
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+        indexing: Cartesian ('xy', default) or matrix ('ij') indexing of output.
 
-#     fn main() raises:
-#         height = 256
-#         width = 256
-#         channels = 3
-#         image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
-#         print(image)
-#         print(nm.array(image))
-#     ```
+    Args:
+        arrays: 1-D input arrays representing the coordinates of a grid.
 
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
+    Returns:
+        A list of N-D coordinate arrays for evaluating expressions on an N-D grid.
 
-#     Args:
-#         data: Tensor.
+    Examples:
+        ```mojo
+        from numojo.routines.creation import meshgrid, arange
+        from numojo.prelude import *
 
-#     Returns:
-#         NDArray.
-#     """
+        var x = arange[f64](3.0)  # [0, 1, 2]
+        var y = arange[f64](2.0)  # [0, 1]
+        var grids = meshgrid[f64, indexing="xy"](x, y)
+        # grids[0]: [[0, 1, 2],
+        #            [0, 1, 2]]
+        # grids[1]: [[0, 0, 0],
+        #            [1, 1, 1]]
+        ```
+    """
+    var n: Int = len(arrays)
+    if n < 2:
+        raise Error(
+            "meshgrid requires at least two input arrays."
+        )
+    for i in range(len(arrays)):
+        if arrays[i].ndim != 1:
+            raise Error(
+                "meshgrid only supports 1-D input arrays."
+            )
 
-#     return from_tensor(data)
+    var grids: List[NDArray[dtype]] = List[NDArray[dtype]](capacity=n)
+    var final_shape: List[Int] = List[Int](capacity=n)
 
+    @parameter
+    if indexing == "xy":
+        final_shape.append(arrays[1].size)
+        final_shape.append(arrays[0].size)
+        for i in range(2, n):
+            final_shape.append(arrays[i].size)
+    else:
+        for i in range(n):
+            final_shape.append(arrays[i].size)
 
-# fn array[
-#     dtype: DType = DType.float64
-# ](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[cdtype]:
-#     """
-#     Create array from tensor.
+    print(final_shape.__str__())
+    for i in range(n):
+        var grid: NDArray[dtype] = NDArray[dtype](Shape(final_shape))
+        var broadcast_dim: Int = i
+        @parameter
+        if indexing == "xy":
+            if i == 0:
+                broadcast_dim = 1
+            elif i == 1:
+                broadcast_dim = 0
 
-#     Example:
-#     ```mojo
-#     import numojo as nm
-#     from tensor import Tensor, TensorShape
-#     from numojo.prelude import *
+        var dim_size: Int = arrays[i].size
+        var outer_size: Int = 1
+        var inner_size: Int = 1
 
-#     fn main() raises:
-#         height = 256
-#         width = 256
-#         channels = 3
-#         image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
-#         print(nm.array(real=image, imag=image))
-#     ```
+        for j in range(broadcast_dim):
+            outer_size *= final_shape[j]
+        for j in range(broadcast_dim + 1, len(final_shape)):
+            inner_size *= final_shape[j]
 
-#     Parameters:
-#         dtype: Datatype of the NDArray elements.
+        print("outer_size: ", outer_size, " inner_size: ", inner_size)
 
-#     Args:
-#         real: Tensor.
-#         imag: Tensor.
+        @parameter
+        # for outer in range(outer_size):
+        fn closure(outer: Int) -> None:
+            print("outer: ", outer)
+            for k in range(dim_size):
+                for inner in range(inner_size):
+                    var idx = outer * dim_size * inner_size + k * inner_size + inner
+                    print("k: ", k, "inner: ", inner,  "idx: ", idx)
+                    grid._buf.ptr[idx] = arrays[i]._buf.ptr[k]
+        parallelize[closure](outer_size, outer_size)
+        grids.append(grid^)
 
-#     Returns:
-#         ComplexNDArray.
-#     """
+    return grids^
 
-#     return from_tensorC(real, imag)
 
 
 # ===----------------------------------------------------------------------=== #

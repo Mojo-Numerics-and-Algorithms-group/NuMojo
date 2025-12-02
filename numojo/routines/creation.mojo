@@ -2723,7 +2723,6 @@ fn meshgrid[dtype: DType = DType.float64, indexing: String = "xy"](
         for i in range(n):
             final_shape.append(arrays[i].size)
 
-    print(final_shape.__str__())
     for i in range(n):
         var grid: NDArray[dtype] = NDArray[dtype](Shape(final_shape))
         var broadcast_dim: Int = i
@@ -2743,17 +2742,14 @@ fn meshgrid[dtype: DType = DType.float64, indexing: String = "xy"](
         for j in range(broadcast_dim + 1, len(final_shape)):
             inner_size *= final_shape[j]
 
-        print("outer_size: ", outer_size, " inner_size: ", inner_size)
-
-        @parameter
         # for outer in range(outer_size):
+        @parameter
         fn closure(outer: Int) -> None:
-            print("outer: ", outer)
             for k in range(dim_size):
                 for inner in range(inner_size):
                     var idx = outer * dim_size * inner_size + k * inner_size + inner
-                    print("k: ", k, "inner: ", inner,  "idx: ", idx)
                     grid._buf.ptr[idx] = arrays[i]._buf.ptr[k]
+
         parallelize[closure](outer_size, outer_size)
         grids.append(grid^)
 

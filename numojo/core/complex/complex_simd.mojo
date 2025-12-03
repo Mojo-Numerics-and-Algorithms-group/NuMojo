@@ -523,6 +523,64 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(-self.re, -self.im)
 
+    fn __invert__(self) -> Self  where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+        """
+        Element-wise logical NOT operation on this ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance where each lane is the logical NOT of the corresponding lane.
+        """
+        return Self(
+            ~self.re,
+            ~self.im
+        )
+
+    # --- Comparison operators ---
+    fn __and__(self, other: Self) -> Self where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+        """
+        Element-wise logical AND operation between two ComplexSIMD instances.
+
+        Args:
+            other: Another ComplexSIMD instance.
+
+        Returns:
+            True if both the real and imaginary parts are non-zero for all lanes, otherwise False.
+        """
+        return Self(
+            self.re & other.re,
+            self.im & other.im
+        )
+
+    fn __or__(self, other: Self) -> Self  where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+        """
+        Element-wise logical OR operation between two ComplexSIMD instances.
+
+        Args:
+            other: Another ComplexSIMD instance.
+
+        Returns:
+            True if either the real or imaginary part is non-zero for any lane, otherwise False.
+        """
+        return Self(
+            self.re | other.re,
+            self.im | other.im
+        )
+
+    fn __xor__(self, other: Self) -> Self  where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+        """
+        Element-wise logical XOR operation between two ComplexSIMD instances.
+
+        Args:
+            other: Another ComplexSIMD instance.
+
+        Returns:
+            True if exactly one of the real or imaginary parts is non-zero for any lane, otherwise False.
+        """
+        return Self(
+            self.re ^ other.re,
+            self.im ^ other.im
+        )
+
     # --- Helpers ---
     @staticmethod
     @always_inline

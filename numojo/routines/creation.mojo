@@ -937,7 +937,7 @@ fn geomspace[
         )
         var base: ComplexSIMD[cdtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
-        var r: ComplexSIMD[cdtype] = base**power
+        var r: ComplexSIMD[cdtype] = base.elem_pow(power)
         for i in range(num):
             result.store[1](
                 i,
@@ -951,7 +951,7 @@ fn geomspace[
         )
         var base: ComplexSIMD[cdtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
-        var r: ComplexSIMD[cdtype] = base**power
+        var r: ComplexSIMD[cdtype] = base.elem_pow(power)
         for i in range(num):
             result.store[1](
                 i,

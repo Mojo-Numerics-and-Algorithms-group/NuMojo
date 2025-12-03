@@ -175,6 +175,15 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: Variadic shape.
             order: Memory order C or F.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            var a = nm.NDArray[nm.f32](nm.Shape(2,3), order="C")
+            ```
+
+        Note:
+            This constructor should not be used by users directly. Use factory functions in `nomojo.routines.creation` module instead.
         """
 
         self.ndim = shape.ndim
@@ -199,6 +208,15 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: List of shape.
             order: Memory order C or F.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            var a = nm.NDArray[nm.f32](List[Int](2,3), order="C")
+            ```
+
+        Note:
+            This constructor should not be used by users directly. Use factory functions in `numojo.routines.creation` module instead.
         """
 
         self = Self(Shape(shape), order)
@@ -215,6 +233,15 @@ struct NDArray[dtype: DType = DType.float64](
         Args:
             shape: Variadic List of shape.
             order: Memory order C or F.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = nm.ComplexNDArray[cf32](VariadicList(2,3,4))
+            ```
+
+        Note:
+            This constructor should not be used by users directly. Use factory functions in `numojo.routines.creation` module instead.
         """
 
         self = Self(Shape(shape), order)
@@ -226,12 +253,25 @@ struct NDArray[dtype: DType = DType.float64](
         strides: List[Int],
     ) raises:
         """
-        Extremely specific NDArray initializer.
+        Initialize a NDArray with a specific shape, offset, and strides.
 
         Args:
-            shape: List of shape.
-            offset: Offset value.
-            strides: List of strides.
+            shape: List of integers specifying the shape of the array.
+            offset: Integer offset into the underlying buffer.
+            strides: List of integers specifying the stride for each dimension.
+
+        Notes:
+            - This constructor is intended for advanced use cases requiring precise control over memory layout.
+            - The resulting array is uninitialized and should be filled before use.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var shape = List[Int](2, 3)
+            var offset = 0
+            var strides = List[Int](3, 1)
+            var arr = NDArray[f32](shape, offset, strides)
+            ```
         """
         self.shape = NDArrayShape(shape)
         self.ndim = self.shape.ndim
@@ -253,16 +293,19 @@ struct NDArray[dtype: DType = DType.float64](
         flags: Flags,
     ):
         """
-        Constructs an extremely specific array, with value uninitialized.
-        The properties do not need to be compatible and are not checked.
-        For example, it can construct a 0-D array (numojo scalar).
+        Initialize a NDArray with explicit shape, strides, number of dimensions, size, and flags. This constructor creates an uninitialized NDArray with the provided properties. No compatibility checks are performed between shape, strides, ndim, size, or flags. This allows construction of arrays with arbitrary metadata, including 0-D arrays (scalars).
 
         Args:
-            shape: Shape of array.
-            strides: Strides of array.
+            shape: Shape of the array.
+            strides: Strides for each dimension.
             ndim: Number of dimensions.
-            size: Size of array.
-            flags: Flags of array.
+            size: Total number of elements.
+            flags: Memory layout flags.
+
+        Notes:
+            - This constructor is intended for advanced or internal use cases requiring manual control.
+            - The resulting array is uninitialized; values must be set before use.
+            - No validation is performed on the consistency of the provided arguments.
         """
 
         self.shape = shape
@@ -282,14 +325,25 @@ struct NDArray[dtype: DType = DType.float64](
         strides: NDArrayStrides,
     ) raises:
         """
-        Initialize an NDArray view with given shape, buffer, offset, and strides.
-        ***Unsafe!*** This function is currently unsafe. Only for internal use.
+        Initialize a NDArray view with explicit shape, raw buffers, offset, and strides.
+
+        This constructor creates a view over existing memory buffers for the real and imaginary parts,
+        using the provided shape, offset, and stride information. It is intended for advanced or internal
+        use cases where direct control over memory layout is required.
+
+        ***Unsafe!*** This function is unsafe and should only be used internally. The caller is responsible
+        for ensuring that the buffers are valid and that the shape, offset, and strides are consistent.
 
         Args:
-            shape: Shape of the array.
-            buffer: Unsafe pointer to the buffer.
-            offset: Offset value.
-            strides: Strides of the array.
+            shape: NDArrayShape specifying the dimensions of the array.
+            buffer: Unsafe pointer to the buffer containing the real part data.
+            offset: Integer offset into the buffers.
+            strides: NDArrayStrides specifying the stride for each dimension.
+
+        Notes:
+            - No validation is performed on the buffers or metadata.
+            - The resulting NDArray shares memory with the provided buffers.
+            - Incorrect usage may lead to undefined behavior.
         """
         self.shape = shape
         self.strides = strides
@@ -384,6 +438,32 @@ struct NDArray[dtype: DType = DType.float64](
     # fn load[width: Int](self, *indices: Int) raises -> SIMD[dtype, width]     # Load SIMD at coordinates
     # ===-------------------------------------------------------------------===#
 
+    @always_inline
+    fn normalize(self, idx: Int, dim: Int) -> Int:
+        """
+        Normalize a potentially negative index to its positive equivalent
+        within the bounds of the given dimension.
+
+        Args:
+            idx: The index to normalize. Can be negative to indicate indexing
+                 from the end (e.g., -1 refers to the last element).
+            dim: The size of the dimension to normalize against.
+
+        Returns:
+            The normalized index as a non-negative integer.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix[f32](shape=(3, 4))
+            var norm_idx = mat.normalize(-1, mat.shape[0])  # Normalize -1 to 2
+            ```
+        """
+        var idx_norm = idx
+        if idx_norm < 0:
+            idx_norm = dim + idx_norm
+        return idx_norm
+
     fn _getitem(self, *indices: Int) -> Scalar[dtype]:
         """
         Get item at indices and bypass all boundary checks.
@@ -395,17 +475,16 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The element of the array at the indices.
 
+        Examples:
+            ```mojo
+            import numojo as nm
+            from numojo.prelude import *
+            var A = nm.ones[f32](nm.Shape(2,3,4))
+            print(A._getitem(1,2,3))
+            ```
+
         Notes:
             This function is unsafe and should be used only on internal use.
-
-        Examples:
-
-        ```mojo
-        import numojo as nm
-        from numojo.prelude import *
-        var A = nm.ones[f32](nm.Shape(2,3,4))
-        print(A._getitem(1,2,3))
-        ```
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
@@ -423,9 +502,6 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The element of the array at the indices.
 
-        Notes:
-            This function is unsafe and should be used only on internal use.
-
         Examples:
 
         ```mojo
@@ -434,6 +510,9 @@ struct NDArray[dtype: DType = DType.float64](
         var A = nm.ones[f32](nm.Shape(2,3,4))
         print(A._getitem(List[Int](1,2,3)))
         ```
+
+        Notes:
+            This function is unsafe and should be used only on internal use.
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
@@ -452,10 +531,10 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
 
-        ```console
-        >>>import numojo
-        >>>var a = numojo.arange(3)[0]
-        >>>print(a[]) # gets values of the 0-D array.
+        ```mojo
+        import numojo as nm
+        var a = nm.arange(3)[0]
+        print(a[]) # gets values of the 0-D array.
         ```.
         """
         if self.ndim != 0:
@@ -551,18 +630,15 @@ struct NDArray[dtype: DType = DType.float64](
             IndexError: If `idx` is out of bounds after normalization.
 
         Notes:
-            Order preservation: The resulting copy preserves the source
-            array's memory order (C or F). Performance fast path: For
-            C-contiguous arrays the slice is a single contiguous block and is
-            copied with one `memcpy`. For F-contiguous or arbitrary
-            strided layouts a unified stride-based element loop is used.
-            (Future enhancement: return a non-owning view instead of
+            Order preservation: The resulting copy preserves the source array's memory order (C or F). Performance fast path: For C-contiguous arrays the slice is a single contiguous block and is
+            copied with one `memcpy`. For F-contiguous or arbitrary strided layouts a unified stride-based element loop is used. (Future enhancement: return a non-owning view instead of
             copying.)
 
-        Examples:
+        Example:
             ```mojo
             import numojo as nm
-            var a = nm.arange(0, 12, 1).reshape(nm.Shape(3, 4))
+            from numojo.prelude import *
+            var a = nm.arange(0, 12, 1).reshape(Shape(3, 4))
             print(a.shape)        # (3,4)
             print(a[1].shape)     # (4,)  -- 1-D slice
             print(a[-1].shape)    # (4,)  -- negative index
@@ -617,11 +693,11 @@ struct NDArray[dtype: DType = DType.float64](
                 count=block,
             )
             return result^
-
         # (F-order or arbitrary stride layout)
         # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
-        self._copy_first_axis_slice(self, norm, result)
-        return result^
+        else:
+            self._copy_first_axis_slice(self, norm, result)
+            return result^
 
     # perhaps move these to a utility module
     fn _copy_first_axis_slice(
@@ -707,7 +783,7 @@ struct NDArray[dtype: DType = DType.float64](
         var narr: Self = self[slice_list^]
         return narr^
 
-    fn _calculate_strides_efficient(self, shape: List[Int]) -> List[Int]:
+    fn _calculate_strides(self, shape: List[Int]) -> List[Int]:
         var strides = List[Int](capacity=len(shape))
 
         if self.flags.C_CONTIGUOUS:  # C_CONTIGUOUS
@@ -748,7 +824,7 @@ struct NDArray[dtype: DType = DType.float64](
             - This method supports advanced slicing similar to NumPy's multi-dimensional slicing.
             - The returned array shares data with the original array if possible.
 
-        Examples:
+        Example:
             ```mojo
             import numojo as nm
             var a = nm.arange(10).reshape(nm.Shape(2, 5))
@@ -805,7 +881,7 @@ struct NDArray[dtype: DType = DType.float64](
             ncoefficients.append(1)
 
         # only C & F order are supported
-        var nstrides: List[Int] = self._calculate_strides_efficient(
+        var nstrides: List[Int] = self._calculate_strides(
             nshape,
         )
         var narr: Self = Self(offset=noffset, shape=nshape, strides=nstrides)
@@ -931,7 +1007,7 @@ struct NDArray[dtype: DType = DType.float64](
             ncoefficients.append(1)
 
         # only C & F order are supported
-        var nstrides: List[Int] = self._calculate_strides_efficient(
+        var nstrides: List[Int] = self._calculate_strides(
             nshape,
         )
         var narr: Self = Self(offset=noffset, shape=nshape, strides=nstrides)
@@ -1230,8 +1306,8 @@ struct NDArray[dtype: DType = DType.float64](
         # var shape = indices.shape.join(self.shape._pop(0))
         var shape = indices.shape.join(self.shape._pop(0))
 
-        var result = NDArray[dtype](shape)
-        var size_per_item = self.size // self.shape[0]
+        var result: NDArray[dtype] = NDArray[dtype](shape)
+        var size_per_item: Int = self.size // self.shape[0]
 
         # Fill in the values
         for i in range(indices.size):
@@ -1534,8 +1610,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        if index < 0:
-            index += self.size
+        index = self.normalize(index, self.size)
 
         if (index < 0) or (index >= self.size):
             raise Error(
@@ -1665,8 +1740,7 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
 
-        if index < 0:
-            index += self.size
+        index = self.normalize(index, self.size)
 
         if index >= self.size:
             raise Error(
@@ -1769,9 +1843,7 @@ struct NDArray[dtype: DType = DType.float64](
         var indices_list: List[Int] = List[Int](capacity=self.ndim)
         for i in range(self.ndim):
             var idx_i = indices[i]
-            if idx_i < 0:
-                idx_i += self.shape[i]
-            elif idx_i >= self.shape[i]:
+            if idx_i < 0 or idx_i >= self.shape[i]:
                 raise Error(
                     IndexError(
                         message=String(
@@ -1788,6 +1860,7 @@ struct NDArray[dtype: DType = DType.float64](
                         ),
                     )
                 )
+            idx_i = self.normalize(idx_i, self.shape[i])
             indices_list.append(idx_i)
 
         # indices_list already built above
@@ -1895,8 +1968,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         var norm = idx
-        if norm < 0:
-            norm += self.shape[0]
+        norm = self.normalize(norm, self.shape[0])
         if (norm < 0) or (norm >= self.shape[0]):
             raise Error(
                 IndexError(
@@ -1906,21 +1978,6 @@ struct NDArray[dtype: DType = DType.float64](
                     suggestion=String("Use an index in [-{}..{}). ").format(
                         self.shape[0], self.shape[0]
                     ),
-                    location=String(
-                        "NDArray.__setitem__(idx: Int, val: NDArray)"
-                    ),
-                )
-            )
-
-        if val.ndim != self.ndim - 1:
-            raise Error(
-                ValueError(
-                    message=String(
-                        "Value ndim {} incompatible with target slice ndim {}."
-                    ).format(val.ndim, self.ndim - 1),
-                    suggestion=String(
-                        "Reshape or expand value to ndim {}."
-                    ).format(self.ndim - 1),
                     location=String(
                         "NDArray.__setitem__(idx: Int, val: NDArray)"
                     ),
@@ -1997,10 +2054,11 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
 
-        ```console
-        >>> import numojo
-        >>> var A = numojo.random.rand[numojo.i16](2, 2, 2)
-        >>> A[numojo.Item(0, 1, 1)] = 10
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var A = numojo.random.rand[numojo.i16](2, 2, 2)
+        A[Item(0, 1, 1)] = 10
         ```.
         """
         if index.__len__() != self.ndim:
@@ -2035,8 +2093,7 @@ struct NDArray[dtype: DType = DType.float64](
                         ),
                     )
                 )
-            if index[i] < 0:
-                index[i] += self.shape[i]
+            index[i] = self.normalize(index[i], self.shape[i])
 
         var idx: Int = _get_offset(index, self.strides)
         self._buf.ptr.store(idx, val)

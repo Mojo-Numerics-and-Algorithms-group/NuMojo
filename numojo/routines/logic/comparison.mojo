@@ -306,3 +306,109 @@ fn not_equal[
     return backend().math_func_compare_array_and_scalar[dtype, SIMD.ne](
         array1, scalar
     )
+
+
+# TODO: Add backend to these functions.
+fn allclose[
+    dtype: DType
+](
+    a: NDArray[dtype],
+    b: NDArray[dtype],
+    rtol: Scalar[dtype] = 1e-5,
+    atol: Scalar[dtype] = 1e-8,
+    equal_nan: Bool = False,
+) raises -> Bool:
+    """
+    Returns True if two arrays are element-wise equal within a tolerance.
+
+    Parameters:
+        dtype: The dtype of the input NDArray.
+
+    Args:
+        a: First NDArray to compare.
+        b: Second NDArray to compare.
+        rtol: The relative tolerance parameter (default is 1e-5).
+        atol: The absolute tolerance parameter (default is 1e-8).
+        equal_nan: If True, NaNs will be considered equal.
+
+    Returns:
+        True if the two arrays are equal within the given tolerance, False otherwise.
+    """
+    if a.shape != b.shape:
+        raise Error(
+            ShapeError(
+                message=(
+                    "Shape Mismatch error shapes must match for this function"
+                ),
+                location=(
+                    "numojo.routines.logic.comparision.allclose(a: NDArray, b:"
+                    " NDArray)"
+                ),
+            )
+        )
+
+    for i in range(a.size):
+        val_a: Scalar[dtype] = a.load(i)
+        val_b: Scalar[dtype] = b.load(i)
+        if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
+            continue
+        if abs(val_a - val_b) <= atol + rtol * abs(val_b):
+            continue
+        else:
+            return False
+
+    return True
+
+
+fn isclose[
+    dtype: DType
+](
+    a: NDArray[dtype],
+    b: NDArray[dtype],
+    rtol: Scalar[dtype] = 1e-5,
+    atol: Scalar[dtype] = 1e-8,
+    equal_nan: Bool = False,
+) raises -> NDArray[DType.bool]:
+    """
+    Returns True if two scalars are equal within a tolerance.
+
+    Parameters:
+        dtype: The dtype of the input Scalar.
+
+    Args:
+        a: First Scalar to compare.
+        b: Second Scalar to compare.
+        rtol: The relative tolerance parameter (default is 1e-5).
+        atol: The absolute tolerance parameter (default is 1e-8).
+        equal_nan: If True, NaNs will be considered equal.
+
+    Returns:
+        True if the two scalars are equal within the given tolerance, False otherwise.
+    """
+    if a.shape != b.shape:
+        raise Error(
+            ShapeError(
+                message=(
+                    "Shape Mismatch error shapes must match for this function"
+                ),
+                location=(
+                    "numojo.routines.logic.comparision.isclose(a: Scalar, b:"
+                    " Scalar)"
+                ),
+            )
+        )
+
+    var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
+    for i in range(a.size):
+        val_a: Scalar[dtype] = a.load(i)
+        val_b: Scalar[dtype] = b.load(i)
+        if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
+            res.store(i, True)
+            continue
+        if abs(val_a - val_b) <= atol + rtol * abs(val_b):
+            res.store(i, True)
+            continue
+        else:
+            res.store(i, False)
+
+    return res^

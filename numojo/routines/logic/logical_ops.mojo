@@ -3,15 +3,17 @@
 # ===----------------------------------------------------------------------=== #
 from numojo.core.error import ShapeError
 
+
 # TODO: add `where` argument support to logical operations
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
 # ===----------------------------------------------------------------------=== #
 # NDArray operations
 # ===----------------------------------------------------------------------=== #
-fn logical_and[dtype: DType](
-    a: NDArray[dtype],
-    b: NDArray[dtype]
-) raises -> NDArray[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+fn logical_and[
+    dtype: DType
+](a: NDArray[dtype], b: NDArray[dtype]) raises -> NDArray[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical AND operation between two arrays.
 
@@ -41,8 +43,11 @@ fn logical_and[dtype: DType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input arrays must have the same shape for logical AND operation.",
-                location="numojo.routines.logic.logical_and"
+                message=(
+                    "Input arrays must have the same shape for logical AND"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_and",
             )
         )
     var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
@@ -50,10 +55,12 @@ fn logical_and[dtype: DType](
         res.store(i, Scalar[DType.bool](a.load(i) & b.load(i)))
     return res^
 
-fn logical_or[dtype: DType](
-    a: NDArray[dtype],
-    b: NDArray[dtype]
-) raises -> NDArray[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+
+fn logical_or[
+    dtype: DType
+](a: NDArray[dtype], b: NDArray[dtype]) raises -> NDArray[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical OR operation between two arrays.
 
@@ -83,8 +90,11 @@ fn logical_or[dtype: DType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input arrays must have the same shape for logical OR operation.",
-                location="numojo.routines.logic.logical_or"
+                message=(
+                    "Input arrays must have the same shape for logical OR"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_or",
             )
         )
     var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
@@ -92,9 +102,12 @@ fn logical_or[dtype: DType](
         res.store(i, Scalar[DType.bool](a.load(i) | b.load(i)))
     return res^
 
-fn logical_not[dtype: DType](
-    a: NDArray[dtype]
-) raises -> NDArray[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+
+fn logical_not[
+    dtype: DType
+](a: NDArray[dtype]) raises -> NDArray[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical NOT operation on an array.
 
@@ -124,10 +137,12 @@ fn logical_not[dtype: DType](
         res.store(i, Scalar[DType.bool](~a.load(i)))
     return res^
 
-fn logical_xor[dtype: DType](
-    a: NDArray[dtype],
-    b: NDArray[dtype]
-) raises -> NDArray[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+
+fn logical_xor[
+    dtype: DType
+](a: NDArray[dtype], b: NDArray[dtype]) raises -> NDArray[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical XOR operation between two arrays.
 
@@ -157,8 +172,11 @@ fn logical_xor[dtype: DType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input arrays must have the same shape for logical XOR operation.",
-                location="numojo.routines.logic.logical_xor"
+                message=(
+                    "Input arrays must have the same shape for logical XOR"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_xor",
             )
         )
     var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
@@ -166,13 +184,17 @@ fn logical_xor[dtype: DType](
         res.store(i, Scalar[DType.bool](a.load(i) ^ b.load(i)))
     return res^
 
+
 # ===----------------------------------------------------------------------=== #
 # ComplexNDArray operations
 # ===----------------------------------------------------------------------=== #
-fn logical_and[cdtype: ComplexDType](
-    a: ComplexNDArray[cdtype],
-    b: ComplexNDArray[cdtype]
-) raises -> ComplexNDArray[cdtype] where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+fn logical_and[
+    cdtype: ComplexDType
+](
+    a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
+) raises -> ComplexNDArray[cdtype] where (
+    cdtype == ComplexDType.bool or cdtype.is_integral()
+):
     """
     Element-wise logical AND operation between two arrays.
 
@@ -202,8 +224,11 @@ fn logical_and[cdtype: ComplexDType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input arrays must have the same shape for logical AND operation.",
-                location="numojo.routines.logic.logical_and"
+                message=(
+                    "Input arrays must have the same shape for logical AND"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_and",
             )
         )
     var res: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](a.shape)
@@ -211,10 +236,14 @@ fn logical_and[cdtype: ComplexDType](
         res.store(i, a.load(i) & b.load(i))
     return res^
 
-fn logical_or[cdtype: ComplexDType](
-    a: ComplexNDArray[cdtype],
-    b: ComplexNDArray[cdtype]
-) raises -> ComplexNDArray[cdtype] where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+
+fn logical_or[
+    cdtype: ComplexDType
+](
+    a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
+) raises -> ComplexNDArray[cdtype] where (
+    cdtype == ComplexDType.bool or cdtype.is_integral()
+):
     """
     Element-wise logical OR operation between two arrays.
 
@@ -244,8 +273,11 @@ fn logical_or[cdtype: ComplexDType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input arrays must have the same shape for logical OR operation.",
-                location="numojo.routines.logic.logical_or"
+                message=(
+                    "Input arrays must have the same shape for logical OR"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_or",
             )
         )
     var res: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](a.shape)
@@ -253,9 +285,12 @@ fn logical_or[cdtype: ComplexDType](
         res.store(i, a.load(i) | b.load(i))
     return res^
 
-fn logical_not[cdtype: ComplexDType](
-    a: ComplexNDArray[cdtype]
-) raises -> ComplexNDArray[cdtype] where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+
+fn logical_not[
+    cdtype: ComplexDType
+](a: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype] where (
+    cdtype == ComplexDType.bool or cdtype.is_integral()
+):
     """
     Element-wise logical NOT operation on an array.
 
@@ -285,10 +320,14 @@ fn logical_not[cdtype: ComplexDType](
         res.store(i, ~a.load(i))
     return res^
 
-fn logical_xor[cdtype: ComplexDType](
-    a: ComplexNDArray[cdtype],
-    b: ComplexNDArray[cdtype]
-) raises -> ComplexNDArray[cdtype] where (cdtype == ComplexDType.bool or cdtype.is_integral()):
+
+fn logical_xor[
+    cdtype: ComplexDType
+](
+    a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
+) raises -> ComplexNDArray[cdtype] where (
+    cdtype == ComplexDType.bool or cdtype.is_integral()
+):
     """
     Element-wise logical XOR operation between two arrays.
 
@@ -318,8 +357,11 @@ fn logical_xor[cdtype: ComplexDType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input arrays must have the same shape for logical XOR operation.",
-                location="numojo.routines.logic.logical_xor"
+                message=(
+                    "Input arrays must have the same shape for logical XOR"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_xor",
             )
         )
     var res: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](a.shape)
@@ -327,13 +369,15 @@ fn logical_xor[cdtype: ComplexDType](
         res.store(i, a.load(i) ^ b.load(i))
     return res^
 
+
 # ===----------------------------------------------------------------------=== #
 # Matrix operations
 # ===----------------------------------------------------------------------=== #
-fn logical_and[dtype: DType](
-    a: Matrix[dtype],
-    b: Matrix[dtype]
-) raises -> Matrix[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+fn logical_and[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises -> Matrix[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical AND operation between two matrices.
 
@@ -363,8 +407,11 @@ fn logical_and[dtype: DType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input matrices must have the same shape for logical AND operation.",
-                location="numojo.routines.logic.logical_and"
+                message=(
+                    "Input matrices must have the same shape for logical AND"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_and",
             )
         )
     var res: Matrix[DType.bool] = Matrix[DType.bool](a.shape)
@@ -372,10 +419,12 @@ fn logical_and[dtype: DType](
         res._buf.store(i, Scalar[DType.bool](a.load(i) & b.load(i)))
     return res^
 
-fn logical_or[dtype: DType](
-    a: Matrix[dtype],
-    b: Matrix[dtype]
-) raises -> Matrix[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+
+fn logical_or[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises -> Matrix[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical OR operation between two matrices.
 
@@ -404,8 +453,11 @@ fn logical_or[dtype: DType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input matrices must have the same shape for logical OR operation.",
-                location="numojo.routines.logic.logical_or"
+                message=(
+                    "Input matrices must have the same shape for logical OR"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_or",
             )
         )
     var res: Matrix[DType.bool] = Matrix[DType.bool](a.shape)
@@ -413,9 +465,14 @@ fn logical_or[dtype: DType](
         res._buf.store(i, Scalar[DType.bool](a.load(i) | b.load(i)))
     return res^
 
-fn logical_not[dtype: DType](
+
+fn logical_not[
+    dtype: DType
+](
     a: Matrix[dtype],
-) raises -> Matrix[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+) raises -> Matrix[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical NOT operation on a matrix.
 
@@ -444,10 +501,12 @@ fn logical_not[dtype: DType](
         res._buf.store(i, Scalar[DType.bool](a.load(i) | b.load(i)))
     return res^
 
-fn logical_xor[dtype: DType](
-    a: Matrix[dtype],
-    b: Matrix[dtype]
-) raises -> Matrix[DType.bool] where (dtype == DType.bool or dtype.is_integral()):
+
+fn logical_xor[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises -> Matrix[DType.bool] where (
+    dtype == DType.bool or dtype.is_integral()
+):
     """
     Element-wise logical XOR operation between two matrices.
 
@@ -476,8 +535,11 @@ fn logical_xor[dtype: DType](
     if a.shape != b.shape:
         raise Error(
             ShapeError(
-                message="Input matrices must have the same shape for logical XOR operation.",
-                location="numojo.routines.logic.logical_xor"
+                message=(
+                    "Input matrices must have the same shape for logical XOR"
+                    " operation."
+                ),
+                location="numojo.routines.logic.logical_xor",
             )
         )
     var res: Matrix[DType.bool] = Matrix[DType.bool](a.shape)

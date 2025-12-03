@@ -18,6 +18,7 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         dtype: The data type of the elements stored in the container.
         origin: The mutability origin for the pointer, controlling aliasing and mutation semantics.
     """
+
     var ptr: UnsafePointer[Scalar[dtype], origin]
 
     fn __init__(out self, size: Int):

@@ -2669,9 +2669,9 @@ fn array[
     return A^
 
 
-fn meshgrid[dtype: DType = DType.float64, indexing: String = "xy"](
-    *arrays: NDArray[dtype]
-) raises -> List[NDArray[dtype]]:
+fn meshgrid[
+    dtype: DType = DType.float64, indexing: String = "xy"
+](*arrays: NDArray[dtype]) raises -> List[NDArray[dtype]]:
     """
     Generate coordinate matrices from coordinate vectors.
 
@@ -2701,14 +2701,10 @@ fn meshgrid[dtype: DType = DType.float64, indexing: String = "xy"](
     """
     var n: Int = len(arrays)
     if n < 2:
-        raise Error(
-            "meshgrid requires at least two input arrays."
-        )
+        raise Error("meshgrid requires at least two input arrays.")
     for i in range(len(arrays)):
         if arrays[i].ndim != 1:
-            raise Error(
-                "meshgrid only supports 1-D input arrays."
-            )
+            raise Error("meshgrid only supports 1-D input arrays.")
 
     var grids: List[NDArray[dtype]] = List[NDArray[dtype]](capacity=n)
     var final_shape: List[Int] = List[Int](capacity=n)
@@ -2726,6 +2722,7 @@ fn meshgrid[dtype: DType = DType.float64, indexing: String = "xy"](
     for i in range(n):
         var grid: NDArray[dtype] = NDArray[dtype](Shape(final_shape))
         var broadcast_dim: Int = i
+
         @parameter
         if indexing == "xy":
             if i == 0:
@@ -2747,14 +2744,15 @@ fn meshgrid[dtype: DType = DType.float64, indexing: String = "xy"](
         fn closure(outer: Int) -> None:
             for k in range(dim_size):
                 for inner in range(inner_size):
-                    var idx = outer * dim_size * inner_size + k * inner_size + inner
+                    var idx = (
+                        outer * dim_size * inner_size + k * inner_size + inner
+                    )
                     grid._buf.ptr[idx] = arrays[i]._buf.ptr[k]
 
         parallelize[closure](outer_size, outer_size)
         grids.append(grid^)
 
     return grids^
-
 
 
 # ===----------------------------------------------------------------------=== #

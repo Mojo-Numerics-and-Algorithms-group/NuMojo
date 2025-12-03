@@ -29,6 +29,7 @@ from numojo.core.ndarray import NDArray
 # ](array: NDArray[dtype]) -> NDArray[DType.bool]:
 #     return backend().math_func_is[dtype, math.is_odd](array)
 
+
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
 fn isinf[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
@@ -99,6 +100,7 @@ fn isnan[
         result_array.store(i, math.isnan(array.load(i)))
     return result_array^
 
+
 fn isneginf[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -119,6 +121,7 @@ fn isneginf[
     for i in range(result_array.size):
         result_array.store(i, neg_inf[dtype]() == array.load(i))
     return result_array^
+
 
 fn isposinf[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized

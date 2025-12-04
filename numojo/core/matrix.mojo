@@ -1619,6 +1619,38 @@ struct MatrixImpl[
         """
         self._buf.ptr.store(idx, val)
 
+    fn store[width: Int = 1](self, idx: Int, val: SIMD[dtype, width]) raises:
+        """
+        Store a SIMD element into the matrix at the specified linear index.
+
+        Parameters:
+            width: The width of the SIMD element to store. Defaults to 1.
+
+        Args:
+            idx: The linear index where the element will be stored. Negative indices are supported and follow Python conventions.
+
+            val: The SIMD element to store at the given index.
+
+        Raises:
+            Error: If the provided index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var simd_element = SIMD[f64, 4](2.0, 2.0, 2.0, 2.0)
+            mat.store[4](2, simd_element)  # Store a SIMD element of width 4 at index 2
+            ```
+        """
+        if idx >= self.size or idx < -self.size:
+            raise Error(
+                String("Index {} exceed the matrix size {}").format(
+                    idx, self.size
+                )
+            )
+        var idx_norm = self.normalize(idx, self.size)
+        self._buf.ptr.store[width=width](idx_norm, val)
+
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#

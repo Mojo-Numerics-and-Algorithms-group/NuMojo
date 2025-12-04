@@ -234,7 +234,9 @@ def test_logic():
         assert_true(np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14))
 
         # Check if R is upper triangular
-        assert_true(np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14))
+        assert_true(
+            np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14)
+        )
 
         # Check if A = QR
         var A_test = Q @ R
@@ -379,7 +381,9 @@ def test_logic():
             var lambda_times_v = eigenvector * Lambda[i, i]
 
             assert_true(
-                np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
+                np.allclose(
+                    Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10
+                ),
                 "Eigenvector verification failed: A*v ≠ λ*v",
             )
 
@@ -393,7 +397,9 @@ def test_logic():
             var lambda_times_v = eigenvector * Lambda[i, i]
 
             assert_true(
-                np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
+                np.allclose(
+                    Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10
+                ),
                 "Eigenvector verification failed: A*v ≠ λ*v",
             )
 
@@ -477,11 +483,17 @@ def test_logic():
         check_matrices_close(nm.sinh(A), np.sinh(Anp), "sinh is broken")
         check_matrices_close(nm.cosh(A), np.cosh(Anp), "cosh is broken")
         check_matrices_close(nm.tanh(A), np.tanh(Anp), "tanh is broken")
-        check_matrices_close(nm.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken")
+        check_matrices_close(
+            nm.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken"
+        )
         check_matrices_close(nm.asinh(A), np.arcsinh(Anp), "asinh is broken")
-        check_matrices_close(nm.arccosh(A), np.arccosh(Anp), "arccosh is broken")
+        check_matrices_close(
+            nm.arccosh(A), np.arccosh(Anp), "arccosh is broken"
+        )
         check_matrices_close(nm.acosh(A), np.arccosh(Anp), "acosh is broken")
-        check_matrices_close(nm.arctanh(B), np.arctanh(Bnp), "arctanh is broken")
+        check_matrices_close(
+            nm.arctanh(B), np.arctanh(Bnp), "arctanh is broken"
+        )
         check_matrices_close(nm.atanh(B), np.arctanh(Bnp), "atanh is broken")
 
     def test_sorting():
@@ -500,7 +512,9 @@ def test_logic():
             )
 
         check_matrices_close(
-            nm.argsort(A), np.argsort(Anp, axis=None), String("Argsort is broken")
+            nm.argsort(A),
+            np.argsort(Anp, axis=None),
+            String("Argsort is broken"),
         )
         for i in range(2):
             check_matrices_close(
@@ -525,7 +539,9 @@ def test_logic():
             )
 
         check_values_close(
-            nm.argmax(A), np.argmax(Anp, axis=None), String("`argmax` is broken")
+            nm.argmax(A),
+            np.argmax(Anp, axis=None),
+            String("`argmax` is broken"),
         )
         for i in range(2):
             check_matrices_close(

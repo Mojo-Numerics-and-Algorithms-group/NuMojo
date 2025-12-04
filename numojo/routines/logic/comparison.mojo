@@ -11,6 +11,7 @@ import math
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+from numojo.core.matrix import Matrix, MatrixImpl
 
 
 # ===-------------------------------------a-----------------------------------===#
@@ -370,7 +371,7 @@ fn isclose[
     equal_nan: Bool = False,
 ) raises -> NDArray[DType.bool]:
     """
-    Returns True if two scalars are equal within a tolerance.
+    Returns a NDArray indicating whether two arrays are element-wise equal within a tolerance.
 
     Parameters:
         dtype: The dtype of the input Scalar.
@@ -383,7 +384,7 @@ fn isclose[
         equal_nan: If True, NaNs will be considered equal.
 
     Returns:
-        True if the two scalars are equal within the given tolerance, False otherwise.
+        A NDArray indicating whether the two arrays are equal within the given tolerance.
     """
     if a.shape != b.shape:
         raise Error(
@@ -412,3 +413,151 @@ fn isclose[
             res.store(i, False)
 
     return res^
+
+
+fn allclose[
+    dtype: DType
+](
+    a: Matrix[dtype],
+    b: Matrix[dtype],
+    rtol: Scalar[dtype] = 1e-5,
+    atol: Scalar[dtype] = 1e-8,
+    equal_nan: Bool = False,
+) raises -> Bool:
+    """
+    Returns True if two arrays are element-wise equal within a tolerance.
+
+    Parameters:
+        dtype: The dtype of the input Matrix.
+
+    Args:
+        a: First Matrix to compare.
+        b: Second Matrix to compare.
+        rtol: The relative tolerance parameter (default is 1e-5).
+        atol: The absolute tolerance parameter (default is 1e-8).
+        equal_nan: If True, NaNs will be considered equal.
+
+    Returns:
+        True if the two arrays are equal within the given tolerance, False otherwise.
+    """
+    if a.shape != b.shape:
+        raise Error(
+            ShapeError(
+                message=(
+                    "Shape Mismatch error shapes must match for this function"
+                ),
+                location=(
+                    "numojo.routines.logic.comparision.allclose(a: NDArray, b:"
+                    " NDArray)"
+                ),
+            )
+        )
+
+    for i in range(a.size):
+        val_a: Scalar[dtype] = a.load(i)
+        val_b: Scalar[dtype] = b.load(i)
+        if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
+            continue
+        if abs(val_a - val_b) <= atol + rtol * abs(val_b):
+            continue
+        else:
+            return False
+
+    return True
+
+
+fn isclose[
+    dtype: DType
+](
+    a: MatrixImpl[dtype, **_],
+    b: MatrixImpl[dtype, **_],
+    rtol: Scalar[dtype] = 1e-5,
+    atol: Scalar[dtype] = 1e-8,
+    equal_nan: Bool = False,
+) raises -> Matrix[DType.bool]:
+    """
+    Returns True if two scalars are equal within a tolerance.
+
+    Parameters:
+        dtype: The dtype of the input Scalar.
+
+    Args:
+        a: First Scalar to compare.
+        b: Second Scalar to compare.
+        rtol: The relative tolerance parameter (default is 1e-5).
+        atol: The absolute tolerance parameter (default is 1e-8).
+        equal_nan: If True, NaNs will be considered equal.
+
+    Returns:
+        True if the two scalars are equal within the given tolerance, False otherwise.
+    """
+    if a.shape != b.shape:
+        raise Error(
+            ShapeError(
+                message=(
+                    "Shape Mismatch error shapes must match for this function"
+                ),
+                location=(
+                    "numojo.routines.logic.comparision.isclose(a: Scalar, b:"
+                    " Scalar)"
+                ),
+            )
+        )
+
+    var res: Matrix[DType.bool] = Matrix[DType.bool](a.shape)
+    for i in range(a.size):
+        val_a: Scalar[dtype] = a.load(i)
+        val_b: Scalar[dtype] = b.load(i)
+        if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
+            res._store_idx(i, val=True)
+            continue
+        if abs(val_a - val_b) <= atol + rtol * abs(val_b):
+            res._store_idx(i, val=True)
+            continue
+        else:
+            res._store_idx(i, val=False)
+
+    return res^
+
+
+# TODO: define the allclose, isclose with correct behaviour for ComplexNDArray.
+
+
+fn array_equal[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> Bool:
+    """
+    Checks if two NDArrays are equal element-wise.
+
+    Parameters:
+        dtype: The dtype of the input NDArray.
+
+    Args:
+        array1: First NDArray to compare.
+        array2: Second NDArray to compare.
+
+    Returns:
+        True if the two NDArrays are equal element-wise, False otherwise.
+
+    Examples:
+        ```mojo
+        from numojo.prelude import *
+        import numojo as nm
+        from numojo.routines.logic.comparison import array_equal
+
+        var arr = nm.arange[i32](0, 10)
+        var arr2 = nm.arange[i32](0, 10)
+        print(array_equal[i32](arr, arr2))  # Output: True
+        ```
+    """
+    if array1.shape != array2.shape:
+        return False
+
+    for i in range(array1.size):
+        if array1.load(i) != array2.load(i):
+            return False
+
+    return True
+
+
+# TODO: define array_equiv with correct broadcast semantics.

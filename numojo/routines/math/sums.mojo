@@ -4,7 +4,7 @@ from memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
-from numojo.core.matrix import Matrix, MatrixImpl
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros
 
 
@@ -110,7 +110,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn sum[dtype: DType](A: MatrixImpl[dtype, **_]) -> Scalar[dtype]:
+fn sum[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     """
     Sum up all items in the Matrix.
 
@@ -137,7 +137,7 @@ fn sum[dtype: DType](A: MatrixImpl[dtype, **_]) -> Scalar[dtype]:
 
 fn sum[
     dtype: DType
-](A: MatrixImpl[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Sum up the items in a Matrix along the axis.
 
@@ -286,7 +286,7 @@ fn cumsum[
     return B^
 
 
-fn cumsum[dtype: DType](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+fn cumsum[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 
@@ -322,7 +322,7 @@ fn cumsum[dtype: DType](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
 
 fn cumsum[
     dtype: DType
-](A: MatrixImpl[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 

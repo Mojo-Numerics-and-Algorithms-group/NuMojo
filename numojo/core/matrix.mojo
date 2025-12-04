@@ -37,7 +37,7 @@ from numojo.routines.linalg.misc import issymmetric
 # ===----------------------------------------------------------------------===#
 
 
-alias Matrix = MatrixImpl[_, own_data=True, origin = MutOrigin.external]
+alias Matrix = MatrixBase[_, own_data=True, origin = MutOrigin.external]
 """
 Primary Matrix type for creating and manipulating 2D matrices in NuMojo.
 
@@ -66,10 +66,10 @@ Usage:
 Notes:
     - This matrix owns its data and manages memory allocation/deallocation.
     - For non-owning views into existing data, use methods like `get()`, `view()` which return `MatrixView`.
-    - Direct instantiation of `MatrixImpl` should be avoided; always use this alias.
+    - Direct instantiation of `MatrixBase` should be avoided; always use this alias.
 """
 
-alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixImpl[
+alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixBase[
     dtype, own_data=False, origin=origin
 ]
 """
@@ -80,7 +80,9 @@ another `Matrix` instance. It does not allocate or manage its own memory, instea
 pointing to a subset or reinterpretation of existing matrix data. This enables
 efficient slicing, row/column access, and memory sharing without data duplication.
 
-**IMPORTANT**: This type is for internal use and should not be directly instantiated by users. Views are created automatically by matrix operations like indexing, slicing, through the `get()` method. A full view of the matrix can be obtained via `view()` method.
+**IMPORTANT**: This type is for internal use and should not be directly instantiated
+by users. Views are created automatically by matrix operations like indexing,
+slicing, through the `get()` method. A full view of the matrix can be obtained via `view()` method.
 
 Type Parameters:
     dtype: The data type of the matrix elements being viewed.
@@ -108,10 +110,15 @@ Example:
     var row_view = mat.get(0)  # Returns MatrixView of first row
     # Modifying row_view would modify mat
     ```
+
+Safety Notes:
+    - The view must not outlive the owning Matrix
+    - Origin tracking ensures compile-time lifetime safety
+    - Attempting to use a view after its owner is deallocated is undefined behavior
 """
 
 
-struct MatrixImpl[
+struct MatrixBase[
     dtype: DType = DType.float64,
     *,
     own_data: Bool,
@@ -120,20 +127,31 @@ struct MatrixImpl[
     """
     Core implementation struct for 2D matrix operations with flexible ownership semantics.
 
-    `MatrixImpl` is the underlying implementation for both owning matrices (`Matrix`) and non-owning matrix views (`MatrixView`). It provides a complete set of operations for 2D array manipulation with compile-time known dimensions, enabling optimizations not possible with generic N-dimensional arrays.
+    `MatrixBase` is the underlying implementation for both owning matrices (`Matrix`)
+    and non-owning matrix views (`MatrixView`). It provides a complete set of operations
+    for 2D array manipulation with compile-time known dimensions, enabling optimizations
+    not possible with generic N-dimensional arrays.
 
-    This struct represents a specialized case of `NDArray` optimized for 2D operations. The fixed dimensionality allows for simpler, more efficient indexing using direct `(row, col)` access patterns rather than generic coordinate tuples. This makes it particularly suitable for linear algebra, image processing, and other applications where 2D structure is fundamental.
+    This struct represents a specialized case of `NDArray` optimized for 2D operations.
+    The fixed dimensionality allows for simpler, more efficient indexing using direct
+    `(row, col)` access patterns rather than generic coordinate tuples. This makes it
+    particularly suitable for linear algebra, image processing, and other applications
+    where 2D structure is fundamental.
 
-    **Important**: Users should not instantiate `MatrixImpl` directly. Instead, use:
+    **Important**: Users should not instantiate `MatrixBase` directly. Instead, use:
     - `Matrix[dtype]` for matrices that own their data (standard usage)
-    - Methods like `get()`, `view()` that return `MatrixView` for non-owning views
+    - Methods like `get()` that return `MatrixView` for non-owning views
 
-    Direct instantiation of `MatrixImpl` may lead to undefined behavior related to
+    Direct instantiation of `MatrixBase` may lead to undefined behavior related to
     memory management and lifetime tracking.
 
-    Parameters:
-        dtype: The data type of matrix elements. Default is DType.float64.
-        own_data: Boolean flag indicating whether this instance owns and manages its underlying memory buffer. When True, the matrix allocates and frees its own memory. When False, it's a view into externally-owned data.
+    Type Parameters:
+        dtype: The data type of matrix elements (e.g., DType.float32, DType.float64).
+               Default is DType.float32. This is a compile-time parameter that determines
+               the size and interpretation of stored values.
+        own_data: Boolean flag indicating whether this instance owns and manages its
+                  underlying memory buffer. When True, the matrix allocates and frees
+                  its own memory. When False, it's a view into externally-owned data.
         origin: Tracks the lifetime and mutability of the underlying data buffer,
                 enabling compile-time safety checks to prevent use-after-free and
                 other memory safety issues. Default is MutOrigin.external.
@@ -143,7 +161,8 @@ struct MatrixImpl[
         - Row-major (C-style) layout: consecutive elements in a row are adjacent in memory
         - Column-major (Fortran-style) layout: consecutive elements in a column are adjacent
 
-        The layout affects cache efficiency for different access patterns and is tracked via the `strides` and `flags` attributes.
+        The layout affects cache efficiency for different access patterns and is tracked
+        via the `strides` and `flags` attributes.
 
     Ownership Semantics:
         **Owning matrices** (own_data=True):
@@ -156,6 +175,20 @@ struct MatrixImpl[
         - Reference existing data from an owning matrix
         - Do not allocate or free memory
         - Cannot be copied currently.
+
+    Indexing and Slicing:
+        - `mat[i, j]` - Returns scalar element at row i, column j
+        - `mat[i]` - Returns a copy of row i as a new Matrix
+        - `mat.get(i)` - Returns a MatrixView of row i (no copy)
+        - `mat[row_slice, col_slice]` - Returns a copy of the submatrix
+        - `mat.get(row_slice, col_slice)` - Returns a MatrixView of the submatrix (no copy)
+
+        Negative indices are supported and follow Python conventions (wrap from end).
+
+    The matrix can be uniquely defined by the following features:
+        1. The data buffer of all items.
+        2. The shape of the matrix.
+        3. The data type of the elements (compile-time known).
 
     Attributes:
         - _buf (saved as row-majored, C-type)
@@ -363,22 +396,13 @@ struct MatrixImpl[
         data: DataContainer[dtype, origin],
     ) where own_data == False:
         """
-        Initialize a non-owning `MatrixView`.
-
-        This constructor creates a Matrix instance that acts as a view into an
-        existing data buffer. The view does not allocate or manage memory; it
-        references data owned by another Matrix. It is an unsafe operation and should not be called by users directly.
+        Initialize Matrix that does not own the data.
+        The data is owned by another Matrix.
 
         Args:
-            shape: A tuple representing the dimensions of the view as (rows, columns).
-            strides: A tuple representing the memory strides for accessing elements in the view. Strides determine how to traverse the data buffer to access elements in the matrix.
-            data: A DataContainer instance that holds the data buffer being referenced.
-
-        Notes:
-            - This constructor is intended for internal use to create views into existing matrices! Users should not call this directly.
-            - The view does not own the data and relies on the lifetime of the
-              original data owner.
-            - Modifications to the view affect the original data by default.
+            shape: Shape of the view.
+            strides: Strides of the view.
+            data: DataContainer that holds the data buffer.
         """
         self.shape = shape
         self.strides = strides
@@ -387,17 +411,9 @@ struct MatrixImpl[
         self.flags = Flags(
             self.shape, self.strides, owndata=False, writeable=False
         )
-        self.shape = shape
-        self.strides = strides
-        self.size = shape[0] * shape[1]
-        self._buf = data
-        self.flags = Flags(
-            self.shape, self.strides, owndata=False, writeable=False
-        )
 
-    # TODO: Prevent copying from views to views or views to owning matrices for now.
-    # FIXME: The `where` clause isn't functioning as expected currently, so we use `constrained` as a workaround. Once the `where` clause is stable, this logic should be moved there.
-    # FIXME: The current `__copyinit__` creates an instance with the same origin as the source. This should instead create an instance with an external origin. Update this behavior so that the default `.copy()` method can be used, and the `create_copy()` method can be removed.
+    # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
+    # TODO: Current copyinit creates an instance with same origin. This should be external origin. fix this so that we can use default `.copy()` method and remove `create_copy()` method.
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """
@@ -597,9 +613,7 @@ struct MatrixImpl[
         dtype, MutOrigin.cast_from[view_origin]
     ]:
         """
-        Retrieve a view of the specified row in the matrix.
-
-        This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
+        Retrieve a view of the specified row in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
         Parameters:
             is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
@@ -1111,7 +1125,7 @@ struct MatrixImpl[
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
     fn __setitem__(
-        self, var x: Int, value: MatrixImpl[dtype, **_]
+        self, var x: Int, value: MatrixBase[dtype, **_]
     ) raises where Self.own_data == True and value.own_data == True:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
@@ -1181,7 +1195,7 @@ struct MatrixImpl[
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
-    fn set(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, var x: Int, value: MatrixBase[dtype, **_]) raises:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
         the provided `value` matrix. The `value` matrix must be a row vector with
@@ -1254,7 +1268,7 @@ struct MatrixImpl[
                     self._store(x, j, value._load(0, j))
 
     fn __setitem__(
-        self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]
+        self, x: Slice, y: Int, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
@@ -1314,7 +1328,7 @@ struct MatrixImpl[
             self._store(i, y_norm, value._load(row, 0))
             row += 1
 
-    fn set(self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Int, value: MatrixBase[dtype, **_]) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
         and row slice `x` with the given matrix. This method replaces the values
@@ -1377,7 +1391,7 @@ struct MatrixImpl[
             row += 1
 
     fn __setitem__(
-        self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]
+        self, x: Int, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
@@ -1435,7 +1449,7 @@ struct MatrixImpl[
             self._store(x_norm, j, value._load(0, col))
             col += 1
 
-    fn set(self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Int, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
         and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
@@ -1496,7 +1510,7 @@ struct MatrixImpl[
             col += 1
 
     fn __setitem__(
-        self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]
+        self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
@@ -1549,7 +1563,7 @@ struct MatrixImpl[
                 col += 1
             row += 1
 
-    fn set(self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
 
@@ -1671,7 +1685,7 @@ struct MatrixImpl[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    MatrixBase[dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1708,7 +1722,7 @@ struct MatrixImpl[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    MatrixBase[dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1798,7 +1812,7 @@ struct MatrixImpl[
     # Arithmetic dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __add__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __add__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Add two matrices element-wise.
 
@@ -1874,7 +1888,7 @@ struct MatrixImpl[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) + self
 
-    fn __sub__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __sub__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Subtract two matrices element-wise.
 
@@ -1950,7 +1964,7 @@ struct MatrixImpl[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) - self
 
-    fn __mul__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __mul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Multiply two matrices element-wise.
 
@@ -2026,7 +2040,7 @@ struct MatrixImpl[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) * self
 
-    fn __truediv__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __truediv__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Divide two matrices element-wise.
 
@@ -2107,7 +2121,7 @@ struct MatrixImpl[
             result._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
         return result^
 
-    fn __lt__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __lt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than.
 
@@ -2164,7 +2178,7 @@ struct MatrixImpl[
         """
         return self < broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __le__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __le__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than-or-equal.
 
@@ -2221,7 +2235,7 @@ struct MatrixImpl[
         """
         return self <= broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __gt__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __gt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than.
 
@@ -2278,7 +2292,7 @@ struct MatrixImpl[
         """
         return self > broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __ge__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ge__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than-or-equal.
 
@@ -2338,7 +2352,7 @@ struct MatrixImpl[
         """
         return self >= broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __eq__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __eq__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for equality.
 
@@ -2395,7 +2409,7 @@ struct MatrixImpl[
         """
         return self == broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __ne__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ne__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for inequality.
 
@@ -2452,7 +2466,7 @@ struct MatrixImpl[
         """
         return self != broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __matmul__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __matmul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Matrix multiplication using the @ operator.
 
@@ -3065,7 +3079,7 @@ struct MatrixImpl[
             ```
         """
         if shape[0] * shape[1] > self.size:
-            var other = MatrixImpl[dtype, own_data=own_data, origin=origin](
+            var other = MatrixBase[dtype, own_data=own_data, origin=origin](
                 shape=shape, order=self.order()
             )
             if self.flags.C_CONTIGUOUS:
@@ -3724,7 +3738,7 @@ struct _MatrixIter[
     """Current index in the iteration."""
 
     var matrix_ptr: Pointer[
-        MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
+        MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
         Self.iterator_origin,
     ]
     """Pointer to the source Matrix being iterated over."""
@@ -3733,7 +3747,7 @@ struct _MatrixIter[
         out self,
         index: Int,
         src: Pointer[
-            MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
+            MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
             Self.iterator_origin,
         ],
     ):
@@ -3813,7 +3827,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     simd_func: fn[type: DType, simd_width: Int] (
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[type, simd_width],
-](A: MatrixImpl[dtype, **_], B: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], B: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Perform element-wise arithmetic operation between two matrices using a SIMD function.
 
@@ -3905,7 +3919,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     simd_func: fn[type: DType, simd_width: Int] (
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[DType.bool, simd_width],
-](A: MatrixImpl[dtype, **_], B: MatrixImpl[dtype, **_]) raises -> Matrix[
+](A: MatrixBase[dtype, **_], B: MatrixBase[dtype, **_]) raises -> Matrix[
     DType.bool
 ]:
     """
@@ -3963,6 +3977,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     #     vectorize[vec_func, width](t1)
 
     # parallelize[calculate_CC](t0, t0)
+    # could remove `if` and combine
     if A.flags.C_CONTIGUOUS:
         for i in range(t0):
             for j in range(t1):

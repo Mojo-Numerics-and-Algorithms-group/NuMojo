@@ -498,7 +498,7 @@ fn logical_not[
     """
     var res: Matrix[DType.bool] = Matrix[DType.bool](a.shape)
     for i in range(res.size):
-        res._buf.store(i, Scalar[DType.bool](a.load(i) | b.load(i)))
+        res._buf.store(i, Scalar[DType.bool](~a.load(i)))
     return res^
 
 

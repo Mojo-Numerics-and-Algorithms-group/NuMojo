@@ -1,6 +1,6 @@
 import numojo as nm
 from numojo.prelude import *
-from numojo.core.matrix import Matrix, MatrixImpl
+from numojo.core.matrix import Matrix, MatrixBase
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 from sys import is_defined

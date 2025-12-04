@@ -5,7 +5,7 @@ from memory import UnsafePointer, memcpy, memset_zero
 from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixImpl
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import ones
 
 
@@ -83,7 +83,7 @@ fn prod[
     return result^
 
 
-fn prod[dtype: DType](A: MatrixImpl[dtype, **_]) -> Scalar[dtype]:
+fn prod[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     """
     Product of all items in the Matrix.
 
@@ -103,7 +103,7 @@ fn prod[dtype: DType](A: MatrixImpl[dtype, **_]) -> Scalar[dtype]:
 
 fn prod[
     dtype: DType
-](A: MatrixImpl[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Product of items in a Matrix along the axis.
 
@@ -226,7 +226,7 @@ fn cumprod[
     return B^
 
 
-fn cumprod[dtype: DType](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+fn cumprod[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 
@@ -259,7 +259,7 @@ fn cumprod[dtype: DType](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
 
 fn cumprod[
     dtype: DType
-](A: MatrixImpl[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Cumprod of Matrix along the axis.
 

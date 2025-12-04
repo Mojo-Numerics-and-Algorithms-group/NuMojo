@@ -8,7 +8,7 @@ from memory import UnsafePointer, memcpy, memset_zero
 import math as builtin_math
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix, issymmetric, MatrixImpl
+from numojo.core.matrix import Matrix, issymmetric, MatrixBase
 from numojo.routines.creation import zeros, eye, full
 
 
@@ -214,7 +214,7 @@ fn lu_decomposition[
 
 fn lu_decomposition[
     dtype: DType
-](A: MatrixImpl[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: MatrixBase[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     """
     Perform LU (lower-upper) decomposition for matrix.
     """
@@ -306,7 +306,7 @@ fn partial_pivoting[
 
 fn partial_pivoting[
     dtype: DType
-](A: MatrixImpl[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
+](A: MatrixBase[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
     """
     Perform partial pivoting for matrix.
     """

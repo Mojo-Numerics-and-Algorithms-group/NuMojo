@@ -3,7 +3,7 @@
 #
 # TODO: fields in traits are not supported yet by Mojo
 # Currently use `get_ptr()` to get pointer, in future, use `ptr` directly.
-# var ptr: UnsafePointer[Scalar[dtype]]
+# var ptr: LegacyUnsafePointer[Scalar[dtype]]
 # ===----------------------------------------------------------------------===
 
 from memory import UnsafePointer, LegacyUnsafePointer

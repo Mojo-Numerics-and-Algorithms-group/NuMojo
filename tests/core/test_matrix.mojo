@@ -163,279 +163,270 @@ def test_logic():
             String("`any` by axis {i} is broken"),
         )
 
+    # ===-----------------------------------------------------------------------===#
+    # Linear algebra
+    # ===-----------------------------------------------------------------------===#
 
-# ===-----------------------------------------------------------------------===#
-# Linear algebra
-# ===-----------------------------------------------------------------------===#
+    # def test_linalg():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((100, 100), order=order)
+    #     var B = Matrix.rand[f64]((100, 100), order=order)
+    #     var E = Matrix.fromstring(
+    #         "[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3), order=order
+    #     )
+    #     var Y = Matrix.rand((100, 1), order=order)
+    #     var Anp = A.to_numpy()
+    #     var Bnp = B.to_numpy()
+    #     var Ynp = Y.to_numpy()
+    #     var Enp = E.to_numpy()
+    #     check_matrices_close(
+    #         nm.linalg.solve(A, B),
+    #         np.linalg.solve(Anp, Bnp),
+    #         "Solve is broken",
+    #     )
+    #     check_matrices_close(
+    #         nm.linalg.inv(A),
+    #         np.linalg.inv(Anp),
+    #         "Inverse is broken",
+    #     )
+    #     check_matrices_close(
+    #         nm.linalg.lstsq(A, Y),
+    #         np.linalg.lstsq(Anp, Ynp)[0],
+    #         "Least square is broken",
+    #     )
+    #     check_matrices_close(
+    #         A.transpose(),
+    #         Anp.transpose(),
+    #         "Transpose is broken",
+    #     )
+    #     check_matrices_close(
+    #         Y.transpose(),
+    #         Ynp.transpose(),
+    #         "Transpose is broken",
+    #     )
+    #     assert_true(
+    #         np.all(np.isclose(nm.linalg.det(A), np.linalg.det(Anp), atol=0.1)),
+    #         "Determinant is broken",
+    #     )
+    #     for i in range(-10, 10):
+    #         assert_true(
+    #             np.all(
+    #                 np.isclose(
+    #                     nm.linalg.trace(E, offset=i),
+    #                     np.trace(Enp, offset=i),
+    #                     atol=0.1,
+    #                 )
+    #             ),
+    #             "Trace is broken",
+    #         )
 
+    # def test_qr_decomposition():
+    #     A = Matrix.rand[f64]((20, 20), order=order)
 
-# def test_linalg():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((100, 100), order=order)
-#     var B = Matrix.rand[f64]((100, 100), order=order)
-#     var E = Matrix.fromstring(
-#         "[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]", shape=(4, 3), order=order
-#     )
-#     var Y = Matrix.rand((100, 1), order=order)
-#     var Anp = A.to_numpy()
-#     var Bnp = B.to_numpy()
-#     var Ynp = Y.to_numpy()
-#     var Enp = E.to_numpy()
-#     check_matrices_close(
-#         nm.linalg.solve(A, B),
-#         np.linalg.solve(Anp, Bnp),
-#         "Solve is broken",
-#     )
-#     check_matrices_close(
-#         nm.linalg.inv(A),
-#         np.linalg.inv(Anp),
-#         "Inverse is broken",
-#     )
-#     check_matrices_close(
-#         nm.linalg.lstsq(A, Y),
-#         np.linalg.lstsq(Anp, Ynp)[0],
-#         "Least square is broken",
-#     )
-#     check_matrices_close(
-#         A.transpose(),
-#         Anp.transpose(),
-#         "Transpose is broken",
-#     )
-#     check_matrices_close(
-#         Y.transpose(),
-#         Ynp.transpose(),
-#         "Transpose is broken",
-#     )
-#     assert_true(
-#         np.all(np.isclose(nm.linalg.det(A), np.linalg.det(Anp), atol=0.1)),
-#         "Determinant is broken",
-#     )
-#     for i in range(-10, 10):
-#         assert_true(
-#             np.all(
-#                 np.isclose(
-#                     nm.linalg.trace(E, offset=i),
-#                     np.trace(Enp, offset=i),
-#                     atol=0.1,
-#                 )
-#             ),
-#             "Trace is broken",
-#         )
+    #     var np = Python.import_module("numpy")
 
+    #     var Q_R = nm.linalg.qr(A)
+    #     Q = Q_R[0].copy()
+    #     R = Q_R[1].copy()
 
-# def test_qr_decomposition():
-#     A = Matrix.rand[f64]((20, 20), order=order)
+    #     # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
+    #     var id = Q.transpose() @ Q
+    #     assert_true(np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14))
 
-#     var np = Python.import_module("numpy")
+    #     # Check if R is upper triangular
+    #     assert_true(np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14))
 
-#     var Q_R = nm.linalg.qr(A)
-#     Q = Q_R[0].copy()
-#     R = Q_R[1].copy()
+    #     # Check if A = QR
+    #     var A_test = Q @ R
+    #     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
 
-#     # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
-#     var id = Q.transpose() @ Q
-#     assert_true(np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14))
+    # def test_qr_decomposition_asym_reduced():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((12, 5), order=order)
+    #     var Q_R = nm.linalg.qr(A, mode="reduced")
+    #     Q = Q_R[0].copy()
+    #     R = Q_R[1].copy()
 
-#     # Check if R is upper triangular
-#     assert_true(np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14))
+    #     assert_true(
+    #         Q.shape[0] == 12 and Q.shape[1] == 5,
+    #         "Q has unexpected shape for reduced.",
+    #     )
+    #     assert_true(
+    #         R.shape[0] == 5 and R.shape[1] == 5,
+    #         "R has unexpected shape for reduced.",
+    #     )
 
-#     # Check if A = QR
-#     var A_test = Q @ R
-#     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+    #     var id = Q.transpose() @ Q
+    #     assert_true(
+    #         np.allclose(id.to_numpy(), np.eye(Q.shape[1]), atol=1e-14),
+    #         "Q not orthonormal for reduced.",
+    #     )
+    #     assert_true(
+    #         np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
+    #         "R not upper triangular for reduced.",
+    #     )
 
+    #     var A_test = Q @ R
+    #     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
 
-# def test_qr_decomposition_asym_reduced():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((12, 5), order=order)
-#     var Q_R = nm.linalg.qr(A, mode="reduced")
-#     Q = Q_R[0].copy()
-#     R = Q_R[1].copy()
+    # def test_qr_decomposition_asym_complete():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((12, 5), order=order)
+    #     var Q_R = nm.linalg.qr(A, mode="complete")
+    #     var Q = Q_R[0].copy()
+    #     var R = Q_R[1].copy()
 
-#     assert_true(
-#         Q.shape[0] == 12 and Q.shape[1] == 5,
-#         "Q has unexpected shape for reduced.",
-#     )
-#     assert_true(
-#         R.shape[0] == 5 and R.shape[1] == 5,
-#         "R has unexpected shape for reduced.",
-#     )
+    #     assert_true(
+    #         Q.shape[0] == 12 and Q.shape[1] == 12,
+    #         "Q has unexpected shape for complete.",
+    #     )
+    #     assert_true(
+    #         R.shape[0] == 12 and R.shape[1] == 5,
+    #         "R has unexpected shape for complete.",
+    #     )
 
-#     var id = Q.transpose() @ Q
-#     assert_true(
-#         np.allclose(id.to_numpy(), np.eye(Q.shape[1]), atol=1e-14),
-#         "Q not orthonormal for reduced.",
-#     )
-#     assert_true(
-#         np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
-#         "R not upper triangular for reduced.",
-#     )
+    #     var id = Q.transpose() @ Q
+    #     assert_true(
+    #         np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14),
+    #         "Q not orthonormal for complete.",
+    #     )
+    #     assert_true(
+    #         np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
+    #         "R not upper triangular for complete.",
+    #     )
 
-#     var A_test = Q @ R
-#     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+    #     var A_test = Q @ R
+    #     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
 
+    # def test_qr_decomposition_asym_complete2():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((5, 12), order=order)
+    #     var Q_R = nm.linalg.qr(A, mode="complete")
+    #     var Q = Q_R[0].copy()
+    #     var R = Q_R[1].copy()
 
-# def test_qr_decomposition_asym_complete():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((12, 5), order=order)
-#     var Q_R = nm.linalg.qr(A, mode="complete")
-#     var Q = Q_R[0].copy()
-#     var R = Q_R[1].copy()
+    #     assert_true(
+    #         Q.shape[0] == 5 and Q.shape[1] == 5,
+    #         "Q has unexpected shape for complete.",
+    #     )
+    #     assert_true(
+    #         R.shape[0] == 5 and R.shape[1] == 12,
+    #         "R has unexpected shape for complete.",
+    #     )
 
-#     assert_true(
-#         Q.shape[0] == 12 and Q.shape[1] == 12,
-#         "Q has unexpected shape for complete.",
-#     )
-#     assert_true(
-#         R.shape[0] == 12 and R.shape[1] == 5,
-#         "R has unexpected shape for complete.",
-#     )
+    #     var id = Q.transpose() @ Q
+    #     assert_true(
+    #         np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14),
+    #         "Q not orthonormal for complete.",
+    #     )
+    #     assert_true(
+    #         np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
+    #         "R not upper triangular for complete.",
+    #     )
 
-#     var id = Q.transpose() @ Q
-#     assert_true(
-#         np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14),
-#         "Q not orthonormal for complete.",
-#     )
-#     assert_true(
-#         np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
-#         "R not upper triangular for complete.",
-#     )
+    #     var A_test = Q @ R
+    #     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
 
-#     var A_test = Q @ R
-#     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+    # def test_eigen_decomposition():
+    #     var np = Python.import_module("numpy")
 
+    #     # Create a symmetric matrix by adding a matrix to its transpose
+    #     var A_random = Matrix.rand[f64]((10, 10), order=order)
+    #     var A = A_random + A_random.transpose()
+    #     var Anp = A.to_numpy()
 
-# def test_qr_decomposition_asym_complete2():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((5, 12), order=order)
-#     var Q_R = nm.linalg.qr(A, mode="complete")
-#     var Q = Q_R[0].copy()
-#     var R = Q_R[1].copy()
+    #     # Compute eigendecomposition
+    #     var Q_Lambda = nm.linalg.eig(A)
+    #     var Q = Q_Lambda[0].copy()
+    #     var Lambda = Q_Lambda[1].copy()
 
-#     assert_true(
-#         Q.shape[0] == 5 and Q.shape[1] == 5,
-#         "Q has unexpected shape for complete.",
-#     )
-#     assert_true(
-#         R.shape[0] == 5 and R.shape[1] == 12,
-#         "R has unexpected shape for complete.",
-#     )
+    #     # Use NumPy for comparison
+    #     namedtuple = np.linalg.eig(Anp)
 
-#     var id = Q.transpose() @ Q
-#     assert_true(
-#         np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14),
-#         "Q not orthonormal for complete.",
-#     )
-#     assert_true(
-#         np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
-#         "R not upper triangular for complete.",
-#     )
+    #     np_eigenvalues = namedtuple.eigenvalues
 
-#     var A_test = Q @ R
-#     assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+    #     # Sort eigenvalues and eigenvectors for comparison (numpy doesn't guarantee order)
+    #     var np_sorted_eigenvalues = np.sort(np_eigenvalues)
+    #     var eigenvalues = np.diag(Lambda.to_numpy())
+    #     var sorted_eigenvalues = np.sort(eigenvalues)
 
+    #     assert_true(
+    #         np.allclose(sorted_eigenvalues, np_sorted_eigenvalues, atol=1e-10),
+    #         "Eigenvalues don't match expected values",
+    #     )
 
-# def test_eigen_decomposition():
-#     var np = Python.import_module("numpy")
+    #     # Check that eigenvectors are orthogonal (Q^T Q = I)
+    #     var id = Q.transpose() @ Q
+    #     assert_true(
+    #         np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-10),
+    #         "Eigenvectors are not orthogonal",
+    #     )
 
-#     # Create a symmetric matrix by adding a matrix to its transpose
-#     var A_random = Matrix.rand[f64]((10, 10), order=order)
-#     var A = A_random + A_random.transpose()
-#     var Anp = A.to_numpy()
+    #     # Check that A = Q * Lambda * Q^T (eigendecomposition property)
+    #     var A_reconstructed = Q @ Lambda @ Q.transpose()
+    #     assert_true(
+    #         np.allclose(A_reconstructed.to_numpy(), Anp, atol=1e-10),
+    #         "A ≠ Q * Lambda * Q^T",
+    #     )
 
-#     # Compute eigendecomposition
-#     var Q_Lambda = nm.linalg.eig(A)
-#     var Q = Q_Lambda[0].copy()
-#     var Lambda = Q_Lambda[1].copy()
+    #     # Verify A*v = λ*v for each eigenvector and eigenvalue
+    #     for i in range(A.shape[0]):
+    #         var eigenvector = Matrix.zeros[f64]((A.shape[0], 1), order=order)
+    #         for j in range(A.shape[0]):
+    #             eigenvector[j, 0] = Q[j, i]
 
-#     # Use NumPy for comparison
-#     namedtuple = np.linalg.eig(Anp)
+    #         var Av = A @ eigenvector
+    #         var lambda_times_v = eigenvector * Lambda[i, i]
 
-#     np_eigenvalues = namedtuple.eigenvalues
+    #         assert_true(
+    #             np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
+    #             "Eigenvector verification failed: A*v ≠ λ*v",
+    #         )
 
-#     # Sort eigenvalues and eigenvectors for comparison (numpy doesn't guarantee order)
-#     var np_sorted_eigenvalues = np.sort(np_eigenvalues)
-#     var eigenvalues = np.diag(Lambda.to_numpy())
-#     var sorted_eigenvalues = np.sort(eigenvalues)
+    #     # Verify A*v = λ*v for each eigenvector and eigenvalue
+    #     for i in range(A.shape[0]):
+    #         var eigenvector = Matrix.zeros[f64]((A.shape[0], 1), order=order)
+    #         for j in range(A.shape[0]):
+    #             eigenvector[j, 0] = Q[j, i]
 
-#     assert_true(
-#         np.allclose(sorted_eigenvalues, np_sorted_eigenvalues, atol=1e-10),
-#         "Eigenvalues don't match expected values",
-#     )
+    #         var Av = A @ eigenvector
+    #         var lambda_times_v = eigenvector * Lambda[i, i]
 
-#     # Check that eigenvectors are orthogonal (Q^T Q = I)
-#     var id = Q.transpose() @ Q
-#     assert_true(
-#         np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-10),
-#         "Eigenvectors are not orthogonal",
-#     )
+    #         assert_true(
+    #             np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
+    #             "Eigenvector verification failed: A*v ≠ λ*v",
+    #         )
 
-#     # Check that A = Q * Lambda * Q^T (eigendecomposition property)
-#     var A_reconstructed = Q @ Lambda @ Q.transpose()
-#     assert_true(
-#         np.allclose(A_reconstructed.to_numpy(), Anp, atol=1e-10),
-#         "A ≠ Q * Lambda * Q^T",
-#     )
+    # # ===-----------------------------------------------------------------------===#
+    # # Mathematics
+    # # ===-----------------------------------------------------------------------===#
 
-#     # Verify A*v = λ*v for each eigenvector and eigenvalue
-#     for i in range(A.shape[0]):
-#         var eigenvector = Matrix.zeros[f64]((A.shape[0], 1), order=order)
-#         for j in range(A.shape[0]):
-#             eigenvector[j, 0] = Q[j, i]
+    # def test_math():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((100, 100), order=order)
+    #     var Anp = np.matrix(A.to_numpy())
 
-#         var Av = A @ eigenvector
-#         var lambda_times_v = eigenvector * Lambda[i, i]
+    #     assert_true(
+    #         np.all(np.isclose(nm.sum(A), np.sum(Anp), atol=0.1)),
+    #         "`sum` is broken",
+    #     )
+    #     for i in range(2):
+    #         check_matrices_close(
+    #             nm.sum(A, axis=i),
+    #             np.sum(Anp, axis=i),
+    #             String("`sum` by axis {i} is broken"),
+    #         )
 
-#         assert_true(
-#             np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
-#             "Eigenvector verification failed: A*v ≠ λ*v",
-#         )
-
-#     # Verify A*v = λ*v for each eigenvector and eigenvalue
-#     for i in range(A.shape[0]):
-#         var eigenvector = Matrix.zeros[f64]((A.shape[0], 1), order=order)
-#         for j in range(A.shape[0]):
-#             eigenvector[j, 0] = Q[j, i]
-
-#         var Av = A @ eigenvector
-#         var lambda_times_v = eigenvector * Lambda[i, i]
-
-#         assert_true(
-#             np.allclose(Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10),
-#             "Eigenvector verification failed: A*v ≠ λ*v",
-#         )
-
-
-# # ===-----------------------------------------------------------------------===#
-# # Mathematics
-# # ===-----------------------------------------------------------------------===#
-
-
-# def test_math():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((100, 100), order=order)
-#     var Anp = np.matrix(A.to_numpy())
-
-#     assert_true(
-#         np.all(np.isclose(nm.sum(A), np.sum(Anp), atol=0.1)),
-#         "`sum` is broken",
-#     )
-#     for i in range(2):
-#         check_matrices_close(
-#             nm.sum(A, axis=i),
-#             np.sum(Anp, axis=i),
-#             String("`sum` by axis {i} is broken"),
-#         )
-
-#     assert_true(
-#         np.all(np.isclose(nm.prod(A), np.prod(Anp), atol=0.1)),
-#         "`prod` is broken",
-#     )
-#     for i in range(2):
-#         check_matrices_close(
-#             nm.prod(A, axis=i),
-#             np.prod(Anp, axis=i),
-#             String("`prod` by axis {i} is broken"),
-#         )
+    #     assert_true(
+    #         np.all(np.isclose(nm.prod(A), np.prod(Anp), atol=0.1)),
+    #         "`prod` is broken",
+    #     )
+    #     for i in range(2):
+    #         check_matrices_close(
+    #             nm.prod(A, axis=i),
+    #             np.prod(Anp, axis=i),
+    #             String("`prod` by axis {i} is broken"),
+    #         )
 
     check_matrices_close(
         nm.cumsum(A),
@@ -461,101 +452,97 @@ def test_logic():
             String("`cumprod` by axis {i} is broken"),
         )
 
+    # def test_trigonometric():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((100, 100), order=order)
+    #     var Anp = np.matrix(A.to_numpy())
+    #     check_matrices_close(nm.sin(A), np.sin(Anp), "sin is broken")
+    #     check_matrices_close(nm.cos(A), np.cos(Anp), "cos is broken")
+    #     check_matrices_close(nm.tan(A), np.tan(Anp), "tan is broken")
+    #     check_matrices_close(nm.arcsin(A), np.arcsin(Anp), "arcsin is broken")
+    #     check_matrices_close(nm.asin(A), np.arcsin(Anp), "asin is broken")
+    #     check_matrices_close(nm.arccos(A), np.arccos(Anp), "arccos is broken")
+    #     check_matrices_close(nm.acos(A), np.arccos(Anp), "acos is broken")
+    #     check_matrices_close(nm.arctan(A), np.arctan(Anp), "arctan is broken")
+    #     check_matrices_close(nm.atan(A), np.arctan(Anp), "atan is broken")
 
-# def test_trigonometric():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((100, 100), order=order)
-#     var Anp = np.matrix(A.to_numpy())
-#     check_matrices_close(nm.sin(A), np.sin(Anp), "sin is broken")
-#     check_matrices_close(nm.cos(A), np.cos(Anp), "cos is broken")
-#     check_matrices_close(nm.tan(A), np.tan(Anp), "tan is broken")
-#     check_matrices_close(nm.arcsin(A), np.arcsin(Anp), "arcsin is broken")
-#     check_matrices_close(nm.asin(A), np.arcsin(Anp), "asin is broken")
-#     check_matrices_close(nm.arccos(A), np.arccos(Anp), "arccos is broken")
-#     check_matrices_close(nm.acos(A), np.arccos(Anp), "acos is broken")
-#     check_matrices_close(nm.arctan(A), np.arctan(Anp), "arctan is broken")
-#     check_matrices_close(nm.atan(A), np.arctan(Anp), "atan is broken")
+    # def test_hyperbolic():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.fromstring(
+    #         "[[1,2,3],[4,5,6],[7,8,9]]", shape=(3, 3), order=order
+    #     )
+    #     var B = A / 10
+    #     var Anp = np.matrix(A.to_numpy())
+    #     var Bnp = np.matrix(B.to_numpy())
+    #     check_matrices_close(nm.sinh(A), np.sinh(Anp), "sinh is broken")
+    #     check_matrices_close(nm.cosh(A), np.cosh(Anp), "cosh is broken")
+    #     check_matrices_close(nm.tanh(A), np.tanh(Anp), "tanh is broken")
+    #     check_matrices_close(nm.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken")
+    #     check_matrices_close(nm.asinh(A), np.arcsinh(Anp), "asinh is broken")
+    #     check_matrices_close(nm.arccosh(A), np.arccosh(Anp), "arccosh is broken")
+    #     check_matrices_close(nm.acosh(A), np.arccosh(Anp), "acosh is broken")
+    #     check_matrices_close(nm.arctanh(B), np.arctanh(Bnp), "arctanh is broken")
+    #     check_matrices_close(nm.atanh(B), np.arctanh(Bnp), "atanh is broken")
 
+    # def test_sorting():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((10, 10), order=order)
+    #     var Anp = np.matrix(A.to_numpy())
 
-# def test_hyperbolic():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.fromstring(
-#         "[[1,2,3],[4,5,6],[7,8,9]]", shape=(3, 3), order=order
-#     )
-#     var B = A / 10
-#     var Anp = np.matrix(A.to_numpy())
-#     var Bnp = np.matrix(B.to_numpy())
-#     check_matrices_close(nm.sinh(A), np.sinh(Anp), "sinh is broken")
-#     check_matrices_close(nm.cosh(A), np.cosh(Anp), "cosh is broken")
-#     check_matrices_close(nm.tanh(A), np.tanh(Anp), "tanh is broken")
-#     check_matrices_close(nm.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken")
-#     check_matrices_close(nm.asinh(A), np.arcsinh(Anp), "asinh is broken")
-#     check_matrices_close(nm.arccosh(A), np.arccosh(Anp), "arccosh is broken")
-#     check_matrices_close(nm.acosh(A), np.arccosh(Anp), "acosh is broken")
-#     check_matrices_close(nm.arctanh(B), np.arctanh(Bnp), "arctanh is broken")
-#     check_matrices_close(nm.atanh(B), np.arctanh(Bnp), "atanh is broken")
+    #     check_matrices_close(
+    #         nm.sort(A), np.sort(Anp, axis=None), String("Sort is broken")
+    #     )
+    #     for i in range(2):
+    #         check_matrices_close(
+    #             nm.sort(A.copy(), axis=i),
+    #             np.sort(Anp, axis=i),
+    #             String("Sort by axis {} is broken").format(i),
+    #         )
 
+    #     check_matrices_close(
+    #         nm.argsort(A), np.argsort(Anp, axis=None), String("Argsort is broken")
+    #     )
+    #     for i in range(2):
+    #         check_matrices_close(
+    #             nm.argsort(A.copy(), axis=i),
+    #             np.argsort(Anp, axis=i),
+    #             String("Argsort by axis {} is broken").format(i),
+    #         )
 
-# def test_sorting():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((10, 10), order=order)
-#     var Anp = np.matrix(A.to_numpy())
+    # def test_searching():
+    #     var np = Python.import_module("numpy")
+    #     var A = Matrix.rand[f64]((10, 10), order=order)
+    #     var Anp = np.matrix(A.to_numpy())
 
-#     check_matrices_close(
-#         nm.sort(A), np.sort(Anp, axis=None), String("Sort is broken")
-#     )
-#     for i in range(2):
-#         check_matrices_close(
-#             nm.sort(A.copy(), axis=i),
-#             np.sort(Anp, axis=i),
-#             String("Sort by axis {} is broken").format(i),
-#         )
+    #     check_values_close(
+    #         nm.max(A), np.max(Anp, axis=None), String("`max` is broken")
+    #     )
+    #     for i in range(2):
+    #         check_matrices_close(
+    #             nm.max(A, axis=i),
+    #             np.max(Anp, axis=i),
+    #             String("`max` by axis {} is broken").format(i),
+    #         )
 
-#     check_matrices_close(
-#         nm.argsort(A), np.argsort(Anp, axis=None), String("Argsort is broken")
-#     )
-#     for i in range(2):
-#         check_matrices_close(
-#             nm.argsort(A.copy(), axis=i),
-#             np.argsort(Anp, axis=i),
-#             String("Argsort by axis {} is broken").format(i),
-#         )
+    #     check_values_close(
+    #         nm.argmax(A), np.argmax(Anp, axis=None), String("`argmax` is broken")
+    #     )
+    #     for i in range(2):
+    #         check_matrices_close(
+    #             nm.argmax(A, axis=i),
+    #             np.argmax(Anp, axis=i),
+    #             String("`argmax` by axis {} is broken").format(i),
+    #         )
 
-
-# def test_searching():
-#     var np = Python.import_module("numpy")
-#     var A = Matrix.rand[f64]((10, 10), order=order)
-#     var Anp = np.matrix(A.to_numpy())
-
-#     check_values_close(
-#         nm.max(A), np.max(Anp, axis=None), String("`max` is broken")
-#     )
-#     for i in range(2):
-#         check_matrices_close(
-#             nm.max(A, axis=i),
-#             np.max(Anp, axis=i),
-#             String("`max` by axis {} is broken").format(i),
-#         )
-
-#     check_values_close(
-#         nm.argmax(A), np.argmax(Anp, axis=None), String("`argmax` is broken")
-#     )
-#     for i in range(2):
-#         check_matrices_close(
-#             nm.argmax(A, axis=i),
-#             np.argmax(Anp, axis=i),
-#             String("`argmax` by axis {} is broken").format(i),
-#         )
-
-#     check_values_close(
-#         nm.min(A), np.min(Anp, axis=None), String("`min` is broken.")
-#     )
-#     for i in range(2):
-#         check_matrices_close(
-#             nm.min(A, axis=i),
-#             np.min(Anp, axis=i),
-#             String("`min` by axis {} is broken").format(i),
-#         )
+    #     check_values_close(
+    #         nm.min(A), np.min(Anp, axis=None), String("`min` is broken.")
+    #     )
+    #     for i in range(2):
+    #         check_matrices_close(
+    #             nm.min(A, axis=i),
+    #             np.min(Anp, axis=i),
+    #             String("`min` by axis {} is broken").format(i),
+    #         )
 
     check_values_close(
         nm.argmin(A), np.argmin(Anp, axis=None), String("`argmin` is broken.")

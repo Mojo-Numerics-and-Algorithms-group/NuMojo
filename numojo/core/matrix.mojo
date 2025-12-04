@@ -341,24 +341,7 @@ struct MatrixBase[
     @always_inline("nodebug")
     fn __init__(
         out self,
-        data: Self,
-    ) where own_data == True:
-        """
-        Construct a new matrix by copying from another matrix.
-
-        This initializer creates a new matrix instance by copying the data, shape and order from an existing matrix. The new matrix will have its own independent copy of the data.
-
-        Args:
-            data: The source matrix to copy from.
-        """
-        self = Self(data.shape, data.order())
-        memcpy(dest=self._buf.ptr, src=data._buf.ptr, count=data.size)
-
-    @always_inline("nodebug")
-    fn __init__(
-        out self,
         data: NDArray[dtype],
-    ) raises where own_data == True:
     ) raises where own_data == True:
         """
         Initialize a new matrix by copying data from an existing NDArray.
@@ -1142,7 +1125,7 @@ struct MatrixBase[
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
     fn __setitem__(
-        self, var x: Int, value: MatrixImpl[dtype, **_]
+        self, var x: Int, value: MatrixBase[dtype, **_]
     ) raises where Self.own_data == True and value.own_data == True:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
@@ -1212,7 +1195,7 @@ struct MatrixBase[
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
-    fn set(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, var x: Int, value: MatrixBase[dtype, **_]) raises:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
         the provided `value` matrix. The `value` matrix must be a row vector with
@@ -1285,7 +1268,7 @@ struct MatrixBase[
                     self._store(x, j, value._load(0, j))
 
     fn __setitem__(
-        self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]
+        self, x: Slice, y: Int, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
@@ -1345,7 +1328,7 @@ struct MatrixBase[
             self._store(i, y_norm, value._load(row, 0))
             row += 1
 
-    fn set(self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Int, value: MatrixBase[dtype, **_]) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
         and row slice `x` with the given matrix. This method replaces the values
@@ -1408,7 +1391,7 @@ struct MatrixBase[
             row += 1
 
     fn __setitem__(
-        self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]
+        self, x: Int, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
@@ -1466,7 +1449,7 @@ struct MatrixBase[
             self._store(x_norm, j, value._load(0, col))
             col += 1
 
-    fn set(self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Int, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
         and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
@@ -1527,7 +1510,7 @@ struct MatrixBase[
             col += 1
 
     fn __setitem__(
-        self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]
+        self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
@@ -1580,7 +1563,7 @@ struct MatrixBase[
                 col += 1
             row += 1
 
-    fn set(self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
 
@@ -1702,7 +1685,7 @@ struct MatrixBase[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    MatrixBase[dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1739,7 +1722,7 @@ struct MatrixBase[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    MatrixBase[dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1829,7 +1812,7 @@ struct MatrixBase[
     # Arithmetic dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __add__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __add__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Add two matrices element-wise.
 
@@ -1905,7 +1888,7 @@ struct MatrixBase[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) + self
 
-    fn __sub__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __sub__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Subtract two matrices element-wise.
 
@@ -1981,7 +1964,7 @@ struct MatrixBase[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) - self
 
-    fn __mul__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __mul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Multiply two matrices element-wise.
 
@@ -2057,7 +2040,7 @@ struct MatrixBase[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) * self
 
-    fn __truediv__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __truediv__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Divide two matrices element-wise.
 
@@ -2138,7 +2121,7 @@ struct MatrixBase[
             result._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
         return result^
 
-    fn __lt__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __lt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than.
 
@@ -2195,7 +2178,7 @@ struct MatrixBase[
         """
         return self < broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __le__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __le__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than-or-equal.
 
@@ -2252,7 +2235,7 @@ struct MatrixBase[
         """
         return self <= broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __gt__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __gt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than.
 
@@ -2309,7 +2292,7 @@ struct MatrixBase[
         """
         return self > broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __ge__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ge__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than-or-equal.
 
@@ -2369,7 +2352,7 @@ struct MatrixBase[
         """
         return self >= broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __eq__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __eq__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for equality.
 
@@ -2426,7 +2409,7 @@ struct MatrixBase[
         """
         return self == broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __ne__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ne__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for inequality.
 
@@ -2483,7 +2466,7 @@ struct MatrixBase[
         """
         return self != broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __matmul__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __matmul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         """
         Matrix multiplication using the @ operator.
 
@@ -3755,7 +3738,7 @@ struct _MatrixIter[
     """Current index in the iteration."""
 
     var matrix_ptr: Pointer[
-        MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
+        MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
         Self.iterator_origin,
     ]
     """Pointer to the source Matrix being iterated over."""
@@ -3764,7 +3747,7 @@ struct _MatrixIter[
         out self,
         index: Int,
         src: Pointer[
-            MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
+            MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
             Self.iterator_origin,
         ],
     ):

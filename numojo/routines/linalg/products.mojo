@@ -366,9 +366,10 @@ fn matmul[
     Example:
     ```mojo
     from numojo import Matrix
+    from numojo.routines.linalg import matmul
     var A = Matrix.rand(shape=(1000, 1000))
     var B = Matrix.rand(shape=(1000, 1000))
-    var result = mat.matmul(A, B)
+    var result = matmul(A, B)
     ```
     """
 

@@ -1,10 +1,16 @@
 """
-`numojo.Matrix` provides:
+NuMojo Matrix Module
 
-- `Matrix` type (2DArray).
-- `_MatrixIter` type (for iteration).
-- Dunder methods for initialization, indexing, slicing, and arithmetics.
-- Auxiliary functions.
+This file implements the core 2D matrix type for the NuMojo numerical computing library. It provides efficient, flexible, and memory-safe matrix operations for scientific and engineering applications.
+
+Features:
+- `Matrix`: The primary 2D array type for owning matrix data.
+- `MatrixView`: Lightweight, non-owning views for fast slicing and submatrix access.
+- Iterators for traversing matrix elements.
+- Comprehensive dunder methods for initialization, indexing, slicing, and arithmetic.
+- Utility functions for broadcasting, memory layout, and linear algebra routines.
+
+Use this module to create, manipulate, and analyze matrices with high performance and safety guarantees.
 """
 
 from algorithm import parallelize, vectorize
@@ -25,6 +31,7 @@ from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
 
 
+# TODO: currently a lot of the __getitem__ and __setitem__ methods raises if the index is out of bounds. An alternative is to clamp the indices to be within bounds, this will remove a lot of if conditions and improve performance I guess. Need to decide which behavior is preferred.
 # ===----------------------------------------------------------------------===#
 # Matrix struct
 # ===----------------------------------------------------------------------===#
@@ -187,7 +194,7 @@ struct MatrixBase[
         - _buf (saved as row-majored, C-type)
         - shape
         - size (shape[0] * shape[1])
-        - strides (shape[1], 1)
+        - strides
 
     Default constructor:
     - [dtype], shape
@@ -225,6 +232,7 @@ struct MatrixBase[
         iterator_origin: Origin[is_mutable],
         forward: Bool,
     ] = _MatrixIter[dtype, matrix_origin, iterator_origin, forward]
+    """Iterator type for the Matrix."""
 
     alias width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
@@ -255,12 +263,23 @@ struct MatrixBase[
         order: String = "C",
     ) where own_data == True:
         """
-        Create a new matrix of the given shape, without initializing data.
+        Initialize a new matrix with the specified shape and memory layout.
+
+        This constructor creates a matrix of the given shape without initializing
+        its data. The memory layout can be specified as either row-major ("C") or
+        column-major ("F").
 
         Args:
-            shape: Tuple representing (rows, columns).
-            order: Use "C" for row-major (C-style) layout or "F" for column-major
-               (Fortran-style) layout. Defaults to "C".
+            shape: A tuple representing the dimensions of the matrix as (rows, columns).
+            order: A string specifying the memory layout. Use "C" for row-major
+                   (C-style) layout or "F" for column-major (Fortran-style) layout. Defaults to "C".
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat_c = Matrix[f32](shape=(3, 4), order="C")  # Row-major
+            var mat_f = Matrix[f32](shape=(3, 4), order="F")  # Column-major
+            ```
         """
         self.shape = (shape[0], shape[1])
         if order == "C":
@@ -273,16 +292,51 @@ struct MatrixBase[
             self.shape, self.strides, owndata=True, writeable=True
         )
 
-    # * Should we take var ref and transfer ownership or take a read ref and copy it?
+    # * Should we take var ref and transfer ownership or take a read ref and copy the data?
     @always_inline("nodebug")
     fn __init__(
         out self,
         var data: Self,
     ) where own_data == True:
         """
-        Construct a matrix from matrix.
+        Initialize a new matrix by transferring ownership from another matrix.
+
+        This constructor creates a new matrix instance by taking ownership of the
+        data from an existing matrix. The source matrix (`data`) will no longer
+        own its data after this operation.
+
+        Args:
+            data: The source matrix from which ownership of the data will be transferred.
+
+        Notes:
+            - This operation is efficient as it avoids copying the data buffer.
+            - The source matrix (`data`) becomes invalid after the transfer and should not be used.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat1 = Matrix[f32](shape=(2, 3))
+            # ... (initialize mat1 with data) ...
+            var mat2 = Matrix[f32](mat1^)  # Transfer ownership from mat1 to mat2
+            ```
         """
         self = data^
+
+    @always_inline("nodebug")
+    fn __init__(
+        out self,
+        data: Self,
+    ) where own_data == True:
+        """
+        Construct a new matrix by copying from another matrix.
+
+        This initializer creates a new matrix instance by copying the data, shape and order from an existing matrix. The new matrix will have its own independent copy of the data.
+
+        Args:
+            data: The source matrix to copy from.
+        """
+        self = Self(data.shape, data.order())
+        memcpy(dest=self._buf.ptr, src=data._buf.ptr, count=data.size)
 
     @always_inline("nodebug")
     fn __init__(
@@ -290,7 +344,24 @@ struct MatrixBase[
         data: NDArray[dtype],
     ) raises where own_data == True:
         """
-        Construct a matrix from array.
+        Initialize a new matrix by copying data from an existing NDArray.
+
+        This constructor creates a matrix instance with the same shape, data, and
+        memory layout as the provided NDArray. The data is copied into a new memory buffer owned by the matrix.
+
+        Args:
+            data: An NDArray instance containing the data to initialize the matrix.
+
+        Raises:
+            Error: If the provided NDArray has more than 2 dimensions, as it cannot be represented as a matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var arr = NDArray[f32](Shape(2, 3))
+            # ... (initialize arr with data) ...
+            var mat = Matrix[f32](arr)  # Create a matrix from the NDArray
+            ```
         """
         if data.ndim == 1:
             self.shape = (1, data.shape[0])
@@ -346,7 +417,28 @@ struct MatrixBase[
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
         """
-        Copy other into self.
+        Initialize a new matrix by copying data from another matrix.
+
+        This method creates a deep copy of the `other` matrix into `self`. It ensures that the copied matrix is independent of the source matrix, with its own memory allocation.
+
+        Constraints:
+            - Copying is only allowed between matrices that own their data.
+              Views cannot be copied to ensure memory safety.
+
+        Args:
+            other: The source matrix to copy from. Must be an owning matrix.
+
+        Notes:
+            - This method uses the `constrained` mechanism to enforce the restriction that both the source and destination matrices must own their data.
+            - The copied matrix will have the same shape, strides, and data as the source matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat1 = Matrix[f32](shape=(2, 3))
+            # ... (initialize mat1 with data) ...
+            var mat2 = mat1.copy() # Calls __copyinit__ to create a copy of mat1
+            ```
         """
         constrained[
             other.own_data == True and own_data == True,
@@ -368,8 +460,21 @@ struct MatrixBase[
         """
         Create a deep copy of the current matrix.
 
+        This method creates a new `Matrix` instance with the same shape, data, and
+        memory layout as the original matrix. The data is copied into a new memory
+        buffer owned by the new matrix, ensuring that the original and the copy are completely independent.
+
         Returns:
-            A new Matrix instance that is a copy of the current matrix.
+            A new `Matrix` instance that is an exact copy of the
+            current matrix, including its shape and data.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat1 = Matrix[f32](shape=(2, 3))
+            # ... (initialize mat1 with data) ...
+            var mat2 = mat1.create_copy()  # Create a deep copy of mat1
+            ```
         """
         var new_matrix = Matrix[dtype](shape=self.shape, order=self.order())
         memcpy(dest=new_matrix._buf.ptr, src=self._buf.ptr, count=self.size)
@@ -378,7 +483,18 @@ struct MatrixBase[
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
         """
-        Move other into self.
+        Transfer ownership of resources from `other` to `self`.
+
+        This method moves the data and metadata from the `other` matrix instance
+        into the current instance (`self`). After the move, the `other` instance
+        is left in an invalid state and should not be used.
+
+        Args:
+            other: The source matrix instance whose resources will be moved.
+
+        Notes:
+            - This operation is efficient as it avoids copying data.
+            - The `other` instance is deinitialized as part of this operation.
         """
         self.shape = other.shape^
         self.strides = other.strides^
@@ -388,7 +504,16 @@ struct MatrixBase[
 
     @always_inline("nodebug")
     fn __del__(deinit self):
-        # NOTE: Using `where` clause doesn't work here, so use a compile time if check.
+        """
+        Destructor for the matrix instance.
+
+        This method is called when the matrix instance is deinitialized. It ensures that resources owned by the matrix, such as its memory buffer, are properly released.
+
+        Notes:
+            - This method only frees resources if the matrix owns its data.
+            - The `own_data` flag determines whether the memory buffer is freed.
+        """
+
         @parameter
         if own_data:
             self._buf.ptr.free()
@@ -399,13 +524,46 @@ struct MatrixBase[
 
     @always_inline
     fn index(self, row: Int, col: Int) -> Int:
-        """Convert 2D index to 1D index."""
+        """
+        Calculate the linear index in the underlying data buffer for a given
+        2D index (row, col) based on the matrix's strides.
+
+        Args:
+            row: The row index.
+            col: The column index.
+
+        Returns:
+            The corresponding 1D index in the data buffer.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix[f32](shape=(3, 4))
+            var idx = mat.index(1, 2)  # Calculate linear index for (1, 2)
+            ```
+        """
         return row * self.strides[0] + col * self.strides[1]
 
     @always_inline
     fn normalize(self, idx: Int, dim: Int) -> Int:
         """
-        Normalize negative indices.
+        Normalize a potentially negative index to its positive equivalent
+        within the bounds of the given dimension.
+
+        Args:
+            idx: The index to normalize. Can be negative to indicate indexing
+                 from the end (e.g., -1 refers to the last element).
+            dim: The size of the dimension to normalize against.
+
+        Returns:
+            The normalized index as a non-negative integer.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix[f32](shape=(3, 4))
+            var norm_idx = mat.normalize(-1, mat.shape[0])  # Normalize -1 to 2
+            ```
         """
         var idx_norm = idx
         if idx_norm < 0:
@@ -425,6 +583,13 @@ struct MatrixBase[
 
         Raises:
             Error: If the provided indices are out of bounds for the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(3, 4))
+            var value = mat[1, 2]  # Retrieve value at row 1, column 2
+            ```
         """
         if (
             x >= self.shape[0]
@@ -441,34 +606,34 @@ struct MatrixBase[
         var y_norm = self.normalize(y, self.shape[1])
         return self._buf[self.index(x_norm, y_norm)]
 
-    # NOTE: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
+    # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Int) raises -> MatrixView[
         dtype, MutOrigin.cast_from[view_origin]
     ]:
         """
-        Retrieve a view of the specified row in the matrix.
-
-        This method returns a non-owning `MatrixView` that references the data of the
-        specified row in the original matrix. The view does not allocate new memory
-        and directly points to the existing data buffer of the matrix.
+        Retrieve a view of the specified row in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
         Parameters:
-            is_mutable: An inferred boolean indicating whether the returned view should allow
-                        modifications to the underlying data.
-            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be
-                         specified directly by users as it can lead to unsafe behavior.
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
 
         Args:
-            x: The row index to retrieve. Negative indices are supported and follow
-               Python conventions (e.g., -1 refers to the last row).
+            x: The row index to retrieve. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
 
         Returns:
             A `MatrixView` representing the specified row as a row vector.
 
         Raises:
             Error: If the provided row index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(3, 4))
+            var row_view = mat.get(1)  # Get a view of the second row
+            ```
         """
         constrained[
             Self.own_data == True,
@@ -501,19 +666,23 @@ struct MatrixBase[
     # for creating a copy of the row.
     fn __getitem__(self, var x: Int) raises -> Matrix[dtype]:
         """
-        Retrieve a copy of the specified row in the matrix.
-
-        This method returns a owning `Matrix` instance.
+        Retrieve a copy of the specified row in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified row of the original matrix. The returned matrix is a row vector with a shape of (1, number_of_columns).
 
         Args:
-            x: The row index to retrieve. Negative indices are supported and follow
-               Python conventions (e.g., -1 refers to the last row).
+            x: The row index to retrieve. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
 
         Returns:
-            A `Matrix` representing the specified row as a row vector.
+            A `Matrix` instance representing the specified row as a row vector.
 
         Raises:
             Error: If the provided row index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(3, 4))
+            var row_copy = mat[1]  # Get a copy of the second row
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -538,7 +707,30 @@ struct MatrixBase[
         dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
-        Get item from two slices.
+        Retrieve a view of the specified slice in the matrix.
+
+        This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
+
+        Parameters:
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
+
+        Args:
+            x: The row slice to retrieve.
+            y: The column slice to retrieve.
+
+        Returns:
+            A `MatrixView` representing the specified slice of the matrix.
+
+        Notes:
+            - Out of bounds indices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var slice_view = mat.get(Slice(1, 3), Slice(0, 2))  # Get a view of the submatrix
+            ```
         """
         start_x, end_x, step_x = x.indices(self.shape[0])
         start_y, end_y, step_y = y.indices(self.shape[1])
@@ -561,7 +753,24 @@ struct MatrixBase[
     # for creating a copy of the slice.
     fn __getitem__(self, x: Slice, y: Slice) -> Matrix[dtype]:
         """
-        Get item from two slices.
+        Retrieve a copy of the specified slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified slice of the original matrix. The returned matrix will have the shape determined by the slice ranges.
+
+        Args:
+            x: The row slice to retrieve. Supports Python slice syntax.
+            y: The column slice to retrieve. Supports Python slice syntax.
+
+        Returns:
+            A `Matrix` instance representing the specified slice of the matrix.
+
+        Notes:
+            - Out of bounds indices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var slice_copy = mat[1:3, 0:2]  # Get a copy of the submatrix
+            ```
         """
         var start_x: Int
         var end_x: Int
@@ -593,9 +802,32 @@ struct MatrixBase[
         dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
-        Get item from one slice and one int.
+        Retrieve a view of a specific column slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified column slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
+
+        Parameters:
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
+
+        Args:
+            x: The row slice to retrieve. This defines the range of rows to include in the view.
+            y: The column index to retrieve. This specifies the column to include in the view.
+
+        Returns:
+            A `MatrixView` representing the specified column slice of the matrix.
+
+        Raises:
+            Error: If the provided column index `y` is out of bounds.
+
+        Notes:
+            - Out-of-bounds indices for `x` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var column_view = mat.get(Slice(0, 4), 2)  # Get a view of the third column
+            ```
         """
-        # we could remove this constraint if we wanna allow users to create views from views. But that may complicate the origin tracking?
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
                 String("Index {} exceed the column number {}").format(
@@ -624,10 +856,28 @@ struct MatrixBase[
 
         return column_view^
 
-    # for creating a copy of the slice.
     fn __getitem__(self, x: Slice, var y: Int) -> Matrix[dtype]:
         """
-        Get item from one slice and one int.
+        Retrieve a copy of a specific column slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
+        of the data from the specified and column slice of the original matrix. The returned matrix will have a shape determined by the row slice and a single column.
+
+        Args:
+            x: The row slice to retrieve. This defines the range of rows to include in the copy.
+            y: The column index to retrieve. This specifies the column to include in the copy.
+
+        Returns:
+            A `Matrix` instance representing the specified column slice of the matrix.
+
+        Notes:
+            - Negative indices for `y` are normalized to their positive equivalent.
+            - Out-of-bounds indices for `x` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var column_copy = mat[0:4, 2]  # Get a copy of the third column
+            ```
         """
         if y < 0:
             y = self.shape[1] + y
@@ -656,7 +906,31 @@ struct MatrixBase[
         dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
-        Get item from one int and one slice.
+        Retrieve a view of a specific row slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
+
+        Parameters:
+            is_mutable: An inferred boolean indicating whether the returned view should allow modifications to the underlying data.
+            view_origin: Tracks the mutability and lifetime of the data being viewed. Should not be specified directly by users as it can lead to unsafe behavior.
+
+        Args:
+            x: The row index to retrieve. This specifies the row to include in the view. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
+            y: The column slice to retrieve. This defines the range of columns to include in the view.
+
+        Returns:
+            A `MatrixView` representing the specified row slice of the matrix.
+
+        Raises:
+            Error: If the provided row index `x` is out of bounds.
+
+        Notes:
+            - Out-of-bounds indices for `y` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var row_view = mat.get(1, Slice(0, 3))  # Get a view of the second row, columns 0 to 2
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -686,10 +960,30 @@ struct MatrixBase[
         )
         return row_slice_view^
 
-    # for creating a copy of the slice.
     fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
         """
-        Get item from one int and one slice.
+        Retrieve a copy of a specific row slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
+        of the data from the specified row and column slice of the original matrix. The returned matrix will have a shape of (1, number_of_columns_in_slice).
+
+        Args:
+            x: The row index to retrieve. This specifies the row to include in the copy. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
+            y: The column slice to retrieve. This defines the range of columns to include in the copy.
+
+        Returns:
+            A `Matrix` instance representing the specified row slice of the matrix.
+
+        Raises:
+            Error: If the provided row index `x` is out of bounds.
+
+        Notes:
+            - Out-of-bounds indices for `y` are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var row_copy = mat[1, 0:3]  # Get a copy of the second row, columns 0 to 2
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -714,27 +1008,60 @@ struct MatrixBase[
 
     fn __getitem__(self, indices: List[Int]) raises -> Matrix[dtype]:
         """
-        Get item by a list of integers.
+        Retrieve a copy of specific rows in the matrix based on the provided indices. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified rows of the original matrix. The returned matrix will have a shape of (number_of_indices, number_of_columns).
+
+        Args:
+            indices: A list of row indices to retrieve. Each index specifies a row to include in the resulting matrix. Negative indices are supported and follow Python conventions (e.g., -1 refers to the last row).
+
+        Returns:
+            A `Matrix` instance containing the selected rows as a new matrix.
+
+        Raises:
+            Error: If any of the provided indices are out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var selected_rows = mat[List[Int](0, 1, 0)]  # Get a copy of the
+            # first and second and first rows in a new matrix with shape (3, 4)
+            ```
         """
         var num_cols = self.shape[1]
         var num_rows = len(indices)
         var selected_rows = Matrix.zeros[dtype](shape=(num_rows, num_cols))
         for i in range(num_rows):
+            if indices[i] >= self.shape[0] or indices[i] < -self.shape[0]:
+                raise Error(
+                    String("Index {} exceed the row size {}").format(
+                        indices[i], self.shape[0]
+                    )
+                )
             selected_rows[i] = self[indices[i]]
         return selected_rows^
 
     fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
         """
-        Returns a SIMD element with width `width` at the given index.
+        Load a SIMD element from the matrix at the specified linear index.
 
         Parameters:
-            width: The width of the SIMD element.
+            width: The width of the SIMD element to load. Defaults to 1.
 
         Args:
-            idx: The linear index.
+            idx: The linear index of the element to load. Negative indices are supported and follow Python conventions.
 
         Returns:
-            A SIMD element with width `width`.
+            A SIMD element of the specified width containing the data at the given index.
+
+        Raises:
+            Error: If the provided index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var simd_element = mat.load[4](2)  # Load a SIMD element of width 4 from index 2
+            ```
         """
         if idx >= self.size or idx < -self.size:
             raise Error(
@@ -763,12 +1090,22 @@ struct MatrixBase[
 
     fn __setitem__(mut self, x: Int, y: Int, value: Scalar[dtype]) raises:
         """
-        Return the scalar at the index.
+        Set the value at the specified row and column indices in the matrix.
 
         Args:
-            x: The row number.
-            y: The column number.
-            value: The value to be set.
+            x: The row index. Can be negative to index from the end.
+            y: The column index. Can be negative to index from the end.
+            value: The value to set at the specified position.
+
+        Raises:
+            Error: If the provided indices are out of bounds for the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(3, 4))
+            mat[1, 2] = 5.0  # Set value at row 1, column 2 to 5.0
+            ```
         """
         if (
             x >= self.shape[0]
@@ -786,13 +1123,34 @@ struct MatrixBase[
 
         self._buf.store(self.index(x_norm, y_norm), value)
 
-    fn __setitem__(self, var x: Int, value: MatrixBase[dtype, **_]) raises:
+    # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
+    fn __setitem__(
+        self, var x: Int, value: MatrixBase[dtype, **_]
+    ) raises where Self.own_data == True and value.own_data == True:
         """
-        Set the corresponding row at the index with the given matrix.
+        Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
+        the provided `value` matrix. The `value` matrix must be a row vector with
+        the same number of columns as the target matrix.
 
         Args:
-            x: The row number.
-            value: Matrix (row vector). Can be either C or F order.
+            x: The row index where the data will be assigned. Negative indices are
+               supported and follow Python conventions (e.g., -1 refers to the last row).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix can be in either C-contiguous or F-contiguous order.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the `value` matrix does not have exactly one row.
+            Error: If the number of columns in the `value` matrix does not match
+                   the number of columns in the target matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(3, 4))
+            var row_vector = Matrix.ones(shape=(1, 4))
+            mat[1] = row_vector  # Set the second row of mat to row_vector
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -839,11 +1197,32 @@ struct MatrixBase[
 
     fn set(self, var x: Int, value: MatrixBase[dtype, **_]) raises:
         """
-        Set the corresponding row at the index with the given matrix.
+        Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
+        the provided `value` matrix. The `value` matrix must be a row vector with
+        the same number of columns as the target matrix.
 
         Args:
-            x: The row number.
-            value: Matrix (row vector). Can be either C or F order.
+            x: The row index where the data will be assigned. Negative indices are
+               supported and follow Python conventions (e.g., -1 refers to the last row).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix can be in either C-contiguous or F-contiguous order.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the `value` matrix does not have exactly one row.
+            Error: If the number of columns in the `value` matrix does not match
+                   the number of columns in the target matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(3, 4))
+            var row_vector = Matrix.ones(shape=(1, 4))
+            mat.set(1, row_vector)  # Set the second row of mat to row_vector
+
+            var view = row_vector.view() # create a view of row_vector
+            mat.set(2, view)  # Set the third row of mat to the view
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -892,7 +1271,35 @@ struct MatrixBase[
         self, x: Slice, y: Int, value: MatrixBase[dtype, **_]
     ) raises:
         """
-        Set item from one slice and one int.
+        Assign values to a column in the matrix at the specified column index `y`
+        and row slice `x` with the given matrix. This method replaces the values
+        in the specified column and row slice with the data from the provided
+        `value` matrix.
+
+        Args:
+            x: The row slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: The column index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last column).
+            value: A `Matrix` instance representing the column vector to assign.
+                   The `value` matrix must have the same number of rows as the
+                   specified slice `x` and exactly one column.
+
+        Raises:
+            Error: If the column index `y` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `x` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var col_vector = Matrix.ones(shape=(4, 1))
+            mat[0:4, 2] = col_vector  # Set the third column of mat to col_vector
+            ```
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
@@ -923,7 +1330,38 @@ struct MatrixBase[
 
     fn set(self, x: Slice, y: Int, value: MatrixBase[dtype, **_]) raises:
         """
-        Set item from one slice and one int.
+        Assign values to a column in the matrix at the specified column index `y`
+        and row slice `x` with the given matrix. This method replaces the values
+        in the specified column and row slice with the data from the provided
+        `value` matrix.
+
+        Args:
+            x: The row slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: The column index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last column).
+            value: A `Matrix` instance representing the column vector to assign.
+                   The `value` matrix must have the same number of rows as the
+                   specified slice `x` and exactly one column.
+
+        Raises:
+            Error: If the column index `y` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `x` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var col_vector = Matrix.ones(shape=(4, 1))
+            mat.set(Slice(0, 4), 2, col_vector)  # Set the third column of mat to col_vector
+
+            var view = col_vector.view() # create a view of col_vector
+            mat.set(Slice(0, 4), 3, view)  # Set the fourth column of mat to the view
+            ```
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
@@ -956,7 +1394,33 @@ struct MatrixBase[
         self, x: Int, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
-        Set item from one int and one slice.
+        Assign values to a row in the matrix at the specified row index `x`
+        and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
+
+        Args:
+            x: The row index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last row).
+            y: The column slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix must have the same number of columns as the
+                   specified slice `y` and exactly one row.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `y` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var row_vector = Matrix.ones(shape=(1, 3))
+            mat[1, 0:3] = row_vector  # Set the second row, columns 0 to 2 of mat to row_vector
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -987,7 +1451,36 @@ struct MatrixBase[
 
     fn set(self, x: Int, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
-        Set item from one int and one slice.
+        Assign values to a row in the matrix at the specified row index `x`
+        and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
+
+        Args:
+            x: The row index where the data will be assigned. Negative indices
+               are supported and follow Python conventions (e.g., -1 refers to the
+               last row).
+            y: The column slice where the data will be assigned. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance representing the row vector to assign.
+                   The `value` matrix must have the same number of columns as the
+                   specified slice `y` and exactly one row.
+
+        Raises:
+            Error: If the row index `x` is out of bounds.
+            Error: If the shape of the `value` matrix does not match the target
+                   slice dimensions.
+
+        Notes:
+            - Out of bound slice `y` is clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var row_vector = Matrix.ones(shape=(1, 3))
+            mat.set(1, Slice(0, 3), row_vector)  # Set the second row, columns 0 to 2 of mat to row_vector
+
+            var view = row_vector.view() # create a view of row_vector
+            mat.set(2, Slice(0, 3), view)  # Set the third row, columns 0 to 2 of mat to the view
+            ```
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
@@ -1020,7 +1513,26 @@ struct MatrixBase[
         self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
-        Set item from two slices.
+        Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
+
+        Args:
+            x: Row slice specifying which rows to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: Column slice specifying which columns to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance containing the values to assign.
+
+        Raises:
+            Error: If the shape of `value` does not match the shape of the target slice.
+
+        Notes:
+            - Out of bounds slices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var submatrix = Matrix.ones(shape=(2, 2))
+            mat[1:3, 1:3] = submatrix  # Set the 2x2 submatrix starting at (1,1) to ones
+            ```
         """
         var start_x: Int
         var end_x: Int
@@ -1053,7 +1565,30 @@ struct MatrixBase[
 
     fn set(self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
-        Set item from two slices.
+        Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
+
+        Args:
+            x: Row slice specifying which rows to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            y: Column slice specifying which columns to assign to. Supports Python slice syntax (e.g., `start:stop:step`).
+            value: A `Matrix` instance containing the values to assign.
+
+        Raises:
+            Error: If the shape of `value` does not match the shape of the target slice.
+
+        Notes:
+            - Out of bounds slices are clamped using the shape of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.zeros(shape=(4, 4))
+            var submatrix = Matrix.ones(shape=(2, 2))
+            mat.set(Slice(1, 3), Slice(1, 3), submatrix)  # Set the 2x2 submatrix starting at (1,1) to ones
+
+            var view = submatrix.view() # create a view of submatrix
+            mat.set(Slice(2, 4), Slice(2, 4), view
+            )  # Set the 2x2 submatrix starting at (2,2) to the view
+            ```
         """
         var start_x: Int
         var end_x: Int
@@ -1103,9 +1638,17 @@ struct MatrixBase[
     # ===-------------------------------------------------------------------===#
     fn view(ref self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
         """
-        Get a view of the matrix.
+        Return a non-owning view of the matrix. This method creates and returns a `MatrixView` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
 
-            A new MatrixView referencing the original matrix.
+        Returns:
+            A `MatrixView` referencing the original matrix data.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var mat = Matrix.rand((4, 4))
+            var mat_view = mat.view()  # Create a view of the original matrix
+            ```
         """
         var new_data = DataContainer[dtype, MutOrigin.cast_from[origin]](
             ptr=self._buf.get_ptr().unsafe_origin_cast[
@@ -1119,24 +1662,16 @@ struct MatrixBase[
         )
         return matrix_view^
 
-    fn get_shape(self) -> Tuple[Int, Int]:
-        """
-        Get the shape of the matrix.
-
-        Returns:
-            A tuple representing the shape of the matrix.
-        """
-        return self.shape
-
     fn __iter__(
         self,
     ) -> Self.IteratorType[origin, origin_of(self), True] where (
         own_data == True
     ):
-        """Iterate over rows of the Matrix, returning row views.
+        """
+        Returns an iterator over the rows of the Matrix. Each iteration yields a MatrixView representing a single row.
 
         Returns:
-            An iterator that yields MatrixView objects for each row.
+            Iterator that yields MatrixView objects for each row.
 
         Example:
             ```mojo
@@ -1158,7 +1693,17 @@ struct MatrixBase[
 
     fn __len__(self) -> Int:
         """
-        Returns length of 0-th dimension.
+        Return the number of rows in the matrix (length of the first dimension).
+
+        Returns:
+            The number of rows (self.shape[0]).
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var mat = Matrix.rand((4, 4))
+            print(len(mat))  # Outputs: 4
+            ```
         """
         return self.shape[0]
 
@@ -1167,13 +1712,12 @@ struct MatrixBase[
     ) raises -> Self.IteratorType[origin, origin_of(self), False] where (
         own_data == True
     ):
-        """Iterate backwards over elements of the Matrix, returning
-        copied value.
+        """
+        Return an iterator that traverses the matrix rows in reverse order.
 
         Returns:
-            A reversed iterator of Matrix elements.
+            A reversed iterator over the rows of the matrix, yielding copies of each row.
         """
-
         return Self.IteratorType[origin, origin_of(self), False](
             index=0,
             src=rebind[
@@ -1185,9 +1729,22 @@ struct MatrixBase[
         )
 
     fn __str__(self) -> String:
+        """
+        Return a string representation of the matrix.
+
+        Returns:
+            A string showing the matrix contents, shape, strides, order, and ownership.
+        """
         return String.write(self)
 
     fn write_to[W: Writer](self, mut writer: W):
+        """
+        Write the string representation of the matrix to a writer.
+
+        Args:
+            writer: The writer to output the matrix string to.
+        """
+
         fn print_row(self: Self, i: Int, sep: String) raises -> String:
             var result: String = String("[")
             var number_of_sep: Int = 1
@@ -1256,6 +1813,26 @@ struct MatrixBase[
     # ===-------------------------------------------------------------------===#
 
     fn __add__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+        """
+        Add two matrices element-wise.
+
+        Args:
+            other: Matrix to add to self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix containing the element-wise sum.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4))
+            print(A + B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1274,29 +1851,64 @@ struct MatrixBase[
             ](self, broadcast_to[dtype](other, self.shape, self.order()))
 
     fn __add__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
-        """Add matrix to scalar.
+        """
+        Add a scalar to every element of the matrix.
 
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.ones(shape=(4, 4))
-        print(A + 2)
-        ```
+        Args:
+            other: Scalar value to add.
+
+        Returns:
+            A new Matrix with the scalar added to each element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(A + 2)
+            ```
         """
         return self + broadcast_to[dtype](other, self.shape, self.order())
 
     fn __radd__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
         """
-        Right-add.
+        Add a matrix to a scalar (right-hand side).
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(2 + A)
-        ```
+        Args:
+            other: Scalar value to add.
+
+        Returns:
+            A new Matrix with the scalar added to each element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            print(2 + A)
+            ```
         """
         return broadcast_to[dtype](other, self.shape, self.order()) + self
 
     fn __sub__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+        """
+        Subtract two matrices element-wise.
+
+        Args:
+            other: Matrix to subtract from self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix containing the element-wise difference.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4))
+            print(A - B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1315,29 +1927,64 @@ struct MatrixBase[
             ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __sub__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
-        """Subtract matrix by scalar.
+        """
+        Subtract a scalar from every element of the matrix.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix(shape=(4, 4))
-        print(A - 2)
-        ```
+        Args:
+            other: Scalar value to subtract.
+
+        Returns:
+            A new Matrix with the scalar subtracted from each element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(A - 2)
+            ```
         """
         return self - broadcast_to[dtype](other, self.shape, self.order())
 
     fn __rsub__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
         """
-        Right-sub.
+        Subtract a matrix from a scalar (right-hand side).
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(2 - A)
-        ```
+        Args:
+            other: Scalar value to subtract from.
+
+        Returns:
+            A new Matrix with each element being the scalar minus the corresponding matrix element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(2 - A)
+            ```
         """
         return broadcast_to[dtype](other, self.shape, self.order()) - self
 
     fn __mul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+        """
+        Multiply two matrices element-wise.
+
+        Args:
+            other: Matrix to multiply with self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix containing the element-wise product.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4))
+            print(A * B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1356,29 +2003,64 @@ struct MatrixBase[
             ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __mul__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
-        """Mutiply matrix by scalar.
+        """
+        Multiply matrix by scalar.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(A * 2)
-        ```
+        Args:
+            other: Scalar value to multiply.
+
+        Returns:
+            A new Matrix with each element multiplied by the scalar.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(A * 2)
+            ```
         """
         return self * broadcast_to[dtype](other, self.shape, self.order())
 
     fn __rmul__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
         """
-        Right-mul.
+        Multiply scalar by matrix (right-hand side).
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(2 * A)
-        ```
+        Args:
+            other: Scalar value to multiply.
+
+        Returns:
+            A new Matrix with each element multiplied by the scalar.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(2 * A)
+            ```
         """
         return broadcast_to[dtype](other, self.shape, self.order()) * self
 
     fn __truediv__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+        """
+        Divide two matrices element-wise.
+
+        Args:
+            other: Matrix to divide self by. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix containing the element-wise division result.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4))
+            print(A / B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1397,11 +2079,41 @@ struct MatrixBase[
             ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __truediv__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
-        """Divide matrix by scalar."""
+        """
+        Divide matrix by scalar.
+
+        Args:
+            other: Scalar value to divide each element of the matrix by.
+
+        Returns:
+            A new Matrix with each element divided by the scalar.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(A / 2)
+            ```
+        """
         return self / broadcast_to[dtype](other, self.shape, order=self.order())
 
     fn __pow__(self, rhs: Scalar[dtype]) raises -> Matrix[dtype]:
-        """Power of items."""
+        """
+        Raise each element of the matrix to the power of `rhs`.
+
+        Args:
+            rhs: The scalar exponent to which each element of the matrix will be raised.
+
+        Returns:
+            A new Matrix where each element is self[i] ** rhs.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(A ** 2)
+            ```
+        """
         var result: Matrix[dtype] = Matrix[dtype](
             shape=self.shape, order=self.order()
         )
@@ -1410,6 +2122,26 @@ struct MatrixBase[
         return result^
 
     fn __lt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+        """
+        Compare two matrices element-wise for less-than.
+
+        Args:
+            other: Matrix to compare with self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] < other[i, j], else False.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4)) * 2
+            print(A < B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1428,17 +2160,45 @@ struct MatrixBase[
             )
 
     fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
-        """Matrix less than scalar.
+        """
+        Compare each element of the matrix to a scalar for less-than.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(A < 2)
-        ```
+        Args:
+            other: Scalar value to compare.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] < other, else False.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            print(A < 2)
+            ```
         """
         return self < broadcast_to[dtype](other, self.shape, self.order())
 
     fn __le__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+        """
+        Compare two matrices element-wise for less-than-or-equal.
+
+        Args:
+            other: Matrix to compare with self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] <= other[i, j], else False.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4)) * 2
+            print(A <= B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1457,17 +2217,45 @@ struct MatrixBase[
             )
 
     fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
-        """Matrix less than and equal to scalar.
+        """
+        Compare each element of the matrix to a scalar for less-than-or-equal.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(A <= 2)
-        ```
+        Args:
+            other: Scalar value to compare.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] <= other, else False.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            print(A <= 2)
+            ```
         """
         return self <= broadcast_to[dtype](other, self.shape, self.order())
 
     fn __gt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+        """
+        Compare two matrices element-wise for greater-than.
+
+        Args:
+            other: Matrix to compare with self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] > other[i, j], else False.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            B = Matrix.ones(shape=(4, 4)) * 2
+            print(A > B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1486,17 +2274,45 @@ struct MatrixBase[
             )
 
     fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
-        """Matrix greater than scalar.
+        """
+        Compare each element of the matrix to a scalar for greater-than.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(A > 2)
-        ```
+        Args:
+            other: Scalar value to compare.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] > other, else False.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            print(A > 2)
+            ```
         """
         return self > broadcast_to[dtype](other, self.shape, self.order())
 
     fn __ge__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+        """
+        Compare two matrices element-wise for greater-than-or-equal.
+
+        Args:
+            other: Matrix to compare with self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] >= other[i, j], else False.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            B = Matrix.ones(shape=(4, 4)) * 2
+            print(A >= B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1515,17 +2331,48 @@ struct MatrixBase[
             )
 
     fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
-        """Matrix greater than and equal to scalar.
+        """
+        Compare each element of the matrix to a scalar for greater-than-or-equal.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(A >= 2)
-        ```
+        Args:
+            other: Scalar value to compare.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] >= other, else False.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            print(A >= 2)
+            ```
         """
         return self >= broadcast_to[dtype](other, self.shape, self.order())
 
     fn __eq__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+        """
+        Compare two matrices element-wise for equality.
+
+        Args:
+            other: Matrix to compare with self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] == other[i, j], else False.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4))
+            print(A == B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1544,17 +2391,45 @@ struct MatrixBase[
             )
 
     fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
-        """Matrix less than and equal to scalar.
+        """
+        Compare each element of the matrix to a scalar for equality.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(A == 2)
-        ```
+        Args:
+            other: Scalar value to compare.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] == other, else False.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            print(A == 2)
+            ```
         """
         return self == broadcast_to[dtype](other, self.shape, self.order())
 
     fn __ne__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+        """
+        Compare two matrices element-wise for inequality.
+
+        Args:
+            other: Matrix to compare with self. Must be broadcastable to self's shape.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] != other[i, j], else False.
+
+        Raises:
+            Error: If the shapes are not compatible for broadcasting.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 4))
+            var B = Matrix.ones(shape=(4, 4))
+            print(A != B)
+            ```
+        """
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1573,86 +2448,247 @@ struct MatrixBase[
             )
 
     fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
-        """Matrix less than and equal to scalar.
+        """
+        Compare each element of the matrix to a scalar for inequality.
 
-        ```mojo
-        from numojo import Matrix
-        A = Matrix.ones(shape=(4, 4))
-        print(A != 2)
-        ```
+        Args:
+            other: Scalar value to compare.
+
+        Returns:
+            A new Matrix[bool] where each element is True if self[i, j] != other, else False.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            A = Matrix.ones(shape=(4, 4))
+            print(A != 2)
+            ```
         """
         return self != broadcast_to[dtype](other, self.shape, self.order())
 
     fn __matmul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+        """
+        Matrix multiplication using the @ operator.
+
+        Args:
+            other: The matrix to multiply with self.
+
+        Returns:
+            A new Matrix containing the result of matrix multiplication.
+
+        Raises:
+            Error: If the shapes are not compatible for matrix multiplication.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.ones(shape=(4, 3))
+            var B = Matrix.ones(shape=(3, 2))
+            print(A @ B)
+            ```
+        """
         return numojo.linalg.matmul(self, other)
 
     # # ===-------------------------------------------------------------------===#
     # # Core methods
     # # ===-------------------------------------------------------------------===#
 
+    # FIXME: These return types be Scalar[DType.bool] or Matrix[DType.bool] instead to match numpy. Fix the docstring examples too.
     fn all(self) -> Scalar[dtype]:
         """
-        Test whether all array elements evaluate to True.
+        Returns True if all elements of the matrix evaluate to True.
+
+        Returns:
+            Scalar[dtype]: True if all elements are True, otherwise False.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float64](1, 1, 1, 1, 1), (5, 1))
+            print(A.all())  # Outputs: True
+            var B = Matrix.fromlist(List[Float64](1, 0, 2, 3, 4), (5, 1))
+            print(B.all())  # Outputs: False
+            ```
         """
         return numojo.logic.all(self)
 
     fn all(self, axis: Int) raises -> Matrix[dtype]:
         """
-        Test whether all array elements evaluate to True along axis.
+        Returns a matrix indicating whether all elements along the specified axis evaluate to True.
+
+        Args:
+            axis: The axis along which to perform the test.
+
+        Returns:
+            Matrix[dtype]: Matrix of boolean values for each slice along the axis.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(
+                List[Float64](1, 1, 1, 0, 1, 3), (2, 3)
+            )
+            print(A.all(axis=0))  # Outputs: [[0, 1, 1]]
+            print(A.all(axis=1))  # Outputs: [[1], [0]]
+            ```
         """
         return numojo.logic.all[dtype](self, axis=axis)
 
     fn any(self) -> Scalar[dtype]:
         """
-        Test whether any array elements evaluate to True.
+        Returns True if any element of the matrix evaluates to True.
+
+        Returns:
+            Scalar[dtype]: True if any element is True, otherwise False.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float64](0, 0, 0, 0, 0), (5, 1))
+            print(A.any())  # Outputs: False
+            var B = Matrix.fromlist(List[Float64](0, 2, 0, 0, 0), (5, 1))
+            print(B.any())  # Outputs: True
+            ```
         """
         return numojo.logic.any(self)
 
     fn any(self, axis: Int) raises -> Matrix[dtype]:
         """
-        Test whether any array elements evaluate to True along axis.
+        Returns a matrix indicating whether any element along the specified axis evaluates to True.
+
+        Args:
+            axis: The axis along which to perform the test.
+
+        Returns:
+            Matrix[dtype]: Matrix of boolean values for each slice along the axis.
         """
         return numojo.logic.any(self, axis=axis)
 
     fn argmax(self) raises -> Scalar[DType.int]:
         """
-        Index of the max. It is first flattened before sorting.
+        Returns the index of the maximum element in the flattened matrix.
+
+        Returns:
+            Scalar[DType.int]: Index of the maximum element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 3, 2, 5, 4), (5, 1))
+            print(A.argmax())  # Outputs: 3
+            ```
         """
         return numojo.math.argmax(self)
 
     fn argmax(self, axis: Int) raises -> Matrix[DType.int]:
         """
-        Index of the max along the given axis.
+        Returns the indices of the maximum elements along the specified axis.
+
+        Args:
+            axis: The axis along which to find the maximum.
+
+        Returns:
+            Matrix[DType.int]: Indices of the maximum elements along the axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 3, 2, 5, 4, 6), (2, 3))
+            print(A.argmax(axis=0))  # Outputs: [[1, 1, 1]]
+            print(A.argmax(axis=1))  # Outputs: [[1], [2]]
+            ```
         """
         return numojo.math.argmax(self, axis=axis)
 
     fn argmin(self) raises -> Scalar[DType.int]:
         """
-        Index of the min. It is first flattened before sorting.
+        Returns the index of the minimum element in the flattened matrix.
+
+        Returns:
+            Scalar[DType.int]: Index of the minimum element.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5), (5, 1))
+            print(A.argmin())  # Outputs: 1
+            ```
         """
         return numojo.math.argmin(self)
 
     fn argmin(self, axis: Int) raises -> Matrix[DType.int]:
         """
-        Index of the min along the given axis.
+        Returns the indices of the minimum elements along the specified axis.
+
+        Args:
+            axis: The axis along which to find the minimum.
+
+        Returns:
+            Matrix[DType.int]: Indices of the minimum elements along the axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5, 0), (2, 3))
+            print(A.argmin(axis=0))  # Outputs: [[1, 1, 1]]
+            print(A.argmin(axis=1))  # Outputs: [[1], [2]]
+            ```
         """
         return numojo.math.argmin(self, axis=axis)
 
     fn argsort(self) raises -> Matrix[DType.int]:
         """
-        Argsort the Matrix. It is first flattened before sorting.
+        Returns the indices that would sort the flattened matrix.
+
+        Returns:
+            Matrix[DType.int]: Indices that sort the flattened matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2), (4, 1))
+            print(A.argsort())  # Outputs: [[1, 3, 0, 2]]
+            ```
         """
         return numojo.math.argsort(self)
 
     fn argsort(self, axis: Int) raises -> Matrix[DType.int]:
         """
-        Argsort the Matrix along the given axis.
+        Returns the indices that would sort the matrix along the specified axis.
+
+        Args:
+            axis: The axis along which to sort.
+
+        Returns:
+            Matrix[DType.int]: Indices that sort the matrix along the axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5, 0), (2, 3))
+            print(A.argsort(axis=0))  # Outputs: [[1, 1, 1], [0, 0, 0]]
+            print(A.argsort(axis=1))  # Outputs: [[1, 3, 0], [2, 0, 1]]
+            ```
         """
         return numojo.math.argsort(self, axis=axis)
 
     fn astype[asdtype: DType](self) -> Matrix[asdtype]:
         """
-        Copy of the matrix, cast to a specified type.
+        Returns a copy of the matrix cast to the specified data type.
+
+        Parameters:
+            asdtype: The target data type to cast to.
+
+        Returns:
+            Matrix[asdtype]: A new matrix with elements cast to the specified type.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float32](1.5, 2.5, 3.5), (3, 1))
+            var B = A.astype[i8]()
+            print(B)  # Outputs a Matrix[i8] with values [[1], [2], [3]]
+            ```
         """
         var casted_matrix = Matrix[asdtype](
             shape=(self.shape[0], self.shape[1]), order=self.order()
@@ -1663,45 +2699,92 @@ struct MatrixBase[
 
     fn cumprod(self) raises -> Matrix[dtype]:
         """
-        Cumprod of flattened matrix.
+        Compute the cumulative product of all elements in the matrix, flattened into a single dimension.
+
+        Returns:
+            Matrix[dtype]: A matrix containing the cumulative product of the flattened input.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand(shape=(100, 100))
-        print(A.cumprod())
-        ```
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.cumprod())
+            ```
         """
         return numojo.math.cumprod(self)
 
     fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
         """
-        Cumprod of Matrix along the axis.
+        Compute the cumulative product of elements along a specified axis.
 
         Args:
-            axis: 0 or 1.
+            axis: The axis along which to compute the cumulative product (0 for rows, 1 for columns).
+
+        Returns:
+            Matrix[dtype]: A matrix containing the cumulative product along the specified axis.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand(shape=(100, 100))
-        print(A.cumprod(axis=0))
-        print(A.cumprod(axis=1))
-        ```
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.cumprod(axis=0))
+            print(A.cumprod(axis=1))
+            ```
         """
         return numojo.math.cumprod(self, axis=axis)
 
     fn cumsum(self) raises -> Matrix[dtype]:
+        """
+        Compute the cumulative sum of all elements in the matrix, flattened into a single dimension.
+
+        Returns:
+            Matrix[dtype]: A matrix containing the cumulative sum of the flattened input.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.cumsum())
+            ```
+        """
         return numojo.math.cumsum(self)
 
     fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
+        """
+        Compute the cumulative sum of elements along a specified axis.
+
+        Args:
+            axis: The axis along which to compute the cumulative sum (0 for rows, 1 for columns).
+
+        Returns:
+            Matrix[dtype]: A matrix containing the cumulative sum along the specified axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.cumsum(axis=0))
+            print(A.cumsum(axis=1))
+            ```
+        """
         return numojo.math.cumsum(self, axis=axis)
 
     fn fill(self, fill_value: Scalar[dtype]):
         """
-        Fill the matrix with value.
+        Fill the matrix with the specified value. This method sets every element of the matrix to `fill_value`.
 
-        See also function `mat.creation.full`.
+        Args:
+            fill_value: The value to assign to every element of the matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            A.fill(5)
+            print(A)
+            ```
+
+        See also: `Matrix.full`
         """
         for i in range(self.size):
             self._buf.ptr[i] = fill_value
@@ -1709,7 +2792,17 @@ struct MatrixBase[
     # * Make it inplace?
     fn flatten(self) -> Matrix[dtype]:
         """
-        Return a flattened copy of the matrix.
+        Return a flattened copy of the matrix. This method returns a new matrix containing all elements of the original matrix in a single row (shape (1, size)), preserving the order.
+
+        Returns:
+            Matrix[dtype]: A new matrix with shape (1, self.size) containing the flattened data.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((2, 3))
+            print(A.flatten())
+            ```
         """
         var res = Matrix[dtype](shape=(1, self.size), order=self.order())
         memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
@@ -1717,13 +2810,36 @@ struct MatrixBase[
 
     fn inv(self) raises -> Matrix[dtype]:
         """
-        Inverse of matrix.
+        Compute the inverse of the matrix.
+
+        Returns:
+            Matrix[dtype]: The inverse of the matrix.
+
+        Raises:
+            Error: If the matrix is not square or not invertible.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            print(A.inv())
+            ```
         """
         return numojo.linalg.inv(self)
 
     fn order(self) -> String:
         """
-        Returns the order.
+        Return the memory layout order of the matrix.
+
+        Returns:
+            String: "C" if the matrix is C-contiguous, "F" if F-contiguous.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3), order="F")
+            print(A.order())  # "F"
+            ```
         """
         var order: String = "F"
         if self.flags.C_CONTIGUOUS:
@@ -1732,13 +2848,39 @@ struct MatrixBase[
 
     fn max(self) raises -> Scalar[dtype]:
         """
-        Find max item. It is first flattened before sorting.
+        Return the maximum element in the matrix.
+
+        The matrix is flattened before finding the maximum.
+
+        Returns:
+            Scalar[dtype]: The maximum value in the matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            print(A.max())
+            ```
         """
         return numojo.math.extrema.max(self)
 
     fn max(self, axis: Int) raises -> Matrix[dtype]:
         """
-        Find max item along the given axis.
+        Return the maximum values along the specified axis.
+
+        Args:
+            axis: The axis along which to compute the maximum (0 for rows, 1 for columns).
+
+        Returns:
+            Matrix[dtype]: A matrix containing the maximum values along the given axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            print(A.max(axis=0))  # Max of each column
+            print(A.max(axis=1))  # Max of each row
+            ```
         """
         return numojo.math.extrema.max(self, axis=axis)
 
@@ -1746,7 +2888,17 @@ struct MatrixBase[
         returned_dtype: DType = DType.float64
     ](self) raises -> Scalar[returned_dtype]:
         """
-        Calculate the arithmetic average of all items in the Matrix.
+        Compute the arithmetic mean of all elements in the matrix.
+
+        Returns:
+            Scalar[returned_dtype]: The mean value of all elements.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.mean())
+            ```
         """
         return numojo.statistics.mean[returned_dtype](self)
 
@@ -1754,45 +2906,95 @@ struct MatrixBase[
         returned_dtype: DType = DType.float64
     ](self, axis: Int) raises -> Matrix[returned_dtype]:
         """
-        Calculate the arithmetic average of a Matrix along the axis.
+        Compute the arithmetic mean along the specified axis.
 
         Args:
-            axis: 0 or 1.
+            axis: The axis along which to compute the mean (0 for rows, 1 for columns).
+
+        Returns:
+            Matrix[returned_dtype]: The mean values along the given axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.mean(axis=0))
+            print(A.mean(axis=1))
+            ```
         """
         return numojo.statistics.mean[returned_dtype](self, axis=axis)
 
     fn min(self) raises -> Scalar[dtype]:
         """
-        Find min item. It is first flattened before sorting.
+        Return the minimum element in the matrix.
+
+        The matrix is flattened before finding the minimum.
+
+        Returns:
+            Scalar[dtype]: The minimum value in the matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            print(A.min())
+            ```
         """
         return numojo.math.extrema.min(self)
 
     fn min(self, axis: Int) raises -> Matrix[dtype]:
         """
-        Find min item along the given axis.
+        Return the minimum values along the specified axis.
+
+        Args:
+            axis: The axis along which to compute the minimum (0 for rows, 1 for columns).
+
+        Returns:
+            Matrix[dtype]: The minimum values along the given axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3))
+            print(A.min(axis=0))  # Min of each column
+            print(A.min(axis=1))  # Min of each row
+            ```
         """
         return numojo.math.extrema.min(self, axis=axis)
 
     fn prod(self) -> Scalar[dtype]:
         """
-        Product of all items in the Matrix.
+        Compute the product of all elements in the matrix.
+
+        Returns:
+            Scalar[dtype]: The product of all elements.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.prod())
+            ```
         """
         return numojo.math.prod(self)
 
     fn prod(self, axis: Int) raises -> Matrix[dtype]:
         """
-        Product of items in a Matrix along the axis.
+        Compute the product of elements along the specified axis.
 
         Args:
-            axis: 0 or 1.
+            axis: The axis along which to compute the product (0 for rows, 1 for columns).
+
+        Returns:
+            Matrix[dtype]: The product values along the given axis.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand(shape=(100, 100))
-        print(A.prod(axis=0))
-        print(A.prod(axis=1))
-        ```
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.prod(axis=0))
+            print(A.prod(axis=1))
+            ```
         """
         return numojo.math.prod(self, axis=axis)
 
@@ -1855,7 +3057,26 @@ struct MatrixBase[
     # NOTE: not sure if `where` clause works correctly here yet.
     fn resize(mut self, shape: Tuple[Int, Int]) raises where own_data == True:
         """
-        Change shape and size of matrix in-place.
+        Change the shape and size of the matrix in-place.
+
+        Args:
+            shape: Tuple of (rows, columns) specifying the new shape.
+
+        Raises:
+            Error: If the new shape requires more elements than the current matrix can hold and memory allocation fails.
+
+        Notes:
+            - If the new shape is larger, the matrix is reallocated and new elements are zero-initialized.
+            - If the new shape is smaller, the matrix shape and strides are updated without reallocating memory.
+            - Only allowed for matrices with own_data=True.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(2, 3))
+            A.resize((4, 5))
+            print(A)
+            ```
         """
         if shape[0] * shape[1] > self.size:
             var other = MatrixBase[dtype, own_data=own_data, origin=origin](
@@ -1894,16 +3115,43 @@ struct MatrixBase[
                 self.strides[1] = shape[0]
 
     fn round(self, decimals: Int) raises -> Matrix[dtype]:
+        """
+        Round each element of the matrix to the specified number of decimals.
+
+        Args:
+            decimals: Number of decimal places to round to.
+
+        Returns:
+            Matrix[dtype]: A new matrix with rounded values.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(List[Float64](1.12345, 2.67891, 3.14159), (3, 1))
+            var B = A.round(2)
+            print(B)  # Outputs a Matrix[Float64] with values [[1.12], [2.68], [3.14]]
+            ```
+        """
         return numojo.math.rounding.round(self, decimals=decimals)
 
     fn std[
         returned_dtype: DType = DType.float64
     ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
-        Compute the standard deviation.
+        Compute the standard deviation of all elements in the matrix.
 
         Args:
-            ddof: Delta degree of freedom.
+            ddof: Delta degrees of freedom. The divisor used in calculations is N - ddof, where N is the number of elements.
+
+        Returns:
+            Scalar[returned_dtype]: The standard deviation of the matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.std())
+            ```
         """
         return numojo.statistics.std[returned_dtype](self, ddof=ddof)
 
@@ -1911,80 +3159,168 @@ struct MatrixBase[
         returned_dtype: DType = DType.float64
     ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
-        Compute the standard deviation along axis.
+        Compute the standard deviation along the specified axis.
 
         Args:
-            axis: 0 or 1.
-            ddof: Delta degree of freedom.
+            axis: Axis along which to compute the standard deviation (0 for rows, 1 for columns).
+            ddof: Delta degrees of freedom. The divisor used in calculations is N - ddof, where N is the number of elements along the axis.
+
+        Returns:
+            Matrix[returned_dtype]: The standard deviation along the given axis.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.std(axis=0))
+            print(A.std(axis=1))
+            ```
         """
         return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
 
     fn sum(self) -> Scalar[dtype]:
         """
-        Sum up all items in the Matrix.
+        Compute the sum of all elements in the matrix.
+
+        Returns:
+            Scalar[dtype]: The sum of all elements.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand(shape=(100, 100))
-        print(A.sum())
-        ```
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.sum())
+            ```
         """
         return numojo.math.sum(self)
 
     fn sum(self, axis: Int) raises -> Matrix[dtype]:
         """
-        Sum up the items in a Matrix along the axis.
+        Compute the sum of elements along the specified axis.
 
         Args:
-            axis: 0 or 1.
+            axis: Axis along which to sum (0 for rows, 1 for columns).
+
+        Returns:
+            Matrix[dtype]: The sum along the given axis.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand(shape=(100, 100))
-        print(A.sum(axis=0))
-        print(A.sum(axis=1))
-        ```
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.sum(axis=0))
+            print(A.sum(axis=1))
+            ```
         """
         return numojo.math.sum(self, axis=axis)
 
     fn trace(self) raises -> Scalar[dtype]:
         """
-        Trace of matrix.
+        Compute the trace of the matrix (sum of diagonal elements).
+
+        Returns:
+            Scalar[dtype]: The trace value.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromlist(
+                List[Float64](1, 2, 3, 4, 5, 6, 7, 8, 9), (3, 3)
+            )
+            print(A.trace())  # Outputs: 15.0
+            ```
         """
         return numojo.linalg.trace(self)
 
     fn issymmetric(self) -> Bool:
         """
-        Transpose of matrix.
+        Check if the matrix is symmetric (equal to its transpose).
+
+        Returns:
+            Bool: True if the matrix is symmetric, False otherwise.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 2, 2, 1), (2, 2))
+            print(A.issymmetric())  # Outputs: True
+            var B = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            print(B.issymmetric())  # Outputs: False
+            ```
         """
         return issymmetric(self)
 
     fn transpose(self) -> Matrix[dtype]:
         """
-        Transpose of matrix.
+        Return the transpose of the matrix.
+
+        Returns:
+            Matrix[dtype]: The transposed matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            print(A.transpose())  # Outputs: [[1, 3], [2, 4]]
+            ```
         """
         return transpose(self)
 
     # TODO: we should only allow this for owndata. not for views, it'll lead to weird origin behaviours.
     fn reorder_layout(self) raises -> Matrix[dtype]:
         """
-        Reorder_layout matrix.
+        Reorder the memory layout of the matrix to match its current order ("C" or "F"). This method returns a new matrix with the same data but stored in the requested memory layout. Only allowed for matrices with own_data=True.
+
+        Returns:
+            Matrix[dtype]: A new matrix with reordered memory layout.
+
+        Raises:
+            Error: If the matrix does not have its own data.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand((3, 3), order="F")
+            var B = A.reorder_layout()
+            print(B.order())  # Outputs: "F"
+            ```
         """
         return reorder_layout(self)
 
     fn T(self) -> Matrix[dtype]:
+        """
+        Return the transpose of the matrix.
+
+        Returns:
+            Matrix[dtype]: The transposed matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            print(A.T())  # Outputs: [[1, 3], [2, 4]]
+            ```
+        """
         return transpose(self)
 
     fn variance[
         returned_dtype: DType = DType.float64
     ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
-        Compute the variance.
+        Compute the variance of all elements in the matrix.
 
         Args:
-            ddof: Delta degree of freedom.
+            ddof: Delta degrees of freedom. The divisor used in calculations is N - ddof, where N is the number of elements.
+
+        Returns:
+            Scalar[returned_dtype]: The variance of the matrix.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.variance())
+            ```
         """
         return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
 
@@ -1992,11 +3328,22 @@ struct MatrixBase[
         returned_dtype: DType = DType.float64
     ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
-        Compute the variance along axis.
+        Compute the variance along the specified axis.
 
         Args:
-            axis: 0 or 1.
-            ddof: Delta degree of freedom.
+            axis: Axis along which to compute the variance (0 for rows, 1 for columns).
+            ddof: Delta degrees of freedom. The divisor used in calculations is N - ddof, where N is the number of elements along the axis.
+
+        Returns:
+            Matrix[returned_dtype]: The variance along the given axis.
+
+        Example:
+            ```mojo
+            from numojo import Matrix
+            var A = Matrix.rand(shape=(100, 100))
+            print(A.variance(axis=0))
+            print(A.variance(axis=1))
+            ```
         """
         return numojo.statistics.variance[returned_dtype](
             self, axis=axis, ddof=ddof
@@ -2009,18 +3356,47 @@ struct MatrixBase[
     fn to_ndarray(self) raises -> NDArray[dtype]:
         """Create `NDArray` from `Matrix`.
 
-        It makes a copy of the buffer of the matrix.
+        Returns a new NDArray with the same shape and data as the Matrix.
+        The buffer is copied, so changes to the NDArray do not affect the original Matrix.
+
+        Returns:
+            NDArray[dtype]: A new NDArray containing the same data as the Matrix.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand((3, 3))
+            var ndarray_A = A.to_ndarray()
+            print(ndarray_A)
+            ```
         """
 
         var ndarray: NDArray[dtype] = NDArray[dtype](
-            shape=List[Int](self.shape[0], self.shape[1]), order="C"
+            shape=List[Int](self.shape[0], self.shape[1]), order=self.order()
         )
         memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
 
         return ndarray^
 
     fn to_numpy(self) raises -> PythonObject where own_data == True:
-        """See `numojo.core.utility.to_numpy`."""
+        """
+        Convert the Matrix to a NumPy ndarray.
+
+        Returns:
+            PythonObject: A NumPy ndarray containing the same data as the Matrix.
+
+        Notes:
+            - The returned NumPy array is a copy of the Matrix data.
+            - The dtype and memory order are matched as closely as possible.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand((3, 3))
+            var np_A = A.to_numpy()
+            print(np_A)
+            ```
+        """
         try:
             var np = Python.import_module("numpy")
 
@@ -2083,13 +3459,22 @@ struct MatrixBase[
         fill_value: Scalar[datatype] = 0,
         order: String = "C",
     ) -> Matrix[datatype]:
-        """Return a matrix with given shape and filled value.
+        """
+        Create a matrix of the specified shape, filled with the given value.
+
+        Args:
+            shape: Tuple specifying the matrix dimensions (rows, columns).
+            fill_value: Value to fill every element of the matrix.
+            order: Memory layout order, "C" (row-major) or "F" (column-major).
+
+        Returns:
+            Matrix[datatype]: Matrix filled with `fill_value`.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.full(shape=(10, 10), fill_value=100)
-        ```
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.full[f32](shape=(10, 10), fill_value=100)
+            ```
         """
 
         var matrix = Matrix[datatype](shape, order)
@@ -2102,13 +3487,21 @@ struct MatrixBase[
     fn zeros[
         datatype: DType = DType.float64
     ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
-        """Return a matrix with given shape and filled with zeros.
+        """
+        Create a matrix of the specified shape, filled with zeros.
+
+        Args:
+            shape: Tuple specifying the matrix dimensions (rows, columns).
+            order: Memory layout order, "C" (row-major) or "F" (column-major).
+
+        Returns:
+            Matrix[datatype]: Matrix filled with zeros.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.ones(shape=(10, 10))
-        ```
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.zeros[i32](shape=(10, 10))
+            ```
         """
 
         var res = Matrix[datatype](shape, order)
@@ -2119,13 +3512,21 @@ struct MatrixBase[
     fn ones[
         datatype: DType = DType.float64
     ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
-        """Return a matrix with given shape and filled with ones.
+        """
+        Create a matrix of the specified shape, filled with ones.
+
+        Args:
+            shape: Tuple specifying the matrix dimensions (rows, columns).
+            order: Memory layout order, "C" (row-major) or "F" (column-major).
+
+        Returns:
+            Matrix[datatype]: Matrix filled with ones.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.ones(shape=(10, 10))
-        ```
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.ones[f64](shape=(10, 10))
+            ```
         """
 
         return Matrix.full[datatype](shape=shape, fill_value=1)
@@ -2134,13 +3535,22 @@ struct MatrixBase[
     fn identity[
         datatype: DType = DType.float64
     ](len: Int, order: String = "C") -> Matrix[datatype]:
-        """Return an identity matrix with given size.
+        """
+        Create an identity matrix of the given size.
+
+        Args:
+            len: Size of the identity matrix (number of rows and columns).
+            order: Memory layout order, "C" (row-major) or "F" (column-major).
+
+        Returns:
+            Matrix[datatype]: Identity matrix of shape (len, len).
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.identity(12)
-        ```
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.identity[f16](12)
+            print(A)
+            ```
         """
         var matrix = Matrix.zeros[datatype]((len, len), order)
         for i in range(len):
@@ -2153,17 +3563,21 @@ struct MatrixBase[
     fn rand[
         datatype: DType = DType.float64
     ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
-        """Return a matrix with random values uniformed distributed between 0 and 1.
-
-        Example:
-        ```mojo
-        from numojo import Matrix
-        var A = Matrix.rand((12, 12))
-        ```
+        """
+        Create a matrix of the specified shape, filled with random values uniformly distributed between 0 and 1.
 
         Args:
-            shape: The shape of the Matrix.
-            order: The order of the Matrix. "C" or "F".
+            shape: Tuple specifying the matrix dimensions (rows, columns).
+            order: Memory layout order, "C" (row-major) or "F" (column-major).
+
+        Returns:
+            Matrix[datatype]: Matrix filled with random values.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.rand[f64]((12, 12))
+            ```
         """
         var result = Matrix[datatype](shape, order)
         for i in range(result.size):
@@ -2178,16 +3592,23 @@ struct MatrixBase[
         shape: Tuple[Int, Int] = (0, 0),
         order: String = "C",
     ) raises -> Matrix[datatype]:
-        """Create a matrix from a 1-dimensional list into given shape.
+        """
+        Create a matrix from a 1-dimensional list and reshape to the given shape.
 
-        If no shape is passed, the return matrix will be a row vector.
+        Args:
+            object: List of values to populate the matrix.
+            shape: Tuple specifying the matrix dimensions (rows, columns). If not provided, creates a row vector.
+            order: Memory layout order, "C" (row-major) or "F" (column-major).
+
+        Returns:
+            Matrix[datatype]: Matrix containing the values from the list.
 
         Example:
-        ```mojo
-        from numojo import Matrix
-        fn main() raises:
-            print(Matrix.fromlist(List[Float64](1, 2, 3, 4, 5), (5, 1)))
-        ```
+            ```mojo
+            from numojo.prelude import *
+            var a = Matrix.fromlist(List[Float64](1, 2, 3, 4, 5), (5, 1))
+            print(a)
+            ```
         """
 
         if (shape[0] == 0) and (shape[1] == 0):
@@ -2212,33 +3633,34 @@ struct MatrixBase[
     ](
         text: String, shape: Tuple[Int, Int] = (0, 0), order: String = "C"
     ) raises -> Matrix[datatype]:
-        """Matrix initialization from string representation of an matrix.
+        """
+        Create a Matrix from a string representation of its elements.
 
-        Comma, right brackets, and whitespace are treated as seperators of numbers.
-        Digits, underscores, and minus signs are treated as a part of the numbers.
-
-        If now shape is passed, the return matrix will be a row vector.
-
-        Example:
-        ```mojo
-        from numojo.prelude import *
-        from numojo import Matrix
-        fn main() raises:
-            var A = Matrix[f32].fromstring(
-            "1 2 .3 4 5 6.5 7 1_323.12 9 10, 11.12, 12 13 14 15 16", (4, 4))
-        ```
-        ```console
-        [[1.0   2.0     0.30000001192092896     4.0]
-        [5.0   6.5     7.0     1323.1199951171875]
-        [9.0   10.0    11.119999885559082      12.0]
-        [13.0  14.0    15.0    16.0]]
-        Size: 4x4  datatype: float32
-        ```
+        The input string should contain numbers separated by commas, right brackets, or whitespace. Digits, underscores, decimal points, and minus signs are treated as part of numbers. If no shape is provided, the returned matrix will be a row vector.
 
         Args:
-            text: String representation of a matrix.
-            shape: Shape of the matrix.
-            order: Order of the matrix. "C" or "F".
+            text: String containing the matrix elements.
+            shape: Tuple specifying the matrix dimensions (rows, columns). If not provided, creates a row vector.
+            order: Memory layout order, "C" (row-major) or "F" (column-major).
+
+        Returns:
+            Matrix[datatype]: Matrix constructed from the string data.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var A = Matrix.fromstring[f32]("1 2 .3 4 5 6.5 7 1_323.12 9 10, 11.12, 12 13 14 15 16", (4, 4))
+            print(A)
+            ```
+
+            Output:
+            ```
+            [[1.0   2.0     0.30000001192092896     4.0]
+            [5.0   6.5     7.0     1323.1199951171875]
+            [9.0   10.0    11.119999885559082      12.0]
+            [13.0  14.0    15.0    16.0]]
+            Size: 4x4  datatype: float32
+            ```
         """
 
         var data = List[Scalar[datatype]]()
@@ -2296,23 +3718,30 @@ struct _MatrixIter[
     iterator_origin: Origin[is_mutable],
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
-    """Iterator for Matrix that returns row views.
+    """
+    Iterator for Matrix that yields row views.
+
+    This struct provides iteration over the rows of a Matrix, returning a MatrixView for each row. It supports both forward and backward iteration.
 
     Parameters:
         is_mutable: Whether the iterator allows mutable access to the matrix.
         dtype: The data type of the matrix elements.
         matrix_origin: The origin of the underlying Matrix data.
         iterator_origin: The origin of the iterator itself.
-        forward: The iteration direction. `False` is backwards.
+        forward: The iteration direction. If True, iterates forward; if False, iterates backward.
     """
 
     comptime Element = MatrixView[dtype, Self.matrix_origin]
+    """The type of elements yielded by the iterator (MatrixView). """
 
     var index: Int
+    """Current index in the iteration."""
+
     var matrix_ptr: Pointer[
         MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
         Self.iterator_origin,
     ]
+    """Pointer to the source Matrix being iterated over."""
 
     fn __init__(
         out self,
@@ -2338,7 +3767,11 @@ struct _MatrixIter[
 
     @always_inline
     fn __has_next__(self) -> Bool:
-        """Check if there are more rows to iterate over."""
+        """Check if there are more rows to iterate over.
+
+        Returns:
+            Bool: True if there are more rows to iterate, False otherwise.
+        """
 
         @parameter
         if Self.forward:
@@ -2352,7 +3785,7 @@ struct _MatrixIter[
         """Return a view of the next row.
 
         Returns:
-            A MatrixView representing the next row in the iteration.
+            MatrixView: A view representing the next row in the iteration.
         """
 
         @parameter
@@ -2367,7 +3800,11 @@ struct _MatrixIter[
 
     @always_inline
     fn bounds(self) -> Tuple[Int, Optional[Int]]:
-        """Return the iteration bounds."""
+        """Return the iteration bounds.
+
+        Returns:
+            Tuple[Int, Optional[Int]]: Number of remaining rows and an optional value of the same.
+        """
         var remaining_rows: Int
 
         @parameter
@@ -2384,6 +3821,7 @@ struct _MatrixIter[
 # # ===-----------------------------------------------------------------------===#
 
 
+# TODO: we can move the checks in these functions to the caller functions to avoid redundant checks.
 fn _arithmetic_func_matrix_matrix_to_matrix[
     dtype: DType,
     simd_func: fn[type: DType, simd_width: Int] (
@@ -2391,9 +3829,24 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     ) -> SIMD[type, simd_width],
 ](A: MatrixBase[dtype, **_], B: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
-    Matrix[dtype] & Matrix[dtype] -> Matrix[dtype]
+    Perform element-wise arithmetic operation between two matrices using a SIMD function.
 
-    For example: `__add__`, `__sub__`, etc.
+    Parameters:
+        dtype: The data type of the matrix elements.
+        simd_func: A SIMD function that takes two SIMD vectors and returns a SIMD vector, representing the desired arithmetic operation (e.g., addition, subtraction).
+
+    Args:
+        A: The first input matrix.
+        B: The second input matrix.
+
+    Returns:
+        Matrix[dtype]: A new matrix containing the result of applying the SIMD function element-wise to A and B.
+
+    Raises:
+        Error: If the matrix orders or shapes do not match.
+
+    Notes:
+        - Only for internal purposes.
     """
     alias simd_width = simd_width_of[dtype]()
     if A.order() != B.order():
@@ -2433,9 +3886,20 @@ fn _arithmetic_func_matrix_to_matrix[
     ) -> SIMD[type, simd_width],
 ](A: Matrix[dtype]) -> Matrix[dtype]:
     """
-    Matrix[dtype] -> Matrix[dtype]
+    Apply a unary SIMD function element-wise to a matrix.
 
-    For example: `sin`, `cos`, etc.
+    Parameters:
+        dtype: The data type of the matrix elements.
+        simd_func: A SIMD function that takes a SIMD vector and returns a SIMD vector representing
+
+    Args:
+        A: Input matrix of type Matrix[dtype].
+
+    Returns:
+        Matrix[dtype]: A new matrix containing the result of applying the SIMD function to each element of the input matrix.
+
+    Notes:
+        - Only for internal purposes.
     """
     alias simd_width: Int = simd_width_of[dtype]()
 
@@ -2459,7 +3923,25 @@ fn _logic_func_matrix_matrix_to_matrix[
     DType.bool
 ]:
     """
-    Matrix[dtype] & Matrix[dtype] -> Matrix[bool]
+    Perform element-wise logical comparison between two matrices using a SIMD function.
+
+    Parameters:
+        dtype: The data type of the input matrices.
+        simd_func: A SIMD function that takes two SIMD vectors of dtype and returns a SIMD vector of bools.
+
+    Args:
+        A: The first input matrix.
+        B: The second input matrix.
+
+    Returns:
+        Matrix[DType.bool]: A new matrix of bools containing the result of the element-wise logical comparison.
+
+    Raises:
+        Error: If the matrix orders or shapes do not match.
+
+    Notes:
+        - Only for internal purposes.
+        - The output matrix has the same shape and order as the input matrices.
     """
     alias width = simd_width_of[dtype]()
 

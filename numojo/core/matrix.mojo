@@ -30,7 +30,7 @@ from numojo.routines.linalg.misc import issymmetric
 # ===----------------------------------------------------------------------===#
 
 
-alias Matrix = MatrixImpl[_, own_data=True, origin = MutOrigin.external]
+alias Matrix = MatrixBase[_, own_data=True, origin = MutOrigin.external]
 """
 Primary Matrix type for creating and manipulating 2D matrices in NuMojo.
 
@@ -59,10 +59,10 @@ Usage:
 Notes:
     - This matrix owns its data and manages memory allocation/deallocation.
     - For non-owning views into existing data, use methods like `get()`, `view()` which return `MatrixView`.
-    - Direct instantiation of `MatrixImpl` should be avoided; always use this alias.
+    - Direct instantiation of `MatrixBase` should be avoided; always use this alias.
 """
 
-alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixImpl[
+alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixBase[
     dtype, own_data=False, origin=origin
 ]
 """
@@ -111,7 +111,7 @@ Safety Notes:
 """
 
 
-struct MatrixImpl[
+struct MatrixBase[
     dtype: DType = DType.float64,
     *,
     own_data: Bool,
@@ -120,7 +120,7 @@ struct MatrixImpl[
     """
     Core implementation struct for 2D matrix operations with flexible ownership semantics.
 
-    `MatrixImpl` is the underlying implementation for both owning matrices (`Matrix`)
+    `MatrixBase` is the underlying implementation for both owning matrices (`Matrix`)
     and non-owning matrix views (`MatrixView`). It provides a complete set of operations
     for 2D array manipulation with compile-time known dimensions, enabling optimizations
     not possible with generic N-dimensional arrays.
@@ -131,11 +131,11 @@ struct MatrixImpl[
     particularly suitable for linear algebra, image processing, and other applications
     where 2D structure is fundamental.
 
-    **Important**: Users should not instantiate `MatrixImpl` directly. Instead, use:
+    **Important**: Users should not instantiate `MatrixBase` directly. Instead, use:
     - `Matrix[dtype]` for matrices that own their data (standard usage)
     - Methods like `get()` that return `MatrixView` for non-owning views
 
-    Direct instantiation of `MatrixImpl` may lead to undefined behavior related to
+    Direct instantiation of `MatrixBase` may lead to undefined behavior related to
     memory management and lifetime tracking.
 
     Type Parameters:
@@ -786,7 +786,7 @@ struct MatrixImpl[
 
         self._buf.store(self.index(x_norm, y_norm), value)
 
-    fn __setitem__(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
+    fn __setitem__(self, var x: Int, value: MatrixBase[dtype, **_]) raises:
         """
         Set the corresponding row at the index with the given matrix.
 
@@ -837,7 +837,7 @@ struct MatrixImpl[
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
-    fn set(self, var x: Int, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, var x: Int, value: MatrixBase[dtype, **_]) raises:
         """
         Set the corresponding row at the index with the given matrix.
 
@@ -889,7 +889,7 @@ struct MatrixImpl[
                     self._store(x, j, value._load(0, j))
 
     fn __setitem__(
-        self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]
+        self, x: Slice, y: Int, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Set item from one slice and one int.
@@ -921,7 +921,7 @@ struct MatrixImpl[
             self._store(i, y_norm, value._load(row, 0))
             row += 1
 
-    fn set(self, x: Slice, y: Int, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Int, value: MatrixBase[dtype, **_]) raises:
         """
         Set item from one slice and one int.
         """
@@ -953,7 +953,7 @@ struct MatrixImpl[
             row += 1
 
     fn __setitem__(
-        self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]
+        self, x: Int, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Set item from one int and one slice.
@@ -985,7 +985,7 @@ struct MatrixImpl[
             self._store(x_norm, j, value._load(0, col))
             col += 1
 
-    fn set(self, x: Int, y: Slice, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Int, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
         Set item from one int and one slice.
         """
@@ -1017,7 +1017,7 @@ struct MatrixImpl[
             col += 1
 
     fn __setitem__(
-        self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]
+        self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]
     ) raises:
         """
         Set item from two slices.
@@ -1051,7 +1051,7 @@ struct MatrixImpl[
                 col += 1
             row += 1
 
-    fn set(self, x: Slice, y: Slice, value: MatrixImpl[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]) raises:
         """
         Set item from two slices.
         """
@@ -1150,7 +1150,7 @@ struct MatrixImpl[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    MatrixBase[dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1178,7 +1178,7 @@ struct MatrixImpl[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixImpl[dtype, own_data=True, origin=origin],
+                    MatrixBase[dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1255,7 +1255,7 @@ struct MatrixImpl[
     # Arithmetic dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __add__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __add__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1296,7 +1296,7 @@ struct MatrixImpl[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) + self
 
-    fn __sub__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __sub__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1337,7 +1337,7 @@ struct MatrixImpl[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) - self
 
-    fn __mul__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __mul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1378,7 +1378,7 @@ struct MatrixImpl[
         """
         return broadcast_to[dtype](other, self.shape, self.order()) * self
 
-    fn __truediv__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __truediv__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1409,7 +1409,7 @@ struct MatrixImpl[
             result._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
         return result^
 
-    fn __lt__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __lt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1438,7 +1438,7 @@ struct MatrixImpl[
         """
         return self < broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __le__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __le__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1467,7 +1467,7 @@ struct MatrixImpl[
         """
         return self <= broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __gt__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __gt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1496,7 +1496,7 @@ struct MatrixImpl[
         """
         return self > broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __ge__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ge__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1525,7 +1525,7 @@ struct MatrixImpl[
         """
         return self >= broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __eq__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __eq__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1554,7 +1554,7 @@ struct MatrixImpl[
         """
         return self == broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __ne__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ne__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
@@ -1583,7 +1583,7 @@ struct MatrixImpl[
         """
         return self != broadcast_to[dtype](other, self.shape, self.order())
 
-    fn __matmul__(self, other: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+    fn __matmul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
         return numojo.linalg.matmul(self, other)
 
     # # ===-------------------------------------------------------------------===#
@@ -1858,7 +1858,7 @@ struct MatrixImpl[
         Change shape and size of matrix in-place.
         """
         if shape[0] * shape[1] > self.size:
-            var other = MatrixImpl[dtype, own_data=own_data, origin=origin](
+            var other = MatrixBase[dtype, own_data=own_data, origin=origin](
                 shape=shape, order=self.order()
             )
             if self.flags.C_CONTIGUOUS:
@@ -2310,7 +2310,7 @@ struct _MatrixIter[
 
     var index: Int
     var matrix_ptr: Pointer[
-        MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
+        MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
         Self.iterator_origin,
     ]
 
@@ -2318,7 +2318,7 @@ struct _MatrixIter[
         out self,
         index: Int,
         src: Pointer[
-            MatrixImpl[dtype, own_data=True, origin = Self.matrix_origin],
+            MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
             Self.iterator_origin,
         ],
     ):
@@ -2389,7 +2389,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     simd_func: fn[type: DType, simd_width: Int] (
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[type, simd_width],
-](A: MatrixImpl[dtype, **_], B: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], B: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Matrix[dtype] & Matrix[dtype] -> Matrix[dtype]
 
@@ -2455,7 +2455,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     simd_func: fn[type: DType, simd_width: Int] (
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[DType.bool, simd_width],
-](A: MatrixImpl[dtype, **_], B: MatrixImpl[dtype, **_]) raises -> Matrix[
+](A: MatrixBase[dtype, **_], B: MatrixBase[dtype, **_]) raises -> Matrix[
     DType.bool
 ]:
     """

@@ -16,7 +16,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.own_data import OwnData
 from numojo.core.item import Item
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixImpl
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros, eye, full
 from numojo.routines.linalg.decompositions import (
     partial_pivoting,
@@ -117,7 +117,7 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     return solve(A, I)
 
 
-fn inv[dtype: DType](A: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+fn inv[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Inverse of matrix.
     """
@@ -373,7 +373,7 @@ fn solve[
 
 fn solve[
     dtype: DType
-](A: MatrixImpl[dtype, **_], Y: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], Y: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LUP decomposition.
     """
@@ -437,7 +437,7 @@ fn solve[
 
 fn solve_lu[
     dtype: DType
-](A: MatrixImpl[dtype, **_], Y: MatrixImpl[dtype, **_]) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], Y: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LU decomposition.
     """

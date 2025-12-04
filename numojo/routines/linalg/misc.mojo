@@ -13,7 +13,7 @@ from sys import simd_width_of
 from algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import MatrixImpl
+from numojo.core.matrix import MatrixBase
 
 
 fn diagonal[
@@ -68,7 +68,7 @@ fn diagonal[
 fn issymmetric[
     dtype: DType
 ](
-    A: MatrixImpl[dtype, **_],
+    A: MatrixBase[dtype, **_],
     rtol: Scalar[dtype] = 1e-5,
     atol: Scalar[dtype] = 1e-8,
 ) -> Bool:

@@ -6,10 +6,125 @@
 # var ptr: LegacyUnsafePointer[Scalar[dtype]]
 # ===----------------------------------------------------------------------===
 
-from memory import LegacyUnsafePointer
+from memory import UnsafePointer, LegacyUnsafePointer
 
 
-struct DataContainer[dtype: DType]():
+# temporary DataContainer to support transition from LegacyUnsafePointer to UnsafePointer.
+struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
+    var ptr: UnsafePointer[Scalar[dtype], origin]
+
+    fn __init__(out self, size: Int):
+        """
+        Allocate given space on memory.
+        The bytes allocated is `size` * `byte size of dtype`.
+
+        Notes:
+        `ndarray.flags['OWN_DATA']` should be set as True.
+        The memory should be freed by `__del__`.
+        """
+        self.ptr: UnsafePointer[Scalar[dtype], origin] = alloc[Scalar[dtype]](
+            size
+        ).unsafe_origin_cast[origin]()
+
+    fn __init__(out self, ptr: UnsafePointer[Scalar[dtype], origin]):
+        """
+        Do not use this if you know what it means.
+        If the pointer is associated with another array, it might cause
+        dangling pointer problem.
+
+        Notes:
+        `ndarray.flags['OWN_DATA']` should be set as False.
+        The memory should not be freed by `__del__`.
+        """
+        self.ptr = ptr
+
+    fn __moveinit__(out self, deinit other: Self):
+        """
+        Move-initializes this DataContainerNew from another instance.
+
+        Transfers ownership of the pointer from `other` to `self`.
+        After this operation, `other` should not be used.
+        """
+        self.ptr = other.ptr
+
+    fn get_ptr(
+        self,
+    ) -> ref [origin_of(self.ptr)] UnsafePointer[Scalar[dtype], origin]:
+        """
+        Returns the internal pointer to the data buffer.
+
+        Returns:
+            UnsafePointer[Scalar[dtype], origin]: The pointer to the underlying data.
+        """
+        return self.ptr
+
+    fn __str__(self) -> String:
+        """
+        Returns a string representation of the DataContainerNew.
+
+        Returns:
+            String: A string describing the container and its pointer.
+        """
+        return "DatContainer with ptr: " + String(self.ptr)
+
+    fn __getitem__(self, idx: Int) -> Scalar[dtype]:
+        """
+        Gets the value at the specified index in the data buffer.
+
+        Args:
+            idx: Index of the element to retrieve.
+
+        Returns:
+            Scalar[dtype]: The value at the given index.
+        """
+        return self.ptr[idx]
+
+    fn __setitem__(mut self, idx: Int, val: Scalar[dtype]):
+        """
+        Sets the value at the specified index in the data buffer.
+
+        Args:
+            idx: Index of the element to set.
+            val: Value to assign.
+        """
+        self.ptr[idx] = val
+
+    fn offset(self, offset: Int) -> UnsafePointer[Scalar[dtype], origin]:
+        """
+        Returns a pointer offset by the given number of elements.
+
+        Args:
+            offset: Number of elements to offset the pointer.
+
+        Returns:
+            UnsafePointer[Scalar[dtype], origin]: The offset pointer.
+        """
+        return self.ptr.offset(offset)
+
+    fn load[width: Int](self, offset: Int) -> SIMD[dtype, width]:
+        """
+        Loads a value from the data buffer at the specified offset.
+
+        Args:
+            offset: Offset from the start of the buffer.
+
+        Returns:
+            Scalar[dtype]: The loaded value.
+        """
+        return self.ptr.load[width=width](offset)
+
+    fn store[width: Int](mut self, offset: Int, value: SIMD[dtype, width]):
+        """
+        Stores a value into the data buffer at the specified offset.
+
+        Args:
+            offset: Offset from the start of the buffer.
+            value: Value to store.
+        """
+        self.ptr.store[width=width](offset, value)
+
+
+struct DataContainer[dtype: DType](ImplicitlyCopyable):
     var ptr: LegacyUnsafePointer[Scalar[dtype]]
 
     fn __init__(out self, size: Int):

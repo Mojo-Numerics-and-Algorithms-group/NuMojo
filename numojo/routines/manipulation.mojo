@@ -9,8 +9,8 @@
 Array manipulation routines.
 """
 
-from memory import memcpy
-from memory import LegacyUnsafePointer as UnsafePointer
+from memory import UnsafePointer, memcpy
+from memory import LegacyUnsafePointer
 from sys import simd_width_of
 from algorithm import vectorize
 
@@ -20,7 +20,7 @@ from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.core.utility import _list_of_flipped_range, _get_offset
 
 # ===----------------------------------------------------------------------=== #
@@ -288,7 +288,7 @@ fn transpose[
 
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
-    var ptr: UnsafePointer[Scalar[DType.int]] = I._buf.ptr
+    var ptr: LegacyUnsafePointer[Scalar[DType.int]] = I._buf.ptr
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
@@ -326,7 +326,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
+fn transpose[dtype: DType](A: MatrixBase[dtype, **_]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
@@ -347,7 +347,7 @@ fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
 
 fn reorder_layout[
     dtype: DType
-](A: Matrix[dtype, **_]) raises -> Matrix[dtype, A.BufType]:
+](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -372,7 +372,7 @@ fn reorder_layout[
             )
         )
 
-    var B = Matrix[dtype, A.BufType](Tuple(rows, cols), new_order)
+    var B = Matrix[dtype](Tuple(rows, cols), new_order)
     if new_order == "C":
         for i in range(rows):
             for j in range(cols):
@@ -450,10 +450,10 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    read A: Matrix[dtype, **_],
+    A: MatrixBase[dtype, **_],
     shape: Tuple[Int, Int],
     override_order: String = "",
-) raises -> Matrix[dtype, **_]:
+) raises -> Matrix[dtype]:
     """
     Broadcasts the vector to the given shape.
 
@@ -490,9 +490,8 @@ fn broadcast_to[
     else:
         ord = override_order
 
-    var B: Matrix[dtype, OwnData] = Matrix[dtype, OwnData](shape, order=ord)
+    var B: Matrix[dtype] = Matrix[dtype](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        # return A.copy()
         memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
         B = Matrix[dtype].full(shape, A[0, 0], order=ord)

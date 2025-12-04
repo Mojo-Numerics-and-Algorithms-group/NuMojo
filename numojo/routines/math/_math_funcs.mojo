@@ -418,7 +418,7 @@ struct Vectorized(Backend):
 fn bool_simd_store[
     simd_width: Int
 ](
-    ptr: UnsafePointer[Scalar[DType.bool]],
+    ptr: LegacyUnsafePointer[Scalar[DType.bool]],
     start: Int,
     val: SIMD[DType.bool, simd_width],
 ):

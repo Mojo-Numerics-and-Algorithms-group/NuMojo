@@ -12,7 +12,6 @@
 
 # pixi environments
 .pixi
-pixi.lock
 /venv
 
 

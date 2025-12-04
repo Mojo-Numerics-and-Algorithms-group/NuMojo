@@ -8,8 +8,7 @@ from memory import UnsafePointer, memcpy, memset_zero
 import math as builtin_math
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
-from numojo.core.matrix import Matrix, issymmetric
+from numojo.core.matrix import Matrix, issymmetric, MatrixBase
 from numojo.routines.creation import zeros, eye, full
 
 
@@ -215,7 +214,7 @@ fn lu_decomposition[
 
 fn lu_decomposition[
     dtype: DType
-](A: Matrix[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: MatrixBase[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     """
     Perform LU (lower-upper) decomposition for matrix.
     """
@@ -307,9 +306,7 @@ fn partial_pivoting[
 
 fn partial_pivoting[
     dtype: DType
-](A: Matrix[dtype, **_]) raises -> Tuple[
-    Matrix[dtype, **_], Matrix[dtype, **_], Int
-]:
+](A: MatrixBase[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
     """
     Perform partial pivoting for matrix.
     """
@@ -376,7 +373,7 @@ fn qr[
     else:
         raise Error(String("Invalid mode: {}").format(mode))
 
-    var R: Matrix[dtype, OwnData]
+    var R: Matrix[dtype]
 
     if A.flags.C_CONTIGUOUS:
         reorder = True

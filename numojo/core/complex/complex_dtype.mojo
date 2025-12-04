@@ -674,6 +674,10 @@ fn _concise_dtype_str(cdtype: ComplexDType) -> String:
     """Returns a concise string representation of the complex data type."""
     if cdtype == ci8:
         return "ci8"
+    elif cdtype == ci16:
+        return "ci16"
+    elif cdtype == ci32:
+        return "ci32"
     elif cdtype == ci64:
         return "ci64"
     elif cdtype == ci128:

@@ -51,7 +51,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             SIMD[cf32._dtype, 2](1.0, 1.5),
             SIMD[cf32._dtype, 2](2.0, -0.5)
         )
-        print(a2)
+        print(a2) # ( [1.0 2.0] + [1.5 -0.5]j )
 
     Convenience factories:
         ComplexSIMD[cf64].zero()

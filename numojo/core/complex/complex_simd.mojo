@@ -22,8 +22,276 @@ alias ComplexScalar = ComplexSIMD[_, width=1]
 alias CScalar = ComplexSIMD[_, width=1]
 """User-friendly alias for scalar complex numbers."""
 
-alias `1j` = ComplexSIMD[_, width=1](0, 1)
-"""Constant representing the imaginary unit complex number 0 + 1j for cf32 in Python style."""
+
+@register_passable("trivial")
+struct ImaginaryUnit(Boolable, Stringable, Writable):
+    """Constant representing the imaginary unit complex number 0 + 1j for cf64 in Python style.
+    """
+
+    fn __init__(out self):
+        """Constructor for ImaginaryUnit."""
+        pass
+
+    fn conj(self) -> ComplexSIMD[ComplexDType.float64, 1]:
+        """Returns the complex conjugate of the imaginary unit: -1j."""
+        return -self
+
+    # --- Arithmetic operators with SIMD and Scalar types ---
+    # Addition: 1j + SIMD -> ComplexSIMD
+    fn __add__[
+        dtype: DType, width: Int
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        """Returns the sum of the imaginary unit and a SIMD vector."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            other, SIMD[dtype, width](1)
+        )
+
+    # Addition: 1j + Scalar -> ComplexScalar
+    fn __add__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        """Returns the sum of the imaginary unit and a scalar."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            other, 1
+        )
+
+    fn __add__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
+        """Returns the sum of the imaginary unit and an integer."""
+        return ComplexSIMD[ComplexDType.int, 1](other, 1)
+
+    # SIMD + 1j -> ComplexSIMD
+    fn __radd__[
+        dtype: DType, width: Int
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        """Returns the sum of a SIMD vector and the imaginary unit."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            other, SIMD[dtype, width](1)
+        )
+
+    # Addition: Scalar + 1j -> ComplexScalar
+    fn __radd__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        """Returns the sum of a scalar and the imaginary unit."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            other, 1
+        )
+
+    # Addition: Int + 1j -> ComplexScalar
+    fn __radd__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
+        """Returns the sum of an integer and the imaginary unit."""
+        return ComplexSIMD[ComplexDType.int, 1](other, 1)
+
+    # Subtraction: 1j - SIMD -> ComplexSIMD
+    fn __sub__[
+        dtype: DType, width: Int
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        """Returns the difference of the imaginary unit and a SIMD vector."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            -other, SIMD[dtype, width](1)
+        )
+
+    # Subtraction: 1j - Scalar -> ComplexScalar
+    fn __sub__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        """Returns the difference of the imaginary unit and a scalar."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            -other, 1
+        )
+
+    fn __sub__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
+        """Returns the difference of the imaginary unit and an integer."""
+        return ComplexSIMD[ComplexDType.int, 1](-other, 1)
+
+    # Subtraction: SIMD - 1j -> ComplexSIMD
+    fn __rsub__[
+        dtype: DType, width: Int
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        """Returns the difference of a SIMD vector and the imaginary unit."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            other, SIMD[dtype, width](-1)
+        )
+
+    # Subtraction: Scalar - 1j -> ComplexScalar
+    fn __rsub__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        """Returns the difference of a scalar and the imaginary unit."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            other, -1
+        )
+
+    # Subtraction: Int - 1j -> ComplexScalar
+    fn __rsub__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
+        """Returns the difference of an integer and the imaginary unit."""
+        return ComplexSIMD[ComplexDType.int, 1](other, -1)
+
+    # Multiplication: 1j * SIMD -> ComplexSIMD
+    fn __mul__[
+        dtype: DType, width: Int
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            SIMD[dtype, width](0), other
+        )
+
+    # Multiplication: 1j * Scalar -> ComplexScalar
+    fn __mul__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            0, other
+        )
+
+    # Multiplication: 1j * Int -> ComplexScalar
+    fn __mul__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
+        return ComplexSIMD[ComplexDType.int, 1](0, other)
+
+    fn __rmul__[
+        dtype: DType,
+        width: Int, //,
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            SIMD[dtype, width](0), other
+        )
+
+    fn __rmul__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            0, other
+        )
+
+    # Multiplication: Scalar * 1j -> ComplexScalar
+    fn __rmul__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
+        return ComplexSIMD[ComplexDType.int, 1](0, other)
+
+    # Division: 1j / SIMD -> ComplexSIMD
+    fn __truediv__[
+        dtype: DType, width: Int
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        """Returns the division of the imaginary unit by a SIMD vector."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            SIMD[dtype, width](0), 1 / other
+        )
+
+    # Division: 1j / Scalar -> ComplexScalar
+    fn __truediv__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        """Returns the division of the imaginary unit by a scalar."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            0, 1 / other
+        )
+
+    # Division: SIMD / 1j -> ComplexSIMD
+    fn __rtruediv__[
+        dtype: DType, width: Int
+    ](self, other: SIMD[dtype, width]) -> ComplexSIMD[
+        ComplexDType(mlir_value=dtype._mlir_value), width
+    ]:
+        """Returns the division of a SIMD vector by the imaginary unit."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), width](
+            SIMD[dtype, width](0), -other
+        )
+
+    # Division: Scalar / 1j -> ComplexScalar
+    fn __rtruediv__[
+        dtype: DType
+    ](self, other: Scalar[dtype]) -> ComplexScalar[
+        ComplexDType(mlir_value=dtype._mlir_value)
+    ]:
+        """Returns the division of a scalar by the imaginary unit."""
+        return ComplexSIMD[ComplexDType(mlir_value=dtype._mlir_value), 1](
+            0, -other
+        )
+
+    # Division: Int / 1j -> ComplexScalar
+    fn __rtruediv__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
+        """Returns the division of an integer by the imaginary unit."""
+        return ComplexSIMD[ComplexDType.int, 1](0, -other)
+
+    # Self-operations: 1j with 1j
+    fn __mul__(self, other: ImaginaryUnit) -> Scalar[DType.float64]:
+        """Returns the product of the imaginary unit with itself: 1j * 1j = -1.
+        """
+        return -1
+
+    fn __add__(
+        self, other: ImaginaryUnit
+    ) -> ComplexScalar[ComplexDType.float64]:
+        """Returns the sum of the imaginary unit with itself: 1j + 1j = 2j."""
+        return ComplexSIMD[ComplexDType.float64, 1](0, 2)
+
+    fn __sub__(self, other: ImaginaryUnit) -> Scalar[DType.float64]:
+        """Returns the difference of the imaginary unit with itself: 1j - 1j = 0.
+        """
+        return 0
+
+    fn __truediv__(self, other: ImaginaryUnit) -> Scalar[DType.float64]:
+        """Returns the division of the imaginary unit by itself: 1j / 1j = 1."""
+        return 1
+
+    fn __pow__(self, exponent: Int) -> ComplexScalar[ComplexDType.float64]:
+        """Returns the imaginary unit raised to an integer power."""
+        var remainder = exponent % 4
+        if remainder == 0:
+            return ComplexSIMD[ComplexDType.float64, 1](1, 0)
+        elif remainder == 1:
+            return ComplexSIMD[ComplexDType.float64, 1](0, 1)
+        elif remainder == 2:
+            return ComplexSIMD[ComplexDType.float64, 1](-1, 0)
+        else:
+            return ComplexSIMD[ComplexDType.float64, 1](0, -1)
+
+    fn __neg__(self) -> ComplexScalar[ComplexDType.float64]:
+        """Returns the negation of the imaginary unit: -1j."""
+        return ComplexSIMD[ComplexDType.float64, 1](0, -1)
+
+    fn __abs__(self) -> Float64:
+        """Returns the absolute value of the imaginary unit: |1j| = 1."""
+        return 1.0
+
+    fn __str__(self) -> String:
+        return "(0 + 1 j)"
+
+    fn write_to[W: Writer](self, mut writer: W):
+        writer.write("(0 + 1 j)")
+
+    fn __bool__(self) -> Bool:
+        """The imaginary unit is always considered True."""
+        return True
+
+
+alias `1j` = ImaginaryUnit()
 
 
 # TODO: add overloads for arithmetic functions to accept Scalar[dtype].
@@ -217,7 +485,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(self.re + Self._broadcast(other), self.im)
 
     # FIXME: currently mojo doesn't allow overloading with both SIMD[Self.dtype, Self.width] and SIMD[*_, size=Self.width]. So keep SIMD[*_, size=Self.width] only for now. We need this method to create complex numbers with syntax like (1 + 2 * `1j`).
-    fn __add__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __add__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Returns the sum of this ComplexSIMD instance and a SIMD vector added to the real part.
 
@@ -228,6 +496,18 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ComplexSIMD instance where each lane's real part is increased by the corresponding lane in the SIMD vector.
         """
         return Self(self.re + other.cast[Self.dtype](), self.im)
+
+    fn __add__(self, other: ImaginaryUnit) -> Self:
+        """
+        Returns the sum of this ComplexSIMD instance and imaginary unit.
+
+        Args:
+            other: Imaginary unit to add.
+
+        Returns:
+            ComplexSIMD instance where each lane's imaginary part is increased by 1.
+        """
+        return Self(self.re, self.im + Self._broadcast(1))
 
     fn __iadd__(mut self, other: Self):
         """
@@ -248,7 +528,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         self.re += Self._broadcast(other)
 
-    fn __iadd__(mut self, other: SIMD[*_, size=Self.width]):
+    fn __iadd__(mut self, other: SIMD[*_, size = Self.width]):
         """
         In-place addition of a SIMD vector to the real part of this ComplexSIMD instance.
 
@@ -256,6 +536,15 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             other: SIMD vector to add to the real component.
         """
         self.re += other.cast[Self.dtype]()
+
+    fn __iadd__(mut self, other: ImaginaryUnit):
+        """
+        In-place addition of imaginary unit to this ComplexSIMD instance.
+
+        Args:
+            other: Imaginary unit to add.
+        """
+        self.im += Self._broadcast(1)
 
     fn __radd__(self, other: Scalar[Self.dtype]) -> Self:
         """
@@ -269,7 +558,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(Self._broadcast(other) + self.re, self.im)
 
-    fn __radd__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __radd__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Returns the sum of a SIMD vector and this ComplexSIMD instance, adding to the real part.
 
@@ -280,6 +569,18 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ComplexSIMD instance where each lane's real part is increased by the corresponding lane in the SIMD vector.
         """
         return Self(other.cast[Self.dtype]() + self.re, self.im)
+
+    fn __radd__(self, other: ImaginaryUnit) -> Self:
+        """
+        Returns the sum of imaginary unit and this ComplexSIMD instance.
+
+        Args:
+            other: Imaginary unit to add.
+
+        Returns:
+            ComplexSIMD instance where each lane's imaginary part is increased by 1.
+        """
+        return Self(self.re, self.im + Self._broadcast(1))
 
     fn __sub__(self, other: Self) -> Self:
         """
@@ -305,7 +606,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(self.re - Self._broadcast(other), self.im)
 
-    fn __sub__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __sub__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Returns the difference of this ComplexSIMD instance and a SIMD vector subtracted from the real part.
 
@@ -316,6 +617,10 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ComplexSIMD instance where each lane's real part is decreased by the corresponding lane in the SIMD vector.
         """
         return Self(self.re - other.cast[Self.dtype](), self.im)
+
+    fn __sub__(self, other: ImaginaryUnit) -> Self:
+        """Subtracts imaginary unit from this ComplexSIMD instance."""
+        return Self(self.re, self.im - Self._broadcast(1))
 
     fn __isub__(mut self, other: Self):
         """
@@ -336,7 +641,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         self.re -= Self._broadcast(other)
 
-    fn __isub__(mut self, other: SIMD[*_, size=Self.width]):
+    fn __isub__(mut self, other: SIMD[*_, size = Self.width]):
         """
         In-place subtraction of a SIMD vector from the real part of this ComplexSIMD instance.
 
@@ -344,6 +649,15 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             other: SIMD vector to subtract from the real component.
         """
         self.re -= other.cast[Self.dtype]()
+
+    fn __isub__(mut self, other: ImaginaryUnit):
+        """
+        In-place subtraction of imaginary unit from this ComplexSIMD instance.
+
+        Args:
+            other: Imaginary unit to subtract.
+        """
+        self.im -= Self._broadcast(1)
 
     fn __rsub__(self, other: Scalar[Self.dtype]) -> Self:
         """
@@ -357,7 +671,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(Self._broadcast(other) - self.re, -self.im)
 
-    fn __rsub__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __rsub__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Returns the difference of a SIMD vector and this ComplexSIMD instance, subtracting from the real part.
 
@@ -369,6 +683,18 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         var other_casted = other.cast[Self.dtype]()
         return Self(other_casted - self.re, -self.im)
+
+    fn __rsub__(self, other: ImaginaryUnit) -> Self:
+        """
+        Returns the difference of imaginary unit and this ComplexSIMD instance.
+
+        Args:
+            other: Imaginary unit to subtract.
+
+        Returns:
+            ComplexSIMD instance where each lane's imaginary part is (1 - self.im).
+        """
+        return Self(-self.re, Self._broadcast(1) - self.im)
 
     fn __mul__(self, other: Self) -> Self:
         """
@@ -398,8 +724,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var scalar_simd = Self._broadcast(other)
         return Self(self.re * scalar_simd, self.im * scalar_simd)
 
-
-    fn __mul__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __mul__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Returns the product of this ComplexSIMD instance and a SIMD vector.
 
@@ -411,6 +736,18 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         var other_casted = other.cast[Self.dtype]()
         return Self(self.re * other_casted, self.im * other_casted)
+
+    fn __mul__(self, other: ImaginaryUnit) -> Self:
+        """
+        Returns the product of this ComplexSIMD instance and imaginary unit.
+
+        Args:
+            other: Imaginary unit to multiply.
+
+        Returns:
+            ComplexSIMD instance where each lane is multiplied by 1j: (a + bi) * 1j = -b + ai.
+        """
+        return Self(-self.im, self.re)
 
     fn __imul__(mut self, other: Self):
         """
@@ -434,7 +771,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         self.re *= scalar_simd
         self.im *= scalar_simd
 
-    fn __imul__(mut self, other: SIMD[*_, size=Self.width]):
+    fn __imul__(mut self, other: SIMD[*_, size = Self.width]):
         """
         In-place multiplication of this ComplexSIMD instance by a SIMD vector.
 
@@ -444,6 +781,17 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var other_casted = other.cast[Self.dtype]()
         self.re *= other_casted
         self.im *= other_casted
+
+    fn __imul__(mut self, other: ImaginaryUnit):
+        """
+        In-place multiplication of this ComplexSIMD instance by imaginary unit.
+
+        Args:
+            other: Imaginary unit to multiply.
+        """
+        var new_re = -self.im
+        self.im = self.re
+        self.re = new_re
 
     fn __rmul__(self, other: Scalar[Self.dtype]) -> Self:
         """
@@ -458,7 +806,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var scalar_simd = Self._broadcast(other)
         return Self(scalar_simd * self.re, scalar_simd * self.im)
 
-    fn __rmul__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __rmul__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Returns the product of a SIMD vector and this ComplexSIMD instance.
 
@@ -470,6 +818,18 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         var other_casted = other.cast[Self.dtype]()
         return Self(other_casted * self.re, other_casted * self.im)
+
+    fn __rmul__(self, other: ImaginaryUnit) -> Self:
+        """
+        Returns the product of imaginary unit and this ComplexSIMD instance.
+
+        Args:
+            other: Imaginary unit to multiply.
+
+        Returns:
+            ComplexSIMD instance where each lane is multiplied by 1j: 1j * (a + bi) = -b + ai.
+        """
+        return Self(-self.im, self.re)
 
     fn __truediv__(self, other: Self) -> Self:
         """
@@ -502,7 +862,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var scalar_simd = Self._broadcast(other)
         return Self(self.re / scalar_simd, self.im / scalar_simd)
 
-    fn __truediv__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __truediv__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Performs element-wise division of this ComplexSIMD instance by a SIMD vector.
 
@@ -514,6 +874,18 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         var other_casted = other.cast[Self.dtype]()
         return Self(self.re / other_casted, self.im / other_casted)
+
+    fn __truediv__(self, other: ImaginaryUnit) -> Self:
+        """
+        Performs division of this ComplexSIMD instance by imaginary unit.
+
+        Args:
+            other: Imaginary unit to divide by.
+
+        Returns:
+            ComplexSIMD instance where each lane is divided by 1j: (a + bi) / 1j = (b - ai).
+        """
+        return Self(self.im, -self.re)
 
     fn __itruediv__(mut self, other: Self):
         """
@@ -538,7 +910,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         self.re /= scalar_simd
         self.im /= scalar_simd
 
-    fn __itruediv__(mut self, other: SIMD[*_, size=Self.width]):
+    fn __itruediv__(mut self, other: SIMD[*_, size = Self.width]):
         """
         Performs in-place element-wise division of this ComplexSIMD instance by a SIMD vector.
 
@@ -548,6 +920,17 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var other_casted = other.cast[Self.dtype]()
         self.re /= other_casted
         self.im /= other_casted
+
+    fn __itruediv__(mut self, other: ImaginaryUnit):
+        """
+        Performs in-place division of this ComplexSIMD instance by imaginary unit.
+
+        Args:
+            other: Imaginary unit to divide by.
+        """
+        var new_re = self.im
+        self.im = -self.re
+        self.re = new_re
 
     fn __rtruediv__(self, other: Scalar[Self.dtype]) -> Self:
         """
@@ -568,7 +951,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             (-scalar_simd * self.im) / denom,
         )
 
-    fn __rtruediv__(self, other: SIMD[*_, size=Self.width]) -> Self:
+    fn __rtruediv__(self, other: SIMD[*_, size = Self.width]) -> Self:
         """
         Performs element-wise division of a SIMD vector by this ComplexSIMD instance.
 
@@ -585,6 +968,24 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(
             (other_casted * self.re) / denom,
             (-other_casted * self.im) / denom,
+        )
+
+    fn __rtruediv__(self, other: ImaginaryUnit) -> Self:
+        """
+        Performs division of imaginary unit by this ComplexSIMD instance.
+
+        Args:
+            other: Imaginary unit to be divided by this ComplexSIMD instance.
+
+        Returns:
+            ComplexSIMD instance where each lane is the result of dividing 1j by the corresponding lane in this ComplexSIMD:
+            1j / (a + bi) = [b / (a^2 + b^2)] + [-a / (a^2 + b^2)]i
+            where a, b are self.re, self.im.
+        """
+        var denom = self.re * self.re + self.im * self.im
+        return Self(
+            self.im / denom,
+            -self.re / denom,
         )
 
     fn reciprocal(self) raises -> Self:
@@ -692,12 +1093,32 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return (self.re == other.re) and (self.im == other.im)
 
+    fn __eq__(self, other: ImaginaryUnit) -> Bool:
+        """
+        Checks if this ComplexSIMD instance is equal to the imaginary unit (0 + 1j).
+
+        Returns:
+            True if the real part is 0 and the imaginary part is 1 for all lanes, otherwise False.
+        """
+        return (self.re == Self._broadcast(0)) and (
+            self.im == Self._broadcast(1)
+        )
+
     fn __ne__(self, other: Self) -> Bool:
         """
         Checks if two ComplexSIMD instances are not equal.
 
         Returns:
             True if either the real or imaginary parts differ for any lane, otherwise False.
+        """
+        return ~(self == other)
+
+    fn __ne__(self, other: ImaginaryUnit) -> Bool:
+        """
+        Checks if this ComplexSIMD instance is not equal to the imaginary unit (0 + 1j).
+
+        Returns:
+            True if either the real part is not 0 or the imaginary part is not 1 for any lane, otherwise False.
         """
         return ~(self == other)
 

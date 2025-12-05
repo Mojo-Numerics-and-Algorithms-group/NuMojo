@@ -41,18 +41,20 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
     The parameter `cdtype` determines the component precision (e.g. cf32, cf64).
     The parameter `width` is the SIMD lane count; when `width == 1` this acts like a scalar complex number.
 
-    Example (scalar):
+    Examples:
+        ```mojo
+        from numojo.prelude import *
         var a = ComplexSIMD[cf32](1.0, 2.0)
         var b = ComplexSIMD[cf32](3.0, 4.0)
         print(a + b)  # (4.0 + 6.0 j)
 
-    Example (SIMD width=2):
+        # SIMD width=2:
         var a2 = ComplexSIMD[cf32, 2](
             SIMD[cf32._dtype, 2](1.0, 1.5),
             SIMD[cf32._dtype, 2](2.0, -0.5)
         )
         print(a2) # ( [1.0 2.0] + [1.5 -0.5]j )
-
+        ```
     Convenience factories:
         ComplexSIMD[cf64].zero()
         ComplexSIMD[cf64].one()
@@ -622,88 +624,146 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         )
 
     # --- Indexing ---
-    fn __getitem__(self, idx: Int) raises -> SIMD[Self.dtype, Self.width]:
+    fn __getitem__(self, idx: Int) raises -> ComplexScalar[Self.cdtype]:
         """
-        Returns the SIMD vector for the specified component.
+        Returns the complex number at the specified lane index.
 
         Args:
-            idx: Index of the component (0 for real, 1 for imaginary).
+            idx: SIMD lane index (0 to width-1).
 
         Returns:
-            SIMD vector of the requested component.
+            ComplexScalar containing the complex number at that lane index.
 
         Raises:
-            Error if idx is not 0 or 1.
+            Error if lane index is out of range for the SIMD width.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var c_simd = ComplexSIMD[cf32, 2](SIMD[f32, 2](1, 2), SIMD[f32, 2](3, 4))
+            var c0 = c_simd[0]  # 1 + 3j
+            var c1 = c_simd[1]  # 2 + 4j
+            ```
         """
-        if idx == 0:
-            return self.re
-        elif idx == 1:
-            return self.im
-        else:
-            raise Error("Index out of range (0=real,1=imag)")
+        if idx < 0 or idx >= Self.width:
+            raise Error("Lane index out of range for SIMD width")
+        return ComplexScalar[Self.cdtype](self.re[idx], self.im[idx])
 
     fn __setitem__(
-        mut self, idx: Int, value: SIMD[Self.dtype, Self.width]
+        mut self, idx: Int, value: ComplexScalar[Self.cdtype]
     ) raises:
         """
-        Sets the SIMD vector for the specified component.
+        Sets the complex scalar at the specified lane index.
 
         Args:
-            idx: Index of the component (0 for real, 1 for imaginary).
-            value: SIMD vector to assign.
+            idx: SIMD lane index (0 to width-1).
+            value: ComplexScalar whose values will be assigned.
 
         Raises:
-            Error if idx is not 0 or 1.
-        """
-        if idx == 0:
-            self.re = value
-        elif idx == 1:
-            self.im = value
-        else:
-            raise Error("Index out of range (0=real,1=imag)")
+            Error if lane index is out of range for the SIMD width.
 
-    fn __setitem__(mut self, idx: Int, value: Self) raises:
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var c_simd = nm.ComplexSIMD[cf32, 2](SIMD[f32, 2](1, 2), SIMD[f32, 2](3, 4)) # [(1 + 3j), (2 + 4j)]
+            c_simd[0] = nm.CScalar[cf32](5, 6)
+            print(c_simd) # [(1 + 3j), (2 + 4j)] becomes [(5 + 6j), (2 + 4j)]
+            ```
         """
-        Sets the real or imaginary component from another ComplexSIMD instance.
+        if idx < 0 or idx >= Self.width:
+            raise Error("Lane index out of range for SIMD width")
+        self.re[idx] = value.re
+        self.im[idx] = value.im
+
+    fn item[name: String](self, idx: Int) raises -> Scalar[Self.dtype]:
+        """
+        Returns the scalar value for the specified lane index and component.
+
+        Parameters:
+            name: Name of the component ('re' or 'im').
 
         Args:
-            idx: Index of the component (0 for real, 1 for imaginary).
-            value: ComplexSIMD instance whose component will be assigned.
-
-        Raises:
-            Error if idx is not 0 or 1.
-        """
-        if idx == 0:
-            self.re = value.re
-        elif idx == 1:
-            self.im = value.im
-        else:
-            raise Error("Index out of range (0=real,1=imag)")
-
-    fn item(self, idx: Int) raises -> SIMD[Self.dtype, Self.width]:
-        """
-        Returns the SIMD vector for the specified component.
-
-        Args:
-            idx: Index of the component (0 for real, 1 for imaginary).
+            idx: Lane index to retrieve.
 
         Returns:
-            SIMD vector of the requested component.
+            Scalar value of the specified component at the given lane index.
 
         Raises:
-            Error if idx is not 0 or 1.
-        """
-        return self[idx]
+            - Error if the component name is invalid.
+            - Error if lane index is out of range for the SIMD width.
 
-    fn itemset(mut self, val: Self):
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var c_simd = nm.ComplexSIMD[cf32, 2](SIMD[f32, 2](1, 2), SIMD[f32, 2](3, 4)) # [(1 + 3j), (2 + 4j)]
+            var re0 = c_simd.item["re"](0)  # 1.0
+            var im1 = c_simd.item["im"](1)  # 4.0
+            ```
         """
-        Sets both the real and imaginary components from another ComplexSIMD instance.
+        if idx < 0 or idx >= Self.width:
+            raise Error("Lane index out of range for SIMD width")
+
+        @parameter
+        if name == "re":
+            return self.re[idx]
+        elif name == "im":
+            return self.im[idx]
+        else:
+            raise Error("Invalid component name: {}".format(name))
+
+    fn itemset[
+        name: String
+    ](mut self, idx: Int, val: Scalar[Self.dtype]) raises:
+        """
+        Sets the scalar value for the specified lane index and component.
+
+        Parameters:
+            name: Name of the component ('re' or 'im').
 
         Args:
-            val: ComplexSIMD instance whose real and imaginary parts will be assigned to self.
+            idx: Lane index to set.
+            val: Scalar value to assign to the specified component.
+
+        Raises:
+            - Error if the component name is invalid.
+            - Error if lane index is out of range for the SIMD width.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var c_simd = nm.ComplexSIMD[cf32, 2](SIMD[f32, 2](1, 2), SIMD[f32, 2](3, 4)) # [(1 + 3j), (2 + 4j)]
+            c_simd.itemset["re"](0, 5.0)  # Now first complex number is (5 + 3j)
+            c_simd.itemset["im"](1, 6.0)  # Now second complex number is (2 + 6j)
+            ```
         """
-        self.re = val.re
-        self.im = val.im
+        if idx < 0 or idx >= Self.width:
+            raise Error("Lane index out of range for SIMD width")
+
+        @parameter
+        if name == "re":
+            self.re[idx] = val
+        elif name == "im":
+            self.im[idx] = val
+        else:
+            raise Error("Invalid component name: {}".format(name))
+
+    fn real(self) -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the real part(s) of the complex number(s).
+
+        Returns:
+            SIMD vector containing the real components.
+        """
+        return self.re
+
+    fn imag(self) -> SIMD[Self.dtype, Self.width]:
+        """
+        Returns the imaginary part(s) of the complex number(s).
+
+        Returns:
+            SIMD vector containing the imaginary components.
+        """
+        return self.im
 
     # --- Magnitude / norm / conjugate ---
     fn __abs__(self) -> SIMD[Self.dtype, Self.width]:
@@ -732,21 +792,3 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ComplexSIMD instance with the imaginary part negated: (re, -im).
         """
         return Self(self.re, -self.im)
-
-    fn real(self) -> SIMD[Self.dtype, Self.width]:
-        """
-        Returns the real part(s) of the complex number(s).
-
-        Returns:
-            SIMD vector containing the real components.
-        """
-        return self.re
-
-    fn imag(self) -> SIMD[Self.dtype, Self.width]:
-        """
-        Returns the imaginary part(s) of the complex number(s).
-
-        Returns:
-            SIMD vector containing the imaginary components.
-        """
-        return self.im

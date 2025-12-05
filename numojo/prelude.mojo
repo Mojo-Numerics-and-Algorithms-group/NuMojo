@@ -26,7 +26,12 @@ from numojo.core.item import Item, item
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import Shape, NDArrayShape
-from numojo.core.complex.complex_simd import ComplexSIMD, CScalar, ComplexScalar, `1j`
+from numojo.core.complex.complex_simd import (
+    ComplexSIMD,
+    CScalar,
+    ComplexScalar,
+    `1j`,
+)
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.complex.complex_dtype import (
     ci8,

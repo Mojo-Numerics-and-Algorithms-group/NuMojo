@@ -86,16 +86,6 @@ struct ComplexDType(
     `ComplexDType` behaves like an enum rather than a typical object. You don't
     instantiate it, but instead use its compile-time constants (aliases) to
     declare data types for complex SIMD vectors, tensors, and other data structures.
-
-    Example:
-
-    ```mojo
-    import numojo as nm
-    var A = nm.CScalar[nm.cf32](re=1.0, im=2.0)
-    print("A:", A) # A: (1.0 + 2.0i)
-    var A1 = nm.ComplexSIMD[nm.cf32, 2](SIMD[nm.f32, 2](1.0, 1.0), SIMD[nm.f32, 2](2.0, 2.0))
-    print("A1:", A1) # A1: ([1.0, 1.0], [2.0, 2.0] j)
-    ```
     """
 
     # ===-------------------------------------------------------------------===#
@@ -219,6 +209,10 @@ struct ComplexDType(
             return Self._from_str(str.removeprefix("ComplexDType."))
         elif str == "int8":
             return ComplexDType.int8
+        elif str == "int16":
+            return ComplexDType.int16
+        elif str == "int32":
+            return ComplexDType.int32
         elif str == "int64":
             return ComplexDType.int64
         elif str == "int128":
@@ -476,7 +470,10 @@ struct ComplexDType(
         Returns:
             Returns True if the input type parameter is an integer.
         """
-        return self in (DType.int, DType.uint) or self._is_non_index_integral()
+        return (
+            self in (ComplexDType.int, ComplexDType.uint)
+            or self._is_non_index_integral()
+        )
 
     @always_inline("nodebug")
     fn is_floating_point(self) -> Bool:
@@ -596,6 +593,14 @@ struct ComplexDType(
             2 * 8 * self.size_of()
         )  # 2 * because complex number has real and imaginary parts
 
+    fn component_bitwidth(self) -> Int:
+        """Returns the size in bits of the component type of the current ComplexDType.
+
+        Returns:
+            Returns the size in bits of the component type of the current ComplexDType.
+        """
+        return self.bitwidth() // 2
+
     # ===-------------------------------------------------------------------===#
     # __mlir_type
     # ===-------------------------------------------------------------------===#
@@ -661,11 +666,18 @@ struct ComplexDType(
 
         return abort[__mlir_type.`!kgen.deferred`]("invalid dtype")
 
+    fn component_dtype(self) -> DType:
+        return self._dtype
+
 
 fn _concise_dtype_str(cdtype: ComplexDType) -> String:
     """Returns a concise string representation of the complex data type."""
     if cdtype == ci8:
         return "ci8"
+    elif cdtype == ci16:
+        return "ci16"
+    elif cdtype == ci32:
+        return "ci32"
     elif cdtype == ci64:
         return "ci64"
     elif cdtype == ci128:

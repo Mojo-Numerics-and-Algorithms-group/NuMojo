@@ -12,6 +12,7 @@ from .complex import (
     ComplexSIMD,
     ComplexScalar,
     CScalar,
+    `1j`,
     ComplexNDArray,
     ComplexDType,
     ci8,

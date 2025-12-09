@@ -79,7 +79,7 @@ fn load[
 #         return "'<f4'"
 #     elif dtype == DType.float64:
 #         return "'<f8'"
-#     elif dtype == DType.index:
+#     elif dtype == DType.int:
 #         # Assuming index is 64-bit signed integer
 #         return "'<i8'"
 #     else:

@@ -1,5 +1,6 @@
 from testing import assert_equal, assert_almost_equal
 from numojo import *
+from testing import TestSuite
 
 
 fn test_complex_init() raises:
@@ -9,8 +10,12 @@ fn test_complex_init() raises:
     assert_equal(c1.im, 2.0, "init failed")
 
     var c2 = ComplexSIMD[cf32](c1)
-    assert_equal(c2.re, c1.re)
-    assert_equal(c2.im, c1.im)
+    assert_equal(c2.re, c1.re, "init failed")
+    assert_equal(c2.im, c1.im, "init failed")
+
+    var c3 = ComplexSIMD[cf32, 2](1.0)
+    assert_equal(c3.re[0], 1.0, "init failed")
+    assert_equal(c3.im[0], 1.0, "init failed")
 
 
 fn test_complex_add() raises:
@@ -69,3 +74,7 @@ fn test_complex_div() raises:
     var quot = c1 / c2
     assert_almost_equal(quot.re, 0.44, " division failed")
     assert_almost_equal(quot.im, 0.08, " division failed")
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

@@ -6,7 +6,8 @@ Implements Item type.
 
 from builtin.type_aliases import Origin
 from builtin.int import index as index_int
-from memory import UnsafePointer, memset_zero, memcpy
+from memory import memset_zero, memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 from memory import memcmp
 from os import abort
 from sys import simd_width_of
@@ -131,7 +132,7 @@ struct Item(
         """
         self.ndim = other.ndim
         self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        memcpy(self._buf, other._buf, self.ndim)
+        memcpy(dest=self._buf, src=other._buf, count=self.ndim)
 
     @always_inline("nodebug")
     fn __del__(deinit self):
@@ -357,7 +358,7 @@ struct Item(
             A new Item with the same values.
         """
         var res = Self(ndim=self.ndim, initialized=False)
-        memcpy(res._buf, self._buf, self.ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
         return res^
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
@@ -529,7 +530,7 @@ struct Item(
 
     fn _compute_slice_params(
         self, slice_index: Slice
-    ) raises -> (Int, Int, Int):
+    ) raises -> Tuple[Int, Int, Int]:
         """
         Compute normalized slice parameters (start, step, length).
 
@@ -725,7 +726,7 @@ struct _ItemIter[
         else:
             return self.index > 0
 
-    fn __next__(mut self) raises -> Scalar[DType.index]:
+    fn __next__(mut self) raises -> Scalar[DType.int]:
         @parameter
         if forward:
             var current_index = self.index

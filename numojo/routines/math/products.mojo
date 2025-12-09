@@ -1,9 +1,11 @@
 from algorithm.functional import parallelize, vectorize
 from sys import simd_width_of
+from memory import UnsafePointer, memcpy, memset_zero
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import ones
 
 
@@ -81,7 +83,7 @@ fn prod[
     return result^
 
 
-fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn prod[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     """
     Product of all items in the Matrix.
 
@@ -99,7 +101,9 @@ fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn prod[
+    dtype: DType
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Product of items in a Matrix along the axis.
 
@@ -205,7 +209,7 @@ fn cumprod[
             String("Invalid index: index out of bound [0, {}).").format(A.ndim)
         )
 
-    var I = NDArray[DType.index](Shape(A.size))
+    var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
     var _shape = B.shape._move_axis_to_end(axis)
@@ -222,7 +226,7 @@ fn cumprod[
     return B^
 
 
-fn cumprod[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn cumprod[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 
@@ -236,25 +240,26 @@ fn cumprod[dtype: DType](var A: Matrix[dtype]) raises -> Matrix[dtype]:
     print(mat.cumprod(A))
     ```
     """
-    var reorder = False
-    if A.flags.F_CONTIGUOUS:
-        reorder = True
-        A = A.reorder_layout()
+    alias width: Int = simd_width_of[dtype]()
+    var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, "C")
 
-    A.resize(shape=(1, A.size))
+    if A.flags.C_CONTIGUOUS:
+        memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    else:
+        for i in range(A.shape[0]):
+            for j in range(A.shape[1]):
+                result[i, j] = A[i, j]
 
     for i in range(1, A.size):
-        A._buf.ptr[i] *= A._buf.ptr[i - 1]
+        result._buf.ptr[i] *= result._buf.ptr[i - 1]
 
-    if reorder:
-        A = A.reorder_layout()
-
-    return A^
+    result.resize(shape=(1, result.size))
+    return result^
 
 
 fn cumprod[
     dtype: DType
-](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Cumprod of Matrix along the axis.
 
@@ -271,6 +276,19 @@ fn cumprod[
     ```
     """
     alias width: Int = simd_width_of[dtype]()
+    var order: String = "C" if A.flags.C_CONTIGUOUS else "F"
+    var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
+
+    if order == "C":
+        memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    else:
+        for j in range(result.shape[1]):
+
+            @parameter
+            fn copy_col[width: Int](i: Int):
+                result._store[width](i, j, A._load[width](i, j))
+
+            vectorize[copy_col, width](A.shape[0])
 
     if axis == 0:
         if A.flags.C_CONTIGUOUS:
@@ -278,34 +296,40 @@ fn cumprod[
 
                 @parameter
                 fn cal_vec_row[width: Int](j: Int):
-                    A._store[width](
-                        i, j, A._load[width](i - 1, j) * A._load[width](i, j)
+                    result._store[width](
+                        i,
+                        j,
+                        result._load[width](i - 1, j)
+                        * result._load[width](i, j),
                     )
 
                 vectorize[cal_vec_row, width](A.shape[1])
-            return A^
+            return result^
         else:
             for j in range(A.shape[1]):
                 for i in range(1, A.shape[0]):
-                    A[i, j] = A[i - 1, j] * A[i, j]
-            return A^
+                    result[i, j] = result[i - 1, j] * result[i, j]
+            return result^
 
     elif axis == 1:
         if A.flags.C_CONTIGUOUS:
             for i in range(A.shape[0]):
                 for j in range(1, A.shape[1]):
-                    A[i, j] = A[i, j - 1] * A[i, j]
-            return A^
+                    result[i, j] = result[i, j - 1] * result[i, j]
+            return result^
         else:
             for j in range(1, A.shape[1]):
 
                 @parameter
                 fn cal_vec_column[width: Int](i: Int):
-                    A._store[width](
-                        i, j, A._load[width](i, j - 1) * A._load[width](i, j)
+                    result._store[width](
+                        i,
+                        j,
+                        result._load[width](i, j - 1)
+                        * result._load[width](i, j),
                     )
 
                 vectorize[cal_vec_column, width](A.shape[0])
-            return A^
+            return result^
     else:
         raise Error(String("The axis can either be 1 or 0!"))

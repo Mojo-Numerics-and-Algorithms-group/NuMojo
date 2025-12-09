@@ -1,6 +1,7 @@
 from numojo.prelude import *
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close, check_values_close
+from testing import TestSuite
 
 
 fn test_argmax() raises:
@@ -223,3 +224,7 @@ fn test_take_along_axis_with_argmax_argmin() raises:
         np.take_along_axis(a2d_np, reshaped_min_indices_np, axis=1),
         "`take_along_axis` with argmin is broken",
     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

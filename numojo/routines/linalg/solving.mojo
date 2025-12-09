@@ -13,11 +13,15 @@ Provides:
 from algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.item import Item
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros, eye, full
-from numojo.routines.linalg.decompositions import partial_pivoting
+from numojo.routines.linalg.decompositions import (
+    partial_pivoting,
+    lu_decomposition,
+)
 
 
 fn forward_substitution[
@@ -113,7 +117,7 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     return solve(A, I)
 
 
-fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+fn inv[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Inverse of matrix.
     """
@@ -208,13 +212,13 @@ fn lstsq[
     """Caclulate the OLS estimates.
 
     Example:
-    ```mojo
+    ```text
     from numojo import Matrix
     X = Matrix.rand((1000000, 5))
     y = Matrix.rand((1000000, 1))
-    print(mat.lstsq(X, y))
+    print(lstsq(X, y))
     ```
-    ```console
+    ```text
     [[0.18731374756029967]
      [0.18821352688798607]
      [0.18717162200411439]
@@ -369,7 +373,7 @@ fn solve[
 
 fn solve[
     dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], Y: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LUP decomposition.
     """
@@ -382,10 +386,12 @@ fn solve[
     var A_pivoted_Pair: Tuple[
         Matrix[dtype], Matrix[dtype], Int
     ] = partial_pivoting(A.copy())
-    A_pivoted = A_pivoted_Pair[0].copy()
-    P = A_pivoted_Pair[1].copy()
+
+    var pivoted_A = A_pivoted_Pair[0].copy()
+    var P = A_pivoted_Pair[1].copy()
+
     var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
-        A_pivoted
+        pivoted_A
     )
     L = L_U[0].copy()
     U = L_U[1].copy()
@@ -393,9 +399,8 @@ fn solve[
     var m: Int = A.shape[0]
     var n: Int = Y.shape[1]
 
-    var Z: Matrix[dtype] = Matrix.full[dtype]((m, n), order=A.order())
-    var X: Matrix[dtype] = Matrix.full[dtype]((m, n), order=A.order())
-
+    var Z: Matrix[dtype] = Matrix.zeros[dtype]((m, n), order=A.order())
+    var X: Matrix[dtype] = Matrix.zeros[dtype]((m, n), order=A.order())
     var PY = P @ Y
 
     @parameter
@@ -432,7 +437,7 @@ fn solve[
 
 fn solve_lu[
     dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], Y: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LU decomposition.
     """
@@ -457,8 +462,6 @@ fn solve_lu[
                 _temp = _temp - L._load(i, j) * Z._load(j, col)
             _temp = _temp / L._load(i, i)
             Z._store(i, col, _temp)
-
-        # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._load(i, col)
             for j in range(i + 1, m):

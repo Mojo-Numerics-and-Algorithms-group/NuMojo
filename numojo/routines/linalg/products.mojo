@@ -15,7 +15,7 @@ from memory import memcpy
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros
 from numojo.routines.math.sums import sum
 
@@ -339,36 +339,37 @@ fn matmul[
 
     for i in range(result.size // result_sub_matrix.size):
         memcpy(
-            A_sub_matrix._buf.ptr,
-            A._buf.ptr + (i * A_sub_matrix.size),
-            A_sub_matrix.size,
+            dest=A_sub_matrix._buf.ptr,
+            src=A._buf.ptr + (i * A_sub_matrix.size),
+            count=A_sub_matrix.size,
         )
         memcpy(
-            B_sub_matrix._buf.ptr,
-            B._buf.ptr + (i * B_sub_matrix.size),
-            B_sub_matrix.size,
+            dest=B_sub_matrix._buf.ptr,
+            src=B._buf.ptr + (i * B_sub_matrix.size),
+            count=B_sub_matrix.size,
         )
         result_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
         memcpy(
-            result._buf.ptr + (i * result_sub_matrix.size),
-            result_sub_matrix._buf.ptr,
-            result_sub_matrix.size,
+            dest=result._buf.ptr + (i * result_sub_matrix.size),
+            src=result_sub_matrix._buf.ptr,
+            count=result_sub_matrix.size,
         )
     return result^
 
 
 fn matmul[
     dtype: DType
-](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], B: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Matrix multiplication.
 
     Example:
     ```mojo
     from numojo import Matrix
+    from numojo.routines.linalg import matmul
     var A = Matrix.rand(shape=(1000, 1000))
     var B = Matrix.rand(shape=(1000, 1000))
-    var result = mat.matmul(A, B)
+    var result = matmul(A, B)
     ```
     """
 
@@ -448,8 +449,6 @@ fn matmul[
 
     else:
         result = matmul(A.reorder_layout(), B)
-    # var _A = A
-    # var _B = B
 
     return result^
 

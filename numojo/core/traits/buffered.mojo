@@ -16,8 +16,13 @@ trait Buffered(ImplicitlyCopyable, Movable):
     fn __init__(out self):
         ...
 
-    fn is_own_data(self) -> Bool:
+    @staticmethod
+    fn is_own_data() -> Bool:
         ...
 
-    fn is_ref_data(self) -> Bool:
+    @staticmethod
+    fn is_ref_data() -> Bool:
+        ...
+
+    fn __str__(self) -> String:
         ...

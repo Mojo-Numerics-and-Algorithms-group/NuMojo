@@ -23,9 +23,10 @@ import math
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.own_data import OwnData
 from numojo.core.ndshape import NDArrayShape
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixBase
 import numojo.core.utility as utility
 from numojo.routines.manipulation import ravel, transpose
 
@@ -149,7 +150,7 @@ fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Sort the Matrix. It is first flattened before sorting.
     """
-    var I = Matrix.zeros[DType.index](shape=A.shape)
+    var I = Matrix[DType.int].zeros(shape=A.shape)
     var B = A.flatten()
     _quick_sort_inplace(B, I, 0, A.size - 1)
 
@@ -167,7 +168,7 @@ fn sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         for i in range(A.shape[0]):
             var row = Matrix[dtype](shape=(1, A.shape[1]), order="C")
-            var indices = Matrix.zeros[DType.index](
+            var indices = Matrix[DType.int].zeros(
                 shape=(1, A.shape[1]), order="C"
             )
 
@@ -186,7 +187,7 @@ fn sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         for j in range(A.shape[1]):
             var col = Matrix[dtype](shape=(A.shape[0], 1), order="C")
-            var indices = Matrix.zeros[DType.index](
+            var indices = Matrix[DType.int].zeros(
                 shape=(A.shape[0], 1), order="C"
             )
 
@@ -203,7 +204,7 @@ fn sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
+fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """
     Returns the indices that would sort an array.
     It is not guaranteed to be unstable.
@@ -224,7 +225,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
     else:
         a_flattened = ravel(a)
 
-    var indices = arange[DType.index](a_flattened.size)
+    var indices = arange[DType.int](a_flattened.size)
 
     _quick_sort_inplace(a_flattened, indices)
 
@@ -233,7 +234,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.index]:
 
 fn argsort[
     dtype: DType
-](mut a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+](mut a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """
     Returns the indices that would sort an array.
     It is not guaranteed to be unstable.
@@ -272,11 +273,11 @@ fn argsort[
     )
 
 
-fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
+fn argsort[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[DType.int]:
     """
     Argsort the Matrix. It is first flattened before sorting.
     """
-    var I = Matrix[DType.index](shape=(1, A.size), order=A.order())
+    var I = Matrix[DType.int](shape=(1, A.size), order=A.order())
     for i in range(I.size):
         I._buf.ptr[i] = i
     var B: Matrix[dtype]
@@ -291,18 +292,18 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.index]:
 
 fn argsort[
     dtype: DType
-](var A: Matrix[dtype], axis: Int) raises -> Matrix[DType.index]:
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[DType.int]:
     """
     Argsort the Matrix along the given axis.
     """
     var order = A.order()
 
     if axis == 1:
-        var result = Matrix[DType.index](shape=A.shape, order=order)
+        var result = Matrix[DType.int](shape=A.shape, order=order)
 
         for i in range(A.shape[0]):
             var row = Matrix[dtype](shape=(1, A.shape[1]), order="C")
-            var idx = Matrix[DType.index](shape=(1, A.shape[1]), order="C")
+            var idx = Matrix[DType.int](shape=(1, A.shape[1]), order="C")
 
             for j in range(A.shape[1]):
                 row._store(0, j, A._load(i, j))
@@ -316,11 +317,11 @@ fn argsort[
         return result^
 
     elif axis == 0:
-        var result = Matrix[DType.index](shape=A.shape, order=order)
+        var result = Matrix[DType.int](shape=A.shape, order=order)
 
         for j in range(A.shape[1]):
             var col = Matrix[dtype](shape=(A.shape[0], 1), order="C")
-            var idx = Matrix[DType.index](shape=(A.shape[0], 1), order="C")
+            var idx = Matrix[DType.int](shape=(A.shape[0], 1), order="C")
 
             for i in range(A.shape[0]):
                 col._store(i, 0, A._load(i, j))
@@ -542,7 +543,7 @@ fn quick_sort_stable_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
 
 fn argsort_quick_sort_1d[
     dtype: DType
-](a: NDArray[dtype]) raises -> NDArray[DType.index]:
+](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """
     Returns the indices that would sort the buffer of an array.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -559,7 +560,7 @@ fn argsort_quick_sort_1d[
     """
 
     var result: NDArray[dtype] = a.copy()
-    var indices = arange[DType.index](result.size)
+    var indices = arange[DType.int](result.size)
     _quick_sort_inplace(result, indices)
     return indices^
 
@@ -831,7 +832,7 @@ fn _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
 
 fn _quick_sort_inplace[
     dtype: DType
-](mut A: NDArray[dtype], mut I: NDArray[DType.index]) raises:
+](mut A: NDArray[dtype], mut I: NDArray[DType.int]) raises:
     """
     Sort in-place array's buffer using quick sort method.
     The indices are also sorted.

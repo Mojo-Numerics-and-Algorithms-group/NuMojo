@@ -1,6 +1,7 @@
 from numojo.prelude import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
+from testing import TestSuite
 
 
 def test_shape():
@@ -29,3 +30,7 @@ def test_item():
         A[-1] == 4,
         msg=String("`NDArrayStrides.__getitem__()` fails: may overflow"),
     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

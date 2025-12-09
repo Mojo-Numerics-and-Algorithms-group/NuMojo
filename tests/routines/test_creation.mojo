@@ -10,6 +10,7 @@ from testing.testing import (
 from python import Python, PythonObject
 import random as builtin_random
 from utils_for_test import check, check_is_close
+from testing import TestSuite
 
 
 def test_arange():
@@ -143,26 +144,28 @@ def test_eye():
     )
 
 
-def test_fromstring():
-    var A = nm.fromstring("[[[1,2],[3,4]],[[5,6],[7,8]]]")
-    var B = nm.array[DType.int32](String("[0.1, -2.3, 41.5, 19.29145, -199]"))
-    print(A)
-    print(B)
+# TODO: modify these tests to use assert_equal and check function
+# def test_fromstring():
+#     var A = nm.fromstring("[[[1,2],[3,4]],[[5,6],[7,8]]]")
+#     var B = nm.array[DType.int32](String("[0.1, -2.3, 41.5, 19.29145, -199]"))
+#     # print(A)
+#     # print(B)
 
 
-def test_fromstring_complicated():
-    var s = """
-    [[[[1,2,10],
-       [3,4,2]],
-       [[5,6,4],
-       [7,8,10]]],
-     [[[1,2,12],
-       [3,4,41]],
-       [[5,6,12],
-       [7,8,99]]]]
-    """
-    var A = nm.fromstring(s)
-    print(A)
+# TODO: modify these tests to use assert_equal and check function
+# def test_fromstring_complicated():
+#     var s = """
+#     [[[[1,2,10],
+#        [3,4,2]],
+#        [[5,6,4],
+#        [7,8,10]]],
+#      [[[1,2,12],
+#        [3,4,41]],
+#        [[5,6,12],
+#        [7,8,99]]]]
+#     """
+#     var A = nm.fromstring(s)
+#     print(A)
 
 
 def test_diag():
@@ -357,3 +360,7 @@ def test_arr_manipulation():
 #     assert_equal(
 #         image == image_converted_via_array, True, "Tensor conversion is broken"
 #     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

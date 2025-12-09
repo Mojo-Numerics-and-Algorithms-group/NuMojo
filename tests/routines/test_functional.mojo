@@ -10,6 +10,7 @@ Test functional programming module `numojo.routines.functional`.
 from python import Python
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
+from testing import TestSuite
 
 from numojo.prelude import *
 
@@ -36,3 +37,7 @@ fn test_apply_along_axis() raises:
                 "`apply_along_axis` F-order array along axis {} is broken"
             ).format(i),
         )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

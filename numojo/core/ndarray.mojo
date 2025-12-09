@@ -84,6 +84,7 @@ from numojo.core.error import (
     ValueError,
     ArithmeticError,
 )
+from numojo.core.array_methods import ellipsis, newaxis
 
 # ===----------------------------------------------------------------------===#
 # === numojo routines (creation / io / logic) ===

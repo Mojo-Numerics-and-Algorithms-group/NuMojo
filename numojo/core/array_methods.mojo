@@ -1,6 +1,7 @@
 comptime newaxis: NewAxis = NewAxis()
 comptime ellipsis: Ellipsis = Ellipsis()
 
+
 struct Ellipsis(Stringable):
     """
     Represents an ellipsis (`...`) used in array slicing to indicate the inclusion of all remaining dimensions.
@@ -52,8 +53,8 @@ struct Ellipsis(Stringable):
         """
         return False
 
-struct NewAxis(Stringable):
 
+struct NewAxis(Stringable):
     fn __init__(out self):
         """
         Initializes a NewAxis instance.
@@ -68,7 +69,6 @@ struct NewAxis(Stringable):
             Str: The string "NewAxis()".
         """
         return "numojo.newaxis()"
-
 
     fn __str__(self) -> String:
         """

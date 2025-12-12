@@ -13,7 +13,6 @@ from memory import LegacyUnsafePointer as UnsafePointer
 
 from numojo.core.error import IndexError, ValueError
 
-alias strides = NDArrayStrides
 alias Strides = NDArrayStrides
 """An alias of the NDArrayStrides."""
 

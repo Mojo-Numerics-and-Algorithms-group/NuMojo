@@ -12,7 +12,7 @@ alias __version__: String = "V0.8.0"
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides, Strides
-from numojo.core.item import Item, item
+from numojo.core.item import Item
 from numojo.core.matrix import Matrix
 from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray

@@ -431,7 +431,7 @@ fn broadcast_to[
     # Iterate all items in the new array and fill in correct values.
     for offset in range(b.size):
         var remainder = offset
-        var indices = Item(ndim=b.ndim, initialized=False)
+        var indices = Item(ndim=b.ndim)
 
         for i in range(b.ndim):
             indices[i] = remainder // b.strides[i]
@@ -555,7 +555,7 @@ fn _broadcast_back_to[
     # Iterate all items in the new array and fill in correct values.
     for offset in range(b.size):
         var remainder = offset
-        var indices = Item(ndim=b.ndim, initialized=False)
+        var indices = Item(ndim=b.ndim)
 
         for i in range(b.ndim):
             indices[i] = remainder // b.strides[i]

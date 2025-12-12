@@ -166,7 +166,7 @@ fn compress[
             for offset in range(current_slice.size):
                 var remainder: Int = count
 
-                var item: Item = Item(ndim=result.ndim, initialized=False)
+                var item: Item = Item(ndim=result.ndim)
 
                 # First along the axis
                 var j = normalized_axis

@@ -4285,7 +4285,7 @@ struct _ComplexNDArrayIter[
 
         for offset in range(self.size_of_item):
             var remainder = offset
-            var item = Item(ndim=self.ndim, initialized=False)
+            var item: Item = Item(ndim=self.ndim)
 
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.dimension:
@@ -4348,7 +4348,7 @@ struct _ComplexNDArrayIter[
 
             for offset in range(self.size_of_item):
                 var remainder = offset
-                var item = Item(ndim=self.ndim, initialized=False)
+                var item: Item = Item(ndim=self.ndim)
 
                 for i in range(self.ndim - 1, -1, -1):
                     if i != self.dimension:

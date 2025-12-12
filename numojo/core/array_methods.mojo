@@ -41,13 +41,13 @@ struct Ellipsis(Stringable):
         """
         return "numojo.ellipsis()"
 
-    fn __eq__(self, other: ellipsis) -> Bool:
+    fn __eq__(self, other: Self) -> Bool:
         """
         Checks equality between two Ellipsis instances.
         """
         return True
 
-    fn __ne__(self, other: ellipsis) -> Bool:
+    fn __ne__(self, other: Self) -> Bool:
         """
         Checks inequality between two Ellipsis instances.
         """
@@ -79,13 +79,13 @@ struct NewAxis(Stringable):
         """
         return "numojo.newaxis()"
 
-    fn __eq__(self, other: NewAxis) -> Bool:
+    fn __eq__(self, other: Self) -> Bool:
         """
         Checks equality between two NewAxis instances.
         """
         return True
 
-    fn __ne__(self, other: NewAxis) -> Bool:
+    fn __ne__(self, other: Self) -> Bool:
         """
         Checks inequality between two NewAxis instances.
         """

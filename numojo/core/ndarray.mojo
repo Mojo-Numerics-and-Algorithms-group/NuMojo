@@ -5430,7 +5430,7 @@ struct _NDArrayIter[
 
         for offset in range(self.size_of_item):
             var remainder = offset
-            var item = Item(ndim=self.ndim, initialized=False)
+            var item = Item(ndim=self.ndim)
 
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.dimension:
@@ -5485,7 +5485,7 @@ struct _NDArrayIter[
 
             for offset in range(self.size_of_item):
                 var remainder = offset
-                var item = Item(ndim=self.ndim, initialized=False)
+                var item: Item = Item(ndim=self.ndim)
 
                 for i in range(self.ndim - 1, -1, -1):
                     if i != self.dimension:
@@ -5653,7 +5653,7 @@ struct _NDAxisIter[
             self.index -= 1
 
         var remainder = current_index * self.size_of_item
-        var item = Item(ndim=self.ndim, initialized=False)
+        var item: Item = Item(ndim=self.ndim)
 
         if self.order == "C":
             for i in range(self.ndim):
@@ -5715,7 +5715,7 @@ struct _NDAxisIter[
         var elements: NDArray[dtype] = NDArray[dtype](Shape(self.size_of_item))
 
         var remainder: Int = index * self.size_of_item
-        var item: Item = Item(ndim=self.ndim, initialized=True)
+        var item: Item = Item(ndim=self.ndim)
 
         if self.order == "C":
             for i in range(self.ndim):
@@ -5782,7 +5782,7 @@ struct _NDAxisIter[
             )
 
         var remainder: Int = index * self.size_of_item
-        var item: Item = Item(ndim=self.ndim, initialized=True)
+        var item: Item = Item(ndim=self.ndim)
         for i in range(self.axis):
             item._buf[i] = remainder // self.strides_compatible[i]
             remainder %= self.strides_compatible[i]
@@ -5894,7 +5894,7 @@ struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
         self.index += 1
 
         var remainder = current_index
-        var indices = Item(ndim=self.ndim, initialized=False)
+        var indices = Item(ndim=self.ndim)
 
         if self.order == "C":
             for i in range(self.ndim):
@@ -5936,7 +5936,7 @@ struct _NDIter[is_mutable: Bool, //, origin: Origin[is_mutable], dtype: DType](
             )
 
         var remainder = index
-        var indices = Item(ndim=self.ndim, initialized=False)
+        var indices = Item(ndim=self.ndim)
 
         if self.order == "C":
             for i in range(self.ndim):

@@ -42,7 +42,7 @@ struct Item(
 
     Fields:
         _buf: Pointer to the buffer storing the indices.
-        ndim: Number of dimensions (length of the index tuple).
+        _ndim: Number of dimensions (length of the index tuple).
     """
 
     # Aliases

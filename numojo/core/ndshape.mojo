@@ -9,7 +9,7 @@ Implements NDArrayShape type.
 """
 
 from memory import memcpy, memcmp
-from memory import LegacyUnsafePointer as UnsafePointer
+from memory import UnsafePointer
 
 from numojo.core.error import IndexError, ShapeError, ValueError
 
@@ -19,7 +19,7 @@ alias Shape = NDArrayShape
 
 @register_passable
 struct NDArrayShape(
-    ImplicitlyCopyable, Movable, Sized, Stringable & Representable, Writable
+    ImplicitlyCopyable, Movable, Sized, Stringable, Representable, Writable
 ):
     """
     Presents the shape of `NDArray` type.
@@ -29,15 +29,30 @@ struct NDArrayShape(
     The elements of the shape must be positive.
     The number of dimension and values of elements are checked upon
     creation of the shape.
+
+    Example:
+    ```mojo
+    import numojo as nm
+    var shape1 = nm.Shape(2, 3, 4)
+    print(shape1)  # Shape: (2,3,4)
+    var shape2 = nm.Shape([5, 6, 7])
+    print(shape2)  # Shape: (5,6,7)
+
+    Fields:
+        _buf: UnsafePointer[Scalar[DType.int]]
+            Data buffer.
+        _ndim: Int
+            Number of dimensions of array. It must be larger than 0.
     """
 
     # Aliases
-    alias _type: DType = DType.int
+    alias _element_type: DType = DType.int
+    alias _origin: MutOrigin = MutOrigin.external
 
     # Fields
-    var _buf: UnsafePointer[Scalar[Self._type]]
+    var _buf: UnsafePointer[Scalar[Self._element_type], Self._origin]
     """Data buffer."""
-    var ndim: Int
+    var _ndim: Int
     """Number of dimensions of array. It must be larger than 0."""
 
     @always_inline("nodebug")
@@ -63,8 +78,8 @@ struct NDArrayShape(
                 )
             )
 
-        self.ndim = 1
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(shape)
+        self._ndim = 1
+        self._buf = alloc[Scalar[Self._element_type]](shape)
         self._buf.init_pointee_copy(shape)
 
     @always_inline("nodebug")
@@ -89,9 +104,9 @@ struct NDArrayShape(
                 )
             )
 
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        for i in range(self.ndim):
+        self._ndim = len(shape)
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        for i in range(self._ndim):
             if shape[i] < 1:
                 raise Error(
                     ShapeError(
@@ -131,9 +146,9 @@ struct NDArrayShape(
                     location="NDArrayShape.__init__(*shape: Int, size: Int)",
                 )
             )
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        for i in range(self.ndim):
+        self._ndim = len(shape)
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        for i in range(self._ndim):
             if shape[i] < 1:
                 raise Error(
                     ShapeError(
@@ -186,9 +201,9 @@ struct NDArrayShape(
                     location="NDArrayShape.__init__(shape: List[Int])",
                 )
             )
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        for i in range(self.ndim):
+        self._ndim = len(shape)
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        for i in range(self._ndim):
             if shape[i] < 0:
                 raise Error(
                     ShapeError(
@@ -232,9 +247,9 @@ struct NDArrayShape(
                 )
             )
 
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        for i in range(self.ndim):
+        self._ndim = len(shape)
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        for i in range(self._ndim):
             if shape[i] < 1:
                 raise Error(
                     ShapeError(
@@ -291,9 +306,9 @@ struct NDArrayShape(
                 )
             )
 
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        for i in range(self.ndim):
+        self._ndim = len(shape)
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        for i in range(self._ndim):
             if shape[i] < 1:
                 raise Error(
                     ShapeError(
@@ -340,9 +355,9 @@ struct NDArrayShape(
                 )
             )
 
-        self.ndim = len(shape)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
-        for i in range(self.ndim):
+        self._ndim = len(shape)
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        for i in range(self._ndim):
             if shape[i] < 1:
                 raise Error(
                     ShapeError(
@@ -387,10 +402,10 @@ struct NDArrayShape(
         Args:
             shape: Another NDArrayShape to initialize from.
         """
-        self.ndim = shape.ndim
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(shape.ndim)
-        memcpy(dest=self._buf, src=shape._buf, count=shape.ndim)
-        for i in range(self.ndim):
+        self._ndim = shape._ndim
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        memcpy(dest=self._buf, src=shape._buf, count=shape._ndim)
+        for i in range(self._ndim):
             (self._buf + i).init_pointee_copy(shape._buf[i])
 
     @always_inline("nodebug")
@@ -431,12 +446,12 @@ struct NDArrayShape(
 
         if ndim == 0:
             # This is a 0darray (numojo scalar)
-            self.ndim = ndim
-            self._buf = UnsafePointer[Scalar[Self._type]]()
-
+            self._ndim = ndim
+            self._buf = alloc[Scalar[Self._element_type]](1) # allocate 1 element to avoid null pointer
+            self._buf.init_pointee_copy(0)  # set to 1
         else:
-            self.ndim = ndim
-            self._buf = UnsafePointer[Scalar[Self._type]]().alloc(ndim)
+            self._ndim = ndim
+            self._buf = alloc[Scalar[Self._element_type]](ndim)
             if initialized:
                 for i in range(ndim):
                     (self._buf + i).init_pointee_copy(1)
@@ -455,7 +470,7 @@ struct NDArrayShape(
         ```mojo
         import numojo as nm
         var shape = nm.Shape(2, 3, 4)
-        var strides = nm.Strides.row_major(shape)
+        var strides = shape.row_major()
         print(strides)  # Strides: (12, 4, 1)
         ```
         """
@@ -475,7 +490,7 @@ struct NDArrayShape(
         ```mojo
         import numojo as nm
         var shape = nm.Shape(2, 3, 4)
-        var strides = nm.Strides.col_major(shape)
+        var strides = shape.col_major()
         print(strides)  # Strides: (1, 2, 6)
         ```
         """
@@ -490,17 +505,20 @@ struct NDArrayShape(
         Args:
             other: Another NDArrayShape to initialize from.
         """
-        self.ndim = other.ndim
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(other.ndim)
-        memcpy(dest=self._buf, src=other._buf, count=other.ndim)
+        self._ndim = other._ndim
+        if other._ndim == 0:
+            self._buf = alloc[Scalar[Self._element_type]](1)
+        else:
+            self._buf = alloc[Scalar[Self._element_type]](other._ndim)
+            memcpy(dest=self._buf, src=other._buf, count=other._ndim)
 
     fn __del__(deinit self):
         """
         Destructor for NDArrayShape.
-        Frees the allocated memory for the data buffer.
+        Frees the allocated memory for the data buffer of the shape.
+        Even when ndim is 0, the buffer is still allocated with 1 element to avoid null pointer, so it needs to be freed here.
         """
-        if self.ndim > 0:
-            self._buf.free()
+        self._buf.free()
 
     fn normalize_index(self, index: Int) -> Int:
         """
@@ -514,7 +532,7 @@ struct NDArrayShape(
         """
         var normalized_idx: Int = index
         if normalized_idx < 0:
-            normalized_idx += self.ndim
+            normalized_idx += self._ndim
         return normalized_idx
 
     @always_inline("nodebug")
@@ -531,11 +549,11 @@ struct NDArrayShape(
         Returns:
            Shape value at the given index.
         """
-        if index >= self.ndim or index < -self.ndim:
+        if index >= self._ndim or index < -self._ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{}, {}).").format(
-                        index, -self.ndim, self.ndim
+                        index, -self._ndim, self._ndim
                     ),
                     suggestion="Use indices in [-ndim, ndim).",
                     location="NDArrayShape.__getitem__",
@@ -549,7 +567,7 @@ struct NDArrayShape(
     fn _compute_slice_params(
         self, slice_index: Slice
     ) raises -> Tuple[Int, Int, Int]:
-        var n = self.ndim
+        var n = self._ndim
         if n == 0:
             return (0, 1, 0)
 
@@ -631,7 +649,7 @@ struct NDArrayShape(
         return result^
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Scalar[Self._type]) raises:
+    fn __setitem__(mut self, index: Int, val: Scalar[Self._element_type]) raises:
         """
         Sets shape at specified index.
 
@@ -643,11 +661,11 @@ struct NDArrayShape(
           index: Index to get the shape.
           val: Value to set at the given index.
         """
-        if index >= self.ndim or index < -self.ndim:
+        if index >= self._ndim or index < -self._ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{}, {}).").format(
-                        index, -self.ndim, self.ndim
+                        index, -self._ndim, self._ndim
                     ),
                     suggestion="Use indices in [-ndim, ndim).",
                     location=(
@@ -668,7 +686,7 @@ struct NDArrayShape(
         Returns:
           Number of elements in the shape.
         """
-        return self.ndim
+        return self._ndim
 
     @always_inline("nodebug")
     fn __repr__(self) -> String:
@@ -678,7 +696,7 @@ struct NDArrayShape(
         Returns:
             String representation of the shape of the array.
         """
-        return "numojo.Shape" + String(self)
+        return "numojo.Shape" + self.__str__()
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
@@ -689,16 +707,16 @@ struct NDArrayShape(
             String representation of the shape of the array.
         """
         var result: String = "("
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             result += String(self._buf[i])
-            if i < self.ndim - 1:
+            if i < self._ndim - 1:
                 result += ","
         result += ")"
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(
-            "Shape: " + String(self) + "  " + "ndim: " + String(self.ndim)
+            "Shape: " + self.__str__() + "  " + "ndim: " + String(self._ndim)
         )
 
     @always_inline("nodebug")
@@ -712,9 +730,9 @@ struct NDArrayShape(
         Returns:
             True if both shapes have identical dimensions and values.
         """
-        if self.ndim != other.ndim:
+        if self._ndim != other._ndim:
             return False
-        if memcmp(self._buf, other._buf, self.ndim) != 0:
+        if memcmp(self._buf, other._buf, self._ndim) != 0:
             return False
         return True
 
@@ -736,7 +754,7 @@ struct NDArrayShape(
         Returns:
           True if the given value is present in the array.
         """
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             if self[i] == val:
                 return True
         return False
@@ -758,7 +776,7 @@ struct NDArrayShape(
         """
         return _ShapeIter(
             shape=self,
-            length=self.ndim,
+            length=self._ndim,
         )
 
     # ===-------------------------------------------------------------------===#
@@ -771,8 +789,8 @@ struct NDArrayShape(
         Returns a deep copy of the shape.
         """
 
-        var res = Self(ndim=self.ndim, initialized=False)
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        var res = Self(ndim=self._ndim, initialized=False)
+        memcpy(dest=res._buf, src=self._buf, count=self._ndim)
         return res
 
     fn join(self, *shapes: Self) raises -> Self:
@@ -785,19 +803,19 @@ struct NDArrayShape(
         Returns:
             A new NDArrayShape object.
         """
-        var total_dims = self.ndim
+        var total_dims = self._ndim
         for i in range(len(shapes)):
-            total_dims += shapes[i].ndim
+            total_dims += shapes[i]._ndim
 
         var new_shape = Self(ndim=total_dims, initialized=False)
 
         var index: Int = 0
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             (new_shape._buf + index).init_pointee_copy(self[i])
             index += 1
 
         for i in range(len(shapes)):
-            for j in range(shapes[i].ndim):
+            for j in range(shapes[i]._ndim):
                 (new_shape._buf + index).init_pointee_copy(shapes[i][j])
                 index += 1
 
@@ -810,10 +828,10 @@ struct NDArrayShape(
         Returns:
           The total number of elements in the corresponding array.
         """
-        var size: Scalar[Self._type] = 1
-        for i in range(self.ndim):
-            size *= self._buf[i]
-        return Int(size)
+        var size_of_arr: Scalar[Self._element_type] = 1
+        for i in range(self._ndim):
+            size_of_arr *= self._buf[i]
+        return Int(size_of_arr)
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
         """
@@ -846,12 +864,12 @@ struct NDArrayShape(
         Returns:
             A new NDArrayShape object.
         """
-        var total_dims = self.ndim + len(shapes)
+        var total_dims = self._ndim + len(shapes)
 
         var new_shape = Self(ndim=total_dims, initialized=False)
 
         var offset = 0
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             (new_shape._buf + offset).init_pointee_copy(self[i])
             offset += 1
         for shape in shapes:
@@ -878,8 +896,8 @@ struct NDArrayShape(
         """
 
         var shape = NDArrayShape(self)
-        for i in range(shape.ndim):
-            shape._buf[i] = self._buf[self.ndim - 1 - i]
+        for i in range(shape._ndim):
+            shape._buf[i] = self._buf[self._ndim - 1 - i]
         return shape
 
     fn _move_axis_to_end(self, var axis: Int) -> Self:
@@ -900,17 +918,17 @@ struct NDArrayShape(
         """
 
         if axis < 0:
-            axis += self.ndim
+            axis += self._ndim
 
         var shape = NDArrayShape(self)
 
-        if axis == self.ndim - 1:
+        if axis == self._ndim - 1:
             return shape
 
         var value = shape._buf[axis]
-        for i in range(axis, shape.ndim - 1):
+        for i in range(axis, shape._ndim - 1):
             shape._buf[i] = shape._buf[i + 1]
-        shape._buf[shape.ndim - 1] = value
+        shape._buf[shape._ndim - 1] = value
         return shape
 
     fn _pop(self, axis: Int) raises -> Self:
@@ -924,16 +942,16 @@ struct NDArrayShape(
         Returns:
             A new shape with the item at the given axis (index) dropped.
         """
-        var res = Self(ndim=self.ndim - 1, initialized=False)
+        var res = Self(ndim=self._ndim - 1, initialized=False)
         memcpy(dest=res._buf, src=self._buf, count=axis)
         memcpy(
             dest=res._buf + axis,
             src=self._buf + axis + 1,
-            count=self.ndim - axis - 1,
+            count=self._ndim - axis - 1,
         )
         return res^
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._type, width]:
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._element_type, width]:
         """
         Load a SIMD vector from the Shape at the specified index.
 
@@ -949,12 +967,12 @@ struct NDArrayShape(
         Raises:
             Error: If the load exceeds the bounds of the Shape.
         """
-        if idx < 0 or idx + width > self.ndim:
+        if idx < 0 or idx + width > self._ndim:
             raise Error(
                 IndexError(
                     message=String(
                         "Load operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
+                    ).format(idx, width, self._ndim),
                     suggestion=(
                         "Ensure that idx and width are within valid range."
                     ),
@@ -966,7 +984,7 @@ struct NDArrayShape(
 
     fn store[
         width: Int = 1
-    ](self, idx: Int, value: SIMD[Self._type, width]) raises:
+    ](self, idx: Int, value: SIMD[Self._element_type, width]) raises:
         """
         Store a SIMD vector into the Shape at the specified index.
 
@@ -980,12 +998,12 @@ struct NDArrayShape(
         Raises:
             Error: If the store exceeds the bounds of the Shape.
         """
-        if idx < 0 or idx + width > self.ndim:
+        if idx < 0 or idx + width > self._ndim:
             raise Error(
                 IndexError(
                     message=String(
                         "Store operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
+                    ).format(idx, width, self._ndim),
                     suggestion=(
                         "Ensure that idx and width are within valid range."
                     ),
@@ -995,7 +1013,7 @@ struct NDArrayShape(
 
         self._buf.store[width=width](idx, value)
 
-    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._type, width]:
+    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._element_type, width]:
         """
         Unsafely load a SIMD vector from the Shape at the specified index.
 
@@ -1012,7 +1030,7 @@ struct NDArrayShape(
 
     fn unsafe_store[
         width: Int = 1
-    ](self, idx: Int, value: SIMD[Self._type, width]):
+    ](self, idx: Int, value: SIMD[Self._element_type, width]):
         """
         Unsafely store a SIMD vector into the Shape at the specified index.
 

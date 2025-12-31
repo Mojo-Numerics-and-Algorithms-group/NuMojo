@@ -46,12 +46,12 @@ struct Item(
     """
 
     # Aliases
-    alias _type: DType = DType.int
+    alias _element_type: DType = DType.int
     alias _origin: MutOrigin = MutOrigin.external
 
     # Fields
-    var _buf: UnsafePointer[Scalar[Self._type], Self._origin]
-    var ndim: Int
+    var _buf: UnsafePointer[Scalar[Self._element_type], Self._origin]
+    var _ndim: Int
 
     @always_inline("nodebug")
     fn __init__[T: Indexer](out self, *args: T):
@@ -63,8 +63,8 @@ struct Item(
         Args:
             args: Initial values.
         """
-        self._buf = alloc[Scalar[Self._type]](len(args))
-        self.ndim = args.__len__()
+        self._buf = alloc[Scalar[Self._element_type]](len(args))
+        self._ndim = args.__len__()
         for i in range(args.__len__()):
             (self._buf + i).init_pointee_copy(convert_to_int(args[i]))
 
@@ -78,9 +78,9 @@ struct Item(
         Args:
             args: Initial values.
         """
-        self.ndim = len(args)
-        self._buf = alloc[Scalar[Self._type]](self.ndim)
-        for i in range(self.ndim):
+        self._ndim = len(args)
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        for i in range(self._ndim):
             (self._buf + i).init_pointee_copy(convert_to_int(args[i]))
 
     @always_inline("nodebug")
@@ -90,9 +90,9 @@ struct Item(
         Args:
             args: Initial values.
         """
-        self.ndim = len(args)
-        self._buf = alloc[Scalar[Self._type]](len(args))
-        for i in range(self.ndim):
+        self._ndim = len(args)
+        self._buf = alloc[Scalar[Self._element_type]](len(args))
+        for i in range(self._ndim):
             (self._buf + i).init_pointee_copy(args[i])
 
     @always_inline("nodebug")
@@ -102,8 +102,8 @@ struct Item(
         Args:
             ndim: The length of the tuple.
         """
-        self.ndim = ndim
-        self._buf = alloc[Scalar[Self._type]](ndim)
+        self._ndim = ndim
+        self._buf = alloc[Scalar[Self._element_type]](ndim)
         memset_zero(self._buf, ndim)
 
     @always_inline("nodebug")
@@ -113,13 +113,13 @@ struct Item(
         Args:
             other: The tuple to copy.
         """
-        self.ndim = other.ndim
-        self._buf = alloc[Scalar[Self._type]](self.ndim)
-        memcpy(dest=self._buf, src=other._buf, count=self.ndim)
+        self._ndim = other._ndim
+        self._buf = alloc[Scalar[Self._element_type]](self._ndim)
+        memcpy(dest=self._buf, src=other._buf, count=self._ndim)
 
     @always_inline("nodebug")
     fn __del__(deinit self):
-        if self.ndim > 0:
+        if self._ndim > 0:
             self._buf.free()
 
     @always_inline("nodebug")
@@ -129,7 +129,7 @@ struct Item(
         Returns:
             The length of the tuple.
         """
-        return self.ndim
+        return self._ndim
 
     fn normalize_index(self, index: Int) -> Int:
         """
@@ -143,7 +143,7 @@ struct Item(
         """
         var norm_idx: Int = index
         if norm_idx < 0:
-            norm_idx += self.ndim
+            norm_idx += self._ndim
         return norm_idx
 
     @always_inline("nodebug")
@@ -160,11 +160,11 @@ struct Item(
             The value at the specified index.
         """
         var index: Int = convert_to_int(idx)
-        if index >= self.ndim or index < -self.ndim:
+        if index >= self._ndim or index < -self._ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{} , {}).").format(
-                        convert_to_int(idx), -self.ndim, self.ndim
+                        convert_to_int(idx), -self._ndim, self._ndim
                     ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."
@@ -233,11 +233,11 @@ struct Item(
             val: The value to set.
         """
         var norm_idx: Int = self.normalize_index(convert_to_int(idx))
-        if norm_idx < 0 or norm_idx >= self.ndim:
+        if norm_idx < 0 or norm_idx >= self._ndim:
             raise Error(
                 IndexError(
                     message=String("Index {} out of range [{} , {}).").format(
-                        convert_to_int(idx), -self.ndim, self.ndim
+                        convert_to_int(idx), -self._ndim, self._ndim
                     ),
                     suggestion=String(
                         "Use indices in [-ndim, ndim) (negative indices wrap)."
@@ -260,7 +260,7 @@ struct Item(
 
         return _ItemIter(
             item=self,
-            length=self.ndim,
+            length=self._ndim,
         )
 
     fn __repr__(self) -> String:
@@ -269,9 +269,9 @@ struct Item(
 
     fn __str__(self) -> String:
         var result: String = "("
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             result += String(self._buf[i])
-            if i < self.ndim - 1:
+            if i < self._ndim - 1:
                 result += ", "
         result += ")"
         return result
@@ -290,9 +290,9 @@ struct Item(
         Returns:
             True if both items have identical dimensions and values.
         """
-        if self.ndim != other.ndim:
+        if self._ndim != other._ndim:
             return False
-        if memcmp(self._buf, other._buf, self.ndim) != 0:
+        if memcmp(self._buf, other._buf, self._ndim) != 0:
             return False
         return True
 
@@ -320,7 +320,7 @@ struct Item(
         Returns:
             True if the given value is present in the item.
         """
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             if self._buf[i] == val:
                 return True
         return False
@@ -336,8 +336,8 @@ struct Item(
         Returns:
             A new Item with the same values.
         """
-        var res: Item = Item(ndim=self.ndim)
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        var res: Item = Item(ndim=self._ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self._ndim)
         return res^
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
@@ -351,8 +351,8 @@ struct Item(
         Returns:
             A new item with the given axes swapped.
         """
-        var res: Item = Item(ndim=self.ndim)
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        var res: Item = Item(ndim=self._ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self._ndim)
         res[axis1] = self[axis2]
         res[axis2] = self[axis1]
         return res
@@ -377,19 +377,19 @@ struct Item(
         print(joined)  # Item at index: (1,2,3,4,5)
         ```
         """
-        var total_dims: Int = self.ndim
+        var total_dims: Int = self._ndim
         for i in range(len(others)):
-            total_dims += others[i].ndim
+            total_dims += others[i]._ndim
 
         var new_item: Item = Item(ndim=total_dims)
 
         var index: UInt = 0
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             (new_item._buf + index).init_pointee_copy(self[i])
             index += 1
 
         for i in range(len(others)):
-            for j in range(others[i].ndim):
+            for j in range(others[i]._ndim):
                 (new_item._buf + index).init_pointee_copy(others[i][j])
                 index += 1
 
@@ -415,10 +415,10 @@ struct Item(
         print(item._flip())  # Item: (3, 2, 1)
         ```
         """
-        var res: Item = Item(ndim=self.ndim)
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
-        for i in range(res.ndim):
-            res._buf[i] = self._buf[self.ndim - 1 - i]
+        var res: Item = Item(ndim=self._ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self._ndim)
+        for i in range(res._ndim):
+            res._buf[i] = self._buf[self._ndim - 1 - i]
         return res^
 
     fn _move_axis_to_end(self, var axis: Int) raises -> Self:
@@ -441,18 +441,18 @@ struct Item(
         ```
         """
         if axis < 0:
-            axis += self.ndim
+            axis += self._ndim
 
-        var res: Item = Item(ndim=self.ndim)
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        var res: Item = Item(ndim=self._ndim)
+        memcpy(dest=res._buf, src=self._buf, count=self._ndim)
 
-        if axis == self.ndim - 1:
+        if axis == self._ndim - 1:
             return res^
 
-        var value: Scalar[Self._type] = res._buf[axis]
-        for i in range(axis, res.ndim - 1):
+        var value: Scalar[Self._element_type] = res._buf[axis]
+        for i in range(axis, res._ndim - 1):
             res._buf[i] = res._buf[i + 1]
-        res._buf[res.ndim - 1] = value
+        res._buf[res._ndim - 1] = value
         return res^
 
     fn _pop(self, axis: Int) raises -> Self:
@@ -466,12 +466,12 @@ struct Item(
         Returns:
             A new item with the item at the given axis (index) dropped.
         """
-        var res: Item = Item(ndim=self.ndim - 1)
+        var res: Item = Item(ndim=self._ndim - 1)
         memcpy(dest=res._buf, src=self._buf, count=axis)
         memcpy(
             dest=res._buf + axis,
             src=self._buf.offset(axis + 1),
-            count=self.ndim - axis - 1,
+            count=self._ndim - axis - 1,
         )
         return res^
 
@@ -494,11 +494,11 @@ struct Item(
         print(extended)  # Item: (1, 2, 3, 4, 5)
         ```
         """
-        var total_dims: Int = self.ndim + len(values)
+        var total_dims: Int = self._ndim + len(values)
         var new_item: Item = Item(ndim=total_dims)
 
         var offset: UInt = 0
-        for i in range(self.ndim):
+        for i in range(self._ndim):
             (new_item._buf + offset).init_pointee_copy(self[i])
             offset += 1
         for value in values:
@@ -522,7 +522,7 @@ struct Item(
         Raises:
             Error: If the slice step is zero.
         """
-        var n = self.ndim
+        var n = self._ndim
         if n == 0:
             return (0, 1, 0)
 
@@ -580,7 +580,7 @@ struct Item(
 
         return (start, step, length)
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._type, width]:
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._element_type, width]:
         """
         Load a SIMD vector from the Item at the specified index.
 
@@ -596,12 +596,12 @@ struct Item(
         Raises:
             Error: If the load exceeds the bounds of the Item.
         """
-        if idx < 0 or idx + width > self.ndim:
+        if idx < 0 or idx + width > self._ndim:
             raise Error(
                 IndexError(
                     message=String(
                         "Load operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
+                    ).format(idx, width, self._ndim),
                     suggestion=(
                         "Ensure that idx and width are within valid range."
                     ),
@@ -613,7 +613,7 @@ struct Item(
 
     fn store[
         width: Int = 1
-    ](self, idx: Int, value: SIMD[Self._type, width]) raises:
+    ](self, idx: Int, value: SIMD[Self._element_type, width]) raises:
         """
         Store a SIMD vector into the Item at the specified index.
 
@@ -627,12 +627,12 @@ struct Item(
         Raises:
             Error: If the store exceeds the bounds of the Item.
         """
-        if idx < 0 or idx + width > self.ndim:
+        if idx < 0 or idx + width > self._ndim:
             raise Error(
                 IndexError(
                     message=String(
                         "Store operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
+                    ).format(idx, width, self._ndim),
                     suggestion=(
                         "Ensure that idx and width are within valid range."
                     ),
@@ -642,7 +642,7 @@ struct Item(
 
         self._buf.store[width=width](idx, value)
 
-    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._type, width]:
+    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._element_type, width]:
         """
         Unsafely load a SIMD vector from the Item at the specified index.
 
@@ -659,7 +659,7 @@ struct Item(
 
     fn unsafe_store[
         width: Int = 1
-    ](self, idx: Int, value: SIMD[Self._type, width]):
+    ](self, idx: Int, value: SIMD[Self._element_type, width]):
         """
         Unsafely store a SIMD vector into the Item at the specified index.
 

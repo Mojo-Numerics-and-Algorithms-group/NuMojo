@@ -386,7 +386,9 @@ struct NDArrayStrides(
         Returns:
             A new NDArrayStride with the same values and new origin.
         """
-        var res: NDArrayStrides = NDArrayStrides(ndim=self.ndim, initialized=True)
+        var res: NDArrayStrides = NDArrayStrides(
+            ndim=self.ndim, initialized=True
+        )
         memcpy(dest=res._buf, src=self._buf, count=self.ndim)
         return res^
 

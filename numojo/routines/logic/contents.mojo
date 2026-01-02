@@ -100,6 +100,7 @@ fn isnan[
         result_array.store(i, math.isnan(array.load(i)))
     return result_array^
 
+
 # TODO: Optimize the following functions by implementing a generic backend or just using vectorized operations.
 # TODO: Implement the same for complex ndarray.
 fn isneginf[
@@ -143,6 +144,7 @@ fn isposinf[
     for i in range(result_array.size):
         result_array.store(i, inf[dtype]() == array.load(i))
     return result_array^
+
 
 fn isneginf[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized

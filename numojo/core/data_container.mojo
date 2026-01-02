@@ -3,14 +3,14 @@
 #
 # TODO: fields in traits are not supported yet by Mojo
 # Currently use `get_ptr()` to get pointer, in future, use `ptr` directly.
-# var ptr: LegacyUnsafePointer[Scalar[dtype]]
+# var ptr: LegacyUnsafePointer[Scalar[Self.dtype]]
 # ===----------------------------------------------------------------------===
 
 from memory import LegacyUnsafePointer
 
 
 struct DataContainer[dtype: DType]():
-    var ptr: LegacyUnsafePointer[Scalar[dtype]]
+    var ptr: LegacyUnsafePointer[Scalar[Self.dtype]]
 
     fn __init__(out self, size: Int):
         """
@@ -21,9 +21,9 @@ struct DataContainer[dtype: DType]():
         `ndarray.flags['OWN_DATA']` should be set as True.
         The memory should be freed by `__del__`.
         """
-        self.ptr = LegacyUnsafePointer[Scalar[dtype]]().alloc(size)
+        self.ptr = LegacyUnsafePointer[Scalar[Self.dtype]]().alloc(size)
 
-    fn __init__(out self, ptr: LegacyUnsafePointer[Scalar[dtype]]):
+    fn __init__(out self, ptr: LegacyUnsafePointer[Scalar[Self.dtype]]):
         """
         Do not use this if you know what it means.
         If the pointer is associated with another array, it might cause
@@ -38,5 +38,5 @@ struct DataContainer[dtype: DType]():
     fn __moveinit__(out self, deinit other: Self):
         self.ptr = other.ptr
 
-    fn get_ptr(self) -> LegacyUnsafePointer[Scalar[dtype]]:
+    fn get_ptr(self) -> LegacyUnsafePointer[Scalar[Self.dtype]]:
         return self.ptr

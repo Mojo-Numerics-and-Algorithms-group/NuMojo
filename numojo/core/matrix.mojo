@@ -396,13 +396,22 @@ struct MatrixBase[
         data: DataContainer[dtype, origin],
     ) where own_data == False:
         """
-        Initialize Matrix that does not own the data.
-        The data is owned by another Matrix.
+        Initialize a non-owning `MatrixView`.
+
+        This constructor creates a Matrix instance that acts as a view into an
+        existing data buffer. The view does not allocate or manage memory; it
+        references data owned by another Matrix. It is an unsafe operation and should not be called by users directly.
 
         Args:
-            shape: Shape of the view.
-            strides: Strides of the view.
-            data: DataContainer that holds the data buffer.
+            shape: A tuple representing the dimensions of the view as (rows, columns).
+            strides: A tuple representing the memory strides for accessing elements in the view. Strides determine how to traverse the data buffer to access elements in the matrix.
+            data: A DataContainer instance that holds the data buffer being referenced.
+
+        Notes:
+            - This constructor is intended for internal use to create views into existing matrices! Users should not call this directly.
+            - The view does not own the data and relies on the lifetime of the
+              original data owner.
+            - Modifications to the view affect the original data by default.
         """
         self.shape = shape
         self.strides = strides
@@ -1632,6 +1641,38 @@ struct MatrixBase[
         Unsafe: No boundary check!
         """
         self._buf.ptr.store(idx, val)
+
+    fn store[width: Int = 1](self, idx: Int, val: SIMD[dtype, width]) raises:
+        """
+        Store a SIMD element into the matrix at the specified linear index.
+
+        Parameters:
+            width: The width of the SIMD element to store. Defaults to 1.
+
+        Args:
+            idx: The linear index where the element will be stored. Negative indices are supported and follow Python conventions.
+
+            val: The SIMD element to store at the given index.
+
+        Raises:
+            Error: If the provided index is out of bounds.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix.ones(shape=(4, 4))
+            var simd_element = SIMD[f64, 4](2.0, 2.0, 2.0, 2.0)
+            mat.store[4](2, simd_element)  # Store a SIMD element of width 4 at index 2
+            ```
+        """
+        if idx >= self.size or idx < -self.size:
+            raise Error(
+                String("Index {} exceed the matrix size {}").format(
+                    idx, self.size
+                )
+            )
+        var idx_norm = self.normalize(idx, self.size)
+        self._buf.ptr.store[width=width](idx_norm, val)
 
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods

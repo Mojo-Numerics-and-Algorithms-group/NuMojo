@@ -19,7 +19,7 @@ from utils import Variant
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
-
+# TODO: Implement same routines for Matrix.
 fn cbrt[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:

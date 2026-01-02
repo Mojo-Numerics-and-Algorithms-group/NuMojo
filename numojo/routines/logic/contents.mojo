@@ -100,7 +100,8 @@ fn isnan[
         result_array.store(i, math.isnan(array.load(i)))
     return result_array^
 
-
+# TODO: Optimize the following functions by implementing a generic backend or just using vectorized operations.
+# TODO: Implement the same for complex ndarray.
 fn isneginf[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -141,4 +142,46 @@ fn isposinf[
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size):
         result_array.store(i, inf[dtype]() == array.load(i))
+    return result_array^
+
+fn isneginf[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
+    """
+    Checks if each element of the input Matrix is negative infinity.
+
+    Parameters:
+        dtype: DType - Data type of the input Matrix.
+        backend: _mf.Backend - Backend to use for the operation. Defaults to _mf.Vectorized.
+
+    Args:
+        matrix: Matrix[dtype] - Input Matrix to check.
+
+    Returns:
+        Matrix[DType.bool] - A array of the same shape as `array` with True for negative infinite elements and False for others.
+    """
+    var result_array: Matrix[DType.bool] = Matrix[DType.bool](matrix.shape)
+    for i in range(result_array.size):
+        result_array.store(i, neg_inf[dtype]() == matrix.load(i))
+    return result_array^
+
+
+fn isposinf[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
+    """
+    Checks if each element of the input Matrix is positive infinity.
+    Parameters:
+        dtype: DType - Data type of the input Matrix.
+        backend: _mf.Backend - Backend to use for the operation. Defaults to _mf.Vectorized.
+
+    Args:
+        matrix: Matrix[dtype] - Input Matrix to check.
+
+    Returns:
+        Matrix[DType.bool] - A array of the same shape as `array` with True for positive infinite elements and False for others.
+    """
+    var result_array: Matrix[DType.bool] = Matrix[DType.bool](matrix.shape)
+    for i in range(result_array.size):
+        result_array.store(i, inf[dtype]() == matrix.load(i))
     return result_array^

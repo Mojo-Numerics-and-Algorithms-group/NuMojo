@@ -320,20 +320,33 @@ fn allclose[
     equal_nan: Bool = False,
 ) raises -> Bool:
     """
-    Returns True if two arrays are element-wise equal within a tolerance.
+    Determines whether two NDArrays are element-wise equal within a specified tolerance.
+
+    This function compares each element of `a` and `b` and returns True if all corresponding elements satisfy the condition:
+        abs(a_i - b_i) <= atol + rtol * abs(b_i)
+    Optionally, if `equal_nan` is True, NaN values at the same positions are considered equal.
 
     Parameters:
-        dtype: The dtype of the input NDArray.
+        dtype: The data type of the input NDArray.
 
     Args:
         a: First NDArray to compare.
         b: Second NDArray to compare.
-        rtol: The relative tolerance parameter (default is 1e-5).
-        atol: The absolute tolerance parameter (default is 1e-8).
-        equal_nan: If True, NaNs will be considered equal.
+        rtol: Relative tolerance (default: 1e-5). The maximum allowed difference, relative to the magnitude of `b`.
+        atol: Absolute tolerance (default: 1e-8). The minimum absolute difference allowed.
+        equal_nan: If True, NaNs in the same position are considered equal (default: False).
 
     Returns:
-        True if the two arrays are equal within the given tolerance, False otherwise.
+        True if all elements of `a` and `b` are equal within the specified tolerances, otherwise False.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        from numojo.routines.logic.comparison import allclose
+        var arr1 = nm.array[nm.f32]([1.0, 2.0, 3.0])
+        var arr2 = nm.array[nm.f32]([1.0, 2.00001, 2.99999])
+        print(allclose[nm.f32](arr1, arr2))  # Output: True
+        ```
     """
     if a.shape != b.shape:
         raise Error(
@@ -371,20 +384,33 @@ fn isclose[
     equal_nan: Bool = False,
 ) raises -> NDArray[DType.bool]:
     """
-    Returns a NDArray indicating whether two arrays are element-wise equal within a tolerance.
+    Performs element-wise comparison of two NDArrays to determine if their values are equal within a specified tolerance.
+
+    For each element pair (a_i, b_i), the result is True if:
+        abs(a_i - b_i) <= atol + rtol * abs(b_i)
+    Optionally, if `equal_nan` is True, NaN values at the same positions are considered equal.
 
     Parameters:
-        dtype: The dtype of the input Scalar.
+        dtype: The data type of the input NDArray.
 
     Args:
-        a: First Scalar to compare.
-        b: Second Scalar to compare.
-        rtol: The relative tolerance parameter (default is 1e-5).
-        atol: The absolute tolerance parameter (default is 1e-8).
-        equal_nan: If True, NaNs will be considered equal.
+        a: First NDArray to compare.
+        b: Second NDArray to compare.
+        rtol: Relative tolerance (default: 1e-5). The maximum allowed difference, relative to the magnitude of `b`.
+        atol: Absolute tolerance (default: 1e-8). The minimum absolute difference allowed.
+        equal_nan: If True, NaNs in the same position are considered equal (default: False).
 
     Returns:
-        A NDArray indicating whether the two arrays are equal within the given tolerance.
+        An NDArray of bools, where each element is True if the corresponding elements of `a` and `b` are equal within the specified tolerances, otherwise False.
+
+    Example:
+        ```mojo
+        import numojo as nm
+        from numojo.routines.logic.comparison import isclose
+        var arr1 = nm.array[nm.f32]([1.0, 2.0, 3.0])
+        var arr2 = nm.array[nm.f32]([1.0, 2.00001, 2.99999])
+        print(isclose[nm.f32](arr1, arr2))  # Output: [True, True, True]
+        ```
     """
     if a.shape != b.shape:
         raise Error(
@@ -425,20 +451,33 @@ fn allclose[
     equal_nan: Bool = False,
 ) raises -> Bool:
     """
-    Returns True if two arrays are element-wise equal within a tolerance.
+    Determines whether two Matrix are element-wise equal within a specified tolerance.
+
+    This function compares each element of `a` and `b` and returns True if all corresponding elements satisfy the condition:
+        abs(a_i - b_i) <= atol + rtol * abs(b_i)
+    Optionally, if `equal_nan` is True, NaN values at the same positions are considered equal.
 
     Parameters:
-        dtype: The dtype of the input Matrix.
+        dtype: The data type of the input Matrix.
 
     Args:
         a: First Matrix to compare.
         b: Second Matrix to compare.
-        rtol: The relative tolerance parameter (default is 1e-5).
-        atol: The absolute tolerance parameter (default is 1e-8).
-        equal_nan: If True, NaNs will be considered equal.
+        rtol: Relative tolerance (default: 1e-5). The maximum allowed difference, relative to the magnitude of `b`.
+        atol: Absolute tolerance (default: 1e-8). The minimum absolute difference allowed.
+        equal_nan: If True, NaNs in the same position are considered equal (default: False).
 
     Returns:
-        True if the two arrays are equal within the given tolerance, False otherwise.
+        True if all elements of `a` and `b` are equal within the specified tolerances, otherwise False.
+
+    Example:
+        ```mojo
+        from numojo.prelude import *
+        from numojo.routines.logic.comparison import allclose
+        var mat1 = Matrix.rand[f32]((2, 2))
+        var mat2 = Matrix.rand[f32]((2, 2))
+        print(allclose[f32](mat1, mat2))  # Output: True
+        ```
     """
     if a.shape != b.shape:
         raise Error(
@@ -476,20 +515,33 @@ fn isclose[
     equal_nan: Bool = False,
 ) raises -> Matrix[DType.bool]:
     """
-    Returns True if two scalars are equal within a tolerance.
+    Performs element-wise comparison of two Matrix to determine if their values are equal within a specified tolerance.
+
+    For each element pair (a_i, b_i), the result is True if:
+        abs(a_i - b_i) <= atol + rtol * abs(b_i)
+    Optionally, if `equal_nan` is True, NaN values at the same positions are considered equal.
 
     Parameters:
-        dtype: The dtype of the input Scalar.
+        dtype: The data type of the input Matrix.
 
     Args:
-        a: First Scalar to compare.
-        b: Second Scalar to compare.
-        rtol: The relative tolerance parameter (default is 1e-5).
-        atol: The absolute tolerance parameter (default is 1e-8).
-        equal_nan: If True, NaNs will be considered equal.
+        a: First Matrix to compare.
+        b: Second Matrix to compare.
+        rtol: Relative tolerance (default: 1e-5). The maximum allowed difference, relative to the magnitude of `b`.
+        atol: Absolute tolerance (default: 1e-8). The minimum absolute difference allowed.
+        equal_nan: If True, NaNs in the same position are considered equal (default: False).
 
     Returns:
-        True if the two scalars are equal within the given tolerance, False otherwise.
+        An NDArray of bools, where each element is True if the corresponding elements of `a` and `b` are equal within the specified tolerances, otherwise False.
+
+    Example:
+        ```mojo
+        from numojo.prelude import *
+        from numojo.routines.logic.comparison import isclose
+        var mat1 = Matrix.rand[f32]((2, 2))
+        var mat2 = Matrix.rand[f32]((2, 2))
+        print(isclose[f32](mat1, mat2))
+        ```
     """
     if a.shape != b.shape:
         raise Error(
@@ -527,7 +579,7 @@ fn array_equal[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> Bool:
     """
-    Checks if two NDArrays are equal element-wise.
+    Checks if two NDArrays are equal element-wise and shape-wise.
 
     Parameters:
         dtype: The dtype of the input NDArray.
@@ -537,7 +589,7 @@ fn array_equal[
         array2: Second NDArray to compare.
 
     Returns:
-        True if the two NDArrays are equal element-wise, False otherwise.
+        True if the two NDArrays are equal element-wise and shape-wise, False otherwise.
 
     Examples:
         ```mojo

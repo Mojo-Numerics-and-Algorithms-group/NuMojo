@@ -11,7 +11,7 @@ import math
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix, MatrixImpl
+from numojo.core.matrix import Matrix, MatrixBase
 
 
 # ===-------------------------------------a-----------------------------------===#

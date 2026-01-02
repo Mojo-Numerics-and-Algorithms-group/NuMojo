@@ -583,7 +583,9 @@ struct Item(
 
         return (start, step, length)
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self.element_type, width]:
+    fn load[
+        width: Int = 1
+    ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
         """
         Load a SIMD vector from the Item at the specified index.
 
@@ -645,7 +647,9 @@ struct Item(
 
         self._buf.store[width=width](idx, value)
 
-    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self.element_type, width]:
+    fn unsafe_load[
+        width: Int = 1
+    ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
         Unsafely load a SIMD vector from the Item at the specified index.
 

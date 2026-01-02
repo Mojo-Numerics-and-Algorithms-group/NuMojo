@@ -19,7 +19,7 @@ alias Shape = NDArrayShape
 
 @register_passable
 struct NDArrayShape(
-    ImplicitlyCopyable, Movable, Sized, Stringable, Representable, Writable
+    ImplicitlyCopyable, Movable, Representable, Sized, Stringable, Writable
 ):
     """
     Presents the shape of `NDArray` type.
@@ -449,7 +449,9 @@ struct NDArrayShape(
         if ndim == 0:
             # This denotes a 0darray (numojo scalar)
             self.ndim = ndim
-            self._buf = alloc[Scalar[Self.element_type]](1) # allocate 1 element to avoid null pointer
+            self._buf = alloc[Scalar[Self.element_type]](
+                1
+            )  # allocate 1 element to avoid null pointer
             self._buf.init_pointee_copy(0)
         else:
             self.ndim = ndim
@@ -956,7 +958,9 @@ struct NDArrayShape(
         )
         return res^
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self.element_type, width]:
+    fn load[
+        width: Int = 1
+    ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
         """
         Load a SIMD vector from the Shape at the specified index.
 
@@ -1018,7 +1022,9 @@ struct NDArrayShape(
 
         self._buf.store[width=width](idx, value)
 
-    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self.element_type, width]:
+    fn unsafe_load[
+        width: Int = 1
+    ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
         Unsafely load a SIMD vector from the Shape at the specified index.
 

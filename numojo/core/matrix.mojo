@@ -1651,7 +1651,6 @@ struct MatrixBase[
 
         Args:
             idx: The linear index where the element will be stored. Negative indices are supported and follow Python conventions.
-
             val: The SIMD element to store at the given index.
 
         Raises:

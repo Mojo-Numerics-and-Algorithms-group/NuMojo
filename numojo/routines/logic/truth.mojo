@@ -76,7 +76,7 @@ fn all[
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
+fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     """
     If all True.
 

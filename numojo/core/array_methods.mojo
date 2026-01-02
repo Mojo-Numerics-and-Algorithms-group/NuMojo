@@ -54,6 +54,7 @@ struct Ellipsis(Stringable):
         return False
 
 
+# TODO: add an initializer with int field to specify number of new axes to add!
 struct NewAxis(Stringable):
     fn __init__(out self):
         """

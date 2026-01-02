@@ -378,6 +378,18 @@ struct NDArrayStrides(
             self._buf = alloc[Scalar[Self.element_type]](other.ndim)
             memcpy(dest=self._buf, src=other._buf, count=other.ndim)
 
+    @always_inline("nodebug")
+    fn deep_copy(self) raises -> Self:
+        """
+        Returns a deep copy of the NDArrayStride.
+
+        Returns:
+            A new NDArrayStride with the same values and new origin.
+        """
+        var res: NDArrayStrides = NDArrayStrides(ndim=self.ndim, initialized=True)
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        return res^
+
     fn __del__(deinit self):
         """
         Destructor for NDArrayStrides.

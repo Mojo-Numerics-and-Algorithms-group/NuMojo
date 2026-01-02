@@ -517,6 +517,18 @@ struct NDArrayShape(
             self._buf = alloc[Scalar[Self.element_type]](other.ndim)
             memcpy(dest=self._buf, src=other._buf, count=other.ndim)
 
+    @always_inline("nodebug")
+    fn deep_copy(self) raises -> Self:
+        """
+        Returns a deep copy of the NDArrayShape.
+
+        Returns:
+            A new NDArrayShape with the same values and new origin.
+        """
+        var res: NDArrayShape = NDArrayShape(ndim=self.ndim, initialized=True)
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        return res^
+
     fn __del__(deinit self):
         """
         Destructor for NDArrayShape.

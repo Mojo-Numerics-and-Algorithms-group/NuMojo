@@ -469,8 +469,8 @@ fn allclose[
 fn isclose[
     dtype: DType
 ](
-    a: MatrixImpl[dtype, **_],
-    b: MatrixImpl[dtype, **_],
+    a: MatrixBase[dtype, **_],
+    b: MatrixBase[dtype, **_],
     rtol: Scalar[dtype] = 1e-5,
     atol: Scalar[dtype] = 1e-8,
     equal_nan: Bool = False,

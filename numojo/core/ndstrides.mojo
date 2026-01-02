@@ -13,9 +13,9 @@ from memory import LegacyUnsafePointer as UnsafePointer
 
 from numojo.core.error import IndexError, ValueError
 
-alias strides = NDArrayStrides
-alias Strides = NDArrayStrides
-"""An alias of the NDArrayStrides."""
+comptime strides = NDArrayStrides
+comptime Strides = NDArrayStrides
+"""An comptime of the NDArrayStrides."""
 
 
 @register_passable
@@ -31,7 +31,7 @@ struct NDArrayStrides(
     """
 
     # Aliases
-    alias _type: DType = DType.int
+    comptime _type: DType = DType.int
 
     # Fields
     var _buf: UnsafePointer[Scalar[Self._type]]

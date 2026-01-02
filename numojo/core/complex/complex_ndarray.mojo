@@ -115,7 +115,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     # Aliases
     # ===----------------------------------------------------------------------===#
 
-    alias dtype: DType = cdtype._dtype  # corresponding real data type
+    comptime dtype: DType = cdtype._dtype  # corresponding real data type
 
     # ===----------------------------------------------------------------------===#
     # FIELDS
@@ -4066,7 +4066,7 @@ struct _ComplexNDArrayIter[
         forward: The iteration direction. `False` is backwards.
     """
     # The equivalent DType of the ComplexDType
-    alias dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype._dtype
 
     # FIELDS
     var index: Int

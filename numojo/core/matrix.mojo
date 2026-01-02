@@ -92,7 +92,7 @@ struct Matrix[dtype: DType = DType.float64, BufType: Buffered = OwnData](
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
-    alias width: Int = simd_width_of[Self.dtype]()  #
+    comptime width: Int = simd_width_of[Self.dtype]()  #
     """Vector size of the data type."""
 
     var _buf: DataContainer[Self.dtype]
@@ -2179,7 +2179,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
 
     For example: `__add__`, `__sub__`, etc.
     """
-    alias simd_width = simd_width_of[dtype]()
+    comptime simd_width = simd_width_of[dtype]()
     if A.order() != B.order():
         raise Error(
             String("Matrix order {} does not match {}.").format(
@@ -2221,7 +2221,7 @@ fn _arithmetic_func_matrix_to_matrix[
 
     For example: `sin`, `cos`, etc.
     """
-    alias simd_width: Int = simd_width_of[dtype]()
+    comptime simd_width: Int = simd_width_of[dtype]()
 
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
@@ -2245,7 +2245,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     """
     Matrix[dtype] & Matrix[dtype] -> Matrix[bool]
     """
-    alias width = simd_width_of[dtype]()
+    comptime width = simd_width_of[dtype]()
 
     if A.order() != B.order():
         raise Error(

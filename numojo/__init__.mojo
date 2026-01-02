@@ -3,7 +3,7 @@ NuMojo is a library for numerical computing in Mojo 🔥
 similar to NumPy, SciPy in Python.
 """
 
-alias __version__: String = "V0.8.0"
+comptime __version__: String = "V0.8.0"
 
 # ===----------------------------------------------------------------------=== #
 # Import core types
@@ -76,9 +76,9 @@ from numojo.core.error import (
 # Objects
 from numojo.routines.constants import Constants
 
-alias pi = numojo.routines.constants.Constants.pi
-alias e = numojo.routines.constants.Constants.e
-alias c = numojo.routines.constants.Constants.c
+comptime pi = numojo.routines.constants.Constants.pi
+comptime e = numojo.routines.constants.Constants.e
+comptime c = numojo.routines.constants.Constants.c
 
 # Functions
 # TODO Make explicit imports of each individual function in future
@@ -235,5 +235,5 @@ from numojo.routines.searching import argmax, argmin
 # ===----------------------------------------------------------------------=== #
 # Alias for users
 # For ease of use, the name of the types may not follow the Mojo convention,
-# e.g., lower case can also be used for alias of structs.
+# e.g., lower case can also be used for comptime of structs.
 # ===----------------------------------------------------------------------=== #

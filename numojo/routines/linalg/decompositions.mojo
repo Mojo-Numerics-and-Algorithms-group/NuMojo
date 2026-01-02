@@ -17,8 +17,8 @@ from numojo.routines.creation import zeros, eye, full
 fn _compute_householder[
     dtype: DType
 ](mut H: Matrix[dtype], mut R: Matrix[dtype], work_index: Int) raises -> None:
-    alias simd_width = simd_width_of[dtype]()
-    alias sqrt2: Scalar[dtype] = 1.4142135623730951
+    comptime simd_width = simd_width_of[dtype]()
+    comptime sqrt2: Scalar[dtype] = 1.4142135623730951
     var rRows = R.shape[0]
 
     @parameter
@@ -84,7 +84,7 @@ fn _apply_householder[
 ) raises -> None:
     var aRows = A.shape[0]
     var aCols = A.shape[1]
-    alias simdwidth = simd_width_of[dtype]()
+    comptime simdwidth = simd_width_of[dtype]()
     for j in range(column_start, aCols):
         var dot: SIMD[dtype, 1] = 0.0
 

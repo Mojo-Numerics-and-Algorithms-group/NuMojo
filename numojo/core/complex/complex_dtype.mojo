@@ -15,52 +15,52 @@ from sys import CompilationTarget
 from sys.info import bit_width_of, size_of
 from sys.intrinsics import _type_is_eq
 
-alias _mIsSigned = UInt8(1)
-alias _mIsInteger = UInt8(1 << 7)
-alias _mIsNotInteger = UInt8(~(1 << 7))
-alias _mIsFloat = UInt8(1 << 6)
+comptime _mIsSigned = UInt8(1)
+comptime _mIsInteger = UInt8(1 << 7)
+comptime _mIsNotInteger = UInt8(~(1 << 7))
+comptime _mIsFloat = UInt8(1 << 6)
 
 # rust like aliases for complex data types.
-alias ci8 = ComplexDType.int8
-"""Data type alias for ComplexDType.int8"""
-alias ci16 = ComplexDType.int16
-"""Data type alias for ComplexDType.int16"""
-alias ci32 = ComplexDType.int32
-"""Data type alias for ComplexDType.int32"""
-alias ci64 = ComplexDType.int64
-"""Data type alias for ComplexDType.int64"""
-alias ci128 = ComplexDType.int128
-"""Data type alias for ComplexDType.int128"""
-alias ci256 = ComplexDType.int256
-"""Data type alias for ComplexDType.int256"""
-alias cint = ComplexDType.int
-"""Data type alias for ComplexDType.int"""
-alias cu8 = ComplexDType.uint8
-"""Data type alias for ComplexDType.uint8"""
-alias cu16 = ComplexDType.uint16
-"""Data type alias for ComplexDType.uint16"""
-alias cu32 = ComplexDType.uint32
-"""Data type alias for ComplexDType.uint32"""
-alias cu64 = ComplexDType.uint64
-"""Data type alias for ComplexDType.uint64"""
-alias cu128 = ComplexDType.uint128
-"""Data type alias for ComplexDType.uint128"""
-alias cu256 = ComplexDType.uint256
-"""Data type alias for ComplexDType.uint256"""
-alias cuint = ComplexDType.uint
-"""Data type alias for ComplexDType.uint"""
-alias cbf16 = ComplexDType.bfloat16
-"""Data type alias for ComplexDType.bfloat16"""
-alias cf16 = ComplexDType.float16
-"""Data type alias for ComplexDType.float16"""
-alias cf32 = ComplexDType.float32
-"""Data type alias for ComplexDType.float32"""
-alias cf64 = ComplexDType.float64
-"""Data type alias for ComplexDType.float64"""
-alias cboolean = ComplexDType.bool
-"""Data type alias for ComplexDType.bool"""
-alias cinvalid = ComplexDType.invalid
-"""Data type alias for ComplexDType.invalid"""
+comptime ci8 = ComplexDType.int8
+"""Data type comptime for ComplexDType.int8"""
+comptime ci16 = ComplexDType.int16
+"""Data type comptime for ComplexDType.int16"""
+comptime ci32 = ComplexDType.int32
+"""Data type comptime for ComplexDType.int32"""
+comptime ci64 = ComplexDType.int64
+"""Data type comptime for ComplexDType.int64"""
+comptime ci128 = ComplexDType.int128
+"""Data type comptime for ComplexDType.int128"""
+comptime ci256 = ComplexDType.int256
+"""Data type comptime for ComplexDType.int256"""
+comptime cint = ComplexDType.int
+"""Data type comptime for ComplexDType.int"""
+comptime cu8 = ComplexDType.uint8
+"""Data type comptime for ComplexDType.uint8"""
+comptime cu16 = ComplexDType.uint16
+"""Data type comptime for ComplexDType.uint16"""
+comptime cu32 = ComplexDType.uint32
+"""Data type comptime for ComplexDType.uint32"""
+comptime cu64 = ComplexDType.uint64
+"""Data type comptime for ComplexDType.uint64"""
+comptime cu128 = ComplexDType.uint128
+"""Data type comptime for ComplexDType.uint128"""
+comptime cu256 = ComplexDType.uint256
+"""Data type comptime for ComplexDType.uint256"""
+comptime cuint = ComplexDType.uint
+"""Data type comptime for ComplexDType.uint"""
+comptime cbf16 = ComplexDType.bfloat16
+"""Data type comptime for ComplexDType.bfloat16"""
+comptime cf16 = ComplexDType.float16
+"""Data type comptime for ComplexDType.float16"""
+comptime cf32 = ComplexDType.float32
+"""Data type comptime for ComplexDType.float32"""
+comptime cf64 = ComplexDType.float64
+"""Data type comptime for ComplexDType.float64"""
+comptime cboolean = ComplexDType.bool
+"""Data type comptime for ComplexDType.bool"""
+comptime cinvalid = ComplexDType.invalid
+"""Data type comptime for ComplexDType.invalid"""
 
 # ===----------------------------------------------------------------------=== #
 # Implements the Complex Datatype.
@@ -102,89 +102,89 @@ struct ComplexDType(
     # Aliases
     # ===-------------------------------------------------------------------===#
     # Refer to DType documentation for details on each data type.
-    alias _mlir_type = __mlir_type.`!kgen.dtype`
-    alias invalid = ComplexDType(
+    comptime _mlir_type = __mlir_type.`!kgen.dtype`
+    comptime invalid = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<invalid> : !kgen.dtype`
     )
-    alias bool = ComplexDType(
+    comptime bool = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<bool> : !kgen.dtype`
     )
-    alias int = ComplexDType(
+    comptime int = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<index> : !kgen.dtype`
     )
-    alias uint = ComplexDType(
+    comptime uint = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<uindex> : !kgen.dtype`
     )
-    alias _uint1 = ComplexDType(
+    comptime _uint1 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui1> : !kgen.dtype`
     )
-    alias _uint2 = ComplexDType(
+    comptime _uint2 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui2> : !kgen.dtype`
     )
-    alias _uint4 = ComplexDType(
+    comptime _uint4 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui4> : !kgen.dtype`
     )
-    alias uint8 = ComplexDType(
+    comptime uint8 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui8> : !kgen.dtype`
     )
-    alias int8 = ComplexDType(
+    comptime int8 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<si8> : !kgen.dtype`
     )
-    alias uint16 = ComplexDType(
+    comptime uint16 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui16> : !kgen.dtype`
     )
-    alias int16 = ComplexDType(
+    comptime int16 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<si16> : !kgen.dtype`
     )
-    alias uint32 = ComplexDType(
+    comptime uint32 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui32> : !kgen.dtype`
     )
-    alias int32 = ComplexDType(
+    comptime int32 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<si32> : !kgen.dtype`
     )
-    alias uint64 = ComplexDType(
+    comptime uint64 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui64> : !kgen.dtype`
     )
-    alias int64 = ComplexDType(
+    comptime int64 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<si64> : !kgen.dtype`
     )
-    alias uint128 = ComplexDType(
+    comptime uint128 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui128> : !kgen.dtype`
     )
-    alias int128 = ComplexDType(
+    comptime int128 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<si128> : !kgen.dtype`
     )
-    alias uint256 = ComplexDType(
+    comptime uint256 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<ui256> : !kgen.dtype`
     )
-    alias int256 = ComplexDType(
+    comptime int256 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<si256> : !kgen.dtype`
     )
-    alias float8_e3m4 = ComplexDType(
+    comptime float8_e3m4 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f8e3m4> : !kgen.dtype`
     )
-    alias float8_e4m3fn = ComplexDType(
+    comptime float8_e4m3fn = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f8e4m3fn> : !kgen.dtype`
     )
-    alias float8_e4m3fnuz = ComplexDType(
+    comptime float8_e4m3fnuz = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f8e4m3fnuz> : !kgen.dtype`
     )
-    alias float8_e5m2 = ComplexDType(
+    comptime float8_e5m2 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f8e5m2> : !kgen.dtype`
     )
-    alias float8_e5m2fnuz = ComplexDType(
+    comptime float8_e5m2fnuz = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f8e5m2fnuz> : !kgen.dtype`
     )
-    alias bfloat16 = ComplexDType(
+    comptime bfloat16 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<bf16> : !kgen.dtype`
     )
-    alias float16 = ComplexDType(
+    comptime float16 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f16> : !kgen.dtype`
     )
-    alias float32 = ComplexDType(
+    comptime float32 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f32> : !kgen.dtype`
     )
-    alias float64 = ComplexDType(
+    comptime float64 = ComplexDType(
         mlir_value=__mlir_attr.`#kgen.dtype.constant<f64> : !kgen.dtype`
     )
 

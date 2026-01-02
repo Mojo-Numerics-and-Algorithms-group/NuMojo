@@ -20,10 +20,10 @@ from math import sqrt
 
 from numojo.core.complex.complex_dtype import ComplexDType
 
-# ComplexScalar alias is for internal purposes
-alias ComplexScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
-# CScalar is short alias for ComplexScalar for user convenience
-alias CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
+# ComplexScalar comptime is for internal purposes
+comptime ComplexScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
+# CScalar is short comptime for ComplexScalar for user convenience
+comptime CScalar[cdtype: ComplexDType] = ComplexSIMD[cdtype, width=1]
 
 
 @register_passable("trivial")
@@ -55,7 +55,7 @@ struct ComplexSIMD[cdtype: ComplexDType, width: Int = 1](
     """
 
     # FIELDS
-    alias dtype: DType = cdtype._dtype  # the corresponding DType
+    comptime dtype: DType = cdtype._dtype  # the corresponding DType
     # The underlying data real and imaginary parts of the complex number.
     var re: SIMD[Self.dtype, width]
     var im: SIMD[Self.dtype, width]

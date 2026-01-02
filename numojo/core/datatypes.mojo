@@ -7,44 +7,44 @@ Datatypes Module - Implements datatypes aliases, conversions
 # ===----------------------------------------------------------------------=== #
 
 # Rust-like or numpy-like data type alias
-alias i8 = DType.int8
-"""Data type alias for DType.int8"""
-alias i16 = DType.int16
-"""Data type alias for DType.int16"""
-alias i32 = DType.int32
-"""Data type alias for DType.int32"""
-alias i64 = DType.int64
-"""Data type alias for DType.int64"""
-alias i128 = DType.int128
-"""Data type alias for DType.int128"""
-alias i256 = DType.int256
-"""Data type alias for DType.int256"""
-alias int = DType.int
-"""Data type alias for DType.int"""
-alias uint = DType.int
-"""Data type alias for DType.uint"""
-alias u8 = DType.uint8
-"""Data type alias for DType.uint8"""
-alias u16 = DType.uint16
-"""Data type alias for DType.uint16"""
-alias u32 = DType.uint32
-"""Data type alias for DType.uint32"""
-alias u64 = DType.uint64
-"""Data type alias for DType.uint64"""
-alias u128 = DType.uint128
-"""Data type alias for DType.uint128"""
-alias u256 = DType.uint256
-"""Data type alias for DType.uint256"""
-alias f16 = DType.float16
-"""Data type alias for DType.float16"""
-alias bf16 = DType.bfloat16
-"""Data type alias for DType.bfloat16"""
-alias f32 = DType.float32
-"""Data type alias for DType.float32"""
-alias f64 = DType.float64
-"""Data type alias for DType.float64"""
-alias boolean = DType.bool
-"""Data type alias for DType.bool"""
+comptime i8 = DType.int8
+"""Data type comptime for DType.int8"""
+comptime i16 = DType.int16
+"""Data type comptime for DType.int16"""
+comptime i32 = DType.int32
+"""Data type comptime for DType.int32"""
+comptime i64 = DType.int64
+"""Data type comptime for DType.int64"""
+comptime i128 = DType.int128
+"""Data type comptime for DType.int128"""
+comptime i256 = DType.int256
+"""Data type comptime for DType.int256"""
+comptime int = DType.int
+"""Data type comptime for DType.int"""
+comptime uint = DType.int
+"""Data type comptime for DType.uint"""
+comptime u8 = DType.uint8
+"""Data type comptime for DType.uint8"""
+comptime u16 = DType.uint16
+"""Data type comptime for DType.uint16"""
+comptime u32 = DType.uint32
+"""Data type comptime for DType.uint32"""
+comptime u64 = DType.uint64
+"""Data type comptime for DType.uint64"""
+comptime u128 = DType.uint128
+"""Data type comptime for DType.uint128"""
+comptime u256 = DType.uint256
+"""Data type comptime for DType.uint256"""
+comptime f16 = DType.float16
+"""Data type comptime for DType.float16"""
+comptime bf16 = DType.bfloat16
+"""Data type comptime for DType.bfloat16"""
+comptime f32 = DType.float32
+"""Data type comptime for DType.float32"""
+comptime f64 = DType.float64
+"""Data type comptime for DType.float64"""
+comptime boolean = DType.bool
+"""Data type comptime for DType.bool"""
 
 # ===----------------------------------------------------------------------=== #
 
@@ -55,13 +55,13 @@ alias boolean = DType.bool
 # struct TypeCoercion:
 #     """Handles type coercion using a promotion matrix approach."""
 
-#     alias ranks: List[DType] = List[DType](
+#     comptime ranks: List[DType] = List[DType](
 #         i8, u8, f16, i16, u16, f32, i32, u32, i64, u64, f64
 #     )
-#     alias int_ranks: List[DType] = List[DType](
+#     comptime int_ranks: List[DType] = List[DType](
 #         i8, u8, i16, u16, i32, u32, i64, u64
 #     )
-#     alias float_ranks: List[DType] = List[DType](f16, f32, f64)
+#     comptime float_ranks: List[DType] = List[DType](f16, f32, f64)
 
 #     @parameter
 #     @staticmethod
@@ -114,8 +114,8 @@ alias boolean = DType.bool
 #     @staticmethod
 #     fn coerce_mixed_ints[T1: DType, T2: DType]() -> DType:
 #         """Coerces a signed and unsigned integer type."""
-#         alias signed = T1 if T1.is_signed() else T2
-#         alias unsigned = T2 if T1.is_signed() else T1
+#         comptime signed = T1 if T1.is_signed() else T2
+#         comptime unsigned = T2 if T1.is_signed() else T1
 
 #         # If unsigned fits in signed, use signed
 #         if unsigned.sizeof() < signed.sizeof():
@@ -220,13 +220,13 @@ fn _concise_dtype_str(dtype: DType) -> String:
         return "Unknown"
 
 
-# alias ranks: List[DType] = List[DType](
+# comptime ranks: List[DType] = List[DType](
 #     i8, u8, f16, i16, u16, f32, i32, u32, i64, u64, f64
 # )
-# alias int_ranks: List[DType] = List[DType](
+# comptime int_ranks: List[DType] = List[DType](
 #     i8, u8, i16, u16, i32, u32, i64, u64
 # )
-# alias float_ranks: List[DType] = List[DType](f16, f32, f64)
+# comptime float_ranks: List[DType] = List[DType](f16, f32, f64)
 
 # @parameter
 # fn get_type_rank[dtype: DType]() -> Int:
@@ -272,8 +272,8 @@ fn _concise_dtype_str(dtype: DType) -> String:
 # @parameter
 # fn coerce_mixed_ints[T1: DType, T2: DType]() -> DType:
 #     """Coerces a signed and unsigned integer type."""
-#     alias signed = T1 if T1.is_signed() else T2
-#     alias unsigned = T2 if T1.is_signed() else T1
+#     comptime signed = T1 if T1.is_signed() else T2
+#     comptime unsigned = T2 if T1.is_signed() else T1
 
 #     # If unsigned fits in signed, use signed
 #     if unsigned.sizeof() < signed.sizeof():

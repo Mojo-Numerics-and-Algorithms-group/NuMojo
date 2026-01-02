@@ -18,8 +18,8 @@ from numojo.core.traits.indexer_collection_element import (
     IndexerCollectionElement,
 )
 
-# simple alias for users. Use `Item` internally.
-alias item = Item
+# simple comptime for users. Use `Item` internally.
+comptime item = Item
 
 
 @register_passable
@@ -31,7 +31,7 @@ struct Item(
     """
 
     # Aliases
-    alias _type: DType = DType.int
+    comptime _type: DType = DType.int
 
     # Fields
     var _buf: UnsafePointer[Scalar[Self._type]]

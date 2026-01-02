@@ -13,8 +13,8 @@ from memory import LegacyUnsafePointer as UnsafePointer
 
 from numojo.core.error import IndexError, ShapeError, ValueError
 
-alias Shape = NDArrayShape
-"""An alias of the NDArrayShape."""
+comptime Shape = NDArrayShape
+"""An comptime of the NDArrayShape."""
 
 
 @register_passable
@@ -32,7 +32,7 @@ struct NDArrayShape(
     """
 
     # Aliases
-    alias _type: DType = DType.int
+    comptime _type: DType = DType.int
 
     # Fields
     var _buf: UnsafePointer[Scalar[Self._type]]

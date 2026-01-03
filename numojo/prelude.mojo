@@ -22,7 +22,7 @@ from numojo.prelude import *
 
 import numojo as nm
 
-from numojo.core.item import Item, item
+from numojo.core.item import Item
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import Shape, NDArrayShape

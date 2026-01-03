@@ -9,11 +9,10 @@ Implements NDArrayStrides type.
 """
 
 from memory import memcmp, memcpy
-from memory import LegacyUnsafePointer as UnsafePointer
+from memory import UnsafePointer
 
 from numojo.core.error import IndexError, ValueError
 
-alias strides = NDArrayStrides
 alias Strides = NDArrayStrides
 """An alias of the NDArrayStrides."""
 
@@ -31,13 +30,43 @@ struct NDArrayStrides(
     """
 
     # Aliases
-    alias _type: DType = DType.int
+    alias element_type: DType = DType.int
+    """The data type of the NDArrayStrides elements."""
+    alias _origin: MutOrigin = MutOrigin.external
+    """Internal origin of the NDArrayStrides instance."""
 
     # Fields
-    var _buf: UnsafePointer[Scalar[Self._type]]
+    var _buf: UnsafePointer[Scalar[Self.element_type], Self._origin]
     """Data buffer."""
     var ndim: Int
     """Number of dimensions of array. It must be larger than 0."""
+
+    @always_inline("nodebug")
+    fn __init__(out self, shape: Int) raises:
+        """
+        Initializes the NDArrayStrides with one dimension.
+
+        Raises:
+            Error: If the shape is not positive.
+
+        Args:
+            shape: Size of the array.
+        """
+
+        if shape < 1:
+            raise Error(
+                ShapeError(
+                    message=String(
+                        "Stride value must be positive, got {}."
+                    ).format(shape),
+                    suggestion="Use positive integers for stride value.",
+                    location="NDArrayStrides.__init__(shape: Int)",
+                )
+            )
+
+        self.ndim = 1
+        self._buf = alloc[Scalar[Self.element_type]](shape)
+        self._buf.init_pointee_copy(shape)
 
     @always_inline("nodebug")
     fn __init__(out self, *strides: Int) raises:
@@ -62,7 +91,7 @@ struct NDArrayStrides(
             )
 
         self.ndim = len(strides)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
+        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
@@ -89,7 +118,7 @@ struct NDArrayStrides(
             )
 
         self.ndim = len(strides)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
+        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
@@ -118,7 +147,7 @@ struct NDArrayStrides(
             )
 
         self.ndim = len(strides)
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
+        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
             (self._buf + i).init_pointee_copy(strides[i])
 
@@ -133,7 +162,7 @@ struct NDArrayStrides(
         """
 
         self.ndim = strides.ndim
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(self.ndim)
+        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
         memcpy(dest=self._buf, src=strides._buf, count=strides.ndim)
 
     @always_inline("nodebug")
@@ -156,7 +185,7 @@ struct NDArrayStrides(
         """
 
         self.ndim = shape.ndim
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(shape.ndim)
+        self._buf = alloc[Scalar[Self.element_type]](shape.ndim)
 
         if order == "C":
             var temp = 1
@@ -272,11 +301,12 @@ struct NDArrayStrides(
         if ndim == 0:
             # This is a 0darray (numojo scalar)
             self.ndim = ndim
-            self._buf = UnsafePointer[Scalar[Self._type]]()
+            self._buf = alloc[Scalar[Self.element_type]](1)
+            self._buf.init_pointee_copy(0)
 
         else:
             self.ndim = ndim
-            self._buf = UnsafePointer[Scalar[Self._type]]().alloc(ndim)
+            self._buf = alloc[Scalar[Self.element_type]](ndim)
             if initialized:
                 for i in range(ndim):
                     (self._buf + i).init_pointee_copy(0)
@@ -298,7 +328,8 @@ struct NDArrayStrides(
         Example:
         ```mojo
         import numojo as nm
-        var shape = nm.Shape(2, 3, 4)
+        from numojo.prelude import *
+        var shape = Shape(2, 3, 4)
         var strides = nm.Strides.row_major(shape)
         print(strides)  # Strides: (12, 4, 1)
         ```
@@ -322,7 +353,8 @@ struct NDArrayStrides(
         Example:
         ```mojo
         import numojo as nm
-        var shape = nm.Shape(2, 3, 4)
+        from numojo.prelude import *
+        var shape = Shape(2, 3, 4)
         var strides = nm.Strides.col_major(shape)
         print(strides)  # Strides: (1, 2, 6)
         ```
@@ -339,16 +371,36 @@ struct NDArrayStrides(
             other: Strides of the array.
         """
         self.ndim = other.ndim
-        self._buf = UnsafePointer[Scalar[Self._type]]().alloc(other.ndim)
-        memcpy(dest=self._buf, src=other._buf, count=other.ndim)
+        if other.ndim == 0:
+            self._buf = alloc[Scalar[Self.element_type]](1)
+            self._buf.init_pointee_copy(0)
+        else:
+            self._buf = alloc[Scalar[Self.element_type]](other.ndim)
+            memcpy(dest=self._buf, src=other._buf, count=other.ndim)
+
+    @always_inline("nodebug")
+    fn deep_copy(self) raises -> Self:
+        """
+        Returns a deep copy of the NDArrayStride.
+
+        Returns:
+            A new NDArrayStride with the same values and new origin.
+        """
+        var res: NDArrayStrides = NDArrayStrides(
+            ndim=self.ndim, initialized=True
+        )
+        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
+        return res^
 
     fn __del__(deinit self):
         """
         Destructor for NDArrayStrides.
         Frees the allocated memory for the data buffer.
+
+        Notes:
+            Even when ndim is 0, the buffer is still allocated with 1 element to avoid null pointer, so it needs to be freed here.
         """
-        if self.ndim > 0:
-            self._buf.free()
+        self._buf.free()
 
     fn normalize_index(self, index: Int) -> Int:
         """
@@ -504,7 +556,7 @@ struct NDArrayStrides(
         return result^
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Scalar[Self._type]) raises:
+    fn __setitem__(mut self, index: Int, val: Scalar[Self.element_type]) raises:
         """
         Sets stride at specified index.
 
@@ -833,7 +885,9 @@ struct NDArrayStrides(
         )
         return res
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self._type, width]:
+    fn load[
+        width: Int = 1
+    ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
         """
         Load a SIMD vector from the Strides at the specified index.
 
@@ -866,7 +920,7 @@ struct NDArrayStrides(
 
     fn store[
         width: Int = 1
-    ](self, idx: Int, value: SIMD[Self._type, width]) raises:
+    ](self, idx: Int, value: SIMD[Self.element_type, width]) raises:
         """
         Store a SIMD vector into the Strides at the specified index.
 
@@ -895,7 +949,9 @@ struct NDArrayStrides(
 
         self._buf.store[width=width](idx, value)
 
-    fn unsafe_load[width: Int = 1](self, idx: Int) -> SIMD[Self._type, width]:
+    fn unsafe_load[
+        width: Int = 1
+    ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
         Unsafely load a SIMD vector from the Strides at the specified index.
 
@@ -912,7 +968,7 @@ struct NDArrayStrides(
 
     fn unsafe_store[
         width: Int = 1
-    ](self, idx: Int, value: SIMD[Self._type, width]):
+    ](self, idx: Int, value: SIMD[Self.element_type, width]):
         """
         Unsafely store a SIMD vector into the Strides at the specified index.
 

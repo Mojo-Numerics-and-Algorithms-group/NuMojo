@@ -67,5 +67,4 @@ from .error import (
 )
 
 alias idx = Item
-alias shape = NDArrayShape
 alias Shape = NDArrayShape

@@ -155,8 +155,8 @@ fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
         The offset of the array of a flipped memory layout.
     """
 
-    var remainder = offset
-    var indices = Item(ndim=len(strides), initialized=False)
+    var remainder: Int = offset
+    var indices: Item = Item(ndim=len(strides))
     for i in range(len(strides)):
         indices[i] = remainder // strides[i]
         remainder %= strides[i]

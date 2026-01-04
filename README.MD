@@ -121,7 +121,7 @@ fn main() raises:
     )
 
     # Matrix slicing
-    var A_slice = A[1:3, 4:19]
+    var A_slice = A[1:3, 4:19] # returns a copy, for getting a view use `A.get(Slice(1,3), Slice(4, 19))
     var B_slice = B[255, 103:241:2]
 
     # Get scalar from matrix
@@ -160,7 +160,9 @@ from numojo.prelude import *
 
 fn main() raises:
     # Create a complex scalar 5 + 5j
-    var complexscalar: CScalar[cf32] = CScalar[cf32](re=5, im=5) # Equivalently ComplexSIMD[cf32](5, 5)
+    var complexscalar = CScalar[cf32](5) # Equivalently ComplexSIMD[cf32](5, 5)
+    # Also equivalently as simple as  5 + 5*`1j`!
+  
     # Create complex arrays
     var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # filled with (5+5j)
     var B = nm.ones[cf32](Shape(1000, 1000))                            # filled with (1+1j)
@@ -184,7 +186,7 @@ fn main() raises:
 
 NuMojo offers several installation methods to suit different development needs. Choose the method that best fits your workflow:
 
-### Method 1: Git Installation with pixi-build-mojo
+### Method 1: Git Installation with pixi-build-mojo  (Recommended)
 
 Install NuMojo directly from the GitHub repository to access both stable releases and cutting-edge features. This method is perfect for developers who want the latest functionality or need to work with the most recent stable version.
 
@@ -231,13 +233,16 @@ pixi install
 
 The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
 
-### Method 2: Stable Release via Pixi (Recommended)
+### Method 2: Stable Release via Pixi (prefix.dev)
 
 For most users, we recommend installing a stable release through Pixi for guaranteed compatibility and reproducibility.
 
 Add the following to your `pixi.toml` file:
 
 ```toml
+[workspace]
+channels = ["https://repo.prefix.dev/modular-community"]
+
 [dependencies]
 numojo = "=0.7.0"
 ```
@@ -251,6 +256,7 @@ pixi install
 
 | NuMojo Version | Required Mojo Version |
 | -------------- | -------------------- |
+| v0.71.0        | ==25.7              |
 | v0.7.0         | ==25.3              |
 | v0.6.1         | ==25.2              |
 | v0.6.0         | ==25.2              |

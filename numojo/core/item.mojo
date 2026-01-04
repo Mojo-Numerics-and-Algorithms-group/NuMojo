@@ -4,7 +4,6 @@ Implements Item type.
 `Item` is a series of `Int` on the heap.
 """
 
-from builtin.type_aliases import Origin
 from builtin.int import index as convert_to_int
 from memory import memcpy, memset_zero
 from memory import UnsafePointer
@@ -46,9 +45,9 @@ struct Item(
     """
 
     # Aliases
-    alias element_type: DType = DType.int
+    comptime element_type: DType = DType.int
     """The data type of the Item elements."""
-    alias _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutOrigin.external
     """Internal origin of the Item instance."""
 
     # Fields

@@ -13,8 +13,8 @@ from memory import UnsafePointer
 
 from numojo.core.error import IndexError, ShapeError, ValueError
 
-alias Shape = NDArrayShape
-"""An alias of the NDArrayShape."""
+comptime Shape = NDArrayShape
+"""An comptime of the NDArrayShape."""
 
 
 @register_passable
@@ -46,9 +46,9 @@ struct NDArrayShape(
     """
 
     # Aliases
-    alias element_type: DType = DType.int
+    comptime element_type: DType = DType.int
     """The data type of the NDArrayShape elements."""
-    alias _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutOrigin.external
     """Internal origin of the NDArrayShape instance."""
 
     # Fields

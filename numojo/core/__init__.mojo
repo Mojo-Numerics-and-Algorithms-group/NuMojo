@@ -5,8 +5,6 @@ from .ndarray import NDArray
 from .item import Item
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
-from .own_data import OwnData
-from .ref_data import RefData
 
 from .complex import (
     ComplexSIMD,
@@ -66,5 +64,5 @@ from .error import (
     ArithmeticError,
 )
 
-alias idx = Item
-alias Shape = NDArrayShape
+comptime idx = Item
+comptime Shape = NDArrayShape

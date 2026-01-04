@@ -327,7 +327,7 @@ fn _linspace_parallel[
         A NDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-    alias nelts = simd_width_of[dtype]()
+    comptime nelts = simd_width_of[dtype]()
 
     if endpoint:
         var denominator: SIMD[dtype, 1] = Scalar[dtype](num) - 1.0
@@ -417,7 +417,7 @@ fn _linspace_serial[
     Returns:
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    alias dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype._dtype
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
 
     if endpoint:
@@ -468,8 +468,8 @@ fn _linspace_parallel[
     Returns:
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    alias dtype: DType = cdtype._dtype
-    alias nelts = simd_width_of[dtype]()
+    comptime dtype: DType = cdtype._dtype
+    comptime nelts = simd_width_of[dtype]()
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
 
     if endpoint:
@@ -738,7 +738,7 @@ fn _logspace_serial[
     Returns:
         A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    alias dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype._dtype
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
         NDArrayShape(num)
     )
@@ -793,7 +793,7 @@ fn _logspace_parallel[
     Returns:
         A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    alias dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype._dtype
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
         NDArrayShape(num)
     )
@@ -928,7 +928,7 @@ fn geomspace[
     constrained[
         not cdtype.is_integral(), "Int type will result to precision errors."
     ]()
-    alias dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype._dtype
     var a: ComplexSIMD[cdtype] = start
 
     if endpoint:
@@ -2002,10 +2002,9 @@ fn tril[
         for i in range(m.ndim - 2, m.ndim):
             final_offset *= m.shape[i]
         for offset in range(initial_offset):
-            offset = offset * final_offset
             for i in range(m.shape[-2]):
                 for j in range(i + 1 + k, m.shape[-1]):
-                    result._buf.ptr[offset + j + i * m.shape[-1]] = Scalar[
+                    result._buf.ptr[offset * final_offset + j + i * m.shape[-1]] = Scalar[
                         dtype
                     ](0)
     else:
@@ -2248,7 +2247,7 @@ fn astype[
         A ComplexNDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    alias target_dtype: DType = target._dtype
+    comptime target_dtype: DType = target._dtype
     return ComplexNDArray[target](
         re=astype[target_dtype](a._re),
         im=astype[target_dtype](a._im),
@@ -2427,7 +2426,7 @@ fn array[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
     """
-    This reload is an alias of `fromstring`.
+    This reload is an comptime of `fromstring`.
     """
     return fromstring[dtype](text, order)
 
@@ -2613,7 +2612,7 @@ fn array[
     Returns:
         A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
-    alias dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype._dtype
     var len = Int(len(real.shape))
     var shape: List[Int] = List[Int]()
     if real.shape != imag.shape:

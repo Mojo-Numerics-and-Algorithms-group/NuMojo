@@ -13,8 +13,8 @@ from memory import UnsafePointer
 
 from numojo.core.error import IndexError, ValueError
 
-alias Strides = NDArrayStrides
-"""An alias of the NDArrayStrides."""
+comptime Strides = NDArrayStrides
+"""An comptime of the NDArrayStrides."""
 
 
 @register_passable
@@ -30,9 +30,9 @@ struct NDArrayStrides(
     """
 
     # Aliases
-    alias element_type: DType = DType.int
+    comptime element_type: DType = DType.int
     """The data type of the NDArrayStrides elements."""
-    alias _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutOrigin.external
     """Internal origin of the NDArrayStrides instance."""
 
     # Fields

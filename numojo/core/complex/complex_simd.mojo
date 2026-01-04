@@ -16,13 +16,13 @@ complex number operations like conjugation and absolute value.
 from math import sqrt, sin, cos
 from numojo.core.complex.complex_dtype import ComplexDType
 
-alias ComplexScalar = ComplexSIMD[_, width=1]
-"""ComplexScalar alias is for internal purposes (width=1 specialization)."""
+comptime ComplexScalar = ComplexSIMD[_, width=1]
+"""ComplexScalar comptime is for internal purposes (width=1 specialization)."""
 
-alias CScalar = ComplexSIMD[_, width=1]
-"""User-friendly alias for scalar complex numbers."""
+comptime CScalar = ComplexSIMD[_, width=1]
+"""User-friendly comptime for scalar complex numbers."""
 
-alias `1j` = ImaginaryUnit()
+comptime `1j` = ImaginaryUnit()
 """Constant representing the imaginary unit complex number 0 + 1j.
 Enables Python like syntax for complex numbers, e.g., (3 + 4 * `1j`)."""
 
@@ -63,11 +63,11 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         ComplexSIMD[cf64].from_polar(2.0, 0.5)
     """
 
-    alias dtype: DType = cdtype._dtype
-    """Component dtype alias (underlying real/imag dtype)."""
+    comptime dtype: DType = Self.cdtype._dtype
+    """Component dtype comptime (underlying real/imag dtype)."""
 
-    var re: SIMD[Self.dtype, width]
-    var im: SIMD[Self.dtype, width]
+    var re: SIMD[Self.dtype, Self.width]
+    var im: SIMD[Self.dtype, Self.width]
 
     # --- Internal helper for broadcasting scalar to SIMD lanes ---
     @staticmethod
@@ -942,7 +942,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     fn __invert__(
         self,
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral():
         """
         Element-wise logical NOT operation on this ComplexSIMD instance.
 
@@ -954,7 +954,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
     # --- Comparison operators ---
     fn __and__(
         self, other: Self
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral():
         """
         Element-wise logical AND operation between two ComplexSIMD instances.
 
@@ -968,7 +968,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     fn __or__(
         self, other: Self
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral():
         """
         Element-wise logical OR operation between two ComplexSIMD instances.
 
@@ -982,7 +982,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     fn __xor__(
         self, other: Self
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral():
         """
         Element-wise logical XOR operation between two ComplexSIMD instances.
 

@@ -30,7 +30,7 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
         Scalar.
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
     var result: Scalar[dtype] = Scalar[dtype](0)
 
     @parameter
@@ -125,7 +125,7 @@ fn sum[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     ```
     """
     var res = Scalar[dtype](0)
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_vec[width: Int](i: Int):
@@ -154,7 +154,7 @@ fn sum[
     ```
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
@@ -339,7 +339,7 @@ fn cumsum[
     ```
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
     var order = "C" if A.flags.C_CONTIGUOUS else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
     memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)

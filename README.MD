@@ -121,7 +121,7 @@ fn main() raises:
     )
 
     # Matrix slicing
-    var A_slice = A[1:3, 4:19]
+    var A_slice = A[1:3, 4:19] # returns a copy, for getting a view use `A.get(Slice(1,3), Slice(4, 19))
     var B_slice = B[255, 103:241:2]
 
     # Get scalar from matrix
@@ -161,6 +161,8 @@ from numojo.prelude import *
 fn main() raises:
     # Create a complex scalar 5 + 5j
     var complexscalar = CScalar[cf32](5) # Equivalently ComplexSIMD[cf32](5, 5)
+    # Also equivalently as simple as  5 + 5*`1j`!
+  
     # Create complex arrays
     var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # filled with (5+5j)
     var B = nm.ones[cf32](Shape(1000, 1000))                            # filled with (1+1j)

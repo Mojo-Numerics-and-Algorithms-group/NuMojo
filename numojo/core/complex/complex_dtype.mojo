@@ -22,45 +22,45 @@ comptime _mIsFloat = UInt8(1 << 6)
 
 # rust like comptimees for complex data types.
 comptime ci8 = ComplexDType.int8
-"""Data type comptime for ComplexDType.int8"""
+"""Data type comptime for ComplexDType.int8."""
 comptime ci16 = ComplexDType.int16
-"""Data type comptime for ComplexDType.int16"""
+"""Data type comptime for ComplexDType.int16."""
 comptime ci32 = ComplexDType.int32
-"""Data type comptime for ComplexDType.int32"""
+"""Data type comptime for ComplexDType.int32."""
 comptime ci64 = ComplexDType.int64
-"""Data type comptime for ComplexDType.int64"""
+"""Data type comptime for ComplexDType.int64."""
 comptime ci128 = ComplexDType.int128
-"""Data type comptime for ComplexDType.int128"""
+"""Data type comptime for ComplexDType.int128."""
 comptime ci256 = ComplexDType.int256
-"""Data type comptime for ComplexDType.int256"""
+"""Data type comptime for ComplexDType.int256."""
 comptime cint = ComplexDType.int
-"""Data type comptime for ComplexDType.int"""
+"""Data type comptime for ComplexDType.int."""
 comptime cu8 = ComplexDType.uint8
-"""Data type comptime for ComplexDType.uint8"""
+"""Data type comptime for ComplexDType.uint8."""
 comptime cu16 = ComplexDType.uint16
-"""Data type comptime for ComplexDType.uint16"""
+"""Data type comptime for ComplexDType.uint16."""
 comptime cu32 = ComplexDType.uint32
-"""Data type comptime for ComplexDType.uint32"""
+"""Data type comptime for ComplexDType.uint32."""
 comptime cu64 = ComplexDType.uint64
-"""Data type comptime for ComplexDType.uint64"""
+"""Data type comptime for ComplexDType.uint64."""
 comptime cu128 = ComplexDType.uint128
-"""Data type comptime for ComplexDType.uint128"""
+"""Data type comptime for ComplexDType.uint128."""
 comptime cu256 = ComplexDType.uint256
-"""Data type comptime for ComplexDType.uint256"""
+"""Data type comptime for ComplexDType.uint256."""
 comptime cuint = ComplexDType.uint
-"""Data type comptime for ComplexDType.uint"""
+"""Data type comptime for ComplexDType.uint."""
 comptime cbf16 = ComplexDType.bfloat16
-"""Data type comptime for ComplexDType.bfloat16"""
+"""Data type comptime for ComplexDType.bfloat16."""
 comptime cf16 = ComplexDType.float16
-"""Data type comptime for ComplexDType.float16"""
+"""Data type comptime for ComplexDType.float16."""
 comptime cf32 = ComplexDType.float32
-"""Data type comptime for ComplexDType.float32"""
+"""Data type comptime for ComplexDType.float32."""
 comptime cf64 = ComplexDType.float64
-"""Data type comptime for ComplexDType.float64"""
+"""Data type comptime for ComplexDType.float64."""
 comptime cboolean = ComplexDType.bool
-"""Data type comptime for ComplexDType.bool"""
+"""Data type comptime for ComplexDType.bool."""
 comptime cinvalid = ComplexDType.invalid
-"""Data type comptime for ComplexDType.invalid"""
+"""Data type comptime for ComplexDType.invalid."""
 
 # ===----------------------------------------------------------------------=== #
 # Implements the Complex Datatype.
@@ -664,7 +664,7 @@ struct ComplexDType(
         if self is ComplexDType.float64:
             return __mlir_attr.f64
 
-        return abort[__mlir_type.`!kgen.deferred`]("invalid dtype")
+        abort("invalid dtype")
 
     fn component_dtype(self) -> DType:
         return self._dtype

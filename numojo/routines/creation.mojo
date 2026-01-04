@@ -42,7 +42,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexScalar
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
-from numojo.core.data_container import DataContainer
+from numojo.core.data_container import DataContainer, DataContainerNew
 
 
 # ===------------------------------------------------------------------------===#
@@ -2065,10 +2065,9 @@ fn triu[
         for i in range(m.ndim - 2, m.ndim):
             final_offset *= m.shape[i]
         for offset in range(initial_offset):
-            offset = offset * final_offset
             for i in range(m.shape[-2]):
                 for j in range(0, i + k):
-                    result._buf.ptr[offset + j + i * m.shape[-1]] = Scalar[
+                    result._buf.ptr[offset * final_offset + j + i * m.shape[-1]] = Scalar[
                         dtype
                     ](0)
     else:
@@ -2193,12 +2192,12 @@ fn astype[
     if target == DType.bool:
 
         @parameter
-        fn vectorized_astype[simd_width: Int](idx: Int) -> None:
+        fn vectorized_astype[simd_width: Int](idx: Int) unified {mut result, read a} -> None:
             (result.unsafe_ptr() + idx).strided_store[width=simd_width](
                 a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
             )
 
-        vectorize[vectorized_astype, a.width](a.size)
+        vectorize[a.width](a.size, vectorized_astype)
 
     else:
 
@@ -2206,7 +2205,7 @@ fn astype[
         if target == DType.bool:
 
             @parameter
-            fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
+            fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) unified {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx,
                     (a._buf.ptr + idx)
@@ -2214,17 +2213,17 @@ fn astype[
                     .cast[target](),
                 )
 
-            vectorize[vectorized_astypenb_from_b, a.width](a.size)
+            vectorize[a.width](a.size, vectorized_astypenb_from_b)
 
         else:
 
             @parameter
-            fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
+            fn vectorized_astypenb[simd_width: Int](idx: Int) unified {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )
 
-            vectorize[vectorized_astypenb, a.width](a.size)
+            vectorize[a.width](a.size, vectorized_astypenb)
 
     return result^
 
@@ -2451,7 +2450,7 @@ fn array[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        var arr = nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+        var arr = nm.array[f16](data=[Scalar[f16](1), 2, 3, 4], shape=[2, 2])
         ```
 
     Returns:
@@ -2486,11 +2485,11 @@ fn array[
         import numojo as nm
         from numojo.prelude import *
         var array = nm.array[cf64](
-            data=List[CScalar[cf64]](CScalar[cf64](1, 1),
+            data=[CScalar[cf64](1, 1),
             CScalar[cf64](2, 2),
             CScalar[cf64](3, 3),
-            CScalar[cf64](4, 4)),
-            shape=List[Int](2, 2),
+            CScalar[cf64](4, 4)],
+            shape=[2, 2],
         )
         ```
 
@@ -2523,7 +2522,7 @@ fn array[
     from numojo.prelude import *
     from python import Python
     var np = Python.import_module("numpy")
-    var np_arr = np.array([1, 2, 3, 4])
+    var np_arr = np.array(Python.list(1, 2, 3, 4))
     A = nm.array[f16](data=np_arr, order="C")
     ```
 
@@ -2573,8 +2572,8 @@ fn array[
         np_dtype = np.bool_
 
     var array_shape: NDArrayShape = NDArrayShape(shape)
-    var np_arr = np.array(data, dtype=np_dtype, order=order.upper())
-    var pointer = np_arr.__array_interface__["data"][0].unsafe_get_as_pointer[
+    var np_arr = np.array(data, dtype=np_dtype, order=PythonObject(order.upper()))
+    var pointer = np_arr.__array_interface__[PythonObject("data")][0].unsafe_get_as_pointer[
         dtype
     ]()
     var A: NDArray[dtype] = NDArray[dtype](array_shape, order)
@@ -2597,7 +2596,7 @@ fn array[
     from python import Python
 
     var np = Python.import_module("numpy")
-    var np_arr = np.array([1, 2, 3, 4])
+    var np_arr = np.array(Python.list(1, 2, 3, 4))
     A = nm.array[cf32](real=np_arr, imag=np_arr, order="C")
     ```
 
@@ -2652,12 +2651,12 @@ fn array[
         np_dtype = np.bool_
 
     var array_shape: NDArrayShape = NDArrayShape(shape)
-    var np_arr = np.array(real, dtype=np_dtype, order=order.upper())
-    var np_arr_imag = np.array(imag, dtype=np_dtype, order=order.upper())
-    var pointer = np_arr.__array_interface__["data"][0].unsafe_get_as_pointer[
+    var np_arr = np.array(real, dtype=np_dtype, order=PythonObject(order.upper()))
+    var np_arr_imag = np.array(imag, dtype=np_dtype, order=PythonObject(order.upper()))
+    var pointer = np_arr.__array_interface__[PythonObject("data")][0].unsafe_get_as_pointer[
         dtype
     ]()
-    var pointer_imag = np_arr_imag.__array_interface__["data"][
+    var pointer_imag = np_arr_imag.__array_interface__[PythonObject("data")][
         0
     ].unsafe_get_as_pointer[dtype]()
     var A: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](array_shape, order)
@@ -2778,7 +2777,7 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._buf = DataContainer[dtype](1)
+    b._buf = DataContainerNew[dtype, b.origin](1)
     b._buf.ptr.init_pointee_copy(val)
     b.flags.OWNDATA = True
     return b^
@@ -2803,8 +2802,9 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._re._buf = DataContainer[cdtype._dtype](1)
-    b._im._buf = DataContainer[cdtype._dtype](1)
+    # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutOrigin.external.
+    b._re._buf = DataContainerNew[cdtype._dtype, MutOrigin.external](1)
+    b._im._buf = DataContainerNew[cdtype._dtype, MutOrigin.external](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True

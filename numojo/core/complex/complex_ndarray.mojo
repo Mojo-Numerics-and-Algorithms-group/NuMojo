@@ -37,11 +37,9 @@
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
 import builtin.math as builtin_math
-from builtin.type_comptimees import Origin
 from collections.optional import Optional
 from math import log10, sqrt
 from memory import memset_zero, memcpy
-from memory import LegacyUnsafePointer
 from python import PythonObject
 from sys import simd_width_of
 from utils import Variant
@@ -56,7 +54,7 @@ from numojo.core.ndshape import NDArrayShape
 from numojo.core.ndstrides import NDArrayStrides
 from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
 from numojo.core.complex.complex_dtype import ComplexDType
-from numojo.core.data_container import DataContainer
+from numojo.core.data_container import DataContainerNew as DataContainer
 from numojo.core.utility import (
     _get_offset,
     _transfer_offset,
@@ -254,7 +252,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = nm.ComplexNDArray[cf32](List[Int](2,3,4))
+            var A = nm.ComplexNDArray[cf32]([2,3,4])
             ```
 
         Notes:
@@ -321,9 +319,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Example:
             ```mojo
             from numojo.prelude import *
-            var shape = List[Int](2, 3)
+            var shape = [2, 3]
             var offset = 0
-            var strides = List[Int](3, 1)
+            var strides = [3, 1]
             var arr = ComplexNDArray[cf32](shape, offset, strides)
             ```
 
@@ -378,46 +376,47 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
-    fn __init__(
-        out self,
-        shape: NDArrayShape,
-        ref buffer_re: LegacyUnsafePointer[Scalar[Self.dtype]],
-        ref buffer_im: LegacyUnsafePointer[Scalar[Self.dtype]],
-        offset: Int,
-        strides: NDArrayStrides,
-    ) raises:
-        """
-        Initialize a ComplexNDArray view with explicit shape, raw buffers, offset, and strides.
+    # FIXME: temporarily disabled this constructor until we setup views for NDArray.
+    # fn __init__(
+    #     out self,
+    #     shape: NDArrayShape,
+    #     ref buffer_re: UnsafePointer[Scalar[Self.dtype]],
+    #     ref buffer_im: UnsafePointer[Scalar[Self.dtype]],
+    #     offset: Int,
+    #     strides: NDArrayStrides,
+    # ) raises:
+    #     """
+    #     Initialize a ComplexNDArray view with explicit shape, raw buffers, offset, and strides.
 
-        This constructor creates a view over existing memory buffers for the real and imaginary parts,
-        using the provided shape, offset, and stride information. It is intended for advanced or internal
-        use cases where direct control over memory layout is required.
+    #     This constructor creates a view over existing memory buffers for the real and imaginary parts,
+    #     using the provided shape, offset, and stride information. It is intended for advanced or internal
+    #     use cases where direct control over memory layout is required.
 
-        ***Unsafe!*** This function is unsafe and should only be used internally. The caller is responsible
-        for ensuring that the buffers are valid and that the shape, offset, and strides are consistent.
+    #     ***Unsafe!*** This function is unsafe and should only be used internally. The caller is responsible
+    #     for ensuring that the buffers are valid and that the shape, offset, and strides are consistent.
 
-        Args:
-            shape: NDArrayShape specifying the dimensions of the array.
-            buffer_re: Unsafe pointer to the buffer containing the real part data.
-            buffer_im: Unsafe pointer to the buffer containing the imaginary part data.
-            offset: Integer offset into the buffers.
-            strides: NDArrayStrides specifying the stride for each dimension.
+    #     Args:
+    #         shape: NDArrayShape specifying the dimensions of the array.
+    #         buffer_re: Unsafe pointer to the buffer containing the real part data.
+    #         buffer_im: Unsafe pointer to the buffer containing the imaginary part data.
+    #         offset: Integer offset into the buffers.
+    #         strides: NDArrayStrides specifying the stride for each dimension.
 
-        Notes:
-            - No validation is performed on the buffers or metadata.
-            - The resulting ComplexNDArray shares memory with the provided buffers.
-            - Incorrect usage may lead to undefined behavior.
-        """
-        self._re = NDArray(shape, buffer_re, offset, strides)
-        self._im = NDArray(shape, buffer_im, offset, strides)
-        self.ndim = self._re.ndim
-        self.shape = self._re.shape
-        self.size = self._re.size
-        self.strides = self._re.strides
-        self.flags = self._re.flags
-        self.print_options = PrintOptions(
-            precision=2, edge_items=2, line_width=100, formatted_width=6
-        )
+    #     Notes:
+    #         - No validation is performed on the buffers or metadata.
+    #         - The resulting ComplexNDArray shares memory with the provided buffers.
+    #         - Incorrect usage may lead to undefined behavior.
+    #     """
+    #     self._re = NDArray(shape, buffer_re, offset, strides)
+    #     self._im = NDArray(shape, buffer_im, offset, strides)
+    #     self.ndim = self._re.ndim
+    #     self.shape = self._re.shape
+    #     self.size = self._re.size
+    #     self.strides = self._re.strides
+    #     self.flags = self._re.flags
+    #     self.print_options = PrintOptions(
+    #         precision=2, edge_items=2, line_width=100, formatted_width=6
+    #     )
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
@@ -550,7 +549,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             ```mojo
             import numojo as nm
             var A = nm.ones[nm.cf32](numojo.Shape(2,3,4))
-            print(A._getitem(List[Int](1,2,3)))
+            print(A._getitem([1,2,3]))
             ```
 
         Notes:
@@ -869,7 +868,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             import numojo as nm
             from numojo.prelude import *
             var a = nm.arange[cf32](CScalar[cf32](10.0, 10.0)).reshape(nm.Shape(2, 5))
-            var b = a[List[Slice](Slice(0, 2, 1), Slice(2, 4, 1))]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
+            var b = a[[Slice(0, 2, 1), Slice(2, 4, 1)]]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
             print(b)
             ```
         """
@@ -1477,7 +1476,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        return ComplexSIMD[cdtype, width](
+        return ComplexSIMD[Self.cdtype, width](
             re=self._re._buf.ptr.load[width=1](index),
             im=self._im._buf.ptr.load[width=1](index),
         )
@@ -1984,7 +1983,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     ## compiler doesn't accept this.
     fn __setitem__(
-        self, var *slices: Variant[Slice, Int], val: ComplexNDArray[cdtype]
+        self, var *slices: Variant[Slice, Int], val: ComplexNDArray[Self.cdtype]
     ) raises:
         """
         Get items by a series of either slices or integers.
@@ -2932,7 +2931,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var imag: NDArray[Self.dtype] = math.div[Self.dtype](self._im, other)
         return Self(real^, imag^)
 
-    fn __truediv__(self, other: ComplexNDArray[cdtype]) raises -> Self:
+    fn __truediv__(self, other: ComplexNDArray[Self.cdtype]) raises -> Self:
         """
         Enables `ComplexNDArray / ComplexNDArray`.
         """
@@ -3313,7 +3312,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     fn __iter__(
         self,
-    ) raises -> _ComplexNDArrayIter[origin_of(self._re), cdtype]:
+    ) raises -> _ComplexNDArrayIter[origin_of(self._re), Self.cdtype]:
         """
         Iterates over elements of the ComplexNDArray and return sub-arrays as view.
 
@@ -3321,14 +3320,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             An iterator of ComplexNDArray elements.
         """
 
-        return _ComplexNDArrayIter[origin_of(self._re), cdtype](
+        return _ComplexNDArrayIter[origin_of(self._re), Self.cdtype](
             self,
             dimension=0,
         )
 
     fn __reversed__(
         self,
-    ) raises -> _ComplexNDArrayIter[origin_of(self._re), cdtype, forward=False]:
+    ) raises -> _ComplexNDArrayIter[origin_of(self._re), Self.cdtype, forward=False]:
         """
         Iterates backwards over elements of the ComplexNDArray, returning
         copied value.
@@ -3337,7 +3336,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             A reversed iterator of NDArray elements.
         """
 
-        return _ComplexNDArrayIter[origin_of(self._re), cdtype, forward=False](
+        return _ComplexNDArrayIter[origin_of(self._re), Self.cdtype, forward=False](
             self,
             dimension=0,
         )
@@ -4066,7 +4065,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```mojo
         import numojo as nm
         var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 3, 4))
-        var A_T = A.T(List[Int](2, 0, 1))  # Shape(4, 2, 3)
+        var A_T = A.T([2, 0, 1])  # Shape(4, 2, 3)
         ```
         """
         var transposed_re = self._re.T(axes)
@@ -4201,7 +4200,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
 struct _ComplexNDArrayIter[
     is_mutable: Bool, //,
-    origin: Origin[is_mutable],
+    origin: Origin[mut=is_mutable],
     cdtype: ComplexDType,
     forward: Bool = True,
 ](Copyable, Movable):
@@ -4221,12 +4220,12 @@ struct _ComplexNDArrayIter[
         forward: The iteration direction. `False` is backwards.
     """
     # The equivalent DType of the ComplexDType
-    comptime dtype: DType = cdtype._dtype
+    comptime dtype: DType = Self.cdtype._dtype
 
     # FIELDS
     var index: Int
-    var re_ptr: LegacyUnsafePointer[Scalar[Self.dtype]]
-    var im_ptr: LegacyUnsafePointer[Scalar[Self.dtype]]
+    var re_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
+    var im_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
     var dimension: Int
     var length: Int
     var shape: NDArrayShape
@@ -4236,7 +4235,7 @@ struct _ComplexNDArrayIter[
     var size_of_item: Int
 
     fn __init__(
-        out self, read a: ComplexNDArray[cdtype], read dimension: Int
+        out self, read a: ComplexNDArray[Self.cdtype], read dimension: Int
     ) raises:
         """
         Initialize the iterator.
@@ -4259,8 +4258,8 @@ struct _ComplexNDArrayIter[
                 )
             )
 
-        self.re_ptr = a._re._buf.ptr
-        self.im_ptr = a._im._buf.ptr
+        self.re_ptr = a._re._buf.get_ptr().unsafe_origin_cast[MutOrigin(unsafe_cast=Self.origin)]()
+        self.im_ptr = a._im._buf.get_ptr().unsafe_origin_cast[MutOrigin(unsafe_cast=Self.origin)]()
         self.dimension = dimension
         self.shape = a.shape
         self.strides = a.strides
@@ -4268,17 +4267,17 @@ struct _ComplexNDArrayIter[
         self.length = a.shape[dimension]
         self.size_of_item = a.size // a.shape[dimension]
         # Status of the iterator
-        self.index = 0 if forward else a.shape[dimension] - 1
+        self.index = 0 if Self.forward else a.shape[dimension] - 1
 
     fn __iter__(self) -> Self:
         return self.copy()
 
-    fn __next__(mut self) raises -> ComplexNDArray[cdtype]:
-        var result = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
+    fn __next__(mut self) raises -> ComplexNDArray[Self.cdtype]:
+        var result = ComplexNDArray[Self.cdtype](self.shape._pop(self.dimension))
         var current_index = self.index
 
         @parameter
-        if forward:
+        if Self.forward:
             self.index += 1
         else:
             self.index -= 1
@@ -4307,19 +4306,19 @@ struct _ComplexNDArrayIter[
     @always_inline
     fn __has_next__(self) -> Bool:
         @parameter
-        if forward:
+        if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
     fn __len__(self) -> Int:
         @parameter
-        if forward:
+        if Self.forward:
             return self.length - self.index
         else:
             return self.index
 
-    fn ith(self, index: Int) raises -> ComplexNDArray[cdtype]:
+    fn ith(self, index: Int) raises -> ComplexNDArray[Self.cdtype]:
         """
         Gets the i-th array of the iterator.
 
@@ -4344,7 +4343,7 @@ struct _ComplexNDArrayIter[
             )
 
         if self.ndim > 1:
-            var result = ComplexNDArray[cdtype](self.shape._pop(self.dimension))
+            var result = ComplexNDArray[Self.cdtype](self.shape._pop(self.dimension))
 
             for offset in range(self.size_of_item):
                 var remainder = offset
@@ -4368,7 +4367,7 @@ struct _ComplexNDArrayIter[
             return result^
 
         else:  # 0-D array
-            var result = numojo.creation._0darray[cdtype](
+            var result = numojo.creation._0darray[Self.cdtype](
                 ComplexSIMD[Self.cdtype](self.re_ptr[index], self.im_ptr[index])
             )
             return result^

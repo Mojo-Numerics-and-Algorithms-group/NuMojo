@@ -1703,7 +1703,7 @@ struct VectorizedParallelized(Backend):
         @parameter
         fn par_closure(j: Int):
             @parameter
-            fn closure[simdwidth: Int](i: Int):
+            fn closure[simdwidth: Int](i: Int) unified {mut result_array, read array1, read array2, read j, read comps_per_core}:
                 var simd_data1 = array1._buf.ptr.load[width=simdwidth](
                     i + comps_per_core * j
                 )
@@ -1720,12 +1720,12 @@ struct VectorizedParallelized(Backend):
                     func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
-            vectorize[closure, width](comps_per_core)
+            vectorize[width](comps_per_core, closure)
 
         parallelize[par_closure](num_cores)
 
         @parameter
-        fn remainder_closure[simdwidth: Int](i: Int):
+        fn remainder_closure[simdwidth: Int](i: Int) unified {mut result_array, read array1, read array2, read remainder_offset}:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](
                 i + remainder_offset
             )
@@ -1742,7 +1742,7 @@ struct VectorizedParallelized(Backend):
                 func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
-        vectorize[remainder_closure, width](comps_remainder)
+        vectorize[width](comps_remainder, remainder_closure)
         return result_array^
 
     fn math_func_compare_array_and_scalar[
@@ -1765,7 +1765,7 @@ struct VectorizedParallelized(Backend):
         @parameter
         fn par_closure(j: Int):
             @parameter
-            fn closure[simdwidth: Int](i: Int):
+            fn closure[simdwidth: Int](i: Int) unified {mut result_array, read array1, read scalar, read j, read comps_per_core}:
                 var simd_data1 = array1._buf.ptr.load[width=simdwidth](
                     i + comps_per_core * j
                 )
@@ -1776,12 +1776,12 @@ struct VectorizedParallelized(Backend):
                     func[dtype, simdwidth](simd_data1, simd_data2),
                 )
 
-            vectorize[closure, width](comps_per_core)
+            vectorize[width](comps_per_core, closure)
 
         parallelize[par_closure](num_cores)
 
         @parameter
-        fn remainder_closure[simdwidth: Int](i: Int):
+        fn remainder_closure[simdwidth: Int](i: Int) unified {mut result_array, read array1, read scalar, read remainder_offset}:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](
                 i + remainder_offset
             )
@@ -1792,7 +1792,7 @@ struct VectorizedParallelized(Backend):
                 func[dtype, simdwidth](simd_data1, simd_data2),
             )
 
-        vectorize[remainder_closure, width](comps_remainder)
+        vectorize[width](comps_remainder, remainder_closure)
         return result_array^
 
     fn math_func_is[
@@ -1811,7 +1811,7 @@ struct VectorizedParallelized(Backend):
         @parameter
         fn par_closure(j: Int):
             @parameter
-            fn closure[simdwidth: Int](i: Int):
+            fn closure[simdwidth: Int](i: Int) unified {mut result_array, read array, read j}:
                 var simd_data = array._buf.ptr.load[width=simdwidth](
                     i + comps_per_core * j
                 )
@@ -1819,12 +1819,12 @@ struct VectorizedParallelized(Backend):
                     i + comps_per_core * j, func[dtype, simdwidth](simd_data)
                 )
 
-            vectorize[closure, width](comps_per_core)
+            vectorize[width](comps_per_core, closure)
 
         parallelize[par_closure](num_cores)
 
         @parameter
-        fn remainder_closure[simdwidth: Int](i: Int):
+        fn remainder_closure[simdwidth: Int](i: Int) unified {mut result_array, read array, read remainder_offset}:
             var simd_data = array._buf.ptr.load[width=simdwidth](
                 i + remainder_offset
             )
@@ -1832,7 +1832,7 @@ struct VectorizedParallelized(Backend):
                 i + remainder_offset, func[dtype, simdwidth](simd_data)
             )
 
-        vectorize[remainder_closure, width](comps_remainder)
+        vectorize[width](comps_remainder, remainder_closure)
         return result_array^
 
     fn math_func_simd_int[
@@ -1845,14 +1845,14 @@ struct VectorizedParallelized(Backend):
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[simdwidth: Int](i: Int):
+        fn closure[simdwidth: Int](i: Int) unified {mut result_array, read array, read intval}:
             var simd_data = array._buf.ptr.load[width=simdwidth](i)
 
             result_array._buf.ptr.store(
                 i, func[dtype, simdwidth](simd_data, intval)
             )
 
-        vectorize[closure, width](array.size)
+        vectorize[width](array.size, closure)
         return result_array^
 
 

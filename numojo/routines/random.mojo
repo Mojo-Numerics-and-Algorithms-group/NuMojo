@@ -12,7 +12,7 @@ numojo.routines.random
 Creates array of the given shape and populate it with random samples from
 a certain distribution.
 
-This module is similar to `numpy.random`. However, in this module, the shape is 
+This module is similar to `numpy.random`. However, in this module, the shape is
 always appearing as the first argument.
 """
 
@@ -35,6 +35,7 @@ fn rand[
 
     Example:
     ```mojo
+    from numojo import Shape
     var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4))
     print(arr)
     ```
@@ -111,6 +112,7 @@ fn rand[
 
     Example:
     ```mojo
+    from numojo import Shape
     var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4), min=0, max=100)
     print(arr)
     ```
@@ -214,7 +216,7 @@ fn randint[
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
     builtin_random.randint[dtype](
-        ptr=result._buf.ptr, size=result.size, low=low, high=high - 1
+        ptr=result._buf.get_ptr(), size=result.size, low=low, high=high - 1
     )
 
     return result^

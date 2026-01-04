@@ -24,8 +24,6 @@ from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.data_container import DataContainerNew as DataContainer
 from numojo.core.traits.buffered import Buffered
-from numojo.core.own_data import OwnData
-from numojo.core.ref_data import RefData
 from numojo.core.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
@@ -1032,7 +1030,7 @@ struct MatrixBase[
             ```mojo
             from numojo.prelude import *
             var mat = Matrix.ones(shape=(4, 4))
-            var selected_rows = mat[List[Int](0, 1, 0)]  # Get a copy of the
+            var selected_rows = mat[[0, 1, 0]]  # Get a copy of the
             # first and second and first rows in a new matrix with shape (3, 4)
             ```
         """
@@ -1676,7 +1674,7 @@ struct MatrixBase[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    fn view(ref self) -> MatrixView[Self.dtype, MutOrigin(unsafe_cast=origin)]:
+    fn view(ref self) -> MatrixView[Self.dtype, MutOrigin(unsafe_cast=Self.origin)]:
         """
         Return a non-owning view of the matrix. This method creates and returns a `MatrixView` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
 
@@ -1878,17 +1876,17 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__add__
+                Self.dtype, SIMD.__add__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__add__
+                Self.dtype, SIMD.__add__
             ](broadcast_to[Self.dtype](self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__add__
+                Self.dtype, SIMD.__add__
             ](self, broadcast_to[Self.dtype](other, self.shape, self.order()))
 
     fn __add__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -1954,17 +1952,17 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__sub__
+                Self.dtype, SIMD.__sub__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__sub__
+                Self.dtype, SIMD.__sub__
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__sub__
+                Self.dtype, SIMD.__sub__
             ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __sub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -2030,17 +2028,17 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__mul__
+                Self.dtype, SIMD.__mul__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__mul__
+                Self.dtype, SIMD.__mul__
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__mul__
+                Self.dtype, SIMD.__mul__
             ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __mul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -2106,17 +2104,17 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__truediv__
+                Self.dtype, SIMD.__truediv__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__truediv__
+                Self.dtype, SIMD.__truediv__
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__truediv__
+                Self.dtype, SIMD.__truediv__
             ](self, broadcast_to(other, self.shape, self.order()))
 
     fn __truediv__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -2545,9 +2543,9 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = Matrix.fromlist(List[Float64](1, 1, 1, 1, 1), (5, 1))
+            var A = Matrix.fromlist([Float64(1), 1, 1, 1, 1], (5, 1))
             print(A.all())  # Outputs: True
-            var B = Matrix.fromlist(List[Float64](1, 0, 2, 3, 4), (5, 1))
+            var B = Matrix.fromlist([Float64(1), 0, 2, 3, 4], (5, 1))
             print(B.all())  # Outputs: False
             ```
         """
@@ -2567,7 +2565,7 @@ struct MatrixBase[
             ```mojo
             from numojo.prelude import *
             var A = Matrix.fromlist(
-                List[Float64](1, 1, 1, 0, 1, 3), (2, 3)
+               [Float64(1), 1, 1, 0, 1, 3], (2, 3)
             )
             print(A.all(axis=0))  # Outputs: [[0, 1, 1]]
             print(A.all(axis=1))  # Outputs: [[1], [0]]
@@ -2585,9 +2583,9 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = Matrix.fromlist(List[Float64](0, 0, 0, 0, 0), (5, 1))
+            var A = Matrix.fromlist([Float64(0), 0, 0, 0, 0], (5, 1))
             print(A.any())  # Outputs: False
-            var B = Matrix.fromlist(List[Float64](0, 2, 0, 0, 0), (5, 1))
+            var B = Matrix.fromlist([Float64(0), 2, 0, 0, 0], (5, 1))
             print(B.any())  # Outputs: True
             ```
         """
@@ -2615,7 +2613,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](1, 3, 2, 5, 4), (5, 1))
+            var A = Matrix.fromlist([Float64(1), 3, 2, 5, 4], (5, 1))
             print(A.argmax())  # Outputs: 3
             ```
         """
@@ -2634,7 +2632,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](1, 3, 2, 5, 4, 6), (2, 3))
+            var A = Matrix.fromlist([Float64(1), 3, 2, 5, 4, 6], (2, 3))
             print(A.argmax(axis=0))  # Outputs: [[1, 1, 1]]
             print(A.argmax(axis=1))  # Outputs: [[1], [2]]
             ```
@@ -2651,7 +2649,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5), (5, 1))
+            var A = Matrix.fromlist([Float64(3), 1, 4, 2, 5], (5, 1))
             print(A.argmin())  # Outputs: 1
             ```
         """
@@ -2670,7 +2668,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5, 0), (2, 3))
+            var A = Matrix.fromlist([Float64(3), 1, 4, 2, 5, 0], (2, 3))
             print(A.argmin(axis=0))  # Outputs: [[1, 1, 1]]
             print(A.argmin(axis=1))  # Outputs: [[1], [2]]
             ```
@@ -2687,7 +2685,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2), (4, 1))
+            var A = Matrix.fromlist([Float64(3), 1, 4, 2], (4, 1))
             print(A.argsort())  # Outputs: [[1, 3, 0, 2]]
             ```
         """
@@ -2706,7 +2704,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](3, 1, 4, 2, 5, 0), (2, 3))
+            var A = Matrix.fromlist([Float64(3), 1, 4, 2, 5, 0], (2, 3))
             print(A.argsort(axis=0))  # Outputs: [[1, 1, 1], [0, 0, 0]]
             print(A.argsort(axis=1))  # Outputs: [[1, 3, 0], [2, 0, 1]]
             ```
@@ -2726,7 +2724,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = Matrix.fromlist(List[Float32](1.5, 2.5, 3.5), (3, 1))
+            var A = Matrix.fromlist([Float32(1.5), 2.5, 3.5], (3, 1))
             var B = A.astype[i8]()
             print(B)  # Outputs a Matrix[i8] with values [[1], [2], [3]]
             ```
@@ -3168,7 +3166,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = Matrix.fromlist(List[Float64](1.12345, 2.67891, 3.14159), (3, 1))
+            var A = Matrix.fromlist([Float64(1.12345), 2.67891, 3.14159], (3, 1))
             var B = A.round(2)
             print(B)  # Outputs a Matrix[Float64] with values [[1.12], [2.68], [3.14]]
             ```
@@ -3266,7 +3264,7 @@ struct MatrixBase[
             ```mojo
             from numojo.prelude import *
             var A = Matrix.fromlist(
-                List[Float64](1, 2, 3, 4, 5, 6, 7, 8, 9), (3, 3)
+                [Float64(1), 2, 3, 4, 5, 6, 7, 8, 9], (3, 3)
             )
             print(A.trace())  # Outputs: 15.0
             ```
@@ -3283,9 +3281,9 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](1, 2, 2, 1), (2, 2))
+            var A = Matrix.fromlist([Float64(1), 2, 2, 1], (2, 2))
             print(A.issymmetric())  # Outputs: True
-            var B = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            var B = Matrix.fromlist([Float64(1), 2, 3, 4], (2, 2))
             print(B.issymmetric())  # Outputs: False
             ```
         """
@@ -3301,7 +3299,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            var A = Matrix.fromlist([Float64(1), 2, 3, 4], (2, 2))
             print(A.transpose())  # Outputs: [[1, 3], [2, 4]]
             ```
         """
@@ -3338,7 +3336,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo import Matrix
-            var A = Matrix.fromlist(List[Float64](1, 2, 3, 4), (2, 2))
+            var A = Matrix.fromlist([Float64(1), 2, 3, 4], (2, 2))
             print(A.T())  # Outputs: [[1, 3], [2, 4]]
             ```
         """
@@ -3413,7 +3411,7 @@ struct MatrixBase[
         """
 
         var ndarray: NDArray[Self.dtype] = NDArray[Self.dtype](
-            shape=List[Int](self.shape[0], self.shape[1]), order=self.order()
+            shape=[self.shape[0], self.shape[1]], order=self.order()
         )
         memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
 
@@ -3647,7 +3645,7 @@ struct MatrixBase[
         Example:
             ```mojo
             from numojo.prelude import *
-            var a = Matrix.fromlist(List[Float64](1, 2, 3, 4, 5), (5, 1))
+            var a = Matrix.fromlist([Float64(1), 2, 3, 4, 5], (5, 1))
             print(a)
             ```
         """
@@ -3907,7 +3905,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     var res = Matrix[dtype](shape=A.shape, order=A.order())
 
     @parameter
-    fn vec_func[simd_width: Int](i: Int):
+    fn vec_func[simd_width: Int](i: Int) unified {mut res, read A, read B}:
         res._buf.ptr.store(
             i,
             simd_func(
@@ -3916,7 +3914,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
             ),
         )
 
-    vectorize[vec_func, simd_width](A.size)
+    vectorize[simd_width](A.size, vec_func)
     return res^
 
 
@@ -3947,10 +3945,10 @@ fn _arithmetic_func_matrix_to_matrix[
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
     @parameter
-    fn vec_func[simd_width: Int](i: Int):
+    fn vec_func[simd_width: Int](i: Int) unified {mut C, read A}:
         C._buf.ptr.store(i, simd_func(A._buf.ptr.load[width=simd_width](i)))
 
-    vectorize[vec_func, simd_width](A.size)
+    vectorize[simd_width](A.size, vec_func)
 
     return C^
 

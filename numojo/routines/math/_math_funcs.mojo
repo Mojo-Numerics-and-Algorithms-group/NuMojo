@@ -1666,7 +1666,7 @@ struct VectorizedParallelized(Backend):
         parallelize[par_closure](num_cores)
 
         @parameter
-        fn remainder_closure[simdwidth: Int](i: Int):
+        fn remainder_closure[simdwidth: Int](i: Int) unified {mut result_array, read array, read scalar, read remainder_offset}:
             var simd_data1 = array._buf.ptr.load[width=simdwidth](
                 i + remainder_offset
             )
@@ -1811,7 +1811,7 @@ struct VectorizedParallelized(Backend):
         @parameter
         fn par_closure(j: Int):
             @parameter
-            fn closure[simdwidth: Int](i: Int) unified {mut result_array, read array, read j}:
+            fn closure[simdwidth: Int](i: Int) unified {mut result_array, read array, read j, read comps_per_core}:
                 var simd_data = array._buf.ptr.load[width=simdwidth](
                     i + comps_per_core * j
                 )

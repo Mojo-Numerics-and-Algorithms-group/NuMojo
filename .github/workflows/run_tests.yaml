@@ -29,28 +29,54 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install magic
+      - name: Install pixi
         run: |
-          curl -ssL https://magic.modular.com/deb181c4-455c-4abe-a263-afcff49ccf67 | bash
-      
-      - name: Add path
-        run: |
-          echo "MODULAR_HOME=$HOME/.modular" >> $GITHUB_ENV
-          echo "$HOME/.modular/bin"  >> $GITHUB_PATH
-          echo "$HOME/.modular/pkg/packages.modular.com_mojo/bin"  >> $GITHUB_PATH
+          curl -fsSL https://pixi.sh/install.sh | bash
+          echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.pixi/bin:$PATH"
 
-      - name: Activate virtualenv
+      - name: Pixi install
         run: |
-          python3 -m venv $HOME/venv/
-          . $HOME/venv/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
+          pixi install --locked
 
-      - name: Install packages
+      - name: Build package
         run: |
-          pip install "numpy"
+          pixi run mojo package numojo
+          cp numojo.mojopkg tests/
 
-      - name: Run tests
+      - name: Run Core Tests
         run: |
-          magic install
-          magic run mojo test tests -I .
-          magic run mojo test tests/core/test_matrix.mojo -I . -D F_CONTIGUOUS
+          echo "Testing core modules..."
+          pixi run mojo run -I tests/ tests/core/test_array_indexing_and_slicing.mojo
+          pixi run mojo run -I tests/ tests/core/test_array_methods.mojo
+          pixi run mojo run -I tests/ tests/core/test_bool_masks.mojo
+          pixi run mojo run -I tests/ tests/core/test_complexArray.mojo
+          pixi run mojo run -I tests/ tests/core/test_complexSIMD.mojo
+          pixi run mojo run -I tests/ tests/core/test_matrix.mojo
+          pixi run mojo run -I tests/ -D F_CONTIGUOUS tests/core/test_matrix.mojo
+          pixi run mojo run -I tests/ tests/core/test_shape_strides_item.mojo
+
+      - name: Run Routine Tests
+        run: |
+          echo "Testing routines..."
+          pixi run mojo run -I tests/ tests/routines/test_creation.mojo
+          pixi run mojo run -I tests/ tests/routines/test_functional.mojo
+          pixi run mojo run -I tests/ tests/routines/test_indexing.mojo
+          pixi run mojo run -I tests/ tests/routines/test_io.mojo
+          pixi run mojo run -I tests/ tests/routines/test_linalg.mojo
+          pixi run mojo run -I tests/ tests/routines/test_manipulation.mojo
+          pixi run mojo run -I tests/ tests/routines/test_math.mojo
+          pixi run mojo run -I tests/ tests/routines/test_random.mojo
+          pixi run mojo run -I tests/ tests/routines/test_statistics.mojo
+          pixi run mojo run -I tests/ tests/routines/test_sorting.mojo
+          pixi run mojo run -I tests/ tests/routines/test_searching.mojo
+
+      - name: Run Science Tests
+        run: |
+          echo "Testing science modules..."
+          pixi run mojo run -I tests/ tests/science/test_signal.mojo
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f tests/numojo.mojopkg

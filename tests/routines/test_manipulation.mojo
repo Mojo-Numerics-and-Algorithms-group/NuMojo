@@ -3,6 +3,7 @@ from numojo import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
 from python import Python
+from testing import TestSuite
 
 
 fn test_arr_manipulation() raises:
@@ -17,10 +18,12 @@ fn test_arr_manipulation() raises:
     var Bnp = B.to_numpy()
 
     # Test flip
-    check_is_close(nm.flip(B), np.flip(Bnp), "`flip` without `axis` fails.")
+    check_is_close(
+        nm.flip(B.copy()), np.flip(Bnp), "`flip` without `axis` fails."
+    )
     for i in range(3):
         check_is_close(
-            nm.flip(B, axis=i),
+            nm.flip(B.copy(), axis=i),
             np.flip(Bnp, axis=i),
             String("`flip` by `axis` {} fails.").format(i),
         )
@@ -39,44 +42,51 @@ def test_ravel_reshape():
 
     # Test ravel
     check_is_close(
-        nm.ravel(c, order="C"),
+        nm.ravel(c.copy(), order="C"),
         np.ravel(cnp, order="C"),
         "`ravel` C-order array by C order is broken.",
     )
     check_is_close(
-        nm.ravel(c, order="F"),
+        nm.ravel(c.copy(), order="F"),
         np.ravel(cnp, order="F"),
         "`ravel` C-order array by F order is broken.",
     )
     check_is_close(
-        nm.ravel(f, order="C"),
+        nm.ravel(f.copy(), order="C"),
         np.ravel(fnp, order="C"),
         "`ravel` F-order array by C order is broken.",
     )
     check_is_close(
-        nm.ravel(f, order="F"),
+        nm.ravel(f.copy(), order="F"),
         np.ravel(fnp, order="F"),
         "`ravel` F-order array by F order is broken.",
     )
 
     # Test reshape
+    var reshape_c = nm.reshape(c.copy(), Shape(4, 2, 2), "C")
+    var reshape_cnp = np.reshape(cnp, Python.tuple(4, 2, 2), "C")
     check_is_close(
-        nm.reshape(c, Shape(4, 2, 2), "C"),
-        np.reshape(cnp, Python.tuple(4, 2, 2), "C"),
+        reshape_c,
+        reshape_cnp,
         "`reshape` C by C is broken",
     )
+    # TODO: This test is breaking, gotta fix reshape.
+    var reshape_f = nm.reshape(c.copy(), Shape(4, 2, 2), "F")
+    var reshape_fnp = np.reshape(cnp, Python.tuple(4, 2, 2), "F")
     check_is_close(
-        nm.reshape(c, Shape(4, 2, 2), "F"),
-        np.reshape(cnp, Python.tuple(4, 2, 2), "F"),
+        reshape_f,
+        reshape_fnp,
         "`reshape` C by F is broken",
     )
+    var reshape_fc = nm.reshape(f.copy(), Shape(4, 2, 2), "C")
+    var reshape_fcnp = np.reshape(fnp, Python.tuple(4, 2, 2), "C")
     check_is_close(
-        nm.reshape(f, Shape(4, 2, 2), "C"),
-        np.reshape(fnp, Python.tuple(4, 2, 2), "C"),
+        reshape_fc,
+        reshape_fcnp,
         "`reshape` F by C is broken",
     )
     check_is_close(
-        nm.reshape(f, Shape(4, 2, 2), "F"),
+        nm.reshape(f.copy(), Shape(4, 2, 2), "F"),
         np.reshape(fnp, Python.tuple(4, 2, 2), "F"),
         "`reshape` F by F is broken",
     )
@@ -87,22 +97,22 @@ def test_transpose():
     var A = nm.random.randn(2)
     var Anp = A.to_numpy()
     check_is_close(
-        nm.transpose(A), np.transpose(Anp), "1-d `transpose` is broken."
+        nm.transpose(A.copy()), np.transpose(Anp), "1-d `transpose` is broken."
     )
     A = nm.random.randn(2, 3)
     Anp = A.to_numpy()
     check_is_close(
-        nm.transpose(A), np.transpose(Anp), "2-d `transpose` is broken."
+        nm.transpose(A.copy()), np.transpose(Anp), "2-d `transpose` is broken."
     )
     A = nm.random.randn(2, 3, 4)
     Anp = A.to_numpy()
     check_is_close(
-        nm.transpose(A), np.transpose(Anp), "3-d `transpose` is broken."
+        nm.transpose(A.copy()), np.transpose(Anp), "3-d `transpose` is broken."
     )
     A = nm.random.randn(2, 3, 4, 5)
     Anp = A.to_numpy()
     check_is_close(
-        nm.transpose(A), np.transpose(Anp), "4-d `transpose` is broken."
+        nm.transpose(A.copy()), np.transpose(Anp), "4-d `transpose` is broken."
     )
     check_is_close(
         A.T(), np.transpose(Anp), "4-d `transpose` with `.T` is broken."
@@ -128,3 +138,7 @@ def test_broadcast():
         np.broadcast_to(a.to_numpy(), Python.tuple(2, 2, 2, 3)),
         "`broadcast_to` fails.",
     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

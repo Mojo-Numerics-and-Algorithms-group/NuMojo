@@ -10,7 +10,7 @@ Functional programming.
 
 from algorithm.functional import vectorize, parallelize
 from memory import memcpy
-from sys import simdwidthof
+from sys import simd_width_of
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
@@ -82,12 +82,12 @@ fn apply_along_axis[
 fn apply_along_axis[
     dtype: DType,
     func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
-        DType.index
+        DType.int
     ],
-](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
-    The returned data type is DType.index.
+    The returned data type is DType.int.
     When the array is 1-d, the returned array will be a 0-d array.
 
     Parameters:
@@ -105,14 +105,14 @@ fn apply_along_axis[
     # The iterator along the axis
     var iterator = a.iter_along_axis(axis=axis)
     # The final output array will have 1 less dimension than the input array
-    var res: NDArray[DType.index]
+    var res: NDArray[DType.int]
 
     if a.ndim == 1:
-        res = numojo.creation._0darray[DType.index](0)
+        res = numojo.creation._0darray[DType.int](0)
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
-        res = NDArray[DType.index](a.shape._pop(axis=axis))
+        res = NDArray[DType.int](a.shape._pop(axis=axis))
 
         @parameter
         fn parallelized_func(i: Int):
@@ -212,7 +212,7 @@ fn apply_along_axis[
     # The iterator along the axis
     var iterator = a.iter_along_axis(axis=axis)
     # The final output array will have the same shape as the input array
-    var res = NDArray[dtype](a.shape)
+    var result: NDArray[dtype] = NDArray[dtype](a.shape)
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
@@ -221,9 +221,9 @@ fn apply_along_axis[
             try:
                 var elements: NDArray[dtype] = func1d[dtype](iterator.ith(i))
                 memcpy(
-                    res._buf.ptr + i * elements.size,
-                    elements._buf.ptr,
-                    elements.size,
+                    dest=result._buf.ptr + i * elements.size,
+                    src=elements._buf.ptr,
+                    count=elements.size,
                 )
             except e:
                 print("Error in parallelized_func", e)
@@ -236,16 +236,19 @@ fn apply_along_axis[
         fn parallelized_func(i: Int):
             try:
                 # The indices of the input array in each iteration
-                var indices: NDArray[DType.index]
+                var indices: NDArray[DType.int]
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_offsets(i)
+                var indices_elements = iterator.ith_with_offsets(i)
+                indices = indices_elements[0].copy()
+                elements = indices_elements[1].copy()
+                # indices, elements = iterator.ith_with_offsets(i)
 
                 var res_along_axis: NDArray[dtype] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (res._buf.ptr + Int(indices[j])).init_pointee_copy(
+                    (result._buf.ptr + Int(indices[j])).init_pointee_copy(
                         (res_along_axis._buf.ptr + j)[]
                     )
             except e:
@@ -253,7 +256,7 @@ fn apply_along_axis[
 
         parallelize[parallelized_func](a.size // a.shape[axis])
 
-    return res^
+    return result^
 
 
 # The following overloads of `apply_along_axis` are for the case when the
@@ -290,9 +293,9 @@ fn apply_along_axis[
                 var elements: NDArray[dtype] = iterator.ith(i)
                 func1d[dtype](elements)
                 memcpy(
-                    a._buf.ptr + i * elements.size,
-                    elements._buf.ptr,
-                    elements.size,
+                    dest=a._buf.ptr + i * elements.size,
+                    src=elements._buf.ptr,
+                    count=elements.size,
                 )
             except e:
                 print("Error in parallelized_func", e)
@@ -305,11 +308,13 @@ fn apply_along_axis[
         fn parallelized_func(i: Int):
             try:
                 # The indices of the input array in each iteration
-                var indices: NDArray[DType.index]
+                var indices: NDArray[DType.int]
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_offsets(i)
+                var indices_elements = iterator.ith_with_offsets(i)
+                indices = indices_elements[0].copy()
+                elements = indices_elements[1].copy()
 
                 func1d[dtype](elements)
 
@@ -328,9 +333,9 @@ fn apply_along_axis[
 fn apply_along_axis[
     dtype: DType,
     func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
-        DType.index
+        DType.int
     ],
-](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.index]:
+](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
     The resulting array will have the same shape as the input array.
@@ -352,20 +357,20 @@ fn apply_along_axis[
     # The iterator along the axis
     var iterator = a.iter_along_axis(axis=axis)
     # The final output array will have the same shape as the input array
-    var res = NDArray[DType.index](a.shape)
+    var res = NDArray[DType.int](a.shape)
 
     if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
         fn parallelized_func_c(i: Int):
             try:
-                var elements: NDArray[DType.index] = func1d[dtype](
+                var elements: NDArray[DType.int] = func1d[dtype](
                     iterator.ith(i)
                 )
                 memcpy(
-                    res._buf.ptr + i * elements.size,
-                    elements._buf.ptr,
-                    elements.size,
+                    dest=res._buf.ptr + i * elements.size,
+                    src=elements._buf.ptr,
+                    count=elements.size,
                 )
             except e:
                 print("Error in parallelized_func", e)
@@ -378,15 +383,15 @@ fn apply_along_axis[
         fn parallelized_func(i: Int):
             try:
                 # The indices of the input array in each iteration
-                var indices: NDArray[DType.index]
+                var indices: NDArray[DType.int]
                 # The elements of the input array in each iteration
                 var elements: NDArray[dtype]
                 # The array after applied the function
-                indices, elements = iterator.ith_with_offsets(i)
+                var indices_elements = iterator.ith_with_offsets(i)
+                indices = indices_elements[0].copy()
+                elements = indices_elements[1].copy()
 
-                var res_along_axis: NDArray[DType.index] = func1d[dtype](
-                    elements
-                )
+                var res_along_axis: NDArray[DType.int] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
                     (res._buf.ptr + Int(indices[j])).init_pointee_copy(

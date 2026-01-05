@@ -8,6 +8,7 @@ from utils_for_test import (
     check_values_close,
     check_with_dtype,
 )
+from testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences
@@ -357,12 +358,16 @@ def test_add_array_par():
     var arr = nm.arange[nm.f64](0, 20)
 
     check(
-        nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, 5.0),
+        nm.add[nm.f64, backend = nm.routines.math._math_funcs.Vectorized](
+            arr, 5.0
+        ),
         np.arange(0, 20) + 5,
         "Add array + scalar",
     )
     check(
-        nm.add[nm.f64, backend = nm.core._math_funcs.Vectorized](arr, arr),
+        nm.add[nm.f64, backend = nm.routines.math._math_funcs.Vectorized](
+            arr, arr
+        ),
         np.arange(0, 20) + np.arange(0, 20),
         "Add array + array",
     )
@@ -384,7 +389,7 @@ def test_sin_par():
     check_is_close(
         nm.sin[
             nm.f64,
-            backend = nm.core._math_funcs.Vectorized,
+            backend = nm.routines.math._math_funcs.Vectorized,
         ](arr),
         np.sin(np.arange(0, 15)),
         "Add array + scalar",
@@ -440,3 +445,7 @@ fn test_misc() raises:
         np.clip(cfnp, 0.02, -0.01),
         String("`clip` 3d f-order is broken"),
     )
+
+
+def main():
+    TestSuite.discover_tests[__functions_in_module()]().run()

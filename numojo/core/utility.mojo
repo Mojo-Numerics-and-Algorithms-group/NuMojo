@@ -21,10 +21,12 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 
 from algorithm.functional import vectorize, parallelize
 from collections import Dict
-from memory import UnsafePointer, memcpy
+from memory import memcpy
+from memory import LegacyUnsafePointer as UnsafePointer
 from python import Python, PythonObject
-from sys import simdwidthof
-from tensor import Tensor, TensorShape
+from sys import simd_width_of
+
+# from tensor import Tensor, TensorShape
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
@@ -153,8 +155,8 @@ fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
         The offset of the array of a flipped memory layout.
     """
 
-    var remainder = offset
-    var indices = Item(ndim=len(strides), initialized=False)
+    var remainder: Int = offset
+    var indices: Item = Item(ndim=len(strides))
     for i in range(len(strides)):
         indices[i] = remainder // strides[i]
         remainder %= strides[i]
@@ -168,7 +170,7 @@ fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
 
 
 fn _traverse_buffer_according_to_shape_and_strides(
-    mut ptr: UnsafePointer[Scalar[DType.index]],
+    mut ptr: UnsafePointer[Scalar[DType.int]],
     shape: NDArrayShape,
     strides: NDArrayStrides,
     current_dim: Int = 0,
@@ -193,7 +195,7 @@ fn _traverse_buffer_according_to_shape_and_strides(
     Example:
     ```console
     # A is a 2x3x4 array
-    var I = nm.NDArray[DType.index](nm.Shape(A.size))
+    var I = nm.NDArray[DType.int](nm.Shape(A.size))
     var ptr = I._buf
     _traverse_buffer_according_to_shape_and_strides(
         ptr, A.shape._flip(), A.strides._flip()
@@ -339,14 +341,14 @@ fn bool_to_numeric[
         The converted NDArray of type `dtype` with 1s (True) and 0s (False).
     """
     # Can't use simd becuase of bit packing error
-    var res: NDArray[dtype] = NDArray[dtype](array.shape)
+    var result: NDArray[dtype] = NDArray[dtype](array.shape)
     for i in range(array.size):
         var t: Bool = array.item(i)
         if t:
-            res._buf.ptr[i] = 1
+            result._buf.ptr[i] = 1
         else:
-            res._buf.ptr[i] = 0
-    return res
+            result._buf.ptr[i] = 0
+    return result^
 
 
 # ===----------------------------------------------------------------------=== #
@@ -398,7 +400,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             np_dtype = np.int16
         elif dtype == DType.int8:
             np_dtype = np.int8
-        elif dtype == DType.index:
+        elif dtype == DType.int:
             np_dtype = np.intp
         elif dtype == DType.uint64:
             np_dtype = np.uint64
@@ -416,7 +418,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         var pointer_d = numpyarray.__array_interface__["data"][
             0
         ].unsafe_get_as_pointer[dtype]()
-        memcpy(pointer_d, array.unsafe_ptr(), array.size)
+        memcpy(dest=pointer_d, src=array.unsafe_ptr(), count=array.size)
         _ = array
 
         return numpyarray^
@@ -424,21 +426,6 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     except e:
         print("Error in converting to numpy", e)
         return PythonObject()
-
-
-fn to_tensor[dtype: DType](a: NDArray[dtype]) raises -> Tensor[dtype]:
-    """
-    Convert to a tensor.
-    """
-    pass
-
-    var shape = List[Int]()
-    for i in range(a.ndim):
-        shape.append(a.shape[i])
-    var t = Tensor[dtype](TensorShape(shape))
-    memcpy(t._ptr, a._buf.ptr, a.size)
-
-    return t
 
 
 # ===----------------------------------------------------------------------=== #
@@ -573,10 +560,10 @@ fn _list_of_range(n: Int) -> List[Int]:
     Generate a list of integers starting from 0 and of size n.
     """
 
-    var l = List[Int]()
+    var list_of_range: List[Int] = List[Int]()
     for i in range(n):
-        l.append(i)
-    return l
+        list_of_range.append(i)
+    return list_of_range^
 
 
 fn _list_of_flipped_range(n: Int) -> List[Int]:
@@ -584,7 +571,7 @@ fn _list_of_flipped_range(n: Int) -> List[Int]:
     Generate a list of integers starting from n-1 to 0 and of size n.
     """
 
-    var l = List[Int]()
+    var list_of_range: List[Int] = List[Int]()
     for i in range(n - 1, -1, -1):
-        l.append(i)
-    return l
+        list_of_range.append(i)
+    return list_of_range^

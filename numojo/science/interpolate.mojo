@@ -78,7 +78,7 @@ fn _interp1d_linear_interpolate[
     Returns:
         The linearly interpolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = NDArray[dtype](xi.shape)
+    var result: NDArray[dtype] = NDArray[dtype](xi.shape)
     for i in range(xi.size):
         if xi._buf.ptr[i] <= x._buf.ptr[0]:
             result._buf.ptr.store(i, y._buf.ptr[0])
@@ -94,7 +94,7 @@ fn _interp1d_linear_interpolate[
             var y1 = y._buf.ptr[j]
             var t = (xi._buf.ptr[i] - x0) / (x1 - x0)
             result._buf.ptr.store(i, y0 + t * (y1 - y0))
-    return result
+    return result^
 
 
 fn _interp1d_linear_extrapolate[
@@ -113,7 +113,7 @@ fn _interp1d_linear_extrapolate[
     Returns:
         The linearly extrapolated values of y at the points xi as An Array of `dtype`.
     """
-    var result = NDArray[dtype](xi.shape)
+    var result: NDArray[dtype] = NDArray[dtype](xi.shape)
     for i in range(xi.size):
         if xi._buf.ptr.load[width=1](i) <= x._buf.ptr.load[width=1](0):
             var slope = (y._buf.ptr[1] - y._buf.ptr[0]) / (
@@ -139,7 +139,7 @@ fn _interp1d_linear_extrapolate[
             var y1 = y._buf.ptr[j]
             var t = (xi._buf.ptr[i] - x0) / (x1 - x0)
             result._buf.ptr[i] = y0 + t * (y1 - y0)
-    return result
+    return result^
 
 
 # fn _interp1d_quadratic_interpolate[

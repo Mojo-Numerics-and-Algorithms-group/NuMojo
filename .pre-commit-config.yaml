@@ -3,13 +3,9 @@ repos:
     hooks:
       - id: mojo-format
         name: mojo-format
-        entry: magic run mojo format
+        entry: pixi run mojo format
         language: system
         files: '\.(mojo|🔥|py)$'
         stages: [pre-commit]
-      # - id: autodoc
-      #   name: mautodoc
-      #   entry: magic run doc_pages
-      #   language: system
-      #   files: '\.(mojo|🔥|py)$'
-      #   stages: [pre-commit]
+        # pass_filenames: false  # Don't pass filenames to the formatter
+        # always_run: true  # Always run the formatter

@@ -6,7 +6,8 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 
 **[Explore the docs»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
 
-**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_jp.md)**
+**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_jp.md)**    |
+**[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_kr.md)**
 
 **Table of Contents**
 
@@ -23,9 +24,6 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 ## About the project
 
 NuMojo aims to encompass the extensive numerics capabilities found in Python packages such as NumPy, SciPy, and Scikit-learn.
-
-=======
-
 ***What NuMojo is***
 
 We seek to harness the full potential of Mojo, including vectorization, parallelization, and GPU acceleration (when available). Currently, NuMojo extends most (if not all) standard library math functions to support array inputs.
@@ -38,7 +36,7 @@ NuMojo is not a machine learning library and will never include back-propagation
 
 ## Features and goals
 
-Our primary objective is to develop a fast, comprehensive numerics library in Mojo. Below are some features and long-term goals. Some have already been implemented, either fully or partially.
+Our primary objective is to develop a fast, comprehensive numerics library in Mojo. Below are some features and long-term goals. Some have already been implemented (fully or partially).
 
 Core data types:
 
@@ -64,7 +62,7 @@ Routines and objects:
 - Statistics (`numojo.statistics`)
 - etc...
 
-Please find all the available functions and objects [here](docs/features.md).
+Please find all the available functions and objects [here](docs/features.md). A living roadmap is maintained in [docs/roadmap.md](docs/roadmap.md).
 
 For a detailed roadmap, please refer to the [docs/roadmap.md](docs/roadmap.md) file.
 
@@ -123,7 +121,7 @@ fn main() raises:
     )
 
     # Matrix slicing
-    var A_slice = A[1:3, 4:19]
+    var A_slice = A[1:3, 4:19] # returns a copy, for getting a view use `A.get(Slice(1,3), Slice(4, 19))
     var B_slice = B[255, 103:241:2]
 
     # Get scalar from matrix
@@ -153,7 +151,7 @@ fn main() raises:
     print(nm.lstsq(A, C))
 ```
 
-An example of ComplexNDArray is as follows,
+An example of `ComplexNDArray` is as follows:
 
 ```mojo
 import numojo as nm
@@ -161,12 +159,13 @@ from numojo.prelude import *
 
 
 fn main() raises:
-    # Create a complexscalar 5 + 5j
-    var complexscalar = ComplexSIMD[f32](re=5, im=5) 
-    # Create complex array filled with (5 + 5j)
-    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)
-    # Create complex array filled with (1 + 1j)
-    var B = nm.ones[f32](Shape(1000, 1000))
+    # Create a complex scalar 5 + 5j
+    var complexscalar = CScalar[cf32](5) # Equivalently ComplexSIMD[cf32](5, 5)
+    # Also equivalently as simple as  5 + 5*`1j`!
+  
+    # Create complex arrays
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # filled with (5+5j)
+    var B = nm.ones[cf32](Shape(1000, 1000))                            # filled with (1+1j)
 
     # Print array
     print(A)
@@ -183,63 +182,131 @@ fn main() raises:
     A[item(291, 141)] = complexscalar
 ```
 
-## How to install
+## Installation
 
-There are three approach to install and use the Numojo package.
+NuMojo offers several installation methods to suit different development needs. Choose the method that best fits your workflow:
 
-### Add `numojo` in `pixi.toml`
+### Method 1: Git Installation with pixi-build-mojo  (Recommended)
 
-You can add the package `numojo` of a specific version in the dependencies section of your toml file.
+Install NuMojo directly from the GitHub repository to access both stable releases and cutting-edge features. This method is perfect for developers who want the latest functionality or need to work with the most recent stable version.
+
+Add the following to your existing `pixi.toml`:
 
 ```toml
+[workspace]
+preview = ["pixi-build"]
+
+[package]
+name = "your_project_name"
+version = "0.1.0"
+
+[package.build]
+backend = {name = "pixi-build-mojo", version = "0.*"}
+
+[package.build.config.pkg]
+name = "your_package_name"
+
+[package.host-dependencies]
+modular = ">=25.7.0,<26"
+
+[package.build-dependencies]
+modular = ">=25.7.0,<26"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+
+[package.run-dependencies]
+modular = ">=25.7.0,<26"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+
 [dependencies]
-numojo = "=0.7.0"
+modular = ">=25.7.0,<26"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
-Then, you can run `pixi install` to install the package.
-
-The following table shows the version of `numojo` and the corresponding version of `mojo` that is required.
-
-| `numojo` | `mojo` |
-| -------- | ------ |
-| v0.7.0   | ==25.3 |
-| v0.6.1   | ==25.2 |
-| v0.6.0   | ==25.2 |
-
-### Build package
-
-This approach involves building a standalone package file `mojopkg`.
-
-1. Clone the repository.
-2. Build the package using `pixi run package`.
-3. Move the `numojo.mojopkg` into the directory containing the your code.
-
-### Include NuMojo's path for compiler and LSP
-
-This approach does not require building a package file. Instead, when you compile your code, you can include the path of NuMojo repository with the following command:
-
-```console
-mojo run -I "../NuMojo" example.mojo
+Then run:
+```bash
+pixi install
 ```
 
-This is more flexible as you are able to edit the NuMojo source files when testing your code.
+**Branch Selection:**
+- **`main` branch**: Provides stable release. Currently supports NuMojo v0.7.0, compatible with Mojo 25.3.0. For earlier NuMojo versions, use Method 2.
+- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently 25.7.0). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
 
-In order to allow VSCode LSP to resolve the imported `numojo` package, you can:
+The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
 
-1. Go to preference page of VSCode.
-2. Go to `Mojo › Lsp: Include Dirs`
-3. Click `add item` and write the path where the Numojo repository is located, e.g. `/Users/Name/Programs/NuMojo`.
-4. Restart the Mojo LSP server.
+### Method 2: Stable Release via Pixi (prefix.dev)
 
-Now VSCode can show function hints for the Numojo package!
+For most users, we recommend installing a stable release through Pixi for guaranteed compatibility and reproducibility.
+
+Add the following to your `pixi.toml` file:
+
+```toml
+[workspace]
+channels = ["https://repo.prefix.dev/modular-community"]
+
+[dependencies]
+numojo = "=0.8.0"
+```
+
+Then run:
+```bash
+pixi install
+```
+
+**Version Compatibility:**
+
+| NuMojo Version | Required Mojo Version |
+| -------------- | -------------------- |
+| v0.8.0         | ==25.7              |
+| v0.7.0         | ==25.3              |
+| v0.6.1         | ==25.2              |
+| v0.6.0         | ==25.2              |
+
+### Method 3: Build Standalone Package
+
+This method creates a portable `numojo.mojopkg` file that you can use across multiple projects, perfect for offline development or hermetic builds.
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   cd NuMojo
+   ```
+
+2. Build the package:
+   ```bash
+   pixi run package
+   ```
+
+3. Copy `numojo.mojopkg` to your project directory or add its parent directory to your include paths.
+
+### Method 4: Direct Source Integration
+
+For maximum flexibility and the ability to modify NuMojo source code during development:
+
+1. Clone the repository to your desired location:
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   ```
+
+2. When compiling your code, include the NuMojo source path:
+   ```bash
+   mojo run -I "/path/to/NuMojo" your_program.mojo
+   ```
+
+3. **VSCode LSP Setup** (for code hints and autocompletion):
+   - Open VSCode preferences
+   - Navigate to `Mojo › Lsp: Include Dirs`
+   - Click `Add Item` and enter the full path to your NuMojo directory (e.g., `/Users/YourName/Projects/NuMojo`)
+   - Restart the Mojo LSP server
+
+After setup, VSCode will provide intelligent code completion and hints for NuMojo functions!
 
 ## Contributing
 
-Any contributions you make are **greatly appreciated**. For more details and guidelines on contributions, please check [here](CONTRIBUTING.md)
+Any contributions you make are **greatly appreciated**. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines (coding style, testing, documentation, release cadence).
 
 ## Warnings
 
-This library is still very much a work in progress and may change at any time.
+This library is still early and may introduce breaking changes between minor versions. Pin versions in production or research code.
 
 ## License
 

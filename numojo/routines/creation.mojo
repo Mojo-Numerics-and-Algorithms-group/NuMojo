@@ -10,13 +10,12 @@ Array creation routine.
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
-3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and 
-    reduce the number of function reloads.
+3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and reduce the number of function reloads.
 4) Simplify complex overloads into sum of real methods.
 
 ---
 
-Use more uniformed way of calling functions, i.e., using one specific 
+Use more uniformed way of calling functions, i.e., using one specific
 overload for each function. This makes maintenance easier. Example:
 
 - `NDArray.__init__` takes in `ShapeLike` and initialize an `NDArray` container.
@@ -24,13 +23,10 @@ overload for each function. This makes maintenance easier. Example:
 - `zeros`, `ones` calls `full`.
 - Other functions calls `zeros`, `ones`, `full`.
 
-If overloads are needed, it is better to call the default signature in other 
-overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this 
-function. So it is easy for modification.
+If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
 
 """
 
-from algorithm import parallelize, vectorize
 from algorithm import parallelize, vectorize
 from builtin.math import pow
 from collections import Dict
@@ -38,19 +34,21 @@ from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
 from algorithm.memory import parallel_memcpy
 from python import PythonObject, Python
-from sys import simdwidthof
-from tensor import Tensor, TensorShape
+from sys import simd_width_of
+
 
 from numojo.core.flags import Flags
 from numojo.core.ndarray import NDArray
+from numojo.core.complex import ComplexScalar
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
-from numojo.core.own_data import OwnData
+from numojo.core.data_container import DataContainer
 
 
 # ===------------------------------------------------------------------------===#
 # Numerical ranges
 # ===------------------------------------------------------------------------===#
+# FIXME: a lot of the creation routines uses ._buf.ptr directly. This should be changed to ._buf[idx] once we use the new DataContainer with correct origins.
 fn arange[
     dtype: DType = DType.float64
 ](
@@ -59,72 +57,104 @@ fn arange[
     step: Scalar[dtype] = Scalar[dtype](1),
 ) raises -> NDArray[dtype]:
     """
-    Function that computes a series of values starting from "start" to "stop"
-    with given "step" size.
-
-    Raises:
-        Error if both dtype and dtype are integers or if dtype is a float and
-        dtype is an integer.
+    Generate evenly spaced values within a given interval.
 
     Parameters:
         dtype: Datatype of the output array.
 
     Args:
-        start: Scalar[dtype] - Start value.
-        stop: Scalar[dtype]  - End value.
-        step: Scalar[dtype]  - Step size between each element (default 1).
+        start: Start value (inclusive).
+        stop: End value (exclusive).
+        step: Step size between consecutive elements (default 1).
 
     Returns:
-        A NDArray of datatype `dtype` with elements ranging from `start` to `stop` incremented with `step`.
+        A NDArray of `dtype` with elements in range [start, stop) with step increments.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Basic usage
+        var arr = nm.arange[nm.f64](0.0, 10.0, 2.0)
+        print(arr)  # [0.0, 2.0, 4.0, 6.0, 8.0]
+
+        # With negative step
+        var arr2 = nm.arange[nm.f64](10.0, 0.0, -2.0)
+        print(arr2)  # [10.0, 8.0, 6.0, 4.0, 2.0]
+        ```
     """
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
     for idx in range(num):
         result._buf.ptr[idx] = start + step * idx
 
-    return result
+    return result^
 
 
 fn arange[
     dtype: DType = DType.float64
 ](stop: Scalar[dtype]) raises -> NDArray[dtype]:
     """
-    (Overload) When start is 0 and step is 1.
+    Generate evenly spaced values from 0 to stop.
+
+    Overload with start=0 and step=1 for convenience.
+
+    Parameters:
+        dtype: Datatype of the output array.
+
+    Args:
+        stop: End value (exclusive).
+
+    Returns:
+        A NDArray of `dtype` with elements [0, 1, 2, ..., stop-1].
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var arr = nm.arange[nm.f64](5.0)
+        print(arr)  # [0.0, 1.0, 2.0, 3.0, 4.0]
+        ```
     """
 
-    var size = Int(stop)
+    var size: Int = Int(stop)  # TODO: handle negative values.
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
         (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
 
-    return result
+    return result^
 
 
-fn arangeC[
-    dtype: DType = DType.float64,
+fn arange[
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
-    step: ComplexSIMD[dtype] = ComplexSIMD[dtype](1, 1),
-) raises -> ComplexNDArray[dtype]:
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
+    step: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](1, 1),
+) raises -> ComplexNDArray[cdtype]:
     """
-    Function that computes a series of values starting from "start" to "stop"
-    with given "step" size.
-
-    Raises:
-        Error if both dtype and dtype are integers or if dtype is a float and
-        dtype is an integer.
+    Generate evenly spaced complex values within a given interval.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
-        start: ComplexSIMD[dtype] - Start value.
-        stop: ComplexSIMD[dtype]  - End value.
-        step: ComplexSIMD[dtype]  - Step size between each element (default 1).
+        start: Start value (inclusive).
+        stop: End value (exclusive).
+        step: Step size between consecutive elements (default 1+1j).
 
     Returns:
-        A ComplexNDArray of datatype `dtype` with elements ranging from `start` to `stop` incremented with `step`.
+        A ComplexNDArray of `cdtype` with elements in range [start, stop) with step increments.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var start = nm.CScalar[nm.cf64](0.0, 0.0)
+        var stop = nm.CScalar[nm.cf64](5.0, 5.0)
+        var step = nm.CScalar[nm.cf64](1.0, 1.0)
+        var arr = nm.arange[nm.cf64](start, stop, step)
+        ```
     """
     var num_re: Int = ((stop.re - start.re) / step.re).__int__()
     var num_im: Int = ((stop.im - start.im) / step.im).__int__()
@@ -134,11 +164,11 @@ fn arangeC[
                 "Number of real and imaginary parts are not equal {} != {}"
             ).format(num_re, num_im)
         )
-    var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](Shape(num_re))
+    var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num_re))
     for idx in range(num_re):
         result.store[width=1](
             idx,
-            ComplexSIMD[dtype](
+            ComplexSIMD[cdtype](
                 start.re + step.re * idx, start.im + step.im * idx
             ),
         )
@@ -146,13 +176,23 @@ fn arangeC[
     return result^
 
 
-fn arangeC[
-    dtype: DType = DType.float64,
-](stop: ComplexSIMD[dtype]) raises -> ComplexNDArray[dtype]:
+fn arange[
+    cdtype: ComplexDType = ComplexDType.float64,
+](stop: ComplexSIMD[cdtype]) raises -> ComplexNDArray[cdtype]:
     """
-    (Overload) When start is 0 and step is 1.
-    """
+    Generate evenly spaced complex values from 0 to stop.
 
+    Overload with start=0+0j and step=1+1j for convenience.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        stop: End value (exclusive).
+
+    Returns:
+        A ComplexNDArray of `cdtype` with elements from origin to stop.
+    """
     var size_re = Int(stop.re)
     var size_im = Int(stop.im)
     if size_re != size_im:
@@ -162,11 +202,11 @@ fn arangeC[
             ).format(size_re, size_im)
         )
 
-    var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](Shape(size_re))
+    var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(size_re))
     for i in range(size_re):
         result.store[width=1](
             i,
-            ComplexSIMD[dtype](Scalar[dtype](i), Scalar[dtype](i)),
+            ComplexSIMD[cdtype](Scalar[cdtype._dtype](i)),
         )
 
     return result^
@@ -176,35 +216,52 @@ fn arangeC[
 # Linear Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
 fn linspace[
-    dtype: DType = DType.float64
+    dtype: DType = DType.float64,
+    parallel: Bool = False,
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
     num: Int = 50,
     endpoint: Bool = True,
-    parallel: Bool = False,
 ) raises -> NDArray[dtype]:
     """
-    Function that computes a series of linearly spaced values starting from "start" to "stop" with given size. Wrapper function for _linspace_serial, _linspace_parallel.
-
-    Raises:
-        Error if dtype is an integer.
+    Generate evenly spaced numbers over a specified interval.
 
     Parameters:
-        dtype: Datatype of the output array.
+        dtype: Datatype of the output array (must be floating-point).
+        parallel: Whether to use parallelization for computation (default False).
 
     Args:
-        start: Start value.
-        stop: End value.
-        num: No of linearly spaced elements.
-        endpoint: Specifies whether to include endpoint in the final NDArray, defaults to True.
-        parallel: Specifies whether the linspace should be calculated using parallelization, deafults to False.
+        start: Starting value of the sequence.
+        stop: End value of the sequence.
+        num: Number of samples to generate (default 50).
+        endpoint: Whether to include `stop` in the result (default True).
 
     Returns:
-        A NDArray of datatype `dtype` with elements ranging from `start` to `stop` with num elements.
+        A NDArray of `dtype` with `num` evenly spaced elements between `start` and `stop`.
 
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Basic usage
+        var arr = nm.linspace[nm.f64](0.0, 10.0, 5)
+        print(arr)  # [0.0, 2.5, 5.0, 7.5, 10.0]
+
+        # Without endpoint
+        var arr2 = nm.linspace[nm.f64](0.0, 10.0, 5, endpoint=False)
+        print(arr2)  # [0.0, 2.0, 4.0, 6.0, 8.0]
+
+        # Parallel computation for large arrays
+        var large = nm.linspace[nm.f64, parallel=True](0.0, 1000.0, 10000)
+        ```
     """
-    constrained[not dtype.is_integral()]()
+    constrained[
+        not dtype.is_integral(),
+        "numojo.linspace requires floating-point dtype.",
+    ]()
+
+    @parameter
     if parallel:
         return _linspace_parallel[dtype](start, stop, num, endpoint)
     else:
@@ -270,7 +327,7 @@ fn _linspace_parallel[
         A NDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-    alias nelts = simdwidthof[dtype]()
+    alias nelts = simd_width_of[dtype]()
 
     if endpoint:
         var denominator: SIMD[dtype, 1] = Scalar[dtype](num) - 1.0
@@ -294,55 +351,62 @@ fn _linspace_parallel[
     return result^
 
 
-fn linspaceC[
-    dtype: DType = DType.float64,
+fn linspace[
+    cdtype: ComplexDType = ComplexDType.float64,
+    parallel: Bool = False,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
     num: Int = 50,
     endpoint: Bool = True,
-    parallel: Bool = False,
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
-    Function that computes a series of linearly spaced values starting from "start" to "stop" with given size. Wrapper function for _linspace_serial, _linspace_parallel.
-
-    Raises:
-        Error if dtype is an integer.
+    Generate evenly spaced complex numbers over a specified interval.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array (must be floating-point).
+        parallel: Whether to use parallelization for computation (default False).
 
     Args:
-        start: Start value.
-        stop: End value.
-        num: No of linearly spaced elements.
-        endpoint: Specifies whether to include endpoint in the final ComplexNDArray, defaults to True.
-        parallel: Specifies whether the linspace should be calculated using parallelization, deafults to False.
+        start: Starting complex value of the sequence.
+        stop: End complex value of the sequence.
+        num: Number of samples to generate (default 50).
+        endpoint: Whether to include `stop` in the result (default True).
 
     Returns:
-        A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
+        A ComplexNDArray of `cdtype` with `num` evenly spaced elements between `start` and `stop`.
 
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var start = nm.CScalar[nm.cf64](0.0, 0.0)
+        var stop = nm.CScalar[nm.cf64](10.0, 10.0)
+        var arr = nm.linspace[nm.cf64](start, stop, 5)
+        ```
     """
-    constrained[not dtype.is_integral()]()
+    constrained[not cdtype.is_integral()]()
+
+    @parameter
     if parallel:
-        return _linspace_parallel[dtype](start, stop, num, endpoint)
+        return _linspace_parallel[cdtype](start, stop, num, endpoint)
     else:
-        return _linspace_serial[dtype](start, stop, num, endpoint)
+        return _linspace_serial[cdtype](start, stop, num, endpoint)
 
 
 fn _linspace_serial[
-    dtype: DType = DType.float64,
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
     num: Int,
     endpoint: Bool = True,
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
     Generate a linearly spaced NDArray of `num` elements between `start` and `stop` using naive for loop.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         start: The starting value of the NDArray.
@@ -353,7 +417,8 @@ fn _linspace_serial[
     Returns:
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](Shape(num))
+    alias dtype: DType = cdtype._dtype
+    var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
 
     if endpoint:
         var step_re: Scalar[dtype] = (stop.re - start.re) / (num - 1)
@@ -361,7 +426,7 @@ fn _linspace_serial[
         for i in range(num):
             result.store[width=1](
                 i,
-                ComplexSIMD[dtype](
+                ComplexSIMD[cdtype](
                     start.re + step_re * i, start.im + step_im * i
                 ),
             )
@@ -372,27 +437,27 @@ fn _linspace_serial[
         for i in range(num):
             result.store[width=1](
                 i,
-                ComplexSIMD[dtype](
+                ComplexSIMD[cdtype](
                     start.re + step_re * i, start.im + step_im * i
                 ),
             )
 
-    return result
+    return result^
 
 
 fn _linspace_parallel[
-    dtype: DType = DType.float64,
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
     num: Int,
     endpoint: Bool = True,
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
     Generate a linearly spaced ComplexNDArray of `num` elements between `start` and `stop` using parallelization.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         start: The starting value of the ComplexNDArray.
@@ -403,8 +468,9 @@ fn _linspace_parallel[
     Returns:
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](Shape(num))
-    alias nelts = simdwidthof[dtype]()
+    alias dtype: DType = cdtype._dtype
+    alias nelts = simd_width_of[dtype]()
+    var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
 
     if endpoint:
         var denominator: Scalar[dtype] = Scalar[dtype](num) - 1.0
@@ -417,7 +483,7 @@ fn _linspace_parallel[
             try:
                 result.store[width=1](
                     idx,
-                    ComplexSIMD[dtype](
+                    ComplexSIMD[cdtype](
                         start.re + step_re * idx, start.im + step_im * idx
                     ),
                 )
@@ -435,7 +501,7 @@ fn _linspace_parallel[
             try:
                 result.store[width=1](
                     idx,
-                    ComplexSIMD[dtype](
+                    ComplexSIMD[cdtype](
                         start.re + step_re * idx, start.im + step_im * idx
                     ),
                 )
@@ -451,36 +517,50 @@ fn _linspace_parallel[
 # Logarithmic Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
 fn logspace[
-    dtype: DType = DType.float64
+    dtype: DType = DType.float64,
+    parallel: Bool = False,
 ](
     start: Scalar[dtype],
     stop: Scalar[dtype],
     num: Int,
     endpoint: Bool = True,
     base: Scalar[dtype] = 10.0,
-    parallel: Bool = False,
 ) raises -> NDArray[dtype]:
     """
-    Generate a logrithmic spaced NDArray of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions.
+    Generate logarithmically spaced numbers over a specified interval.
 
-    Raises:
-        Error if dtype is an integer.
+    The sequence starts at base^start and ends at base^stop.
 
     Parameters:
-        dtype: Datatype of the output array.
+        dtype: Datatype of the output array (must be floating-point).
+        parallel: Whether to use parallelization for computation (default False).
 
     Args:
-        start: The starting value of the NDArray.
-        stop: The ending value of the NDArray.
-        num: The number of elements in the NDArray.
-        endpoint: Whether to include the `stop` value in the NDArray. Defaults to True.
-        base: Base value of the logarithm, defaults to 10.
-        parallel: Specifies whether to calculate the logarithmic spaced values using parallelization.
+        start: Base^start is the starting value of the sequence.
+        stop: Base^stop is the final value of the sequence.
+        num: Number of samples to generate.
+        endpoint: Whether to include base^stop in the result (default True).
+        base: The base of the logarithm (default 10.0).
 
     Returns:
-    - A NDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
+        A NDArray of `dtype` with `num` logarithmically spaced elements.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Logarithmic spacing from 10^0 to 10^3
+        var arr = nm.logspace[nm.f64](0.0, 3.0, 4)
+        print(arr)  # [1.0, 10.0, 100.0, 1000.0]
+
+        # Base 2 logarithmic spacing
+        var arr2 = nm.logspace[nm.f64](0.0, 4.0, 5, base=2.0)
+        print(arr2)  # [1.0, 2.0, 4.0, 8.0, 16.0]
+        ```
     """
     constrained[not dtype.is_integral()]()
+
+    @parameter
     if parallel:
         return _logspace_parallel[dtype](
             start,
@@ -534,7 +614,7 @@ fn _logspace_serial[
         var step: Scalar[dtype] = (stop - start) / num
         for i in range(num):
             result._buf.ptr[i] = base ** (start + step * i)
-    return result
+    return result^
 
 
 fn _logspace_parallel[
@@ -582,42 +662,41 @@ fn _logspace_parallel[
 
         parallelize[parallelized_logspace1](num)
 
-    return result
+    return result^
 
 
-fn logspaceC[
-    dtype: DType = DType.float64,
+fn logspace[
+    cdtype: ComplexDType = ComplexDType.float64,
+    parallel: Bool = False,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
     num: Int,
     endpoint: Bool = True,
-    base: ComplexSIMD[dtype] = ComplexSIMD[dtype](10.0, 10.0),
-    parallel: Bool = False,
-) raises -> ComplexNDArray[dtype]:
+    base: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](10.0, 10.0),
+) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a logrithmic spaced ComplexNDArray of `num` elements between `start` and `stop`. Wrapper function for _logspace_serial, _logspace_parallel functions.
+    Generate logarithmically spaced complex numbers over a specified interval.
 
-    Raises:
-        Error if dtype is an integer.
+    The sequence starts at base^start and ends at base^stop.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array (must be floating-point).
+        parallel: Whether to use parallelization for computation (default False).
 
     Args:
-        start: The starting value of the ComplexNDArray.
-        stop: The ending value of the ComplexNDArray.
-        num: The number of elements in the ComplexNDArray.
-        endpoint: Whether to include the `stop` value in the ComplexNDArray. Defaults to True.
-        base: Base value of the logarithm, defaults to 10.
-        parallel: Specifies whether to calculate the logarithmic spaced values using parallelization.
+        start: Base^start is the starting complex value of the sequence.
+        stop: Base^stop is the final complex value of the sequence.
+        num: Number of samples to generate.
+        endpoint: Whether to include base^stop in the result (default True).
+        base: The complex base of the logarithm (default 10+10j).
 
     Returns:
-    - A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
+        A ComplexNDArray of `cdtype` with `num` logarithmically spaced elements.
     """
-    constrained[not dtype.is_integral()]()
+    constrained[not cdtype.is_integral()]()
     if parallel:
-        return _logspace_parallel[dtype](
+        return _logspace_parallel[cdtype](
             start,
             stop,
             num,
@@ -625,7 +704,7 @@ fn logspaceC[
             endpoint,
         )
     else:
-        return _logspace_serial[dtype](
+        return _logspace_serial[cdtype](
             start,
             stop,
             num,
@@ -635,19 +714,19 @@ fn logspaceC[
 
 
 fn _logspace_serial[
-    dtype: DType = DType.float64,
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
     num: Int,
-    base: ComplexSIMD[dtype],
+    base: ComplexSIMD[cdtype],
     endpoint: Bool = True,
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
     Generate a logarithmic spaced ComplexNDArray of `num` elements between `start` and `stop` using naive for loop.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         start: The starting value of the ComplexNDArray.
@@ -659,7 +738,10 @@ fn _logspace_serial[
     Returns:
         A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](NDArrayShape(num))
+    alias dtype: DType = cdtype._dtype
+    var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
+        NDArrayShape(num)
+    )
 
     if endpoint:
         var step_re: Scalar[dtype] = (stop.re - start.re) / (num - 1)
@@ -667,7 +749,7 @@ fn _logspace_serial[
         for i in range(num):
             result.store[1](
                 i,
-                ComplexSIMD[dtype](
+                ComplexSIMD[cdtype](
                     base.re ** (start.re + step_re * i),
                     base.im ** (start.im + step_im * i),
                 ),
@@ -678,7 +760,7 @@ fn _logspace_serial[
         for i in range(num):
             result.store[1](
                 i,
-                ComplexSIMD[dtype](
+                ComplexSIMD[cdtype](
                     base.re ** (start.re + step_re * i),
                     base.im ** (start.im + step_im * i),
                 ),
@@ -687,19 +769,19 @@ fn _logspace_serial[
 
 
 fn _logspace_parallel[
-    dtype: DType = DType.float64,
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
     num: Int,
-    base: ComplexSIMD[dtype],
+    base: ComplexSIMD[cdtype],
     endpoint: Bool = True,
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
     Generate a logarithmic spaced ComplexNDArray of `num` elements between `start` and `stop` using parallelization.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         start: The starting value of the ComplexNDArray.
@@ -711,7 +793,10 @@ fn _logspace_parallel[
     Returns:
         A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](NDArrayShape(num))
+    alias dtype: DType = cdtype._dtype
+    var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
+        NDArrayShape(num)
+    )
 
     if endpoint:
         var step_re: Scalar[dtype] = (stop.re - start.re) / (num - 1)
@@ -722,7 +807,7 @@ fn _logspace_parallel[
             try:
                 result.store[1](
                     idx,
-                    ComplexSIMD[dtype](
+                    ComplexSIMD[cdtype](
                         base.re ** (start.re + step_re * idx),
                         base.im ** (start.im + step_im * idx),
                     ),
@@ -741,7 +826,7 @@ fn _logspace_parallel[
             try:
                 result.store[1](
                     idx,
-                    ComplexSIMD[dtype](
+                    ComplexSIMD[cdtype](
                         base.re ** (start.re + step_re * idx),
                         base.im ** (start.im + step_im * idx),
                     ),
@@ -764,22 +849,31 @@ fn geomspace[
     endpoint: Bool = True,
 ) raises -> NDArray[dtype]:
     """
-    Generate a NDArray of `num` elements between `start` and `stop` in a geometric series.
-
-    Raises:
-        Error if dtype is an integer.
+    Generate numbers spaced evenly on a log scale (geometric progression).
 
     Parameters:
-        dtype: Datatype of the input values.
+        dtype: Datatype of the output array (must be floating-point).
 
     Args:
-        start: The starting value of the NDArray.
-        stop: The ending value of the NDArray.
-        num: The number of elements in the NDArray.
-        endpoint: Whether to include the `stop` value in the NDArray. Defaults to True.
+        start: The starting value of the sequence.
+        stop: The final value of the sequence.
+        num: Number of samples to generate.
+        endpoint: Whether to include `stop` in the result (default True).
 
     Returns:
         A NDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Geometric progression from 1 to 1000
+        var arr = nm.geomspace[nm.f64](1.0, 1000.0, 4)
+        print(arr)  # [1.0, 10.0, 100.0, 1000.0]
+        ```
+
+    Notes:
+        This is similar to logspace, but with endpoints specified directly.
     """
     constrained[
         not dtype.is_integral(), "Int type will result to precision errors."
@@ -788,79 +882,80 @@ fn geomspace[
 
     if endpoint:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var base: Scalar[dtype] = (stop / start)
+        var base: Scalar[dtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: Scalar[dtype] = base**power
         for i in range(num):
             result._buf.ptr[i] = a * r**i
-        return result
+        return result^
 
     else:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
-        var base: Scalar[dtype] = (stop / start)
+        var base: Scalar[dtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: Scalar[dtype] = base**power
         for i in range(num):
             result._buf.ptr[i] = a * r**i
-        return result
+        return result^
 
 
-fn geomspaceC[
-    dtype: DType = DType.float64,
+fn geomspace[
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    start: ComplexSIMD[dtype],
-    stop: ComplexSIMD[dtype],
+    start: ComplexSIMD[cdtype],
+    stop: ComplexSIMD[cdtype],
     num: Int,
     endpoint: Bool = True,
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a ComplexNDArray of `num` elements between `start` and `stop` in a geometric series.
-
-    Raises:
-        Error if dtype is an integer.
+    Generate complex numbers spaced evenly on a log scale (geometric progression).
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array (must be floating-point).
 
     Args:
-        start: The starting value of the ComplexNDArray.
-        stop: The ending value of the ComplexNDArray.
-        num: The number of elements in the ComplexNDArray.
-        endpoint: Whether to include the `stop` value in the ComplexNDArray. Defaults to True.
+        start: The starting complex value of the sequence.
+        stop: The final complex value of the sequence.
+        num: Number of samples to generate.
+        endpoint: Whether to include `stop` in the result (default True).
 
     Returns:
-        A ComplexNDArray of `dtype` with `num` geometrically spaced elements between `start` and `stop`.
+        A ComplexNDArray of `cdtype` with `num` geometrically spaced elements between `start` and `stop`.
+
+    Notes:
+        This is similar to logspace, but with endpoints specified directly.
     """
     constrained[
-        not dtype.is_integral(), "Int type will result to precision errors."
+        not cdtype.is_integral(), "Int type will result to precision errors."
     ]()
-    var a: ComplexSIMD[dtype] = start
+    alias dtype: DType = cdtype._dtype
+    var a: ComplexSIMD[cdtype] = start
 
     if endpoint:
-        var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](
+        var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
             NDArrayShape(num)
         )
-        var base: ComplexSIMD[dtype] = (stop / start)
+        var base: ComplexSIMD[cdtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
-        var r: ComplexSIMD[dtype] = base**power
+        var r: ComplexSIMD[cdtype] = base.elem_pow(power)
         for i in range(num):
             result.store[1](
                 i,
-                ComplexSIMD[dtype](a.re * r.re**i, a.im * r.im**i),
+                ComplexSIMD[cdtype](a.re * r.re**i, a.im * r.im**i),
             )
         return result^
 
     else:
-        var result: ComplexNDArray[dtype] = ComplexNDArray[dtype](
+        var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
             NDArrayShape(num)
         )
-        var base: ComplexSIMD[dtype] = (stop / start)
+        var base: ComplexSIMD[cdtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
-        var r: ComplexSIMD[dtype] = base**power
+        var r: ComplexSIMD[cdtype] = base.elem_pow(power)
         for i in range(num):
             result.store[1](
                 i,
-                ComplexSIMD[dtype](a.re * r.re**i, a.im * r.im**i),
+                ComplexSIMD[cdtype](a.re * r.re**i, a.im * r.im**i),
             )
         return result^
 
@@ -889,14 +984,40 @@ fn empty[
 fn empty[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
-    """Overload of function `empty` that reads a list of ints."""
+    """
+    Generate an empty NDArray from a list of integers.
+
+    Overload of `empty` that accepts a list of integers for the shape.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: Shape as a list of integers.
+
+    Returns:
+        A NDArray of `dtype` with given `shape`.
+    """
     return empty[dtype](shape=NDArrayShape(shape))
 
 
 fn empty[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int]) raises -> NDArray[dtype]:
-    """Overload of function `empty` that reads a variadic list of ints."""
+    """
+    Generate an empty NDArray from variadic integer arguments.
+
+    Overload of `empty` that accepts variadic integers for the shape.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: Shape as variadic integers.
+
+    Returns:
+        A NDArray of `dtype` with given `shape`.
+    """
     return empty[dtype](shape=NDArrayShape(shape))
 
 
@@ -918,14 +1039,14 @@ fn empty_like[
     return NDArray[dtype](shape=array.shape)
 
 
-fn emptyC[
-    dtype: DType = DType.float64,
-](shape: NDArrayShape) raises -> ComplexNDArray[dtype]:
+fn empty[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: NDArrayShape) raises -> ComplexNDArray[cdtype]:
     """
     Generate an empty ComplexNDArray of given shape with arbitrary values.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         shape: Shape of the ComplexNDArray.
@@ -933,31 +1054,57 @@ fn emptyC[
     Returns:
         A ComplexNDArray of `dtype` with given `shape`.
     """
-    return ComplexNDArray[dtype](shape=shape)
+    return ComplexNDArray[cdtype](shape=shape)
 
 
-fn emptyC[
-    dtype: DType = DType.float64,
-](shape: List[Int]) raises -> ComplexNDArray[dtype]:
-    """Overload of function `empty` that reads a list of ints."""
-    return emptyC[dtype](shape=NDArrayShape(shape))
+fn empty[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: List[Int]) raises -> ComplexNDArray[cdtype]:
+    """
+    Generate an empty ComplexNDArray from a list of integers.
+
+    Overload of `empty` that accepts a list of integers for the shape.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as a list of integers.
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape`.
+    """
+    return empty[cdtype](shape=NDArrayShape(shape))
 
 
-fn emptyC[
-    dtype: DType = DType.float64,
-](shape: VariadicList[Int]) raises -> ComplexNDArray[dtype]:
-    """Overload of function `empty` that reads a variadic list of ints."""
-    return emptyC[dtype](shape=NDArrayShape(shape))
+fn empty[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: VariadicList[Int]) raises -> ComplexNDArray[cdtype]:
+    """
+    Generate an empty ComplexNDArray from variadic integer arguments.
+
+    Overload of `empty` that accepts variadic integers for the shape.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as variadic integers.
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape`.
+    """
+    return empty[cdtype](shape=NDArrayShape(shape))
 
 
-fn empty_likeC[
-    dtype: DType = DType.float64,
-](array: ComplexNDArray[dtype]) raises -> ComplexNDArray[dtype]:
+fn empty_like[
+    cdtype: ComplexDType = ComplexDType.float64,
+](array: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype]:
     """
     Generate an empty ComplexNDArray of the same shape as `array`.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         array: ComplexNDArray to be used as a reference for the shape.
@@ -965,7 +1112,7 @@ fn empty_likeC[
     Returns:
         A ComplexNDArray of `dtype` with the same shape as `array`.
     """
-    return ComplexNDArray[dtype](shape=array.shape)
+    return ComplexNDArray[cdtype](shape=array.shape)
 
 
 fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
@@ -981,6 +1128,16 @@ fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
 
     Returns:
         A NDArray of `dtype` with size N x M and ones on the diagonals.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var arr = nm.eye[nm.f64](3, 4)
+        # [[1, 0, 0, 0],
+        #  [0, 1, 0, 0],
+        #  [0, 0, 1, 0]]
+        ```
     """
     var result: NDArray[dtype] = zeros[dtype](NDArrayShape(N, M))
     var one: Scalar[dtype] = Scalar[dtype](1)
@@ -989,24 +1146,24 @@ fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn eyeC[
-    dtype: DType = DType.float64,
-](N: Int, M: Int) raises -> ComplexNDArray[dtype]:
+fn eye[
+    cdtype: ComplexDType = ComplexDType.float64,
+](N: Int, M: Int) raises -> ComplexNDArray[cdtype]:
     """
     Return a 2-D ComplexNDArray with ones on the diagonal and zeros elsewhere.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         N: Number of rows in the matrix.
         M: Number of columns in the matrix.
 
     Returns:
-        A ComplexNDArray of `dtype` with size N x M and ones on the diagonals.
+        A ComplexNDArray of `cdtype` with size N x M and ones on the diagonals.
     """
-    var result: ComplexNDArray[dtype] = zerosC[dtype](NDArrayShape(N, M))
-    var one: ComplexSIMD[dtype] = ComplexSIMD[dtype](1, 1)
+    var result: ComplexNDArray[cdtype] = zeros[cdtype](NDArrayShape(N, M))
+    var one: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](1, 1)
     for i in range(min(N, M)):
         result.store[1](i, i, val=one)
     return result^
@@ -1020,10 +1177,20 @@ fn identity[dtype: DType = DType.float64](N: Int) raises -> NDArray[dtype]:
         dtype: Datatype of the NDArray elements.
 
     Args:
-        N: Size of the matrix.
+        N: Size of the square matrix.
 
     Returns:
         A NDArray of `dtype` with size N x N and ones on the diagonals.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var I = nm.identity[nm.f64](3)
+        # [[1, 0, 0],
+        #  [0, 1, 0],
+        #  [0, 0, 1]]
+        ```
     """
     var result: NDArray[dtype] = zeros[dtype](NDArrayShape(N, N))
     var one: Scalar[dtype] = Scalar[dtype](1)
@@ -1032,23 +1199,23 @@ fn identity[dtype: DType = DType.float64](N: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn identityC[
-    dtype: DType = DType.float64,
-](N: Int) raises -> ComplexNDArray[dtype]:
+fn identity[
+    cdtype: ComplexDType = ComplexDType.float64,
+](N: Int) raises -> ComplexNDArray[cdtype]:
     """
-    Generate an Complex identity matrix of size N x N.
+    Generate a complex identity matrix of size N x N.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
-        N: Size of the matrix.
+        N: Size of the square matrix.
 
     Returns:
-        A ComplexNDArray of `dtype` with size N x N and ones on the diagonals.
+        A ComplexNDArray of `cdtype` with size N x N and ones on the diagonals.
     """
-    var result: ComplexNDArray[dtype] = zerosC[dtype](NDArrayShape(N, N))
-    var one: ComplexSIMD[dtype] = ComplexSIMD[dtype](1, 1)
+    var result: ComplexNDArray[cdtype] = zeros[cdtype](NDArrayShape(N, N))
+    var one: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](1, 1)
     for i in range(N):
         result.store[1](i, i, val=one)
     return result^
@@ -1058,9 +1225,7 @@ fn ones[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
-    Generate a NDArray of ones with given shape filled with ones.
-
-    It calls the function `full`.
+    Generate a NDArray filled with ones.
 
     Parameters:
         dtype: Datatype of the NDArray.
@@ -1069,7 +1234,16 @@ fn ones[
         shape: Shape of the NDArray.
 
     Returns:
-        A NDArray of `dtype` with given `shape`.
+        A NDArray of `dtype` with given `shape` filled with ones.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var arr = nm.ones[nm.f64](nm.Shape(2, 3))
+        # [[1, 1, 1],
+        #  [1, 1, 1]]
+        ```
     """
     return full[dtype](shape=shape, fill_value=1)
 
@@ -1077,14 +1251,36 @@ fn ones[
 fn ones[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
-    """Overload of function `ones` that reads a list of ints."""
+    """
+    Generate a NDArray filled with ones from a list of integers.
+
+    Parameters:
+        dtype: Datatype of the NDArray.
+
+    Args:
+        shape: Shape as a list of integers.
+
+    Returns:
+        A NDArray of `dtype` with given `shape` filled with ones.
+    """
     return ones[dtype](shape=NDArrayShape(shape))
 
 
 fn ones[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int]) raises -> NDArray[dtype]:
-    """Overload of function `ones` that reads a variadic of ints."""
+    """
+    Generate a NDArray filled with ones from variadic integer arguments.
+
+    Parameters:
+        dtype: Datatype of the NDArray.
+
+    Args:
+        shape: Shape as variadic integers.
+
+    Returns:
+        A NDArray of `dtype` with given `shape` filled with ones.
+    """
     return ones[dtype](shape=NDArrayShape(shape))
 
 
@@ -1106,65 +1302,83 @@ fn ones_like[
     return ones[dtype](shape=array.shape)
 
 
-fn onesC[
-    dtype: DType = DType.float64,
-](shape: NDArrayShape) raises -> ComplexNDArray[dtype]:
+fn ones[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: NDArrayShape) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a ComplexNDArray of ones with given shape filled with ones.
-
-    It calls the function `full`.
+    Generate a ComplexNDArray filled with ones.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         shape: Shape of the ComplexNDArray.
 
     Returns:
-        A ComplexNDArray of `dtype` with given `shape`.
+        A ComplexNDArray of `cdtype` with given `shape` filled with ones.
     """
-    return fullC[dtype](shape=shape, fill_value=ComplexSIMD[dtype](1, 1))
+    return full[cdtype](shape=shape, fill_value=ComplexSIMD[cdtype](1, 1))
 
 
-fn onesC[
-    dtype: DType = DType.float64,
-](shape: List[Int]) raises -> ComplexNDArray[dtype]:
-    """Overload of function `ones` that reads a list of ints."""
-    return onesC[dtype](shape=NDArrayShape(shape))
-
-
-fn onesC[
-    dtype: DType = DType.float64,
-](shape: VariadicList[Int]) raises -> ComplexNDArray[dtype]:
-    """Overload of function `ones` that reads a variadic of ints."""
-    return onesC[dtype](shape=NDArrayShape(shape))
-
-
-fn ones_likeC[
-    dtype: DType = DType.float64,
-](array: ComplexNDArray[dtype]) raises -> ComplexNDArray[dtype]:
+fn ones[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: List[Int]) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a ComplexNDArray of the same shape as `a` filled with ones.
+    Generate a ComplexNDArray filled with ones from a list of integers.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as a list of integers.
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape` filled with ones.
+    """
+    return ones[cdtype](shape=NDArrayShape(shape))
+
+
+fn ones[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: VariadicList[Int]) raises -> ComplexNDArray[cdtype]:
+    """
+    Generate a ComplexNDArray filled with ones from variadic integer arguments.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as variadic integers.
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape` filled with ones.
+    """
+    return ones[cdtype](shape=NDArrayShape(shape))
+
+
+fn ones_like[
+    cdtype: ComplexDType = ComplexDType.float64,
+](array: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype]:
+    """
+    Generate a ComplexNDArray of the same shape as `array` filled with ones.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
 
     Args:
         array: ComplexNDArray to be used as a reference for the shape.
 
     Returns:
-        A ComplexNDArray of `dtype` with the same shape as `a` filled with ones.
+        A ComplexNDArray of `cdtype` with the same shape as `array` filled with ones.
     """
-    return fullC[dtype](shape=array.shape, fill_value=ComplexSIMD[dtype](1, 1))
+    return full[cdtype](shape=array.shape, fill_value=ComplexSIMD[cdtype](1, 1))
 
 
 fn zeros[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
-    Generate a NDArray of zeros with given shape.
-
-    It calls the function `full`.
+    Generate a NDArray filled with zeros.
 
     Parameters:
         dtype: Datatype of the NDArray elements.
@@ -1173,9 +1387,16 @@ fn zeros[
         shape: Shape of the NDArray.
 
     Returns:
-        A NDArray of `dtype` with given `shape`.
+        A NDArray of `dtype` with given `shape` filled with zeros.
 
-    of NDArray.
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var arr = nm.zeros[nm.f64](nm.Shape(2, 3))
+        # [[0, 0, 0],
+        #  [0, 0, 0]]
+        ```
     """
     return full[dtype](shape=shape, fill_value=0)
 
@@ -1183,14 +1404,36 @@ fn zeros[
 fn zeros[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
-    """Overload of function `zeros` that reads a list of ints."""
+    """
+    Generate a NDArray filled with zeros from a list of integers.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: Shape as a list of integers.
+
+    Returns:
+        A NDArray of `dtype` with given `shape` filled with zeros.
+    """
     return zeros[dtype](shape=NDArrayShape(shape))
 
 
 fn zeros[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int]) raises -> NDArray[dtype]:
-    """Overload of function `zeros` that reads a variadic list of ints."""
+    """
+    Generate a NDArray filled with zeros from variadic integer arguments.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: Shape as variadic integers.
+
+    Returns:
+        A NDArray of `dtype` with given `shape` filled with zeros.
+    """
     return zeros[dtype](shape=NDArrayShape(shape))
 
 
@@ -1198,7 +1441,7 @@ fn zeros_like[
     dtype: DType = DType.float64
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Generate a NDArray of the same shape as `a` filled with zeros.
+    Generate a NDArray of the same shape as `array` filled with zeros.
 
     Parameters:
         dtype: Datatype of the NDArray elements.
@@ -1207,62 +1450,81 @@ fn zeros_like[
         array: NDArray to be used as a reference for the shape.
 
     Returns:
-        A NDArray of `dtype` with the same shape as `a` filled with zeros.
+        A NDArray of `dtype` with the same shape as `array` filled with zeros.
     """
     return full[dtype](shape=array.shape, fill_value=0)
 
 
-fn zerosC[
-    dtype: DType = DType.float64,
-](shape: NDArrayShape) raises -> ComplexNDArray[dtype]:
+fn zeros[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: NDArrayShape) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a ComplexNDArray of zeros with given shape.
-
-    It calls the function `full` with `fill_value` set to `ComplexSIMD[dtype](0, 0)`.
+    Generate a ComplexNDArray filled with zeros.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         shape: Shape of the ComplexNDArray.
 
     Returns:
-        A ComplexNDArray of `dtype` with given `shape`.
-
+        A ComplexNDArray of `cdtype` with given `shape` filled with zeros.
     """
-    return fullC[dtype](shape=shape, fill_value=ComplexSIMD[dtype](0, 0))
+    return full[cdtype](shape=shape, fill_value=ComplexSIMD[cdtype](0, 0))
 
 
-fn zerosC[
-    dtype: DType = DType.float64,
-](shape: List[Int]) raises -> ComplexNDArray[dtype]:
-    """Overload of function `zeros` that reads a list of ints."""
-    return zerosC[dtype](shape=NDArrayShape(shape))
-
-
-fn zerosC[
-    dtype: DType = DType.float64,
-](shape: VariadicList[Int]) raises -> ComplexNDArray[dtype]:
-    """Overload of function `zeros` that reads a variadic list of ints."""
-    return zerosC[dtype](shape=NDArrayShape(shape))
-
-
-fn zeros_likeC[
-    dtype: DType = DType.float64,
-](array: ComplexNDArray[dtype]) raises -> ComplexNDArray[dtype]:
+fn zeros[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: List[Int]) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a ComplexNDArray of the same shape as `a` filled with zeros.
+    Generate a ComplexNDArray filled with zeros from a list of integers.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as a list of integers.
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape` filled with zeros.
+    """
+    return zeros[cdtype](shape=NDArrayShape(shape))
+
+
+fn zeros[
+    cdtype: ComplexDType = ComplexDType.float64,
+](shape: VariadicList[Int]) raises -> ComplexNDArray[cdtype]:
+    """
+    Generate a ComplexNDArray filled with zeros from variadic integer arguments.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as variadic integers.
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape` filled with zeros.
+    """
+    return zeros[cdtype](shape=NDArrayShape(shape))
+
+
+fn zeros_like[
+    cdtype: ComplexDType = ComplexDType.float64,
+](array: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype]:
+    """
+    Generate a ComplexNDArray of the same shape as `array` filled with zeros.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
 
     Args:
         array: ComplexNDArray to be used as a reference for the shape.
 
     Returns:
-        A ComplexNDArray of `dtype` with the same shape as `a` filled with zeros.
+        A ComplexNDArray of `cdtype` with the same shape as `array` filled with zeros.
     """
-    return fullC[dtype](shape=array.shape, fill_value=ComplexSIMD[dtype](0, 0))
+    return full[cdtype](shape=array.shape, fill_value=ComplexSIMD[cdtype](0, 0))
 
 
 fn full[
@@ -1270,18 +1532,27 @@ fn full[
 ](
     shape: NDArrayShape, fill_value: Scalar[dtype], order: String = "C"
 ) raises -> NDArray[dtype]:
-    """Initialize an NDArray of certain shape fill it with a given value.
+    """
+    Create a NDArray filled with a specified value.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
 
     Args:
         shape: Shape of the array.
-        fill_value: Set all the values to this.
-        order: Memory order C or F.
+        fill_value: Value to fill all elements with.
+        order: Memory layout order ('C' for row-major or 'F' for column-major).
 
-    Example:
+    Returns:
+        A NDArray of `dtype` with given `shape` filled with `fill_value`.
+
+    Examples:
         ```mojo
         import numojo as nm
-        from numojo.prelude import *
-        var a = nm.full(Shape(2,3,4), fill_value=10)
+
+        var arr = nm.full[nm.f64](nm.Shape(2, 3), fill_value=7.0)
+        # [[7, 7, 7],
+        #  [7, 7, 7]]
         ```
     """
 
@@ -1296,7 +1567,20 @@ fn full[
 ](
     shape: List[Int], fill_value: Scalar[dtype], order: String = "C"
 ) raises -> NDArray[dtype]:
-    """Overload of function `full` that reads a list of ints."""
+    """
+    Create a NDArray filled with a specified value from a list of integers.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: Shape as a list of integers.
+        fill_value: Value to fill all elements with.
+        order: Memory layout order ('C' or 'F').
+
+    Returns:
+        A NDArray of `dtype` with given `shape` filled with `fill_value`.
+    """
     return full[dtype](
         shape=NDArrayShape(shape), fill_value=fill_value, order=order
     )
@@ -1307,7 +1591,20 @@ fn full[
 ](
     shape: VariadicList[Int], fill_value: Scalar[dtype], order: String = "C"
 ) raises -> NDArray[dtype]:
-    """Overload of function `full` that reads a variadic list of ints."""
+    """
+    Create a NDArray filled with a specified value from variadic integer arguments.
+
+    Parameters:
+        dtype: Datatype of the NDArray elements.
+
+    Args:
+        shape: Shape as variadic integers.
+        fill_value: Value to fill all elements with.
+        order: Memory layout order ('C' or 'F').
+
+    Returns:
+        A NDArray of `dtype` with given `shape` filled with `fill_value`.
+    """
     return full[dtype](
         shape=NDArrayShape(shape), fill_value=fill_value, order=order
     )
@@ -1319,7 +1616,7 @@ fn full_like[
     array: NDArray[dtype], fill_value: Scalar[dtype], order: String = "C"
 ) raises -> NDArray[dtype]:
     """
-    Generate a NDArray of the same shape as `a` filled with `fill_value`.
+    Generate a NDArray of the same shape as `array` filled with `fill_value`.
 
     Parameters:
         dtype: Datatype of the NDArray elements.
@@ -1327,93 +1624,124 @@ fn full_like[
     Args:
         array: NDArray to be used as a reference for the shape.
         fill_value: Value to fill the NDArray with.
-        order: Memory order C or F.
+        order: Memory layout order ('C' or 'F').
 
     Returns:
-        A NDArray of `dtype` with the same shape as `a` filled with `fill_value`.
+        A NDArray of `dtype` with the same shape as `array` filled with `fill_value`.
     """
     return full[dtype](shape=array.shape, fill_value=fill_value, order=order)
 
 
-fn fullC[
-    dtype: DType = DType.float64
+fn full[
+    cdtype: ComplexDType = ComplexDType.float64
 ](
     shape: NDArrayShape,
-    fill_value: ComplexSIMD[dtype],
+    fill_value: ComplexSIMD[cdtype],
     order: String = "C",
-) raises -> ComplexNDArray[dtype]:
-    """Initialize an ComplexNDArray of certain shape fill it with a given value.
+) raises -> ComplexNDArray[cdtype]:
+    """
+    Create a ComplexNDArray filled with a specified complex value.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         shape: Shape of the ComplexNDArray.
-        fill_value: Set all the values to this.
-        order: Memory order C or F.
+        fill_value: Complex value to fill all elements with.
+        order: Memory layout order ('C' for row-major or 'F' for column-major).
 
-    Example:
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape` filled with `fill_value`.
+
+    Examples:
         ```mojo
         import numojo as nm
-        from numojo.prelude import *
-        var a = nm.fullC[f32](Shape(2,3,4), fill_value=ComplexSIMD[f32](10, 10))
+
+        var val = nm.CScalar[nm.cf64](3.0, 4.0)
+        var arr = nm.full[nm.cf64](nm.Shape(2, 2), fill_value=val)
         ```
     """
-    var A = ComplexNDArray[dtype](shape=shape, order=order)
+    var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
         A._re._buf.ptr.store(i, fill_value.re)
         A._im._buf.ptr.store(i, fill_value.im)
     return A^
 
 
-fn fullC[
-    dtype: DType = DType.float64
+fn full[
+    cdtype: ComplexDType = ComplexDType.float64
 ](
     shape: List[Int],
-    fill_value: ComplexSIMD[dtype],
+    fill_value: ComplexSIMD[cdtype],
     order: String = "C",
-) raises -> ComplexNDArray[dtype]:
-    """Overload of function `full` that reads a list of ints."""
-    return fullC[dtype](
-        shape=NDArrayShape(shape), fill_value=fill_value, order=order
-    )
-
-
-fn fullC[
-    dtype: DType = DType.float64
-](
-    shape: VariadicList[Int],
-    fill_value: ComplexSIMD[dtype],
-    order: String = "C",
-) raises -> ComplexNDArray[dtype]:
-    """Overload of function `full` that reads a variadic list of ints."""
-    return fullC[dtype](
-        shape=NDArrayShape(shape), fill_value=fill_value, order=order
-    )
-
-
-fn full_likeC[
-    dtype: DType = DType.float64
-](
-    array: ComplexNDArray[dtype],
-    fill_value: ComplexSIMD[dtype],
-    order: String = "C",
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a ComplexNDArray of the same shape as `a` filled with `fill_value`.
+    Create a ComplexNDArray filled with a specified value from a list of integers.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as a list of integers.
+        fill_value: Complex value to fill all elements with.
+        order: Memory layout order ('C' or 'F').
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape` filled with `fill_value`.
+    """
+    return full[cdtype](
+        shape=NDArrayShape(shape), fill_value=fill_value, order=order
+    )
+
+
+fn full[
+    cdtype: ComplexDType = ComplexDType.float64
+](
+    shape: VariadicList[Int],
+    fill_value: ComplexSIMD[cdtype],
+    order: String = "C",
+) raises -> ComplexNDArray[cdtype]:
+    """
+    Create a ComplexNDArray filled with a specified value from variadic integer arguments.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
+
+    Args:
+        shape: Shape as variadic integers.
+        fill_value: Complex value to fill all elements with.
+        order: Memory layout order ('C' or 'F').
+
+    Returns:
+        A ComplexNDArray of `cdtype` with given `shape` filled with `fill_value`.
+    """
+    return full[cdtype](
+        shape=NDArrayShape(shape), fill_value=fill_value, order=order
+    )
+
+
+fn full_like[
+    cdtype: ComplexDType = ComplexDType.float64
+](
+    array: ComplexNDArray[cdtype],
+    fill_value: ComplexSIMD[cdtype],
+    order: String = "C",
+) raises -> ComplexNDArray[cdtype]:
+    """
+    Generate a ComplexNDArray of the same shape as `array` filled with `fill_value`.
+
+    Parameters:
+        cdtype: Complex datatype of the output array.
 
     Args:
         array: ComplexNDArray to be used as a reference for the shape.
-        fill_value: Value to fill the ComplexNDArray with.
-        order: Memory order C or F.
+        fill_value: Complex value to fill the ComplexNDArray with.
+        order: Memory layout order ('C' or 'F').
 
     Returns:
-        A ComplexNDArray of `dtype` with the same shape as `a` filled with `fill_value`.
+        A ComplexNDArray of `cdtype` with the same shape as `array` filled with `fill_value`.
     """
-    return fullC[dtype](shape=array.shape, fill_value=fill_value, order=order)
+    return full[cdtype](shape=array.shape, fill_value=fill_value, order=order)
 
 
 # ===------------------------------------------------------------------------===#
@@ -1429,11 +1757,29 @@ fn diag[
         dtype: Datatype of the NDArray elements.
 
     Args:
-        v: NDArray to extract the diagonal from.
-        k: Diagonal offset.
+        v: If 1-D, creates a 2-D array with v on the diagonal. If 2-D, extracts the diagonal.
+        k: Diagonal offset (0 for main diagonal, positive for upper, negative for lower).
 
     Returns:
-        A 1-D NDArray with the diagonal of the input NDArray.
+        If v is 1-D: A 2-D NDArray with v on the k-th diagonal.
+        If v is 2-D: A 1-D NDArray containing the k-th diagonal.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Create diagonal matrix from 1-D array
+        var v = nm.arange[nm.f64](3.0)
+        var diag_mat = nm.diag[nm.f64](v)
+        # [[0, 0, 0],
+        #  [0, 1, 0],
+        #  [0, 0, 2]]
+
+        # Extract diagonal from 2-D array
+        var mat = nm.ones[nm.f64](nm.Shape(3, 3))
+        var d = nm.diag[nm.f64](mat)
+        # [1, 1, 1]
+        ```
     """
     if v.ndim == 1:
         var n: Int = v.size
@@ -1467,25 +1813,26 @@ fn diag[
         raise Error("Arrays bigger than 2D are not supported")
 
 
-fn diagC[
-    dtype: DType = DType.float64,
-](v: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
+fn diag[
+    cdtype: ComplexDType = ComplexDType.float64,
+](v: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
     Extract a diagonal or construct a diagonal ComplexNDArray.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
-        v: ComplexNDArray to extract the diagonal from.
-        k: Diagonal offset.
+        v: If 1-D, creates a 2-D array with v on the diagonal. If 2-D, extracts the diagonal.
+        k: Diagonal offset (0 for main diagonal, positive for upper, negative for lower).
 
     Returns:
-        A 1-D ComplexNDArray with the diagonal of the input ComplexNDArray.
+        If v is 1-D: A 2-D ComplexNDArray with v on the k-th diagonal.
+        If v is 2-D: A 1-D ComplexNDArray containing the k-th diagonal.
     """
-    return ComplexNDArray[dtype](
-        re=diag[dtype](v._re, k),
-        im=diag[dtype](v._im, k),
+    return ComplexNDArray[cdtype](
+        re=diag[cdtype._dtype](v._re, k),
+        im=diag[cdtype._dtype](v._im, k),
     )
 
 
@@ -1493,17 +1840,29 @@ fn diagflat[
     dtype: DType = DType.float64
 ](v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
-    Generate a 2-D NDArray with the flattened input as the diagonal.
+    Create a 2-D array with the flattened input as the diagonal.
 
     Parameters:
         dtype: Datatype of the NDArray elements.
 
     Args:
-        v: NDArray to be flattened and used as the diagonal.
-        k: Diagonal offset.
+        v: NDArray to be flattened and used as the diagonal (any shape).
+        k: Diagonal offset (0 for main diagonal, positive for upper, negative for lower).
 
     Returns:
-        A 2-D NDArray with the flattened input as the diagonal.
+        A 2-D NDArray with the flattened input as the k-th diagonal.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var v = nm.arange[nm.f64](4.0).reshape(nm.Shape(2, 2))  # 2x2 array
+        var d = nm.diagflat[nm.f64](v)  # Flattens to [0,1,2,3] then creates diagonal
+        # [[0, 0, 0, 0],
+        #  [0, 1, 0, 0],
+        #  [0, 0, 2, 0],
+        #  [0, 0, 0, 3]]
+        ```
     """
     var n: Int = v.size
     var result: NDArray[dtype] = zeros[dtype](
@@ -1521,25 +1880,25 @@ fn diagflat[
     return result^
 
 
-fn diagflatC[
-    dtype: DType = DType.float64,
-](v: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
+fn diagflat[
+    cdtype: ComplexDType = ComplexDType.float64,
+](v: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a 2-D ComplexNDArray with the flattened input as the diagonal.
+    Create a 2-D complex array with the flattened input as the diagonal.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
-        v: ComplexNDArray to be flattened and used as the diagonal.
-        k: Diagonal offset.
+        v: ComplexNDArray to be flattened and used as the diagonal (any shape).
+        k: Diagonal offset (0 for main diagonal, positive for upper, negative for lower).
 
     Returns:
-        A 2-D ComplexNDArray with the flattened input as the diagonal.
+        A 2-D ComplexNDArray with the flattened input as the k-th diagonal.
     """
-    return ComplexNDArray[dtype](
-        re=diagflat[dtype](v._re, k),
-        im=diagflat[dtype](v._im, k),
+    return ComplexNDArray[cdtype](
+        re=diagflat[cdtype._dtype](v._re, k),
+        im=diagflat[cdtype._dtype](v._im, k),
     )
 
 
@@ -1547,7 +1906,9 @@ fn tri[
     dtype: DType = DType.float64
 ](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
     """
-    Generate a 2-D NDArray with ones on and below the k-th diagonal.
+    Generate a lower triangular matrix.
+
+    Creates an array with ones on and below the k-th diagonal, zeros elsewhere.
 
     Parameters:
         dtype: Datatype of the NDArray elements.
@@ -1555,10 +1916,27 @@ fn tri[
     Args:
         N: Number of rows in the matrix.
         M: Number of columns in the matrix.
-        k: Diagonal offset.
+        k: Diagonal offset (0 for main diagonal, positive shifts right, negative shifts left).
 
     Returns:
-        A 2-D NDArray with ones on and below the k-th diagonal.
+        A 2-D NDArray of shape (N, M) with ones on and below the k-th diagonal.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Lower triangular matrix
+        var L = nm.tri[nm.f64](3, 3)
+        # [[1, 0, 0],
+        #  [1, 1, 0],
+        #  [1, 1, 1]]
+
+        # With offset
+        var L2 = nm.tri[nm.f64](3, 3, k=1)
+        # [[1, 1, 0],
+        #  [1, 1, 1],
+        #  [1, 1, 1]]
+        ```
     """
     var result: NDArray[dtype] = zeros[dtype](NDArrayShape(N, M))
     for i in range(N):
@@ -1568,26 +1946,28 @@ fn tri[
     return result^
 
 
-fn triC[
-    dtype: DType = DType.float64,
-](N: Int, M: Int, k: Int = 0) raises -> ComplexNDArray[dtype]:
+fn tri[
+    cdtype: ComplexDType = ComplexDType.float64,
+](N: Int, M: Int, k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
-    Generate a 2-D ComplexNDArray with ones on and below the k-th diagonal.
+    Generate a lower triangular complex matrix.
+
+    Creates a complex array with ones on and below the k-th diagonal, zeros elsewhere.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         N: Number of rows in the matrix.
         M: Number of columns in the matrix.
-        k: Diagonal offset.
+        k: Diagonal offset (0 for main diagonal, positive shifts right, negative shifts left).
 
     Returns:
-        A 2-D ComplexNDArray with ones on and below the k-th diagonal.
+        A 2-D ComplexNDArray of shape (N, M) with ones on and below the k-th diagonal.
     """
-    return ComplexNDArray[dtype](
-        re=tri[dtype](N, M, k),
-        im=tri[dtype](N, M, k),
+    return ComplexNDArray[cdtype](
+        re=tri[cdtype._dtype](N, M, k),
+        im=tri[cdtype._dtype](N, M, k),
     )
 
 
@@ -1609,7 +1989,9 @@ fn tril[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m
+    var result: NDArray[
+        dtype
+    ] = m.copy()  # * We should move this to be inplace operation perhaps.
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
@@ -1633,14 +2015,14 @@ fn tril[
     return result^
 
 
-fn trilC[
-    dtype: DType = DType.float64,
-](m: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
+fn tril[
+    cdtype: ComplexDType = ComplexDType.float64,
+](m: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
     Zero out elements above the k-th diagonal.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         m: ComplexNDArray to be zeroed out.
@@ -1649,9 +2031,9 @@ fn trilC[
     Returns:
         A ComplexNDArray with elements above the k-th diagonal zeroed out.
     """
-    return ComplexNDArray[dtype](
-        re=tril[dtype](m._re, k),
-        im=tril[dtype](m._im, k),
+    return ComplexNDArray[cdtype](
+        re=tril[cdtype._dtype](m._re, k),
+        im=tril[cdtype._dtype](m._im, k),
     )
 
 
@@ -1673,7 +2055,7 @@ fn triu[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m
+    var result: NDArray[dtype] = m.copy()
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
@@ -1697,14 +2079,14 @@ fn triu[
     return result^
 
 
-fn triuC[
-    dtype: DType = DType.float64,
-](m: ComplexNDArray[dtype], k: Int = 0) raises -> ComplexNDArray[dtype]:
+fn triu[
+    cdtype: ComplexDType = ComplexDType.float64,
+](m: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
     Zero out elements below the k-th diagonal.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         m: ComplexNDArray to be zeroed out.
@@ -1713,9 +2095,9 @@ fn triuC[
     Returns:
         A ComplexNDArray with elements below the k-th diagonal zeroed out.
     """
-    return ComplexNDArray[dtype](
-        re=triu[dtype](m._re, k),
-        im=triu[dtype](m._im, k),
+    return ComplexNDArray[cdtype](
+        re=triu[cdtype._dtype](m._re, k),
+        im=triu[cdtype._dtype](m._im, k),
     )
 
 
@@ -1755,18 +2137,18 @@ fn vander[
     return result^
 
 
-fn vanderC[
-    dtype: DType = DType.float64,
+fn vander[
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    x: ComplexNDArray[dtype],
+    x: ComplexNDArray[cdtype],
     N: Optional[Int] = None,
     increasing: Bool = False,
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
     Generate a Complex Vandermonde matrix.
 
     Parameters:
-        dtype: Complex datatype of the output array.
+        cdtype: Complex datatype of the output array.
 
     Args:
         x: 1-D input array.
@@ -1776,9 +2158,9 @@ fn vanderC[
     Returns:
         A Complex Vandermonde matrix.
     """
-    return ComplexNDArray[dtype](
-        re=vander[dtype](x._re, N, increasing),
-        im=vander[dtype](x._im, N, increasing),
+    return ComplexNDArray[cdtype](
+        re=vander[cdtype._dtype](x._re, N, increasing),
+        im=vander[cdtype._dtype](x._im, N, increasing),
     )
 
 
@@ -1787,8 +2169,6 @@ fn vanderC[
 # ===------------------------------------------------------------------------===#
 
 
-# TODO: Technically we should allow for runtime type inference here,
-# but NDArray doesn't support it yet.
 # TODO: Check whether inplace cast is needed.
 fn astype[
     dtype: DType, //, target: DType
@@ -1807,15 +2187,15 @@ fn astype[
         A NDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    var array_order = "C" if a.flags.C_CONTIGUOUS else "F"
-    var res = NDArray[target](a.shape, order=array_order)
+    var array_order: String = "C" if a.flags.C_CONTIGUOUS else "F"
+    var result: NDArray[target] = NDArray[target](a.shape, order=array_order)
 
     @parameter
     if target == DType.bool:
 
         @parameter
         fn vectorized_astype[simd_width: Int](idx: Int) -> None:
-            (res.unsafe_ptr() + idx).strided_store[width=simd_width](
+            (result.unsafe_ptr() + idx).strided_store[width=simd_width](
                 a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
             )
 
@@ -1828,7 +2208,7 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
+                result._buf.ptr.store(
                     idx,
                     (a._buf.ptr + idx)
                     .strided_load[width=simd_width](1)
@@ -1841,24 +2221,24 @@ fn astype[
 
             @parameter
             fn vectorized_astypenb[simd_width: Int](idx: Int) -> None:
-                res._buf.ptr.store(
+                result._buf.ptr.store(
                     idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )
 
             vectorize[vectorized_astypenb, a.width](a.size)
 
-    return res
+    return result^
 
 
 fn astype[
-    dtype: DType, //,
-    target: DType,
-](a: ComplexNDArray[dtype]) raises -> ComplexNDArray[target]:
+    cdtype: ComplexDType, //,
+    target: ComplexDType,
+](a: ComplexNDArray[cdtype]) raises -> ComplexNDArray[target]:
     """
     Cast a ComplexNDArray to a different dtype.
 
     Parameters:
-        dtype: Complex datatype of the input array.
+        cdtype: Complex datatype of the input array.
         target: Complex datatype of the output array.
 
     Args:
@@ -1868,9 +2248,10 @@ fn astype[
         A ComplexNDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
+    alias target_dtype: DType = target._dtype
     return ComplexNDArray[target](
-        re=astype[target](a._re),
-        im=astype[target](a._im),
+        re=astype[target_dtype](a._re),
+        im=astype[target_dtype](a._im),
     )
 
 
@@ -1972,64 +2353,64 @@ fn fromstring[
     return result^
 
 
-fn from_tensor[
-    dtype: DType = DType.float64
-](data: Tensor[dtype]) raises -> NDArray[dtype]:
-    """
-    Create array from tensor.
+# fn from_tensor[
+#     dtype: DType = DType.float64
+# ](data: Tensor[dtype]) raises -> NDArray[dtype]:
+#     """
+#     Create array from tensor.
 
-    Parameters:
-        dtype: Datatype of the NDArray elements.
+#     Parameters:
+#         dtype: Datatype of the NDArray elements.
 
-    Args:
-        data: Tensor.
+#     Args:
+#         data: Tensor.
 
-    Returns:
-        NDArray.
-    """
+#     Returns:
+#         NDArray.
+#     """
 
-    var ndim = data.shape().rank()
-    var shape = NDArrayShape(ndim=ndim, initialized=False)
-    for i in range(ndim):
-        (shape._buf + i).init_pointee_copy(data.shape()[i])
+#     var ndim = data.shape().rank()
+#     var shape = NDArrayShape(ndim=ndim, initialized=False)
+#     for i in range(ndim):
+#         (shape._buf + i).init_pointee_copy(data.shape()[i])
 
-    var a = NDArray[dtype](shape=shape)
+#     var a = NDArray[dtype](shape=shape)
 
-    memcpy(a._buf.ptr, data._ptr, a.size)
+#     memcpy(a._buf.ptr, data._ptr, a.size)
 
-    return a
+#     return a
 
 
-fn from_tensorC[
-    dtype: DType = DType.float64
-](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
-    """
-    Create array from tensor.
+# fn from_tensorC[
+#     dtype: DType = DType.float64
+# ](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[cdtype]:
+#     """
+#     Create array from tensor.
 
-    Parameters:
-        dtype: Datatype of the NDArray elements.
+#     Parameters:
+#         dtype: Datatype of the NDArray elements.
 
-    Args:
-        real: Tensor.
-        imag: Tensor.
+#     Args:
+#         real: Tensor.
+#         imag: Tensor.
 
-    Returns:
-        ComplexNDArray constructed from real and imaginary tensors.
-    """
+#     Returns:
+#         ComplexNDArray constructed from real and imaginary tensors.
+#     """
 
-    var ndim = real.shape().rank()
-    if ndim != imag.shape().rank():
-        raise ("Real and imaginary tensors must have the same rank!")
-    var shape = NDArrayShape(ndim=ndim, initialized=False)
-    for i in range(ndim):
-        (shape._buf + i).init_pointee_copy(real.shape()[i])
+#     var ndim = real.shape().rank()
+#     if ndim != imag.shape().rank():
+#         raise ("Real and imaginary tensors must have the same rank!")
+#     var shape = NDArrayShape(ndim=ndim, initialized=False)
+#     for i in range(ndim):
+#         (shape._buf + i).init_pointee_copy(real.shape()[i])
 
-    var a = ComplexNDArray[dtype](shape=shape)
+#     var a = ComplexNDArray[cdtype](shape=shape)
 
-    memcpy(a._re._buf.ptr, real._ptr, a._re.size)
-    memcpy(a._im._buf.ptr, imag._ptr, a._im.size)
+#     memcpy(a._re._buf.ptr, real._ptr, a._re.size)
+#     memcpy(a._im._buf.ptr, imag._ptr, a._im.size)
 
-    return a
+#     return a
 
 
 # ===------------------------------------------------------------------------===#
@@ -2071,35 +2452,33 @@ fn array[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
+        var arr = nm.array[f16](data=List[Scalar[f16]](1, 2, 3, 4), shape=List[Int](2, 2))
         ```
 
     Returns:
         An Array of given data, shape and order.
     """
-    A = NDArray[dtype](NDArrayShape(shape), order)
-    for i in range(A.size):
-        A._buf.ptr[i] = data[i]
-    return A
+    var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(shape), order)
+    for i in range(result.size):
+        result._buf.ptr[i] = data[i]
+    return result^
 
 
-fn arrayC[
-    dtype: DType = DType.float64
+fn array[
+    cdtype: ComplexDType = ComplexDType.float64,
 ](
-    real: List[Scalar[dtype]],
-    imag: List[Scalar[dtype]],
+    data: List[ComplexScalar[cdtype]],
     shape: List[Int],
     order: String = "C",
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
     Array creation with given data, shape and order.
 
     Parameters:
-        dtype: Datatype of the NDArray elements.
+        cdtype: Complex datatype of the ComplexNDArray elements.
 
     Args:
-        real: List of real data.
-        imag: List of imaginary data.
+        data: List of complex data.
         shape: List of shape.
         order: Memory order C or F.
 
@@ -2107,9 +2486,11 @@ fn arrayC[
         ```mojo
         import numojo as nm
         from numojo.prelude import *
-        nm.arrayC[f32](
-            real=List[Scalar[f32]](1, 2, 3, 4),
-            imag=List[Scalar[f32]](5, 6, 7, 8),
+        var array = nm.array[cf64](
+            data=List[CScalar[cf64]](CScalar[cf64](1, 1),
+            CScalar[cf64](2, 2),
+            CScalar[cf64](3, 3),
+            CScalar[cf64](4, 4)),
             shape=List[Int](2, 2),
         )
         ```
@@ -2117,16 +2498,17 @@ fn arrayC[
     Returns:
         A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
-
-    if len(real) != len(imag):
+    var size: Int = 1
+    for i in range(len(shape)):
+        size = size * shape[i]
+    if len(data) != size:
         raise Error(
-            "Error in arrayC: Real and imaginary data must have the same"
-            " length!"
+            "Error in array: Real and imaginary data must have the same length!"
         )
-    A = ComplexNDArray[dtype](shape=shape, order=order)
+    A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        A._re._buf.ptr[i] = real[i]
-        A._im._buf.ptr[i] = imag[i]
+        A._re._buf.ptr[i] = data[i].re
+        A._im._buf.ptr[i] = data[i].im
     return A^
 
 
@@ -2178,7 +2560,7 @@ fn array[
         np_dtype = np.int16
     elif dtype == DType.int8:
         np_dtype = np.int8
-    elif dtype == DType.index:
+    elif dtype == DType.int:
         np_dtype = np.intp
     elif dtype == DType.uint64:
         np_dtype = np.uint64
@@ -2197,15 +2579,15 @@ fn array[
         dtype
     ]()
     var A: NDArray[dtype] = NDArray[dtype](array_shape, order)
-    memcpy[Scalar[dtype]](A._buf.ptr, pointer, A.size)
+    memcpy[Scalar[dtype]](dest=A._buf.ptr, src=pointer, count=A.size)
     return A^
 
 
-fn arrayC[
-    dtype: DType = DType.float64
+fn array[
+    cdtype: ComplexDType = ComplexDType.float64
 ](
     real: PythonObject, imag: PythonObject, order: String = "C"
-) raises -> ComplexNDArray[dtype]:
+) raises -> ComplexNDArray[cdtype]:
     """
     Array creation with given real and imaginary data, shape and order.
 
@@ -2214,13 +2596,14 @@ fn arrayC[
     import numojo as nm
     from numojo.prelude import *
     from python import Python
+
     var np = Python.import_module("numpy")
     var np_arr = np.array([1, 2, 3, 4])
-    A = nm.arrayC[f32](real=np_arr, imag=np_arr, order="C")
+    A = nm.array[cf32](real=np_arr, imag=np_arr, order="C")
     ```
 
     Parameters:
-        dtype: Datatype of the NDArray elements.
+        cdtype: Complex datatype of the NDArray elements.
 
     Args:
         real: A Numpy array (PythonObject).
@@ -2230,12 +2613,12 @@ fn arrayC[
     Returns:
         A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
-
+    alias dtype: DType = cdtype._dtype
     var len = Int(len(real.shape))
     var shape: List[Int] = List[Int]()
     if real.shape != imag.shape:
         raise Error(
-            "Error in arrayC: Real and imaginary data must have the same shape!"
+            "Error in array: Real and imaginary data must have the same shape!"
         )
     for i in range(len):
         if Int(real.shape[i]) == 1:
@@ -2256,7 +2639,7 @@ fn arrayC[
         np_dtype = np.int16
     elif dtype == DType.int8:
         np_dtype = np.int8
-    elif dtype == DType.index:
+    elif dtype == DType.int:
         np_dtype = np.intp
     elif dtype == DType.uint64:
         np_dtype = np.uint64
@@ -2278,78 +2661,98 @@ fn arrayC[
     var pointer_imag = np_arr_imag.__array_interface__["data"][
         0
     ].unsafe_get_as_pointer[dtype]()
-    var A: ComplexNDArray[dtype] = ComplexNDArray[dtype](array_shape, order)
-    memcpy[Scalar[dtype]](A._re._buf.ptr, pointer, A._re.size)
-    memcpy[Scalar[dtype]](A._im._buf.ptr, pointer_imag, A._im.size)
+    var A: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](array_shape, order)
+    memcpy[Scalar[dtype]](dest=A._re._buf.ptr, src=pointer, count=A._re.size)
+    memcpy[Scalar[dtype]](
+        dest=A._im._buf.ptr, src=pointer_imag, count=A._im.size
+    )
     return A^
 
 
-fn array[
-    dtype: DType = DType.float64
-](data: Tensor[dtype]) raises -> NDArray[dtype]:
+fn meshgrid[
+    dtype: DType = DType.float64, indexing: String = "xy"
+](*arrays: NDArray[dtype]) raises -> List[NDArray[dtype]]:
     """
-    Create array from tensor.
-
-    Example:
-    ```mojo
-    import numojo as nm
-    from tensor import Tensor, TensorShape
-    from numojo.prelude import *
-
-    fn main() raises:
-        height = 256
-        width = 256
-        channels = 3
-        image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
-        print(image)
-        print(nm.array(image))
-    ```
+    Generate coordinate matrices from coordinate vectors.
 
     Parameters:
         dtype: Datatype of the NDArray elements.
+        indexing: Cartesian ('xy', default) or matrix ('ij') indexing of output.
 
     Args:
-        data: Tensor.
+        arrays: 1-D input arrays representing the coordinates of a grid.
 
     Returns:
-        NDArray.
+        A list of N-D coordinate arrays for evaluating expressions on an N-D grid.
+
+    Examples:
+        ```mojo
+        from numojo.routines.creation import meshgrid, arange
+        from numojo.prelude import *
+
+        var x = arange[f64](3.0)  # [0, 1, 2]
+        var y = arange[f64](2.0)  # [0, 1]
+        var grids = meshgrid[f64, indexing="xy"](x, y)
+        # grids[0]: [[0, 1, 2],
+        #            [0, 1, 2]]
+        # grids[1]: [[0, 0, 0],
+        #            [1, 1, 1]]
+        ```
     """
+    var n: Int = len(arrays)
+    if n < 2:
+        raise Error("meshgrid requires at least two input arrays.")
+    for i in range(len(arrays)):
+        if arrays[i].ndim != 1:
+            raise Error("meshgrid only supports 1-D input arrays.")
 
-    return from_tensor(data)
+    var grids: List[NDArray[dtype]] = List[NDArray[dtype]](capacity=n)
+    var final_shape: List[Int] = List[Int](capacity=n)
 
+    @parameter
+    if indexing == "xy":
+        final_shape.append(arrays[1].size)
+        final_shape.append(arrays[0].size)
+        for i in range(2, n):
+            final_shape.append(arrays[i].size)
+    else:
+        for i in range(n):
+            final_shape.append(arrays[i].size)
 
-fn arrayC[
-    dtype: DType = DType.float64
-](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[dtype]:
-    """
-    Create array from tensor.
+    for i in range(n):
+        var grid: NDArray[dtype] = NDArray[dtype](Shape(final_shape))
+        var broadcast_dim: Int = i
 
-    Example:
-    ```mojo
-    import numojo as nm
-    from tensor import Tensor, TensorShape
-    from numojo.prelude import *
+        @parameter
+        if indexing == "xy":
+            if i == 0:
+                broadcast_dim = 1
+            elif i == 1:
+                broadcast_dim = 0
 
-    fn main() raises:
-        height = 256
-        width = 256
-        channels = 3
-        image = Tensor[DType.float32].rand(TensorShape(height, width, channels))
-        print(nm.arrayC(real=image, imag=image))
-    ```
+        var dim_size: Int = arrays[i].size
+        var outer_size: Int = 1
+        var inner_size: Int = 1
 
-    Parameters:
-        dtype: Datatype of the NDArray elements.
+        for j in range(broadcast_dim):
+            outer_size *= final_shape[j]
+        for j in range(broadcast_dim + 1, len(final_shape)):
+            inner_size *= final_shape[j]
 
-    Args:
-        real: Tensor.
-        imag: Tensor.
+        # for outer in range(outer_size):
+        @parameter
+        fn closure(outer: Int) -> None:
+            for k in range(dim_size):
+                for inner in range(inner_size):
+                    var idx = (
+                        outer * dim_size * inner_size + k * inner_size + inner
+                    )
+                    grid._buf.ptr[idx] = arrays[i]._buf.ptr[k]
 
-    Returns:
-        ComplexNDArray.
-    """
+        parallelize[closure](outer_size, outer_size)
+        grids.append(grid^)
 
-    return from_tensorC(real, imag)
+    return grids^
 
 
 # ===----------------------------------------------------------------------=== #
@@ -2376,15 +2779,15 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._buf = OwnData[dtype](1)
+    b._buf = DataContainer[dtype](1)
     b._buf.ptr.init_pointee_copy(val)
     b.flags.OWNDATA = True
-    return b
+    return b^
 
 
 fn _0darray[
-    dtype: DType,
-](val: ComplexSIMD[dtype],) raises -> ComplexNDArray[dtype]:
+    cdtype: ComplexDType
+](val: ComplexSIMD[cdtype],) raises -> ComplexNDArray[cdtype]:
     """
     Initialize an special 0d complexarray (numojo scalar).
     The ndim is 0.
@@ -2392,8 +2795,7 @@ fn _0darray[
     The strides is unitialized (0-element strides).
     The size is 1 (`=0!`).
     """
-
-    var b = ComplexNDArray[dtype](
+    var b = ComplexNDArray[cdtype](
         shape=NDArrayShape(ndim=0, initialized=False),
         strides=NDArrayStrides(ndim=0, initialized=False),
         ndim=0,
@@ -2402,9 +2804,9 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._re._buf = OwnData[dtype](1)
-    b._im._buf = OwnData[dtype](1)
+    b._re._buf = DataContainer[cdtype._dtype](1)
+    b._im._buf = DataContainer[cdtype._dtype](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True
-    return b
+    return b^

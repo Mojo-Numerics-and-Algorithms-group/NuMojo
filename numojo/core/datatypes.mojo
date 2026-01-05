@@ -15,10 +15,14 @@ alias i32 = DType.int32
 """Data type alias for DType.int32"""
 alias i64 = DType.int64
 """Data type alias for DType.int64"""
-alias isize = DType.index
-"""Data type alias for DType.index"""
-alias intp = DType.index
-"""Data type alias for DType.index"""
+alias i128 = DType.int128
+"""Data type alias for DType.int128"""
+alias i256 = DType.int256
+"""Data type alias for DType.int256"""
+alias int = DType.int
+"""Data type alias for DType.int"""
+alias uint = DType.int
+"""Data type alias for DType.uint"""
 alias u8 = DType.uint8
 """Data type alias for DType.uint8"""
 alias u16 = DType.uint16
@@ -27,8 +31,14 @@ alias u32 = DType.uint32
 """Data type alias for DType.uint32"""
 alias u64 = DType.uint64
 """Data type alias for DType.uint64"""
+alias u128 = DType.uint128
+"""Data type alias for DType.uint128"""
+alias u256 = DType.uint256
+"""Data type alias for DType.uint256"""
 alias f16 = DType.float16
 """Data type alias for DType.float16"""
+alias bf16 = DType.bfloat16
+"""Data type alias for DType.bfloat16"""
 alias f32 = DType.float32
 """Data type alias for DType.float32"""
 alias f64 = DType.float64
@@ -174,14 +184,14 @@ fn _concise_dtype_str(dtype: DType) -> String:
     """Returns a concise string representation of the data type."""
     if dtype == i8:
         return "i8"
-    elif dtype == i16:
-        return "i16"
-    elif dtype == i32:
-        return "i32"
     elif dtype == i64:
         return "i64"
-    elif dtype == isize:
-        return "index"
+    elif dtype == i128:
+        return "i128"
+    elif dtype == i256:
+        return "i256"
+    elif dtype == int:
+        return "int"
     elif dtype == u8:
         return "u8"
     elif dtype == u16:
@@ -190,6 +200,14 @@ fn _concise_dtype_str(dtype: DType) -> String:
         return "u32"
     elif dtype == u64:
         return "u64"
+    elif dtype == u128:
+        return "u128"
+    elif dtype == u256:
+        return "u256"
+    elif dtype == uint:
+        return "uint"
+    elif dtype == bf16:
+        return "bf16"
     elif dtype == f16:
         return "f16"
     elif dtype == f32:
@@ -198,8 +216,6 @@ fn _concise_dtype_str(dtype: DType) -> String:
         return "f64"
     elif dtype == boolean:
         return "boolean"
-    elif dtype == isize:
-        return "isize"
     else:
         return "Unknown"
 

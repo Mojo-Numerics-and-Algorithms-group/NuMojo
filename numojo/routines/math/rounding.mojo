@@ -8,23 +8,22 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from utils import Variant
 from utils.numerics import nextafter as builtin_nextafter
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+from numojo.core.matrix import Matrix, MatrixBase
 
 
 fn round[
     dtype: DType
-](owned A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], decimals: Int = 0) -> Matrix[dtype]:
     # FIXME
     # The built-in `round` function is not working now.
     # It will be fixed in future.
-
+    var res = Matrix.zeros[dtype](A.shape)
     for i in range(A.size):
-        A._buf.ptr[i] = builtin_math.round(A._buf.ptr[i], ndigits=decimals)
-
-    return A^
+        res._buf.ptr[i] = builtin_math.round(A._buf.ptr[i], ndigits=decimals)
+    return res^
 
 
 fn tabs[

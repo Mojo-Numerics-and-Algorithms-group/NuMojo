@@ -4,14 +4,15 @@
 
 import math
 from algorithm import vectorize, parallelize
-from sys import simdwidthof
+from sys import simd_width_of
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
+from numojo.core.own_data import OwnData
+from numojo.core.matrix import Matrix, MatrixBase
 
 
-fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn all[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     """
     Test whether all array elements evaluate to True.
 
@@ -19,7 +20,7 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](1)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_and[width: Int](i: Int):
@@ -29,12 +30,14 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn all[
+    dtype: DType
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Test whether all array elements evaluate to True along axis.
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.ones[dtype](shape=(1, A.shape[1]))
@@ -73,7 +76,7 @@ fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
+fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     """
     If all True.
 
@@ -83,7 +86,7 @@ fn allt(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
         A boolean scalar
     """
     var result = Scalar[DType.bool](True)
-    # alias opt_nelts: Int = simdwidthof[DType.bool]()
+    # alias opt_nelts: Int = simd_width_of[DType.bool]()
 
     # @parameter
     # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
@@ -107,7 +110,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
         A boolean scalar
     """
     var result = Scalar[DType.bool](False)
-    # alias opt_nelts: Int = simdwidthof[DType.bool]()
+    # alias opt_nelts: Int = simd_width_of[DType.bool]()
 
     # @parameter
     # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
@@ -121,7 +124,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     return result
 
 
-fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn any[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     """
     Test whether any array elements evaluate to True.
 
@@ -129,7 +132,7 @@ fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](0)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_and[width: Int](i: Int):
@@ -139,12 +142,14 @@ fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn any[
+    dtype: DType
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Test whether any array elements evaluate to True along axis.
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]))

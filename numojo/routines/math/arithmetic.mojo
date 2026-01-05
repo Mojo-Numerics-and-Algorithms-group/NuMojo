@@ -10,7 +10,7 @@ from algorithm import parallelize, Static2DTileUnitFunc as Tile2DFunc
 import math
 from utils import Variant
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.traits.backend import Backend
 from numojo.core.ndarray import NDArray
 
@@ -186,9 +186,7 @@ fn add[
 fn add[
     dtype: DType,
     backend: Backend = _mf.Vectorized,
-](owned *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
-    dtype
-]:
+](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[dtype]:
     """
     Perform addition on a list of arrays and a scalars.
 
@@ -204,11 +202,11 @@ fn add[
     """
     var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
     var scalar_part: Scalar[dtype] = 0
-    for val in values:
-        if val[].isa[NDArray[dtype]]():
-            array_list.append(val[].take[NDArray[dtype]]())
-        elif val[].isa[Scalar[dtype]]():
-            scalar_part += val[].take[Scalar[dtype]]()
+    for i in range(len(values)):
+        if values[i].isa[NDArray[dtype]]():
+            array_list.append(values[i].take[NDArray[dtype]]())
+        elif values[i].isa[Scalar[dtype]]():
+            scalar_part += values[i].take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
@@ -219,7 +217,7 @@ fn add[
         result_array = add[dtype, backend=backend](result_array, array)
     result_array = add[dtype, backend=backend](result_array, scalar_part)
 
-    return result_array
+    return result_array^
 
 
 fn sub[
@@ -401,18 +399,16 @@ fn diff[
         The n-th order difference of the input array.
     """
 
-    var array1: NDArray[dtype] = NDArray[dtype](NDArrayShape(array.size))
-    for i in range(array.size):
-        array1.store(i, array.load(i))
+    var current: NDArray[dtype] = array.copy()
 
-    for num in range(n):
+    for _ in range(n):
         var result: NDArray[dtype] = NDArray[dtype](
-            NDArrayShape(array.size - (num + 1))
+            NDArrayShape(current.size - 1)
         )
-        for i in range(array1.size - 1):
-            result.store(i, (array1.load[1](i + 1) - array1.load[1](i)))
-        array1 = result
-    return array1
+        for i in range(current.size - 1):
+            result.store(i, current.load(i + 1) - current.load(i))
+        current = result^
+    return current^
 
 
 fn mod[
@@ -646,9 +642,7 @@ fn mul[
 fn mul[
     dtype: DType,
     backend: Backend = _mf.Vectorized,
-](owned *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[
-    dtype
-]:
+](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[dtype]:
     """
     Perform multiplication on a list of arrays an arrays and a scalars.
 
@@ -664,11 +658,11 @@ fn mul[
     """
     var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
     var scalar_part: Scalar[dtype] = 0
-    for val in values:
-        if val[].isa[NDArray[dtype]]():
-            array_list.append(val[].take[NDArray[dtype]]())
-        elif val[].isa[Scalar[dtype]]():
-            scalar_part += val[].take[Scalar[dtype]]()
+    for i in range(len(values)):
+        if values[i].isa[NDArray[dtype]]():
+            array_list.append(values[i].take[NDArray[dtype]]())
+        elif values[i].isa[Scalar[dtype]]():
+            scalar_part += values[i].take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
@@ -679,7 +673,7 @@ fn mul[
         result_array = mul[dtype, backend=backend](result_array, array)
     result_array = mul[dtype, backend=backend](result_array, scalar_part)
 
-    return result_array
+    return result_array^
 
 
 fn div[

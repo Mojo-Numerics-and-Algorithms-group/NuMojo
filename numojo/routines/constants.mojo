@@ -7,8 +7,7 @@ Constants
 # ===----------------------------------------------------------------------=== #
 
 
-@value
-struct Constants(AnyType):
+struct Constants(AnyType, Copyable, Movable):
     """Define constants.
 
     Use alias for compile time evaluation of indefinite precision.
@@ -36,7 +35,7 @@ struct Constants(AnyType):
         """
         pass
 
-    fn __del__(owned self):
+    fn __del__(deinit self):
         """
         Deletes the constants.
         """

@@ -9,10 +9,11 @@
 # Miscellaneous Linear Algebra Routines
 # ===----------------------------------------------------------------------=== #
 
-from sys import simdwidthof
+from sys import simd_width_of
 from algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray
+from numojo.core.matrix import MatrixBase
 
 
 fn diagonal[
@@ -40,34 +41,36 @@ fn diagonal[
     if a.ndim != 2:
         raise Error("\nError in `diagonal`: Only supports 2D arrays")
 
-    var m = a.shape[0]
-    var n = a.shape[1]
+    var m: Int = a.shape[0]
+    var n: Int = a.shape[1]
 
     if offset >= max(m, n):  # Offset beyond the shape of the array
         raise Error(
             "\nError in `diagonal`: Offset beyond the shape of the array"
         )
 
-    var res: NDArray[dtype]
+    var result: NDArray[dtype]
 
     if offset >= 0:
-        var size_of_res = min(n - offset, m)
-        res = NDArray[dtype](Shape(size_of_res))
-        for i in range(size_of_res):
-            res.item(i) = a.item(i, i + offset)
+        var size_of_result = min(n - offset, m)
+        result = NDArray[dtype](Shape(size_of_result))
+        for i in range(size_of_result):
+            result.item(i) = a.item(i, i + offset)
     else:
-        var size_of_res = min(m + offset, m)
-        res = NDArray[dtype](Shape(size_of_res))
-        for i in range(size_of_res):
-            res.item(i) = a.item(i - offset, i)
+        var size_of_result = min(m + offset, m)
+        result = NDArray[dtype](Shape(size_of_result))
+        for i in range(size_of_result):
+            result.item(i) = a.item(i - offset, i)
 
-    return res
+    return result^
 
 
 fn issymmetric[
     dtype: DType
 ](
-    A: Matrix[dtype], rtol: Scalar[dtype] = 1e-5, atol: Scalar[dtype] = 1e-8
+    A: MatrixBase[dtype, **_],
+    rtol: Scalar[dtype] = 1e-5,
+    atol: Scalar[dtype] = 1e-8,
 ) -> Bool:
     """
     Returns True if A is symmetric, False otherwise.

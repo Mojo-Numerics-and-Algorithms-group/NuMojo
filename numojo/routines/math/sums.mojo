@@ -1,8 +1,10 @@
-from sys import simdwidthof
+from sys import simd_width_of
 from algorithm import parallelize, vectorize
+from memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
+from numojo.core.own_data import OwnData
+from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros
 
 
@@ -28,15 +30,15 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
         Scalar.
     """
 
-    alias width: Int = simdwidthof[dtype]()
-    var res = Scalar[dtype](0)
+    alias width: Int = simd_width_of[dtype]()
+    var result: Scalar[dtype] = Scalar[dtype](0)
 
     @parameter
     fn cal_vec[width: Int](i: Int):
-        res += A._buf.ptr.load[width=width](i).reduce_add()
+        result += A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[cal_vec, width](A.size)
-    return res
+    return result
 
 
 fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -62,20 +64,31 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         An NDArray.
     """
 
-    var normalized_axis = axis
+    var normalized_axis: Int = axis
     if normalized_axis < 0:
         normalized_axis += A.ndim
 
     if (normalized_axis < 0) or (normalized_axis >= A.ndim):
         raise Error(
-            String("Axis {} out of bound [0, {}).").format(axis, A.ndim)
+            IndexError(
+                message=String(
+                    "Axis out of range: got {}; valid range is [0, {})."
+                ).format(axis, A.ndim),
+                suggestion=String(
+                    "Use a valid axis in [0, {}) or a negative axis within"
+                    " [-{}, -1]."
+                ).format(A.ndim, A.ndim),
+                location=String("routines.math.sums.sum(A, axis)"),
+            )
         )
     if A.ndim == 1:
         raise Error(
-            String(
-                "`numojo.routines.math.sums.sum()`: "
-                "Cannot sum over axis for 1-d array. "
-                "Please remove the `axis` argument."
+            ShapeError(
+                message=String("Cannot use axis with 1D array."),
+                suggestion=String(
+                    "Call `sum(A)` without axis, or reshape A to 2D or higher."
+                ),
+                location=String("routines.math.sums.sum(A, axis)"),
             )
         )
 
@@ -88,16 +101,16 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             slices.append(Slice(0, A.shape[i]))
         else:
             slices.append(Slice(0, 0))  # Temp value
-    var result = zeros[dtype](NDArrayShape(result_shape))
+    var result: NDArray[dtype] = zeros[dtype](NDArrayShape(result_shape))
     for i in range(size_of_axis):
         slices[normalized_axis] = Slice(i, i + 1)
-        var arr_slice = A[slices]
+        var arr_slice: NDArray[dtype] = A._getitem_list_slices(slices.copy())
         result += arr_slice
 
-    return result
+    return result^
 
 
-fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+fn sum[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     """
     Sum up all items in the Matrix.
 
@@ -112,7 +125,7 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     ```
     """
     var res = Scalar[dtype](0)
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_vec[width: Int](i: Int):
@@ -122,7 +135,9 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     return res
 
 
-fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn sum[
+    dtype: DType
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Sum up the items in a Matrix along the axis.
 
@@ -139,7 +154,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
@@ -217,7 +232,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A
+        var B = A.copy()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] += B._buf.ptr[i]
         return B^
@@ -226,9 +241,10 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return cumsum(A.flatten(), axis=-1)
 
 
+# Why do we do in inplace operation here?
 fn cumsum[
     dtype: DType
-](owned A: NDArray[dtype], owned axis: Int) raises -> NDArray[dtype]:
+](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns cumsum of array by axis.
 
@@ -242,7 +258,8 @@ fn cumsum[
     Returns:
         Cumsum of array by axis.
     """
-
+    # TODO: reduce copies if possible
+    var B: NDArray[dtype] = A.copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
@@ -250,26 +267,26 @@ fn cumsum[
             String("Invalid index: index out of bound [0, {}).").format(A.ndim)
         )
 
-    var I = NDArray[DType.index](Shape(A.size))
+    var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
-    var _shape = A.shape._move_axis_to_end(axis)
-    var _strides = A.strides._move_axis_to_end(axis)
+    var _shape = B.shape._move_axis_to_end(axis)
+    var _strides = B.strides._move_axis_to_end(axis)
 
     numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
         ptr, _shape, _strides
     )
 
-    for i in range(0, A.size, A.shape[axis]):
-        for j in range(A.shape[axis] - 1):
-            A._buf.ptr[Int(I._buf.ptr[i + j + 1])] += A._buf.ptr[
+    for i in range(0, B.size, B.shape[axis]):
+        for j in range(B.shape[axis] - 1):
+            B._buf.ptr[Int(I._buf.ptr[i + j + 1])] += B._buf.ptr[
                 Int(I._buf.ptr[i + j])
             ]
 
-    return A^
+    return B^
 
 
-fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
+fn cumsum[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 
@@ -284,24 +301,28 @@ fn cumsum[dtype: DType](owned A: Matrix[dtype]) -> Matrix[dtype]:
     ```
     """
     var reorder = False
+    var order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
+    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+
     if A.flags.F_CONTIGUOUS:
         reorder = True
-        A = A.reorder_layout()
+        result = result.reorder_layout()
 
-    A.resize(shape=(1, A.size))
+    result.resize(shape=(1, A.size))
 
     for i in range(1, A.size):
-        A._buf.ptr[i] += A._buf.ptr[i - 1]
+        result._buf.ptr[i] += result._buf.ptr[i - 1]
 
     if reorder:
-        A = A.reorder_layout()
+        result = result.reorder_layout()
 
-    return A^
+    return result^
 
 
 fn cumsum[
     dtype: DType
-](owned A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 
@@ -318,42 +339,51 @@ fn cumsum[
     ```
     """
 
-    alias width: Int = simdwidthof[dtype]()
+    alias width: Int = simd_width_of[dtype]()
+    var order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
+    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
 
     if axis == 0:
-        if A.flags.C_CONTIGUOUS:
+        if result.flags.C_CONTIGUOUS:
             for i in range(1, A.shape[0]):
 
                 @parameter
                 fn cal_vec_sum_column[width: Int](j: Int):
-                    A._store[width](
-                        i, j, A._load[width](i - 1, j) + A._load[width](i, j)
+                    result._store[width](
+                        i,
+                        j,
+                        result._load[width](i - 1, j)
+                        + result._load[width](i, j),
                     )
 
-                vectorize[cal_vec_sum_column, width](A.shape[1])
-            return A^
+                vectorize[cal_vec_sum_column, width](result.shape[1])
+            return result^
         else:
             for j in range(A.shape[1]):
                 for i in range(1, A.shape[0]):
-                    A[i, j] = A[i - 1, j] + A[i, j]
-            return A^
+                    result[i, j] = result[i - 1, j] + result[i, j]
+            return result^
 
     elif axis == 1:
         if A.flags.C_CONTIGUOUS:
             for i in range(A.shape[0]):
                 for j in range(1, A.shape[1]):
-                    A[i, j] = A[i, j - 1] + A[i, j]
-            return A^
+                    result[i, j] = result[i, j - 1] + result[i, j]
+            return result^
         else:
             for j in range(1, A.shape[1]):
 
                 @parameter
                 fn cal_vec_sum_row[width: Int](i: Int):
-                    A._store[width](
-                        i, j, A._load[width](i, j - 1) + A._load[width](i, j)
+                    result._store[width](
+                        i,
+                        j,
+                        result._load[width](i, j - 1)
+                        + result._load[width](i, j),
                     )
 
                 vectorize[cal_vec_sum_row, width](A.shape[0])
-            return A^
+            return result^
     else:
         raise Error(String("The axis can either be 1 or 0!"))

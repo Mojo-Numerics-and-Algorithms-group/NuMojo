@@ -7,8 +7,9 @@ Implements Checking routines: currently not SIMD due to bool bit packing issue
 
 
 import math
+from utils.numerics import neg_inf, inf
 
-import numojo.core._math_funcs as _mf
+import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
 # fn is_power_of_2[
@@ -29,6 +30,7 @@ from numojo.core.ndarray import NDArray
 #     return backend().math_func_is[dtype, math.is_odd](array)
 
 
+# FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
 fn isinf[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
 ](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -50,7 +52,7 @@ fn isinf[
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size):
         result_array.store(i, math.isinf(array.load(i)))
-    return result_array
+    return result_array^
 
 
 fn isfinite[
@@ -73,7 +75,7 @@ fn isfinite[
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size):
         result_array.store(i, math.isfinite(array.load(i)))
-    return result_array
+    return result_array^
 
 
 fn isnan[
@@ -96,4 +98,92 @@ fn isnan[
     var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
     for i in range(result_array.size):
         result_array.store(i, math.isnan(array.load(i)))
-    return result_array
+    return result_array^
+
+
+# TODO: Optimize the following functions by implementing a generic backend or just using vectorized operations.
+# TODO: Implement the same for complex ndarray.
+fn isneginf[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    """
+    Checks if each element of the input array is negative infinity.
+
+    Parameters:
+        dtype: DType - Data type of the input array.
+        backend: _mf.Backend - Backend to use for the operation. Defaults to _mf.Vectorized.
+
+    Args:
+        array: NDArray[dtype] - Input array to check.
+
+    Returns:
+        NDArray[DType.bool] - A array of the same shape as `array` with True for negative infinite elements and False for others.
+    """
+    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
+    for i in range(result_array.size):
+        result_array.store(i, neg_inf[dtype]() == array.load(i))
+    return result_array^
+
+
+fn isposinf[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+    """
+    Checks if each element of the input array is positive infinity.
+    Parameters:
+        dtype: DType - Data type of the input array.
+        backend: _mf.Backend - Backend to use for the operation. Defaults to _mf.Vectorized.
+
+    Args:
+        array: NDArray[dtype] - Input array to check.
+
+    Returns:
+        NDArray[DType.bool] - A array of the same shape as `array` with True for positive infinite elements and False for others.
+    """
+    var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
+    for i in range(result_array.size):
+        result_array.store(i, inf[dtype]() == array.load(i))
+    return result_array^
+
+
+fn isneginf[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
+    """
+    Checks if each element of the input Matrix is negative infinity.
+
+    Parameters:
+        dtype: DType - Data type of the input Matrix.
+        backend: _mf.Backend - Backend to use for the operation. Defaults to _mf.Vectorized.
+
+    Args:
+        matrix: Matrix[dtype] - Input Matrix to check.
+
+    Returns:
+        Matrix[DType.bool] - A array of the same shape as `array` with True for negative infinite elements and False for others.
+    """
+    var result_array: Matrix[DType.bool] = Matrix[DType.bool](matrix.shape)
+    for i in range(result_array.size):
+        result_array.store(i, neg_inf[dtype]() == matrix.load(i))
+    return result_array^
+
+
+fn isposinf[
+    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
+    """
+    Checks if each element of the input Matrix is positive infinity.
+    Parameters:
+        dtype: DType - Data type of the input Matrix.
+        backend: _mf.Backend - Backend to use for the operation. Defaults to _mf.Vectorized.
+
+    Args:
+        matrix: Matrix[dtype] - Input Matrix to check.
+
+    Returns:
+        Matrix[DType.bool] - A array of the same shape as `array` with True for positive infinite elements and False for others.
+    """
+    var result_array: Matrix[DType.bool] = Matrix[DType.bool](matrix.shape)
+    for i in range(result_array.size):
+        result_array.store(i, inf[dtype]() == matrix.load(i))
+    return result_array^

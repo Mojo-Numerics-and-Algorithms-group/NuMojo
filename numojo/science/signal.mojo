@@ -34,20 +34,22 @@ fn convolve2d[
     ```
     """
 
-    var in2_mirrored = in2
-    var length = in2.size
+    var in2_mirrored: NDArray[dtype] = in2.copy()
+    var length: Int = in2.size
     for i in range(length):
         in2_mirrored._buf.ptr[i] = in2._buf.ptr[length - i - 1]
 
-    var in1_height = in1.shape[0]
-    var in1_width = in1.shape[1]
-    var in2_height = in2_mirrored.shape[0]
-    var in2_width = in2_mirrored.shape[1]
+    var in1_height: Int = in1.shape[0]
+    var in1_width: Int = in1.shape[1]
+    var in2_height: Int = in2_mirrored.shape[0]
+    var in2_width: Int = in2_mirrored.shape[1]
 
-    var output_height = in1_height - in2_height + 1
-    var output_width = in1_width - in2_width + 1
+    var output_height: Int = in1_height - in2_height + 1
+    var output_width: Int = in1_width - in2_width + 1
 
-    var output = zeros[dtype](Shape(output_height, output_width))
+    var output: NDArray[dtype] = zeros[dtype](
+        Shape(output_height, output_width)
+    )
 
     for i in range(output_height):
         for j in range(output_width):
@@ -55,4 +57,4 @@ fn convolve2d[
                 in1[i : i + in2_height, j : j + in2_width] * in2_mirrored
             )
 
-    return output
+    return output^

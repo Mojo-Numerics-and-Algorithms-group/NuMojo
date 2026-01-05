@@ -3,7 +3,7 @@ NuMojo is a library for numerical computing in Mojo 🔥
 similar to NumPy, SciPy in Python.
 """
 
-alias __version__ = "V0.7.0"
+alias __version__: String = "V0.8.0"
 
 # ===----------------------------------------------------------------------=== #
 # Import core types
@@ -12,23 +12,61 @@ alias __version__ = "V0.7.0"
 from numojo.core.ndarray import NDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides, Strides
-from numojo.core.item import Item, item
-from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar
-from numojo.core.complex.complex_ndarray import ComplexNDArray
+from numojo.core.item import Item
 from numojo.core.matrix import Matrix
+from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
+from numojo.core.complex.complex_ndarray import ComplexNDArray
+from numojo.core.complex.complex_dtype import (
+    ComplexDType,
+    ci8,
+    ci16,
+    ci32,
+    ci64,
+    ci128,
+    ci256,
+    cint,
+    cu8,
+    cu16,
+    cu32,
+    cu64,
+    cu128,
+    cu256,
+    cuint,
+    cbf16,
+    cf16,
+    cf32,
+    cf64,
+    cboolean,
+    cinvalid,
+)
 from numojo.core.datatypes import (
     i8,
     i16,
     i32,
     i64,
-    isize,
+    i128,
+    i256,
+    int,
     u8,
     u16,
     u32,
     u64,
+    u128,
+    u256,
+    uint,
+    bf16,
     f16,
     f32,
     f64,
+    boolean,
+)
+from numojo.core.error import (
+    ShapeError,
+    IndexError,
+    BroadcastError,
+    MemoryError,
+    ValueError,
+    ArithmeticError,
 )
 
 # ===----------------------------------------------------------------------=== #
@@ -49,6 +87,8 @@ from numojo.routines import io
 from numojo.routines.io import (
     loadtxt,
     savetxt,
+    load,
+    save,
 )
 from numojo.routines.io import set_printoptions
 
@@ -164,12 +204,11 @@ from numojo.routines.creation import (
     triu,
     vander,
     fromstring,
-    from_tensor,
     array,
 )
 
 from numojo.routines import indexing
-from numojo.routines.indexing import where, compress, take_along_axis
+from numojo.routines.indexing import `where`, compress, take_along_axis
 
 from numojo.routines.functional import apply_along_axis
 

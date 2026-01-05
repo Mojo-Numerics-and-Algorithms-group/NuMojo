@@ -288,9 +288,9 @@ fn transpose[
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
-    numojo.core.utility._traverse_buffer_according_to_shape_and_strides[I.origin](
-        ptr, new_shape, new_strides
-    )
+    numojo.core.utility._traverse_buffer_according_to_shape_and_strides[
+        I.origin
+    ](ptr, new_shape, new_strides)
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):

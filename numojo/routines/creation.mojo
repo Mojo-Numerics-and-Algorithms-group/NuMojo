@@ -42,7 +42,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexScalar
 from numojo.core.ndshape import NDArrayShape
 from numojo.core.utility import _get_offset
-from numojo.core.data_container import DataContainer, DataContainerNew
+from numojo.core.data_container import DataContainerNew
 
 
 # ===------------------------------------------------------------------------===#
@@ -2004,9 +2004,9 @@ fn tril[
         for offset in range(initial_offset):
             for i in range(m.shape[-2]):
                 for j in range(i + 1 + k, m.shape[-1]):
-                    result._buf.ptr[offset * final_offset + j + i * m.shape[-1]] = Scalar[
-                        dtype
-                    ](0)
+                    result._buf.ptr[
+                        offset * final_offset + j + i * m.shape[-1]
+                    ] = Scalar[dtype](0)
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."
@@ -2067,9 +2067,9 @@ fn triu[
         for offset in range(initial_offset):
             for i in range(m.shape[-2]):
                 for j in range(0, i + k):
-                    result._buf.ptr[offset * final_offset + j + i * m.shape[-1]] = Scalar[
-                        dtype
-                    ](0)
+                    result._buf.ptr[
+                        offset * final_offset + j + i * m.shape[-1]
+                    ] = Scalar[dtype](0)
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."
@@ -2192,7 +2192,9 @@ fn astype[
     if target == DType.bool:
 
         @parameter
-        fn vectorized_astype[simd_width: Int](idx: Int) unified {mut result, read a} -> None:
+        fn vectorized_astype[
+            simd_width: Int
+        ](idx: Int) unified {mut result, read a} -> None:
             (result.unsafe_ptr() + idx).strided_store[width=simd_width](
                 a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
             )
@@ -2205,7 +2207,9 @@ fn astype[
         if target == DType.bool:
 
             @parameter
-            fn vectorized_astypenb_from_b[simd_width: Int](idx: Int) unified {mut result, read a} -> None:
+            fn vectorized_astypenb_from_b[
+                simd_width: Int
+            ](idx: Int) unified {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx,
                     (a._buf.ptr + idx)
@@ -2218,7 +2222,9 @@ fn astype[
         else:
 
             @parameter
-            fn vectorized_astypenb[simd_width: Int](idx: Int) unified {mut result, read a} -> None:
+            fn vectorized_astypenb[
+                simd_width: Int
+            ](idx: Int) unified {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )
@@ -2229,7 +2235,8 @@ fn astype[
 
 
 fn astype[
-    cdtype: ComplexDType, //,
+    cdtype: ComplexDType,
+    //,
     target: ComplexDType,
 ](a: ComplexNDArray[cdtype]) raises -> ComplexNDArray[target]:
     """
@@ -2572,10 +2579,12 @@ fn array[
         np_dtype = np.bool_
 
     var array_shape: NDArrayShape = NDArrayShape(shape)
-    var np_arr = np.array(data, dtype=np_dtype, order=PythonObject(order.upper()))
-    var pointer = np_arr.__array_interface__[PythonObject("data")][0].unsafe_get_as_pointer[
-        dtype
-    ]()
+    var np_arr = np.array(
+        data, dtype=np_dtype, order=PythonObject(order.upper())
+    )
+    var pointer = np_arr.__array_interface__[PythonObject("data")][
+        0
+    ].unsafe_get_as_pointer[dtype]()
     var A: NDArray[dtype] = NDArray[dtype](array_shape, order)
     memcpy[Scalar[dtype]](dest=A._buf.ptr, src=pointer, count=A.size)
     return A^
@@ -2651,11 +2660,15 @@ fn array[
         np_dtype = np.bool_
 
     var array_shape: NDArrayShape = NDArrayShape(shape)
-    var np_arr = np.array(real, dtype=np_dtype, order=PythonObject(order.upper()))
-    var np_arr_imag = np.array(imag, dtype=np_dtype, order=PythonObject(order.upper()))
-    var pointer = np_arr.__array_interface__[PythonObject("data")][0].unsafe_get_as_pointer[
-        dtype
-    ]()
+    var np_arr = np.array(
+        real, dtype=np_dtype, order=PythonObject(order.upper())
+    )
+    var np_arr_imag = np.array(
+        imag, dtype=np_dtype, order=PythonObject(order.upper())
+    )
+    var pointer = np_arr.__array_interface__[PythonObject("data")][
+        0
+    ].unsafe_get_as_pointer[dtype]()
     var pointer_imag = np_arr_imag.__array_interface__[PythonObject("data")][
         0
     ].unsafe_get_as_pointer[dtype]()

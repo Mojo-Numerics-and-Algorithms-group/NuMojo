@@ -21,7 +21,9 @@ fn _compute_householder[
     var rRows = R.shape[0]
 
     @parameter
-    fn load_store_vec[n_elements: Int](i: Int) unified {mut H, mut R, read work_index}:
+    fn load_store_vec[
+        n_elements: Int
+    ](i: Int) unified {mut H, mut R, read work_index}:
         var r_value = R._load[n_elements](i + work_index, work_index)
         H._store[n_elements](i + work_index, work_index, r_value)
         R._store[n_elements](i + work_index, work_index, 0.0)
@@ -31,7 +33,9 @@ fn _compute_householder[
     var norm = Scalar[dtype](0)
 
     @parameter
-    fn calculate_norm[width: Int](i: Int) unified {mut norm, read H, read work_index}:
+    fn calculate_norm[
+        width: Int
+    ](i: Int) unified {mut norm, read H, read work_index}:
         norm += (H._load[width=width](i, work_index) ** 2).reduce_add()
 
     vectorize[simd_width](rRows, calculate_norm)
@@ -50,7 +54,9 @@ fn _compute_householder[
     R._store(work_index, work_index, -1 / scaling_factor)
 
     @parameter
-    fn scaling_factor_vec[simd_width: Int](i: Int) unified {mut H, read work_index, read scaling_factor}:
+    fn scaling_factor_vec[
+        simd_width: Int
+    ](i: Int) unified {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
@@ -63,7 +69,9 @@ fn _compute_householder[
     scaling_factor = builtin_math.sqrt(1.0 / increment)
 
     @parameter
-    fn scaling_factor_increment_vec[simd_width: Int](i: Int) unified {mut H, read work_index, read scaling_factor}:
+    fn scaling_factor_increment_vec[
+        simd_width: Int
+    ](i: Int) unified {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
@@ -88,7 +96,9 @@ fn _apply_householder[
         var dot: SIMD[dtype, 1] = 0.0
 
         @parameter
-        fn calculate_norm[width: Int](i: Int) unified {mut dot, read H, read A, read work_index, read j}:
+        fn calculate_norm[
+            width: Int
+        ](i: Int) unified {mut dot, read H, read A, read work_index, read j}:
             dot += (
                 H._load[width=width](i, work_index) * A._load[width=width](i, j)
             ).reduce_add()
@@ -96,7 +106,9 @@ fn _apply_householder[
         vectorize[simdwidth](aRows, calculate_norm)
 
         @parameter
-        fn closure[width: Int](i: Int) unified {mut A, read H, read work_index, read j, read dot}:
+        fn closure[
+            width: Int
+        ](i: Int) unified {mut A, read H, read work_index, read j, read dot}:
             val = A._load[width](i, j) - H._load[width](i, work_index) * dot
             A._store(i, j, val)
 

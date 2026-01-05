@@ -13,7 +13,6 @@ Provides:
 from algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 from numojo.core.item import Item
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase

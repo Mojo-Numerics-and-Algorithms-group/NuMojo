@@ -3,7 +3,6 @@ from sys import simd_width_of
 from memory import UnsafePointer, memcpy, memset_zero
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import ones
@@ -36,10 +35,10 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var res = Scalar[dtype](1)
 
     @parameter
-    fn cal_vec[width: Int](i: Int):
+    fn cal_vec[width: Int](i: Int) unified {mut res, read A}:
         res *= A._buf.ptr.load[width=width](i).reduce_mul()
 
-    vectorize[cal_vec, width](A.size)
+    vectorize[width](A.size, cal_vec)
     return res
 
 
@@ -94,10 +93,10 @@ fn prod[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_vec[width: Int](i: Int):
+    fn cal_vec[width: Int](i: Int) unified {mut res, read A}:
         res = res * A._buf.ptr.load[width=width](i).reduce_mul()
 
-    vectorize[cal_vec, width](A.size)
+    vectorize[width](A.size, cal_vec)
     return res
 
 
@@ -128,12 +127,12 @@ fn prod[
         for i in range(A.shape[0]):
 
             @parameter
-            fn cal_vec_sum[width: Int](j: Int):
+            fn cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store[width](
                     0, j, B._load[width](0, j) * A._load[width](i, j)
                 )
 
-            vectorize[cal_vec_sum, width](A.shape[1])
+            vectorize[width](A.shape[1], cal_vec_sum)
 
         return B^
 
@@ -143,14 +142,14 @@ fn prod[
         @parameter
         fn cal_rows(i: Int):
             @parameter
-            fn cal_vec[width: Int](j: Int):
+            fn cal_vec[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store(
                     i,
                     0,
                     B._load(i, 0) * A._load[width=width](i, j).reduce_mul(),
                 )
 
-            vectorize[cal_vec, width](A.shape[1])
+            vectorize[width](A.shape[1], cal_vec)
 
         parallelize[cal_rows](A.shape[0], A.shape[0])
         return B^
@@ -285,17 +284,19 @@ fn cumprod[
         for j in range(result.shape[1]):
 
             @parameter
-            fn copy_col[width: Int](i: Int):
+            fn copy_col[
+                width: Int
+            ](i: Int) unified {mut result, read A, read j}:
                 result._store[width](i, j, A._load[width](i, j))
 
-            vectorize[copy_col, width](A.shape[0])
+            vectorize[width](A.shape[0], copy_col)
 
     if axis == 0:
         if A.flags.C_CONTIGUOUS:
             for i in range(1, A.shape[0]):
 
                 @parameter
-                fn cal_vec_row[width: Int](j: Int):
+                fn cal_vec_row[width: Int](j: Int) unified {mut result, read i}:
                     result._store[width](
                         i,
                         j,
@@ -303,7 +304,7 @@ fn cumprod[
                         * result._load[width](i, j),
                     )
 
-                vectorize[cal_vec_row, width](A.shape[1])
+                vectorize[width](A.shape[1], cal_vec_row)
             return result^
         else:
             for j in range(A.shape[1]):
@@ -321,7 +322,9 @@ fn cumprod[
             for j in range(1, A.shape[1]):
 
                 @parameter
-                fn cal_vec_column[width: Int](i: Int):
+                fn cal_vec_column[
+                    width: Int
+                ](i: Int) unified {mut result, read j}:
                     result._store[width](
                         i,
                         j,
@@ -329,7 +332,7 @@ fn cumprod[
                         * result._load[width](i, j),
                     )
 
-                vectorize[cal_vec_column, width](A.shape[0])
+                vectorize[width](A.shape[0], cal_vec_column)
             return result^
     else:
         raise Error(String("The axis can either be 1 or 0!"))

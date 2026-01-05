@@ -244,7 +244,7 @@ Add the following to your `pixi.toml` file:
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.7.0"
+numojo = "=0.8.0"
 ```
 
 Then run:
@@ -256,7 +256,7 @@ pixi install
 
 | NuMojo Version | Required Mojo Version |
 | -------------- | -------------------- |
-| v0.71.0        | ==25.7              |
+| v0.8.0         | ==25.7              |
 | v0.7.0         | ==25.3              |
 | v0.6.1         | ==25.2              |
 | v0.6.0         | ==25.2              |

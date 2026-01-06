@@ -86,12 +86,30 @@ struct Flags(ImplicitlyCopyable):
                 If owndata is False, writeable is forced to be False.
         """
 
-        self.C_CONTIGUOUS = (
-            True if (strides[-1] == 1) or (shape[-1] == 1) else False
-        )
-        self.F_CONTIGUOUS = (
-            True if (strides[0] == 1) or (shape[0] == 1) else False
-        )
+        var ndim = len(shape)
+        # 0-D and 1-D arrays are both C and F contiguous
+        if ndim <= 1:
+            self.C_CONTIGUOUS = True
+            self.F_CONTIGUOUS = True
+        else:
+            # C-contiguity: stride[-1] == 1, and each stride[i] == stride[i+1] * shape[i+1]
+            self.C_CONTIGUOUS = strides[ndim - 1] == 1
+            if self.C_CONTIGUOUS:
+                for i in range(ndim - 2, -1, -1):
+                    if shape[i + 1] != 1:  # Skip size-1 dimensions
+                        if strides[i] != strides[i + 1] * shape[i + 1]:
+                            self.C_CONTIGUOUS = False
+                            break
+
+            # F-contiguity: stride[0] == 1, and each stride[i] == stride[i-1] * shape[i-1]
+            self.F_CONTIGUOUS = strides[0] == 1
+            if self.F_CONTIGUOUS:
+                for i in range(1, ndim):
+                    if shape[i - 1] != 1:  # Skip size-1 dimensions
+                        if strides[i] != strides[i - 1] * shape[i - 1]:
+                            self.F_CONTIGUOUS = False
+                            break
+
         self.OWNDATA = owndata
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS

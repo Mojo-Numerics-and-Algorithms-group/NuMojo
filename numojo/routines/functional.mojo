@@ -129,7 +129,8 @@ fn apply_along_axis[
 
 
 fn apply_along_axis[
-    dtype: DType, //,
+    dtype: DType,
+    //,
     returned_dtype: DType,
     func1d: fn[dtype_func: DType, //, returned_dtype_func: DType] (
         NDArray[dtype_func]
@@ -188,7 +189,8 @@ fn apply_along_axis[
 
 
 fn apply_along_axis[
-    dtype: DType, //,
+    dtype: DType,
+    //,
     func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
         dtype_func
     ],
@@ -266,7 +268,8 @@ fn apply_along_axis[
 
 
 fn apply_along_axis[
-    dtype: DType, //,
+    dtype: DType,
+    //,
     func1d: fn[dtype_func: DType] (mut NDArray[dtype_func]) raises -> None,
 ](mut a: NDArray[dtype], axis: Int) raises -> None:
     """

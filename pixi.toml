@@ -50,7 +50,7 @@ package = "pixi run mojo package numojo && cp numojo.mojopkg tests/"
 p = "clear && pixi run package"
 
 # format the package
-format = "pixi run mojo format ./"
+format = "pixi run mojo format ./numojo/ && pixi run mojo format ./tests/"
 
 # to run individual test files
 run-test = { cmd = "pixi run mojo run -I tests/ $TEST_FILE", env = { TEST_FILE = "" } }

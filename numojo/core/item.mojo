@@ -18,6 +18,7 @@ from numojo.core.traits.indexer_collection_element import (
 )
 
 
+# TODO: make it immutable.
 @register_passable
 struct Item(
     ImplicitlyCopyable, Movable, Representable, Sized, Stringable, Writable

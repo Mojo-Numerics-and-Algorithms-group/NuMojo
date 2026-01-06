@@ -6,9 +6,9 @@ from testing.testing import assert_raises, assert_true
 from sys import is_defined
 from testing import assert_equal, TestSuite
 
-alias order: String = String("F") if is_defined["F_CONTIGUOUS"]() else String(
-    "C"
-)
+comptime order: String = String("F") if is_defined[
+    "F_CONTIGUOUS"
+]() else String("C")
 
 # ===-----------------------------------------------------------------------===#
 # Main functions
@@ -27,7 +27,12 @@ fn check_matrices_close[
 ](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(
-        np.all(np.isclose(np.matrix(matrix.to_numpy()), np_sol, atol=0.01)), st
+        np.all(
+            np.isclose(
+                np.matrix(matrix.to_numpy()), np_sol, atol=PythonObject(0.01)
+            )
+        ),
+        st,
     )
 
 
@@ -35,7 +40,7 @@ fn check_values_close[
     dtype: DType
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
-    assert_true(np.isclose(value, np_sol, atol=0.01), st)
+    assert_true(np.isclose(value, np_sol, atol=PythonObject(0.01)), st)
 
 
 # ===-----------------------------------------------------------------------===#
@@ -205,7 +210,11 @@ def test_logic():
             "Transpose is broken",
         )
         assert_true(
-            np.all(np.isclose(nm.linalg.det(A), np.linalg.det(Anp), atol=0.1)),
+            np.all(
+                np.isclose(
+                    nm.linalg.det(A), np.linalg.det(Anp), atol=PythonObject(0.1)
+                )
+            ),
             "Determinant is broken",
         )
         for i in range(-10, 10):
@@ -214,7 +223,7 @@ def test_logic():
                     np.isclose(
                         nm.linalg.trace(E, offset=i),
                         np.trace(Enp, offset=i),
-                        atol=0.1,
+                        atol=PythonObject(0.1),
                     )
                 ),
                 "Trace is broken",
@@ -231,16 +240,26 @@ def test_logic():
 
         # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
         var id = Q.transpose() @ Q
-        assert_true(np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14))
+        assert_true(
+            np.allclose(
+                id.to_numpy(), np.eye(Q.shape[0]), atol=PythonObject(1e-14)
+            )
+        )
 
         # Check if R is upper triangular
         assert_true(
-            np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14)
+            np.allclose(
+                R.to_numpy(), np.triu(R.to_numpy()), atol=PythonObject(1e-14)
+            )
         )
 
         # Check if A = QR
         var A_test = Q @ R
-        assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+        assert_true(
+            np.allclose(
+                A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
+            )
+        )
 
     def test_qr_decomposition_asym_reduced():
         var np = Python.import_module("numpy")
@@ -260,16 +279,24 @@ def test_logic():
 
         var id = Q.transpose() @ Q
         assert_true(
-            np.allclose(id.to_numpy(), np.eye(Q.shape[1]), atol=1e-14),
+            np.allclose(
+                id.to_numpy(), np.eye(Q.shape[1]), atol=PythonObject(1e-14)
+            ),
             "Q not orthonormal for reduced.",
         )
         assert_true(
-            np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
+            np.allclose(
+                R.to_numpy(), np.triu(R.to_numpy()), atol=PythonObject(1e-14)
+            ),
             "R not upper triangular for reduced.",
         )
 
         var A_test = Q @ R
-        assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+        assert_true(
+            np.allclose(
+                A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
+            )
+        )
 
     def test_qr_decomposition_asym_complete():
         var np = Python.import_module("numpy")
@@ -289,16 +316,24 @@ def test_logic():
 
         var id = Q.transpose() @ Q
         assert_true(
-            np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14),
+            np.allclose(
+                id.to_numpy(), np.eye(Q.shape[0]), atol=PythonObject(1e-14)
+            ),
             "Q not orthonormal for complete.",
         )
         assert_true(
-            np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
+            np.allclose(
+                R.to_numpy(), np.triu(R.to_numpy()), atol=PythonObject(1e-14)
+            ),
             "R not upper triangular for complete.",
         )
 
         var A_test = Q @ R
-        assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+        assert_true(
+            np.allclose(
+                A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
+            )
+        )
 
     def test_qr_decomposition_asym_complete2():
         var np = Python.import_module("numpy")
@@ -318,16 +353,24 @@ def test_logic():
 
         var id = Q.transpose() @ Q
         assert_true(
-            np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-14),
+            np.allclose(
+                id.to_numpy(), np.eye(Q.shape[0]), atol=PythonObject(1e-14)
+            ),
             "Q not orthonormal for complete.",
         )
         assert_true(
-            np.allclose(R.to_numpy(), np.triu(R.to_numpy()), atol=1e-14),
+            np.allclose(
+                R.to_numpy(), np.triu(R.to_numpy()), atol=PythonObject(1e-14)
+            ),
             "R not upper triangular for complete.",
         )
 
         var A_test = Q @ R
-        assert_true(np.allclose(A_test.to_numpy(), A.to_numpy(), atol=1e-14))
+        assert_true(
+            np.allclose(
+                A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
+            )
+        )
 
     def test_eigen_decomposition():
         var np = Python.import_module("numpy")
@@ -353,21 +396,29 @@ def test_logic():
         var sorted_eigenvalues = np.sort(eigenvalues)
 
         assert_true(
-            np.allclose(sorted_eigenvalues, np_sorted_eigenvalues, atol=1e-10),
+            np.allclose(
+                sorted_eigenvalues,
+                np_sorted_eigenvalues,
+                atol=PythonObject(1e-10),
+            ),
             "Eigenvalues don't match expected values",
         )
 
         # Check that eigenvectors are orthogonal (Q^T Q = I)
         var id = Q.transpose() @ Q
         assert_true(
-            np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=1e-10),
+            np.allclose(
+                id.to_numpy(), np.eye(Q.shape[0]), atol=PythonObject(1e-10)
+            ),
             "Eigenvectors are not orthogonal",
         )
 
         # Check that A = Q * Lambda * Q^T (eigendecomposition property)
         var A_reconstructed = Q @ Lambda @ Q.transpose()
         assert_true(
-            np.allclose(A_reconstructed.to_numpy(), Anp, atol=1e-10),
+            np.allclose(
+                A_reconstructed.to_numpy(), Anp, atol=PythonObject(1e-10)
+            ),
             "A ≠ Q * Lambda * Q^T",
         )
 
@@ -382,7 +433,9 @@ def test_logic():
 
             assert_true(
                 np.allclose(
-                    Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10
+                    Av.to_numpy(),
+                    lambda_times_v.to_numpy(),
+                    atol=PythonObject(1e-10),
                 ),
                 "Eigenvector verification failed: A*v ≠ λ*v",
             )
@@ -398,7 +451,9 @@ def test_logic():
 
             assert_true(
                 np.allclose(
-                    Av.to_numpy(), lambda_times_v.to_numpy(), atol=1e-10
+                    Av.to_numpy(),
+                    lambda_times_v.to_numpy(),
+                    atol=PythonObject(1e-10),
                 ),
                 "Eigenvector verification failed: A*v ≠ λ*v",
             )
@@ -413,7 +468,7 @@ def test_logic():
         var Anp = np.matrix(A.to_numpy())
 
         assert_true(
-            np.all(np.isclose(nm.sum(A), np.sum(Anp), atol=0.1)),
+            np.all(np.isclose(nm.sum(A), np.sum(Anp), atol=PythonObject(0.1))),
             "`sum` is broken",
         )
         for i in range(2):
@@ -424,7 +479,9 @@ def test_logic():
             )
 
         assert_true(
-            np.all(np.isclose(nm.prod(A), np.prod(Anp), atol=0.1)),
+            np.all(
+                np.isclose(nm.prod(A), np.prod(Anp), atol=PythonObject(0.1))
+            ),
             "`prod` is broken",
         )
         for i in range(2):
@@ -502,7 +559,9 @@ def test_logic():
         var Anp = np.matrix(A.to_numpy())
 
         check_matrices_close(
-            nm.sort(A), np.sort(Anp, axis=None), String("Sort is broken")
+            nm.sort(A),
+            np.sort(Anp, axis=PythonObject(None)),
+            String("Sort is broken"),
         )
         for i in range(2):
             check_matrices_close(
@@ -513,7 +572,7 @@ def test_logic():
 
         check_matrices_close(
             nm.argsort(A),
-            np.argsort(Anp, axis=None),
+            np.argsort(Anp, axis=PythonObject(None)),
             String("Argsort is broken"),
         )
         for i in range(2):
@@ -529,7 +588,9 @@ def test_logic():
         var Anp = np.matrix(A.to_numpy())
 
         check_values_close(
-            nm.max(A), np.max(Anp, axis=None), String("`max` is broken")
+            nm.max(A),
+            np.max(Anp, axis=PythonObject(None)),
+            String("`max` is broken"),
         )
         for i in range(2):
             check_matrices_close(
@@ -540,7 +601,7 @@ def test_logic():
 
         check_values_close(
             nm.argmax(A),
-            np.argmax(Anp, axis=None),
+            np.argmax(Anp, axis=PythonObject(None)),
             String("`argmax` is broken"),
         )
         for i in range(2):
@@ -551,7 +612,9 @@ def test_logic():
             )
 
         check_values_close(
-            nm.min(A), np.min(Anp, axis=None), String("`min` is broken.")
+            nm.min(A),
+            np.min(Anp, axis=PythonObject(None)),
+            String("`min` is broken."),
         )
         for i in range(2):
             check_matrices_close(
@@ -561,7 +624,9 @@ def test_logic():
             )
 
     check_values_close(
-        nm.argmin(A), np.argmin(Anp, axis=None), String("`argmin` is broken.")
+        nm.argmin(A),
+        np.argmin(Anp, axis=PythonObject(None)),
+        String("`argmin` is broken."),
     )
     for i in range(2):
         check_matrices_close(

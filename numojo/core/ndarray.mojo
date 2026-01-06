@@ -189,7 +189,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         self.ndim = shape.ndim
-        self.shape = NDArrayShape(shape)
+        self.shape = shape
         self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(shape, order=order)
         self._buf = DataContainer[Self.dtype, Self.origin](self.size)
@@ -239,7 +239,7 @@ struct NDArray[dtype: DType = DType.float64](
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = nm.ComplexNDArray[cf32]((2,3,4))
+            var A = nm.NDArray[f32]([2,3,4])
             ```
 
         Note:
@@ -1552,11 +1552,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self[mask_array]
 
-    fn item(
-        self, var index: Int
-    ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
-        Self.dtype
-    ]:
+    fn item(self, var index: Int) raises -> Scalar[Self.dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the array (not buffer).
@@ -1632,11 +1628,17 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        if self.flags.F_CONTIGUOUS:
-            return (self._buf.ptr + _transfer_offset(index, self.strides))[]
-
-        else:
+        if self.flags.C_CONTIGUOUS or self.ndim == 1:
             return (self._buf.ptr + index)[]
+
+        var remainder = index
+        var item = Item(ndim=self.ndim)
+
+        for i in range(self.ndim - 1, -1, -1):
+            (item._buf + i).init_pointee_copy(remainder % self.shape[i])
+            remainder = remainder // self.shape[i]
+
+        return self._buf.ptr[_get_offset(item, self.strides)]
 
     fn item(
         self, *index: Int
@@ -4512,7 +4514,7 @@ struct NDArray[dtype: DType = DType.float64](
     fn iter_along_axis[
         forward: Bool = True
     ](self, axis: Int, order: String = "C") raises -> _NDAxisIter[
-        origin_of(self), Self.dtype, forward
+        MutOrigin(unsafe_cast=origin_of(self)), Self.dtype, forward
     ]:
         """
         Returns an iterator yielding 1-d array slices along the given axis.
@@ -4605,7 +4607,9 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(axis, -self.ndim, self.ndim)
             )
 
-        return _NDAxisIter[origin_of(self), Self.dtype, forward](
+        return _NDAxisIter[
+            MutOrigin(unsafe_cast=origin_of(self)), Self.dtype, forward
+        ](
             self,
             axis=normalized_axis,
             order=order,
@@ -5533,9 +5537,10 @@ struct _NDArrayIter[
 
 
 struct _NDAxisIter[
-    is_mutable: Bool,
-    //,
-    origin: Origin[mut=is_mutable],
+    # is_mutable: Bool,
+    # //,
+    # origin: Origin[mut=is_mutable],
+    origin: MutOrigin,
     dtype: DType,
     forward: Bool = True,
 ](Copyable, Movable):
@@ -5550,7 +5555,6 @@ struct _NDAxisIter[
     The iterator is useful when applying functions along a certain axis.
 
     Parameters:
-        is_mutable: Whether the iterator is mutable.
         origin: The lifetime of the underlying NDArray data.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
@@ -5578,7 +5582,7 @@ struct _NDAxisIter[
     ```
     """
 
-    var ptr: LegacyUnsafePointer[Scalar[Self.dtype], origin = Self.origin]
+    var ptr: UnsafePointer[Scalar[Self.dtype], origin = Self.origin]
     var axis: Int
     var order: String
     var length: Int
@@ -5623,7 +5627,7 @@ struct _NDAxisIter[
 
         self.size = a.size
         self.size_of_item = a.shape[axis]
-        self.ptr = a._buf.ptr
+        self.ptr = a._buf.ptr.unsafe_origin_cast[Self.origin]()
         self.axis = axis
         self.order = order
         self.length = self.size // self.size_of_item

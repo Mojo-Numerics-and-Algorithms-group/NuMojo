@@ -2,7 +2,7 @@ import numojo as nm
 from numojo import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
-from python import Python
+from python import Python, PythonObject
 from testing import TestSuite
 
 
@@ -43,22 +43,22 @@ def test_ravel_reshape():
     # Test ravel
     check_is_close(
         nm.ravel(c.copy(), order="C"),
-        np.ravel(cnp, order="C"),
+        np.ravel(cnp, order=PythonObject("C")),
         "`ravel` C-order array by C order is broken.",
     )
     check_is_close(
         nm.ravel(c.copy(), order="F"),
-        np.ravel(cnp, order="F"),
+        np.ravel(cnp, order=PythonObject("F")),
         "`ravel` C-order array by F order is broken.",
     )
     check_is_close(
         nm.ravel(f.copy(), order="C"),
-        np.ravel(fnp, order="C"),
+        np.ravel(fnp, order=PythonObject("C")),
         "`ravel` F-order array by C order is broken.",
     )
     check_is_close(
         nm.ravel(f.copy(), order="F"),
-        np.ravel(fnp, order="F"),
+        np.ravel(fnp, order=PythonObject("F")),
         "`ravel` F-order array by F order is broken.",
     )
 
@@ -118,7 +118,7 @@ def test_transpose():
         A.T(), np.transpose(Anp), "4-d `transpose` with `.T` is broken."
     )
     check_is_close(
-        nm.transpose(A, axes=List(1, 3, 0, 2)),
+        nm.transpose(A, axes=[Int(1), 3, 0, 2]),
         np.transpose(Anp, Python.list(1, 3, 0, 2)),
         "4-d `transpose` with arbitrary `axes` is broken.",
     )

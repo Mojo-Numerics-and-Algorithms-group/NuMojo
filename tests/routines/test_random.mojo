@@ -18,7 +18,7 @@ def test_rand():
 def test_randminmax():
     """Test random array generation with min and max values."""
     var arr_variadic = nm.random.rand[nm.f64](10, 10, 10, min=1, max=2)
-    var arr_list = nm.random.rand[nm.f64](List[Int](10, 10, 10), min=3, max=4)
+    var arr_list = nm.random.rand[nm.f64]([Int(10), 10, 10], min=3, max=4)
     var arr_variadic_mean = nm.mean(arr_variadic)
     var arr_list_mean = nm.mean(arr_list)
     assert_almost_equal(
@@ -167,7 +167,7 @@ def test_rand_exponential():
         Shape(20, 20, 20), scale=2.0
     )
     var arr_list = nm.random.exponential[nm.f64](
-        List[Int](20, 20, 20), scale=0.5
+        [20, 20, 20], scale=0.5
     )
 
     var arr_variadic_mean = nm.mean(arr_variadic)

@@ -341,7 +341,7 @@ struct Vectorized(Backend):
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        comptime width = simd_width_of[dtype]()
+        comptime width = simd_width_of[DType.bool]()
 
         @parameter
         fn closure[
@@ -352,8 +352,8 @@ struct Vectorized(Backend):
             # result_array._buf.ptr.store(
             #     i, func[dtype, simdwidth](simd_data1, simd_data2)
             # )
-            bool_simd_store[simdwidth](
-                result_array.unsafe_ptr(),
+            bool_simd_store[simdwidth, ptr_origin = result_array.origin](
+                result_array._buf.ptr,
                 i,
                 func[dtype, simdwidth](simd_data1, simd_data2),
             )
@@ -458,7 +458,7 @@ fn bool_simd_store[
         start: Start position in pointer.
         val: Value to store at locations.
     """
-    (ptr + start).strided_store[width=simd_width](val, 1)
+    (ptr + start).strided_store[width=simd_width](val=val, stride=1)
 
 
 struct VectorizedUnroll[unroll_factor: Int = 1](Backend):

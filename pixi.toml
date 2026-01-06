@@ -8,7 +8,7 @@ channels = [
 platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 name = "NuMojo"
-version = "0.7.0"
+version = "0.8.0"
 description = "NuMojo is a library for numerical computing written in Mojo 🔥"
 authors = [
     "Shivasankar <shivasankar.ka@gmail.com>",
@@ -23,7 +23,7 @@ readme = "README.MD"
 
 [package]
 name = "numojo"
-version = "0.7.0"
+version = "0.8.0"
 
 [package.build]
 backend = {name = "pixi-build-mojo", version = "0.*", channels = [

@@ -166,9 +166,7 @@ def test_rand_exponential():
     var arr_variadic = nm.random.exponential[nm.f64](
         Shape(20, 20, 20), scale=2.0
     )
-    var arr_list = nm.random.exponential[nm.f64](
-        [20, 20, 20], scale=0.5
-    )
+    var arr_list = nm.random.exponential[nm.f64]([20, 20, 20], scale=0.5)
 
     var arr_variadic_mean = nm.mean(arr_variadic)
     var arr_list_mean = nm.mean(arr_list)

@@ -29,7 +29,9 @@ def test_mean_median_var_std():
         )
 
     assert_true(
-        np.all(np.isclose(nm.median(A), np.median(Anp), atol=PythonObject(0.001))),
+        np.all(
+            np.isclose(nm.median(A), np.median(Anp), atol=PythonObject(0.001))
+        ),
         "`median` is broken",
     )
     for axis in range(3):
@@ -42,7 +44,9 @@ def test_mean_median_var_std():
     assert_true(
         np.all(
             np.isclose(
-                nm.mode(A), sp.stats.mode(Anp, axis=PythonObject(None)).mode, atol=PythonObject(0.001)
+                nm.mode(A),
+                sp.stats.mode(Anp, axis=PythonObject(None)).mode,
+                atol=PythonObject(0.001),
             )
         ),
         "`mode` is broken",
@@ -55,7 +59,9 @@ def test_mean_median_var_std():
         )
 
     assert_true(
-        np.all(np.isclose(nm.variance(A), np.`var`(Anp), atol=PythonObject(0.001))),
+        np.all(
+            np.isclose(nm.variance(A), np.`var`(Anp), atol=PythonObject(0.001))
+        ),
         "`variance` is broken",
     )
     for axis in range(3):

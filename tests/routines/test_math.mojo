@@ -406,7 +406,9 @@ fn test_extrema() raises:
     var cfnp = cf.to_numpy()
 
     # max
-    check_values_close(nm.max(a), np.max(anp, axis=PythonObject(None)), "`sort` 1d is broken")
+    check_values_close(
+        nm.max(a), np.max(anp, axis=PythonObject(None)), "`sort` 1d is broken"
+    )
     for i in range(3):
         check(
             nm.max(c, axis=i),

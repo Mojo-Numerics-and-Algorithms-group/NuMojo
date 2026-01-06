@@ -1547,11 +1547,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self[mask_array]
 
-    fn item(
-        self, var index: Int
-    ) raises -> Scalar[
-        dtype
-    ]:
+    fn item(self, var index: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the array (not buffer).
@@ -1639,11 +1635,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self._buf.ptr[_get_offset(item, self.strides)]
 
-    fn item(
-        self, *index: Int
-    ) raises -> Scalar[
-        dtype
-    ]:
+    fn item(self, *index: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the array (not buffer).

@@ -45,15 +45,15 @@ fn diagonal[
     var n: Int = a.shape[1]
 
     if offset > n - 1 or offset < -(m - 1):
-            raise Error(
-                "\nError in `diagonal`: Offset "
-                + String(offset)
-                + " is outside the valid range for array with shape ("
-                + String(m)
-                + ", "
-                + String(n)
-                + ")"
-            )
+        raise Error(
+            "\nError in `diagonal`: Offset "
+            + String(offset)
+            + " is outside the valid range for array with shape ("
+            + String(m)
+            + ", "
+            + String(n)
+            + ")"
+        )
 
     var result: NDArray[dtype]
 

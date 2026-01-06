@@ -235,7 +235,8 @@ fn compress[
 
 
 fn take_along_axis[
-    dtype: DType, //,
+    dtype: DType,
+    //,
 ](
     arr: NDArray[dtype], indices: NDArray[DType.int], axis: Int = 0
 ) raises -> NDArray[dtype]:

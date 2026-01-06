@@ -2,9 +2,7 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
-## (v0.71)
-
-Starting with this release, NuMojo will remain on the v0.7x series and transition to incremental minor releases (e.g., v0.71) instead of advancing to v0.8, in alignment with the NuMojo v1.0 roadmap.
+## (v0.8.0)
 
 ### ⭐️ New
 - Introduced a Python-like imaginary literal via the new `ImaginaryUnit` type and the `1j` alias, enabling natural complex-number expressions across scalars, SIMD vectors, and arrays.

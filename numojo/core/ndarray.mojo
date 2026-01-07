@@ -1547,11 +1547,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return self[mask_array]
 
-    fn item(
-        self, var index: Int
-    ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
-        dtype
-    ]:
+    fn item(self, var index: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the array (not buffer).
@@ -1627,17 +1623,19 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        if self.flags.F_CONTIGUOUS:
-            return (self._buf.ptr + _transfer_offset(index, self.strides))[]
-
-        else:
+        if self.flags.C_CONTIGUOUS or self.ndim == 1:
             return (self._buf.ptr + index)[]
 
-    fn item(
-        self, *index: Int
-    ) raises -> ref [self._buf.ptr.origin, self._buf.ptr.address_space] Scalar[
-        dtype
-    ]:
+        var remainder = index
+        var item = Item(ndim=self.ndim)
+
+        for i in range(self.ndim - 1, -1, -1):
+            (item._buf + i).init_pointee_copy(remainder % self.shape[i])
+            remainder = remainder // self.shape[i]
+
+        return self._buf.ptr[_get_offset(item, self.strides)]
+
+    fn item(self, *index: Int) raises -> Scalar[dtype]:
         """
         Return the scalar at the coordinates.
         If one index is given, get the i-th item of the array (not buffer).

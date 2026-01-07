@@ -44,23 +44,30 @@ fn diagonal[
     var m: Int = a.shape[0]
     var n: Int = a.shape[1]
 
-    if offset >= max(m, n):  # Offset beyond the shape of the array
+    if offset > n - 1 or offset < -(m - 1):
         raise Error(
-            "\nError in `diagonal`: Offset beyond the shape of the array"
+            "\nError in `diagonal`: Offset "
+            + String(offset)
+            + " is outside the valid range for array with shape ("
+            + String(m)
+            + ", "
+            + String(n)
+            + ")"
         )
 
     var result: NDArray[dtype]
 
     if offset >= 0:
-        var size_of_result = min(n - offset, m)
+        var size_of_result: Int = min(m, n - offset)
         result = NDArray[dtype](Shape(size_of_result))
         for i in range(size_of_result):
-            result.item(i) = a.item(i, i + offset)
+            result._buf.ptr[i] = a._buf.ptr[i * n + (i + offset)]
     else:
-        var size_of_result = min(m + offset, m)
+        var k: Int = -offset
+        var size_of_result: Int = min(m - k, n)
         result = NDArray[dtype](Shape(size_of_result))
         for i in range(size_of_result):
-            result.item(i) = a.item(i - offset, i)
+            result._buf.ptr[i] = a._buf.ptr[(i + k) * n + i]
 
     return result^
 

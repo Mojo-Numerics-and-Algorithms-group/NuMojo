@@ -36,13 +36,13 @@ name = "numojo"
 
 # TODO: update these modular version before release.
 [package.host-dependencies]
-modular = ">=25.7.0,<26"
+modular = ">=26.1.0.dev2026010305,<27"
 
 [package.build-dependencies]
-modular = ">=25.7.0,<26"
+modular = ">=26.1.0.dev2026010305,<27"
 
 [package.run-dependencies]
-modular = ">=25.7.0,<26"
+modular = ">=26.1.0.dev2026010305,<27"
 
 [tasks]
 # compile the package and copy it to the tests folder

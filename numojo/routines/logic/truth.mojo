@@ -20,7 +20,7 @@ fn all[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](1)
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_and[width: Int](i: Int):
@@ -37,7 +37,7 @@ fn all[
     Test whether all array elements evaluate to True along axis.
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.ones[dtype](shape=(1, A.shape[1]))
@@ -86,7 +86,7 @@ fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
         A boolean scalar
     """
     var result = Scalar[DType.bool](True)
-    # alias opt_nelts: Int = simd_width_of[DType.bool]()
+    # comptime opt_nelts: Int = simd_width_of[DType.bool]()
 
     # @parameter
     # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
@@ -110,7 +110,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
         A boolean scalar
     """
     var result = Scalar[DType.bool](False)
-    # alias opt_nelts: Int = simd_width_of[DType.bool]()
+    # comptime opt_nelts: Int = simd_width_of[DType.bool]()
 
     # @parameter
     # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
@@ -132,7 +132,7 @@ fn any[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](0)
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_and[width: Int](i: Int):
@@ -149,7 +149,7 @@ fn any[
     Test whether any array elements evaluate to True along axis.
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]))

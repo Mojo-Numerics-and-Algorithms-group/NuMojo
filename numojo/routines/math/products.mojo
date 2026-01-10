@@ -32,7 +32,7 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
         Scalar.
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
     var res = Scalar[dtype](1)
 
     @parameter
@@ -91,7 +91,7 @@ fn prod[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
         A: Matrix.
     """
     var res = Scalar[dtype](1)
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     @parameter
     fn cal_vec[width: Int](i: Int):
@@ -120,7 +120,7 @@ fn prod[
     ```
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
 
     if axis == 0:
         var B = Matrix.ones[dtype](shape=(1, A.shape[1]))
@@ -240,7 +240,7 @@ fn cumprod[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     print(mat.cumprod(A))
     ```
     """
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, "C")
 
     if A.flags.C_CONTIGUOUS:
@@ -275,7 +275,7 @@ fn cumprod[
     print(mat.cumprod(A, axis=1))
     ```
     """
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
     var order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
 

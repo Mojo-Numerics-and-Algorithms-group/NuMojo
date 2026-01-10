@@ -60,7 +60,7 @@ fn extrema_1d[
         Max value.
     """
 
-    alias simd_width = builtin_max(simd_width_of[dtype](), 64)
+    comptime simd_width = builtin_max(simd_width_of[dtype](), 64)
     var value = a._buf.ptr[0]
 
     @parameter
@@ -463,7 +463,7 @@ fn minimum[
     """
     var result: NDArray[dtype] = NDArray[dtype](array1.shape)
 
-    alias width = simd_width_of[dtype]()
+    comptime width = simd_width_of[dtype]()
     if array1.shape != array2.shape:
         raise Error("array shapes are not the same")
 
@@ -498,7 +498,7 @@ fn maximum[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](array1.shape)
-    alias width = simd_width_of[dtype]()
+    comptime width = simd_width_of[dtype]()
     if array1.shape != array2.shape:
         raise Error("array shapes are not the same")
 

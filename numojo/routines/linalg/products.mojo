@@ -85,7 +85,7 @@ fn dot[
         The dot product of two arrays.
     """
 
-    alias width = simd_width_of[dtype]()
+    comptime width = simd_width_of[dtype]()
     if array1.ndim == array2.ndim == 1:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
 
@@ -123,7 +123,7 @@ fn matmul_tiled_unrolled_parallelized[
     """
     Matrix multiplication vectorized, tiled, unrolled, and parallelized.
     """
-    alias width = max(simd_width_of[dtype](), 16)
+    comptime width = max(simd_width_of[dtype](), 16)
     var result: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
     var t0 = A.shape[0]
     var t1 = A.shape[1]
@@ -146,12 +146,12 @@ fn matmul_tiled_unrolled_parallelized[
                         * B._buf.ptr.load[width=simd_width](k * t2 + (n + x)),
                     )
 
-                alias unroll_factor = tile_x // width
+                comptime unroll_factor = tile_x // width
                 vectorize[
                     dot, width, size=tile_x, unroll_factor=unroll_factor
                 ]()
 
-        alias tile_size = 4
+        comptime tile_size = 4
         tile[calc_tile, width * tile_size, tile_size](t1, t2)
 
     parallelize[calculate_A_rows](t0, t0)
@@ -214,7 +214,7 @@ fn matmul_2darray[
         matrices.
     """
 
-    alias width = max(simd_width_of[dtype](), 16)
+    comptime width = max(simd_width_of[dtype](), 16)
 
     if A.ndim * B.ndim == 1:
         return matmul_1darray(A, B)
@@ -373,7 +373,7 @@ fn matmul[
     ```
     """
 
-    alias width = max(simd_width_of[dtype](), 16)
+    comptime width = max(simd_width_of[dtype](), 16)
 
     if A.shape[1] != B.shape[0]:
         raise Error(

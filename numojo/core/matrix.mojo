@@ -37,7 +37,7 @@ from numojo.routines.linalg.misc import issymmetric
 # ===----------------------------------------------------------------------===#
 
 
-comptime Matrix = MatrixBase[_, own_data=True, origin = MutOrigin.external]
+comptime Matrix = MatrixBase[_, own_data=True, origin = MutExternalOrigin]
 """
 Primary Matrix type for creating and manipulating 2D matrices in NuMojo.
 
@@ -154,7 +154,7 @@ struct MatrixBase[
                   its own memory. When False, it's a view into externally-owned data.
         origin: Tracks the lifetime and mutability of the underlying data buffer,
                 enabling compile-time safety checks to prevent use-after-free and
-                other memory safety issues. Default is MutOrigin.external.
+                other memory safety issues. Default is MutExternalOrigin.
 
     Memory Layout:
         Matrices can be stored in either:

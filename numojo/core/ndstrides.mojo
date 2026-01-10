@@ -32,7 +32,7 @@ struct NDArrayStrides(
     # Aliases
     comptime element_type: DType = DType.int
     """The data type of the NDArrayStrides elements."""
-    comptime _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutExternalOrigin
     """Internal origin of the NDArrayStrides instance."""
 
     # Fields

@@ -87,7 +87,6 @@ struct Flags(ImplicitlyCopyable):
         """
 
         var ndim = len(shape)
-
         # 0-D and 1-D arrays are both C and F contiguous
         if ndim <= 1:
             self.C_CONTIGUOUS = True

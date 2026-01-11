@@ -15,7 +15,6 @@ from collections.optional import Optional
 import math as mt
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase
 import numojo.core.utility as utility

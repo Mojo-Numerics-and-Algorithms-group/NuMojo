@@ -48,7 +48,7 @@ struct NDArrayShape(
     # Aliases
     comptime element_type: DType = DType.int
     """The data type of the NDArrayShape elements."""
-    comptime _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutExternalOrigin
     """Internal origin of the NDArrayShape instance."""
 
     # Fields
@@ -1085,7 +1085,7 @@ struct _ShapeIter[
         shape: NDArrayShape,
         length: Int,
     ):
-        self.index = 0 if forward else length
+        self.index = 0 if Self.forward else length
         self.length = length
         self.shape = shape
 
@@ -1094,14 +1094,14 @@ struct _ShapeIter[
 
     fn __has_next__(self) -> Bool:
         @parameter
-        if forward:
+        if Self.forward:
             return self.index < self.length
         else:
             return self.index > 0
 
     fn __next__(mut self) raises -> Scalar[DType.int]:
         @parameter
-        if forward:
+        if Self.forward:
             var current_index = self.index
             self.index += 1
             return self.shape.__getitem__(current_index)
@@ -1112,7 +1112,7 @@ struct _ShapeIter[
 
     fn __len__(self) -> Int:
         @parameter
-        if forward:
+        if Self.forward:
             return self.length - self.index
         else:
             return self.index

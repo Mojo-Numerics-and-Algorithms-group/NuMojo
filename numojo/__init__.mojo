@@ -235,5 +235,5 @@ from numojo.routines.searching import argmax, argmin
 # ===----------------------------------------------------------------------=== #
 # Alias for users
 # For ease of use, the name of the types may not follow the Mojo convention,
-# e.g., lower case can also be used for alias of structs.
+# e.g., lower case can also be used for comptime of structs.
 # ===----------------------------------------------------------------------=== #

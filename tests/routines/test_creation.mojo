@@ -75,7 +75,7 @@ def test_ones_from_shape():
 def test_ones_from_list():
     var np = Python.import_module("numpy")
     check(
-        nm.ones[nm.f64](List[Int](10, 10, 10, 10)),
+        nm.ones[nm.f64]([Int(10), 10, 10, 10]),
         np.ones(Python.tuple(10, 10, 10, 10), dtype=np.float64),
         "Ones is broken",
     )
@@ -111,7 +111,7 @@ def test_full_from_shape():
 def test_full_from_list():
     var np = Python.import_module("numpy")
     check(
-        nm.full[nm.f64](List[Int](10, 10, 10, 10), fill_value=10),
+        nm.full[nm.f64]([Int(10), 10, 10, 10], fill_value=10),
         np.full(Python.tuple(10, 10, 10, 10), 10, dtype=np.float64),
         "Full is broken",
     )
@@ -316,11 +316,11 @@ def test_vander():
     check(x_nm_N3, x_np_N3, "Vander is broken (N=3)")
 
     var x_nm_inc = nm.vander[nm.f32](nm_arr, increasing=True)
-    var x_np_inc = np.vander(np_arr, increasing=True)
+    var x_np_inc = np.vander(np_arr, increasing=PythonObject(True))
     check(x_nm_inc, x_np_inc, "Vander is broken (increasing=True)")
 
     var x_nm_N3_inc = nm.vander[nm.f32](nm_arr, N=3, increasing=True)
-    var x_np_N3_inc = np.vander(np_arr, N=3, increasing=True)
+    var x_np_N3_inc = np.vander(np_arr, N=3, increasing=PythonObject(True))
     check(x_nm_N3_inc, x_np_N3_inc, "Vander is broken (N=3, increasing=True)")
 
     # Test with different dtype
@@ -335,8 +335,8 @@ def test_vander():
 def test_arr_manipulation():
     var np = Python.import_module("numpy")
     var arr6 = nm.array[f32](
-        data=List[SIMD[f32, 1]](1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-        shape=List[Int](2, 5),
+        data=[SIMD[f32, 1](1), 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        shape=[Int(2), 5],
     )
     assert_true(
         arr6.shape[0] == 2,

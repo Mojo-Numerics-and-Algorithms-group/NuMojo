@@ -15,7 +15,7 @@ trait Backend:
         """
         Initialize the backend.
         """
-        pass
+        ...
 
     fn math_func_fma[
         dtype: DType,
@@ -45,7 +45,7 @@ trait Backend:
         Raises:
             If shapes are missmatched or there is a access error.
         """
-        pass
+        ...
 
     fn math_func_fma[
         dtype: DType,
@@ -72,7 +72,7 @@ trait Backend:
         Returns:
             A new NDArray that is NDArray with the function func applied.
         """
-        pass
+        ...
 
     fn math_func_1_array_in_one_array_out[
         dtype: DType,

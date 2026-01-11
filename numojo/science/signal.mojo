@@ -12,7 +12,8 @@ from numojo.routines.math.sums import sum
 
 
 fn convolve2d[
-    dtype: DType, //,
+    dtype: DType,
+    //,
 ](in1: NDArray[dtype], in2: NDArray[dtype]) raises -> NDArray[dtype]:
     """Convolve two 2-dimensional arrays.
 

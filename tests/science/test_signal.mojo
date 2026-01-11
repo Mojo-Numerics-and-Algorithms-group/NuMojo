@@ -15,7 +15,7 @@ def test_convolve2d():
     npin2 = in2.to_numpy()
 
     res1 = nm.science.signal.convolve2d(in1, in2)
-    res2 = sp.signal.convolve2d(npin1, npin2, mode="valid")
+    res2 = sp.signal.convolve2d(npin1, npin2, mode=PythonObject("valid"))
     check(res1, res2, "test_convolve2d failed #2\n")
 
 

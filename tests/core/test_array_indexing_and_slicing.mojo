@@ -2,7 +2,7 @@ import numojo as nm
 from numojo.prelude import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
-from python import Python
+from python import Python, PythonObject
 from testing import TestSuite
 
 
@@ -17,7 +17,8 @@ def test_setitem():
     var np = Python.import_module("numpy")
     var arr = nm.NDArray(nm.Shape(4, 4))
     var np_arr = arr.to_numpy()
-    arr.itemset(List(2, 2), 1000)
+    var val: List[Int] = [2, 2]
+    arr.itemset(val^, 1000)
     np_arr[2, 2] = 1000
     check_is_close(arr, np_arr, "Itemset is broken")
 
@@ -130,7 +131,9 @@ def test_getitem_single_axis_1d_scalar():
 def test_getitem_single_axis_f_order():
     var np = Python.import_module("numpy")
     var a = nm.arange[i32](0, 12, 1).reshape(nm.Shape(3, 4), order="F")
-    var anp = np.arange(12, dtype=np.int32).reshape(3, 4, order="F")
+    var anp = np.arange(12, dtype=np.int32).reshape(
+        3, 4, order=PythonObject("F")
+    )
     check(a[0], anp[0], "__getitem__(idx: Int) F-order first row broken")
     check(a[2], anp[2], "__getitem__(idx: Int) F-order last row broken")
 
@@ -153,7 +156,9 @@ def test_setitem_single_axis_basic():
 def test_setitem_single_axis_f_order():
     var np = Python.import_module("numpy")
     var a = nm.arange[i32](0, 12, 1).reshape(nm.Shape(3, 4), order="F")
-    var anp = np.arange(12, dtype=np.int32).reshape(3, 4, order="F")
+    var anp = np.arange(12, dtype=np.int32).reshape(
+        3, 4, order=PythonObject("F")
+    )
     var row = nm.full[i32](nm.Shape(4), fill_value=Scalar[i32](111))
     a[0] = row
     anp[0] = 111
@@ -377,7 +382,9 @@ def test_f_order_array_slicing():
     var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(
         nm.Shape(3, 4), order="F"
     )
-    var np_arr = np.arange(0, 12, dtype=np.float32).reshape(3, 4, order="F")
+    var np_arr = np.arange(0, 12, dtype=np.float32).reshape(
+        3, 4, order=PythonObject("F")
+    )
 
     # Basic F-order slicing
     nm_slice1 = nm_arr[1:, 1:]

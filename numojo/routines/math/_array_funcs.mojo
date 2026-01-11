@@ -32,11 +32,11 @@ fn math_func_1_array_in_one_array_out[
     comptime width = simd_width_of[dtype]()
 
     @parameter
-    fn closure[simd_width: Int](i: Int):
+    fn closure[simd_width: Int](i: Int) unified {mut result_array, read array}:
         var simd_data = array._buf.ptr.load[width=simd_width](i)
         result_array._buf.ptr.store(i, func[dtype, simd_width](simd_data))
 
-    vectorize[closure, width](array.size)
+    vectorize[width](array.size, closure)
 
     return result_array^
 
@@ -72,14 +72,16 @@ fn math_func_2_array_in_one_array_out[
     comptime width = simd_width_of[dtype]()
 
     @parameter
-    fn closure[simd_width: Int](i: Int):
+    fn closure[
+        simd_width: Int
+    ](i: Int) unified {mut result_array, read array1, read array2}:
         var simd_data1 = array1._buf.ptr.load[width=simd_width](i)
         var simd_data2 = array2._buf.ptr.load[width=simd_width](i)
         result_array._buf.ptr.store(
             i, func[dtype, simd_width](simd_data1, simd_data2)
         )
 
-    vectorize[closure, width](result_array.size)
+    vectorize[width](result_array.size, closure)
 
     return result_array^
 
@@ -109,11 +111,13 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
     comptime width = simd_width_of[dtype]()
 
     @parameter
-    fn closure[simd_width: Int](i: Int):
+    fn closure[
+        simd_width: Int
+    ](i: Int) unified {mut result_array, read array, read scalar}:
         var simd_data1 = array._buf.ptr.load[width=simd_width](i)
         result_array._buf.ptr.store(
             i, func[dtype, simd_width](simd_data1, scalar)
         )
 
-    vectorize[closure, width](result_array.size)
+    vectorize[width](result_array.size, closure)
     return result_array^

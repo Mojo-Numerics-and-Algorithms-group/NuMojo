@@ -9,9 +9,9 @@ All files must begin with a triple quoted docstring describing the functionality
 Document docstring describing what it does, if it is in an init file it will be the docstring for the module.
 """
 ```
-All aliases and file-level variable definitions must have a docstring that describes what they are placed below the declaration.
+All comptimes and file-level variable definitions must have a docstring that describes what they are placed below the declaration.
 ```python
-alias Example = Int
+comptime Example = Int
 """ Aliases can be explained with docstrings and should if they exist in the global scope."""
 ```
 Aliases should be snake_case if they are a value and CamelCase if they are a type. With the exception of the `DType` mapping types ex: `f32`. Alias names should clearly indicate what they are for and in addition to their docstring require no further information to understand assuming the reader understands the Mojo, and the domain.
@@ -77,7 +77,7 @@ struct AStruct[param:AnyType](AnyType):
     ...
 ```
 
-Fields and aliases should have a docstring below them describing what they are. They should be no longer than a single sentence and should start with a capital letter and end with a period.
+Fields and comptimes should have a docstring below them describing what they are. They should be no longer than a single sentence and should start with a capital letter and end with a period.
 
 ```rust
 struct AStruct[param:AnyType](AnyType):

@@ -46,9 +46,9 @@ struct Item(
     """
 
     # Aliases
-    alias element_type: DType = DType.int
+    comptime element_type: DType = DType.int
     """The data type of the Item elements."""
-    alias _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutOrigin.external
     """Internal origin of the Item instance."""
 
     # Fields

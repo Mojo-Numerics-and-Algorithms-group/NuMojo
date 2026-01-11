@@ -11,7 +11,7 @@ from utils import Variant
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
-alias ln = log
+comptime ln = log
 """
 Natural Log equivelent to log
 """

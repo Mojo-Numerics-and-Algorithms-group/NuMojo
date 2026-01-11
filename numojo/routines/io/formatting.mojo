@@ -4,24 +4,24 @@ from utils.numerics import isnan, isinf
 
 from numojo.core.utility import is_inttype, is_floattype
 
-alias DEFAULT_PRECISION = 4
-alias DEFAULT_SUPPRESS_SMALL = False
-alias DEFAULT_SEPARATOR = " "
-alias DEFAULT_PADDING = ""
-alias DEFAULT_EDGE_ITEMS = 2
-alias DEFAULT_THRESHOLD = 15
-alias DEFAULT_LINE_WIDTH = 75
-alias DEFAULT_SIGN = False
-alias DEFAULT_FLOAT_FORMAT = "fixed"
-alias DEFAULT_COMPLEX_FORMAT = "parentheses"
-alias DEFAULT_NAN_STRING = "nan"
-alias DEFAULT_INF_STRING = "inf"
-alias DEFAULT_FORMATTED_WIDTH = 6
-alias DEFAULT_EXPONENT_THRESHOLD = 4
-alias DEFAULT_SUPPRESS_SCIENTIFIC = False
+comptime DEFAULT_PRECISION = 4
+comptime DEFAULT_SUPPRESS_SMALL = False
+comptime DEFAULT_SEPARATOR = " "
+comptime DEFAULT_PADDING = ""
+comptime DEFAULT_EDGE_ITEMS = 2
+comptime DEFAULT_THRESHOLD = 15
+comptime DEFAULT_LINE_WIDTH = 75
+comptime DEFAULT_SIGN = False
+comptime DEFAULT_FLOAT_FORMAT = "fixed"
+comptime DEFAULT_COMPLEX_FORMAT = "parentheses"
+comptime DEFAULT_NAN_STRING = "nan"
+comptime DEFAULT_INF_STRING = "inf"
+comptime DEFAULT_FORMATTED_WIDTH = 6
+comptime DEFAULT_EXPONENT_THRESHOLD = 4
+comptime DEFAULT_SUPPRESS_SCIENTIFIC = False
 
 # placeholder, we can use this global var option in future when Mojo supports global options
-alias GLOBAL_PRINT_OPTIONS = PrintOptions(
+comptime GLOBAL_PRINT_OPTIONS = PrintOptions(
     precision=DEFAULT_PRECISION,
     suppress_small=DEFAULT_SUPPRESS_SMALL,
     separator=DEFAULT_SEPARATOR,

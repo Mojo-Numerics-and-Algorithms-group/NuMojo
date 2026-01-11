@@ -76,9 +76,9 @@ struct NumojoError[
 # Error Category Constants
 # ===----------------------------------------------------------------------===#
 # common error categories, might expand in future
-alias IndexError = NumojoError[category="IndexError"]
-alias ShapeError = NumojoError[category="ShapeError"]
-alias BroadcastError = NumojoError[category="BroadcastError"]
-alias MemoryError = NumojoError[category="MemoryError"]
-alias ValueError = NumojoError[category="ValueError"]
-alias ArithmeticError = NumojoError[category="ArithmeticError"]
+comptime IndexError = NumojoError[category="IndexError"]
+comptime ShapeError = NumojoError[category="ShapeError"]
+comptime BroadcastError = NumojoError[category="BroadcastError"]
+comptime MemoryError = NumojoError[category="MemoryError"]
+comptime ValueError = NumojoError[category="ValueError"]
+comptime ArithmeticError = NumojoError[category="ArithmeticError"]

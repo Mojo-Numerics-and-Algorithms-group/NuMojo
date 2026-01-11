@@ -66,5 +66,5 @@ from .error import (
     ArithmeticError,
 )
 
-alias idx = Item
-alias Shape = NDArrayShape
+comptime idx = Item
+comptime Shape = NDArrayShape

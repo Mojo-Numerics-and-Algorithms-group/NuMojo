@@ -140,7 +140,7 @@ struct NDArray[dtype: DType = DType.float64](
         - The order of the array: Row vs Columns major
     """
 
-    alias width: Int = simd_width_of[dtype]()
+    comptime width: Int = simd_width_of[dtype]()
     """Vector size of the data type."""
 
     var _buf: DataContainer[dtype]

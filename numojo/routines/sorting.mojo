@@ -23,7 +23,6 @@ import math
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 from numojo.core.ndshape import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase

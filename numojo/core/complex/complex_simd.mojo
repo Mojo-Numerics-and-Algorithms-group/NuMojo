@@ -63,11 +63,11 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         ComplexSIMD[cf64].from_polar(2.0, 0.5)
     """
 
-    comptime dtype: DType = cdtype._dtype
-    """Component dtype alias (underlying real/imag dtype)."""
+    comptime dtype: DType = Self.cdtype._dtype
+    """Component dtype (underlying real/imag dtype)."""
 
-    var re: SIMD[Self.dtype, width]
-    var im: SIMD[Self.dtype, width]
+    var re: SIMD[Self.dtype, Self.width]
+    var im: SIMD[Self.dtype, Self.width]
 
     # --- Internal helper for broadcasting scalar to SIMD lanes ---
     @staticmethod
@@ -942,7 +942,9 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     fn __invert__(
         self,
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where (
+        Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral()
+    ):
         """
         Element-wise logical NOT operation on this ComplexSIMD instance.
 
@@ -954,7 +956,9 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
     # --- Comparison operators ---
     fn __and__(
         self, other: Self
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where (
+        Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral()
+    ):
         """
         Element-wise logical AND operation between two ComplexSIMD instances.
 
@@ -968,7 +972,9 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     fn __or__(
         self, other: Self
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where (
+        Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral()
+    ):
         """
         Element-wise logical OR operation between two ComplexSIMD instances.
 
@@ -982,7 +988,9 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     fn __xor__(
         self, other: Self
-    ) -> Self where cdtype == ComplexDType.bool or cdtype.is_integral():
+    ) -> Self where (
+        Self.cdtype == ComplexDType.bool or Self.cdtype.is_integral()
+    ):
         """
         Element-wise logical XOR operation between two ComplexSIMD instances.
 

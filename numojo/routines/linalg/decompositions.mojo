@@ -21,20 +21,24 @@ fn _compute_householder[
     var rRows = R.shape[0]
 
     @parameter
-    fn load_store_vec[n_elements: Int](i: Int):
+    fn load_store_vec[
+        n_elements: Int
+    ](i: Int) unified {mut H, mut R, read work_index}:
         var r_value = R._load[n_elements](i + work_index, work_index)
         H._store[n_elements](i + work_index, work_index, r_value)
         R._store[n_elements](i + work_index, work_index, 0.0)
 
-    vectorize[load_store_vec, simd_width](rRows - work_index)
+    vectorize[simd_width](rRows - work_index, load_store_vec)
 
     var norm = Scalar[dtype](0)
 
     @parameter
-    fn calculate_norm[width: Int](i: Int):
+    fn calculate_norm[
+        width: Int
+    ](i: Int) unified {mut norm, read H, read work_index}:
         norm += (H._load[width=width](i, work_index) ** 2).reduce_add()
 
-    vectorize[calculate_norm, simd_width](rRows)
+    vectorize[simd_width](rRows, calculate_norm)
 
     norm = builtin_math.sqrt(norm)
     if work_index == rRows - 1 or norm == 0:
@@ -50,12 +54,14 @@ fn _compute_householder[
     R._store(work_index, work_index, -1 / scaling_factor)
 
     @parameter
-    fn scaling_factor_vec[simd_width: Int](i: Int):
+    fn scaling_factor_vec[
+        simd_width: Int
+    ](i: Int) unified {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
 
-    vectorize[scaling_factor_vec, simd_width](rRows)
+    vectorize[simd_width](rRows, scaling_factor_vec)
 
     increment = H._load(work_index, work_index) + 1.0
     H._store(work_index, work_index, increment)
@@ -63,12 +69,14 @@ fn _compute_householder[
     scaling_factor = builtin_math.sqrt(1.0 / increment)
 
     @parameter
-    fn scaling_factor_increment_vec[simd_width: Int](i: Int):
+    fn scaling_factor_increment_vec[
+        simd_width: Int
+    ](i: Int) unified {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
 
-    vectorize[scaling_factor_increment_vec, simd_width](rRows)
+    vectorize[simd_width](rRows, scaling_factor_increment_vec)
 
 
 @always_inline
@@ -88,19 +96,23 @@ fn _apply_householder[
         var dot: SIMD[dtype, 1] = 0.0
 
         @parameter
-        fn calculate_norm[width: Int](i: Int):
+        fn calculate_norm[
+            width: Int
+        ](i: Int) unified {mut dot, read H, read A, read work_index, read j}:
             dot += (
                 H._load[width=width](i, work_index) * A._load[width=width](i, j)
             ).reduce_add()
 
-        vectorize[calculate_norm, simdwidth](aRows)
+        vectorize[simdwidth](aRows, calculate_norm)
 
         @parameter
-        fn closure[width: Int](i: Int):
+        fn closure[
+            width: Int
+        ](i: Int) unified {mut A, read H, read work_index, read j, read dot}:
             val = A._load[width](i, j) - H._load[width](i, work_index) * dot
             A._store(i, j, val)
 
-        vectorize[closure, simdwidth](aRows)
+        vectorize[simdwidth](aRows, closure)
 
 
 fn lu_decomposition[

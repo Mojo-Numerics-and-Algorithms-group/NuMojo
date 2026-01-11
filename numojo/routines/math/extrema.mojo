@@ -30,7 +30,6 @@ from sys import simd_width_of
 from numojo.core.matrix import Matrix, MatrixBase
 import numojo.core.matrix as matrix
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 import numojo.core.utility as utility
 from numojo.routines.creation import full
 from numojo.routines.sorting import binary_sort
@@ -67,24 +66,28 @@ fn extrema_1d[
     if is_max:
 
         @parameter
-        fn vectorize_max[simd_width: Int](offset: Int) -> None:
+        fn vectorize_max[
+            simd_width: Int
+        ](offset: Int) unified {mut value, read a} -> None:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
             if temp > value:
                 value = temp
 
-        vectorize[vectorize_max, simd_width](a.size)
+        vectorize[simd_width](a.size, vectorize_max)
 
         return value
 
     else:
 
         @parameter
-        fn vectorize_min[simd_width: Int](offset: Int) -> None:
+        fn vectorize_min[
+            simd_width: Int
+        ](offset: Int) unified {mut value, read a} -> None:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
             if temp < value:
                 value = temp
 
-        vectorize[vectorize_min, simd_width](a.size)
+        vectorize[simd_width](a.size, vectorize_min)
 
         return value
 
@@ -468,7 +471,9 @@ fn minimum[
         raise Error("array shapes are not the same")
 
     @parameter
-    fn vectorized_min[simd_width: Int](idx: Int) -> None:
+    fn vectorized_min[
+        simd_width: Int
+    ](idx: Int) unified {mut result, read array1, read array2} -> None:
         result._buf.ptr.store(
             idx,
             builtin_min(
@@ -477,7 +482,7 @@ fn minimum[
             ),
         )
 
-    vectorize[vectorized_min, width](array1.size)
+    vectorize[width](array1.size, vectorized_min)
     return result^
 
 
@@ -503,7 +508,9 @@ fn maximum[
         raise Error("array shapes are not the same")
 
     @parameter
-    fn vectorized_max[simd_width: Int](idx: Int) -> None:
+    fn vectorized_max[
+        simd_width: Int
+    ](idx: Int) unified {mut result, read array1, read array2} -> None:
         result._buf.ptr.store(
             idx,
             builtin_max(
@@ -512,5 +519,5 @@ fn maximum[
             ),
         )
 
-    vectorize[vectorized_max, width](array1.size)
+    vectorize[width](array1.size, vectorized_max)
     return result^

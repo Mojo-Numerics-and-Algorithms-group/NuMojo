@@ -12,7 +12,7 @@ numojo.routines.random
 Creates array of the given shape and populate it with random samples from
 a certain distribution.
 
-This module is similar to `numpy.random`. However, in this module, the shape is 
+This module is similar to `numpy.random`. However, in this module, the shape is
 always appearing as the first argument.
 """
 
@@ -35,6 +35,7 @@ fn rand[
 
     Example:
     ```mojo
+    from numojo import Shape
     var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4))
     print(arr)
     ```
@@ -111,6 +112,7 @@ fn rand[
 
     Example:
     ```mojo
+    from numojo import Shape
     var arr = numojo.core.random.rand[numojo.i16](Shape(3,2,4), min=0, max=100)
     print(arr)
     ```
@@ -182,7 +184,9 @@ fn rand[
 
 fn randint[
     dtype: DType = DType.int64
-](shape: NDArrayShape, low: Int, high: Int) raises -> NDArray[dtype]:
+](shape: NDArrayShape, low: Int, high: Int) raises -> NDArray[
+    dtype
+] where dtype.is_integral():
     """
     Return an array of random integers from low (inclusive) to high (exclusive).
     Note that it is different from the built-in `random.randint()` function
@@ -214,7 +218,7 @@ fn randint[
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
     builtin_random.randint[dtype](
-        ptr=result._buf.ptr, size=result.size, low=low, high=high - 1
+        ptr=result.unsafe_ptr(), size=result.size, low=low, high=high - 1
     )
 
     return result^
@@ -222,7 +226,9 @@ fn randint[
 
 fn randint[
     dtype: DType = DType.int64
-](*shape: Int, low: Int, high: Int) raises -> NDArray[dtype]:
+](*shape: Int, low: Int, high: Int) raises -> NDArray[
+    dtype
+] where dtype.is_integral():
     """
     Overloads the function `randint(shape: NDArrayShape, low, high)`.
     Return an array of random integers from low (inclusive) to high (exclusive).
@@ -235,7 +241,9 @@ fn randint[
 
 fn randint[
     dtype: DType = DType.int64
-](shape: NDArrayShape, high: Int) raises -> NDArray[dtype]:
+](shape: NDArrayShape, high: Int) raises -> NDArray[
+    dtype
+] where dtype.is_integral():
     """
     Return an array of random integers from 0 (inclusive) to high (exclusive).
 
@@ -264,7 +272,7 @@ fn randint[
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
     builtin_random.randint[dtype](
-        ptr=result._buf.ptr, size=result.size, low=0, high=high - 1
+        ptr=result.unsafe_ptr(), size=result.size, low=0, high=high - 1
     )
 
     return result^
@@ -272,7 +280,7 @@ fn randint[
 
 fn randint[
     dtype: DType = DType.int64
-](*shape: Int, high: Int) raises -> NDArray[dtype]:
+](*shape: Int, high: Int) raises -> NDArray[dtype] where dtype.is_integral():
     """
     Overloads the function `randint(shape: NDArrayShape, high)`.
     Return an array of random integers from 0 (inclusive) to high (exclusive).
@@ -454,7 +462,9 @@ fn exponential[
 @parameter
 fn _int_rand_func[
     dtype: DType
-](mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
+](
+    mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]
+) where dtype.is_integral():
     """
     Generate random integers between `min` and `max` and store them in the given NDArray.
 

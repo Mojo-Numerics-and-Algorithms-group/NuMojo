@@ -8,7 +8,6 @@ from sys import simd_width_of
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 from numojo.core.matrix import Matrix, MatrixBase
 
 
@@ -23,10 +22,10 @@ fn all[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_and[width: Int](i: Int):
+    fn cal_and[width: Int](i: Int) unified {mut res, read A}:
         res = res & A._buf.ptr.load[width=width](i).reduce_and()
 
-    vectorize[cal_and, width](A.size)
+    vectorize[width](A.size, cal_and)
     return res
 
 
@@ -45,12 +44,12 @@ fn all[
         for i in range(A.shape[0]):
 
             @parameter
-            fn cal_vec_sum[width: Int](j: Int):
+            fn cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store[width](
                     0, j, B._load[width](0, j) & A._load[width](i, j)
                 )
 
-            vectorize[cal_vec_sum, width](A.shape[1])
+            vectorize[width](A.shape[1], cal_vec_sum)
 
         return B^
 
@@ -60,14 +59,14 @@ fn all[
         @parameter
         fn cal_rows(i: Int):
             @parameter
-            fn cal_sum[width: Int](j: Int):
+            fn cal_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store(
                     i,
                     0,
                     B._load(i, 0) & A._load[width=width](i, j).reduce_and(),
                 )
 
-            vectorize[cal_sum, width](A.shape[1])
+            vectorize[width](A.shape[1], cal_sum)
 
         parallelize[cal_rows](A.shape[0], A.shape[0])
         return B^
@@ -135,10 +134,10 @@ fn any[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_and[width: Int](i: Int):
+    fn cal_and[width: Int](i: Int) unified {mut res, read A}:
         res = res | A._buf.ptr.load[width=width](i).reduce_or()
 
-    vectorize[cal_and, width](A.size)
+    vectorize[width](A.size, cal_and)
     return res
 
 
@@ -157,12 +156,12 @@ fn any[
         for i in range(A.shape[0]):
 
             @parameter
-            fn cal_vec_sum[width: Int](j: Int):
+            fn cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store[width](
                     0, j, B._load[width](0, j) | A._load[width](i, j)
                 )
 
-            vectorize[cal_vec_sum, width](A.shape[1])
+            vectorize[width](A.shape[1], cal_vec_sum)
 
         return B^
 
@@ -172,14 +171,14 @@ fn any[
         @parameter
         fn cal_rows(i: Int):
             @parameter
-            fn cal_sum[width: Int](j: Int):
+            fn cal_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store(
                     i,
                     0,
                     B._load(i, 0) | A._load[width=width](i, j).reduce_or(),
                 )
 
-            vectorize[cal_sum, width](A.shape[1])
+            vectorize[width](A.shape[1], cal_sum)
 
         parallelize[cal_rows](A.shape[0], A.shape[0])
         return B^

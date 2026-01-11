@@ -3,7 +3,6 @@ from algorithm import parallelize, vectorize
 from memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros
 
@@ -34,10 +33,10 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
     var result: Scalar[dtype] = Scalar[dtype](0)
 
     @parameter
-    fn cal_vec[width: Int](i: Int):
+    fn cal_vec[width: Int](i: Int) unified {mut result, read A}:
         result += A._buf.ptr.load[width=width](i).reduce_add()
 
-    vectorize[cal_vec, width](A.size)
+    vectorize[width](A.size, cal_vec)
     return result
 
 
@@ -128,10 +127,10 @@ fn sum[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_vec[width: Int](i: Int):
+    fn cal_vec[width: Int](i: Int) unified {mut res, read A}:
         res = res + A._buf.ptr.load[width=width](i).reduce_add()
 
-    vectorize[cal_vec, width](A.size)
+    vectorize[width](A.size, cal_vec)
     return res
 
 
@@ -164,26 +163,28 @@ fn sum[
             @parameter
             fn calc_columns(j: Int):
                 @parameter
-                fn col_sum[width: Int](i: Int):
+                fn col_sum[width: Int](i: Int) unified {mut B, read j, read A}:
                     B._store(
                         0,
                         j,
                         B._load(0, j) + A._load[width=width](i, j).reduce_add(),
                     )
 
-                vectorize[col_sum, width](A.shape[0])
+                vectorize[width](A.shape[0], col_sum)
 
             parallelize[calc_columns](A.shape[1], A.shape[1])
         else:
             for i in range(A.shape[0]):
 
                 @parameter
-                fn cal_vec_sum[width: Int](j: Int):
+                fn cal_vec_sum[
+                    width: Int
+                ](j: Int) unified {mut B, read i, read A}:
                     B._store[width](
                         0, j, B._load[width](0, j) + A._load[width](i, j)
                     )
 
-                vectorize[cal_vec_sum, width](A.shape[1])
+                vectorize[width](A.shape[1], cal_vec_sum)
 
         return B^
 
@@ -195,14 +196,14 @@ fn sum[
             @parameter
             fn cal_rows(i: Int):
                 @parameter
-                fn cal_vec[width: Int](j: Int):
+                fn cal_vec[width: Int](j: Int) unified {mut B, read i, read A}:
                     B._store(
                         i,
                         0,
                         B._load(i, 0) + A._load[width=width](i, j).reduce_add(),
                     )
 
-                vectorize[cal_vec, width](A.shape[1])
+                vectorize[width](A.shape[1], cal_vec)
 
             parallelize[cal_rows](A.shape[0], A.shape[0])
         else:
@@ -349,7 +350,9 @@ fn cumsum[
             for i in range(1, A.shape[0]):
 
                 @parameter
-                fn cal_vec_sum_column[width: Int](j: Int):
+                fn cal_vec_sum_column[
+                    width: Int
+                ](j: Int) unified {mut result, read i}:
                     result._store[width](
                         i,
                         j,
@@ -357,7 +360,7 @@ fn cumsum[
                         + result._load[width](i, j),
                     )
 
-                vectorize[cal_vec_sum_column, width](result.shape[1])
+                vectorize[width](result.shape[1], cal_vec_sum_column)
             return result^
         else:
             for j in range(A.shape[1]):
@@ -375,7 +378,9 @@ fn cumsum[
             for j in range(1, A.shape[1]):
 
                 @parameter
-                fn cal_vec_sum_row[width: Int](i: Int):
+                fn cal_vec_sum_row[
+                    width: Int
+                ](i: Int) unified {mut result, read j}:
                     result._store[width](
                         i,
                         j,
@@ -383,7 +388,7 @@ fn cumsum[
                         + result._load[width](i, j),
                     )
 
-                vectorize[cal_vec_sum_row, width](A.shape[0])
+                vectorize[width](A.shape[0], cal_vec_sum_row)
             return result^
     else:
         raise Error(String("The axis can either be 1 or 0!"))

@@ -13,7 +13,7 @@ from numojo.core.ndarray import NDArray
 
 comptime ln = log
 """
-Natural Log equivelent to log
+Natural Log equivalent to log.
 """
 
 

@@ -1,4 +1,4 @@
-from python import Python
+from python import Python, PythonObject
 
 from numojo.prelude import *
 from testing.testing import assert_true, assert_almost_equal, assert_equal
@@ -36,7 +36,8 @@ def test_constructors():
         arr3[Item(0, 0, 0)], 10.0, "NDArray constructor with fill value"
     )
 
-    var arr4 = NDArray[f32](List[Int](3, 4, 5))
+    var values: List[Int] = [3, 4, 5]
+    var arr4 = NDArray[f32](values^)
     assert_true(
         arr4.shape[0] == 3, "NDArray constructor with List: shape element 0"
     )
@@ -123,7 +124,7 @@ def test_iterator():
         )
 
     var a_nditer_f = a.nditer(order="F")
-    var anp_nditer_f = np.nditer(anp, order="F")
+    var anp_nditer_f = np.nditer(anp, order=PythonObject("F"))
     for _ in range(a.size):
         check_values_close(
             a_nditer_f.__next__(),
@@ -142,7 +143,7 @@ def test_iterator():
         )
 
     var f_nditer_f = f.nditer(order="F")
-    var fnp_nditer_f = np.nditer(fnp, order="F")
+    var fnp_nditer_f = np.nditer(fnp, order=PythonObject("F"))
     for _ in range(f.size):
         check_values_close(
             f_nditer_f.__next__(),

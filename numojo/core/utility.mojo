@@ -22,7 +22,7 @@ Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 from algorithm.functional import vectorize, parallelize
 from collections import Dict
 from memory import memcpy
-from memory import LegacyUnsafePointer as UnsafePointer
+from memory import UnsafePointer
 from python import Python, PythonObject
 from sys import simd_width_of
 
@@ -169,8 +169,10 @@ fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
 # ===----------------------------------------------------------------------=== #
 
 
-fn _traverse_buffer_according_to_shape_and_strides(
-    mut ptr: UnsafePointer[Scalar[DType.int]],
+fn _traverse_buffer_according_to_shape_and_strides[
+    origin: MutOrigin
+](
+    mut ptr: UnsafePointer[Scalar[DType.int], origin=origin],
     shape: NDArrayShape,
     strides: NDArrayStrides,
     current_dim: Int = 0,
@@ -414,8 +416,10 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             np_dtype = np.bool_
 
         var order = "C" if array.flags.C_CONTIGUOUS else "F"
-        numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
-        var pointer_d = numpyarray.__array_interface__["data"][
+        numpyarray = np.empty(
+            np_arr_dim, dtype=np_dtype, order=PythonObject(order)
+        )
+        var pointer_d = numpyarray.__array_interface__[PythonObject("data")][
             0
         ].unsafe_get_as_pointer[dtype]()
         memcpy(dest=pointer_d, src=array.unsafe_ptr(), count=array.size)

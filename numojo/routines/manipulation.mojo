@@ -15,7 +15,6 @@ from sys import simd_width_of
 from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
-from numojo.core.own_data import OwnData
 from numojo.core.complex import ComplexNDArray
 from numojo.core.ndshape import NDArrayShape, Shape
 from numojo.core.ndstrides import NDArrayStrides
@@ -250,16 +249,16 @@ fn transpose[
     import numojo as nm
     var A = nm.random.rand(2,3,4,5)
     print(nm.transpose(A))  # A is a 4darray.
-    print(nm.transpose(A, axes=List(3,2,1,0)))
+    print(nm.transpose(A, axes=[3,2,1,0]))
     ```
 
     Examples.
     ```mojo
     import numojo as nm
     var arr2d = nm.random.rand(2,3)
-    print(nm.transpose(arr2d, axes=List(0, 1)))  # equal to transpose of matrix
+    print(nm.transpose(arr2d, axes=[0, 1]))  # equal to transpose of matrix
     var arr3d = nm.random.rand(2,3,4)
-    print(nm.transpose(arr3d, axes=List(2, 1, 0)))  # transpose 0-th and 2-th dimensions
+    print(nm.transpose(arr3d, axes=[2, 1, 0]))  # transpose 0-th and 2-th dimensions
     ```
     """
     if len(axes) != A.ndim:
@@ -288,10 +287,10 @@ fn transpose[
 
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
-    var ptr: LegacyUnsafePointer[Scalar[DType.int]] = I._buf.ptr
-    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
-        ptr, new_shape, new_strides
-    )
+    var ptr = I._buf.get_ptr()
+    numojo.core.utility._traverse_buffer_according_to_shape_and_strides[
+        I.origin
+    ](ptr, new_shape, new_strides)
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
@@ -498,7 +497,7 @@ fn broadcast_to[
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(
-                dest=B._buf.ptr.offset(shape[1] * i),
+                dest=B._buf.offset(shape[1] * i),
                 src=A._buf.ptr,
                 count=shape[1],
             )

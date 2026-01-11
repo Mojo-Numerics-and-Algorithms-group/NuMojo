@@ -32,11 +32,11 @@ fn load[
     """
     var np = Python.import_module("numpy")
     var data = np.load(
-        file=file,
-        allow_pickle=allow_pickle,
-        fix_imports=fix_imports,
-        encoding=encoding,
-        max_header_size=max_header_size,
+        file=PythonObject(file),
+        allow_pickle=PythonObject(allow_pickle),
+        fix_imports=PythonObject(fix_imports),
+        encoding=PythonObject(encoding),
+        max_header_size=PythonObject(max_header_size),
     )
     var array = numojo.array[dtype](data=data)
     return array^
@@ -207,9 +207,9 @@ fn save[
     var np = Python.import_module("numpy")
     var np_arr = array.to_numpy()
     np.save(
-        file=fname,
+        file=PythonObject(fname),
         arr=np_arr,
-        allow_pickle=allow_pickle,
+        allow_pickle=PythonObject(allow_pickle),
     )
 
 
@@ -237,11 +237,11 @@ fn loadtxt[
     """
     var np = Python.import_module("numpy")
     var data = np.loadtxt(
-        fname=fname,
-        comments=comments,
-        delimiter=delimiter,
-        skiprows=skiprows,
-        ndmin=ndmin,
+        fname=PythonObject(fname),
+        comments=PythonObject(comments),
+        delimiter=PythonObject(delimiter),
+        skiprows=PythonObject(skiprows),
+        ndmin=PythonObject(ndmin),
     )
     var array = numojo.array[dtype](data=data)
     return array^
@@ -275,12 +275,12 @@ fn savetxt[
     var np = Python.import_module("numpy")
     var np_arr = array.to_numpy()
     np.savetxt(
-        fname=fname,
+        fname=PythonObject(fname),
         X=np_arr,
-        fmt=fmt,
-        delimiter=delimiter,
-        newline=newline,
-        header=header,
-        footer=footer,
-        comments=comments,
+        fmt=PythonObject(fmt),
+        delimiter=PythonObject(delimiter),
+        newline=PythonObject(newline),
+        header=PythonObject(header),
+        footer=PythonObject(footer),
+        comments=PythonObject(comments),
     )

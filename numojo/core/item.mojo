@@ -4,7 +4,6 @@ Implements Item type.
 `Item` is a series of `Int` on the heap.
 """
 
-from builtin.type_aliases import Origin
 from builtin.int import index as convert_to_int
 from memory import memcpy, memset_zero
 from memory import UnsafePointer
@@ -19,6 +18,7 @@ from numojo.core.traits.indexer_collection_element import (
 )
 
 
+# TODO: make it immutable.
 @register_passable
 struct Item(
     ImplicitlyCopyable, Movable, Representable, Sized, Stringable, Writable
@@ -48,7 +48,7 @@ struct Item(
     # Aliases
     comptime element_type: DType = DType.int
     """The data type of the Item elements."""
-    comptime _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutExternalOrigin
     """Internal origin of the Item instance."""
 
     # Fields
@@ -473,7 +473,7 @@ struct Item(
         memcpy(dest=res._buf, src=self._buf, count=axis)
         memcpy(
             dest=res._buf + axis,
-            src=self._buf.offset(axis + 1),
+            src=self._buf + (axis + 1),
             count=self.ndim - axis - 1,
         )
         return res^
@@ -698,7 +698,7 @@ struct _ItemIter[
         item: Item,
         length: Int,
     ):
-        self.index = 0 if forward else length - 1
+        self.index = 0 if Self.forward else length - 1
         self.length = length
         self.item = item
 
@@ -707,14 +707,14 @@ struct _ItemIter[
 
     fn __has_next__(self) -> Bool:
         @parameter
-        if forward:
+        if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
     fn __next__(mut self) raises -> Scalar[DType.int]:
         @parameter
-        if forward:
+        if Self.forward:
             var current_index = self.index
             self.index += 1
             return self.item.__getitem__(current_index)
@@ -725,7 +725,7 @@ struct _ItemIter[
 
     fn __len__(self) -> Int:
         @parameter
-        if forward:
+        if Self.forward:
             return self.length - self.index
         else:
             return self.index

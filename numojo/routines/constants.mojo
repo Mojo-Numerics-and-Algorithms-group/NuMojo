@@ -10,7 +10,7 @@ Constants
 struct Constants(AnyType, Copyable, Movable):
     """Define constants.
 
-    Use alias for compile time evaluation of indefinite precision.
+    Use comptime for compile time evaluation of indefinite precision.
     ```mojo
     import numojo as nm
     fn main():

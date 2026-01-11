@@ -112,11 +112,11 @@ def test_misc():
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(4, 8)
     var np_arr = arr.to_numpy()
-    for i in range(-3, 8):
+    for i in range(-(arr.shape[0] - 1), arr.shape[1]):
         check_is_close(
             nm.diagonal(arr, offset=i),
             np.diagonal(np_arr, offset=i),
-            String("`diagonal` by axis {} is broken").format(i),
+            String("`diagonal` with offset {} is broken").format(i),
         )
 
 

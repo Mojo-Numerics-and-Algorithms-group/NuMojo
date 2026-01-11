@@ -90,14 +90,16 @@ fn dot[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
 
         @parameter
-        fn vectorized_dot[simd_width: Int](idx: Int) -> None:
+        fn vectorized_dot[
+            simd_width: Int
+        ](idx: Int) unified {mut result, read array1, read array2} -> None:
             result._buf.ptr.store(
                 idx,
                 array1._buf.ptr.load[width=simd_width](idx)
                 * array2._buf.ptr.load[width=simd_width](idx),
             )
 
-        vectorize[vectorized_dot, width](array1.size)
+        vectorize[width](array1.size, vectorized_dot)
         return result^
     else:
         raise Error(
@@ -136,7 +138,18 @@ fn matmul_tiled_unrolled_parallelized[
             for k in range(y, y + tile_y):
 
                 @parameter
-                fn dot[simd_width: Int](n: Int):
+                fn dot[
+                    simd_width: Int
+                ](n: Int) unified {
+                    mut result,
+                    read A,
+                    read B,
+                    read t1,
+                    read t2,
+                    read x,
+                    read m,
+                    read k,
+                } -> None:
                     result._buf.ptr.store(
                         m * t2 + (n + x),
                         val=result._buf.ptr.load[width=simd_width](
@@ -147,9 +160,7 @@ fn matmul_tiled_unrolled_parallelized[
                     )
 
                 comptime unroll_factor = tile_x // width
-                vectorize[
-                    dot, width, size=tile_x, unroll_factor=unroll_factor
-                ]()
+                vectorize[width, unroll_factor=unroll_factor](tile_x, dot)
 
         comptime tile_size = 4
         tile[calc_tile, width * tile_size, tile_size](t1, t2)
@@ -253,7 +264,11 @@ fn matmul_2darray[
         for k in range(t1):
 
             @parameter
-            fn dot[simd_width: Int](n: Int):
+            fn dot[
+                simd_width: Int
+            ](n: Int) unified {
+                mut result, read A, read B, read t2, read t1, read k, read m
+            } -> None:
                 result._buf.ptr.store(
                     m * t2 + n,
                     val=result._buf.ptr.load[width=simd_width](m * t2 + n)
@@ -261,7 +276,7 @@ fn matmul_2darray[
                     * B._buf.ptr.load[width=simd_width](k * t2 + n),
                 )
 
-            vectorize[dot, width](t2)
+            vectorize[width](t2, dot)
 
     parallelize[calculate_A_rows](t0, t0)
 
@@ -394,7 +409,11 @@ fn matmul[
             for k in range(A.shape[1]):
 
                 @parameter
-                fn dot[simd_width: Int](n: Int):
+                fn dot[
+                    simd_width: Int
+                ](n: Int) unified {
+                    mut result, read A, read B, read m, read k
+                } -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -402,7 +421,7 @@ fn matmul[
                         + A._load(m, k) * B._load[simd_width](k, n),
                     )
 
-                vectorize[dot, width](B.shape[1])
+                vectorize[width](B.shape[1], dot)
 
         parallelize[calculate_resultresult](A.shape[0], A.shape[0])
     elif A.flags.F_CONTIGUOUS and B.flags.F_CONTIGUOUS:
@@ -415,7 +434,11 @@ fn matmul[
             for k in range(A.shape[1]):
 
                 @parameter
-                fn dot_F[simd_width: Int](m: Int):
+                fn dot_F[
+                    simd_width: Int
+                ](m: Int) unified {
+                    mut result, read A, read B, read n, read k
+                } -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -423,7 +446,7 @@ fn matmul[
                         + A._load[simd_width](m, k) * B._load(k, n),
                     )
 
-                vectorize[dot_F, width](A.shape[0])
+                vectorize[width](A.shape[0], dot_F)
 
         parallelize[calculate_FF](B.shape[1], B.shape[1])
     elif A.flags.C_CONTIGUOUS and B.flags.F_CONTIGUOUS:
@@ -437,12 +460,16 @@ fn matmul[
                 var sum: Scalar[dtype] = 0.0
 
                 @parameter
-                fn dot_product[simd_width: Int](k: Int):
+                fn dot_product[
+                    simd_width: Int
+                ](k: Int) unified {
+                    mut sum, read A, read B, read m, read n
+                } -> None:
                     sum += (
                         A._load[simd_width](m, k) * B._load[simd_width](k, n)
                     ).reduce_add()
 
-                vectorize[dot_product, width](A.shape[1])
+                vectorize[width](A.shape[1], dot_product)
                 result._store(m, n, sum)
 
         parallelize[calculate_resultF](A.shape[0], A.shape[0])

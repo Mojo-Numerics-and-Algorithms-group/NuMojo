@@ -237,7 +237,7 @@ struct MatrixBase[
     comptime width: Int = simd_width_of[Self.dtype]()  #
     """Vector size of the data type."""
 
-    var _buf: DataContainer[Self.dtype, origin]
+    var _buf: DataContainer[Self.dtype, Self.origin]
     """Data buffer of the items in the Matrix."""
 
     var shape: Tuple[Int, Int]
@@ -287,7 +287,7 @@ struct MatrixBase[
         else:
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
-        self._buf = DataContainer[Self.dtype, origin](size=self.size)
+        self._buf = DataContainer[Self.dtype, Self.origin](size=self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -377,7 +377,7 @@ struct MatrixBase[
         else:
             raise Error(String("Shape too large to be a matrix."))
 
-        self._buf = DataContainer[Self.dtype, origin](self.size)
+        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -393,7 +393,7 @@ struct MatrixBase[
         out self,
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
-        data: DataContainer[Self.dtype, origin],
+        data: DataContainer[Self.dtype, Self.origin],
     ) where own_data == False:
         """
         Initialize a non-owning `MatrixView`.
@@ -459,7 +459,7 @@ struct MatrixBase[
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
-        self._buf = DataContainer[Self.dtype, origin](other.size)
+        self._buf = DataContainer[Self.dtype, Self.origin](other.size)
         memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
         self.flags = Flags(
             other.shape, other.strides, owndata=True, writeable=True
@@ -1676,7 +1676,7 @@ struct MatrixBase[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    fn view(ref self) -> MatrixView[Self.dtype, MutOrigin.cast_from[origin]]:
+    fn view(ref self) -> MatrixView[Self.dtype, MutOrigin.cast_from[Self.origin]]:
         """
         Return a non-owning view of the matrix. This method creates and returns a `MatrixView` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
 
@@ -1690,12 +1690,12 @@ struct MatrixBase[
             var mat_view = mat.view()  # Create a view of the original matrix
             ```
         """
-        var new_data = DataContainer[Self.dtype, MutOrigin.cast_from[origin]](
+        var new_data = DataContainer[Self.dtype, MutOrigin.cast_from[Self.origin]](
             ptr=self._buf.get_ptr().unsafe_origin_cast[
-                MutOrigin.cast_from[origin]
+                MutOrigin.cast_from[Self.origin]
             ]()
         )
-        var matrix_view = MatrixView[Self.dtype, MutOrigin.cast_from[origin]](
+        var matrix_view = MatrixView[Self.dtype, MutOrigin.cast_from[Self.origin]](
             shape=self.shape,
             strides=self.strides,
             data=new_data,
@@ -1704,7 +1704,7 @@ struct MatrixBase[
 
     fn __iter__(
         self,
-    ) -> Self.IteratorType[origin, origin_of(self), True] where (
+    ) -> Self.IteratorType[Self.origin, origin_of(self), True] where (
         own_data == True
     ):
         """
@@ -1721,11 +1721,11 @@ struct MatrixBase[
                 print(row)  # Each row is a MatrixView
             ```
         """
-        return Self.IteratorType[origin, origin_of(self), True](
+        return Self.IteratorType[Self.origin, origin_of(self), True](
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixBase[Self.dtype, own_data=True, origin=origin],
+                    MatrixBase[Self.dtype, own_data=True, origin=Self.origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1749,7 +1749,7 @@ struct MatrixBase[
 
     fn __reversed__(
         mut self,
-    ) raises -> Self.IteratorType[origin, origin_of(self), False] where (
+    ) raises -> Self.IteratorType[Self.origin, origin_of(self), False] where (
         own_data == True
     ):
         """
@@ -1758,11 +1758,11 @@ struct MatrixBase[
         Returns:
             A reversed iterator over the rows of the matrix, yielding copies of each row.
         """
-        return Self.IteratorType[origin, origin_of(self), False](
+        return Self.IteratorType[Self.origin, origin_of(self), False](
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixBase[Self.dtype, own_data=True, origin=origin],
+                    MatrixBase[Self.dtype, own_data=True, origin=Self.origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -3119,7 +3119,7 @@ struct MatrixBase[
             ```
         """
         if shape[0] * shape[1] > self.size:
-            var other = MatrixBase[Self.dtype, own_data=own_data, origin=origin](
+            var other = MatrixBase[Self.dtype, own_data=own_data, origin=Self.origin](
                 shape=shape, order=self.order()
             )
             if self.flags.C_CONTIGUOUS:

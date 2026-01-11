@@ -34,9 +34,8 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
 [package.build.config.pkg]
 name = "numojo"
 
-# TODO: update these modular version before release.
 [package.host-dependencies]
-modular = ">=26.1.0.dev2026010305,<27"
+modular = ">=26.1.0.dev2026011105,<27"
 
 [package.build-dependencies]
 modular = ">=26.1.0.dev2026010305,<27"

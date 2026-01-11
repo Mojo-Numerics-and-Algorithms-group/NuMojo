@@ -1000,7 +1000,7 @@ struct _StrideIter[
         strides: NDArrayStrides,
         length: Int,
     ):
-        self.index = 0 if forward else length
+        self.index = 0 if Self.forward else length
         self.length = length
         self.strides = strides
 
@@ -1009,14 +1009,14 @@ struct _StrideIter[
 
     fn __has_next__(self) -> Bool:
         @parameter
-        if forward:
+        if Self.forward:
             return self.index < self.length
         else:
             return self.index > 0
 
     fn __next__(mut self) raises -> Scalar[DType.int]:
         @parameter
-        if forward:
+        if Self.forward:
             var current_index = self.index
             self.index += 1
             return self.strides.__getitem__(current_index)
@@ -1027,7 +1027,7 @@ struct _StrideIter[
 
     fn __len__(self) -> Int:
         @parameter
-        if forward:
+        if Self.forward:
             return self.length - self.index
         else:
             return self.index

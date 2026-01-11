@@ -261,7 +261,7 @@ struct MatrixBase[
         out self,
         shape: Tuple[Int, Int],
         order: String = "C",
-    ) where own_data == True:
+    ) where Self.own_data == True:
         """
         Initialize a new matrix with the specified shape and memory layout.
 
@@ -297,7 +297,7 @@ struct MatrixBase[
     fn __init__(
         out self,
         var data: Self,
-    ) where own_data == True:
+    ) where Self.own_data == True:
         """
         Initialize a new matrix by transferring ownership from another matrix.
 
@@ -326,7 +326,7 @@ struct MatrixBase[
     fn __init__(
         out self,
         data: Self,
-    ) where own_data == True:
+    ) where Self.own_data == True:
         """
         Construct a new matrix by copying from another matrix.
 
@@ -342,7 +342,7 @@ struct MatrixBase[
     fn __init__(
         out self,
         data: NDArray[Self.dtype],
-    ) raises where own_data == True:
+    ) raises where Self.own_data == True:
         """
         Initialize a new matrix by copying data from an existing NDArray.
 
@@ -394,7 +394,7 @@ struct MatrixBase[
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
         data: DataContainer[Self.dtype, Self.origin],
-    ) where own_data == False:
+    ) where Self.own_data == False:
         """
         Initialize a non-owning `MatrixView`.
 
@@ -450,7 +450,7 @@ struct MatrixBase[
             ```
         """
         constrained[
-            other.own_data == True and own_data == True,
+            other.own_data == True and Self.own_data == True,
             (
                 "`.copy()` is only allowed for Matrices that own the data and"
                 " not views."
@@ -524,7 +524,7 @@ struct MatrixBase[
         """
 
         @parameter
-        if own_data:
+        if Self.own_data:
             self._buf.ptr.free()
 
     # ===-------------------------------------------------------------------===#
@@ -714,7 +714,7 @@ struct MatrixBase[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Slice, y: Slice) -> MatrixView[
         Self.dtype, MutOrigin.cast_from[view_origin]
-    ] where (own_data == True):
+    ] where (Self.own_data == True):
         """
         Retrieve a view of the specified slice in the matrix.
 
@@ -809,7 +809,7 @@ struct MatrixBase[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Slice, var y: Int) raises -> MatrixView[
         Self.dtype, MutOrigin.cast_from[view_origin]
-    ] where (own_data == True):
+    ] where (Self.own_data == True):
         """
         Retrieve a view of a specific column slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified column slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
@@ -913,7 +913,7 @@ struct MatrixBase[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, var x: Int, y: Slice) raises -> MatrixView[
         Self.dtype, MutOrigin.cast_from[view_origin]
-    ] where (own_data == True):
+    ] where (Self.own_data == True):
         """
         Retrieve a view of a specific row slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
@@ -1705,7 +1705,7 @@ struct MatrixBase[
     fn __iter__(
         self,
     ) -> Self.IteratorType[Self.origin, origin_of(self), True] where (
-        own_data == True
+        Self.own_data == True
     ):
         """
         Returns an iterator over the rows of the Matrix. Each iteration yields a MatrixView representing a single row.
@@ -1750,7 +1750,7 @@ struct MatrixBase[
     fn __reversed__(
         mut self,
     ) raises -> Self.IteratorType[Self.origin, origin_of(self), False] where (
-        own_data == True
+        Self.own_data == True
     ):
         """
         Return an iterator that traverses the matrix rows in reverse order.
@@ -3095,7 +3095,7 @@ struct MatrixBase[
         return res^
 
     # NOTE: not sure if `where` clause works correctly here yet.
-    fn resize(mut self, shape: Tuple[Int, Int]) raises where own_data == True:
+    fn resize(mut self, shape: Tuple[Int, Int]) raises where Self.own_data == True:
         """
         Change the shape and size of the matrix in-place.
 
@@ -3119,7 +3119,7 @@ struct MatrixBase[
             ```
         """
         if shape[0] * shape[1] > self.size:
-            var other = MatrixBase[Self.dtype, own_data=own_data, origin=Self.origin](
+            var other = MatrixBase[Self.dtype, own_data=Self.own_data, origin=Self.origin](
                 shape=shape, order=self.order()
             )
             if self.flags.C_CONTIGUOUS:
@@ -3418,7 +3418,7 @@ struct MatrixBase[
 
         return ndarray^
 
-    fn to_numpy(self) raises -> PythonObject where own_data == True:
+    fn to_numpy(self) raises -> PythonObject where Self.own_data == True:
         """
         Convert the Matrix to a NumPy ndarray.
 

@@ -14,7 +14,7 @@ from memory import UnsafePointer
 from numojo.core.error import IndexError, ValueError
 
 comptime Strides = NDArrayStrides
-"""An comptime of the NDArrayStrides."""
+"""An alias of the NDArrayStrides."""
 
 
 @register_passable

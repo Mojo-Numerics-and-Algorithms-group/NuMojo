@@ -14,7 +14,7 @@ from memory import UnsafePointer
 from numojo.core.error import IndexError, ShapeError, ValueError
 
 comptime Shape = NDArrayShape
-"""An comptime of the NDArrayShape."""
+"""An alias of the NDArrayShape."""
 
 
 @register_passable

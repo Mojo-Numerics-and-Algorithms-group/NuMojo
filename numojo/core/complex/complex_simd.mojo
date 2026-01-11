@@ -17,10 +17,10 @@ from math import sqrt, sin, cos
 from numojo.core.complex.complex_dtype import ComplexDType
 
 comptime ComplexScalar = ComplexSIMD[_, width=1]
-"""ComplexScalar comptime is for internal purposes (width=1 specialization)."""
+"""ComplexScalar alias is for internal purposes (width=1 specialization)."""
 
 comptime CScalar = ComplexSIMD[_, width=1]
-"""User-friendly comptime for scalar complex numbers."""
+"""User-friendly alias for scalar complex numbers."""
 
 comptime `1j` = ImaginaryUnit()
 """Constant representing the imaginary unit complex number 0 + 1j.
@@ -63,8 +63,13 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         ComplexSIMD[cf64].from_polar(2.0, 0.5)
     """
 
+<<<<<<< HEAD
     comptime dtype: DType = Self.cdtype._dtype
     """Component dtype comptime (underlying real/imag dtype)."""
+=======
+    comptime dtype: DType = cdtype._dtype
+    """Component dtype alias (underlying real/imag dtype)."""
+>>>>>>> upstream/pre-0.9
 
     var re: SIMD[Self.dtype, Self.width]
     var im: SIMD[Self.dtype, Self.width]

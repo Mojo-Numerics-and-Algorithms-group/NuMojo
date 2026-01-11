@@ -4233,7 +4233,11 @@ struct _ComplexNDArrayIter[
         forward: The iteration direction. `False` is backwards.
     """
     # The equivalent DType of the ComplexDType
+<<<<<<< HEAD
     comptime dtype: DType = Self.cdtype._dtype
+=======
+    comptime dtype: DType = cdtype._dtype
+>>>>>>> upstream/pre-0.9
 
     # FIELDS
     var index: Int

@@ -273,7 +273,11 @@ fn _concise_dtype_str(dtype: DType) -> String:
 # fn coerce_mixed_ints[T1: DType, T2: DType]() -> DType:
 #     """Coerces a signed and unsigned integer type."""
 #     comptime signed = T1 if T1.is_signed() else T2
+<<<<<<< HEAD
 #     comptime unsigned = T2 if T1.is_signed() else T1
+=======
+#     alias unsigned = T2 if T1.is_signed() else T1
+>>>>>>> upstream/pre-0.9
 
 #     # If unsigned fits in signed, use signed
 #     if unsigned.sizeof() < signed.sizeof():

@@ -63,13 +63,8 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         ComplexSIMD[cf64].from_polar(2.0, 0.5)
     """
 
-<<<<<<< HEAD
     comptime dtype: DType = Self.cdtype._dtype
-    """Component dtype comptime (underlying real/imag dtype)."""
-=======
-    comptime dtype: DType = cdtype._dtype
-    """Component dtype alias (underlying real/imag dtype)."""
->>>>>>> upstream/pre-0.9
+    """Component dtype (underlying real/imag dtype)."""
 
     var re: SIMD[Self.dtype, Self.width]
     var im: SIMD[Self.dtype, Self.width]

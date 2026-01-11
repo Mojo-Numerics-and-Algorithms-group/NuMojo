@@ -383,7 +383,7 @@ fn binary_sort[
 
     @parameter
     if dtype != array.dtype:
-        alias dtype = array.dtype
+        comptime dtype = array.dtype
 
     var result: NDArray[dtype] = NDArray[dtype](array.shape)
     for i in range(array.size):

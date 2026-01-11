@@ -6,7 +6,7 @@ Document docstring decribing what it does, if it is in an init file it will be t
 # Subsection header, used to divide code in a file by functional parts (ingored by doc generation)
 # ===----------------------------------------------------------------------=== #
 
-alias Example = Int
+comptime Example = Int
 """Aliases can be explained with docstrings and should if they exist in the global scope."""
 
 

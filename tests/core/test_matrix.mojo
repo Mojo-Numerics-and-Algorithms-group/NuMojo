@@ -6,9 +6,9 @@ from testing.testing import assert_raises, assert_true
 from sys import is_defined
 from testing import assert_equal, TestSuite
 
-alias order: String = String("F") if is_defined["F_CONTIGUOUS"]() else String(
-    "C"
-)
+comptime order: String = String("F") if is_defined[
+    "F_CONTIGUOUS"
+]() else String("C")
 
 # ===-----------------------------------------------------------------------===#
 # Main functions

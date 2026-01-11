@@ -37,11 +37,11 @@ from numojo.routines.linalg.misc import issymmetric
 # ===----------------------------------------------------------------------===#
 
 
-alias Matrix = MatrixBase[_, own_data=True, origin = MutOrigin.external]
+comptime Matrix = MatrixBase[_, own_data=True, origin = MutOrigin.external]
 """
 Primary Matrix type for creating and manipulating 2D matrices in NuMojo.
 
-This is the main user-facing type alias for working with matrices. It represents
+This is the main user-facing type comptime for working with matrices. It represents
 a matrix that owns and manages its underlying memory buffer. The data type parameter
 is inferred from context or can be explicitly specified.
 
@@ -69,7 +69,7 @@ Notes:
     - Direct instantiation of `MatrixBase` should be avoided; always use this alias.
 """
 
-alias MatrixView[dtype: DType, origin: MutOrigin] = MatrixBase[
+comptime MatrixView[dtype: DType, origin: MutOrigin] = MatrixBase[
     dtype, own_data=False, origin=origin
 ]
 """
@@ -234,7 +234,7 @@ struct MatrixBase[
     ] = _MatrixIter[dtype, matrix_origin, iterator_origin, forward]
     """Iterator type for the Matrix."""
 
-    alias width: Int = simd_width_of[dtype]()  #
+    comptime width: Int = simd_width_of[dtype]()  #
     """Vector size of the data type."""
 
     var _buf: DataContainer[dtype, origin]
@@ -3888,7 +3888,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     Notes:
         - Only for internal purposes.
     """
-    alias simd_width = simd_width_of[dtype]()
+    comptime simd_width = simd_width_of[dtype]()
     if A.order() != B.order():
         raise Error(
             String("Matrix order {} does not match {}.").format(
@@ -3941,7 +3941,7 @@ fn _arithmetic_func_matrix_to_matrix[
     Notes:
         - Only for internal purposes.
     """
-    alias simd_width: Int = simd_width_of[dtype]()
+    comptime simd_width: Int = simd_width_of[dtype]()
 
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
@@ -3983,7 +3983,7 @@ fn _logic_func_matrix_matrix_to_matrix[
         - Only for internal purposes.
         - The output matrix has the same shape and order as the input matrices.
     """
-    alias width = simd_width_of[dtype]()
+    comptime width = simd_width_of[dtype]()
 
     if A.order() != B.order():
         raise Error(

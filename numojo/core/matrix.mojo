@@ -229,7 +229,7 @@ struct MatrixBase[
     comptime IteratorType[
         is_mutable: Bool, //,
         matrix_origin: MutOrigin,
-        iterator_origin: Origin[is_mutable],
+        iterator_origin: Origin[mut=is_mutable],
         forward: Bool,
     ] = _MatrixIter[Self.dtype, matrix_origin, iterator_origin, forward]
     """Iterator type for the Matrix."""
@@ -617,7 +617,7 @@ struct MatrixBase[
 
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get[
-        is_mutable: Bool, //, view_origin: Origin[is_mutable]
+        is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, x: Int) raises -> MatrixView[
         Self.dtype, MutOrigin.cast_from[view_origin]
     ]:
@@ -711,7 +711,7 @@ struct MatrixBase[
         return result^
 
     fn get[
-        is_mutable: Bool, //, view_origin: Origin[is_mutable]
+        is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, x: Slice, y: Slice) -> MatrixView[
         Self.dtype, MutOrigin.cast_from[view_origin]
     ] where (Self.own_data == True):
@@ -806,7 +806,7 @@ struct MatrixBase[
         return B^
 
     fn get[
-        is_mutable: Bool, //, view_origin: Origin[is_mutable]
+        is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, x: Slice, var y: Int) raises -> MatrixView[
         Self.dtype, MutOrigin.cast_from[view_origin]
     ] where (Self.own_data == True):
@@ -910,7 +910,7 @@ struct MatrixBase[
         return res^
 
     fn get[
-        is_mutable: Bool, //, view_origin: Origin[is_mutable]
+        is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, var x: Int, y: Slice) raises -> MatrixView[
         Self.dtype, MutOrigin.cast_from[view_origin]
     ] where (Self.own_data == True):
@@ -3755,7 +3755,7 @@ struct _MatrixIter[
     is_mutable: Bool, //,
     dtype: DType,
     matrix_origin: MutOrigin,
-    iterator_origin: Origin[is_mutable],
+    iterator_origin: Origin[mut=is_mutable],
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """

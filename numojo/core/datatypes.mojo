@@ -47,3 +47,42 @@ comptime boolean = DType.bool
 """Data type comptime for DType.bool."""
 
 # ===----------------------------------------------------------------------=== #
+
+fn _concise_dtype_str(dtype: DType) -> String:
+    """Returns a concise string representation of the data type."""
+    if dtype == i8:
+        return "i8"
+    elif dtype == i64:
+        return "i64"
+    elif dtype == i128:
+        return "i128"
+    elif dtype == i256:
+        return "i256"
+    elif dtype == int:
+        return "int"
+    elif dtype == u8:
+        return "u8"
+    elif dtype == u16:
+        return "u16"
+    elif dtype == u32:
+        return "u32"
+    elif dtype == u64:
+        return "u64"
+    elif dtype == u128:
+        return "u128"
+    elif dtype == u256:
+        return "u256"
+    elif dtype == uint:
+        return "uint"
+    elif dtype == bf16:
+        return "bf16"
+    elif dtype == f16:
+        return "f16"
+    elif dtype == f32:
+        return "f32"
+    elif dtype == f64:
+        return "f64"
+    elif dtype == boolean:
+        return "boolean"
+    else:
+        return "Unknown"

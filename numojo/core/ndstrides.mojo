@@ -32,7 +32,7 @@ struct NDArrayStrides(
     # Aliases
     comptime element_type: DType = DType.int
     """The data type of the NDArrayStrides elements."""
-    comptime _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutExternalOrigin
     """Internal origin of the NDArrayStrides instance."""
 
     # Fields
@@ -880,7 +880,7 @@ struct NDArrayStrides(
         memcpy(dest=res._buf, src=self._buf, count=axis)
         memcpy(
             dest=res._buf + axis,
-            src=self._buf.offset(axis + 1),
+            src=self._buf + (axis + 1),
             count=self.ndim - axis - 1,
         )
         return res

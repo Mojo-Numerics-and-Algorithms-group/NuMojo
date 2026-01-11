@@ -48,7 +48,7 @@ struct NDArrayShape(
     # Aliases
     comptime element_type: DType = DType.int
     """The data type of the NDArrayShape elements."""
-    comptime _origin: MutOrigin = MutOrigin.external
+    comptime _origin: MutOrigin = MutExternalOrigin
     """Internal origin of the NDArrayShape instance."""
 
     # Fields

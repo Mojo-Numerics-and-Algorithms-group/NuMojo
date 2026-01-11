@@ -109,7 +109,7 @@ struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
         Returns:
             UnsafePointer[Scalar[dtype], origin]: The offset pointer.
         """
-        return self.ptr.offset(offset)
+        return self.ptr + offset
 
     fn load[width: Int](self, offset: Int) -> SIMD[Self.dtype, width]:
         """

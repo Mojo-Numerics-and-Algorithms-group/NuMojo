@@ -497,7 +497,7 @@ fn broadcast_to[
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
             memcpy(
-                dest=B._buf.ptr.offset(shape[1] * i),
+                dest=B._buf.offset(shape[1] * i),
                 src=A._buf.ptr,
                 count=shape[1],
             )

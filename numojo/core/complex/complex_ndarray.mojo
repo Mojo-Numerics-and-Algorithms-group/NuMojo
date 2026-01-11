@@ -2070,7 +2070,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Unary positive returns self unless boolean type.
         """
-        if self.dtype is DType.bool:
+        if Self.dtype == DType.bool:
             raise Error(
                 "complex_ndarray:ComplexNDArray:__pos__: pos does not accept"
                 " bool type arrays"
@@ -2083,7 +2083,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         For bolean use `__invert__`(~)
         """
-        if self.dtype is DType.bool:
+        if Self.dtype == DType.bool:
             raise Error(
                 "complex_ndarray:ComplexNDArray:__neg__: neg does not accept"
                 " bool type arrays"

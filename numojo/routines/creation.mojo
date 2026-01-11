@@ -2815,9 +2815,9 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutOrigin.external.
-    b._re._buf = DataContainerNew[cdtype._dtype, MutOrigin.external](1)
-    b._im._buf = DataContainerNew[cdtype._dtype, MutOrigin.external](1)
+    # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutExternalOrigin.
+    b._re._buf = DataContainerNew[cdtype._dtype, MutExternalOrigin](1)
+    b._im._buf = DataContainerNew[cdtype._dtype, MutExternalOrigin](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True

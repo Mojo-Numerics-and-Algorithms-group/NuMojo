@@ -35,7 +35,7 @@ from numojo.routines.linalg.misc import issymmetric
 # ===----------------------------------------------------------------------===#
 
 
-comptime Matrix = MatrixBase[_, own_data=True, origin = MutOrigin.external]
+comptime Matrix = MatrixBase[_, own_data=True, origin=MutExternalOrigin]
 """
 Primary Matrix type for creating and manipulating 2D matrices in NuMojo.
 
@@ -620,7 +620,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, x: Int) raises -> MatrixView[
-        Self.dtype, MutOrigin(unsafe_cast=view_origin)
+        Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
     ]:
         """
         Retrieve a view of the specified row in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
@@ -661,15 +661,15 @@ struct MatrixBase[
 
         var x_norm = self.normalize(x, self.shape[0])
         var new_data = DataContainer[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
             ptr=self._buf.get_ptr().unsafe_origin_cast[
-                MutOrigin(unsafe_cast=view_origin)
+                unsafe_origin_mutcast[view_origin, mut=True]
             ]()
             + x_norm * self.strides[0]
         )
         var row_view = MatrixView[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
@@ -709,7 +709,7 @@ struct MatrixBase[
             shape=(1, self.shape[1]), order=self.order()
         )
         if self.flags.C_CONTIGUOUS:
-            var ptr = self._buf.ptr.offset(x_norm * self.strides[0])
+            var ptr = self._buf.offset(x_norm * self.strides[0])
             memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
         else:
             for j in range(self.shape[1]):
@@ -720,7 +720,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, x: Slice, y: Slice) -> MatrixView[
-        Self.dtype, MutOrigin(unsafe_cast=view_origin)
+        Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
     ] where (Self.own_data == True):
         """
         Retrieve a view of the specified slice in the matrix.
@@ -752,14 +752,15 @@ struct MatrixBase[
         start_y, end_y, step_y = y.indices(self.shape[1])
 
         var new_data = DataContainer[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
-            ptr=self._buf.get_ptr()
-            .unsafe_origin_cast[MutOrigin(unsafe_cast=view_origin)]()
-            .offset(start_x * self.strides[0] + start_y * self.strides[1])
+            ptr=self._buf.get_ptr().unsafe_origin_cast[
+                unsafe_origin_mutcast[view_origin, mut=True]
+            ]()
+            + (start_x * self.strides[0] + start_y * self.strides[1])
         )
         var sliced_view = MatrixView[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
@@ -819,7 +820,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, x: Slice, var y: Int) raises -> MatrixView[
-        Self.dtype, MutOrigin(unsafe_cast=view_origin)
+        Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
     ] where (Self.own_data == True):
         """
         Retrieve a view of a specific column slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified column slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
@@ -861,14 +862,15 @@ struct MatrixBase[
         start_x, end_x, step_x = x.indices(self.shape[0])
 
         var new_data = DataContainer[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
-            ptr=self._buf.get_ptr()
-            .unsafe_origin_cast[MutOrigin(unsafe_cast=view_origin)]()
-            .offset(start_x * self.strides[0] + y * self.strides[1])
+            ptr=self._buf.get_ptr().unsafe_origin_cast[
+                unsafe_origin_mutcast[view_origin, mut=True]
+            ]()
+            + (start_x * self.strides[0] + y * self.strides[1])
         )
         var column_view = MatrixView[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
@@ -927,7 +929,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]
     ](ref [view_origin]self, var x: Int, y: Slice) raises -> MatrixView[
-        Self.dtype, MutOrigin(unsafe_cast=view_origin)
+        Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
     ] where (Self.own_data == True):
         """
         Retrieve a view of a specific row slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
@@ -968,14 +970,15 @@ struct MatrixBase[
         var step_y: Int
         start_y, end_y, step_y = y.indices(self.shape[1])
         var new_data = DataContainer[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
-            ptr=self._buf.get_ptr()
-            .unsafe_origin_cast[MutOrigin(unsafe_cast=view_origin)]()
-            .offset(x * self.strides[0] + start_y * self.strides[1])
+            ptr=self._buf.get_ptr().unsafe_origin_cast[
+                unsafe_origin_mutcast[view_origin, mut=True]
+            ]()
+            + (x * self.strides[0] + start_y * self.strides[1])
         )
         var row_slice_view = MatrixView[
-            Self.dtype, MutOrigin(unsafe_cast=view_origin)
+            Self.dtype, unsafe_origin_mutcast[view_origin, mut=True]
         ](
             shape=(
                 1,
@@ -1204,7 +1207,7 @@ struct MatrixBase[
 
         if self.flags.C_CONTIGUOUS:
             if value.flags.C_CONTIGUOUS:
-                var dest_ptr = self._buf.ptr.offset(x * self.strides[0])
+                var dest_ptr = self._buf.offset(x * self.strides[0])
                 memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
             else:
                 for j in range(self.shape[1]):
@@ -1214,7 +1217,7 @@ struct MatrixBase[
         else:
             if value.flags.F_CONTIGUOUS:
                 for j in range(self.shape[1]):
-                    self._buf.ptr.offset(x + j * self.strides[1]).store(
+                    self._buf.offset(x + j * self.strides[1]).store(
                         value._buf.ptr.load(j * value.strides[1])
                     )
             else:
@@ -1276,7 +1279,7 @@ struct MatrixBase[
 
         if self.flags.C_CONTIGUOUS:
             if value.flags.C_CONTIGUOUS:
-                var dest_ptr = self._buf.ptr.offset(x * self.strides[0])
+                var dest_ptr = self._buf.offset(x * self.strides[0])
                 memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
             else:
                 for j in range(self.shape[1]):
@@ -1286,7 +1289,7 @@ struct MatrixBase[
         else:
             if value.flags.F_CONTIGUOUS:
                 for j in range(self.shape[1]):
-                    self._buf.ptr.offset(x + j * self.strides[1]).store(
+                    self._buf.offset(x + j * self.strides[1]).store(
                         value._buf.ptr.load(j * value.strides[1])
                     )
             else:
@@ -1699,7 +1702,7 @@ struct MatrixBase[
     # ===-------------------------------------------------------------------===#
     fn view(
         ref self,
-    ) -> MatrixView[Self.dtype, MutOrigin(unsafe_cast=Self.origin)]:
+    ) -> MatrixView[Self.dtype, unsafe_origin_mutcast[Self.origin, mut=True]]:
         """
         Return a non-owning view of the matrix. This method creates and returns a `MatrixView` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
 
@@ -1714,14 +1717,14 @@ struct MatrixBase[
             ```
         """
         var new_data = DataContainer[
-            Self.dtype, MutOrigin(unsafe_cast=Self.origin)
+            Self.dtype, unsafe_origin_mutcast[Self.origin, mut=True]
         ](
             ptr=self._buf.get_ptr().unsafe_origin_cast[
-                MutOrigin(unsafe_cast=Self.origin)
+                unsafe_origin_mutcast[Self.origin, mut=True]
             ]()
         )
         var matrix_view = MatrixView[
-            Self.dtype, MutOrigin(unsafe_cast=Self.origin)
+            Self.dtype, unsafe_origin_mutcast[Self.origin, mut=True]
         ](
             shape=self.shape,
             strides=self.strides,
@@ -3881,7 +3884,7 @@ struct _MatrixIter[
     fn __next__(
         mut self,
     ) raises -> MatrixView[
-        Self.dtype, MutOrigin(unsafe_cast=Self.iterator_origin)
+        Self.dtype, unsafe_origin_mutcast[Self.iterator_origin, mut=True]
     ]:
         """Return a view of the next row.
 

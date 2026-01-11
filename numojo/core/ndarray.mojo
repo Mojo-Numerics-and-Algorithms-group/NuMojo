@@ -139,7 +139,7 @@ struct NDArray[dtype: DType = DType.float64](
         - The order of the array: Row vs Columns major
     """
 
-    comptime origin: MutOrigin = MutOrigin.external
+    comptime origin: MutOrigin = MutExternalOrigin
     """Origin of the data buffer."""
     comptime width: Int = simd_width_of[Self.dtype]()
     """Vector size of the data type."""
@@ -2881,7 +2881,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Unary positve returns self unless boolean type.
         """
-        if self.dtype is DType.bool:
+        if self.dtype == DType.bool:
             raise Error(
                 "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
             )
@@ -2893,7 +2893,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         For bolean use `__invert__`(~)
         """
-        if self.dtype is DType.bool:
+        if self.dtype == DType.bool:
             raise Error(
                 "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
             )
@@ -4212,7 +4212,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the array elements are not Boolean or Integer.
         """
         constrained[
-            self.dtype is DType.bool or self.dtype.is_integral(),
+            self.dtype == DType.bool or self.dtype.is_integral(),
             (
                 "NDArray.all(): invalid dtype. Expected a boolean or integral"
                 " dtype (e.g. bool, i8, i16, i32, i64); floating and other"
@@ -4244,7 +4244,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the array elements are not Boolean or Integer.
         """
         # make this a compile time check
-        if not (self.dtype is DType.bool or self.dtype.is_integral()):
+        if not (Self.dtype == DType.bool or self.dtype.is_integral()):
             raise Error(
                 "\nError in `numojo.NDArray.any(self)`: "
                 "Array elements must be Boolean or Integer."
@@ -4510,7 +4510,10 @@ struct NDArray[dtype: DType = DType.float64](
     fn iter_along_axis[
         forward: Bool = True
     ](self, axis: Int, order: String = "C") raises -> _NDAxisIter[
-        MutOrigin(unsafe_cast=origin_of(self)), Self.dtype, forward
+        # MutOrigin(origin_of(self)), Self.dtype, forward
+        unsafe_origin_mutcast[origin_of(self), mut=True],
+        Self.dtype,
+        forward,
     ]:
         """
         Returns an iterator yielding 1-d array slices along the given axis.
@@ -4604,7 +4607,9 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         return _NDAxisIter[
-            MutOrigin(unsafe_cast=origin_of(self)), Self.dtype, forward
+            unsafe_origin_mutcast[origin_of(self), mut=True],
+            Self.dtype,
+            forward,
         ](
             self,
             axis=normalized_axis,

@@ -231,13 +231,13 @@ struct MatrixBase[
         matrix_origin: MutOrigin,
         iterator_origin: Origin[is_mutable],
         forward: Bool,
-    ] = _MatrixIter[dtype, matrix_origin, iterator_origin, forward]
+    ] = _MatrixIter[Self.dtype, matrix_origin, iterator_origin, forward]
     """Iterator type for the Matrix."""
 
-    comptime width: Int = simd_width_of[dtype]()  #
+    comptime width: Int = simd_width_of[Self.dtype]()  #
     """Vector size of the data type."""
 
-    var _buf: DataContainer[dtype, origin]
+    var _buf: DataContainer[Self.dtype, origin]
     """Data buffer of the items in the Matrix."""
 
     var shape: Tuple[Int, Int]
@@ -287,7 +287,7 @@ struct MatrixBase[
         else:
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
-        self._buf = DataContainer[dtype, origin](size=self.size)
+        self._buf = DataContainer[Self.dtype, origin](size=self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -341,7 +341,7 @@ struct MatrixBase[
     @always_inline("nodebug")
     fn __init__(
         out self,
-        data: NDArray[dtype],
+        data: NDArray[Self.dtype],
     ) raises where own_data == True:
         """
         Initialize a new matrix by copying data from an existing NDArray.
@@ -377,7 +377,7 @@ struct MatrixBase[
         else:
             raise Error(String("Shape too large to be a matrix."))
 
-        self._buf = DataContainer[dtype, origin](self.size)
+        self._buf = DataContainer[Self.dtype, origin](self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -393,7 +393,7 @@ struct MatrixBase[
         out self,
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
-        data: DataContainer[dtype, origin],
+        data: DataContainer[Self.dtype, origin],
     ) where own_data == False:
         """
         Initialize a non-owning `MatrixView`.
@@ -459,13 +459,13 @@ struct MatrixBase[
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
-        self._buf = DataContainer[dtype, origin](other.size)
+        self._buf = DataContainer[Self.dtype, origin](other.size)
         memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
         self.flags = Flags(
             other.shape, other.strides, owndata=True, writeable=True
         )
 
-    fn create_copy(self) -> Matrix[dtype]:
+    fn create_copy(self) -> Matrix[Self.dtype]:
         """
         Create a deep copy of the current matrix.
 
@@ -485,7 +485,7 @@ struct MatrixBase[
             var mat2 = mat1.create_copy()  # Create a deep copy of mat1
             ```
         """
-        var new_matrix = Matrix[dtype](shape=self.shape, order=self.order())
+        var new_matrix = Matrix[Self.dtype](shape=self.shape, order=self.order())
         memcpy(dest=new_matrix._buf.ptr, src=self._buf.ptr, count=self.size)
         return new_matrix^
 
@@ -579,7 +579,7 @@ struct MatrixBase[
             idx_norm = dim + idx_norm
         return idx_norm
 
-    fn __getitem__(self, x: Int, y: Int) raises -> Scalar[dtype]:
+    fn __getitem__(self, x: Int, y: Int) raises -> Scalar[Self.dtype]:
         """
         Retrieve the scalar value at the specified row and column indices.
 
@@ -619,7 +619,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Int) raises -> MatrixView[
-        dtype, MutOrigin.cast_from[view_origin]
+        Self.dtype, MutOrigin.cast_from[view_origin]
     ]:
         """
         Retrieve a view of the specified row in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
@@ -659,13 +659,13 @@ struct MatrixBase[
             )
 
         var x_norm = self.normalize(x, self.shape[0])
-        var new_data = DataContainer[dtype, MutOrigin.cast_from[view_origin]](
+        var new_data = DataContainer[Self.dtype, MutOrigin.cast_from[view_origin]](
             ptr=self._buf.get_ptr().unsafe_origin_cast[
                 MutOrigin.cast_from[view_origin]
             ]()
             + x_norm * self.strides[0]
         )
-        var row_view = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
+        var row_view = MatrixView[Self.dtype, MutOrigin.cast_from[view_origin]](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
             data=new_data,
@@ -673,7 +673,7 @@ struct MatrixBase[
         return row_view^
 
     # for creating a copy of the row.
-    fn __getitem__(self, var x: Int) raises -> Matrix[dtype]:
+    fn __getitem__(self, var x: Int) raises -> Matrix[Self.dtype]:
         """
         Retrieve a copy of the specified row in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified row of the original matrix. The returned matrix is a row vector with a shape of (1, number_of_columns).
 
@@ -700,7 +700,7 @@ struct MatrixBase[
                 )
             )
         var x_norm = self.normalize(x, self.shape[0])
-        var result = Matrix[dtype](shape=(1, self.shape[1]), order=self.order())
+        var result = Matrix[Self.dtype](shape=(1, self.shape[1]), order=self.order())
         if self.flags.C_CONTIGUOUS:
             var ptr = self._buf.ptr.offset(x_norm * self.strides[0])
             memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
@@ -713,7 +713,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Slice, y: Slice) -> MatrixView[
-        dtype, MutOrigin.cast_from[view_origin]
+        Self.dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
         Retrieve a view of the specified slice in the matrix.
@@ -744,12 +744,12 @@ struct MatrixBase[
         start_x, end_x, step_x = x.indices(self.shape[0])
         start_y, end_y, step_y = y.indices(self.shape[1])
 
-        var new_data = DataContainer[dtype, MutOrigin.cast_from[view_origin]](
+        var new_data = DataContainer[Self.dtype, MutOrigin.cast_from[view_origin]](
             ptr=self._buf.get_ptr()
             .unsafe_origin_cast[MutOrigin.cast_from[view_origin]]()
             .offset(start_x * self.strides[0] + start_y * self.strides[1])
         )
-        var sliced_view = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
+        var sliced_view = MatrixView[Self.dtype, MutOrigin.cast_from[view_origin]](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
                 Int(ceil((end_y - start_y) / step_y)),
@@ -760,7 +760,7 @@ struct MatrixBase[
         return sliced_view^
 
     # for creating a copy of the slice.
-    fn __getitem__(self, x: Slice, y: Slice) -> Matrix[dtype]:
+    fn __getitem__(self, x: Slice, y: Slice) -> Matrix[Self.dtype]:
         """
         Retrieve a copy of the specified slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified slice of the original matrix. The returned matrix will have the shape determined by the slice ranges.
 
@@ -792,7 +792,7 @@ struct MatrixBase[
         var range_x = range(start_x, end_x, step_x)
         var range_y = range(start_y, end_y, step_y)
 
-        var B = Matrix[dtype](
+        var B = Matrix[Self.dtype](
             shape=(len(range_x), len(range_y)), order=self.order()
         )
         var row = 0
@@ -808,7 +808,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, x: Slice, var y: Int) raises -> MatrixView[
-        dtype, MutOrigin.cast_from[view_origin]
+        Self.dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
         Retrieve a view of a specific column slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified column slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
@@ -849,12 +849,12 @@ struct MatrixBase[
         var step_x: Int
         start_x, end_x, step_x = x.indices(self.shape[0])
 
-        var new_data = DataContainer[dtype, MutOrigin.cast_from[view_origin]](
+        var new_data = DataContainer[Self.dtype, MutOrigin.cast_from[view_origin]](
             ptr=self._buf.get_ptr()
             .unsafe_origin_cast[MutOrigin.cast_from[view_origin]]()
             .offset(start_x * self.strides[0] + y * self.strides[1])
         )
-        var column_view = MatrixView[dtype, MutOrigin.cast_from[view_origin]](
+        var column_view = MatrixView[Self.dtype, MutOrigin.cast_from[view_origin]](
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
                 1,
@@ -865,7 +865,7 @@ struct MatrixBase[
 
         return column_view^
 
-    fn __getitem__(self, x: Slice, var y: Int) -> Matrix[dtype]:
+    fn __getitem__(self, x: Slice, var y: Int) -> Matrix[Self.dtype]:
         """
         Retrieve a copy of a specific column slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
         of the data from the specified and column slice of the original matrix. The returned matrix will have a shape determined by the row slice and a single column.
@@ -896,7 +896,7 @@ struct MatrixBase[
         var step_x: Int
         start_x, end_x, step_x = x.indices(self.shape[0])
         var range_x = range(start_x, end_x, step_x)
-        var res = Matrix[dtype](
+        var res = Matrix[Self.dtype](
             shape=(
                 len(range_x),
                 1,
@@ -912,7 +912,7 @@ struct MatrixBase[
     fn get[
         is_mutable: Bool, //, view_origin: Origin[is_mutable]
     ](ref [view_origin]self, var x: Int, y: Slice) raises -> MatrixView[
-        dtype, MutOrigin.cast_from[view_origin]
+        Self.dtype, MutOrigin.cast_from[view_origin]
     ] where (own_data == True):
         """
         Retrieve a view of a specific row slice in the matrix. This method returns a non-owning `MatrixView` that references the data of the specified row slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
@@ -952,13 +952,13 @@ struct MatrixBase[
         var end_y: Int
         var step_y: Int
         start_y, end_y, step_y = y.indices(self.shape[1])
-        var new_data = DataContainer[dtype, MutOrigin.cast_from[view_origin]](
+        var new_data = DataContainer[Self.dtype, MutOrigin.cast_from[view_origin]](
             ptr=self._buf.get_ptr()
             .unsafe_origin_cast[MutOrigin.cast_from[view_origin]]()
             .offset(x * self.strides[0] + start_y * self.strides[1])
         )
         var row_slice_view = MatrixView[
-            dtype, MutOrigin.cast_from[view_origin]
+            Self.dtype, MutOrigin.cast_from[view_origin]
         ](
             shape=(
                 1,
@@ -969,7 +969,7 @@ struct MatrixBase[
         )
         return row_slice_view^
 
-    fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[dtype]:
+    fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
         """
         Retrieve a copy of a specific row slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
         of the data from the specified row and column slice of the original matrix. The returned matrix will have a shape of (1, number_of_columns_in_slice).
@@ -1007,7 +1007,7 @@ struct MatrixBase[
         start_y, end_y, step_y = y.indices(self.shape[1])
         var range_y = range(start_y, end_y, step_y)
 
-        var B = Matrix[dtype](shape=(1, len(range_y)), order=self.order())
+        var B = Matrix[Self.dtype](shape=(1, len(range_y)), order=self.order())
         var col = 0
         for j in range_y:
             B._store(0, col, self._load(x, j))
@@ -1015,7 +1015,7 @@ struct MatrixBase[
 
         return B^
 
-    fn __getitem__(self, indices: List[Int]) raises -> Matrix[dtype]:
+    fn __getitem__(self, indices: List[Int]) raises -> Matrix[Self.dtype]:
         """
         Retrieve a copy of specific rows in the matrix based on the provided indices. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified rows of the original matrix. The returned matrix will have a shape of (number_of_indices, number_of_columns).
 
@@ -1038,7 +1038,7 @@ struct MatrixBase[
         """
         var num_cols = self.shape[1]
         var num_rows = len(indices)
-        var selected_rows = Matrix.zeros[dtype](shape=(num_rows, num_cols))
+        var selected_rows = Matrix.zeros[Self.dtype](shape=(num_rows, num_cols))
         for i in range(num_rows):
             if indices[i] >= self.shape[0] or indices[i] < -self.shape[0]:
                 raise Error(
@@ -1049,7 +1049,7 @@ struct MatrixBase[
             selected_rows[i] = self[indices[i]]
         return selected_rows^
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[dtype, width]:
+    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self.dtype, width]:
         """
         Load a SIMD element from the matrix at the specified linear index.
 
@@ -1081,7 +1081,7 @@ struct MatrixBase[
         var idx_norm = self.normalize(idx, self.size)
         return self._buf.ptr.load[width=width](idx_norm)
 
-    fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[dtype, width]:
+    fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[Self.dtype, width]:
         """
         `__getitem__` with width.
         Unsafe: No boundary check!
@@ -1090,14 +1090,14 @@ struct MatrixBase[
             x * self.strides[0] + y * self.strides[1]
         )
 
-    fn _load[width: Int = 1](self, idx: Int) -> SIMD[dtype, width]:
+    fn _load[width: Int = 1](self, idx: Int) -> SIMD[Self.dtype, width]:
         """
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
         return self._buf.ptr.load[width=width](idx)
 
-    fn __setitem__(mut self, x: Int, y: Int, value: Scalar[dtype]) raises:
+    fn __setitem__(mut self, x: Int, y: Int, value: Scalar[Self.dtype]) raises:
         """
         Set the value at the specified row and column indices in the matrix.
 
@@ -1134,7 +1134,7 @@ struct MatrixBase[
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
     fn __setitem__(
-        self, var x: Int, value: MatrixBase[dtype, **_]
+        self, var x: Int, value: MatrixBase[Self.dtype, **_]
     ) raises where Self.own_data == True and value.own_data == True:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
@@ -1204,7 +1204,7 @@ struct MatrixBase[
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
-    fn set(self, var x: Int, value: MatrixBase[dtype, **_]) raises:
+    fn set(self, var x: Int, value: MatrixBase[Self.dtype, **_]) raises:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
         the provided `value` matrix. The `value` matrix must be a row vector with
@@ -1277,7 +1277,7 @@ struct MatrixBase[
                     self._store(x, j, value._load(0, j))
 
     fn __setitem__(
-        self, x: Slice, y: Int, value: MatrixBase[dtype, **_]
+        self, x: Slice, y: Int, value: MatrixBase[Self.dtype, **_]
     ) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
@@ -1337,7 +1337,7 @@ struct MatrixBase[
             self._store(i, y_norm, value._load(row, 0))
             row += 1
 
-    fn set(self, x: Slice, y: Int, value: MatrixBase[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Int, value: MatrixBase[Self.dtype, **_]) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
         and row slice `x` with the given matrix. This method replaces the values
@@ -1400,7 +1400,7 @@ struct MatrixBase[
             row += 1
 
     fn __setitem__(
-        self, x: Int, y: Slice, value: MatrixBase[dtype, **_]
+        self, x: Int, y: Slice, value: MatrixBase[Self.dtype, **_]
     ) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
@@ -1458,7 +1458,7 @@ struct MatrixBase[
             self._store(x_norm, j, value._load(0, col))
             col += 1
 
-    fn set(self, x: Int, y: Slice, value: MatrixBase[dtype, **_]) raises:
+    fn set(self, x: Int, y: Slice, value: MatrixBase[Self.dtype, **_]) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
         and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
@@ -1519,7 +1519,7 @@ struct MatrixBase[
             col += 1
 
     fn __setitem__(
-        self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]
+        self, x: Slice, y: Slice, value: MatrixBase[Self.dtype, **_]
     ) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
@@ -1572,7 +1572,7 @@ struct MatrixBase[
                 col += 1
             row += 1
 
-    fn set(self, x: Slice, y: Slice, value: MatrixBase[dtype, **_]) raises:
+    fn set(self, x: Slice, y: Slice, value: MatrixBase[Self.dtype, **_]) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
 
@@ -1628,21 +1628,21 @@ struct MatrixBase[
                 col += 1
             row += 1
 
-    fn _store[width: Int = 1](self, x: Int, y: Int, simd: SIMD[dtype, width]):
+    fn _store[width: Int = 1](self, x: Int, y: Int, simd: SIMD[Self.dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
         self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], simd)
 
-    fn _store_idx[width: Int = 1](self, idx: Int, val: SIMD[dtype, width]):
+    fn _store_idx[width: Int = 1](self, idx: Int, val: SIMD[Self.dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
         self._buf.ptr.store(idx, val)
 
-    fn store[width: Int = 1](self, idx: Int, val: SIMD[dtype, width]) raises:
+    fn store[width: Int = 1](self, idx: Int, val: SIMD[Self.dtype, width]) raises:
         """
         Store a SIMD element into the matrix at the specified linear index.
 
@@ -1676,7 +1676,7 @@ struct MatrixBase[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    fn view(ref self) -> MatrixView[dtype, MutOrigin.cast_from[origin]]:
+    fn view(ref self) -> MatrixView[Self.dtype, MutOrigin.cast_from[origin]]:
         """
         Return a non-owning view of the matrix. This method creates and returns a `MatrixView` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
 
@@ -1690,12 +1690,12 @@ struct MatrixBase[
             var mat_view = mat.view()  # Create a view of the original matrix
             ```
         """
-        var new_data = DataContainer[dtype, MutOrigin.cast_from[origin]](
+        var new_data = DataContainer[Self.dtype, MutOrigin.cast_from[origin]](
             ptr=self._buf.get_ptr().unsafe_origin_cast[
                 MutOrigin.cast_from[origin]
             ]()
         )
-        var matrix_view = MatrixView[dtype, MutOrigin.cast_from[origin]](
+        var matrix_view = MatrixView[Self.dtype, MutOrigin.cast_from[origin]](
             shape=self.shape,
             strides=self.strides,
             data=new_data,
@@ -1725,7 +1725,7 @@ struct MatrixBase[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixBase[dtype, own_data=True, origin=origin],
+                    MatrixBase[Self.dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1762,7 +1762,7 @@ struct MatrixBase[
             index=0,
             src=rebind[
                 Pointer[
-                    MatrixBase[dtype, own_data=True, origin=origin],
+                    MatrixBase[Self.dtype, own_data=True, origin=origin],
                     origin_of(self),
                 ]
             ](Pointer(to=self)),
@@ -1852,7 +1852,7 @@ struct MatrixBase[
     # Arithmetic dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __add__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+    fn __add__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[Self.dtype]:
         """
         Add two matrices element-wise.
 
@@ -1877,20 +1877,20 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__add__
+                Self.dtype, SIMD.__add__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__add__
-            ](broadcast_to[dtype](self, other.shape, self.order()), other)
+                Self.dtype, SIMD.__add__
+            ](broadcast_to[Self.dtype](self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__add__
-            ](self, broadcast_to[dtype](other, self.shape, self.order()))
+                Self.dtype, SIMD.__add__
+            ](self, broadcast_to[Self.dtype](other, self.shape, self.order()))
 
-    fn __add__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __add__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Add a scalar to every element of the matrix.
 
@@ -1907,9 +1907,9 @@ struct MatrixBase[
             print(A + 2)
             ```
         """
-        return self + broadcast_to[dtype](other, self.shape, self.order())
+        return self + broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __radd__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __radd__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Add a matrix to a scalar (right-hand side).
 
@@ -1926,9 +1926,9 @@ struct MatrixBase[
             print(2 + A)
             ```
         """
-        return broadcast_to[dtype](other, self.shape, self.order()) + self
+        return broadcast_to[Self.dtype](other, self.shape, self.order()) + self
 
-    fn __sub__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+    fn __sub__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[Self.dtype]:
         """
         Subtract two matrices element-wise.
 
@@ -1953,20 +1953,20 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__sub__
+                Self.dtype, SIMD.__sub__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__sub__
+                Self.dtype, SIMD.__sub__
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__sub__
+                Self.dtype, SIMD.__sub__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __sub__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __sub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Subtract a scalar from every element of the matrix.
 
@@ -1983,9 +1983,9 @@ struct MatrixBase[
             print(A - 2)
             ```
         """
-        return self - broadcast_to[dtype](other, self.shape, self.order())
+        return self - broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __rsub__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __rsub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Subtract a matrix from a scalar (right-hand side).
 
@@ -2002,9 +2002,9 @@ struct MatrixBase[
             print(2 - A)
             ```
         """
-        return broadcast_to[dtype](other, self.shape, self.order()) - self
+        return broadcast_to[Self.dtype](other, self.shape, self.order()) - self
 
-    fn __mul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+    fn __mul__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[Self.dtype]:
         """
         Multiply two matrices element-wise.
 
@@ -2029,20 +2029,20 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__mul__
+                Self.dtype, SIMD.__mul__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__mul__
+                Self.dtype, SIMD.__mul__
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__mul__
+                Self.dtype, SIMD.__mul__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __mul__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __mul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Multiply matrix by scalar.
 
@@ -2059,9 +2059,9 @@ struct MatrixBase[
             print(A * 2)
             ```
         """
-        return self * broadcast_to[dtype](other, self.shape, self.order())
+        return self * broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __rmul__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __rmul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Multiply scalar by matrix (right-hand side).
 
@@ -2078,9 +2078,9 @@ struct MatrixBase[
             print(2 * A)
             ```
         """
-        return broadcast_to[dtype](other, self.shape, self.order()) * self
+        return broadcast_to[Self.dtype](other, self.shape, self.order()) * self
 
-    fn __truediv__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+    fn __truediv__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[Self.dtype]:
         """
         Divide two matrices element-wise.
 
@@ -2105,20 +2105,20 @@ struct MatrixBase[
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__truediv__
+                Self.dtype, SIMD.__truediv__
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__truediv__
+                Self.dtype, SIMD.__truediv__
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                dtype, SIMD.__truediv__
+                Self.dtype, SIMD.__truediv__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __truediv__(self, other: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __truediv__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Divide matrix by scalar.
 
@@ -2135,9 +2135,9 @@ struct MatrixBase[
             print(A / 2)
             ```
         """
-        return self / broadcast_to[dtype](other, self.shape, order=self.order())
+        return self / broadcast_to[Self.dtype](other, self.shape, order=self.order())
 
-    fn __pow__(self, rhs: Scalar[dtype]) raises -> Matrix[dtype]:
+    fn __pow__(self, rhs: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Raise each element of the matrix to the power of `rhs`.
 
@@ -2154,14 +2154,14 @@ struct MatrixBase[
             print(A ** 2)
             ```
         """
-        var result: Matrix[dtype] = Matrix[dtype](
+        var result: Matrix[Self.dtype] = Matrix[Self.dtype](
             shape=self.shape, order=self.order()
         )
         for i in range(self.size):
             result._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
         return result^
 
-    fn __lt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __lt__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than.
 
@@ -2185,21 +2185,21 @@ struct MatrixBase[
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.lt](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.lt](
                 broadcast_to(self, other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.lt](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.lt](
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __lt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __lt__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for less-than.
 
@@ -2216,9 +2216,9 @@ struct MatrixBase[
             print(A < 2)
             ```
         """
-        return self < broadcast_to[dtype](other, self.shape, self.order())
+        return self < broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __le__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __le__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than-or-equal.
 
@@ -2242,21 +2242,21 @@ struct MatrixBase[
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.le](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.le](
                 broadcast_to(self, other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.le](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.le](
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __le__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __le__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for less-than-or-equal.
 
@@ -2273,9 +2273,9 @@ struct MatrixBase[
             print(A <= 2)
             ```
         """
-        return self <= broadcast_to[dtype](other, self.shape, self.order())
+        return self <= broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __gt__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __gt__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than.
 
@@ -2299,21 +2299,21 @@ struct MatrixBase[
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.gt](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.gt](
                 broadcast_to(self, other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.gt](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.gt](
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __gt__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __gt__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for greater-than.
 
@@ -2330,9 +2330,9 @@ struct MatrixBase[
             print(A > 2)
             ```
         """
-        return self > broadcast_to[dtype](other, self.shape, self.order())
+        return self > broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __ge__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ge__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than-or-equal.
 
@@ -2356,21 +2356,21 @@ struct MatrixBase[
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.ge](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.ge](
                 broadcast_to(self, other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ge](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.ge](
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ge__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __ge__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for greater-than-or-equal.
 
@@ -2390,9 +2390,9 @@ struct MatrixBase[
             print(A >= 2)
             ```
         """
-        return self >= broadcast_to[dtype](other, self.shape, self.order())
+        return self >= broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __eq__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __eq__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for equality.
 
@@ -2416,21 +2416,21 @@ struct MatrixBase[
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.eq](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.eq](
                 broadcast_to(self, other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.eq](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.eq](
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __eq__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __eq__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for equality.
 
@@ -2447,9 +2447,9 @@ struct MatrixBase[
             print(A == 2)
             ```
         """
-        return self == broadcast_to[dtype](other, self.shape, self.order())
+        return self == broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __ne__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[DType.bool]:
+    fn __ne__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for inequality.
 
@@ -2473,21 +2473,21 @@ struct MatrixBase[
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.ne](
                 self, other
             )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.ne](
                 broadcast_to(self, other.shape, self.order()), other
             )
         else:
-            return _logic_func_matrix_matrix_to_matrix[dtype, SIMD.ne](
+            return _logic_func_matrix_matrix_to_matrix[Self.dtype, SIMD.ne](
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ne__(self, other: Scalar[dtype]) raises -> Matrix[DType.bool]:
+    fn __ne__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for inequality.
 
@@ -2504,9 +2504,9 @@ struct MatrixBase[
             print(A != 2)
             ```
         """
-        return self != broadcast_to[dtype](other, self.shape, self.order())
+        return self != broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __matmul__(self, other: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+    fn __matmul__(self, other: MatrixBase[Self.dtype, **_]) raises -> Matrix[Self.dtype]:
         """
         Matrix multiplication using the @ operator.
 
@@ -2534,7 +2534,7 @@ struct MatrixBase[
     # # ===-------------------------------------------------------------------===#
 
     # FIXME: These return types be Scalar[DType.bool] or Matrix[DType.bool] instead to match numpy. Fix the docstring examples too.
-    fn all(self) -> Scalar[dtype]:
+    fn all(self) -> Scalar[Self.dtype]:
         """
         Returns True if all elements of the matrix evaluate to True.
 
@@ -2552,7 +2552,7 @@ struct MatrixBase[
         """
         return numojo.logic.all(self)
 
-    fn all(self, axis: Int) raises -> Matrix[dtype]:
+    fn all(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Returns a matrix indicating whether all elements along the specified axis evaluate to True.
 
@@ -2572,9 +2572,9 @@ struct MatrixBase[
             print(A.all(axis=1))  # Outputs: [[1], [0]]
             ```
         """
-        return numojo.logic.all[dtype](self, axis=axis)
+        return numojo.logic.all[Self.dtype](self, axis=axis)
 
-    fn any(self) -> Scalar[dtype]:
+    fn any(self) -> Scalar[Self.dtype]:
         """
         Returns True if any element of the matrix evaluates to True.
 
@@ -2592,7 +2592,7 @@ struct MatrixBase[
         """
         return numojo.logic.any(self)
 
-    fn any(self, axis: Int) raises -> Matrix[dtype]:
+    fn any(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Returns a matrix indicating whether any element along the specified axis evaluates to True.
 
@@ -2737,7 +2737,7 @@ struct MatrixBase[
             casted_matrix._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
         return casted_matrix^
 
-    fn cumprod(self) raises -> Matrix[dtype]:
+    fn cumprod(self) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative product of all elements in the matrix, flattened into a single dimension.
 
@@ -2753,7 +2753,7 @@ struct MatrixBase[
         """
         return numojo.math.cumprod(self)
 
-    fn cumprod(self, axis: Int) raises -> Matrix[dtype]:
+    fn cumprod(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative product of elements along a specified axis.
 
@@ -2773,7 +2773,7 @@ struct MatrixBase[
         """
         return numojo.math.cumprod(self, axis=axis)
 
-    fn cumsum(self) raises -> Matrix[dtype]:
+    fn cumsum(self) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative sum of all elements in the matrix, flattened into a single dimension.
 
@@ -2789,7 +2789,7 @@ struct MatrixBase[
         """
         return numojo.math.cumsum(self)
 
-    fn cumsum(self, axis: Int) raises -> Matrix[dtype]:
+    fn cumsum(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative sum of elements along a specified axis.
 
@@ -2809,7 +2809,7 @@ struct MatrixBase[
         """
         return numojo.math.cumsum(self, axis=axis)
 
-    fn fill(self, fill_value: Scalar[dtype]):
+    fn fill(self, fill_value: Scalar[Self.dtype]):
         """
         Fill the matrix with the specified value. This method sets every element of the matrix to `fill_value`.
 
@@ -2830,7 +2830,7 @@ struct MatrixBase[
             self._buf.ptr[i] = fill_value
 
     # * Make it inplace?
-    fn flatten(self) -> Matrix[dtype]:
+    fn flatten(self) -> Matrix[Self.dtype]:
         """
         Return a flattened copy of the matrix. This method returns a new matrix containing all elements of the original matrix in a single row (shape (1, size)), preserving the order.
 
@@ -2844,11 +2844,11 @@ struct MatrixBase[
             print(A.flatten())
             ```
         """
-        var res = Matrix[dtype](shape=(1, self.size), order=self.order())
+        var res = Matrix[Self.dtype](shape=(1, self.size), order=self.order())
         memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
         return res^
 
-    fn inv(self) raises -> Matrix[dtype]:
+    fn inv(self) raises -> Matrix[Self.dtype]:
         """
         Compute the inverse of the matrix.
 
@@ -2886,7 +2886,7 @@ struct MatrixBase[
             order = "C"
         return order
 
-    fn max(self) raises -> Scalar[dtype]:
+    fn max(self) raises -> Scalar[Self.dtype]:
         """
         Return the maximum element in the matrix.
 
@@ -2904,7 +2904,7 @@ struct MatrixBase[
         """
         return numojo.math.extrema.max(self)
 
-    fn max(self, axis: Int) raises -> Matrix[dtype]:
+    fn max(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Return the maximum values along the specified axis.
 
@@ -2964,7 +2964,7 @@ struct MatrixBase[
         """
         return numojo.statistics.mean[returned_dtype](self, axis=axis)
 
-    fn min(self) raises -> Scalar[dtype]:
+    fn min(self) raises -> Scalar[Self.dtype]:
         """
         Return the minimum element in the matrix.
 
@@ -2982,7 +2982,7 @@ struct MatrixBase[
         """
         return numojo.math.extrema.min(self)
 
-    fn min(self, axis: Int) raises -> Matrix[dtype]:
+    fn min(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Return the minimum values along the specified axis.
 
@@ -3002,7 +3002,7 @@ struct MatrixBase[
         """
         return numojo.math.extrema.min(self, axis=axis)
 
-    fn prod(self) -> Scalar[dtype]:
+    fn prod(self) -> Scalar[Self.dtype]:
         """
         Compute the product of all elements in the matrix.
 
@@ -3018,7 +3018,7 @@ struct MatrixBase[
         """
         return numojo.math.prod(self)
 
-    fn prod(self, axis: Int) raises -> Matrix[dtype]:
+    fn prod(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the product of elements along the specified axis.
 
@@ -3040,7 +3040,7 @@ struct MatrixBase[
 
     fn reshape(
         self, shape: Tuple[Int, Int], order: String = "C"
-    ) raises -> Matrix[dtype]:
+    ) raises -> Matrix[Self.dtype]:
         """
         Return a new matrix with the specified shape containing the same data.
 
@@ -3068,7 +3068,7 @@ struct MatrixBase[
                     "Cannot reshape matrix of size {} into shape ({}, {})."
                 ).format(self.size, shape[0], shape[1])
             )
-        var res = Matrix[dtype](shape=shape, order=order)
+        var res = Matrix[Self.dtype](shape=shape, order=order)
 
         if self.flags.C_CONTIGUOUS and order == "F":
             for i in range(shape[0]):
@@ -3119,7 +3119,7 @@ struct MatrixBase[
             ```
         """
         if shape[0] * shape[1] > self.size:
-            var other = MatrixBase[dtype, own_data=own_data, origin=origin](
+            var other = MatrixBase[Self.dtype, own_data=own_data, origin=origin](
                 shape=shape, order=self.order()
             )
             if self.flags.C_CONTIGUOUS:
@@ -3154,7 +3154,7 @@ struct MatrixBase[
             else:
                 self.strides[1] = shape[0]
 
-    fn round(self, decimals: Int) raises -> Matrix[dtype]:
+    fn round(self, decimals: Int) raises -> Matrix[Self.dtype]:
         """
         Round each element of the matrix to the specified number of decimals.
 
@@ -3218,7 +3218,7 @@ struct MatrixBase[
         """
         return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
 
-    fn sum(self) -> Scalar[dtype]:
+    fn sum(self) -> Scalar[Self.dtype]:
         """
         Compute the sum of all elements in the matrix.
 
@@ -3234,7 +3234,7 @@ struct MatrixBase[
         """
         return numojo.math.sum(self)
 
-    fn sum(self, axis: Int) raises -> Matrix[dtype]:
+    fn sum(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the sum of elements along the specified axis.
 
@@ -3254,7 +3254,7 @@ struct MatrixBase[
         """
         return numojo.math.sum(self, axis=axis)
 
-    fn trace(self) raises -> Scalar[dtype]:
+    fn trace(self) raises -> Scalar[Self.dtype]:
         """
         Compute the trace of the matrix (sum of diagonal elements).
 
@@ -3290,7 +3290,7 @@ struct MatrixBase[
         """
         return issymmetric(self)
 
-    fn transpose(self) -> Matrix[dtype]:
+    fn transpose(self) -> Matrix[Self.dtype]:
         """
         Return the transpose of the matrix.
 
@@ -3307,7 +3307,7 @@ struct MatrixBase[
         return transpose(self)
 
     # TODO: we should only allow this for owndata. not for views, it'll lead to weird origin behaviours.
-    fn reorder_layout(self) raises -> Matrix[dtype]:
+    fn reorder_layout(self) raises -> Matrix[Self.dtype]:
         """
         Reorder the memory layout of the matrix to match its current order ("C" or "F"). This method returns a new matrix with the same data but stored in the requested memory layout. Only allowed for matrices with own_data=True.
 
@@ -3327,7 +3327,7 @@ struct MatrixBase[
         """
         return reorder_layout(self)
 
-    fn T(self) -> Matrix[dtype]:
+    fn T(self) -> Matrix[Self.dtype]:
         """
         Return the transpose of the matrix.
 
@@ -3393,7 +3393,7 @@ struct MatrixBase[
     # # To other data types
     # # ===-------------------------------------------------------------------===#
 
-    fn to_ndarray(self) raises -> NDArray[dtype]:
+    fn to_ndarray(self) raises -> NDArray[Self.dtype]:
         """Create `NDArray` from `Matrix`.
 
         Returns a new NDArray with the same shape and data as the Matrix.
@@ -3411,7 +3411,7 @@ struct MatrixBase[
             ```
         """
 
-        var ndarray: NDArray[dtype] = NDArray[dtype](
+        var ndarray: NDArray[Self.dtype] = NDArray[Self.dtype](
             shape=List[Int](self.shape[0], self.shape[1]), order=self.order()
         )
         memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
@@ -3449,36 +3449,36 @@ struct MatrixBase[
             # Implement a dictionary for this later
             var numpyarray: PythonObject
             var np_dtype = np.float64
-            if dtype == DType.float16:
+            if Self.dtype == DType.float16:
                 np_dtype = np.float16
-            elif dtype == DType.float32:
+            elif Self.dtype == DType.float32:
                 np_dtype = np.float32
-            elif dtype == DType.int64:
+            elif Self.dtype == DType.int64:
                 np_dtype = np.int64
-            elif dtype == DType.int32:
+            elif Self.dtype == DType.int32:
                 np_dtype = np.int32
-            elif dtype == DType.int16:
+            elif Self.dtype == DType.int16:
                 np_dtype = np.int16
-            elif dtype == DType.int8:
+            elif Self.dtype == DType.int8:
                 np_dtype = np.int8
-            elif dtype == DType.uint64:
+            elif Self.dtype == DType.uint64:
                 np_dtype = np.uint64
-            elif dtype == DType.uint32:
+            elif Self.dtype == DType.uint32:
                 np_dtype = np.uint32
-            elif dtype == DType.uint16:
+            elif Self.dtype == DType.uint16:
                 np_dtype = np.uint16
-            elif dtype == DType.uint8:
+            elif Self.dtype == DType.uint8:
                 np_dtype = np.uint8
-            elif dtype == DType.bool:
+            elif Self.dtype == DType.bool:
                 np_dtype = np.bool_
-            elif dtype == DType.int:
+            elif Self.dtype == DType.int:
                 np_dtype = np.int64
 
             var order = "C" if self.flags.C_CONTIGUOUS else "F"
             numpyarray = np.empty(np_arr_dim, dtype=np_dtype, order=order)
             var pointer_d = numpyarray.__array_interface__["data"][
                 0
-            ].unsafe_get_as_pointer[dtype]()
+            ].unsafe_get_as_pointer[Self.dtype]()
             memcpy(dest=pointer_d, src=self._buf.get_ptr(), count=self.size)
 
             return numpyarray^
@@ -3771,14 +3771,14 @@ struct _MatrixIter[
         forward: The iteration direction. If True, iterates forward; if False, iterates backward.
     """
 
-    comptime Element = MatrixView[dtype, Self.matrix_origin]
+    comptime Element = MatrixView[Self.dtype, Self.matrix_origin]
     """The type of elements yielded by the iterator (MatrixView). """
 
     var index: Int
     """Current index in the iteration."""
 
     var matrix_ptr: Pointer[
-        MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
+        MatrixBase[Self.dtype, own_data=True, origin = Self.matrix_origin],
         Self.iterator_origin,
     ]
     """Pointer to the source Matrix being iterated over."""
@@ -3787,7 +3787,7 @@ struct _MatrixIter[
         out self,
         index: Int,
         src: Pointer[
-            MatrixBase[dtype, own_data=True, origin = Self.matrix_origin],
+            MatrixBase[Self.dtype, own_data=True, origin = Self.matrix_origin],
             Self.iterator_origin,
         ],
     ):
@@ -3821,7 +3821,7 @@ struct _MatrixIter[
 
     fn __next__(
         mut self,
-    ) raises -> MatrixView[dtype, MutOrigin.cast_from[Self.iterator_origin]]:
+    ) raises -> MatrixView[Self.dtype, MutOrigin.cast_from[Self.iterator_origin]]:
         """Return a view of the next row.
 
         Returns:

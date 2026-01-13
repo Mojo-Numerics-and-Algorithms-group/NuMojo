@@ -12,10 +12,8 @@ from algorithm.functional import vectorize, parallelize
 from memory import memcpy
 from sys import simd_width_of
 
-from numojo.core.flags import Flags
+from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
 from numojo.core.ndarray import NDArray
-from numojo.core.ndshape import NDArrayShape
-from numojo.core.ndstrides import NDArrayStrides
 
 # ===----------------------------------------------------------------------=== #
 # `apply_along_axis`

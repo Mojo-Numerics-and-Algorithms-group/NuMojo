@@ -10,7 +10,7 @@ from memory import UnsafePointer, LegacyUnsafePointer
 
 
 # temporary DataContainer to support transition from LegacyUnsafePointer to UnsafePointer.
-struct DataContainerNew[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
+struct DataContainer[dtype: DType, origin: MutOrigin](ImplicitlyCopyable):
     """
     DataContainer is managing a contiguous block of memory containing elements of type `Scalar[dtype]`, using an `UnsafePointer` with a specified mutability origin. It provides basic memory management and pointer access for low-level array operations.
 

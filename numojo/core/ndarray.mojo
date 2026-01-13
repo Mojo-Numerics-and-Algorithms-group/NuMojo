@@ -61,13 +61,13 @@ from utils import Variant
 # ===----------------------------------------------------------------------===#
 # === numojo core ===
 # ===----------------------------------------------------------------------===#
-from numojo.core.datatypes import _concise_dtype_str
-from numojo.core.flags import Flags
-from numojo.core.item import Item
-from numojo.core.ndshape import NDArrayShape
-from numojo.core.ndstrides import NDArrayStrides
-from numojo.core.data_container import DataContainerNew as DataContainer
-from numojo.core.utility import (
+from numojo.core.dtype.default_dtype import _concise_dtype_str
+from numojo.core.layout.flags import Flags
+from numojo.core.indexing.item import Item
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.memory.data_container import DataContainer
+from numojo.core.indexing.utility import (
     _get_offset,
     _transfer_offset,
     _traverse_iterative,
@@ -83,7 +83,6 @@ from numojo.core.error import (
     ValueError,
     ArithmeticError,
 )
-from numojo.core.array_methods import ellipsis, newaxis
 
 # ===----------------------------------------------------------------------===#
 # === numojo routines (creation / io / logic) ===

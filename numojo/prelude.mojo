@@ -1,31 +1,34 @@
 """
-prelude
-=======
+NuMojo Prelude (`numojo.prelude`)
+================================
 
-NuMojo comes a wide range of functions, types, and constants.
-If you manually import everything,
-it will make the header of the file too long.
-On the other hand, using `from numojo import *` would import a lot of functions
-that you never use and would pollute the naming space.
+The prelude is the recommended “batteries-included” import for day-to-day use.
 
-This module tries to find out a balance by providing a list of things
-that can be imported at one time.
-The list contains the functions or types
-that are the most essential for a user.
+Why it exists:
+- Importing everything from `numojo` is convenient but pollutes your namespace.
+- Importing every symbol manually makes headers long and repetitive.
 
-You can use the following code to import them:
+What it exports:
+- Core container types like `Matrix` and `NDArray`
+- Shape/index helpers like `Shape`, `NDArrayShape`, and `Item`
+- Common dtype aliases (e.g. `f32`, `f64`, `i32`, `boolean`)
+- Complex number helpers (`ComplexSIMD`, `ComplexScalar`, `CScalar`, `1j`)
 
+Usage:
 ```mojo
 from numojo.prelude import *
 ```
+
+For more functions (math, linalg, statistics, etc.), import them from
+`numojo.routines.*` (or directly from `numojo`) as needed.
 """
 
 import numojo as nm
 
-from numojo.core.item import Item
+from numojo.core.indexing.item import Item
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
-from numojo.core.ndshape import Shape, NDArrayShape
+from numojo.core.layout import Shape, NDArrayShape
 from numojo.core.complex.complex_simd import (
     ComplexSIMD,
     CScalar,
@@ -33,7 +36,7 @@ from numojo.core.complex.complex_simd import (
     `1j`,
 )
 from numojo.core.complex.complex_ndarray import ComplexNDArray
-from numojo.core.complex.complex_dtype import (
+from numojo.core.dtype.complex_dtype import (
     ci8,
     ci16,
     ci32,
@@ -55,7 +58,7 @@ from numojo.core.complex.complex_dtype import (
     cboolean,
     cinvalid,
 )
-from numojo.core.datatypes import (
+from numojo.core.dtype.default_dtype import (
     i8,
     i16,
     i32,

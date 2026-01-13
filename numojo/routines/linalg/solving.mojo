@@ -13,7 +13,7 @@ Provides:
 from algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
-from numojo.core.item import Item
+from numojo.core.indexing import Item
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros, eye, full

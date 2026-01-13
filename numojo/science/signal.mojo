@@ -5,8 +5,8 @@ It is like `scipy.signal` in Python.
 """
 
 from numojo.core.ndarray import NDArray
-from numojo.core.ndshape import Shape
-from numojo.core.item import Item
+from numojo.core.layout import Shape
+from numojo.core.indexing import Item
 from numojo.routines.creation import fromstring, zeros
 from numojo.routines.math.sums import sum
 

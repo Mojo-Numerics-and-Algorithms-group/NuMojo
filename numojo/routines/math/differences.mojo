@@ -9,7 +9,7 @@ from algorithm import Static2DTileUnitFunc as Tile2DFunc
 import numojo.routines.math._math_funcs as _mf
 from numojo.routines.creation import arange
 from numojo.core.ndarray import NDArray
-from numojo.core.utility import is_inttype, is_floattype
+from numojo.core.dtype.utility import is_inttype, is_floattype
 
 # TODO:
 # 1) add a Variant[NDArray, Scalar, ...] to include all possibilities

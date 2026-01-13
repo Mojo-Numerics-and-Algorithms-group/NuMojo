@@ -17,8 +17,8 @@ from memory import memcpy
 from sys import simd_width_of
 from algorithm import vectorize
 from numojo.core.ndarray import NDArray
-from numojo.core.ndstrides import NDArrayStrides
-import numojo.core.utility as utility
+from numojo.core.layout import NDArrayStrides
+import numojo.core.indexing.utility as utility
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays

@@ -30,6 +30,7 @@ numojo.mojopkg
 bench_*.mojo
 /tempCodeRunnerFile.mojo
 kgen.trace.*
+extras/
 
 # Auto docs
 docs/readthedocs/docs.json

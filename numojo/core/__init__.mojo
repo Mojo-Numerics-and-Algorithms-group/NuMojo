@@ -18,7 +18,7 @@ from .error import (
     ArithmeticError,
 )
 
-from .matrix import Matrix, MatrixBase, MatrixView
+from .matrix import Matrix
 
 from .layout import (
     NDArrayShape,

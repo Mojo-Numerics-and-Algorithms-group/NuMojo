@@ -19,7 +19,7 @@ from numojo.core.complex import ComplexNDArray
 from numojo.core.layout import NDArrayShape, Shape
 from numojo.core.layout import NDArrayStrides
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 from numojo.core.indexing.utility import (
     _list_of_flipped_range,
     _get_offset,
@@ -329,7 +329,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-fn transpose[dtype: DType](A: MatrixBase[dtype, **_]) -> Matrix[dtype]:
+fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
@@ -350,7 +350,7 @@ fn transpose[dtype: DType](A: MatrixBase[dtype, **_]) -> Matrix[dtype]:
 
 fn reorder_layout[
     dtype: DType
-](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+](A: Matrix[dtype, **_]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -453,7 +453,7 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    A: MatrixBase[dtype, **_],
+    A: Matrix[dtype, **_],
     shape: Tuple[Int, Int],
     override_order: String = "",
 ) raises -> Matrix[dtype]:

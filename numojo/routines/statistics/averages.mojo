@@ -16,7 +16,7 @@ import math as mt
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
 from numojo.routines.math.arithmetic import add
@@ -101,7 +101,7 @@ fn mean[
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: MatrixBase[dtype, **_]) -> Scalar[returned_dtype]:
+](a: Matrix[dtype, **_]) -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in the Matrix.
 
@@ -121,7 +121,7 @@ fn mean[
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[returned_dtype]:
+](a: Matrix[dtype, **_], axis: Int) raises -> Matrix[returned_dtype]:
     """
     Calculate the arithmetic average of a Matrix along the axis.
 
@@ -372,7 +372,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the standard deviation.
 
@@ -397,7 +397,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
+](A: Matrix[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
     returned_dtype
 ]:
     """
@@ -506,7 +506,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the variance.
 
@@ -534,7 +534,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
+](A: Matrix[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
     returned_dtype
 ]:
     """

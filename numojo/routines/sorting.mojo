@@ -25,7 +25,7 @@ from algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 from numojo.routines.manipulation import ravel, transpose
 
 
@@ -271,7 +271,7 @@ fn argsort[
     )
 
 
-fn argsort[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[DType.int]:
+fn argsort[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[DType.int]:
     """
     Argsort the Matrix. It is first flattened before sorting.
     """
@@ -290,7 +290,7 @@ fn argsort[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[DType.int]:
 
 fn argsort[
     dtype: DType
-](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[DType.int]:
+](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[DType.int]:
     """
     Argsort the Matrix along the given axis.
     """

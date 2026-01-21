@@ -11,7 +11,7 @@ import math
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 
 
 # ===-------------------------------------a-----------------------------------===#
@@ -508,8 +508,8 @@ fn allclose[
 fn isclose[
     dtype: DType
 ](
-    a: MatrixBase[dtype, **_],
-    b: MatrixBase[dtype, **_],
+    a: Matrix[dtype, **_],
+    b: Matrix[dtype, **_],
     rtol: Scalar[dtype] = 1e-5,
     atol: Scalar[dtype] = 1e-8,
     equal_nan: Bool = False,

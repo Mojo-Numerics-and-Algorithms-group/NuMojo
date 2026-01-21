@@ -29,9 +29,7 @@ fn all[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     return res
 
 
-fn all[
-    dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn all[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Test whether all array elements evaluate to True along axis.
     """
@@ -141,9 +139,7 @@ fn any[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     return res
 
 
-fn any[
-    dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn any[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Test whether any array elements evaluate to True along axis.
     """

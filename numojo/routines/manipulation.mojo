@@ -348,9 +348,7 @@ fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
     return B^
 
 
-fn reorder_layout[
-    dtype: DType
-](A: Matrix[dtype, **_]) raises -> Matrix[dtype]:
+fn reorder_layout[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.

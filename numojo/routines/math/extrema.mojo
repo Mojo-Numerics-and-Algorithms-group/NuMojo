@@ -222,9 +222,7 @@ fn max[dtype: DType](A: Matrix[dtype, **_]) raises -> Scalar[dtype]:
     return matrix_extrema[dtype, True](A)
 
 
-fn max[
-    dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn max[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Find max item along the given axis.
     """
@@ -344,9 +342,7 @@ fn min[dtype: DType](A: Matrix[dtype, **_]) raises -> Scalar[dtype]:
     return matrix_extrema[dtype, False](A)
 
 
-fn min[
-    dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn min[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Find min item along the given axis.
     """

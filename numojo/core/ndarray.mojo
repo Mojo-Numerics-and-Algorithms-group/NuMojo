@@ -3276,7 +3276,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self = self.__floordiv__(other)
 
-
     fn __rfloordiv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar // array`.

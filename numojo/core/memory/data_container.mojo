@@ -48,7 +48,9 @@ struct DataContainer[dtype: DType, origin: MutOrigin = MutExternalOrigin](
         var data_size = size * size_of[Scalar[Self.dtype]]()
         var total_size = refcount_size + data_size
 
-        var alloc_start = alloc[UInt8](total_size).unsafe_origin_cast[Self.origin]()
+        var alloc_start = alloc[UInt8](total_size).unsafe_origin_cast[
+            Self.origin
+        ]()
         var refcount_ptr = alloc_start.bitcast[Atomic[DType.uint64]]()
         refcount_ptr[] = Atomic[DType.uint64](1)
 

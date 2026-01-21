@@ -137,9 +137,7 @@ fn sum[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     return res
 
 
-fn sum[
-    dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn sum[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Sum up the items in a Matrix along the axis.
 

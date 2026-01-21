@@ -103,9 +103,7 @@ fn prod[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     return res
 
 
-fn prod[
-    dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn prod[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
     """
     Product of items in a Matrix along the axis.
 

@@ -5,6 +5,9 @@ from memory import UnsafePointer, memcpy, memset_zero
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.indexing.utility import (
+    _traverse_buffer_according_to_shape_and_strides,
+)
 from numojo.routines.creation import ones
 
 
@@ -214,9 +217,7 @@ fn cumprod[
     var _shape = B.shape._move_axis_to_end(axis)
     var _strides = B.strides._move_axis_to_end(axis)
 
-    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
-        ptr, _shape, _strides
-    )
+    _traverse_buffer_according_to_shape_and_strides(ptr, _shape, _strides)
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):

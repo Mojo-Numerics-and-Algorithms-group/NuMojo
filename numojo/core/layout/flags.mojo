@@ -8,8 +8,8 @@
 Implements Flags type.
 """
 
-from numojo.core.ndshape import NDArrayShape
-from numojo.core.ndstrides import NDArrayStrides
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.layout.ndstrides import NDArrayStrides
 
 
 @register_passable

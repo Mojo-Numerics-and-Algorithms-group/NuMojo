@@ -26,12 +26,9 @@ from memory import UnsafePointer
 from python import Python, PythonObject
 from sys import simd_width_of
 
-# from tensor import Tensor, TensorShape
 
-from numojo.core.flags import Flags
+from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
 from numojo.core.ndarray import NDArray
-from numojo.core.ndshape import NDArrayShape
-from numojo.core.ndstrides import NDArrayStrides
 
 # ===----------------------------------------------------------------------=== #
 # Offset and traverse functions
@@ -430,128 +427,6 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     except e:
         print("Error in converting to numpy", e)
         return PythonObject()
-
-
-# ===----------------------------------------------------------------------=== #
-# Type checking functions
-# ===----------------------------------------------------------------------=== #
-
-
-@parameter
-fn is_inttype[dtype: DType]() -> Bool:
-    """
-    Check if the given dtype is an integer type at compile time.
-
-    Parameters:
-        dtype: DType.
-
-    Returns:
-        Bool: True if the given dtype is an integer type, False otherwise.
-    """
-
-    @parameter
-    if (
-        dtype == DType.int8
-        or dtype == DType.int16
-        or dtype == DType.int32
-        or dtype == DType.int64
-    ):
-        return True
-    return False
-
-
-fn is_inttype(dtype: DType) -> Bool:
-    """
-    Check if the given dtype is an integer type at run time.
-
-    Args:
-        dtype: DType.
-
-    Returns:
-        Bool: True if the given dtype is an integer type, False otherwise.
-    """
-    if (
-        dtype == DType.int8
-        or dtype == DType.int16
-        or dtype == DType.int32
-        or dtype == DType.int64
-    ):
-        return True
-    return False
-
-
-@parameter
-fn is_floattype[dtype: DType]() -> Bool:
-    """
-    Check if the given dtype is a floating point type at compile time.
-
-    Parameters:
-        dtype: DType.
-
-    Returns:
-        Bool: True if the given dtype is a floating point type, False otherwise.
-    """
-
-    @parameter
-    if (
-        dtype == DType.float16
-        or dtype == DType.float32
-        or dtype == DType.float64
-    ):
-        return True
-    return False
-
-
-fn is_floattype(dtype: DType) -> Bool:
-    """
-    Check if the given dtype is a floating point type at run time.
-
-    Args:
-        dtype: DType.
-
-    Returns:
-        Bool: True if the given dtype is a floating point type, False otherwise.
-    """
-    if (
-        dtype == DType.float16
-        or dtype == DType.float32
-        or dtype == DType.float64
-    ):
-        return True
-    return False
-
-
-@parameter
-fn is_booltype[dtype: DType]() -> Bool:
-    """
-    Check if the given dtype is a boolean type at compile time.
-
-    Parameters:
-        dtype: DType.
-
-    Returns:
-        Bool: True if the given dtype is a boolean type, False otherwise.
-    """
-
-    @parameter
-    if dtype == DType.bool:
-        return True
-    return False
-
-
-fn is_booltype(dtype: DType) -> Bool:
-    """
-    Check if the given dtype is a boolean type at run time.
-
-    Args:
-        dtype: DType.
-
-    Returns:
-        Bool: True if the given dtype is a boolean type, False otherwise.
-    """
-    if dtype == DType.bool:
-        return True
-    return False
 
 
 # ===----------------------------------------------------------------------=== #

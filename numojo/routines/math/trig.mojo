@@ -10,7 +10,7 @@ import math
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
-import numojo.core.matrix as matrix
+from numojo.core.matrix.base import _arithmetic_func_matrix_to_matrix
 
 from numojo.routines.math.misc import sqrt
 from numojo.routines.math.arithmetic import fma
@@ -23,7 +23,7 @@ from numojo.routines.math.arithmetic import fma
 
 
 fn arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
 
 
 fn acos[
@@ -46,11 +46,11 @@ fn acos[
 
 
 fn acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
 
 
 fn arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
 
 
 fn asin[
@@ -73,11 +73,11 @@ fn asin[
 
 
 fn asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
 
 
 fn arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
 
 
 fn atan[
@@ -100,7 +100,7 @@ fn atan[
 
 
 fn atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
 
 
 fn atan2[
@@ -154,7 +154,7 @@ fn cos[
 
 
 fn cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.cos](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.cos](A)
 
 
 fn sin[
@@ -177,7 +177,7 @@ fn sin[
 
 
 fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.sin](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.sin](A)
 
 
 fn tan[
@@ -200,7 +200,7 @@ fn tan[
 
 
 fn tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.tan](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.tan](A)
 
 
 fn hypot[

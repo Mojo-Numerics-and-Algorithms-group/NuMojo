@@ -10,7 +10,7 @@ import math
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
-import numojo.core.matrix as matrix
+from numojo.core.matrix.base import _arithmetic_func_matrix_to_matrix
 
 # TODO: add  dtype in backends and pass it here.
 
@@ -20,7 +20,7 @@ import numojo.core.matrix as matrix
 
 
 fn arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
 
 
 fn acosh[
@@ -45,11 +45,11 @@ fn acosh[
 
 
 fn acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
 
 
 fn arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
 
 
 fn asinh[
@@ -74,11 +74,11 @@ fn asinh[
 
 
 fn asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
 
 
 fn arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
 
 
 fn atanh[
@@ -103,7 +103,7 @@ fn atanh[
 
 
 fn atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
 
 
 # ===------------------------------------------------------------------------===#
@@ -131,7 +131,7 @@ fn cosh[
 
 
 fn cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.cosh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.cosh](A)
 
 
 fn sinh[
@@ -154,7 +154,7 @@ fn sinh[
 
 
 fn sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.sinh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.sinh](A)
 
 
 fn tanh[
@@ -177,4 +177,4 @@ fn tanh[
 
 
 fn tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return matrix._arithmetic_func_matrix_to_matrix[dtype, math.tanh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.tanh](A)

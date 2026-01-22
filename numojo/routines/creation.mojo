@@ -37,12 +37,12 @@ from python import PythonObject, Python
 from sys import simd_width_of
 
 
-from numojo.core.flags import Flags
+from numojo.core.layout import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexScalar
-from numojo.core.ndshape import NDArrayShape
-from numojo.core.utility import _get_offset
-from numojo.core.data_container import DataContainerNew
+from numojo.core.layout import NDArrayShape
+from numojo.core.indexing.utility import _get_offset
+from numojo.core.memory import DataContainer
 
 
 # ===------------------------------------------------------------------------===#
@@ -2790,7 +2790,7 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._buf = DataContainerNew[dtype, b.origin](1)
+    b._buf = DataContainer[dtype, b.origin](1)
     b._buf.ptr.init_pointee_copy(val)
     b.flags.OWNDATA = True
     return b^
@@ -2816,8 +2816,8 @@ fn _0darray[
         ),
     )
     # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutExternalOrigin.
-    b._re._buf = DataContainerNew[cdtype._dtype, MutExternalOrigin](1)
-    b._im._buf = DataContainerNew[cdtype._dtype, MutExternalOrigin](1)
+    b._re._buf = DataContainer[cdtype._dtype, MutExternalOrigin](1)
+    b._im._buf = DataContainer[cdtype._dtype, MutExternalOrigin](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True

@@ -8,7 +8,8 @@ from memory import UnsafePointer, memcpy, memset_zero
 import math as builtin_math
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix, issymmetric, MatrixBase
+from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix.base import issymmetric
 from numojo.routines.creation import zeros, eye, full
 
 

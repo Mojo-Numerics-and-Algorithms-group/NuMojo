@@ -17,7 +17,6 @@ import math as mt
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase
-import numojo.core.utility as utility
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
 from numojo.routines.math.arithmetic import add

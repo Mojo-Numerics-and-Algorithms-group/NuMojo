@@ -14,7 +14,7 @@ from memory import memcpy
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
-from numojo.core.ndshape import NDArrayShape, Shape
+from numojo.core.layout import NDArrayShape, Shape
 from numojo.core.matrix import Matrix, MatrixBase
 from numojo.routines.creation import zeros
 from numojo.routines.math.sums import sum

@@ -1,6 +1,31 @@
 """
-NuMojo is a library for numerical computing in Mojo 🔥
-similar to NumPy, SciPy in Python.
+NuMojo Top-Level Package (`numojo`)
+==================================
+
+This is the main public entry point for NuMojo.
+
+Exports
+-------
+Core container types:
+- `Matrix` (2D array type)
+- `NDArray` (N-dimensional array type)
+- `Shape` / `NDArrayShape`, `Strides` / `NDArrayStrides`
+
+Core utilities:
+- dtype aliases (`f32`, `f64`, `i32`, `i64`, etc.) and complex dtypes
+- common error types (`IndexError`, `ShapeError`, ...)
+
+Routines
+--------
+For convenience, this module also re-exports a curated set of NumPy-like routines
+from `numojo.routines` (creation, manipulation, math, linalg, statistics, IO, etc.).
+
+Notes
+-----
+- This file is intended to provide a stable import surface for users.
+- Internal code should prefer importing from the canonical submodules/packages
+  (e.g. `numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`) rather
+  than relying on extensive top-level re-exports.
 """
 
 comptime __version__: String = "V0.8.0"
@@ -10,13 +35,13 @@ comptime __version__: String = "V0.8.0"
 # ===----------------------------------------------------------------------=== #
 
 from numojo.core.ndarray import NDArray
-from numojo.core.ndshape import NDArrayShape, Shape
-from numojo.core.ndstrides import NDArrayStrides, Strides
-from numojo.core.item import Item
+from numojo.core.layout.ndshape import NDArrayShape, Shape
+from numojo.core.layout.ndstrides import NDArrayStrides, Strides
+from numojo.core.indexing.item import Item
 from numojo.core.matrix import Matrix
 from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
-from numojo.core.complex.complex_dtype import (
+from numojo.core.dtype.complex_dtype import (
     ComplexDType,
     ci8,
     ci16,
@@ -39,7 +64,7 @@ from numojo.core.complex.complex_dtype import (
     cboolean,
     cinvalid,
 )
-from numojo.core.datatypes import (
+from numojo.core.dtype.default_dtype import (
     i8,
     i16,
     i32,

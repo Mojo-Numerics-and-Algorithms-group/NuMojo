@@ -28,9 +28,7 @@ from collections.optional import Optional
 from sys import simd_width_of
 
 from numojo.core.matrix import Matrix, MatrixBase
-import numojo.core.matrix as matrix
 from numojo.core.ndarray import NDArray
-import numojo.core.utility as utility
 from numojo.routines.creation import full
 from numojo.routines.sorting import binary_sort
 

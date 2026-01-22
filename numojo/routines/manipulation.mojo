@@ -16,11 +16,15 @@ from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexNDArray
-from numojo.core.ndshape import NDArrayShape, Shape
-from numojo.core.ndstrides import NDArrayStrides
+from numojo.core.layout import NDArrayShape, Shape
+from numojo.core.layout import NDArrayStrides
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase
-from numojo.core.utility import _list_of_flipped_range, _get_offset
+from numojo.core.indexing.utility import (
+    _list_of_flipped_range,
+    _get_offset,
+    _traverse_buffer_according_to_shape_and_strides,
+)
 
 # ===----------------------------------------------------------------------=== #
 # TODO:
@@ -288,9 +292,9 @@ fn transpose[
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
-    numojo.core.utility._traverse_buffer_according_to_shape_and_strides[
-        I.origin
-    ](ptr, new_shape, new_strides)
+    _traverse_buffer_according_to_shape_and_strides[I.origin](
+        ptr, new_shape, new_strides
+    )
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
@@ -621,7 +625,7 @@ fn flip[
     var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
-    numojo.core.utility._traverse_buffer_according_to_shape_and_strides(
+    _traverse_buffer_according_to_shape_and_strides(
         ptr, A.shape._move_axis_to_end(axis), A.strides._move_axis_to_end(axis)
     )
 

@@ -9,10 +9,10 @@ from sys import simd_width_of
 from collections.optional import Optional
 
 from numojo.core.ndarray import NDArray
-from numojo.core.ndshape import NDArrayShape
+from numojo.core.layout import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix, MatrixBase
-from numojo.core.utility import is_inttype, is_floattype
+from numojo.core.dtype.utility import is_inttype, is_floattype
 from numojo.routines.sorting import binary_sort
 from numojo.routines.math.extrema import _max, _min
 

@@ -2,7 +2,7 @@ from builtin.math import pow
 import math as mt
 from utils.numerics import isnan, isinf
 
-from numojo.core.utility import is_inttype, is_floattype
+from numojo.core.dtype.utility import is_inttype, is_floattype
 
 comptime DEFAULT_PRECISION = 4
 comptime DEFAULT_SUPPRESS_SMALL = False

@@ -14,7 +14,7 @@ complex number operations like conjugation and absolute value.
 """
 
 from math import sqrt, sin, cos
-from numojo.core.complex.complex_dtype import ComplexDType
+from numojo.core.dtype import ComplexDType
 
 comptime ComplexScalar = ComplexSIMD[_, width=1]
 """ComplexScalar alias is for internal purposes (width=1 specialization)."""

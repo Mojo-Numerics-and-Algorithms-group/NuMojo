@@ -20,11 +20,11 @@ from sys import simd_width_of
 from python import PythonObject, Python
 from math import ceil
 
-from numojo.core.flags import Flags
+from numojo.core.layout.flags import Flags
 from numojo.core.ndarray import NDArray
-from numojo.core.data_container import DataContainerNew as DataContainer
+from numojo.core.memory.data_container import DataContainer
 from numojo.core.traits.buffered import Buffered
-from numojo.core.utility import _get_offset
+from numojo.core.indexing.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
 

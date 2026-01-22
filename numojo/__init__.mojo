@@ -235,7 +235,6 @@ from numojo.routines.creation import (
 from numojo.routines import indexing
 from numojo.routines.indexing import `where`, compress, take_along_axis
 
-from numojo.routines.functional import apply_along_axis
 
 from numojo.routines import manipulation
 from numojo.routines.manipulation import (

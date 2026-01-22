@@ -666,7 +666,7 @@ struct NDArrayStrides(
                 return True
         return False
 
-    fn __iter__(self) raises -> _StrideIter:
+    fn __iter__(self) raises -> _StrideIter[True]:
         """
         Iterate over elements of the NDArrayStrides, returning copied values.
 
@@ -681,7 +681,7 @@ struct NDArrayStrides(
             print(stride)  # Prints: 12, 4, 1
         ```
         """
-        return _StrideIter(
+        return _StrideIter[True](
             strides=self,
             length=self.ndim,
         )

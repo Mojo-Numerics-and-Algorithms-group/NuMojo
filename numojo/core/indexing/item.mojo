@@ -251,7 +251,7 @@ struct Item(
 
         self._buf[norm_idx] = index(val)
 
-    fn __iter__(self) raises -> _ItemIter:
+    fn __iter__(self) raises -> _ItemIter[True]:
         """Iterate over elements of the NDArray, returning copied value.
 
         Returns:
@@ -261,7 +261,7 @@ struct Item(
             Need to add lifetimes after the new release.
         """
 
-        return _ItemIter(
+        return _ItemIter[True](
             item=self,
             length=self.ndim,
         )

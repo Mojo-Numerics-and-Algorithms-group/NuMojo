@@ -27,6 +27,7 @@ from numojo.core.layout import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.routines.manipulation import ravel, transpose
+from numojo.routines.functional import apply_along_axis_preserve, apply_along_axis_inplace, apply_along_axis_indices
 
 
 # ===----------------------------------------------------------------------=== #
@@ -90,11 +91,11 @@ fn sort[
             return quick_sort_1d(a)
 
     if stable:
-        return numojo.apply_along_axis[func1d=quick_sort_stable_1d](
+        return apply_along_axis_preserve[dtype, func1d=quick_sort_stable_1d](
             a, axis=normalized_axis
         )
     else:
-        return numojo.apply_along_axis[func1d=quick_sort_1d](
+        return apply_along_axis_preserve[dtype, func1d=quick_sort_1d](
             a, axis=normalized_axis
         )
 
@@ -132,11 +133,11 @@ fn sort_inplace[
             quick_sort_inplace_1d(a)
 
     if stable:
-        numojo.apply_along_axis[func1d=quick_sort_stable_inplace_1d](
+        apply_along_axis_inplace[dtype, func1d=quick_sort_stable_inplace_1d](
             a, axis=normalized_axis
         )
     else:
-        numojo.apply_along_axis[func1d=quick_sort_inplace_1d](
+        apply_along_axis_inplace[dtype, func1d=quick_sort_inplace_1d](
             a, axis=normalized_axis
         )
 
@@ -266,7 +267,7 @@ fn argsort[
     if (a.ndim == 1) and (normalized_axis == 0):
         return argsort_quick_sort_1d(a)
 
-    return numojo.apply_along_axis[func1d=argsort_quick_sort_1d](
+    return apply_along_axis_indices[dtype, func1d=argsort_quick_sort_1d](
         a, axis=normalized_axis
     )
 

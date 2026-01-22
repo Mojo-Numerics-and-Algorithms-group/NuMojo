@@ -24,14 +24,14 @@ fn test_apply_along_axis() raises:
 
     for i in range(a.ndim):
         check(
-            nm.apply_along_axis[nm.sorting.quick_sort_1d](a, axis=i),
+            nm.apply_along_axis_preserve[nm.DType.float64, nm.sorting.quick_sort_1d](a, axis=i),
             np.apply_along_axis(np.sort, axis=i, arr=anp),
             String(
                 "`apply_along_axis` C-order array along axis {} is broken"
             ).format(i),
         )
         check(
-            nm.apply_along_axis[nm.sorting.quick_sort_1d](b, axis=i),
+            nm.apply_along_axis_preserve[nm.DType.float64, nm.sorting.quick_sort_1d](b, axis=i),
             np.apply_along_axis(np.sort, axis=i, arr=bnp),
             String(
                 "`apply_along_axis` F-order array along axis {} is broken"

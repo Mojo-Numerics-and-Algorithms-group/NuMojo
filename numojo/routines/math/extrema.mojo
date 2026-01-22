@@ -31,12 +31,15 @@ from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import full
 from numojo.routines.sorting import binary_sort
+from numojo.routines.functional import apply_along_axis_reduce
+from numojo.routines.manipulation import ravel
+
+from gpu.primitives.warp import max as gpu_max
 
 
 # ===-----------------------------------------------------------------------===#
 # Find extrema in elements of a single array.
 # ===-----------------------------------------------------------------------===#
-
 
 fn extrema_1d[
     dtype: DType, //, is_max: Bool
@@ -67,7 +70,8 @@ fn extrema_1d[
         fn vectorize_max[
             simd_width: Int
         ](offset: Int) unified {mut value, read a} -> None:
-            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
+            # var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
+            var temp = gpu_max(a._buf.ptr.load[width=simd_width](offset))
             if temp > value:
                 value = temp
 
@@ -81,7 +85,8 @@ fn extrema_1d[
         fn vectorize_min[
             simd_width: Int
         ](offset: Int) unified {mut value, read a} -> None:
-            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
+            # var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
+            var temp = gpu_max(a._buf.ptr.load[width=simd_width](offset))
             if temp < value:
                 value = temp
 
@@ -110,6 +115,11 @@ fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     else:
         return extrema_1d[is_max=True](ravel(a))
 
+fn extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Finds the max value in a 1-D array.
+    """
+    return extrema_1d[is_max=True](a)
 
 fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
@@ -138,7 +148,7 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return numojo.apply_along_axis[func1d = extrema_1d[is_max=True]](
+    return apply_along_axis_reduce[dtype, func1d = extrema_1d_max](
         a=a, axis=normalized_axis
     )
 
@@ -330,7 +340,7 @@ fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return numojo.apply_along_axis[func1d = extrema_1d[is_max=False]](
+    return apply_along_axis_reduce[func1d = extrema_1d[is_max=False]](
         a=a, axis=normalized_axis
     )
 

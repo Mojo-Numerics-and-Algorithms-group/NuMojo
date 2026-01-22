@@ -251,17 +251,14 @@ fn _traverse_iterative[
     """
     var total_elements = narr.size
 
-    # # parallelized version was slower xD
-    for _ in range(total_elements):
+    # `strides` here is a logical multi-index -> linear offset mapping.
+    # Using it directly as the destination offset breaks when `narr.strides`
+    # is not a contiguous layout mapping (e.g. slices that create F-order views).
+    # The destination buffer is always laid out contiguously for `narr`, so we
+    # write using a simple linear counter.
+    for lin in range(total_elements):
         var orig_idx = offset + _get_offset(index, coefficients)
-        var narr_idx = _get_offset(index, strides)
-        try:
-            if narr_idx >= total_elements:
-                raise Error("Invalid index: index out of bound")
-        except:
-            return
-
-        narr._buf.ptr.store(narr_idx, orig._buf.ptr.load[width=1](orig_idx))
+        narr._buf.ptr.store(lin, orig._buf.ptr.load[width=1](orig_idx))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1
@@ -299,18 +296,13 @@ fn _traverse_iterative_setter[
         offset: The offset to the first element of the original NDArray.
         index: The list of indices.
     """
-    # # parallelized version was slower xD
+    # The source `orig` being assigned from is contiguous in its own buffer.
+    # When iterating logical indices, write/read using a contiguous linear
+    # counter for `orig`, not a potentially non-contiguous stride mapping.
     var total_elements = narr.size
-    for _ in range(total_elements):
+    for lin in range(total_elements):
         var orig_idx = offset + _get_offset(index, coefficients)
-        var narr_idx = _get_offset(index, strides)
-        try:
-            if narr_idx >= total_elements:
-                raise Error("Invalid index: index out of bound")
-        except:
-            return
-
-        narr._buf.ptr.store(orig_idx, orig._buf.ptr.load[width=1](narr_idx))
+        orig._buf.ptr.store(orig_idx, narr._buf.ptr.load[width=1](lin))
 
         for d in range(ndim.__len__() - 1, -1, -1):
             index[d] += 1

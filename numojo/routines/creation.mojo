@@ -2547,9 +2547,9 @@ fn array[
     var len = Int(len(data.shape))
     var shape: List[Int] = List[Int]()
     for i in range(len):
-        if Int(data.shape[i]) == 1:
+        if Int(py=data.shape[i]) == 1:
             continue
-        shape.append(Int(data.shape[i]))
+        shape.append(Int(py=data.shape[i]))
 
     var np = Python.import_module("numpy")
     var np_dtype = np.float64
@@ -2628,9 +2628,9 @@ fn array[
             "Error in array: Real and imaginary data must have the same shape!"
         )
     for i in range(len):
-        if Int(real.shape[i]) == 1:
+        if Int(py=real.shape[i]) == 1:
             continue
-        shape.append(Int(real.shape[i]))
+        shape.append(Int(py=real.shape[i]))
 
     var np = Python.import_module("numpy")
     var np_dtype = np.float64

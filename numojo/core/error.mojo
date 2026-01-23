@@ -17,6 +17,8 @@ Currently we have a few common error categories like
 We can expand this list in the future as needed.
 """
 
+comptime RED_COLOR: String = "\033[31m"
+comptime RESET_COLOR: String = "\033[0m"
 
 # TODO: remove suggestion field and remove it from existing instances.
 struct NumojoError[
@@ -59,8 +61,8 @@ struct NumojoError[
         self.location = location
 
     fn __str__(self) -> String:
-        var result = String("NuMojo Error\n")
-        result += String("\tCategory  : ") + String(Self.category) + "\n"
+        var result = RED + String("NuMojo Error\n")
+        result += String("\tCategory  : ") + String(Self.category) + "\n" + RESET.__str__()
         result += String("\tMessage   : ") + self.message + "\n"
         if self.location:
             result += String("\tLocation  : ") + self.location.value() + "\n"

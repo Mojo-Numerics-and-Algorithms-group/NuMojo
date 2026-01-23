@@ -81,7 +81,7 @@ from .complex import (
 
 from .memory import DataContainer
 
-from .indexing import Item
+from .indexing import Item, IndexMethods
 
 import .dtype
 import .layout

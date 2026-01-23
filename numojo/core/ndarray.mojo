@@ -152,7 +152,7 @@ struct NDArray[dtype: DType = DType.float64](
     comptime width: Int = simd_width_of[Self.dtype]()
     """Vector size of the data type."""
 
-    var _buf: DataContainer[Self.dtype, Self.origin]
+    var _buf: DataContainer[Self.dtype]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
     """Number of Dimensions."""
@@ -200,7 +200,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = shape
         self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(shape, order=order)
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -287,7 +287,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = self.shape.ndim
         self.size = self.shape.size_of_array()
         self.strides = NDArrayStrides(strides=strides)
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         memset_zero(self._buf.ptr, self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
@@ -323,7 +323,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = ndim
         self.size = size
         self.flags = flags
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         self.print_options = PrintOptions()
 
     # for creating views (unsafe!)
@@ -379,7 +379,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = other.shape
         self.size = other.size
         self.strides = other.strides
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
         self.flags = Flags(
             c_contiguous=other.flags.C_CONTIGUOUS,
@@ -410,8 +410,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Destroys all elements in the list and free its memory.
         """
-        if self.flags.OWNDATA:
-            self._buf.ptr.free()
+        # if self.flags.OWNDATA:
+        #     self._buf.ptr.free()
+        _ = self._buf^
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
@@ -4781,7 +4782,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn unsafe_ptr(
         ref self,
-    ) -> UnsafePointer[Scalar[Self.dtype], origin = Self.origin]:
+    ) -> ref [self._buf.ptr] UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
         """
         Retreive pointer without taking ownership.
 

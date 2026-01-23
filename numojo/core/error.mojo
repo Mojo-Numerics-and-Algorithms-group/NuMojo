@@ -18,6 +18,7 @@ We can expand this list in the future as needed.
 """
 
 
+# TODO: remove suggestion field and remove it from existing instances.
 struct NumojoError[
     category: String,
 ](Stringable, Writable):

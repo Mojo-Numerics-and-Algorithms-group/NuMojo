@@ -34,8 +34,6 @@ from numojo.routines.sorting import binary_sort
 from numojo.routines.functional import apply_along_axis_reduce
 from numojo.routines.manipulation import ravel
 
-from gpu.primitives.warp import max as gpu_max
-
 
 # ===-----------------------------------------------------------------------===#
 # Find extrema in elements of a single array.
@@ -70,8 +68,7 @@ fn extrema_1d[
         fn vectorize_max[
             simd_width: Int
         ](offset: Int) unified {mut value, read a} -> None:
-            # var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
-            var temp = gpu_max(a._buf.ptr.load[width=simd_width](offset))
+            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
             if temp > value:
                 value = temp
 
@@ -85,8 +82,7 @@ fn extrema_1d[
         fn vectorize_min[
             simd_width: Int
         ](offset: Int) unified {mut value, read a} -> None:
-            # var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
-            var temp = gpu_max(a._buf.ptr.load[width=simd_width](offset))
+            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
             if temp < value:
                 value = temp
 

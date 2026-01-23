@@ -7,3 +7,5 @@ Indexing-related helpers and types used by NuMojo core containers.
 """
 
 from .item import Item
+
+from .utility import IndexMethods

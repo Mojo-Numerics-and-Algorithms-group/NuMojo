@@ -130,7 +130,7 @@ struct Matrix[
     comptime width: Int = simd_width_of[Self.dtype]()  #
     """Vector size of the data type."""
 
-    var _buf: DataContainer[Self.dtype, Self.origin]
+    var _buf: DataContainer[Self.dtype]
     """Data buffer of the items in the Matrix."""
 
     var shape: Tuple[Int, Int]
@@ -180,7 +180,7 @@ struct Matrix[
         else:
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
-        self._buf = DataContainer[Self.dtype, Self.origin](size=self.size)
+        self._buf = DataContainer[Self.dtype](size=self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -270,7 +270,7 @@ struct Matrix[
         else:
             raise Error(String("Shape too large to be a matrix."))
 
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -286,7 +286,7 @@ struct Matrix[
         out self,
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
-        data: DataContainer[Self.dtype, Self.origin],
+        data: DataContainer[Self.dtype],
     ):
         """
         Initialize a non-owning `Matrix`.
@@ -337,7 +337,7 @@ struct Matrix[
         self.shape = (other.shape[0], other.shape[1])
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
-        self._buf = DataContainer[Self.dtype, Self.origin](other.size)
+        self._buf = other._buf.copy()
         memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
         self.flags = Flags(
             other.shape, other.strides, owndata=True, writeable=True
@@ -404,6 +404,9 @@ struct Matrix[
         """
         return row * self.strides[0] + col * self.strides[1]
 
+    # ===-------------------------------------------------------------------===#
+    # Internal helper methods for bounds checking and slice processing
+    # ===-------------------------------------------------------------------===#
     @always_inline
     fn normalize(self, idx: Int, dim: Int) -> Int:
         """
@@ -417,22 +420,11 @@ struct Matrix[
 
         Returns:
             The normalized index as a non-negative integer.
-
-        Example:
-            ```mojo
-            from numojo.prelude import *
-            var mat = Matrix[f32](shape=(3, 4))
-            var norm_idx = mat.normalize(-1, mat.shape[0])  # Normalize -1 to 2
-            ```
         """
         var idx_norm = idx
         if idx_norm < 0:
             idx_norm = dim + idx_norm
         return idx_norm
-
-    # ===-------------------------------------------------------------------===#
-    # Internal helper methods for bounds checking and slice processing
-    # ===-------------------------------------------------------------------===#
 
     @always_inline
     fn _check_row_bounds(self, x: Int) raises:
@@ -1590,25 +1582,25 @@ struct Matrix[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    fn view(self) -> Matrix[Self.dtype]:
-        """
-        Return a non-owning view of the matrix. This method creates and returns a `Matrix` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
+    # fn view(self) -> Matrix[Self.dtype]:
+    #     """
+    #     Return a non-owning view of the matrix. This method creates and returns a `Matrix` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
 
-        Returns:
-            A `Matrix` referencing the original matrix data.
+    #     Returns:
+    #         A `Matrix` referencing the original matrix data.
 
-        Example:
-            ```mojo
-            from numojo.prelude import *
-            var mat = Matrix.rand((4, 4))
-            var mat_view = mat.view()  # Create a view of the original matrix
-            ```
-        """
-        return Matrix[Self.dtype](
-            shape=self.shape,
-            strides=self.strides,
-            data=self._buf.share(),
-        )
+    #     Example:
+    #         ```mojo
+    #         from numojo.prelude import *
+    #         var mat = Matrix.rand((4, 4))
+    #         var mat_view = mat.view()  # Create a view of the original matrix
+    #         ```
+    #     """
+    #     return Matrix[Self.dtype](
+    #         shape=self.shape,
+    #         strides=self.strides,
+    #         data=self._buf.share(),
+    #     )
 
     fn __iter__(ref self) -> Self.IteratorType[True, True]:
         """
@@ -4458,7 +4450,7 @@ struct _MatrixIter[
             strides: Strides of the matrix.
         """
         self.index = index
-        self._buf = matrix_buf.share()
+        self._buf = matrix_buf.copy()
         self.shape = shape
         self.strides = strides
 

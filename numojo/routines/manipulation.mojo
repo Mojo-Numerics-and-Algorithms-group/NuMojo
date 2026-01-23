@@ -292,7 +292,7 @@ fn transpose[
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
-    _traverse_buffer_according_to_shape_and_strides[I.origin](
+    _traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
 

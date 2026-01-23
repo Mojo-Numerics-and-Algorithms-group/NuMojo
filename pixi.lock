@@ -153,15 +153,15 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/lz4-c-1.10.0-h5888daf_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-4.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markupsafe-3.0.3-pyh7db6752_0.conda
-      - conda: https://conda.modular.com/max-nightly/linux-64/max-26.1.0.dev2026012105-3.14release.conda
-      - conda: https://conda.modular.com/max-nightly/linux-64/max-core-26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/max-pipelines-26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/mblack-26.1.0.dev2026012105-release.conda
+      - conda: https://conda.modular.com/max-nightly/linux-64/max-26.2.0.dev2026012305-3.14release.conda
+      - conda: https://conda.modular.com/max-nightly/linux-64/max-core-26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/max-pipelines-26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/mblack-26.2.0.dev2026012305-release.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mdurl-0.1.2-pyhd8ed1ab_1.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/modular-26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/linux-64/mojo-0.26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/linux-64/mojo-compiler-0.26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/mojo-python-0.26.1.0.dev2026012105-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/modular-26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/linux-64/mojo-0.26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/linux-64/mojo-compiler-0.26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/mojo-python-0.26.2.0.dev2026012305-release.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/msgspec-0.20.0-py314h5bd0f2a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/multidict-6.7.0-pyh62beb40_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/multiprocess-0.70.18-py314h0f05182_2.conda
@@ -399,15 +399,15 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/lz4-c-1.10.0-h286801f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-4.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markupsafe-3.0.3-pyh7db6752_0.conda
-      - conda: https://conda.modular.com/max-nightly/osx-arm64/max-26.1.0.dev2026012105-3.14release.conda
-      - conda: https://conda.modular.com/max-nightly/osx-arm64/max-core-26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/max-pipelines-26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/mblack-26.1.0.dev2026012105-release.conda
+      - conda: https://conda.modular.com/max-nightly/osx-arm64/max-26.2.0.dev2026012305-3.14release.conda
+      - conda: https://conda.modular.com/max-nightly/osx-arm64/max-core-26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/max-pipelines-26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/mblack-26.2.0.dev2026012305-release.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mdurl-0.1.2-pyhd8ed1ab_1.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/modular-26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-0.26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-compiler-0.26.1.0.dev2026012105-release.conda
-      - conda: https://conda.modular.com/max-nightly/noarch/mojo-python-0.26.1.0.dev2026012105-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/modular-26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-0.26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-compiler-0.26.2.0.dev2026012305-release.conda
+      - conda: https://conda.modular.com/max-nightly/noarch/mojo-python-0.26.2.0.dev2026012305-release.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/msgspec-0.20.0-py314h0612a62_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/multidict-6.7.0-pyh62beb40_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/multiprocess-0.70.18-py314h9d33bd4_2.conda
@@ -3419,14 +3419,14 @@ packages:
   license_family: BSD
   size: 15499
   timestamp: 1759055275624
-- conda: https://conda.modular.com/max-nightly/linux-64/max-26.1.0.dev2026012105-3.14release.conda
-  sha256: 0b52f7ab491419653217d9ecb7529090d3aeaa04d5b2228fbcbebf499454f5db
+- conda: https://conda.modular.com/max-nightly/linux-64/max-26.2.0.dev2026012305-3.14release.conda
+  sha256: b863bf4da0444bfeade6d5667db92cfbda350c6619980960701dca33338d7167
   depends:
   - numpy >=1.18
   - typing-extensions >=4.12.2
   - pyyaml >=6.0.1
   - python-gil
-  - max-core ==26.1.0.dev2026012105 release
+  - max-core ==26.2.0.dev2026012305 release
   - python_abi 3.14.* *_cp314
   constrains:
   - click >=8.0.0
@@ -3469,16 +3469,16 @@ packages:
   - sse-starlette >=2.1.2
   - starlette >=0.47.2
   license: LicenseRef-Modular-Proprietary
-  size: 6131398
-  timestamp: 1768973118421
-- conda: https://conda.modular.com/max-nightly/osx-arm64/max-26.1.0.dev2026012105-3.14release.conda
-  sha256: ecd601f0c6ae6ebadde4c83d7bef8826c3649bfaccd0e46ce865f6a7c12c56a9
+  size: 6169441
+  timestamp: 1769145796778
+- conda: https://conda.modular.com/max-nightly/osx-arm64/max-26.2.0.dev2026012305-3.14release.conda
+  sha256: 5f5fbc0c9fdb9368fe5deeece9e63953ba22d60f44e2cee1a92abb812e5f92e8
   depends:
   - numpy >=1.18
   - typing-extensions >=4.12.2
   - pyyaml >=6.0.1
   - python-gil
-  - max-core ==26.1.0.dev2026012105 release
+  - max-core ==26.2.0.dev2026012305 release
   - python_abi 3.14.* *_cp314
   constrains:
   - click >=8.0.0
@@ -3521,25 +3521,25 @@ packages:
   - sse-starlette >=2.1.2
   - starlette >=0.47.2
   license: LicenseRef-Modular-Proprietary
-  size: 8602412
-  timestamp: 1768973376190
-- conda: https://conda.modular.com/max-nightly/linux-64/max-core-26.1.0.dev2026012105-release.conda
-  sha256: 5446d15c89a02aee03807544886b06a5605474b860a822f5b809d09dba738ba3
+  size: 8633183
+  timestamp: 1769145918332
+- conda: https://conda.modular.com/max-nightly/linux-64/max-core-26.2.0.dev2026012305-release.conda
+  sha256: 8c656b0d14bb4d390938d4aed99cc7550aa045f0a9f7358d5586fcacf5b84d9e
   depends:
-  - mojo-compiler ==0.26.1.0.dev2026012105 release
+  - mojo-compiler ==0.26.2.0.dev2026012305 release
   license: LicenseRef-Modular-Proprietary
-  size: 118579255
-  timestamp: 1768973118420
-- conda: https://conda.modular.com/max-nightly/osx-arm64/max-core-26.1.0.dev2026012105-release.conda
-  sha256: fbe8603b9766ad1ea2e25efdef116c532a779ebd188a066a586c6eec14b3e4c1
+  size: 125274068
+  timestamp: 1769145796777
+- conda: https://conda.modular.com/max-nightly/osx-arm64/max-core-26.2.0.dev2026012305-release.conda
+  sha256: fab13006cf5951fc42c2a7b270a9ed688bbf54613322fc2e78ac13c2c02fb51f
   depends:
-  - mojo-compiler ==0.26.1.0.dev2026012105 release
+  - mojo-compiler ==0.26.2.0.dev2026012305 release
   license: LicenseRef-Modular-Proprietary
-  size: 78625129
-  timestamp: 1768973376189
-- conda: https://conda.modular.com/max-nightly/noarch/max-pipelines-26.1.0.dev2026012105-release.conda
+  size: 79263487
+  timestamp: 1769145918332
+- conda: https://conda.modular.com/max-nightly/noarch/max-pipelines-26.2.0.dev2026012305-release.conda
   noarch: python
-  sha256: 9047573b2a6b35d0cd52be199bcaa52b89e780f8a2fe532c07b7b9878eb5dc60
+  sha256: 3db8538b488e37eacba554b46391023177fa3069777a24977c48b604203ac5e8
   depends:
   - click >=8.0.0
   - exceptiongroup >=0.2.2
@@ -3580,13 +3580,13 @@ packages:
   - scipy >=1.13.0
   - sse-starlette >=2.1.2
   - starlette >=0.47.2
-  - max >=26.1.0.dev2026012105,<27.0a0
+  - max >=26.2.0.dev2026012305,<27.0a0
   license: LicenseRef-Modular-Proprietary
-  size: 16851
-  timestamp: 1768973118420
-- conda: https://conda.modular.com/max-nightly/noarch/mblack-26.1.0.dev2026012105-release.conda
+  size: 16840
+  timestamp: 1769145796777
+- conda: https://conda.modular.com/max-nightly/noarch/mblack-26.2.0.dev2026012305-release.conda
   noarch: python
-  sha256: 52642b7aeda8a8f53abf18c017f12c5fa2e79e46d6b920fa1b5a416e528f4753
+  sha256: 8edc476e632f17670f2e8560bab0c262d9532461639326dd98defffeff85342f
   depends:
   - python >=3.10
   - click >=8.0.0
@@ -3597,8 +3597,8 @@ packages:
   - tomli >=1.1.0
   - python
   license: MIT
-  size: 135796
-  timestamp: 1768973118421
+  size: 135811
+  timestamp: 1769145796778
 - conda: https://conda.anaconda.org/conda-forge/noarch/mdurl-0.1.2-pyhd8ed1ab_1.conda
   sha256: 78c1bbe1723449c52b7a9df1af2ee5f005209f67e40b6e1d3c7619127c43b1c7
   md5: 592132998493b3ff25fd7479396e8351
@@ -3608,57 +3608,57 @@ packages:
   license_family: MIT
   size: 14465
   timestamp: 1733255681319
-- conda: https://conda.modular.com/max-nightly/noarch/modular-26.1.0.dev2026012105-release.conda
+- conda: https://conda.modular.com/max-nightly/noarch/modular-26.2.0.dev2026012305-release.conda
   noarch: python
-  sha256: f4abe490e827703980c99d452984e1418d20d96df9c6402db9349a57a36dc3b6
+  sha256: 1ea52aafd69778045a6b3d387db152e5d34ac2dc612939b689b0c70d189471ba
   depends:
-  - max-pipelines ==26.1.0.dev2026012105 release
-  - mojo ==0.26.1.0.dev2026012105 release
+  - max-pipelines ==26.2.0.dev2026012305 release
+  - mojo ==0.26.2.0.dev2026012305 release
   license: LicenseRef-Modular-Proprietary
-  size: 16288
-  timestamp: 1768973118421
-- conda: https://conda.modular.com/max-nightly/linux-64/mojo-0.26.1.0.dev2026012105-release.conda
-  sha256: beb2e65a34f01b75713754a9eca0be5c88af56100c5ac5c3879a350d6270593b
+  size: 16297
+  timestamp: 1769145796778
+- conda: https://conda.modular.com/max-nightly/linux-64/mojo-0.26.2.0.dev2026012305-release.conda
+  sha256: 8b28c89811dda10dc571c01e2bc4a36a3b51f4e85182185d60201430849d0316
   depends:
   - python >=3.10
-  - mojo-compiler ==0.26.1.0.dev2026012105 release
-  - mblack ==26.1.0.dev2026012105 release
+  - mojo-compiler ==0.26.2.0.dev2026012305 release
+  - mblack ==26.2.0.dev2026012305 release
   - jupyter_client >=8.6.2,<8.7
   license: LicenseRef-Modular-Proprietary
-  size: 89003996
-  timestamp: 1768973118421
-- conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-0.26.1.0.dev2026012105-release.conda
-  sha256: b9c89d5f905285cea44aed1dfda6fcb4dc165704e3d6dd9ebe923df6a648dc03
+  size: 89061291
+  timestamp: 1769145796778
+- conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-0.26.2.0.dev2026012305-release.conda
+  sha256: 41535c85527eb22b5f81dd9e82a1042d5f946d0909590d9ed5c50b8a216a1daa
   depends:
   - python >=3.10
-  - mojo-compiler ==0.26.1.0.dev2026012105 release
-  - mblack ==26.1.0.dev2026012105 release
+  - mojo-compiler ==0.26.2.0.dev2026012305 release
+  - mblack ==26.2.0.dev2026012305 release
   - jupyter_client >=8.6.2,<8.7
   license: LicenseRef-Modular-Proprietary
-  size: 75151224
-  timestamp: 1768973376189
-- conda: https://conda.modular.com/max-nightly/linux-64/mojo-compiler-0.26.1.0.dev2026012105-release.conda
-  sha256: 2f2b9c82491b1cb82db226c6bb122a1234575ebdb1617f5c46730e6859a9f9fe
+  size: 75216721
+  timestamp: 1769145918332
+- conda: https://conda.modular.com/max-nightly/linux-64/mojo-compiler-0.26.2.0.dev2026012305-release.conda
+  sha256: 4abae7c30804c6e6183975772434ed66d0ee08b6d950c47c6089c9968b57945d
   depends:
-  - mojo-python ==0.26.1.0.dev2026012105 release
+  - mojo-python ==0.26.2.0.dev2026012305 release
   license: LicenseRef-Modular-Proprietary
-  size: 85745160
-  timestamp: 1768973118420
-- conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-compiler-0.26.1.0.dev2026012105-release.conda
-  sha256: e977b399bff3f5a9b9cb29e8e116f652c6901c7fa09cbf77afc82728c13bd3bd
+  size: 85746378
+  timestamp: 1769145796777
+- conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-compiler-0.26.2.0.dev2026012305-release.conda
+  sha256: 20ace9c198fdbb4c2d5f6d6a1c3e7fed94027806ff39bd4f840ed1c66dc942c5
   depends:
-  - mojo-python ==0.26.1.0.dev2026012105 release
+  - mojo-python ==0.26.2.0.dev2026012305 release
   license: LicenseRef-Modular-Proprietary
-  size: 65983395
-  timestamp: 1768973376189
-- conda: https://conda.modular.com/max-nightly/noarch/mojo-python-0.26.1.0.dev2026012105-release.conda
+  size: 65981724
+  timestamp: 1769145918332
+- conda: https://conda.modular.com/max-nightly/noarch/mojo-python-0.26.2.0.dev2026012305-release.conda
   noarch: python
-  sha256: 0106e7640fd2f7451c8d25395b0dc7e1a871654f4ad6b8d03d2b00e6f97f6e5e
+  sha256: 15ababb1dc439f382274c34fd10ead4a1369ef892039009e9544b70d31718331
   depends:
   - python
   license: LicenseRef-Modular-Proprietary
-  size: 24241
-  timestamp: 1768973118420
+  size: 24240
+  timestamp: 1769145796777
 - conda: https://conda.anaconda.org/conda-forge/linux-64/msgspec-0.20.0-py314h5bd0f2a_1.conda
   sha256: 93ce4ffc756ae634d3a2a96c46b6ba559ee7be46a87a5aeb1500b92226dfcf7b
   md5: 5b30e949cb05f1d0fa367d7b2778ab91

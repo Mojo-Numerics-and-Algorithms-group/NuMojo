@@ -64,6 +64,7 @@ from utils import Variant
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.layout.flags import Flags
 from numojo.core.indexing.item import Item
+from numojo.core.indexing.utility import InternalSlice
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.memory.data_container import DataContainer
@@ -103,16 +104,6 @@ from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
-
-struct InternalSlice(ImplicitlyCopyable):
-    var start: Int
-    var end: Int
-    var step: Int
-
-    fn __init__(out self, start: Int, end: Int, step: Int):
-        self.start = start
-        self.end = end
-        self.step = step
 
 # ===-----------------------------------------------------------------------===#
 # Implements the N-Dimensional Array.

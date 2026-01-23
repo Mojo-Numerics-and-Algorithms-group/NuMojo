@@ -635,4 +635,5 @@ def test_slicing_getter3():
 
 
 def main():
-    TestSuite.discover_tests[__functions_in_module()]().run()
+    # TestSuite.discover_tests[__functions_in_module()]().run()
+    

@@ -104,6 +104,15 @@ import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
+struct InternalSlice(ImplicitlyCopyable):
+    var start: Int
+    var end: Int
+    var step: Int
+
+    fn __init__(out self, start: Int, end: Int, step: Int):
+        self.start = start
+        self.end = end
+        self.step = step
 
 # ===-----------------------------------------------------------------------===#
 # Implements the N-Dimensional Array.
@@ -856,10 +865,11 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         # adjust slice values for user provided slices
-        var slices: List[Slice] = self._adjust_slice(slice_list)
+        var slices: List[InternalSlice] = self._adjust_slice(slice_list)
+
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                slices.append(Slice(0, self.shape[i], 1))
+                slices.append(InternalSlice(0, self.shape[i], 1))
 
         var ndims: Int = 0
         var nshape: List[Int] = List[Int]()
@@ -867,15 +877,15 @@ struct NDArray[dtype: DType = DType.float64](
         var noffset: Int = 0
 
         for i in range(self.ndim):
-            var start: Int = slices[i].start.value()
-            var end: Int = slices[i].end.value()
-            var step: Int = slices[i].step.or_else(1)
+            var start: Int = slices[i].start
+            var end: Int = slices[i].end
+            var step: Int = slices[i].step
 
             var slice_len: Int
             if step > 0:
-                slice_len: Int = max(0, (end - start + (step - 1)) // step)
+                slice_len: Int = max((end - start + (step - 1)) // step, 0)
             else:
-                slice_len: Int = max(0, (start - end - step - 1) // (-step))
+                slice_len: Int = max((start - end - step - 1) // (-step), 0)
             nshape.append(slice_len)
             ncoefficients.append(self.strides[i] * step)
             ndims += 1
@@ -981,10 +991,10 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         # adjust slice values for user provided slices
-        var slices: List[Slice] = self._adjust_slice(slice_list)
+        var slices: List[InternalSlice] = self._adjust_slice(slice_list)
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                slices.append(Slice(0, self.shape[i], 1))
+                slices.append(InternalSlice(0, self.shape[i], 1))
 
         var ndims: Int = 0
         var nshape: List[Int] = List[Int]()
@@ -992,15 +1002,15 @@ struct NDArray[dtype: DType = DType.float64](
         var noffset: Int = 0
 
         for i in range(self.ndim):
-            var start: Int = slices[i].start.value()
-            var end: Int = slices[i].end.value()
-            var step: Int = slices[i].step.or_else(1)
+            var start: Int = slices[i].start
+            var end: Int = slices[i].end
+            var step: Int = slices[i].step
 
             var slice_len: Int
             if step > 0:
-                slice_len: Int = max(0, (end - start + (step - 1)) // step)
+                slice_len: Int = max((end - start + (step - 1)) // step, 0)
             else:
-                slice_len: Int = max(0, (start - end - step - 1) // (-step))
+                slice_len: Int = max((start - end - step - 1) // (-step), 0)
             if slice_len > 1:
                 nshape.append(slice_len)
                 ncoefficients.append(self.strides[i] * step)
@@ -1260,6 +1270,7 @@ struct NDArray[dtype: DType = DType.float64](
                 slice_list.append(Slice(0, self.shape[i], 1))
 
         narr = self.__getitem__(slice_list^)
+        print("LOL")
         return narr^
 
     fn __getitem__(self, indices: NDArray[DType.int]) raises -> Self:
@@ -2211,11 +2222,11 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var count: Int = 0
         var spec: List[Int] = List[Int]()
-        var slice_list: List[Slice] = self._adjust_slice(slices)
+        var slice_list: List[InternalSlice] = self._adjust_slice(slices)
         for i in range(n_slices):
             if (
-                slice_list[i].start.value() >= self.shape[i]
-                or slice_list[i].end.value() > self.shape[i]
+                slice_list[i].start >= self.shape[i]
+                or slice_list[i].end > self.shape[i]
             ):
                 raise Error(
                     IndexError(
@@ -2224,8 +2235,8 @@ struct NDArray[dtype: DType = DType.float64](
                             " valid bounds are [0, {}]."
                         ).format(
                             i,
-                            slice_list[i].start.value(),
-                            slice_list[i].end.value(),
+                            slice_list[i].start,
+                            slice_list[i].end,
                             self.shape[i],
                         ),
                         suggestion=String(
@@ -2238,8 +2249,8 @@ struct NDArray[dtype: DType = DType.float64](
                     )
                 )
             var slice_len: Int = (
-                (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step.or_else(1)
+                (slice_list[i].end - slice_list[i].start)
+                / slice_list[i].step
             ).__int__()
             spec.append(slice_len)
             if slice_len != 1:
@@ -2263,13 +2274,13 @@ struct NDArray[dtype: DType = DType.float64](
             if j >= self.ndim:
                 break
             var slice_len: Int = (
-                (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step.or_else(1)
+                (slice_list[j].end - slice_list[j].start)
+                / slice_list[j].step
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
             ncoefficients.append(
-                self.strides[j] * slice_list[j].step.or_else(1)
+                self.strides[j] * slice_list[j].step
             )
             j += 1
 
@@ -2302,14 +2313,14 @@ struct NDArray[dtype: DType = DType.float64](
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
+                noffset += slice_list[i].start * self.strides[i]
         elif self.flags.F_CONTIGUOUS:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
+                noffset += slice_list[i].start * self.strides[i]
 
         var index = List[Int]()
         for _ in range(ndims):
@@ -3466,7 +3477,7 @@ struct NDArray[dtype: DType = DType.float64](
             dimension=0,
         )
 
-    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
+    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[InternalSlice]:
         """
         Adjusts slice values to handle all possible slicing scenarios including:
         - Negative indices (Python-style wrapping)
@@ -3490,7 +3501,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        var slices = List[Slice](capacity=self.ndim)
+        var slices = List[InternalSlice](capacity=self.ndim)
         for i in range(n_slices):
             var dim_size = self.shape[i]
             var step = slice_list[i].step.or_else(1)
@@ -3519,38 +3530,36 @@ struct NDArray[dtype: DType = DType.float64](
                 end = -1
 
             # start
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    start += dim_size
-                if step > 0:
-                    start = 0 if start < 0 else (
-                        dim_size if start > dim_size else start
-                    )
-                else:
-                    start = -1 if start < -1 else (
-                        dim_size - 1 if start >= dim_size else start
-                    )
+            var raw_start = slice_list[i].start.or_else(start)
+            if raw_start < 0:
+                raw_start += dim_size
+            if step > 0:
+                start = 0 if raw_start < 0 else (
+                    dim_size if raw_start > dim_size else raw_start
+                )
+            else:
+                start = -1 if raw_start < -1 else (
+                    dim_size - 1 if raw_start >= dim_size else raw_start
+                )
 
             # end
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    end += dim_size
-                if step > 0:
-                    end = 0 if end < 0 else (
-                        dim_size if end > dim_size else end
-                    )
-                else:
-                    end = -1 if end < -1 else (
-                        dim_size if end > dim_size else end
-                    )
+            var raw_end = slice_list[i].end.or_else(end)
+            if raw_end < 0:
+                raw_end += dim_size
+            if step > 0:
+                end = 0 if raw_end < 0 else (
+                    dim_size if raw_end > dim_size else raw_end
+                )
+            else:
+                end = -1 if raw_end < -1 else (
+                    dim_size if raw_end > dim_size else raw_end
+                )
 
             slices.append(
-                Slice(
-                    start=Optional(start),
-                    end=Optional(end),
-                    step=Optional(step),
+                InternalSlice(
+                    start=start,
+                    end=end,
+                    step=step,
                 )
             )
 

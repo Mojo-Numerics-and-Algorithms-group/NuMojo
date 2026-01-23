@@ -90,11 +90,11 @@ fn sort[
             return quick_sort_1d(a)
 
     if stable:
-        return numojo.apply_along_axis[func1d=quick_sort_stable_1d](
+        return numojo.apply_along_axis_preserve[func1d=quick_sort_stable_1d](
             a, axis=normalized_axis
         )
     else:
-        return numojo.apply_along_axis[func1d=quick_sort_1d](
+        return numojo.apply_along_axis_preserve[func1d=quick_sort_1d](
             a, axis=normalized_axis
         )
 
@@ -132,11 +132,11 @@ fn sort_inplace[
             quick_sort_inplace_1d(a)
 
     if stable:
-        numojo.apply_along_axis[func1d=quick_sort_stable_inplace_1d](
+        numojo.apply_along_axis_inplace[func1d=quick_sort_stable_inplace_1d](
             a, axis=normalized_axis
         )
     else:
-        numojo.apply_along_axis[func1d=quick_sort_inplace_1d](
+        numojo.apply_along_axis_inplace[func1d=quick_sort_inplace_1d](
             a, axis=normalized_axis
         )
 
@@ -266,7 +266,7 @@ fn argsort[
     if (a.ndim == 1) and (normalized_axis == 0):
         return argsort_quick_sort_1d(a)
 
-    return numojo.apply_along_axis[func1d=argsort_quick_sort_1d](
+    return numojo.apply_along_axis_indices[func1d=argsort_quick_sort_1d](
         a, axis=normalized_axis
     )
 

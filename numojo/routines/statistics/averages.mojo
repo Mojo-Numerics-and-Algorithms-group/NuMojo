@@ -94,7 +94,7 @@ fn mean[
             )
         )
 
-    return numojo.apply_along_axis[
+    return numojo.apply_along_axis_reduce_with_dtype[
         returned_dtype=returned_dtype, func1d=mean_1d
     ](a=a, axis=normalized_axis)
 
@@ -219,7 +219,7 @@ fn median[
                 axis, a.ndim, a.ndim
             )
         )
-    return numojo.apply_along_axis[
+    return numojo.apply_along_axis_reduce_with_dtype[
         returned_dtype=returned_dtype, func1d=median_1d
     ](a=a, axis=normalized_axis)
 
@@ -300,7 +300,7 @@ fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return numojo.apply_along_axis[func1d=mode_1d](a=a, axis=normalized_axis)
+    return numojo.apply_along_axis_reduce[func1d=mode_1d](a=a, axis=normalized_axis)
 
 
 fn std[

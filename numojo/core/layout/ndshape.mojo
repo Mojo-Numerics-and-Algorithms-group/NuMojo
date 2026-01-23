@@ -778,7 +778,7 @@ struct NDArrayShape(
                 return True
         return False
 
-    fn __iter__(self) raises -> _ShapeIter:
+    fn __iter__(self) raises -> _ShapeIter[True]:
         """
         Iterate over elements of the NDArrayShape, returning copied values.
 
@@ -793,7 +793,7 @@ struct NDArrayShape(
             print(dim)  # Prints: 2, 3, 4
         ```
         """
-        return _ShapeIter(
+        return _ShapeIter[True](
             shape=self,
             length=self.ndim,
         )

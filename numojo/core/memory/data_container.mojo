@@ -109,7 +109,6 @@ struct DataContainer[dtype: DType](
         Destructor - decrements refcount and frees allocation if last reference.
         """
         if self.size == 0 or self.ext_origin or not self.ptr.__bool__():
-            print("NO FREE")
             return
 
         if self._is_refcounted():
@@ -117,17 +116,15 @@ struct DataContainer[dtype: DType](
                 self._refcount[].fetch_sub[ordering = Consistency.RELEASE](1)
                 != 1
             ):
-                print("REFCOUNT DECR")
                 return
 
             fence[ordering = Consistency.ACQUIRE]()
-            var refcount_size = size_of[Atomic[DType.uint64]]()
             var alloc_start = self._refcount.bitcast[UInt8]()
             alloc_start.free()
-            print("ALLOC FREE")
+            print("REFCOUNTED DEL")
         else:
             self.ptr.free()
-            print("PTR FREE")
+            print("UNTRACKED DEL")
 
     @always_inline
     fn get_ptr(
@@ -170,18 +167,6 @@ struct DataContainer[dtype: DType](
         """Return the size of the container."""
         return self.size
 
-    # fn __getitem(self, slice: Slice) -> DataContainer[Self.dtype]:
-    #     """
-    #     Get a sub-container for the given slice. Creates a copy of the data.
-    #     """
-    #     var start, stop, step = slice.indices(self.size)
-    #     var slice_size = (stop - start + step - 1) // step
-
-    #     if slice_size == 0
-    #         return DataContainer[Self.dtype]()
-
-    #     var res = DataContainer[Self.dtype](slice_size)
-
     @always_inline
     fn _is_refcounted(self) -> Bool:
         """Check if this container has refcounting enabled."""
@@ -192,14 +177,20 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn ref_count(self) -> UInt64:
         """Get the current reference count."""
+        if not self._is_refcounted():
+            return 0
         return self._refcount[].load[ordering = Consistency.MONOTONIC]()
 
     @always_inline
     fn enable_views(mut self) raises:
         """
         Enables sharing of this container by initializing the refcount.
+        Converts the memory layout from [data] to [refcount][data].
         """
-        if self._is_refcounted() or self.size == 0:
+        if self._is_refcounted():
+            return
+
+        if self.size == 0:
             return
 
         if self.ext_origin:
@@ -226,6 +217,28 @@ struct DataContainer[dtype: DType](
         self._refcount = new_refcount_ptr
 
     @always_inline
+    fn copy(self) -> DataContainer[Self.dtype]:
+        """
+        Create a copy of this container.
+        For refcounted containers, increments the refcount.
+        For non-refcounted containers, deep copies the data.
+        """
+        var result = DataContainer[Self.dtype]()
+        result.size = self.size
+        result.ptr = self.ptr
+        result._refcount = self._refcount
+        result.ext_origin = self.ext_origin
+
+        if self._is_refcounted():
+            _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+        else:
+            if self.size > 0 and not self.ext_origin:
+                result.ptr = alloc[Scalar[Self.dtype]](self.size)
+                memcpy(dest=result.ptr, src=self.ptr, count=self.size)
+
+        return result
+
+    @always_inline
     fn __str__(self) -> String:
         if self._is_refcounted():
             return (
@@ -249,13 +262,25 @@ struct DataContainer[dtype: DType](
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(self.__str__())
 
-    fn share_with_offset(ref self, offset: Int) -> DataContainer[Self.dtype]:
+    fn share_with_offset(mut self, offset: Int) -> DataContainer[Self.dtype]:
         """
         Create a shared view into this container starting at the given offset.
-        Increments the refcount.
+        Enables refcounting on first call, then increments the refcount.
+
+        This is the key method for creating views that properly share memory.
         """
-        return DataContainer[Self.dtype](
-            ptr=self.ptr + offset,
-            size=self.size - offset,
-            copy=False,
-        )
+        if not self._is_refcounted():
+            try:
+                self.enable_views()
+            except:
+                abort("DataContainer.share_with_offset(): failed to enable views")
+
+        var result = DataContainer[Self.dtype]()
+        result.size = self.size - offset
+        result.ptr = self.ptr + offset
+        result._refcount = self._refcount
+        result.ext_origin = self.ext_origin
+
+        _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+
+        return result

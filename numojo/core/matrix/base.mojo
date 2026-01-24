@@ -28,6 +28,7 @@ from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
 
 
+# TODO: Currently the copyinit creates a ref counted view instead of a deep copy.
 # TODO: currently a lot of the __getitem__ and __setitem__ methods raises if the index is out of bounds. An alternative is to clamp the indices to be within bounds, this will remove a lot of if conditions and improve performance I guess. Need to decide which behavior is preferred.
 # ===----------------------------------------------------------------------===#
 # Matrix struct
@@ -351,6 +352,28 @@ struct Matrix[
             other.shape, other.strides, owndata=True, writeable=True
         )
 
+    fn deep_copy(self) -> Self:
+        """
+        Create a deep copy of the current matrix.
+
+        This method returns a new matrix instance that is a deep copy of the current matrix (`self`). The new matrix will have its own independent copy of the data, shape, and strides.
+
+        Returns:
+            A new `Matrix` instance that is a deep copy of `self`.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat1 = Matrix[f32](shape=(2, 3))
+            # ... (initialize mat1 with data) ...
+            var mat2 = mat1.deep_copy()  # Create a deep copy of mat1
+            ```
+        """
+        var copy_mat: Self
+        copy_mat = Self(self.shape)
+        memcpy(dest=copy_mat._buf.ptr, src=self._buf.ptr, count=self.size)
+        return copy_mat^
+
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
         """
@@ -620,7 +643,7 @@ struct Matrix[
         return self._buf[self.index(x_norm, y_norm)]
 
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
-    fn get(self, x: Int) raises -> Matrix[Self.dtype]:
+    fn get(mut self, var x: Int) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of the specified row in the matrix. This method returns a non-owning `Matrix` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
@@ -709,7 +732,7 @@ struct Matrix[
 
         return result^
 
-    fn get(self, x: Slice, y: Slice) -> Matrix[Self.dtype]:
+    fn get(mut self, x: Slice, y: Slice) -> Matrix[Self.dtype]:
         """
         Retrieve a view of the specified slice in the matrix.
 
@@ -793,7 +816,7 @@ struct Matrix[
 
         return B^
 
-    fn get(self, x: Slice, var y: Int) raises -> Matrix[Self.dtype]:
+    fn get(mut self, x: Slice, var y: Int) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of a specific column slice in the matrix. This method returns a non-owning `Matrix` that references the data of the specified column slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
@@ -890,7 +913,7 @@ struct Matrix[
             row += 1
         return res^
 
-    fn get(self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
+    fn get(mut self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of a specific row slice in the matrix. This method returns a non-owning `Matrix` that references the data of the specified row slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 

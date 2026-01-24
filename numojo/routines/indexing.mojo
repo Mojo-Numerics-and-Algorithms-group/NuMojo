@@ -18,7 +18,7 @@ from sys import simd_width_of
 from algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayStrides
-import numojo.core.indexing.utility as utility
+from numojo.core.indexing.utility import IndexMethods
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays
@@ -184,7 +184,7 @@ fn compress[
                         remainder %= Int(res_strides._buf[j])
 
                 (
-                    result._buf.ptr + utility._get_offset(item, result.strides)
+                    result._buf.ptr + IndexMethods.get_1d_index(item, result.strides)
                 ).init_pointee_copy(current_slice._buf.ptr[offset])
 
                 count += 1

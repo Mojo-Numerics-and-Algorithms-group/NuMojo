@@ -24,7 +24,6 @@ from numojo.core.layout.flags import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.memory.data_container import DataContainer
 from numojo.core.traits.buffered import Buffered
-from numojo.core.indexing.utility import _get_offset
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
 
@@ -4673,7 +4672,8 @@ struct Matrix[
         for i in range(len(bytes)):
             var b = bytes[i]
             if (
-                chr(Int(b)).isdigit()
+                # TODO: Check whether is_ascii_digit works as expected.
+                chr(Int(b)).is_ascii_digit()
                 or (chr(Int(b)) == ".")
                 or (chr(Int(b)) == "-")
             ):

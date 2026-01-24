@@ -29,7 +29,7 @@ from sys import simd_width_of
 
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
 from numojo.core.ndarray import NDArray
-from numojo.core.error import IndexError
+from numojo.core.error import NumojoError
 
 # ===----------------------------------------------------------------------=== #
 # Internal Data Structures
@@ -83,28 +83,31 @@ struct InternalSlice(ImplicitlyCopyable):
 
         return InternalSlice(start_norm, end_norm, self.step)
 
-    fn check_bounds(self, dim: Int) raises CustomError:
+    fn check_bounds(self, dim: Int) raises:
         if self.start < 0 or self.start >= dim:
-            raise IndexError(
+            raise Error(NumojoError(
+                category="index",
                 message=(
                     "Slice start index {} out of bounds for dimension of"
                     " size {}".format(self.start, dim)
                 ),
                 location="InternalSlice.check_bounds()",
-            )
+            ))
         if self.end < 0 or self.end > dim:
-            raise IndexError(
+            raise Error(NumojoError(
+                category="index",
                 message=(
                     "Slice end index {} out of bounds for dimension of size {}"
                     .format(self.end, dim)
                 ),
                 location="InternalSlice.check_bounds()",
-            )
+            ))
         if self.step == 0:
-            raise IndexError(
+            raise Error(NumojoError(
+                category="index",
                 message="Slice step cannot be zero",
                 location="InternalSlice.check_bounds()",
-            )
+            ))
 
 
 comptime newaxis: NewAxis = NewAxis()
@@ -433,7 +436,7 @@ struct TraverseMethods:
                 ptr.init_pointee_copy(current_sum)
                 ptr += 1
             else:
-                _traverse_buffer_according_to_shape_and_strides(
+                TraverseMethods.traverse_buffer_according_to_shape_and_strides(
                     ptr,
                     shape,
                     strides,
@@ -481,7 +484,7 @@ struct TraverseMethods:
         # The destination buffer is always laid out contiguously for `narr`, so we
         # write using a simple linear counter.
         for lin in range(total_elements):
-            var orig_idx = offset + _get_offset(index, coefficients)
+            var orig_idx = offset + IndexMethods.get_1d_index(index, coefficients)
             narr._buf.ptr.store(lin, orig._buf.ptr.load[width=1](orig_idx))
 
             for d in range(ndim.__len__() - 1, -1, -1):
@@ -525,7 +528,7 @@ struct TraverseMethods:
         # counter for `orig`, not a potentially non-contiguous stride mapping.
         var total_elements = narr.size
         for lin in range(total_elements):
-            var orig_idx = offset + _get_offset(index, coefficients)
+            var orig_idx = offset + IndexMethods.get_1d_index(index, coefficients)
             orig._buf.ptr.store(orig_idx, narr._buf.ptr.load[width=1](lin))
 
             for d in range(ndim.__len__() - 1, -1, -1):
@@ -533,151 +536,6 @@ struct TraverseMethods:
                 if index[d] < ndim[d]:
                     break
                 index[d] = 0
-
-
-fn _traverse_buffer_according_to_shape_and_strides[
-    origin: MutOrigin
-](
-    mut ptr: UnsafePointer[Scalar[DType.int], origin=origin],
-    shape: NDArrayShape,
-    strides: NDArrayStrides,
-    current_dim: Int = 0,
-    previous_sum: Int = 0,
-) raises:
-    """
-    Store sequence of indices according to shape and strides into the pointer
-    given in the arguments.
-
-    It is auxiliary functions that get or set values according to new shape
-    and strides for variadic number of dimensions.
-
-    UNSAFE: Raw pointer is used!
-
-    Args:
-        ptr: Pointer to buffer of uninitialized 1-d index array.
-        shape: NDArrayShape.
-        strides: NDArrayStrides.
-        current_dim: Temporarily save the current dimension.
-        previous_sum: Temporarily save the previous summed index.
-
-    Example:
-    ```console
-    # A is a 2x3x4 array
-    var I = nm.NDArray[DType.int](nm.Shape(A.size))
-    var ptr = I._buf
-    _traverse_buffer_according_to_shape_and_strides(
-        ptr, A.shape._flip(), A.strides._flip()
-    )
-    # I = [       0       12      4       ...     19      11      23      ]
-    ```
-
-    """
-    for index_of_axis in range(shape[current_dim]):
-        var current_sum = previous_sum + index_of_axis * strides[current_dim]
-        if current_dim >= shape.ndim - 1:
-            ptr.init_pointee_copy(current_sum)
-            ptr += 1
-        else:
-            _traverse_buffer_according_to_shape_and_strides(
-                ptr,
-                shape,
-                strides,
-                current_dim + 1,
-                current_sum,
-            )
-
-
-fn _traverse_iterative[
-    dtype: DType
-](
-    orig: NDArray[dtype],
-    mut narr: NDArray[dtype],
-    ndim: List[Int],
-    coefficients: List[Int],
-    strides: List[Int],
-    offset: Int,
-    mut index: List[Int],
-    depth: Int,
-) raises:
-    """
-    Traverse a multi-dimensional array in a iterative manner.
-
-    Raises:
-        Error: If the index is out of bound.
-
-    Parameters:
-        dtype: The data type of the NDArray elements.
-
-    Args:
-        orig: The original array.
-        narr: The array to store the result.
-        ndim: The number of dimensions of the array.
-        coefficients: The coefficients to traverse the sliced part of the original array.
-        strides: The strides to traverse the new NDArray `narr`.
-        offset: The offset to the first element of the original NDArray.
-        index: The list of indices.
-        depth: The depth of the indices.
-    """
-    var total_elements = narr.size
-
-    # `strides` here is a logical multi-index -> linear offset mapping.
-    # Using it directly as the destination offset breaks when `narr.strides`
-    # is not a contiguous layout mapping (e.g. slices that create F-order views).
-    # The destination buffer is always laid out contiguously for `narr`, so we
-    # write using a simple linear counter.
-    for lin in range(total_elements):
-        var orig_idx = offset + _get_offset(index, coefficients)
-        narr._buf.ptr.store(lin, orig._buf.ptr.load[width=1](orig_idx))
-
-        for d in range(ndim.__len__() - 1, -1, -1):
-            index[d] += 1
-            if index[d] < ndim[d]:
-                break
-            index[d] = 0
-
-
-fn _traverse_iterative_setter[
-    dtype: DType
-](
-    orig: NDArray[dtype],
-    mut narr: NDArray[dtype],
-    ndim: List[Int],
-    coefficients: List[Int],
-    strides: List[Int],
-    offset: Int,
-    mut index: List[Int],
-) raises:
-    """
-    Traverse a multi-dimensional array in a iterative manner.
-
-    Raises:
-        Error: If the index is out of bound.
-
-    Parameters:
-        dtype: The data type of the NDArray elements.
-
-    Args:
-        orig: The original array.
-        narr: The array to store the result.
-        ndim: The number of dimensions of the array.
-        coefficients: The coefficients to traverse the sliced part of the original array.
-        strides: The strides to traverse the new NDArray `narr`.
-        offset: The offset to the first element of the original NDArray.
-        index: The list of indices.
-    """
-    # The source `orig` being assigned from is contiguous in its own buffer.
-    # When iterating logical indices, write/read using a contiguous linear
-    # counter for `orig`, not a potentially non-contiguous stride mapping.
-    var total_elements = narr.size
-    for lin in range(total_elements):
-        var orig_idx = offset + _get_offset(index, coefficients)
-        orig._buf.ptr.store(orig_idx, narr._buf.ptr.load[width=1](lin))
-
-        for d in range(ndim.__len__() - 1, -1, -1):
-            index[d] += 1
-            if index[d] < ndim[d]:
-                break
-            index[d] = 0
 
 
 # ===----------------------------------------------------------------------=== #

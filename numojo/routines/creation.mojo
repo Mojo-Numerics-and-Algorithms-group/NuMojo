@@ -41,7 +41,6 @@ from numojo.core.layout import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexScalar
 from numojo.core.layout import NDArrayShape
-from numojo.core.indexing.utility import _get_offset
 from numojo.core.memory import DataContainer
 
 
@@ -2335,7 +2334,8 @@ fn fromstring[
             shape[level - 1] = 0
 
         if (
-            chr(Int(b)).isdigit()
+            # TODO: Check that is_ascii_digit works as expected.
+            chr(Int(b)).is_ascii_digit()
             or (chr(Int(b)) == ".")
             or (chr(Int(b)) == "-")
         ):

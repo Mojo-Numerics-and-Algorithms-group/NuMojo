@@ -22,8 +22,8 @@ import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.core.indexing.utility import (
     _list_of_flipped_range,
-    _get_offset,
-    _traverse_buffer_according_to_shape_and_strides,
+    IndexMethods,
+    TraverseMethods,
 )
 
 # ===----------------------------------------------------------------------=== #
@@ -210,7 +210,7 @@ fn ravel[
 
 
 # TODO: Remove this one if the following function is working well:
-# `numojo.core.utility._traverse_buffer_according_to_shape_and_strides`
+# `numojo.core.utility.TraverseMethods.traverse_buffer_according_to_shape_and_strides`
 fn _set_values_according_to_shape_and_strides(
     mut I: NDArray[DType.int],
     mut index: Int,
@@ -292,7 +292,7 @@ fn transpose[
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
-    _traverse_buffer_according_to_shape_and_strides(ptr, new_shape, new_strides)
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(ptr, new_shape, new_strides)
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
@@ -439,7 +439,7 @@ fn broadcast_to[
 
         (b._buf.ptr + offset).init_pointee_copy(
             a._buf.ptr[
-                _get_offset(indices, b_strides)
+                IndexMethods.get_1d_index(indices, b_strides)
             ]  # TODO: Change b_strides to b.strides when DataContainer
         )
 
@@ -561,7 +561,7 @@ fn _broadcast_back_to[
             remainder %= b.strides[i]
 
         (b._buf.ptr + offset).init_pointee_copy(
-            a._buf.ptr[_get_offset(indices, b_strides)]
+            a._buf.ptr[IndexMethods.get_1d_index(indices, b_strides)]
         )
 
     return b^
@@ -621,7 +621,7 @@ fn flip[
     var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
-    _traverse_buffer_according_to_shape_and_strides(
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(
         ptr, A.shape._move_axis_to_end(axis), A.strides._move_axis_to_end(axis)
     )
 

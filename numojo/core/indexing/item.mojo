@@ -12,7 +12,7 @@ from os import abort
 from sys import simd_width_of
 from utils import Variant
 
-from numojo.core.error import IndexError, ValueError
+from numojo.core.error import NumojoError
 from numojo.core.traits.indexer_collection_element import (
     IndexerCollectionElement,
 )
@@ -165,14 +165,12 @@ struct Item(
         var index: Int = convert_to_int(idx)
         if index >= self.ndim or index < -self.ndim:
             raise Error(
-                IndexError(
-                    message=String("Index {} out of range [{} , {}).").format(
+                NumojoError(
+                    category="index",
+                    message=String("Index {} out of range [{} , {}). Use indices in [-ndim, ndim) (negative indices wrap).").format(
                         convert_to_int(idx), -self.ndim, self.ndim
                     ),
-                    suggestion=String(
-                        "Use indices in [-ndim, ndim) (negative indices wrap)."
-                    ),
-                    location=String("Item.__getitem__"),
+                    location="Item.__getitem__",
                 )
             )
         var normalized_idx: Int = self.normalize_index(convert_to_int(idx))
@@ -207,11 +205,9 @@ struct Item(
 
         if length <= 0:
             raise Error(
-                ShapeError(
-                    message="Provided slice results in an empty Item.",
-                    suggestion=(
-                        "Adjust slice parameters to obtain non-empty result."
-                    ),
+                NumojoError(
+                    category="shape",
+                    message="Provided slice results in an empty Item. Adjust slice parameters to obtain non-empty result.",
                     location="Item.__getitem__(self, slice_list: Slice)",
                 )
             )
@@ -238,14 +234,12 @@ struct Item(
         var norm_idx: Int = self.normalize_index(convert_to_int(idx))
         if norm_idx < 0 or norm_idx >= self.ndim:
             raise Error(
-                IndexError(
-                    message=String("Index {} out of range [{} , {}).").format(
+                NumojoError(
+                    category="index",
+                    message=String("Index {} out of range [{} , {}). Use indices in [-ndim, ndim) (negative indices wrap).").format(
                         convert_to_int(idx), -self.ndim, self.ndim
                     ),
-                    suggestion=String(
-                        "Use indices in [-ndim, ndim) (negative indices wrap)."
-                    ),
-                    location=String("Item.__setitem__"),
+                    location="Item.__setitem__",
                 )
             )
 
@@ -532,9 +526,9 @@ struct Item(
         var step = slice_index.step.or_else(1)
         if step == 0:
             raise Error(
-                ValueError(
-                    message="Slice step cannot be zero.",
-                    suggestion="Use a non-zero step value.",
+                NumojoError(
+                    category="value",
+                    message="Slice step cannot be zero. Use a non-zero step value.",
                     location="Item._compute_slice_params",
                 )
             )
@@ -603,13 +597,11 @@ struct Item(
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Load operation out of bounds: idx={} width={} ndim={}"
+                        "Load operation out of bounds: idx={} width={} ndim={}. Ensure that idx and width are within valid range."
                     ).format(idx, width, self.ndim),
-                    suggestion=(
-                        "Ensure that idx and width are within valid range."
-                    ),
                     location="Item.load",
                 )
             )
@@ -634,13 +626,11 @@ struct Item(
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Store operation out of bounds: idx={} width={} ndim={}"
+                        "Store operation out of bounds: idx={} width={} ndim={}. Ensure that idx and width are within valid range."
                     ).format(idx, width, self.ndim),
-                    suggestion=(
-                        "Ensure that idx and width are within valid range."
-                    ),
                     location="Item.store",
                 )
             )

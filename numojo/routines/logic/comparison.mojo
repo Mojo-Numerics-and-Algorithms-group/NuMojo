@@ -12,6 +12,7 @@ import math
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
+from numojo.core.error import NumojoError
 
 
 # ===-------------------------------------a-----------------------------------===#
@@ -350,13 +351,13 @@ fn allclose[
     """
     if a.shape != b.shape:
         raise Error(
-            ShapeError(
+            NumojoError(
+                category="shape",
                 message=(
                     "Shape Mismatch error shapes must match for this function"
                 ),
                 location=(
-                    "numojo.routines.logic.comparision.allclose(a: NDArray, b:"
-                    " NDArray)"
+                    "numojo.routines.logic.comparision.allclose(a: NDArray, b: NDArray)"
                 ),
             )
         )
@@ -414,7 +415,8 @@ fn isclose[
     """
     if a.shape != b.shape:
         raise Error(
-            ShapeError(
+            NumojoError(
+                category="shape",
                 message=(
                     "Shape Mismatch error shapes must match for this function"
                 ),
@@ -481,7 +483,8 @@ fn allclose[
     """
     if a.shape != b.shape:
         raise Error(
-            ShapeError(
+            NumojoError(
+                category="shape",
                 message=(
                     "Shape Mismatch error shapes must match for this function"
                 ),
@@ -545,7 +548,8 @@ fn isclose[
     """
     if a.shape != b.shape:
         raise Error(
-            ShapeError(
+            NumojoError(
+                category="shape",
                 message=(
                     "Shape Mismatch error shapes must match for this function"
                 ),

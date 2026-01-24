@@ -129,9 +129,10 @@ struct DataContainer[dtype: DType](
             self.ptr.free()
             print("PTR FREE")
 
-
     @always_inline
-    fn get_ptr(ref self) -> ref [self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    fn get_ptr(
+        ref self,
+    ) -> ref [self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """Get the data pointer."""
         return self.ptr
 
@@ -207,15 +208,12 @@ struct DataContainer[dtype: DType](
                 " externally managed data"
             )
 
-
         var refcount_size = size_of[Atomic[DType.uint64]]()
         var data_size = self.size * size_of[Scalar[Self.dtype]]()
         var total_size = refcount_size + data_size
         var alloc_start = alloc[UInt8](total_size)
 
-        var new_refcount_ptr = alloc_start.bitcast[
-            Atomic[DType.uint64]
-        ]()
+        var new_refcount_ptr = alloc_start.bitcast[Atomic[DType.uint64]]()
         new_refcount_ptr[] = Atomic[DType.uint64](1)
 
         var new_data_ptr = (alloc_start + refcount_size).bitcast[
@@ -251,9 +249,7 @@ struct DataContainer[dtype: DType](
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(self.__str__())
 
-    fn share_with_offset(
-        ref self, offset: Int
-    ) -> DataContainer[Self.dtype]:
+    fn share_with_offset(ref self, offset: Int) -> DataContainer[Self.dtype]:
         """
         Create a shared view into this container starting at the given offset.
         Increments the refcount.

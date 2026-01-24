@@ -156,7 +156,9 @@ fn argmax[
             )
         )
 
-    return apply_along_axis_reduce_to_int[dtype, func1d=argmax_1d](a=a, axis=normalized_axis)
+    return apply_along_axis_reduce_to_int[dtype, func1d=argmax_1d](
+        a=a, axis=normalized_axis
+    )
 
 
 @always_inline
@@ -307,7 +309,9 @@ fn argmin[
             )
         )
 
-    return apply_along_axis_reduce_to_int[dtype, func1d=argmin_1d](a=a, axis=normalized_axis)
+    return apply_along_axis_reduce_to_int[dtype, func1d=argmin_1d](
+        a=a, axis=normalized_axis
+    )
 
 
 fn argmin[dtype: DType](A: Matrix[dtype, **_]) raises -> Scalar[DType.int]:

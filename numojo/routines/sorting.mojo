@@ -27,7 +27,11 @@ from numojo.core.layout import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.routines.manipulation import ravel, transpose
-from numojo.routines.functional import apply_along_axis_preserve, apply_along_axis_inplace, apply_along_axis_indices
+from numojo.routines.functional import (
+    apply_along_axis_preserve,
+    apply_along_axis_inplace,
+    apply_along_axis_indices,
+)
 
 
 # ===----------------------------------------------------------------------=== #

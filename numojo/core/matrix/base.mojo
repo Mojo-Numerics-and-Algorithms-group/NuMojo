@@ -268,7 +268,16 @@ struct Matrix[
                 self.strides = (1, data.shape[0])
             self.size = data.shape[0] * data.shape[1]
         else:
-            raise Error(String("Shape too large to be a matrix."))
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape too large to be a matrix. Matrix only supports"
+                        " 1D or 2D arrays."
+                    ),
+                    location="Matrix.__init__(from NDArray)",
+                )
+            )
 
         self._buf = DataContainer[Self.dtype](self.size)
         self.flags = Flags(
@@ -439,9 +448,16 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String(
-                    "Row index {} out of bounds for matrix with {} rows"
-                ).format(x, self.shape[0])
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Row index {} out of bounds for matrix with {} rows."
+                        " Use indices in [{}, {}).".format(
+                            x, -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.__getitem__(x: Int)",
+                )
             )
 
     @always_inline
@@ -457,9 +473,16 @@ struct Matrix[
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
-                String(
-                    "Column index {} out of bounds for matrix with {} columns"
-                ).format(y, self.shape[1])
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Column index {} out of bounds for matrix with {}"
+                        " columns. Use indices in [{}, {}).".format(
+                            y, -self.shape[1], self.shape[1]
+                        )
+                    ),
+                    location="Matrix.__getitem__(y: Int)",
+                )
             )
 
     @always_inline
@@ -481,9 +504,23 @@ struct Matrix[
             or y < -self.shape[1]
         ):
             raise Error(
-                String(
-                    "Index ({}, {}) out of bounds for matrix shape ({}, {})"
-                ).format(x, y, self.shape[0], self.shape[1])
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index ({}, {}) out of bounds for matrix shape ({},"
+                        " {}). Use indices in [{}, {}) x [{}, {}).".format(
+                            x,
+                            y,
+                            self.shape[0],
+                            self.shape[1],
+                            -self.shape[0],
+                            self.shape[0],
+                            -self.shape[1],
+                            self.shape[1],
+                        )
+                    ),
+                    location="Matrix.__getitem__(x: Int, y: Int)",
+                )
             )
 
     @always_inline
@@ -606,8 +643,15 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index {} exceed the row number {}").format(
-                    x, self.shape[0]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.get_row(x: Int)",
                 )
             )
 
@@ -642,8 +686,15 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index {} exceed the row size {}").format(
-                    x, self.shape[0]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.get_row(x: Slice)",
                 )
             )
         var x_norm = self.normalize(x, self.shape[0])
@@ -769,8 +820,15 @@ struct Matrix[
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
-                String("Index {} exceed the column number {}").format(
-                    y, self.shape[1]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} columns. Use"
+                        " indices in [{}, {}).".format(
+                            y, self.shape[1], -self.shape[1], self.shape[1]
+                        )
+                    ),
+                    location="Matrix.get_col(y: Int)",
                 )
             )
         y = self.normalize(y, self.shape[1])
@@ -859,8 +917,15 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index {} exceed the row size {}").format(
-                    x, self.shape[0]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.get(x: Int, y: Slice)",
                 )
             )
         x = self.normalize(x, self.shape[0])
@@ -906,8 +971,15 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index {} exceed the row size {}").format(
-                    x, self.shape[0]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.get(x: Slice, y: Int)",
                 )
             )
         x = self.normalize(x, self.shape[0])
@@ -952,8 +1024,18 @@ struct Matrix[
         for i in range(num_rows):
             if indices[i] >= self.shape[0] or indices[i] < -self.shape[0]:
                 raise Error(
-                    String("Index {} exceed the row size {}").format(
-                        indices[i], self.shape[0]
+                    NumojoError(
+                        category="index",
+                        message=(
+                            "Index {} out of bounds for matrix with {} rows."
+                            " Use indices in [{}, {}).".format(
+                                indices[i],
+                                self.shape[0],
+                                -self.shape[0],
+                                self.shape[0],
+                            )
+                        ),
+                        location="Matrix.get(indices: List[Int])",
                     )
                 )
             selected_rows[i] = self[indices[i]]
@@ -984,8 +1066,15 @@ struct Matrix[
         """
         if idx >= self.size or idx < -self.size:
             raise Error(
-                String("Index {} exceed the matrix size {}").format(
-                    idx, self.size
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix size {}. Use indices"
+                        " in [{}, {}).".format(
+                            idx, self.size, -self.size, self.size
+                        )
+                    ),
+                    location="Matrix.__getitem__(idx: Int)",
                 )
             )
         var idx_norm = self.normalize(idx, self.size)
@@ -1033,9 +1122,23 @@ struct Matrix[
             or y < -self.shape[1]
         ):
             raise Error(
-                String(
-                    "Index ({}, {}) exceed the matrix shape ({}, {})"
-                ).format(x, y, self.shape[0], self.shape[1])
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index ({}, {}) out of bounds for matrix shape ({},"
+                        " {}). Use indices in [{}, {}) x [{}, {}).".format(
+                            x,
+                            y,
+                            self.shape[0],
+                            self.shape[1],
+                            -self.shape[0],
+                            self.shape[0],
+                            -self.shape[1],
+                            self.shape[1],
+                        )
+                    ),
+                    location="Matrix.__setitem__(x: Int, y: Int, val: Scalar)",
+                )
             )
         var x_norm: Int = self.normalize(x, self.shape[0])
         var y_norm: Int = self.normalize(y, self.shape[1])
@@ -1071,26 +1174,40 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String(
-                    "Error: Elements of `index` ({}) \n"
-                    "exceed the matrix shape ({})."
-                ).format(x, self.shape[0])
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.set(x: Int, value: Matrix)",
+                )
             )
-
         if value.shape[0] != 1:
             raise Error(
-                String(
-                    "Error: The value should have only 1 row, "
-                    "but it has {} rows."
-                ).format(value.shape[0])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Value must have exactly 1 row, but has {} rows."
+                        .format(value.shape[0])
+                    ),
+                    location="Matrix.set(x: Int, value: Matrix)",
+                )
             )
-
         if self.shape[1] != value.shape[1]:
             raise Error(
-                String(
-                    "Error: Matrix has {} columns, "
-                    "but the value has {} columns."
-                ).format(self.shape[1], value.shape[1])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Matrix has {} columns, but value has {} columns."
+                        " Column counts must match.".format(
+                            self.shape[1], value.shape[1]
+                        )
+                    ),
+                    location="Matrix.set(x: Int, value: Matrix)",
+                )
             )
 
         if self.flags.C_CONTIGUOUS:
@@ -1143,26 +1260,40 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String(
-                    "Error: Elements of `index` ({}) \n"
-                    "exceed the matrix shape ({})."
-                ).format(x, self.shape[0])
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.__setitem__(x: Int, value: Matrix)",
+                )
             )
-
         if value.shape[0] != 1:
             raise Error(
-                String(
-                    "Error: The value should have only 1 row, "
-                    "but it has {} rows."
-                ).format(value.shape[0])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Value must have exactly 1 row, but has {} rows."
+                        .format(value.shape[0])
+                    ),
+                    location="Matrix.__setitem__(x: Int, value: Matrix)",
+                )
             )
-
         if self.shape[1] != value.shape[1]:
             raise Error(
-                String(
-                    "Error: Matrix has {} columns, "
-                    "but the value has {} columns."
-                ).format(self.shape[1], value.shape[1])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Matrix has {} columns, but value has {} columns."
+                        " Column counts must match.".format(
+                            self.shape[1], value.shape[1]
+                        )
+                    ),
+                    location="Matrix.__setitem__(x: Int, value: Matrix)",
+                )
             )
 
         if self.flags.C_CONTIGUOUS:
@@ -1218,8 +1349,15 @@ struct Matrix[
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
-                String("Index {} exceed the column number {}").format(
-                    y, self.shape[1]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} columns. Use"
+                        " indices in [{}, {}).".format(
+                            y, self.shape[1], -self.shape[1], self.shape[1]
+                        )
+                    ),
+                    location="Matrix.set(x: Slice, y: Int, value: Matrix)",
                 )
             )
         var y_norm = self.normalize(y, self.shape[1])
@@ -1232,10 +1370,17 @@ struct Matrix[
 
         if len_range_x != value.shape[0] or value.shape[1] != 1:
             raise Error(
-                String(
-                    "Shape mismatch when assigning to slice: "
-                    "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(len_range_x, 1, value.shape[0], value.shape[1])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch when assigning to slice: target shape"
+                        " ({}, {}) vs value shape ({}, {}). Shapes must match"
+                        " exactly.".format(
+                            len_range_x, 1, value.shape[0], value.shape[1]
+                        )
+                    ),
+                    location="Matrix.set(x: Slice, y: Int, value: Matrix)",
+                )
             )
 
         var row = 0
@@ -1280,8 +1425,17 @@ struct Matrix[
         """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
-                String("Index {} exceed the column number {}").format(
-                    y, self.shape[1]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} columns. Use"
+                        " indices in [{}, {}).".format(
+                            y, self.shape[1], -self.shape[1], self.shape[1]
+                        )
+                    ),
+                    location=(
+                        "Matrix.__setitem__(x: Slice, y: Int, value: Matrix)"
+                    ),
                 )
             )
         var y_norm = self.normalize(y, self.shape[1])
@@ -1294,10 +1448,19 @@ struct Matrix[
 
         if len_range_x != value.shape[0] or value.shape[1] != 1:
             raise Error(
-                String(
-                    "Shape mismatch when assigning to slice: "
-                    "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(len_range_x, 1, value.shape[0], value.shape[1])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch when assigning to slice: target shape"
+                        " ({}, {}) vs value shape ({}, {}). Shapes must match"
+                        " exactly.".format(
+                            len_range_x, 1, value.shape[0], value.shape[1]
+                        )
+                    ),
+                    location=(
+                        "Matrix.__setitem__(x: Slice, y: Int, value: Matrix)"
+                    ),
+                )
             )
 
         var row = 0
@@ -1337,8 +1500,15 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index {} exceed the row size {}").format(
-                    x, self.shape[0]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location="Matrix.set(x: Int, y: Slice, value: Matrix)",
                 )
             )
         var x_norm = self.normalize(x, self.shape[0])
@@ -1351,10 +1521,17 @@ struct Matrix[
 
         if len_range_y != value.shape[1] or value.shape[0] != 1:
             raise Error(
-                String(
-                    "Shape mismatch when assigning to slice: "
-                    "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(1, len_range_y, value.shape[0], value.shape[1])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch when assigning to slice: target shape"
+                        " ({}, {}) vs value shape ({}, {}). Shapes must match"
+                        " exactly.".format(
+                            1, len_range_y, value.shape[0], value.shape[1]
+                        )
+                    ),
+                    location="Matrix.set(x: Int, y: Slice, value: Matrix)",
+                )
             )
 
         var col = 0
@@ -1397,8 +1574,17 @@ struct Matrix[
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
-                String("Index {} exceed the row size {}").format(
-                    x, self.shape[0]
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
+                        )
+                    ),
+                    location=(
+                        "Matrix.__setitem__(x: Int, y: Slice, value: Matrix)"
+                    ),
                 )
             )
         var x_norm = self.normalize(x, self.shape[0])
@@ -1411,10 +1597,19 @@ struct Matrix[
 
         if len_range_y != value.shape[1] or value.shape[0] != 1:
             raise Error(
-                String(
-                    "Shape mismatch when assigning to slice: "
-                    "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(1, len_range_y, value.shape[0], value.shape[1])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch when assigning to slice: target shape"
+                        " ({}, {}) vs value shape ({}, {}). Shapes must match"
+                        " exactly.".format(
+                            1, len_range_y, value.shape[0], value.shape[1]
+                        )
+                    ),
+                    location=(
+                        "Matrix.__setitem__(x: Int, y: Slice, value: Matrix)"
+                    ),
+                )
             )
 
         var col = 0
@@ -1458,11 +1653,19 @@ struct Matrix[
 
         if len(range_x) != value.shape[0] or len(range_y) != value.shape[1]:
             raise Error(
-                String(
-                    "Shape mismatch when assigning to slice: "
-                    "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(
-                    len(range_x), len(range_y), value.shape[0], value.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch when assigning to slice: target shape"
+                        " ({}, {}) vs value shape ({}, {}). Shapes must match"
+                        " exactly.".format(
+                            len(range_x),
+                            len(range_y),
+                            value.shape[0],
+                            value.shape[1],
+                        )
+                    ),
+                    location="Matrix.set(x: Slice, y: Slice, value: Matrix)",
                 )
             )
 
@@ -1514,11 +1717,21 @@ struct Matrix[
 
         if len(range_x) != value.shape[0] or len(range_y) != value.shape[1]:
             raise Error(
-                String(
-                    "Shape mismatch when assigning to slice: "
-                    "target shape ({}, {}) vs value shape ({}, {})"
-                ).format(
-                    len(range_x), len(range_y), value.shape[0], value.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch when assigning to slice: target shape"
+                        " ({}, {}) vs value shape ({}, {}). Shapes must match"
+                        " exactly.".format(
+                            len(range_x),
+                            len(range_y),
+                            value.shape[0],
+                            value.shape[1],
+                        )
+                    ),
+                    location=(
+                        "Matrix.__setitem__(x: Slice, y: Slice, value: Matrix)"
+                    ),
                 )
             )
 
@@ -1572,8 +1785,15 @@ struct Matrix[
         """
         if idx >= self.size or idx < -self.size:
             raise Error(
-                String("Index {} exceed the matrix size {}").format(
-                    idx, self.size
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of bounds for matrix size {}. Use indices"
+                        " in [{}, {}).".format(
+                            idx, self.size, -self.size, self.size
+                        )
+                    ),
+                    location="Matrix.__setitem__(idx: Int, val: Scalar)",
                 )
             )
         var idx_norm = self.normalize(idx, self.size)
@@ -2084,11 +2304,18 @@ struct Matrix[
             self.shape[1] != other.shape[1]
         ):
             raise Error(
-                String(
-                    "Shape mismatch: cannot add matrix of shape ({}, {}) to"
-                    " ({}, {})"
-                ).format(
-                    other.shape[0], other.shape[1], self.shape[0], self.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch: cannot add matrix of shape ({}, {}) to"
+                        " ({}, {}). Shapes must match exactly.".format(
+                            other.shape[0],
+                            other.shape[1],
+                            self.shape[0],
+                            self.shape[1],
+                        )
+                    ),
+                    location="Matrix.__iadd__",
                 )
             )
         comptime width = simd_width_of[Self.dtype]()
@@ -2146,11 +2373,18 @@ struct Matrix[
             self.shape[1] != other.shape[1]
         ):
             raise Error(
-                String(
-                    "Shape mismatch: cannot subtract matrix of shape ({}, {})"
-                    " from ({}, {})"
-                ).format(
-                    other.shape[0], other.shape[1], self.shape[0], self.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch: cannot subtract matrix of shape ({},"
+                        " {}) from ({}, {}). Shapes must match exactly.".format(
+                            other.shape[0],
+                            other.shape[1],
+                            self.shape[0],
+                            self.shape[1],
+                        )
+                    ),
+                    location="Matrix.__isub__",
                 )
             )
         comptime width = simd_width_of[Self.dtype]()
@@ -2208,11 +2442,18 @@ struct Matrix[
             self.shape[1] != other.shape[1]
         ):
             raise Error(
-                String(
-                    "Shape mismatch: cannot multiply matrix of shape ({}, {})"
-                    " with ({}, {})"
-                ).format(
-                    other.shape[0], other.shape[1], self.shape[0], self.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch: cannot multiply matrix of shape ({},"
+                        " {}) with ({}, {}). Shapes must match exactly.".format(
+                            other.shape[0],
+                            other.shape[1],
+                            self.shape[0],
+                            self.shape[1],
+                        )
+                    ),
+                    location="Matrix.__imul__",
                 )
             )
         comptime width = simd_width_of[Self.dtype]()
@@ -2270,11 +2511,18 @@ struct Matrix[
             self.shape[1] != other.shape[1]
         ):
             raise Error(
-                String(
-                    "Shape mismatch: cannot divide matrix of shape ({}, {}) by"
-                    " ({}, {})"
-                ).format(
-                    self.shape[0], self.shape[1], other.shape[0], other.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch: cannot divide matrix of shape ({}, {})"
+                        " by ({}, {}). Shapes must match exactly.".format(
+                            self.shape[0],
+                            self.shape[1],
+                            other.shape[0],
+                            other.shape[1],
+                        )
+                    ),
+                    location="Matrix.__itruediv__",
                 )
             )
         comptime width = simd_width_of[Self.dtype]()
@@ -2394,11 +2642,19 @@ struct Matrix[
             self.shape[1] != other.shape[1]
         ):
             raise Error(
-                String(
-                    "Shape mismatch: cannot floor divide matrix of shape ({},"
-                    " {}) by ({}, {})"
-                ).format(
-                    self.shape[0], self.shape[1], other.shape[0], other.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch: cannot floor divide matrix of shape"
+                        " ({}, {}) by ({}, {}). Shapes must match exactly."
+                        .format(
+                            self.shape[0],
+                            self.shape[1],
+                            other.shape[0],
+                            other.shape[1],
+                        )
+                    ),
+                    location="Matrix.__ifloordiv__",
                 )
             )
         comptime width = simd_width_of[Self.dtype]()
@@ -2515,11 +2771,19 @@ struct Matrix[
             self.shape[1] != other.shape[1]
         ):
             raise Error(
-                String(
-                    "Shape mismatch: cannot compute modulo of matrix of shape"
-                    " ({}, {}) with ({}, {})"
-                ).format(
-                    self.shape[0], self.shape[1], other.shape[0], other.shape[1]
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape mismatch: cannot compute modulo of matrix of"
+                        " shape ({}, {}) with ({}, {}). Shapes must match"
+                        " exactly.".format(
+                            self.shape[0],
+                            self.shape[1],
+                            other.shape[0],
+                            other.shape[1],
+                        )
+                    ),
+                    location="Matrix.__imod__",
                 )
             )
         comptime width = simd_width_of[Self.dtype]()
@@ -3458,9 +3722,16 @@ struct Matrix[
         """
         if shape[0] * shape[1] != self.size:
             raise Error(
-                String(
-                    "Cannot reshape matrix of size {} into shape ({}, {})."
-                ).format(self.size, shape[0], shape[1])
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Cannot reshape matrix of size {} into shape ({}, {})."
+                        " Total elements must match.".format(
+                            self.size, shape[0], shape[1]
+                        )
+                    ),
+                    location="Matrix.reshape",
+                )
             )
         var res = Matrix[Self.dtype](shape=shape, order=order)
 
@@ -4088,20 +4359,41 @@ struct Matrix[
             ```
         """
         if step == 0:
-            raise Error("arange: step cannot be zero")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Step cannot be zero. Provide a non-zero step value."
+                    ),
+                    location="arange",
+                )
+            )
 
         var num_elements: Int
         if step > 0:
             if stop <= start:
                 raise Error(
-                    "arange: stop must be greater than start when step is"
-                    " positive"
+                    NumojoError(
+                        category="value",
+                        message=(
+                            "Stop must be greater than start when step is"
+                            " positive."
+                        ),
+                        location="arange",
+                    )
                 )
             num_elements = Int(ceil((stop - start) / step))
         else:
             if stop >= start:
                 raise Error(
-                    "arange: stop must be less than start when step is negative"
+                    NumojoError(
+                        category="value",
+                        message=(
+                            "Stop must be less than start when step is"
+                            " negative."
+                        ),
+                        location="arange",
+                    )
                 )
             num_elements = Int(ceil((start - stop) / (-step)))
 
@@ -4142,7 +4434,16 @@ struct Matrix[
             ```
         """
         if num < 2:
-            raise Error("linspace: num must be at least 2")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Number of samples must be at least 2. Provide num"
+                        " >= 2."
+                    ),
+                    location="linspace",
+                )
+            )
 
         var result = Matrix[datatype](shape=(1, num), order=order)
         var step = (stop - start) / (num - 1)
@@ -4309,10 +4610,19 @@ struct Matrix[
             return M^
 
         if shape[0] * shape[1] != len(object):
-            var message = String(
-                "The input has {} elements, but the target has the shape {}x{}"
-            ).format(len(object), shape[0], shape[1])
-            raise Error(message)
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "The input has {} elements, but the target shape {}x{}"
+                        " requires {} elements. Total elements must match."
+                        .format(
+                            len(object), shape[0], shape[1], shape[0] * shape[1]
+                        )
+                    ),
+                    location="matrix_from_numpy",
+                )
+            )
         var M = Matrix[datatype](shape=shape, order="C")
         memcpy(dest=M._buf.ptr, src=object.unsafe_ptr(), count=M.size)
         if order == "F":
@@ -4386,11 +4696,19 @@ struct Matrix[
             return Matrix.fromlist(data)
 
         if size != len(data):
-            var message = String(
-                "The number of items in the string is {}, which does not match"
-                " the given shape {}x{}."
-            ).format(len(data), shape[0], shape[1])
-            raise Error(message)
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "The number of items in the string is {}, which does"
+                        " not match the given shape {}x{} (requires {}"
+                        " elements). Total elements must match.".format(
+                            len(data), shape[0], shape[1], size
+                        )
+                    ),
+                    location="matrix_from_str",
+                )
+            )
 
         var result = Matrix[datatype](shape=shape)
         for i in range(len(data)):
@@ -4553,15 +4871,27 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     comptime simd_width = simd_width_of[dtype]()
     if A.order() != B.order():
         raise Error(
-            String("Matrix order {} does not match {}.").format(
-                A.order(), B.order()
+            NumojoError(
+                category="value",
+                message=(
+                    "Matrix order {} does not match {}. Both matrices must have"
+                    " the same memory order.".format(A.order(), B.order())
+                ),
+                location="_apply_op_to_matrix_matrix",
             )
         )
 
     if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
         raise Error(
-            String("Shape {}x{} does not match {}x{}.").format(
-                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+            NumojoError(
+                category="shape",
+                message=(
+                    "Shape {}x{} does not match {}x{}. Matrix shapes must match"
+                    " exactly.".format(
+                        A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+                    )
+                ),
+                location="_apply_op_to_matrix_matrix",
             )
         )
 
@@ -4647,15 +4977,27 @@ fn _logic_func_matrix_matrix_to_matrix[
 
     if A.order() != B.order():
         raise Error(
-            String("Matrix order {} does not match {}.").format(
-                A.order(), B.order()
+            NumojoError(
+                category="value",
+                message=(
+                    "Matrix order {} does not match {}. Both matrices must have"
+                    " the same memory order.".format(A.order(), B.order())
+                ),
+                location="_apply_compop_to_matrix_matrix",
             )
         )
 
     if (A.shape[0] != B.shape[0]) or (A.shape[1] != B.shape[1]):
         raise Error(
-            String("Shape {}x{} does not match {}x{}.").format(
-                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+            NumojoError(
+                category="shape",
+                message=(
+                    "Shape {}x{} does not match {}x{}. Matrix shapes must match"
+                    " exactly.".format(
+                        A.shape[0], A.shape[1], B.shape[0], B.shape[1]
+                    )
+                ),
+                location="_apply_compop_to_matrix_matrix",
             )
         )
 

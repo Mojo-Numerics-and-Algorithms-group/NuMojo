@@ -39,6 +39,7 @@ from numojo.routines.manipulation import ravel
 # Find extrema in elements of a single array.
 # ===-----------------------------------------------------------------------===#
 
+
 fn extrema_1d[
     dtype: DType, //, is_max: Bool
 ](a: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -111,11 +112,13 @@ fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     else:
         return extrema_1d[is_max=True](ravel(a))
 
+
 fn extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Finds the max value in a 1-D array.
     """
     return extrema_1d[is_max=True](a)
+
 
 fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
@@ -144,7 +147,7 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return apply_along_axis_reduce[dtype, func1d = extrema_1d_max](
+    return apply_along_axis_reduce[dtype, func1d=extrema_1d_max](
         a=a, axis=normalized_axis
     )
 

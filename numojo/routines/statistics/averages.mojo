@@ -23,7 +23,10 @@ from numojo.routines.math.arithmetic import add
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
 from numojo.routines.sorting import binary_sort, sort
-from numojo.routines.functional import apply_along_axis_reduce_with_dtype, apply_along_axis_reduce
+from numojo.routines.functional import (
+    apply_along_axis_reduce_with_dtype,
+    apply_along_axis_reduce,
+)
 
 
 fn mean_1d[
@@ -301,7 +304,9 @@ fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return apply_along_axis_reduce[dtype, func1d=mode_1d](a=a, axis=normalized_axis)
+    return apply_along_axis_reduce[dtype, func1d=mode_1d](
+        a=a, axis=normalized_axis
+    )
 
 
 fn std[

@@ -440,7 +440,8 @@ struct Vectorized(Backend):
 
 # This provides a way to bypass bitpacking issues with Bool
 fn bool_simd_store[
-    ptr_origin: MutOrigin, //,
+    ptr_origin: MutOrigin,
+    //,
     simd_width: Int,
 ](
     ptr: UnsafePointer[Scalar[DType.bool], ptr_origin],

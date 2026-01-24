@@ -29,14 +29,134 @@ from sys import simd_width_of
 
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
 from numojo.core.ndarray import NDArray
+from numojo.core.error import IndexError
+
+# ===----------------------------------------------------------------------=== #
+# Internal Data Structures
+# ===----------------------------------------------------------------------=== #
+
+
+struct InternalSlice(ImplicitlyCopyable):
+    var start: Int
+    var end: Int
+    var step: Int
+
+    fn __init__(out self, start: Int, end: Int, step: Int):
+        self.start = start
+        self.end = end
+        self.step = step
+
+    fn __repr__(self) -> String:
+        return "InternalSlice(start={}, end={}, step={})".format(
+            self.start, self.end, self.step
+        )
+
+    fn __str__(self) -> String:
+        return "InternalSlice(start={}, end={}, step={})".format(
+            self.start, self.end, self.step
+        )
+
+    fn __eq__(self, other: Self) -> Bool:
+        return (
+            self.start == other.start
+            and self.end == other.end
+            and self.step == other.step
+        )
+
+    fn __ne__(self, other: Self) -> Bool:
+        return not self.__eq__(other)
+
+    fn to_tuple(self) -> Tuple[Int, Int, Int]:
+        return (self.start, self.end, self.step)
+
+    fn to_slice(self) -> Slice:
+        return Slice(self.start, self.end, self.step)
+
+    fn normalize(self, dim: Int) -> InternalSlice:
+        var start_norm = self.start
+        var end_norm = self.end
+
+        if self.start < 0:
+            start_norm = dim + self.start
+        if self.end < 0:
+            end_norm = dim + self.end
+
+        return InternalSlice(start_norm, end_norm, self.step)
+
+    fn check_bounds(self, dim: Int) raises CustomError:
+        if self.start < 0 or self.start >= dim:
+            raise IndexError(
+                message=(
+                    "Slice start index {} out of bounds for dimension of"
+                    " size {}".format(self.start, dim)
+                ),
+                location="InternalSlice.check_bounds()",
+            )
+        if self.end < 0 or self.end > dim:
+            raise IndexError(
+                message=(
+                    "Slice end index {} out of bounds for dimension of size {}"
+                    .format(self.end, dim)
+                ),
+                location="InternalSlice.check_bounds()",
+            )
+        if self.step == 0:
+            raise IndexError(
+                message="Slice step cannot be zero",
+                location="InternalSlice.check_bounds()",
+            )
+
+
+comptime newaxis: NewAxis = NewAxis()
+
+
+# TODO: add an initializer with int field to specify number of new axes to add!
+struct NewAxis(Stringable):
+    fn __init__(out self):
+        """
+        Initializes a NewAxis instance.
+        """
+        pass
+
+    fn __repr__(self) -> String:
+        """
+        Returns a string representation of the NewAxis instance.
+
+        Returns:
+            Str: The string "NewAxis()".
+        """
+        return "numojo.newaxis()"
+
+    fn __str__(self) -> String:
+        """
+        Returns a string representation of the NewAxis instance.
+
+        Returns:
+            Str: The string "NewAxis()".
+        """
+        return "numojo.newaxis()"
+
+    fn __eq__(self, other: Self) -> Bool:
+        """
+        Checks equality between two NewAxis instances.
+        """
+        return True
+
+    fn __ne__(self, other: Self) -> Bool:
+        """
+        Checks inequality between two NewAxis instances.
+        """
+        return False
+
 
 # ===----------------------------------------------------------------------=== #
 # Offset and traverse functions
 # ===----------------------------------------------------------------------=== #
 
-struct Validator():
+
+struct Validator:
     @staticmethod
-    fn _check_row_bounds(x: Int, dim: Int) raises:
+    fn check_row_bounds(x: Int, dim: Int) raises:
         """
         Check if row index is within bounds.
 
@@ -55,7 +175,7 @@ struct Validator():
             )
 
     @staticmethod
-    fn _check_col_bounds(y: Int, dim: Int) raises:
+    fn check_col_bounds(y: Int, dim: Int) raises:
         """
         Check if column index is within bounds.
 
@@ -74,7 +194,7 @@ struct Validator():
             )
 
     @staticmethod
-    fn _check_bounds(x: Int, y: Int, dim_x: Int, dim_y: Int) raises:
+    fn check_bounds(x: Int, y: Int, dim_x: Int, dim_y: Int) raises:
         """
         Check if both row and column indices are within bounds.
 
@@ -87,19 +207,15 @@ struct Validator():
         Raises:
             Error: If either index is out of bounds.
         """
-        if (
-            x >= dim_x
-            or x < -dim_x
-            or y >= dim_y
-            or y < -dim_y
-        ):
+        if x >= dim_x or x < -dim_x or y >= dim_y or y < -dim_y:
             raise Error(
                 String(
                     "Index ({}, {}) out of bounds for matrix shape ({}, {})"
                 ).format(x, y, dim_x, dim_y)
             )
 
-struct IndexMethods():
+
+struct IndexMethods:
     @staticmethod
     fn normalize(idx: Int, dim: Int) -> Int:
         """
@@ -187,7 +303,6 @@ struct IndexMethods():
             idx += indices[i] * strides[i]
         return idx
 
-
     @staticmethod
     fn get_1d_index(indices: List[Int], strides: List[Int]) -> Int:
         """
@@ -206,7 +321,9 @@ struct IndexMethods():
         return idx
 
     @staticmethod
-    fn get_1d_index(indices: VariadicList[Int], strides: VariadicList[Int]) -> Int:
+    fn get_1d_index(
+        indices: VariadicList[Int], strides: VariadicList[Int]
+    ) -> Int:
         """
         Get the index of a multi-dimensional array from a list of indices and strides.
 
@@ -259,141 +376,16 @@ struct IndexMethods():
             indices[i] = remainder // strides[i]
             remainder %= strides[i]
 
-        return _get_offset(indices, strides._flip())
-
-fn _get_offset(indices: List[Int], strides: NDArrayStrides) raises -> Int:
-    """
-    Get the index of a multi-dimensional array from a list of indices and strides.
-
-    Args:
-        indices: The list of indices.
-        strides: The strides of the indices.
-
-    Returns:
-        The scalar index of the multi-dimensional array.
-    """
-    var idx: Int = 0
-    for i in range(strides.ndim):
-        idx += indices[i] * strides[i]
-    return idx
-
-
-fn _get_offset(indices: Item, strides: NDArrayStrides) raises -> Int:
-    """
-    Get the index of a multi-dimensional array from a list of indices and strides.
-
-    Args:
-        indices: The list of indices.
-        strides: The strides of the indices.
-
-    Returns:
-        The scalar index of the multi-dimensional array.
-    """
-    var index: Int = 0
-    for i in range(strides.ndim):
-        index += indices[i] * strides[i]
-    return index
-
-
-fn _get_offset(
-    indices: VariadicList[Int], strides: NDArrayStrides
-) raises -> Int:
-    """
-    Get the index of a multi-dimensional array from a list of indices and strides.
-
-    Args:
-        indices: The list of indices.
-        strides: The strides of the indices.
-
-    Returns:
-        The scalar index of the multi-dimensional array.
-    """
-    var idx: Int = 0
-    for i in range(strides.ndim):
-        idx += indices[i] * strides[i]
-    return idx
-
-
-fn _get_offset(indices: List[Int], strides: List[Int]) -> Int:
-    """
-    Get the index of a multi-dimensional array from a list of indices and strides.
-
-    Args:
-        indices: The list of indices.
-        strides: The strides of the indices.
-
-    Returns:
-        The scalar index of the multi-dimensional array.
-    """
-    var idx: Int = 0
-    for i in range(strides.__len__()):
-        idx += indices[i] * strides[i]
-    return idx
-
-
-fn _get_offset(indices: VariadicList[Int], strides: VariadicList[Int]) -> Int:
-    """
-    Get the index of a multi-dimensional array from a list of indices and strides.
-
-    Args:
-        indices: The list of indices.
-        strides: The strides of the indices.
-
-    Returns:
-        The scalar index of the multi-dimensional array.
-    """
-    var idx: Int = 0
-    for i in range(strides.__len__()):
-        idx += indices[i] * strides[i]
-    return idx
-
-
-fn _get_offset(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
-    """
-    Get the index of matrix from a list of indices and strides.
-
-    Args:
-        indices: The list of indices.
-        strides: The strides of the indices.
-
-    Returns:
-        Offset of contiguous memory layout.
-    """
-    return indices[0] * strides[0] + indices[1] * strides[1]
-
-
-fn _transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
-    """
-    Transfers the offset by flipping the strides information.
-    It can be used to transfer between C-contiguous and F-continuous memory
-    layout. For example, in a 4x4 C-contiguous array, the item with offset 4
-    has the indices (1, 0). The item with the same indices (1, 0) in a
-    F-continuous array has an offset of 1.
-
-    Args:
-        offset: The offset in memory of an element of array.
-        strides: The strides of the array.
-
-    Returns:
-        The offset of the array of a flipped memory layout.
-    """
-
-    var remainder: Int = offset
-    var indices: Item = Item(ndim=len(strides))
-    for i in range(len(strides)):
-        indices[i] = remainder // strides[i]
-        remainder %= strides[i]
-
-    return _get_offset(indices, strides._flip())
+        return Self.get_1d_index(indices, strides._flip())
 
 
 # ===----------------------------------------------------------------------=== #
 # Functions to traverse a multi-dimensional array
 # ===----------------------------------------------------------------------=== #
 #
-struct TraverseMethods():
+struct TraverseMethods:
     @staticmethod
-    fn _traverse_buffer_according_to_shape_and_strides[
+    fn traverse_buffer_according_to_shape_and_strides[
         origin: MutOrigin
     ](
         mut ptr: UnsafePointer[Scalar[DType.int], origin=origin],
@@ -434,7 +426,9 @@ struct TraverseMethods():
 
         """
         for index_of_axis in range(shape[current_dim]):
-            var current_sum = previous_sum + index_of_axis * strides[current_dim]
+            var current_sum = (
+                previous_sum + index_of_axis * strides[current_dim]
+            )
             if current_dim >= shape.ndim - 1:
                 ptr.init_pointee_copy(current_sum)
                 ptr += 1
@@ -448,7 +442,7 @@ struct TraverseMethods():
                 )
 
     @staticmethod
-    fn _traverse_iterative[
+    fn traverse_iterative[
         dtype: DType
     ](
         orig: NDArray[dtype],
@@ -497,7 +491,7 @@ struct TraverseMethods():
                 index[d] = 0
 
     @staticmethod
-    fn _traverse_iterative_setter[
+    fn traverse_iterative_setter[
         dtype: DType
     ](
         orig: NDArray[dtype],

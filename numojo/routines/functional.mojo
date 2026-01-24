@@ -79,7 +79,7 @@ from numojo.core.ndarray import NDArray
 
 fn apply_along_axis_reduce_to_int[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
+    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
         DType.int
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
@@ -125,11 +125,12 @@ fn apply_along_axis_reduce_to_int[
 
     return res^
 
+
 fn apply_along_axis_reduce[
     dtype: DType,
-    func1d: fn[dtype_func: DType] (
-        NDArray[dtype_func]
-    ) raises -> Scalar[dtype_func]
+    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
+        dtype_func
+    ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
@@ -180,7 +181,7 @@ fn apply_along_axis_reduce[
 fn apply_along_axis_reduce_with_dtype[
     dtype: DType,
     returned_dtype: DType,
-    func1d: fn[dtype_func: DType, returned_dtype_func: DType](
+    func1d: fn[dtype_func: DType, returned_dtype_func: DType] (
         NDArray[dtype_func]
     ) raises -> Scalar[returned_dtype_func],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
@@ -234,7 +235,7 @@ fn apply_along_axis_reduce_with_dtype[
 
 fn apply_along_axis_preserve[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
+    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
         dtype_func
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -312,7 +313,7 @@ fn apply_along_axis_preserve[
 
 fn apply_along_axis_inplace[
     dtype: DType,
-    func1d: fn[dtype_func: DType](mut NDArray[dtype_func]) raises -> None,
+    func1d: fn[dtype_func: DType] (mut NDArray[dtype_func]) raises -> None,
 ](mut a: NDArray[dtype], axis: Int) raises -> None:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
@@ -377,7 +378,7 @@ fn apply_along_axis_inplace[
 
 fn apply_along_axis_indices[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
+    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
         DType.int
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:

@@ -22,6 +22,7 @@ from numojo.routines.functional import (
     apply_along_axis_indices,
 )
 
+
 fn test_apply_along_axis() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.randn(Shape(4, 8, 16))
@@ -31,14 +32,18 @@ fn test_apply_along_axis() raises:
 
     for i in range(a.ndim):
         check(
-            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](a, axis=i),
+            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](
+                a, axis=i
+            ),
             np.apply_along_axis(np.sort, axis=i, arr=anp),
             String(
                 "`apply_along_axis` C-order array along axis {} is broken"
             ).format(i),
         )
         check(
-            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](b, axis=i),
+            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](
+                b, axis=i
+            ),
             np.apply_along_axis(np.sort, axis=i, arr=bnp),
             String(
                 "`apply_along_axis` F-order array along axis {} is broken"

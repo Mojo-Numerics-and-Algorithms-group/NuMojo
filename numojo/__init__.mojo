@@ -86,14 +86,7 @@ from numojo.core.dtype.default_dtype import (
     f64,
     boolean,
 )
-from numojo.core.error import (
-    ShapeError,
-    IndexError,
-    BroadcastError,
-    MemoryError,
-    ValueError,
-    ArithmeticError,
-)
+from numojo.core.error import NumojoError
 
 # ===----------------------------------------------------------------------=== #
 # Import routines and objects

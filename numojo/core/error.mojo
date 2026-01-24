@@ -16,72 +16,89 @@ Currently we have a few common error categories like
 
 We can expand this list in the future as needed.
 """
+from os import abort
 
 comptime RED_COLOR: String = "\033[31m"
 comptime RESET_COLOR: String = "\033[0m"
 
+
 # TODO: remove suggestion field and remove it from existing instances.
-struct NumojoError[
-    category: String,
-](Stringable, Writable):
+struct NumojoError(Stringable, Writable):
     """
     Unified error type for all Numojo operations.
 
     Parameters:
-        category: Type of error (e.g., "ShapeError", "IndexError").
 
     Args:
-        message: Main error description.
-        suggestion: Optional hint for fixing the error.
+        category: Type of error (e.g., "ShapeError", "IndexError").
+        message: Main error description and suggestion.
         location: Optional context about where error occurred.
     """
 
+    comptime ErrorDict: Dict[String, String] = {
+        "index": "IndexError",
+        "shape": "ShapeError",
+        "broadcast": "BroadcastError",
+        "memory": "MemoryError",
+        "value": "ValueError",
+        "arithmetic": "ArithmeticError",
+    }
+    var category: String
     var message: String
-    var suggestion: Optional[String]
     var location: Optional[String]
 
     fn __init__(
         out self,
+        category: StringLiteral,
         message: StringLiteral,
-        suggestion: StringLiteral,
         location: StringLiteral,
     ):
+        err_dict = materialize[Self.ErrorDict]()
+        try:
+            self.category = err_dict[category]
+        except:
+            abort("NumojoError: Invalid error type provided.")
         self.message = message
-        self.suggestion = Optional[String](suggestion)
-        self.location = Optional[String](location)
+        self.location = location
 
     fn __init__(
         out self,
+        category: StringLiteral,
         message: String,
-        suggestion: Optional[String] = None,
         location: Optional[String] = None,
     ):
+        err_dict = materialize[Self.ErrorDict]()
+        try:
+            self.category = err_dict[category]
+        except:
+            abort("NumojoError: Invalid error type provided.")
         self.message = message
-        self.suggestion = suggestion
         self.location = location
 
     fn __str__(self) -> String:
-        var result = RED + String("NuMojo Error\n")
-        result += String("\tCategory  : ") + String(Self.category) + "\n" + RESET.__str__()
+        var result = RED_COLOR + String("NuMojo Error\n")
+        result += (
+            String("\tCategory  : ")
+            + String(self.category)
+            + "\n"
+            + RESET_COLOR.__str__()
+        )
         result += String("\tMessage   : ") + self.message + "\n"
         if self.location:
             result += String("\tLocation  : ") + self.location.value() + "\n"
-        if self.suggestion:
-            result += String("\tSuggestion: ") + self.suggestion.value() + "\n"
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
         """Write error information to a writer."""
-        writer.write(self.__str__())
-
-
-# ===----------------------------------------------------------------------===#
-# Error Category Constants
-# ===----------------------------------------------------------------------===#
-# common error categories, might expand in future
-comptime IndexError = NumojoError[category="IndexError"]
-comptime ShapeError = NumojoError[category="ShapeError"]
-comptime BroadcastError = NumojoError[category="BroadcastError"]
-comptime MemoryError = NumojoError[category="MemoryError"]
-comptime ValueError = NumojoError[category="ValueError"]
-comptime ArithmeticError = NumojoError[category="ArithmeticError"]
+        writer.write(RED_COLOR + String("NuMojo Error\n"))
+        writer.write(
+            String("\tCategory  : ")
+            + String(self.category)
+            + "\n"
+            + RESET_COLOR.__str__()
+        )
+        writer.write(String("\tMessage   : ") + self.message + "\n")
+        if self.location:
+            writer.write(
+                String("\tLocation  : ") + self.location.value() + "\n"
+            )

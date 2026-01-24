@@ -11,7 +11,7 @@ Implements NDArrayStrides type.
 from memory import memcmp, memcpy
 from memory import UnsafePointer
 
-from numojo.core.error import IndexError, ValueError
+from numojo.core.error import NumojoError
 
 comptime Strides = NDArrayStrides
 """An alias of the NDArrayStrides."""
@@ -55,11 +55,12 @@ struct NDArrayStrides(
 
         if shape < 1:
             raise Error(
-                ShapeError(
-                    message=String(
-                        "Stride value must be positive, got {}."
-                    ).format(shape),
-                    suggestion="Use positive integers for stride value.",
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Stride value must be positive, got {}. Use positive"
+                        " integers for stride value.".format(shape)
+                    ),
                     location="NDArrayStrides.__init__(shape: Int)",
                 )
             )
@@ -81,11 +82,12 @@ struct NDArrayStrides(
         """
         if len(strides) <= 0:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Number of dimensions must be positive, got {}."
-                    ).format(len(strides)),
-                    suggestion="Provide at least one stride value.",
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Number of dimensions must be positive, got {}. Provide"
+                        " at least one stride value.".format(len(strides))
+                    ),
                     location="NDArrayStrides.__init__(*strides: Int)",
                 )
             )
@@ -108,11 +110,12 @@ struct NDArrayStrides(
         """
         if len(strides) <= 0:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Number of dimensions must be positive, got {}."
-                    ).format(len(strides)),
-                    suggestion="Provide a non-empty list of strides.",
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Number of dimensions must be positive, got {}. Provide"
+                        " a non-empty list of strides.".format(len(strides))
+                    ),
                     location="NDArrayStrides.__init__(strides: List[Int])",
                 )
             )
@@ -135,11 +138,14 @@ struct NDArrayStrides(
         """
         if len(strides) <= 0:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Number of dimensions must be positive, got {}."
-                    ).format(len(strides)),
-                    suggestion="Provide a non-empty variadic list of strides.",
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Number of dimensions must be positive, got {}. Provide"
+                        " a non-empty variadic list of strides.".format(
+                            len(strides)
+                        )
+                    ),
                     location=(
                         "NDArrayStrides.__init__(strides: VariadicList[Int])"
                     ),
@@ -200,12 +206,13 @@ struct NDArrayStrides(
                 temp *= shape[i]
         else:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Invalid order '{}'; expected 'C' or 'F'."
-                    ).format(order),
-                    suggestion=(
-                        "Use 'C' for row-major or 'F' for column-major layout."
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Invalid order '{}'; expected 'C' or 'F'. Use 'C' for"
+                        " row-major or 'F' for column-major layout.".format(
+                            order
+                        )
                     ),
                     location="NDArrayStrides.__init__(shape, order)",
                 )
@@ -289,11 +296,12 @@ struct NDArrayStrides(
         """
         if ndim < 0:
             raise Error(
-                ValueError(
-                    message=String(
+                NumojoError(
+                    category="value",
+                    message=(
                         "Number of dimensions must be non-negative, got {}."
-                    ).format(ndim),
-                    suggestion="Provide ndim >= 0.",
+                        " Provide ndim >= 0.".format(ndim)
+                    ),
                     location="NDArrayStrides.__init__(ndim, initialized)",
                 )
             )
@@ -433,11 +441,12 @@ struct NDArrayStrides(
         """
         if index >= self.ndim or index < -self.ndim:
             raise Error(
-                IndexError(
-                    message=String("Index {} out of range [{}, {}).").format(
-                        index, -self.ndim, self.ndim
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of range [{}, {}). Use indices in [-ndim,"
+                        " ndim).".format(index, -self.ndim, self.ndim)
                     ),
-                    suggestion="Use indices in [-ndim, ndim).",
                     location="NDArrayStrides.__getitem__",
                 )
             )
@@ -467,9 +476,11 @@ struct NDArrayStrides(
         var step = slice_index.step.or_else(1)
         if step == 0:
             raise Error(
-                ValueError(
-                    message="Slice step cannot be zero.",
-                    suggestion="Use a non-zero step value.",
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Slice step cannot be zero. Use a non-zero step value."
+                    ),
                     location="NDArrayStrides._compute_slice_params",
                 )
             )
@@ -570,11 +581,12 @@ struct NDArrayStrides(
         """
         if index >= self.ndim or index < -self.ndim:
             raise Error(
-                IndexError(
-                    message=String("Index {} out of range [{}, {}).").format(
-                        index, -self.ndim, self.ndim
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Index {} out of range [{}, {}). Use indices in [-ndim,"
+                        " ndim).".format(index, -self.ndim, self.ndim)
                     ),
-                    suggestion="Use indices in [-ndim, ndim).",
                     location=(
                         "NDArrayStrides.__setitem__(index: Int, val:"
                         " Scalar[DType.int])"
@@ -716,21 +728,23 @@ struct NDArrayStrides(
 
         if norm_axis1 < 0 or norm_axis1 >= self.ndim:
             raise Error(
-                IndexError(
-                    message=String("axis1 {} out of range [0, {}).").format(
-                        norm_axis1, self.ndim
+                NumojoError(
+                    category="index",
+                    message=(
+                        "axis1 {} out of range [0, {}). Provide axis1 in"
+                        " [-ndim, ndim).".format(norm_axis1, self.ndim)
                     ),
-                    suggestion="Provide axis1 in [-ndim, ndim).",
                     location="NDArrayStrides.swapaxes",
                 )
             )
         if norm_axis2 < 0 or norm_axis2 >= self.ndim:
             raise Error(
-                IndexError(
-                    message=String("axis2 {} out of range [0, {}).").format(
-                        norm_axis2, self.ndim
+                NumojoError(
+                    category="index",
+                    message=(
+                        "axis2 {} out of range [0, {}). Provide axis2 in"
+                        " [-ndim, ndim).".format(norm_axis2, self.ndim)
                     ),
-                    suggestion="Provide axis2 in [-ndim, ndim).",
                     location="NDArrayStrides.swapaxes",
                 )
             )
@@ -905,12 +919,12 @@ struct NDArrayStrides(
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
-                IndexError(
-                    message=String(
-                        "Load operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
-                    suggestion=(
-                        "Ensure that idx and width are within valid range."
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Load operation out of bounds: idx={} width={} ndim={}."
+                        " Ensure that idx and width are within valid range."
+                        .format(idx, width, self.ndim)
                     ),
                     location="Strides.load",
                 )
@@ -936,12 +950,12 @@ struct NDArrayStrides(
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
-                IndexError(
-                    message=String(
-                        "Store operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
-                    suggestion=(
-                        "Ensure that idx and width are within valid range."
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Store operation out of bounds: idx={} width={}"
+                        " ndim={}. Ensure that idx and width are within valid"
+                        " range.".format(idx, width, self.ndim)
                     ),
                     location="Strides.store",
                 )

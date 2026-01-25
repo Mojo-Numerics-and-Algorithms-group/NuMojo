@@ -76,29 +76,15 @@ struct NumojoError(Stringable, Writable):
         self.location = location
 
     fn __str__(self) -> String:
-        var result = RED_COLOR + String("NuMojo Error\n")
-        result += (
-            String("\tCategory  : ")
-            + String(self.category)
-            + "\n"
-            + RESET_COLOR.__str__()
-        )
-        result += String("\tMessage   : ") + self.message + "\n"
+        var result = RED_COLOR + String(self.category) + String(": ") + self.message
         if self.location:
-            result += String("\tLocation  : ") + self.location.value() + "\n"
+            result += String(" [at ") + self.location.value() + String("]")
+        result += RESET_COLOR.__str__()
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
         """Write error information to a writer."""
-        writer.write(RED_COLOR + String("NuMojo Error\n"))
-        writer.write(
-            String("\tCategory  : ")
-            + String(self.category)
-            + "\n"
-            + RESET_COLOR.__str__()
-        )
-        writer.write(String("\tMessage   : ") + self.message + "\n")
+        writer.write(RED_COLOR + String(self.category) + String(": ") + self.message)
         if self.location:
-            writer.write(
-                String("\tLocation  : ") + self.location.value() + "\n"
-            )
+            writer.write(String(" [at ") + self.location.value() + String("]"))
+        writer.write(RESET_COLOR)

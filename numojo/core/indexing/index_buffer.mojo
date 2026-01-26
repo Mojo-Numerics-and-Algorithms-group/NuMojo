@@ -1,3 +1,9 @@
+# ===----------------------------------------------------------------------=== #
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 Shared integer buffer backend for shape/strides/item.
 
@@ -11,10 +17,12 @@ from algorithm.functional import vectorize
 from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice
 
-comptime Item = IndexBuffer
+
 
 @register_passable
-struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
+struct IndexBuffer(
+    Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
+):
     """
     Backend for shape/strides/item buffers.
     """
@@ -35,7 +43,7 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
     # Lifecycle Methods
     # ===----------------------------------------------------------------------=== #
 
-    fn __init__(out self, size: Int):
+    fn __init__(out self, *, size: Int):
         """
         Initialize an IndexBuffer of given size.
 
@@ -118,6 +126,21 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(values[i])
 
+    fn __init__(out self, values: List[Int]):
+        """
+        Initialize an IndexBuffer with a list of Int values.
+
+        Args:
+            values: List of integer values.
+        """
+        self.ndim = len(values)
+        if self.ndim <= 0:
+            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            return
+        self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
+        for i in range(self.ndim):
+            (self.ptr + i).init_pointee_copy(values[i])
+
     fn __init__(out self, values: VariadicList[Scalar[Self.element_type]]):
         """
         Initialize an IndexBuffer with a range of values.
@@ -146,7 +169,7 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
             self.ptr.free()
 
     # ===----------------------------------------------------------------------=== #
-    # Pointer and Element Access Methods
+    # Element Access Methods
     # ===----------------------------------------------------------------------=== #
     fn get_ptr(
         ref self,
@@ -176,7 +199,7 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         """
         return self.ptr + offset
 
-    fn __getitem__(self, idx: Int) -> Scalar[Self.element_type]:
+    fn __getitem__(self, idx: Int) raises -> Scalar[Self.element_type]:
         """
         Get the element at the given index.
 
@@ -186,7 +209,16 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         Returns:
             Element at the given index.
         """
-        return self.ptr[idx]
+        var index = idx if idx >= 0 else self.ndim + idx
+        if index < 0 or index >= self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="index out of bounds",
+                    location="IndexBuffer.__getitem__(idx: Int)",
+                )
+            )
+        return self.ptr[index]
 
     fn __getitem__(self, slice: Slice) raises -> Self:
         """
@@ -219,7 +251,7 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
 
         return new_buffer^
 
-    fn __setitem__(mut self, idx: Int, value: Scalar[Self.element_type]):
+    fn __setitem__(mut self, idx: Int, value: Scalar[Self.element_type]) raises:
         """
         Set the element at the given index.
 
@@ -227,7 +259,16 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
             idx: Index of the element.
             value: Value to set.
         """
-        self.ptr[idx] = value
+        var index = idx if idx >= 0 else self.ndim + idx
+        if index < 0 or index >= self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="index out of bounds",
+                    location="IndexBuffer.__setitem__(idx: Int)",
+                )
+            )
+        self.ptr[index] = value
 
     fn __setitem__(mut self, slice: Slice, value: Self) raises:
         """
@@ -297,145 +338,41 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         """
         self.ptr.store[width=width](idx, value)
 
-    # ===----------------------------------------------------------------------=== #
-    # Static Constructors
-    # ===----------------------------------------------------------------------=== #
-    @staticmethod
-    fn arange(start: Int, end: Int, step: Int = 1) raises -> Self:
+    fn unsafe_load[
+        width: Int = 1
+    ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
-        Create a IndexBuffer with a range of values.
+        Unsafely load a SIMD vector from the buffer at the given index.
+
+        Parameters:
+            width: Width of the SIMD vector.
 
         Args:
-            start: Start of the range.
-            end: End of the range.
-            step: Step size of the range.
+            idx: Index to load from.
 
         Returns:
-            IndexBuffer with the range of values.
+            SIMD vector loaded from the buffer.
         """
-        if step == 0:
-            raise Error(
-                NumojoError(
-                    category="value",
-                    message="step must be non-zero in range()",
-                    location="IndexBuffer.range",
-                )
-            )
+        return self.ptr.load[width=width](idx)
 
-        var size = 0
-        if step > 0:
-            size = max(0, (end - start + step - 1) // step)
-        else:
-            size = max(0, (start - end - step - 1) // (-step))
-
-        var result = Self(size)
-        var val = start
-        for i in range(size):
-            result.ptr[i] = val
-            val += step
-
-        return result^
-
-    @staticmethod
-    fn fill(size: Int, value: Int) -> Self:
+    fn unsafe_store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self.element_type, width]):
         """
-        Create a IndexBuffer filled with the given value.
+        Unsafely store a SIMD vector to the buffer at the given index.
+
+        Parameters:
+            width: Width of the SIMD vector.
 
         Args:
-            size: Number of elements in the buffer.
-            value: Value to fill the buffer with.
-
-        Returns:
-            IndexBuffer filled with the given value.
+            idx: Index to store to.
+            value: SIMD vector to store.
         """
-        var res = Self(size)
-        for i in range(size):
-            res.ptr[i] = value
-        return res^
-
-    @staticmethod
-    fn zeros(size: Int) -> Self:
-        """
-        Create a IndexBuffer filled with zeros.
-
-        Args:
-            size: Number of elements in the buffer.
-
-        Returns:
-            IndexBuffer filled with zeros.
-        """
-        var res = Self(size)
-        memset_zero(res.ptr, size)
-        return res^
-
-    @staticmethod
-    fn ones(size: Int) -> Self:
-        """
-        Create a IndexBuffer filled with ones.
-
-        Args:
-            size: Number of elements in the buffer.
-
-        Returns:
-            IndexBuffer filled with ones.
-        """
-        var res = Self(size)
-        for i in range(size):
-            res.ptr[i] = 1
-        return res^
-
-    @staticmethod
-    fn linspace(start: Int, end: Int, num: Int) raises -> Self:
-        """
-        Create a IndexBuffer with linearly spaced values.
-
-        Args:
-            start: Start of the range.
-            end: End of the range.
-            num: Number of elements in the buffer.
-
-        Returns:
-            IndexBuffer with linearly spaced values.
-        """
-        if num <= 0:
-            raise Error(
-                NumojoError(
-                    category="value",
-                    message="num must be positive in linspace()",
-                    location="IndexBuffer.linspace",
-                )
-            )
-
-        var res = Self(num)
-        if num == 1:
-            res.ptr[0] = start
-            return res^
-
-        var step = (end - start) / (num - 1)
-        for i in range(num):
-            res.ptr[i] = Scalar[Self.element_type](start + i * step)
-
-        return res^
+        self.ptr.store[width=width](idx, value)
 
     # ===----------------------------------------------------------------------=== #
-    # Manipulation Methods
+    # Transformation Methods
     # ===----------------------------------------------------------------------=== #
-    @staticmethod
-    fn invert_permutation(perm: Self) -> Self:
-        """
-        Invert a permutation.
-
-        Args:
-            perm: IndexBuffer representing a permutation.
-
-        Returns:
-            IndexBuffer representing the inverse permutation.
-        """
-        var n = len(perm)
-        var inverted = Self(n)
-        for i in range(n):
-            inverted.ptr[perm.ptr[i]] = i
-        return inverted^
 
     fn extend(self, *shapes: Int) -> Self:
         """
@@ -558,6 +495,52 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
             res.ptr[i + 1] = self.ptr[i]
         return res^
 
+    fn join(self, *others: Self) -> Self:
+        """
+        Join multiple IndexBuffers into a single IndexBuffer.
+
+        Args:
+            others: Variable number of IndexBuffer objects.
+
+        Returns:
+            A new IndexBuffer with all values concatenated.
+        """
+        var total_dims = self.ndim
+        for i in range(len(others)):
+            total_dims += others[i].ndim
+
+        var res = Self(total_dims)
+        var offset = 0
+        memcpy(res.ptr, self.ptr, self.ndim)
+        offset += self.ndim
+        for i in range(len(others)):
+            memcpy(res.ptr + offset, others[i].ptr, others[i].ndim)
+            offset += others[i].ndim
+        return res^
+
+    fn join(self, others: List[Self]) -> Self:
+        """
+        Join multiple IndexBuffers into a single IndexBuffer from a List.
+
+        Args:
+            others: List of IndexBuffer objects.
+
+        Returns:
+            A new IndexBuffer with all values concatenated.
+        """
+        var total_dims = self.ndim
+        for i in range(len(others)):
+            total_dims += others[i].ndim
+
+        var res = Self(total_dims)
+        var offset = 0
+        memcpy(res.ptr, self.ptr, self.ndim)
+        offset += self.ndim
+        for i in range(len(others)):
+            memcpy(res.ptr + offset, others[i].ptr, others[i].ndim)
+            offset += others[i].ndim
+        return res^
+
     fn sort(mut self, order: Bool):
         """
         Sort the IndexBuffer in-place.
@@ -590,6 +573,194 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         return res^
 
     # ===----------------------------------------------------------------------=== #
+    # Static Constructors
+    # ===----------------------------------------------------------------------=== #
+    @staticmethod
+    fn arange(start: Int, end: Int, step: Int = 1) raises -> Self:
+        """
+        Create a IndexBuffer with a range of values.
+
+        Args:
+            start: Start of the range.
+            end: End of the range.
+            step: Step size of the range.
+
+        Returns:
+            IndexBuffer with the range of values.
+        """
+        if step == 0:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="step must be non-zero in range()",
+                    location="IndexBuffer.range",
+                )
+            )
+
+        var size = 0
+        if step > 0:
+            size = max(0, (end - start + step - 1) // step)
+        else:
+            size = max(0, (start - end - step - 1) // (-step))
+
+        var result = Self(size=size)
+        var val = start
+        for i in range(size):
+            result.ptr[i] = val
+            val += step
+
+        return result^
+
+    @staticmethod
+    fn fill(size: Int, value: Int) -> Self:
+        """
+        Create a IndexBuffer filled with the given value.
+
+        Args:
+            size: Number of elements in the buffer.
+            value: Value to fill the buffer with.
+
+        Returns:
+            IndexBuffer filled with the given value.
+        """
+        var res = Self(size=size)
+        for i in range(size):
+            res.ptr[i] = value
+        return res^
+
+    @staticmethod
+    fn zeros(size: Int) -> Self:
+        """
+        Create a IndexBuffer filled with zeros.
+
+        Args:
+            size: Number of elements in the buffer.
+
+        Returns:
+            IndexBuffer filled with zeros.
+        """
+        var res = Self(size=size)
+        memset_zero(res.ptr, size)
+        return res^
+
+    @staticmethod
+    fn ones(size: Int) -> Self:
+        """
+        Create a IndexBuffer filled with ones.
+
+        Args:
+            size: Number of elements in the buffer.
+
+        Returns:
+            IndexBuffer filled with ones.
+        """
+        var res = Self(size=size)
+        for i in range(size):
+            res.ptr[i] = 1
+        return res^
+
+    @staticmethod
+    fn linspace(start: Int, end: Int, num: Int) raises -> Self:
+        """
+        Create a IndexBuffer with linearly spaced values.
+
+        Args:
+            start: Start of the range.
+            end: End of the range.
+            num: Number of elements in the buffer.
+
+        Returns:
+            IndexBuffer with linearly spaced values.
+        """
+        if num <= 0:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="num must be positive in linspace()",
+                    location="IndexBuffer.linspace",
+                )
+            )
+
+        var res = Self(size=num)
+        if num == 1:
+            res.ptr[0] = start
+            return res^
+
+        var step = (end - start) / (num - 1)
+        for i in range(num):
+            res.ptr[i] = Scalar[Self.element_type](start + i * step)
+
+        return res^
+
+    @staticmethod
+    fn invert_permutation(perm: Self) -> Self:
+        """
+        Invert a permutation.
+
+        Args:
+            perm: IndexBuffer representing a permutation.
+
+        Returns:
+            IndexBuffer representing the inverse permutation.
+        """
+        var n = len(perm)
+        var inverted = Self(size=n)
+        for i in range(n):
+            inverted.ptr[perm.ptr[i]] = i
+        return inverted^
+
+    # ===----------------------------------------------------------------------=== #
+    # Properties
+    # ===----------------------------------------------------------------------=== #
+    fn rank(self) -> Int:
+        """
+        Get the number of elements in the IndexBuffer.
+
+        Returns:
+            Number of elements in the IndexBuffer.
+        """
+        return self.ndim
+
+    fn is_empty(self) -> Bool:
+        """
+        Check if the IndexBuffer is empty.
+
+        Returns:
+            True if the IndexBuffer is empty, False otherwise.
+        """
+        return self.ndim == 0
+
+    fn sum(self) -> Scalar[Self.element_type]:
+        """
+        Compute the sum of all elements in the IndexBuffer.
+
+        Returns:
+            Sum of all elements in the IndexBuffer.
+        """
+        var total: Scalar[Self.element_type] = 0
+        # fn closure[width: Int](i: Int) unified {mut total, read self}:
+        #     total += self.load[width](i).reduce_add()
+        # vectorize[Self.simd_width](self.ndim, closure)
+        for i in range(self.ndim):
+            total += self.ptr[i]
+        return total
+
+    fn product(self) -> Scalar[Self.element_type]:
+        """
+        Compute the product of all elements in the IndexBuffer.
+
+        Returns:
+            Product of all elements in the IndexBuffer.
+        """
+        var total: Scalar[Self.element_type] = 1
+        # fn closure[width: Int](i: Int) unified {mut total, read self}:
+        #     total += self.load[width](i).reduce_mul()
+        # vectorize[Self.simd_width](self.ndim, closure)
+        for i in range(self.ndim):
+            total *= self.ptr[i]
+        return total
+
+    # ===----------------------------------------------------------------------=== #
     # Traits
     # ===----------------------------------------------------------------------=== #
     fn __len__(self) -> Int:
@@ -601,7 +772,6 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         """
         return self.ndim
 
-    # TODO: for longer buffers, perhaps we shorten the output.
     fn __str__(self) -> String:
         """
         Get the string representation of the IndexBuffer.
@@ -659,71 +829,6 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
                 return True
         return False
 
-    # ===----------------------------------------------------------------------=== #
-    # Properties
-    # ===----------------------------------------------------------------------=== #
-    fn size(self) -> Int:
-        """
-        Get the number of elements in the IndexBuffer.
-
-        Returns:
-            Number of elements in the IndexBuffer.
-        """
-        return self.ndim
-
-    fn is_empty(self) -> Bool:
-        """
-        Check if the IndexBuffer is empty.
-
-        Returns:
-            True if the IndexBuffer is empty, False otherwise.
-        """
-        return self.ndim == 0
-
-    fn sum(self) -> Scalar[Self.element_type]:
-        """
-        Compute the sum of all elements in the IndexBuffer.
-
-        Returns:
-            Sum of all elements in the IndexBuffer.
-        """
-        var total: Scalar[Self.element_type] = 0
-        # fn closure[width: Int](i: Int) unified {mut total, read self}:
-        #     total += self.load[width](i).reduce_add()
-        # vectorize[Self.simd_width](self.ndim, closure)
-        for i in range(self.ndim):
-            total += self.ptr[i]
-        return total
-
-    fn product(self) -> Scalar[Self.element_type]:
-        """
-        Compute the product of all elements in the IndexBuffer.
-
-        Returns:
-            Product of all elements in the IndexBuffer.
-        """
-        var total: Scalar[Self.element_type] = 1
-        # fn closure[width: Int](i: Int) unified {mut total, read self}:
-        #     total += self.load[width](i).reduce_mul()
-        # vectorize[Self.simd_width](self.ndim, closure)
-        for i in range(self.ndim):
-            total *= self.ptr[i]
-        return total
-
-    fn tolist(self) -> List[Scalar[Self.element_type]]:
-        """
-        Convert the buffer to a list.
-        """
-        var result: List[Scalar[Self.element_type]] = List[
-            Scalar[Self.element_type]
-        ]()
-        for i in range(self.ndim):
-            result.append(self.ptr[i])
-        return result^
-
-    # ===----------------------------------------------------------------------=== #
-    # Equality Methods
-    # ===----------------------------------------------------------------------=== #
     fn __eq__(self, other: IndexBuffer) -> Bool:
         """
         Check if two IndexBuffers are equal.
@@ -754,6 +859,31 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         return not self.__eq__(other)
 
     # ===----------------------------------------------------------------------=== #
+    # Utility Methods
+    # ===----------------------------------------------------------------------=== #
+    fn init_value(mut self, idx: Int, value: Scalar[Self.element_type]):
+        """
+        Initialize the element at the given index.
+        No bounds checking.
+
+        Args:
+            idx: Index of the element.
+            value: Value to set.
+        """
+        self.ptr[idx] = value
+
+    fn tolist(self) -> List[Scalar[Self.element_type]]:
+        """
+        Convert the buffer to a list.
+        """
+        var result: List[Scalar[Self.element_type]] = List[
+            Scalar[Self.element_type]
+        ]()
+        for i in range(self.ndim):
+            result.append(self.ptr[i])
+        return result^
+
+    # ===----------------------------------------------------------------------=== #
     # Iterators
     # ===----------------------------------------------------------------------=== #
     fn __iter__(ref self) -> _IndexBufferIter[origin_of(self), True]:
@@ -763,7 +893,9 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         Returns:
             Forward iterator for the IndexBuffer.
         """
-        return _IndexBufferIter[origin_of(self), True](Pointer(to=self), self.ndim)
+        return _IndexBufferIter[origin_of(self), True](
+            Pointer(to=self), self.ndim
+        )
 
     fn __reversed__(ref self) -> _IndexBufferIter[origin_of(self), False]:
         """
@@ -772,7 +904,10 @@ struct IndexBuffer(ImplicitlyCopyable, Movable, Sized, Stringable, Writable):
         Returns:
             Backward iterator for the IndexBuffer.
         """
-        return _IndexBufferIter[origin_of(self), False](Pointer(to=self), self.ndim)
+        return _IndexBufferIter[origin_of(self), False](
+            Pointer(to=self), self.ndim
+        )
+
 
 # ===----------------------------------------------------------------------=== #
 # IndexBuffer Iterator

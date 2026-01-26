@@ -16,7 +16,7 @@ struct DataContainer[dtype: DType](
     The allocation is freed when the last reference is dropped.
     """
 
-    comptime origin: MutOrigin = MutAnyOrigin
+    comptime origin: MutOrigin = MutExternalOrigin
     """Memory origin for the allocation."""
 
     var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
@@ -71,7 +71,7 @@ struct DataContainer[dtype: DType](
         Increments the refcount.
         """
         self.size = size
-        self._refcount = UnsafePointer[Atomic[DType.uint64], MutAnyOrigin]()
+        self._refcount = UnsafePointer[Atomic[DType.uint64], Self.origin]()
         if copy:
             self.ptr = alloc[Scalar[Self.dtype]](size)
             memcpy(dest=self.ptr, src=ptr, count=size)
@@ -94,6 +94,27 @@ struct DataContainer[dtype: DType](
             if self.size > 0 and not self.ext_origin:
                 self.ptr = alloc[Scalar[Self.dtype]](self.size)
                 memcpy(dest=self.ptr, src=other.ptr, count=self.size)
+
+    @always_inline
+    fn deep_copy(self) -> DataContainer[Self.dtype]:
+        """Create a deep copy of this container."""
+        var result = DataContainer[Self.dtype]()
+        result.size = self.size
+        result.ext_origin = False
+
+        if self.size > 0:
+            result.ptr = alloc[Scalar[Self.dtype]](self.size)
+            memcpy(dest=result.ptr, src=self.ptr, count=self.size)
+            result._refcount = UnsafePointer[
+                Atomic[DType.uint64], Self.origin
+            ]()
+        else:
+            result.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
+            result._refcount = UnsafePointer[
+                Atomic[DType.uint64], Self.origin
+            ]()
+
+        return result
 
     @always_inline
     fn __moveinit__(out self, deinit other: Self):
@@ -121,10 +142,8 @@ struct DataContainer[dtype: DType](
             fence[ordering = Consistency.ACQUIRE]()
             var alloc_start = self._refcount.bitcast[UInt8]()
             alloc_start.free()
-            print("REFCOUNTED DEL")
         else:
             self.ptr.free()
-            print("UNTRACKED DEL")
 
     @always_inline
     fn get_ptr(
@@ -141,15 +160,31 @@ struct DataContainer[dtype: DType](
         return self.ptr + offset
 
     @always_inline
-    fn __getitem__(self, idx: Int) -> Scalar[Self.dtype]:
+    fn __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
         """Get the element at the given index."""
-        var norm_idx: Int = idx
-        debug_assert(idx >= 0 and idx < self.size, "Index out of bounds")
-        return self.ptr[idx]
+        var norm_idx = idx if idx >= 0 else self.size + idx
+        if norm_idx < 0 or norm_idx >= self.size:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Index out of bounds",
+                    location="DataContainer.__getitem__(idx: Int)",
+                )
+            )
+        return self.ptr[norm_idx]
 
     @always_inline
-    fn __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]):
+    fn __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
         """Set the element at the given index."""
+        var norm_idx = idx if idx >= 0 else self.size + idx
+        if norm_idx < 0 or norm_idx >= self.size:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Index out of bounds",
+                    location="DataContainer.__setitem__(idx: Int, val: Scalar)",
+                )
+            )
         self.ptr[idx] = val
 
     @always_inline

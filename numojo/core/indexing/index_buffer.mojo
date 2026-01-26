@@ -18,7 +18,6 @@ from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice
 
 
-
 @register_passable
 struct IndexBuffer(
     Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
@@ -42,7 +41,7 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Lifecycle Methods
     # ===----------------------------------------------------------------------=== #
-
+    # TODO: add `abort()` for cases where we have ndim < 0 since they are invalid.
     fn __init__(out self, *, size: Int):
         """
         Initialize an IndexBuffer of given size.
@@ -54,9 +53,8 @@ struct IndexBuffer(
         if size <= 0:
             self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
         else:
-            self.ptr = alloc[Scalar[Self.element_type]](
-                size
-            ).unsafe_origin_cast[Self._origin]()
+            self.ptr = alloc[Scalar[DType.int]](size)
+            memset_zero(self.ptr, size)
 
     fn __init__(
         out self,
@@ -157,6 +155,12 @@ struct IndexBuffer(
             (self.ptr + i).init_pointee_copy(values[i])
 
     fn __copyinit__(out self, other: Self):
+        """
+        Copy-initialize an IndexBuffer from another IndexBuffer.
+
+        Args:
+            other: The other IndexBuffer to copy from.
+        """
         self.ndim = other.ndim
         if other.ndim <= 0:
             self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
@@ -165,6 +169,9 @@ struct IndexBuffer(
         memcpy(dest=self.ptr, src=other.ptr, count=other.ndim)
 
     fn __del__(deinit self):
+        """
+        Deinitialize the IndexBuffer and free resources.
+        """
         if self.ndim > 0 and self.ptr:
             self.ptr.free()
 
@@ -243,7 +250,7 @@ struct IndexBuffer(
         var start, end, step_value, length = InternalSlice.get_slice_info(
             slice, self.ndim
         )
-        var new_buffer = Self(length)
+        var new_buffer = Self(size=length)
         var idx = 0
         for i in range(start, end, step_value):
             new_buffer.ptr[idx] = self.ptr[i]
@@ -426,7 +433,7 @@ struct IndexBuffer(
         Returns:
             A new IndexBuffer with the items reversed.
         """
-        var res = Self(self.ndim)
+        var res = Self(size=self.ndim)
         for i in range(self.ndim):
             res.ptr[i] = self.ptr[self.ndim - 1 - i]
         return res^
@@ -444,7 +451,7 @@ struct IndexBuffer(
         var ax = axis
         if ax < 0:
             ax += self.ndim
-        var res = Self(self.ndim)
+        var res = Self(size=self.ndim)
         var idx = 0
         for i in range(self.ndim):
             if i != ax:
@@ -471,7 +478,10 @@ struct IndexBuffer(
                     location="IndexBuffer.pop()",
                 )
             )
-        if axis < 0 or axis >= self.ndim:
+        var ax = axis
+        if ax < 0:
+            ax += self.ndim
+        if ax < 0 or ax >= self.ndim:
             raise Error(
                 NumojoError(
                     category="value",
@@ -479,11 +489,13 @@ struct IndexBuffer(
                     location="IndexBuffer.pop",
                 )
             )
-        var res = Self(self.ndim - 1)
-        for i in range(axis):
-            res.ptr[i] = self.ptr[i]
-        for i in range(axis + 1, self.ndim):
-            res.ptr[i - 1] = self.ptr[i]
+        var res = Self(size=self.ndim - 1)
+        var idx = 0
+        for i in range(self.ndim):
+            if i == ax:
+                continue
+            res.ptr[idx] = self.ptr[i]
+            idx += 1
         return res^
 
     fn insert(self, axis: Int, value: Int) raises -> Self:
@@ -505,7 +517,7 @@ struct IndexBuffer(
                     location="IndexBuffer.insert",
                 )
             )
-        var res = Self(self.ndim + 1)
+        var res = Self(size=self.ndim + 1)
         for i in range(axis):
             res.ptr[i] = self.ptr[i]
         res.ptr[axis] = value
@@ -527,12 +539,14 @@ struct IndexBuffer(
         for i in range(len(others)):
             total_dims += others[i].ndim
 
-        var res = Self(total_dims)
+        var res = Self(size=total_dims)
         var offset = 0
         memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         offset += self.ndim
         for i in range(len(others)):
-            memcpy(dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim)
+            memcpy(
+                dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim
+            )
             offset += others[i].ndim
         return res^
 
@@ -550,12 +564,14 @@ struct IndexBuffer(
         for i in range(len(others)):
             total_dims += others[i].ndim
 
-        var res = Self(total_dims)
+        var res = Self(size=total_dims)
         var offset = 0
         memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         offset += self.ndim
         for i in range(len(others)):
-            memcpy(dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim)
+            memcpy(
+                dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim
+            )
             offset += others[i].ndim
         return res^
 
@@ -585,7 +601,7 @@ struct IndexBuffer(
         Returns:
             A new IndexBuffer that is sorted.
         """
-        var res = Self(self.ndim)
+        var res = Self(size=self.ndim)
         memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         res.sort(order)
         return res^
@@ -615,7 +631,7 @@ struct IndexBuffer(
                 )
             )
 
-        var size = 0
+        var size: Int
         if step > 0:
             size = max(0, (end - start + step - 1) // step)
         else:

@@ -11,11 +11,13 @@ Functions to traverse a multi-dimensional array.
 from memory import UnsafePointer
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.indexing.offset import IndexMethods
+from numojo.core.error import NumojoError
+
 
 struct TraverseMethods:
     @staticmethod
     fn traverse_buffer_according_to_shape_and_strides[
-        origin: ImmutOrigin
+        origin: MutOrigin
     ](
         mut ptr: UnsafePointer[Scalar[DType.int], origin=origin],
         shape: NDArrayShape,
@@ -40,8 +42,8 @@ struct TraverseMethods:
             previous_sum: Temporarily save the previous summed index.
         """
         for index_of_axis in range(Int(shape[current_dim])):
-            var current_sum = (
-                previous_sum + index_of_axis * Int(strides[current_dim])
+            var current_sum = previous_sum + index_of_axis * Int(
+                strides[current_dim]
             )
             if current_dim >= shape.ndim - 1:
                 ptr.init_pointee_copy(current_sum)
@@ -57,86 +59,100 @@ struct TraverseMethods:
 
     @staticmethod
     fn traverse_iterative[
-        dtype: DType,
-        src_origin: ImmutOrigin,
-        dest_origin: ImmutOrigin,
+        dtype: DType
     ](
-        src_ptr: UnsafePointer[Scalar[dtype], origin=src_origin],
-        dest_ptr: UnsafePointer[Scalar[dtype], origin=dest_origin],
-        shape: List[Int],
+        orig: NDArray[dtype],
+        mut narr: NDArray[dtype],
+        ndim: List[Int],
         coefficients: List[Int],
+        strides: List[Int],
         offset: Int,
-        total_elements: Int,
+        mut index: List[Int],
+        depth: Int,
     ) raises:
         """
-        Traverse a multi-dimensional source and copy to a contiguous destination.
+        Traverse a multi-dimensional array in an iterative manner.
 
         Parameters:
-            dtype: The data type of the elements.
-            src_origin: Origin of the source pointer.
-            dest_origin: Origin of the destination pointer.
+            dtype: The data type of the NDArray elements.
 
         Args:
-            src_ptr: Source pointer.
-            dest_ptr: Destination pointer (contiguous).
-            shape: The logical shape of the source view.
-            coefficients: The coefficients (strides) of the source view.
-            offset: The base offset of the source view.
-            total_elements: Total number of elements to copy.
+            orig: The original array.
+            narr: The array to store the result.
+            ndim: The number of dimensions of the array.
+            coefficients: The coefficients to traverse the sliced part of the original array.
+            strides: The strides to traverse the new NDArray `narr`.
+            offset: The offset to the first element of the original NDArray.
+            index: The list of indices.
+            depth: The depth of the indices.
         """
-        var index = List[Int]()
-        for _ in range(len(shape)):
-            index.append(0)
+        var total_elements = narr.size
 
-        for lin in range(total_elements):
-            var src_idx = offset + IndexMethods.get_1d_index(index, coefficients)
-            dest_ptr.store(lin, src_ptr.load[width=1](src_idx))
+        for _ in range(total_elements):
+            var orig_idx = offset
+            for i in range(len(index)):
+                orig_idx += index[i] * coefficients[i]
 
-            for d in range(len(shape) - 1, -1, -1):
+            var narr_idx = 0
+            for i in range(len(index)):
+                narr_idx += index[i] * strides[i]
+
+            if narr_idx >= total_elements:
+                raise Error("Invalid index: index out of bound")
+
+            narr._buf.ptr.store(narr_idx, orig._buf.ptr.load[width=1](orig_idx))
+
+            for d in range(ndim.__len__() - 1, -1, -1):
                 index[d] += 1
-                if index[d] < shape[d]:
+                if index[d] < ndim[d]:
                     break
                 index[d] = 0
 
     @staticmethod
     fn traverse_iterative_setter[
-        dtype: DType,
-        src_origin: ImmutOrigin,
-        dest_origin: ImmutOrigin,
+        dtype: DType
     ](
-        src_ptr: UnsafePointer[Scalar[dtype], origin=src_origin],
-        dest_ptr: UnsafePointer[Scalar[dtype], origin=dest_origin],
-        shape: List[Int],
+        orig: NDArray[dtype],
+        mut narr: NDArray[dtype],
+        ndim: List[Int],
         coefficients: List[Int],
+        strides: List[Int],
         offset: Int,
-        total_elements: Int,
+        mut index: List[Int],
     ) raises:
         """
-        Traverse a contiguous source and set into a multi-dimensional destination view.
+        Traverse a multi-dimensional array in an iterative manner for setter.
 
         Parameters:
-            dtype: The data type of the elements.
-            src_origin: Origin of the source pointer (contiguous).
-            dest_origin: Origin of the destination pointer (view).
+            dtype: The data type of the NDArray elements.
 
         Args:
-            src_ptr: Source pointer (contiguous).
-            dest_ptr: Destination pointer (view).
-            shape: The logical shape of the destination view.
-            coefficients: The coefficients (strides) of the destination view.
-            offset: The base offset of the destination view.
-            total_elements: Total number of elements to copy.
+            orig: The original array (source).
+            narr: The array to store the result (destination).
+            ndim: The number of dimensions of the array.
+            coefficients: The coefficients to traverse the sliced part of the original array.
+            strides: The strides to traverse the new NDArray `narr`.
+            offset: The offset to the first element of the original NDArray.
+            index: The list of indices.
         """
-        var index = List[Int]()
-        for _ in range(len(shape)):
-            index.append(0)
+        var total_elements = narr.size
 
-        for lin in range(total_elements):
-            var dest_idx = offset + IndexMethods.get_1d_index(index, coefficients)
-            dest_ptr.store(dest_idx, src_ptr.load[width=1](lin))
+        for _ in range(total_elements):
+            var orig_idx = offset
+            for i in range(len(index)):
+                orig_idx += index[i] * coefficients[i]
 
-            for d in range(len(shape) - 1, -1, -1):
+            var narr_idx = 0
+            for i in range(len(index)):
+                narr_idx += index[i] * strides[i]
+
+            if narr_idx >= total_elements:
+                raise Error("Invalid index: index out of bound")
+
+            narr._buf.ptr.store(orig_idx, orig._buf.ptr.load[width=1](narr_idx))
+
+            for d in range(ndim.__len__() - 1, -1, -1):
                 index[d] += 1
-                if index[d] < shape[d]:
+                if index[d] < ndim[d]:
                     break
                 index[d] = 0

@@ -481,13 +481,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         Returns:
             The normalized index as a non-negative integer.
-
-        Example:
-            ```mojo
-            from numojo.prelude import *
-            var mat = Matrix[f32](shape=(3, 4))
-            var norm_idx = mat.normalize(-1, mat.shape[0])  # Normalize -1 to 2
-            ```
         """
         var idx_norm = idx
         if idx_norm < 0:
@@ -565,7 +558,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arange[nm.cf32](3)[0]
+            from numojo.prelude import *
+            var a = nm.arange[cf32](CScalar[cf32](1))[0]
             print(a[]) # gets values of the 0-D complex array.
             ```
         """
@@ -907,26 +901,26 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         )
         # TODO: combine the two traverses into one.
         var index_re: List[Int] = List[Int](length=ndims, fill=0)
-        TraverseMethods.traverse_iterative[
-            Self.dtype
-        ](
-            self._re.unsafe_ptr(),
-            narr._re.unsafe_ptr(),
+        TraverseMethods.traverse_iterative[Self.dtype](
+            self._re,
+            narr._re,
             nshape,
             ncoefficients,
+            nstrides,
             noffset,
-            narr.size,
+            index_re,
+            0,
         )
         var index_im: List[Int] = List[Int](length=ndims, fill=0)
-        TraverseMethods.traverse_iterative[
-            Self.dtype
-        ](
-            self._im.unsafe_ptr(),
-            narr._im.unsafe_ptr(),
+        TraverseMethods.traverse_iterative[Self.dtype](
+            self._im,
+            narr._im,
             nshape,
             ncoefficients,
+            nstrides,
             noffset,
-            narr.size,
+            index_im,
+            0,
         )
 
         return narr^
@@ -1940,25 +1934,11 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         for _ in range(ndims):
             index.append(0)
 
-        TraverseMethods.traverse_iterative_setter[
-            Self.dtype
-        ](
-            val._re.unsafe_ptr(),
-            self._re.unsafe_ptr(),
-            nshape,
-            ncoefficients,
-            noffset,
-            val.size,
+        TraverseMethods.traverse_iterative_setter[Self.dtype](
+            val._re, self._re, nshape, ncoefficients, nstrides, noffset, index
         )
-        TraverseMethods.traverse_iterative_setter[
-            Self.dtype
-        ](
-            val._im.unsafe_ptr(),
-            self._im.unsafe_ptr(),
-            nshape,
-            ncoefficients,
-            noffset,
-            val.size,
+        TraverseMethods.traverse_iterative_setter[Self.dtype](
+            val._im, self._im, nshape, ncoefficients, nstrides, noffset, index
         )
 
     ## compiler doesn't accept this.
@@ -4258,9 +4238,7 @@ struct _ComplexNDArrayIter[
         return self.copy()
 
     fn __next__(mut self) raises -> ComplexNDArray[Self.cdtype]:
-        var result = ComplexNDArray[Self.cdtype](
-            self.shape.pop(self.dimension)
-        )
+        var result = ComplexNDArray[Self.cdtype](self.shape.pop(self.dimension))
         var current_index = self.index
 
         @parameter
@@ -4275,7 +4253,9 @@ struct _ComplexNDArrayIter[
 
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.dimension:
-                    (item._buf.ptr + i).init_pointee_copy(remainder % self.shape[i])
+                    (item._buf.ptr + i).init_pointee_copy(
+                        remainder % self.shape[i]
+                    )
                     remainder = remainder // self.shape[i]
                 else:
                     (item._buf.ptr + self.dimension).init_pointee_copy(
@@ -4344,7 +4324,9 @@ struct _ComplexNDArrayIter[
                         )
                         remainder = remainder // self.shape[i]
                     else:
-                        (item._buf.ptr + self.dimension).init_pointee_copy(index)
+                        (item._buf.ptr + self.dimension).init_pointee_copy(
+                            index
+                        )
 
                 (result._re._buf.ptr + offset).init_pointee_copy(
                     self.re_ptr[IndexMethods.get_1d_index(item, self.strides)]

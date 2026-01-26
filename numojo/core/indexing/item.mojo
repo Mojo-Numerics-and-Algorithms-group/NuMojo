@@ -103,7 +103,7 @@ struct Item(
             args: Initial values.
         """
         self.ndim = len(args)
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             self._buf.init_value(i, convert_to_int(args[i]))
 
@@ -118,7 +118,7 @@ struct Item(
             args: Initial values.
         """
         self.ndim = len(args)
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             self._buf.init_value(i, convert_to_int(args[i]))
 
@@ -130,7 +130,7 @@ struct Item(
             args: Initial values.
         """
         self.ndim = len(args)
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             self._buf.init_value(i, args[i])
 
@@ -142,7 +142,7 @@ struct Item(
             ndim: The length of the Item.
         """
         self.ndim = ndim
-        self._buf = IndexBuffer(ndim)
+        self._buf = IndexBuffer(size=ndim)
         memset_zero(self._buf.ptr, ndim)
 
     @always_inline("nodebug")
@@ -153,7 +153,7 @@ struct Item(
             other: The Item to copy.
         """
         self.ndim = other.ndim
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=self.ndim)
 
     # ===----------------------------------------------------------------------=== #

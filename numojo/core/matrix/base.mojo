@@ -348,7 +348,9 @@ struct Matrix[
         self.strides = (other.strides[0], other.strides[1])
         self.size = other.size
         self._buf = other._buf.copy()
-        memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
+        memcpy(
+            dest=self._buf.ptr, src=other._buf.ptr, count=other.size
+        )  # TODO: I think we should remove this.
         self.flags = Flags(
             other.shape, other.strides, owndata=True, writeable=True
         )
@@ -394,7 +396,7 @@ struct Matrix[
             ```
         """
         return Matrix[Self.dtype](
-            shape=(1, self.shape[1]),
+            shape=(self.shape[0], self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
             data=self._buf.share_with_offset(0),
         )
@@ -459,8 +461,8 @@ struct Matrix[
                 NumojoError(
                     category="index",
                     message=(
-                        "Row index {} out of bounds for matrix with {} rows. Use"
-                        " indices in [{}, {}).".format(
+                        "Row index {} out of bounds for matrix with {} rows."
+                        " Use indices in [{}, {}).".format(
                             x, self.shape[0], -self.shape[0], self.shape[0]
                         )
                     ),
@@ -472,8 +474,8 @@ struct Matrix[
                 NumojoError(
                     category="index",
                     message=(
-                        "Column index {} out of bounds for matrix with {} columns."
-                        " Use indices in [{}, {}).".format(
+                        "Column index {} out of bounds for matrix with {}"
+                        " columns. Use indices in [{}, {}).".format(
                             y, self.shape[1], -self.shape[1], self.shape[1]
                         )
                     ),
@@ -509,7 +511,9 @@ struct Matrix[
         var x_norm: Int
         var y_norm: Int
         x_norm, y_norm = self.validate_and_normalize(x, y)
-        return self._buf[IndexMethods.get_1d_index((x_norm, y_norm), self.strides)]
+        return self._buf[
+            IndexMethods.get_1d_index((x_norm, y_norm), self.strides)
+        ]
 
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get(mut self, var x: Int) raises -> Matrix[Self.dtype]:
@@ -663,13 +667,17 @@ struct Matrix[
         var end_x: Int
         var step_x: Int
         var len_x: Int
-        start_x, end_x, step_x, len_x = InternalSlice.get_slice_info(x, self.shape[0])
+        start_x, end_x, step_x, len_x = InternalSlice.get_slice_info(
+            x, self.shape[0]
+        )
 
         var start_y: Int
         var end_y: Int
         var step_y: Int
         var len_y: Int
-        start_y, end_y, step_y, len_y = InternalSlice.get_slice_info(y, self.shape[1])
+        start_y, end_y, step_y, len_y = InternalSlice.get_slice_info(
+            y, self.shape[1]
+        )
 
         var range_x = range(start_x, end_x, step_x)
         var range_y = range(start_y, end_y, step_y)
@@ -1034,7 +1042,9 @@ struct Matrix[
         var x_norm: Int = Validator.normalize(x, self.shape[0])
         var y_norm: Int = Validator.normalize(y, self.shape[1])
 
-        self._buf.store(IndexMethods.get_1d_index((x_norm, y_norm), self.strides), value)
+        self._buf.store(
+            IndexMethods.get_1d_index((x_norm, y_norm), self.strides), value
+        )
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
     fn __setitem__(self, var x: Int, value: Matrix[Self.dtype]) raises:

@@ -11,6 +11,7 @@ Indexing offset calculation functions.
 from numojo.core.layout import NDArrayStrides
 from numojo.core.indexing.item import Item
 
+
 # TODO: Define a IndexContainerLike trait and use that to replace many of these get_1d_index overloads.
 struct IndexMethods:
     @staticmethod
@@ -82,7 +83,9 @@ struct IndexMethods:
         return idx
 
     @staticmethod
-    fn get_1d_index(indices: VariadicList[Int], strides: VariadicList[Int]) -> Int:
+    fn get_1d_index(
+        indices: VariadicList[Int], strides: VariadicList[Int]
+    ) -> Int:
         """
         Get the flat index from variadic lists of indices and strides.
 

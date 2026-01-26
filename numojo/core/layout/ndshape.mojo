@@ -99,8 +99,8 @@ struct NDArrayShape(
            Error: If any shape dimension is not positive.
         """
         self.ndim = len(shape)
-        self._buf = IndexBuffer(size=self.ndim)
-        for i in range(self.ndim):
+        self._buf = IndexBuffer(size=len(shape))
+        for i in range(len(shape)):
             if shape[i] < 1:
                 raise Error(
                     NumojoError(
@@ -139,7 +139,7 @@ struct NDArrayShape(
                     location="NDArrayShape.__init__(shape: List[Int])",
                 )
             )
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
                 raise Error(
@@ -180,7 +180,7 @@ struct NDArrayShape(
                 ),
             )
 
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             if shape[i] < 1:
                 raise Error(
@@ -208,7 +208,7 @@ struct NDArrayShape(
             shape: Another NDArrayShape to initialize from.
         """
         self.ndim = shape.ndim
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         memcpy(dest=self._buf.ptr, src=shape._buf.ptr, count=shape.ndim)
 
     @always_inline("nodebug")
@@ -253,12 +253,12 @@ struct NDArrayShape(
             # This denotes a 0darray (numojo scalar)
             self.ndim = ndim
             self._buf = IndexBuffer(
-               size=1
+                size=1
             )  # allocate 1 element to avoid null pointer
             self._buf.init_value(0, 0)
         else:
             self.ndim = ndim
-            self._buf = IndexBuffer(ndim)
+            self._buf = IndexBuffer(size=ndim)
             if initialized:
                 for i in range(ndim):
                     self._buf.init_value(i, 1)
@@ -274,10 +274,10 @@ struct NDArrayShape(
         """
         self.ndim = other.ndim
         if other.ndim == 0:
-            self._buf = IndexBuffer(1)
+            self._buf = IndexBuffer(size=1)
             self._buf.init_value(0, 0)
         else:
-            self._buf = IndexBuffer(other.ndim)
+            self._buf = IndexBuffer(size=other.ndim)
             memcpy(
                 dest=self._buf.ptr,
                 src=other._buf.ptr,
@@ -361,7 +361,7 @@ struct NDArrayShape(
                     location="Shape.load",
                 )
             )
-        return self._buf.load[width=width](idx)
+        return self._buf.ptr.load[width=width](idx)
 
     fn store[
         width: Int = 1
@@ -391,7 +391,7 @@ struct NDArrayShape(
                     location="Shape.store",
                 )
             )
-        self._buf.store[width=width](idx, value)
+        self._buf.ptr.store[width=width](idx, value)
 
     fn unsafe_load[
         width: Int = 1
@@ -487,7 +487,7 @@ struct NDArrayShape(
                 )
             )
 
-        var normalized = IndexBuffer(self.ndim)
+        var normalized = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             var axis = axes[i]
             if axis < 0:

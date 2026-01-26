@@ -2806,6 +2806,7 @@ fn _0darray[
     The strides is unitialized (0-element strides).
     The size is 1 (`=0!`).
     """
+
     var b = ComplexNDArray[cdtype](
         shape=NDArrayShape(ndim=0, initialized=False),
         strides=NDArrayStrides(ndim=0, initialized=False),

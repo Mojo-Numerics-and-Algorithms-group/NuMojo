@@ -13,6 +13,7 @@ from memory import memcpy
 from sys import simd_width_of
 
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
+from numojo.routines.creation import arange
 from numojo.core.ndarray import NDArray
 
 # ===----------------------------------------------------------------------=== #
@@ -153,7 +154,6 @@ fn apply_along_axis_reduce[
         The NDArray with the function applied to the input NDArray by axis.
     """
     # The iterator along the axis
-    var iterator = a.iter_along_axis(axis=axis)
     # The final output array will have 1 less dimension than the input array
     var res: NDArray[dtype]
 
@@ -162,16 +162,27 @@ fn apply_along_axis_reduce[
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
-        res = NDArray[dtype](a.shape.pop(axis=axis))
+        var new_shape = a.shape.pop(axis=axis)
+        res = NDArray[dtype](new_shape)
+        var iterator = a.iter_along_axis(axis=axis)
+
+        # for i in range(a.size // a.shape[axis]):
+        #     var ith = iterator.ith(i)
+        #     var func_result = func1d[dtype](ith)
+        #     res._buf.store(i, func_result)
 
         @parameter
         fn parallelized_func(i: Int):
             try:
-                (res._buf.ptr + i).init_pointee_copy(
-                    func1d[dtype](iterator.ith(i))
-                )
+                res._buf.store(i, func1d[dtype](iterator.ith(i)))
             except e:
                 print("Error in parallelized_func", e)
+            # try:
+            #     (res._buf.ptr + i).init_pointee_copy(
+            #         func1d[dtype](iterator.ith(i))
+            #     )
+            # except e:
+            #     print("Error in parallelized_func", e)
 
         parallelize[parallelized_func](a.size // a.shape[axis])
 

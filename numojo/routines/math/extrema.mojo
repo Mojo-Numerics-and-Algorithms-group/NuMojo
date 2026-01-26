@@ -60,7 +60,7 @@ fn extrema_1d[
     """
 
     comptime simd_width = builtin_max(simd_width_of[dtype](), 64)
-    var value = a._buf.ptr[0]
+    var value = a._buf.load[width=1](0)
 
     @parameter
     if is_max:
@@ -68,9 +68,9 @@ fn extrema_1d[
         @parameter
         fn vectorize_max[
             simd_width: Int
-        ](offset: Int) unified {mut value, read a} -> None:
+        ](offset: Int) unified {mut value, read a}:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
-            if temp > value:
+            if temp >= value:
                 value = temp
 
         vectorize[simd_width](a.size, vectorize_max)

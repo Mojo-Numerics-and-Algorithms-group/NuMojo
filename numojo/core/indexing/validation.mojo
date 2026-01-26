@@ -11,6 +11,7 @@ Validation module for indexing.
 from numojo.core.error import NumojoError
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 
+
 struct Validator:
     @staticmethod
     fn normalize(index: Int, dim: Int) -> Int:
@@ -43,7 +44,12 @@ struct Validator:
             raise Error(
                 NumojoError(
                     category="index",
-                    message="Index " + String(index) + " out of bounds for axis " + String(axis) + " with size " + String(dim),
+                    message="Index "
+                    + String(index)
+                    + " out of bounds for axis "
+                    + String(axis)
+                    + " with size "
+                    + String(dim),
                     location="Validator.check_bounds",
                 )
             )
@@ -64,7 +70,10 @@ struct Validator:
             raise Error(
                 NumojoError(
                     category="shape",
-                    message="Permutation length " + String(len(axes)) + " does not match rank " + String(rank),
+                    message="Permutation length "
+                    + String(len(axes))
+                    + " does not match rank "
+                    + String(rank),
                     location="Validator.check_permutation",
                 )
             )
@@ -87,7 +96,9 @@ struct Validator:
                 raise Error(
                     NumojoError(
                         category="index",
-                        message="Duplicate axis " + String(axis) + " in permutation",
+                        message="Duplicate axis "
+                        + String(axis)
+                        + " in permutation",
                         location="Validator.check_permutation",
                     )
                 )
@@ -109,13 +120,18 @@ struct Validator:
             raise Error(
                 NumojoError(
                     category="shape",
-                    message="Cannot reshape array of size " + String(current_size) + " into shape " + String(new_shape),
+                    message="Cannot reshape array of size "
+                    + String(current_size)
+                    + " into shape "
+                    + String(new_shape),
                     location="Validator.validate_reshape",
                 )
             )
 
     @staticmethod
-    fn validate_and_normalize_axes(rank: Int, axes: List[Int]) raises -> List[Int]:
+    fn validate_and_normalize_axes(
+        rank: Int, axes: List[Int]
+    ) raises -> List[Int]:
         """
         Validate and normalize axes for reduction operations.
 
@@ -153,7 +169,9 @@ struct Validator:
                 raise Error(
                     NumojoError(
                         category="index",
-                        message="Duplicate axis " + String(axis) + " in reduction",
+                        message="Duplicate axis "
+                        + String(axis)
+                        + " in reduction",
                         location="Validator.validate_and_normalize_axes",
                     )
                 )

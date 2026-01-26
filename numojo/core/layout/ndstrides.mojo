@@ -77,33 +77,6 @@ struct NDArrayStrides(
         self._buf = buf
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: Int) raises:
-        """
-        Initializes the NDArrayStrides with one dimension.
-
-        Args:
-            shape: Size of the array.
-
-        Raises:
-            Error: If the shape is not positive.
-        """
-        if shape < 1:
-            raise Error(
-                NumojoError(
-                    category="shape",
-                    message=(
-                        "Stride value must be positive, got {}. Use positive"
-                        " integers for stride value.".format(shape)
-                    ),
-                    location="NDArrayStrides.__init__(shape: Int)",
-                )
-            )
-
-        self.ndim = 1
-        self._buf = IndexBuffer(1)
-        self._buf.init_value(0, shape)
-
-    @always_inline("nodebug")
     fn __init__(out self, *strides: Int) raises:
         """
         Initializes the NDArrayStrides from strides.
@@ -127,7 +100,7 @@ struct NDArrayStrides(
                 )
             )
 
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             self._buf.init_value(i, strides[i])
 
@@ -155,7 +128,7 @@ struct NDArrayStrides(
                 )
             )
 
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             self._buf.init_value(i, strides[i])
 
@@ -187,7 +160,7 @@ struct NDArrayStrides(
                 )
             )
 
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             self._buf.init_value(i, strides[i])
 
@@ -201,7 +174,7 @@ struct NDArrayStrides(
             strides: Strides of the array.
         """
         self.ndim = strides.ndim
-        self._buf = IndexBuffer(self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         memcpy(
             dest=self._buf.ptr,
             src=strides._buf.ptr,
@@ -227,17 +200,17 @@ struct NDArrayStrides(
             ValueError: If the order argument is not `C` or `F`.
         """
         self.ndim = shape.ndim
-        self._buf = IndexBuffer(shape.ndim)
+        self._buf = IndexBuffer(size=shape.ndim)
 
         if order == "C":
             var temp = 1
             for i in range(self.ndim - 1, -1, -1):
-                self._buf.init_value(i, temp)
+                self._buf.store(i, temp)
                 temp *= Int(shape[i])
         elif order == "F":
             var temp = 1
             for i in range(0, self.ndim):
-                self._buf.init_value(i, temp)
+                self._buf.store(i, temp)
                 temp *= Int(shape[i])
         else:
             raise Error(
@@ -342,11 +315,11 @@ struct NDArrayStrides(
         if ndim == 0:
             # This is a 0darray (numojo scalar)
             self.ndim = ndim
-            self._buf = IndexBuffer(1)
+            self._buf = IndexBuffer(size=1)
             self._buf.init_value(0, 0)
         else:
             self.ndim = ndim
-            self._buf = IndexBuffer(ndim)
+            self._buf = IndexBuffer(size=ndim)
             if initialized:
                 for i in range(ndim):
                     self._buf.init_value(i, 0)
@@ -362,10 +335,10 @@ struct NDArrayStrides(
         """
         self.ndim = other.ndim
         if other.ndim == 0:
-            self._buf = IndexBuffer(1)
+            self._buf = IndexBuffer(size=1)
             self._buf.init_value(0, 0)
         else:
-            self._buf = IndexBuffer(other.ndim)
+            self._buf = IndexBuffer(size=other.ndim)
             memcpy(
                 dest=self._buf.ptr,
                 src=other._buf.ptr,
@@ -542,7 +515,7 @@ struct NDArrayStrides(
                 )
             )
 
-        var normalized = IndexBuffer(self.ndim)
+        var normalized = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
             var axis = axes[i]
             if axis < 0:

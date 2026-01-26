@@ -14,9 +14,7 @@ import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 
 
-fn round[
-    dtype: DType
-](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
+fn round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
     # FIXME
     # The built-in `round` function is not working now.
     # It will be fixed in future.

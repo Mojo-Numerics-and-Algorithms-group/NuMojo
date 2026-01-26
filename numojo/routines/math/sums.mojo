@@ -321,9 +321,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return result^
 
 
-fn cumsum[
-    dtype: DType
-](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 

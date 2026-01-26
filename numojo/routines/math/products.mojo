@@ -255,9 +255,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return result^
 
 
-fn cumprod[
-    dtype: DType
-](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumprod of Matrix along the axis.
 

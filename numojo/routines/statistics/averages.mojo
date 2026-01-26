@@ -403,9 +403,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[
-    returned_dtype
-]:
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the standard deviation along axis.
 
@@ -540,9 +538,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[
-    returned_dtype
-]:
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the variance along axis.
 

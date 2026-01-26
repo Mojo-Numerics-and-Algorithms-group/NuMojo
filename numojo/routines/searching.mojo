@@ -10,6 +10,7 @@ from collections.optional import Optional
 
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape
+from numojo.core.layout import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.core.dtype.utility import is_inttype, is_floattype

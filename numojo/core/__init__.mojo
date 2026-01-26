@@ -6,6 +6,14 @@ Core (numojo.core)
 Core types and utilities for NuMojo (arrays, matrices, layout, memory, dtypes, and errors).
 """
 
+"""
+=====================================
+Core (numojo.core)
+=====================================
+
+Core types and utilities for NuMojo (arrays, matrices, layout, memory, dtypes, and errors).
+"""
+
 from .ndarray import NDArray
 
 from .error import (
@@ -65,6 +73,12 @@ from .dtype import (
     cinvalid,
 )
 
+from .complex import (
+    ComplexSIMD,
+    ComplexScalar,
+    CScalar,
+    `1j`,
+    ComplexNDArray,
 from .complex import (
     ComplexSIMD,
     ComplexScalar,

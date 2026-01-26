@@ -18,6 +18,8 @@ from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexNDArray
 from numojo.core.layout import NDArrayShape, Shape
 from numojo.core.layout import NDArrayStrides
+from numojo.core.layout import NDArrayShape, Shape
+from numojo.core.layout import NDArrayStrides
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.core.indexing import (

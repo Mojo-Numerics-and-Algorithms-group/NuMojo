@@ -24,6 +24,7 @@ from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape
+from numojo.core.layout import NDArrayShape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
 from numojo.routines.manipulation import ravel, transpose

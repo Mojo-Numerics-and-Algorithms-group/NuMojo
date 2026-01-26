@@ -26,6 +26,33 @@ Notes
 - Internal code should prefer importing from the canonical submodules/packages
   (e.g. `numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`) rather
   than relying on extensive top-level re-exports.
+NuMojo Top-Level Package (`numojo`)
+==================================
+
+This is the main public entry point for NuMojo.
+
+Exports
+-------
+Core container types:
+- `Matrix` (2D array type)
+- `NDArray` (N-dimensional array type)
+- `Shape` / `NDArrayShape`, `Strides` / `NDArrayStrides`
+
+Core utilities:
+- dtype aliases (`f32`, `f64`, `i32`, `i64`, etc.) and complex dtypes
+- common error types (`IndexError`, `ShapeError`, ...)
+
+Routines
+--------
+For convenience, this module also re-exports a curated set of NumPy-like routines
+from `numojo.routines` (creation, manipulation, math, linalg, statistics, IO, etc.).
+
+Notes
+-----
+- This file is intended to provide a stable import surface for users.
+- Internal code should prefer importing from the canonical submodules/packages
+  (e.g. `numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`) rather
+  than relying on extensive top-level re-exports.
 """
 
 comptime __version__: String = "V0.8.0"
@@ -42,6 +69,7 @@ from numojo.core.indexing import IndexMethods
 from numojo.core.matrix import Matrix
 from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
+from numojo.core.dtype.complex_dtype import (
 from numojo.core.dtype.complex_dtype import (
     ComplexDType,
     ci8,
@@ -65,6 +93,7 @@ from numojo.core.dtype.complex_dtype import (
     cboolean,
     cinvalid,
 )
+from numojo.core.dtype.default_dtype import (
 from numojo.core.dtype.default_dtype import (
     i8,
     i16,

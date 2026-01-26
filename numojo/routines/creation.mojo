@@ -38,6 +38,7 @@ from sys import simd_width_of
 
 
 from numojo.core.layout import Flags
+from numojo.core.layout import Flags
 from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexScalar
 from numojo.core.layout import NDArrayShape

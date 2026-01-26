@@ -529,10 +529,10 @@ struct IndexBuffer(
 
         var res = Self(total_dims)
         var offset = 0
-        memcpy(res.ptr, self.ptr, self.ndim)
+        memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         offset += self.ndim
         for i in range(len(others)):
-            memcpy(res.ptr + offset, others[i].ptr, others[i].ndim)
+            memcpy(dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim)
             offset += others[i].ndim
         return res^
 
@@ -552,10 +552,10 @@ struct IndexBuffer(
 
         var res = Self(total_dims)
         var offset = 0
-        memcpy(res.ptr, self.ptr, self.ndim)
+        memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         offset += self.ndim
         for i in range(len(others)):
-            memcpy(res.ptr + offset, others[i].ptr, others[i].ndim)
+            memcpy(dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim)
             offset += others[i].ndim
         return res^
 

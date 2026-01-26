@@ -15,7 +15,7 @@ from numojo.core.indexing.offset import IndexMethods
 struct TraverseMethods:
     @staticmethod
     fn traverse_buffer_according_to_shape_and_strides[
-        origin: MutOrigin
+        origin: ImmutOrigin
     ](
         mut ptr: UnsafePointer[Scalar[DType.int], origin=origin],
         shape: NDArrayShape,
@@ -58,8 +58,8 @@ struct TraverseMethods:
     @staticmethod
     fn traverse_iterative[
         dtype: DType,
-        src_origin: MutOrigin,
-        dest_origin: MutOrigin,
+        src_origin: ImmutOrigin,
+        dest_origin: ImmutOrigin,
     ](
         src_ptr: UnsafePointer[Scalar[dtype], origin=src_origin],
         dest_ptr: UnsafePointer[Scalar[dtype], origin=dest_origin],
@@ -101,8 +101,8 @@ struct TraverseMethods:
     @staticmethod
     fn traverse_iterative_setter[
         dtype: DType,
-        src_origin: MutOrigin,
-        dest_origin: MutOrigin,
+        src_origin: ImmutOrigin,
+        dest_origin: ImmutOrigin,
     ](
         src_ptr: UnsafePointer[Scalar[dtype], origin=src_origin],
         dest_ptr: UnsafePointer[Scalar[dtype], origin=dest_origin],

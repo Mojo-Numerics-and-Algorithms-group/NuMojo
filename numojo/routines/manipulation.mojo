@@ -20,10 +20,12 @@ from numojo.core.layout import NDArrayShape, Shape
 from numojo.core.layout import NDArrayStrides
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
-from numojo.core.indexing.utility import (
-    _list_of_flipped_range,
+from numojo.core.indexing import (
     IndexMethods,
     TraverseMethods,
+)
+from numojo.core.indexing.utility import (
+    _list_of_flipped_range,
 )
 
 # ===----------------------------------------------------------------------=== #
@@ -146,7 +148,7 @@ fn reshape[
     Returns:
         Array of the same data with a new shape.
     """
-    if A.size != shape.size_of_array():
+    if A.size != shape.size():
         raise Error("Cannot reshape: Number of elements do not match.")
 
     var array_order: String = String("C") if A.flags.C_CONTIGUOUS else String(
@@ -292,7 +294,9 @@ fn transpose[
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
-    TraverseMethods.traverse_buffer_according_to_shape_and_strides(ptr, new_shape, new_strides)
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(
+        ptr, new_shape, new_strides
+    )
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
@@ -622,7 +626,7 @@ fn flip[
     var ptr = I._buf.ptr
 
     TraverseMethods.traverse_buffer_according_to_shape_and_strides(
-        ptr, A.shape._move_axis_to_end(axis), A.strides._move_axis_to_end(axis)
+        ptr, A.shape.move_axis_to_end(axis), A.strides.move_axis_to_end(axis)
     )
 
     print(A.size, A.shape[axis])

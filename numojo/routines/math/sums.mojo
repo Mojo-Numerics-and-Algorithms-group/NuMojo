@@ -4,7 +4,7 @@ from memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
-from numojo.core.indexing.utility import (
+from numojo.core.indexing import (
     TraverseMethods,
 )
 from numojo.routines.creation import zeros
@@ -271,8 +271,8 @@ fn cumsum[
     var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
-    var _shape = B.shape._move_axis_to_end(axis)
-    var _strides = B.strides._move_axis_to_end(axis)
+    var _shape = B.shape.move_axis_to_end(axis)
+    var _strides = B.strides.move_axis_to_end(axis)
 
     TraverseMethods.traverse_buffer_according_to_shape_and_strides(
         ptr, _shape, _strides

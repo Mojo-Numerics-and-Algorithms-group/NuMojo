@@ -75,7 +75,7 @@ from .complex import (
 
 from .memory import DataContainer
 
-from .indexing import Item, IndexMethods
+from .indexing import Item, IndexMethods, TraverseMethods, Validator
 
 import .dtype
 import .layout

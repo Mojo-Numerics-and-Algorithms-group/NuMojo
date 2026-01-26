@@ -38,7 +38,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.layout.ndshape import NDArrayShape, Shape
 from numojo.core.layout.ndstrides import NDArrayStrides, Strides
 from numojo.core.indexing.item import Item
-from numojo.core.indexing.utility import IndexMethods
+from numojo.core.indexing.utility.offset import IndexMethods
 from numojo.core.matrix import Matrix
 from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray

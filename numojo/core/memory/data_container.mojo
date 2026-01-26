@@ -273,7 +273,9 @@ struct DataContainer[dtype: DType](
             try:
                 self.enable_views()
             except:
-                abort("DataContainer.share_with_offset(): failed to enable views")
+                abort(
+                    "DataContainer.share_with_offset(): failed to enable views"
+                )
 
         var result = DataContainer[Self.dtype]()
         result.size = self.size - offset

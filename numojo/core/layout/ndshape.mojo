@@ -289,7 +289,7 @@ struct NDArrayShape(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Scalar[Self.element_type]:
+    fn __getitem__(self, index: Int) raises -> Int:
         """
         Gets shape dimension at specified index.
 
@@ -302,7 +302,7 @@ struct NDArrayShape(
         Raises:
            Error: Index out of bound.
         """
-        return self._buf[index]
+        return Int(self._buf[index])
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayShape:

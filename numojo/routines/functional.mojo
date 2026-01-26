@@ -61,7 +61,7 @@ from numojo.core.ndarray import NDArray
 #         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
 #     else:
-#         res = NDArray[dtype](a.shape._pop(axis=axis))
+#         res = NDArray[dtype](a.shape.pop(axis=axis))
 
 #         @parameter
 #         fn parallelized_func(i: Int):
@@ -110,7 +110,7 @@ fn apply_along_axis_reduce_to_int[
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
-        res = NDArray[DType.int](a.shape._pop(axis=axis))
+        res = NDArray[DType.int](a.shape.pop(axis=axis))
 
         @parameter
         fn parallelized_func(i: Int):
@@ -162,7 +162,7 @@ fn apply_along_axis_reduce[
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
-        res = NDArray[dtype](a.shape._pop(axis=axis))
+        res = NDArray[dtype](a.shape.pop(axis=axis))
 
         @parameter
         fn parallelized_func(i: Int):
@@ -213,7 +213,7 @@ fn apply_along_axis_reduce_with_dtype[
         (res._buf.ptr).init_pointee_copy(func1d[dtype, returned_dtype](a))
 
     else:
-        res = NDArray[returned_dtype](a.shape._pop(axis=axis))
+        res = NDArray[returned_dtype](a.shape.pop(axis=axis))
 
         @parameter
         fn parallelized_func(i: Int):

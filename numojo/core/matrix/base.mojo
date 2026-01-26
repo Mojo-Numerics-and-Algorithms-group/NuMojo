@@ -22,6 +22,7 @@ from math import ceil
 
 from numojo.core.layout.flags import Flags
 from numojo.core.ndarray import NDArray
+from numojo.core.indexing import Validator, InternalSlice
 from numojo.core.memory.data_container import DataContainer
 from numojo.core.traits.buffered import Buffered
 from numojo.routines.manipulation import broadcast_to, reorder_layout
@@ -352,6 +353,7 @@ struct Matrix[
             other.shape, other.strides, owndata=True, writeable=True
         )
 
+    # NOTE: perhaps remove this?
     fn deep_copy(self) -> Self:
         """
         Create a deep copy of the current matrix.
@@ -373,6 +375,29 @@ struct Matrix[
         copy_mat = Self(self.shape)
         memcpy(dest=copy_mat._buf.ptr, src=self._buf.ptr, count=self.size)
         return copy_mat^
+
+    fn view(mut self) -> Self:
+        """
+        Create a non-owning view of the current matrix.
+
+        This method returns a new `Matrix` instance that acts as a view into the data of the current matrix (`self`). The view does not allocate new memory and directly references the existing data buffer of the matrix.
+
+        Returns:
+            A `Matrix` representing a view of `self`.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix[f32](shape=(3, 4))
+            # ... (initialize mat with data) ...
+            var mat_view = mat.view()  # Create a view of mat
+            ```
+        """
+        return Matrix[Self.dtype](
+            shape=(1, self.shape[1]),
+            strides=(self.strides[0], self.strides[1]),
+            data=self._buf.share_with_offset(0),
+        )
 
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit other: Self):
@@ -410,211 +435,55 @@ struct Matrix[
         _ = self._buf^
 
     # ===-------------------------------------------------------------------===#
-    # Slicing and indexing methods
+    # Indexing and slicing methods
     # ===-------------------------------------------------------------------===#
-
-    @always_inline
-    fn index(self, row: Int, col: Int) -> Int:
+    fn validate_and_normalize(self, x: Int, y: Int) raises -> Tuple[Int, Int]:
         """
-        Calculate the linear index in the underlying data buffer for a given
-        2D index (row, col) based on the matrix's strides.
+        Validate and normalize the provided row and column indices.
+
+        This method checks if the given indices are within the bounds of the matrix shape.
+        If an index is negative, it is normalized to its positive equivalent.
 
         Args:
-            row: The row index.
-            col: The column index.
+            x: The row index. Can be negative to index from the end.
+            y: The column index. Can be negative to index from the end.
 
         Returns:
-            The corresponding 1D index in the data buffer.
-
-        Example:
-            ```mojo
-            from numojo.prelude import *
-            var mat = Matrix[f32](shape=(3, 4))
-            var idx = mat.index(1, 2)  # Calculate linear index for (1, 2)
-            ```
-        """
-        return row * self.strides[0] + col * self.strides[1]
-
-    # ===-------------------------------------------------------------------===#
-    # Internal helper methods for bounds checking and slice processing
-    # ===-------------------------------------------------------------------===#
-    @always_inline
-    fn normalize(self, idx: Int, dim: Int) -> Int:
-        """
-        Normalize a potentially negative index to its positive equivalent
-        within the bounds of the given dimension.
-
-        Args:
-            idx: The index to normalize. Can be negative to indicate indexing
-                 from the end (e.g., -1 refers to the last element).
-            dim: The size of the dimension to normalize against.
-
-        Returns:
-            The normalized index as a non-negative integer.
-        """
-        var idx_norm = idx
-        if idx_norm < 0:
-            idx_norm = dim + idx_norm
-        return idx_norm
-
-    @always_inline
-    fn _check_row_bounds(self, x: Int) raises:
-        """
-        Check if row index is within bounds.
-
-        Args:
-            x: The row index to check.
+            A tuple containing the normalized (x, y) indices.
 
         Raises:
-            Error: If the row index is out of bounds.
+            Error: If any of the provided indices are out of bounds for the matrix.
         """
         if x >= self.shape[0] or x < -self.shape[0]:
             raise Error(
                 NumojoError(
                     category="index",
                     message=(
-                        "Row index {} out of bounds for matrix with {} rows."
-                        " Use indices in [{}, {}).".format(
-                            x, -self.shape[0], self.shape[0]
+                        "Row index {} out of bounds for matrix with {} rows. Use"
+                        " indices in [{}, {}).".format(
+                            x, self.shape[0], -self.shape[0], self.shape[0]
                         )
                     ),
-                    location="Matrix.__getitem__(x: Int)",
+                    location="Matrix.validate_and_normalize",
                 )
             )
-
-    @always_inline
-    fn _check_col_bounds(self, y: Int) raises:
-        """
-        Check if column index is within bounds.
-
-        Args:
-            y: The column index to check.
-
-        Raises:
-            Error: If the column index is out of bounds.
-        """
         if y >= self.shape[1] or y < -self.shape[1]:
             raise Error(
                 NumojoError(
                     category="index",
                     message=(
-                        "Column index {} out of bounds for matrix with {}"
-                        " columns. Use indices in [{}, {}).".format(
-                            y, -self.shape[1], self.shape[1]
+                        "Column index {} out of bounds for matrix with {} columns."
+                        " Use indices in [{}, {}).".format(
+                            y, self.shape[1], -self.shape[1], self.shape[1]
                         )
                     ),
-                    location="Matrix.__getitem__(y: Int)",
+                    location="Matrix.validate_and_normalize",
                 )
             )
 
-    @always_inline
-    fn _check_bounds(self, x: Int, y: Int) raises:
-        """
-        Check if both row and column indices are within bounds.
-
-        Args:
-            x: The row index to check.
-            y: The column index to check.
-
-        Raises:
-            Error: If either index is out of bounds.
-        """
-        if (
-            x >= self.shape[0]
-            or x < -self.shape[0]
-            or y >= self.shape[1]
-            or y < -self.shape[1]
-        ):
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=(
-                        "Index ({}, {}) out of bounds for matrix shape ({},"
-                        " {}). Use indices in [{}, {}) x [{}, {}).".format(
-                            x,
-                            y,
-                            self.shape[0],
-                            self.shape[1],
-                            -self.shape[0],
-                            self.shape[0],
-                            -self.shape[1],
-                            self.shape[1],
-                        )
-                    ),
-                    location="Matrix.__getitem__(x: Int, y: Int)",
-                )
-            )
-
-    @always_inline
-    fn _normalize_indices(self, x: Int, y: Int) -> Tuple[Int, Int]:
-        """
-        Normalize both row and column indices.
-
-        Args:
-            x: The row index to normalize.
-            y: The column index to normalize.
-
-        Returns:
-            A tuple of (normalized_row, normalized_col).
-        """
-        return (
-            self.normalize(x, self.shape[0]),
-            self.normalize(y, self.shape[1]),
-        )
-
-    @always_inline
-    fn _validate_and_normalize(self, x: Int, y: Int) raises -> Tuple[Int, Int]:
-        """
-        Validate bounds and normalize indices in one call.
-
-        Args:
-            x: The row index to validate and normalize.
-            y: The column index to validate and normalize.
-
-        Returns:
-            A tuple of (normalized_row, normalized_col).
-
-        Raises:
-            Error: If either index is out of bounds.
-        """
-        self._check_bounds(x, y)
-        return self._normalize_indices(x, y)
-
-    @always_inline
-    fn _get_slice_info(self, s: Slice, dim: Int) -> Tuple[Int, Int, Int, Int]:
-        """
-        Get complete slice information for a given dimension.
-
-        Args:
-            s: The slice to process.
-            dim: The dimension size to process against.
-
-        Returns:
-            A tuple of (start, end, step, length) for the slice.
-        """
-        var start: Int
-        var end: Int
-        var step: Int
-        start, end, step = s.indices(dim)
-        var length = Int(ceil((end - start) / step))
-        return (start, end, step, length)
-
-    @always_inline
-    fn _is_contiguous_slice(self, step: Int) -> Bool:
-        """
-        Check if a slice with given step can use contiguous memory operations.
-
-        Args:
-            step: The step of the slice.
-
-        Returns:
-            True if step is 1 and matrix is C-contiguous.
-        """
-        return step == 1 and self.flags.C_CONTIGUOUS
-
-    # ===-------------------------------------------------------------------===#
-    # Indexing and slicing methods
-    # ===-------------------------------------------------------------------===#
+        var x_norm = Validator.normalize(x, self.shape[0])
+        var y_norm = Validator.normalize(y, self.shape[1])
+        return (x_norm, y_norm)
 
     fn __getitem__(self, x: Int, y: Int) raises -> Scalar[Self.dtype]:
         """
@@ -639,8 +508,8 @@ struct Matrix[
         """
         var x_norm: Int
         var y_norm: Int
-        x_norm, y_norm = self._validate_and_normalize(x, y)
-        return self._buf[self.index(x_norm, y_norm)]
+        x_norm, y_norm = self.validate_and_normalize(x, y)
+        return self._buf[IndexMethods.get_1d_index((x_norm, y_norm), self.strides)]
 
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
     fn get(mut self, var x: Int) raises -> Matrix[Self.dtype]:
@@ -677,7 +546,7 @@ struct Matrix[
                 )
             )
 
-        var x_norm = self.normalize(x, self.shape[0])
+        var x_norm = Validator.normalize(x, self.shape[0])
         var offset = x_norm * self.strides[0]
         return Matrix[Self.dtype](
             shape=(1, self.shape[1]),
@@ -719,7 +588,7 @@ struct Matrix[
                     location="Matrix.get_row(x: Slice)",
                 )
             )
-        var x_norm = self.normalize(x, self.shape[0])
+        var x_norm = Validator.normalize(x, self.shape[0])
         var result = Matrix[Self.dtype](
             shape=(1, self.shape[1]), order=self.order()
         )
@@ -794,13 +663,13 @@ struct Matrix[
         var end_x: Int
         var step_x: Int
         var len_x: Int
-        start_x, end_x, step_x, len_x = self._get_slice_info(x, self.shape[0])
+        start_x, end_x, step_x, len_x = InternalSlice.get_slice_info(x, self.shape[0])
 
         var start_y: Int
         var end_y: Int
         var step_y: Int
         var len_y: Int
-        start_y, end_y, step_y, len_y = self._get_slice_info(y, self.shape[1])
+        start_y, end_y, step_y, len_y = InternalSlice.get_slice_info(y, self.shape[1])
 
         var range_x = range(start_x, end_x, step_x)
         var range_y = range(start_y, end_y, step_y)
@@ -853,7 +722,7 @@ struct Matrix[
                     location="Matrix.get_col(y: Int)",
                 )
             )
-        y = self.normalize(y, self.shape[1])
+        y = Validator.normalize(y, self.shape[1])
         var start_x: Int
         var end_x: Int
         var step_x: Int
@@ -950,7 +819,7 @@ struct Matrix[
                     location="Matrix.get(x: Int, y: Slice)",
                 )
             )
-        x = self.normalize(x, self.shape[0])
+        x = Validator.normalize(x, self.shape[0])
         var start_y: Int
         var end_y: Int
         var step_y: Int
@@ -1004,7 +873,7 @@ struct Matrix[
                     location="Matrix.get(x: Slice, y: Int)",
                 )
             )
-        x = self.normalize(x, self.shape[0])
+        x = Validator.normalize(x, self.shape[0])
         var start_y: Int
         var end_y: Int
         var step_y: Int
@@ -1099,7 +968,7 @@ struct Matrix[
                     location="Matrix.__getitem__(idx: Int)",
                 )
             )
-        var idx_norm = self.normalize(idx, self.size)
+        var idx_norm = Validator.normalize(idx, self.size)
         return self._buf.ptr.load[width=width](idx_norm)
 
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[Self.dtype, width]:
@@ -1162,10 +1031,10 @@ struct Matrix[
                     location="Matrix.__setitem__(x: Int, y: Int, val: Scalar)",
                 )
             )
-        var x_norm: Int = self.normalize(x, self.shape[0])
-        var y_norm: Int = self.normalize(y, self.shape[1])
+        var x_norm: Int = Validator.normalize(x, self.shape[0])
+        var y_norm: Int = Validator.normalize(y, self.shape[1])
 
-        self._buf.store(self.index(x_norm, y_norm), value)
+        self._buf.store(IndexMethods.get_1d_index((x_norm, y_norm), self.strides), value)
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
     fn __setitem__(self, var x: Int, value: Matrix[Self.dtype]) raises:
@@ -1382,7 +1251,7 @@ struct Matrix[
                     location="Matrix.set(x: Slice, y: Int, value: Matrix)",
                 )
             )
-        var y_norm = self.normalize(y, self.shape[1])
+        var y_norm = Validator.normalize(y, self.shape[1])
         var start_x: Int
         var end_x: Int
         var step_x: Int
@@ -1460,7 +1329,7 @@ struct Matrix[
                     ),
                 )
             )
-        var y_norm = self.normalize(y, self.shape[1])
+        var y_norm = Validator.normalize(y, self.shape[1])
         var start_x: Int
         var end_x: Int
         var step_x: Int
@@ -1533,7 +1402,7 @@ struct Matrix[
                     location="Matrix.set(x: Int, y: Slice, value: Matrix)",
                 )
             )
-        var x_norm = self.normalize(x, self.shape[0])
+        var x_norm = Validator.normalize(x, self.shape[0])
         var start_y: Int
         var end_y: Int
         var step_y: Int
@@ -1609,7 +1478,7 @@ struct Matrix[
                     ),
                 )
             )
-        var x_norm = self.normalize(x, self.shape[0])
+        var x_norm = Validator.normalize(x, self.shape[0])
         var start_y: Int
         var end_y: Int
         var step_y: Int
@@ -1818,7 +1687,7 @@ struct Matrix[
                     location="Matrix.__setitem__(idx: Int, val: Scalar)",
                 )
             )
-        var idx_norm = self.normalize(idx, self.size)
+        var idx_norm = Validator.normalize(idx, self.size)
         self._buf.ptr.store[width=width](idx_norm, val)
 
     # ===-------------------------------------------------------------------===#

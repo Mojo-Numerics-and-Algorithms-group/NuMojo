@@ -333,7 +333,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
+fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
@@ -352,7 +352,7 @@ fn transpose[dtype: DType](A: Matrix[dtype, **_]) -> Matrix[dtype]:
     return B^
 
 
-fn reorder_layout[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype]:
+fn reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -455,7 +455,7 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    A: Matrix[dtype, **_],
+    A: Matrix[dtype],
     shape: Tuple[Int, Int],
     override_order: String = "",
 ) raises -> Matrix[dtype]:

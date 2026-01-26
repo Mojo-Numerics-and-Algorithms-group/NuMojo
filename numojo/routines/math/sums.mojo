@@ -111,7 +111,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn sum[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
+fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     Sum up all items in the Matrix.
 
@@ -136,7 +136,7 @@ fn sum[dtype: DType](A: Matrix[dtype, **_]) -> Scalar[dtype]:
     return res
 
 
-fn sum[dtype: DType](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Sum up the items in a Matrix along the axis.
 
@@ -287,7 +287,7 @@ fn cumsum[
     return B^
 
 
-fn cumsum[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype]:
+fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 
@@ -323,7 +323,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype]:
 
 fn cumsum[
     dtype: DType
-](A: Matrix[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 

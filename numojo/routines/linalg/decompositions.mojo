@@ -227,7 +227,7 @@ fn lu_decomposition[
 
 fn lu_decomposition[
     dtype: DType
-](A: Matrix[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     """
     Perform LU (lower-upper) decomposition for matrix.
     """
@@ -319,7 +319,7 @@ fn partial_pivoting[
 
 fn partial_pivoting[
     dtype: DType
-](A: Matrix[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
+](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
     """
     Perform partial pivoting for matrix.
     """

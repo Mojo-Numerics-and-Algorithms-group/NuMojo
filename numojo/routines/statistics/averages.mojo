@@ -105,7 +105,7 @@ fn mean[
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: Matrix[dtype, **_]) -> Scalar[returned_dtype]:
+](a: Matrix[dtype]) -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in the Matrix.
 
@@ -125,7 +125,7 @@ fn mean[
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: Matrix[dtype, **_], axis: Int) raises -> Matrix[returned_dtype]:
+](a: Matrix[dtype], axis: Int) raises -> Matrix[returned_dtype]:
     """
     Calculate the arithmetic average of a Matrix along the axis.
 
@@ -378,7 +378,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the standard deviation.
 
@@ -403,7 +403,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[
     returned_dtype
 ]:
     """
@@ -512,7 +512,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the variance.
 
@@ -540,7 +540,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[
     returned_dtype
 ]:
     """

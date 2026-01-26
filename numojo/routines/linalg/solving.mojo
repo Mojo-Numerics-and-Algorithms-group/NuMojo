@@ -116,7 +116,7 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     return solve(A, I)
 
 
-fn inv[dtype: DType](A: Matrix[dtype, **_]) raises -> Matrix[dtype]:
+fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Inverse of matrix.
     """
@@ -372,7 +372,7 @@ fn solve[
 
 fn solve[
     dtype: DType
-](A: Matrix[dtype, **_], Y: Matrix[dtype, **_]) raises -> Matrix[dtype]:
+](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LUP decomposition.
     """
@@ -436,7 +436,7 @@ fn solve[
 
 fn solve_lu[
     dtype: DType
-](A: Matrix[dtype, **_], Y: Matrix[dtype, **_]) raises -> Matrix[dtype]:
+](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Solve `AX = Y` using LU decomposition.
     """

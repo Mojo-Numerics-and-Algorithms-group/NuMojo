@@ -70,7 +70,6 @@ from numojo.core.matrix import Matrix
 from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.dtype.complex_dtype import (
-from numojo.core.dtype.complex_dtype import (
     ComplexDType,
     ci8,
     ci16,
@@ -93,7 +92,6 @@ from numojo.core.dtype.complex_dtype import (
     cboolean,
     cinvalid,
 )
-from numojo.core.dtype.default_dtype import (
 from numojo.core.dtype.default_dtype import (
     i8,
     i16,

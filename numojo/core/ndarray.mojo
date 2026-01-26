@@ -5478,9 +5478,13 @@ struct _NDAxisIter[
         Initialize the iterator.
 
         Args:
-            data: the array.
+            data: the data container of the array.
             axis: Axis.
             order: Order to traverse the array.
+            shape: Shape of the array.
+            strides: Strides of the array.
+            ndim: Number of dimensions of the array.
+            size: Size of the array.
         """
         if axis < 0 or axis >= ndim:
             raise Error(

@@ -251,10 +251,10 @@ fn format_floating_scientific[
         if x == 0:
             if sign:
                 var result: String = "+0." + "0" * precision + "e+00"
-                return result.rjust(formatted_width)
+                return result.ascii_rjust(formatted_width)
             else:
                 var result: String = " 0." + "0" * precision + "e+00"
-                return result.rjust(formatted_width)
+                return result.ascii_rjust(formatted_width)
 
         var power: Int = Int(mt.log10(abs(x)))
         if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
@@ -272,7 +272,7 @@ fn format_floating_scientific[
                 result = " " + mantissa_without_sign_string[: 2 + precision]
 
         if suppress_scientific and abs(power) <= exponent_threshold:
-            return format_floating_precision(x, precision, sign).rjust(
+            return format_floating_precision(x, precision, sign).ascii_rjust(
                 formatted_width
             )
 
@@ -291,7 +291,7 @@ fn format_floating_scientific[
         return (
             String("{0}{1}")
             .format(result, exponent_string)
-            .rjust(formatted_width)
+            .ascii_rjust(formatted_width)
         )
     except:
         raise Error("Failed to format float in scientific notation.")
@@ -420,9 +420,9 @@ fn format_value[
     @parameter
     if is_floattype[dtype]():
         if isnan(value):
-            return nan_string.rjust(formatted_width)
+            return nan_string.ascii_rjust(formatted_width)
         if isinf(value):
-            return inf_string.rjust(formatted_width)
+            return inf_string.ascii_rjust(formatted_width)
         if float_format == "scientific":
             return format_floating_scientific(
                 value,
@@ -438,12 +438,12 @@ fn format_value[
                 print_options.precision,
                 sign,
                 suppress_small,
-            ).rjust(formatted_width)
+            ).ascii_rjust(formatted_width)
     else:
         var formatted = String(value)
         if sign and value > 0:
             formatted = "+" + formatted
-        return formatted.rjust(formatted_width)
+        return formatted.ascii_rjust(formatted_width)
 
 
 fn format_value[
@@ -540,8 +540,8 @@ fn format_value[
         imag_mag_str = String(abs_im_int)
 
     # Right justify parts
-    re_str = re_str.rjust(formatted_width)
-    imag_mag_str = imag_mag_str.rjust(formatted_width)
+    re_str = re_str.ascii_rjust(formatted_width)
+    imag_mag_str = imag_mag_str.ascii_rjust(formatted_width)
 
     return _trim_paranthesis_strings_cnumbers(
         complex_format, re_str, imag_mag_str, imag_sign_char

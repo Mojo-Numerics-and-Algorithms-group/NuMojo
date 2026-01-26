@@ -55,56 +55,6 @@ struct Validator:
             )
 
     @staticmethod
-    fn check_permutation(axes: List[Int], rank: Int) raises:
-        """
-        Check if axes represent a valid permutation.
-
-        Args:
-            axes: The list of axes.
-            rank: The rank of the array.
-
-        Raises:
-            Error: If the permutation is invalid.
-        """
-        if len(axes) != rank:
-            raise Error(
-                NumojoError(
-                    category="shape",
-                    message="Permutation length "
-                    + String(len(axes))
-                    + " does not match rank "
-                    + String(rank),
-                    location="Validator.check_permutation",
-                )
-            )
-
-        var seen = List[Bool]()
-        for _ in range(rank):
-            seen.append(False)
-
-        for axis in axes:
-            var a = axis if axis >= 0 else axis + rank
-            if a < 0 or a >= rank:
-                raise Error(
-                    NumojoError(
-                        category="index",
-                        message="Axis " + String(axis) + " out of range",
-                        location="Validator.check_permutation",
-                    )
-                )
-            if seen[a]:
-                raise Error(
-                    NumojoError(
-                        category="index",
-                        message="Duplicate axis "
-                        + String(axis)
-                        + " in permutation",
-                        location="Validator.check_permutation",
-                    )
-                )
-            seen[a] = True
-
-    @staticmethod
     fn validate_reshape(current_size: Int, new_shape: NDArrayShape) raises:
         """
         Validate if a reshape operation is valid.

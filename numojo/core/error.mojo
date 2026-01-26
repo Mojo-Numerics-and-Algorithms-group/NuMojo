@@ -19,8 +19,7 @@ We can expand this list in the future as needed.
 from os import abort
 
 comptime RED_COLOR: String = "\033[31m"
-comptime RESET_COLOR: String = "\033[0m"
-
+comptime END_COLOR: String = "\033[0m"
 
 # TODO: remove suggestion field and remove it from existing instances.
 struct NumojoError(Stringable, Writable):
@@ -76,15 +75,19 @@ struct NumojoError(Stringable, Writable):
         self.location = location
 
     fn __str__(self) -> String:
-        var result = RED_COLOR + String(self.category) + String(": ") + self.message
+        var result = (
+            RED_COLOR + String(self.category) + String(": ") + self.message
+        )
         if self.location:
             result += String(" [at ") + self.location.value() + String("]")
-        result += RESET_COLOR.__str__()
+        result += END_COLOR.__str__()
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
         """Write error information to a writer."""
-        writer.write(RED_COLOR + String(self.category) + String(": ") + self.message)
+        writer.write(
+            RED_COLOR + String(self.category) + String(": ") + self.message
+        )
         if self.location:
             writer.write(String(" [at ") + self.location.value() + String("]"))
-        writer.write(RESET_COLOR)
+        writer.write(END_COLOR)

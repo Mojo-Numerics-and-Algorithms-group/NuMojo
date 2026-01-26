@@ -74,14 +74,21 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         raise Error(
             NumojoError(
                 category="index",
-                message="Axis out of range: got {}, expected 0 <= axis < {}.".format(axis, A.ndim),
+                message=(
+                    "Axis out of range: got {}, expected 0 <= axis < {}."
+                    .format(axis, A.ndim)
+                ),
                 location=String("routines.math.sums.sum(A, axis)"),
             )
         )
     if A.ndim == 1:
         raise Error(
-            NumojoError(category="shape",
-                message=String("Cannot use axis with 1D array. Call `sum(A)` without axis, or reshape A to 2D or higher."),
+            NumojoError(
+                category="shape",
+                message=String(
+                    "Cannot use axis with 1D array. Call `sum(A)` without axis,"
+                    " or reshape A to 2D or higher."
+                ),
                 location=String("routines.math.sums.sum(A, axis)"),
             )
         )
@@ -267,7 +274,9 @@ fn cumsum[
     var _shape = B.shape._move_axis_to_end(axis)
     var _strides = B.strides._move_axis_to_end(axis)
 
-    TraverseMethods.traverse_buffer_according_to_shape_and_strides(ptr, _shape, _strides)
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(
+        ptr, _shape, _strides
+    )
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):

@@ -194,7 +194,8 @@ struct Flags(ImplicitlyCopyable):
                 NumojoError(
                     category="memory",
                     message=String(
-                        "Invalid Flags key: '{}'. Valid keys: C_CONTIGUOUS, C, F_CONTIGUOUS, F, OWNDATA, O, WRITEABLE, W, FORC."
+                        "Invalid Flags key: '{}'. Valid keys: C_CONTIGUOUS, C,"
+                        " F_CONTIGUOUS, F, OWNDATA, O, WRITEABLE, W, FORC."
                     ).format(key),
                     location=String("numojo.core.flags.__getitem__"),
                 )

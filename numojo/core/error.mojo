@@ -21,6 +21,7 @@ from os import abort
 comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"
 
+
 # TODO: remove suggestion field and remove it from existing instances.
 struct NumojoError(Stringable, Writable):
     """

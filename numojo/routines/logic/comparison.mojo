@@ -357,7 +357,8 @@ fn allclose[
                     "Shape Mismatch error shapes must match for this function"
                 ),
                 location=(
-                    "numojo.routines.logic.comparision.allclose(a: NDArray, b: NDArray)"
+                    "numojo.routines.logic.comparision.allclose(a: NDArray, b:"
+                    " NDArray)"
                 ),
             )
         )

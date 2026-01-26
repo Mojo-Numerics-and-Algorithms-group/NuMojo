@@ -90,7 +90,8 @@ fn logical_or[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input arrays must have the same shape for logical OR"
                     " operation."
@@ -172,7 +173,8 @@ fn logical_xor[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input arrays must have the same shape for logical XOR"
                     " operation."
@@ -224,7 +226,8 @@ fn logical_and[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input arrays must have the same shape for logical AND"
                     " operation."
@@ -273,7 +276,8 @@ fn logical_or[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input arrays must have the same shape for logical OR"
                     " operation."
@@ -357,7 +361,8 @@ fn logical_xor[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input arrays must have the same shape for logical XOR"
                     " operation."
@@ -407,7 +412,8 @@ fn logical_and[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input matrices must have the same shape for logical AND"
                     " operation."
@@ -453,7 +459,8 @@ fn logical_or[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input matrices must have the same shape for logical OR"
                     " operation."
@@ -535,7 +542,8 @@ fn logical_xor[
     """
     if a.shape != b.shape:
         raise Error(
-            NumojoError(category="shape",
+            NumojoError(
+                category="shape",
                 message=(
                     "Input matrices must have the same shape for logical XOR"
                     " operation."

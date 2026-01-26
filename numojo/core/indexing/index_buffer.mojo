@@ -374,22 +374,40 @@ struct IndexBuffer(
     # Transformation Methods
     # ===----------------------------------------------------------------------=== #
 
-    fn extend(self, *shapes: Int) -> Self:
+    fn extend(self, *values: Int) -> Self:
         """
         Extend the buffer by appending additional integer values.
 
         Args:
-            shapes: Sizes of extended dimensions.
+            values: Variadic list of sizes of extended dimensions.
 
         Returns:
             A new IndexBuffer with the additional values appended.
         """
-        var total_dims = self.ndim + len(shapes)
-        var new_buf = Self(total_dims)
+        var total_dims = self.ndim + len(values)
+        var new_buf = Self(size=total_dims)
         for i in range(self.ndim):
             new_buf.ptr[i] = self.ptr[i]
-        for j in range(len(shapes)):
-            new_buf.ptr[self.ndim + j] = shapes[j]
+        for j in range(len(values)):
+            new_buf.ptr[self.ndim + j] = values[j]
+        return new_buf^
+
+    fn extend(self, values: List[Int]) -> Self:
+        """
+        Extend the buffer by appending additional integer values from a List.
+
+        Args:
+            values: List of sizes of extended dimensions.
+
+        Returns:
+            A new IndexBuffer with the additional values appended.
+        """
+        var total_dims = self.ndim + len(values)
+        var new_buf = Self(size=total_dims)
+        for i in range(self.ndim):
+            new_buf.ptr[i] = self.ptr[i]
+        for j in range(len(values)):
+            new_buf.ptr[self.ndim + j] = values[j]
         return new_buf^
 
     fn flip(mut self):

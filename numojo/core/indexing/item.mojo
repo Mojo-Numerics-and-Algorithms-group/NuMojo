@@ -333,15 +333,18 @@ struct Item(
 
     fn extend(self, *values: Int) -> Self:
         """
-        Extend the item by additional values.
+        Extend the shape by sizes of extended dimensions.
 
         Args:
-            values: Additional values to append.
+            values: Sizes of extended dimensions.
 
         Returns:
-            A new Item object with the extended values.
+            A new NDArrayShape object.
         """
-        return Self(self._buf.extend(*values))
+        var new_vals = List[Int]()
+        for i in range(self.ndim):
+            new_vals.append(values[i])
+        return Self(self._buf.extend(new_vals))
 
     fn flip(mut self):
         """
@@ -484,16 +487,6 @@ struct Item(
         return res^
 
     @always_inline("nodebug")
-    fn deep_copy(self) -> Self:
-        """
-        Returns a deep copy of the item.
-
-        Returns:
-            A new Item with the same values.
-        """
-        return Self(self)
-
-    @always_inline("nodebug")
     fn normalize_index(self, index: Int) -> Int:
         """
         Normalizes the given index to be within the valid range [0, ndim).
@@ -542,6 +535,7 @@ struct _ItemIter[
     """Iterator for Item.
 
     Parameters:
+        origin: The origin of the Item being iterated.
         forward: The iteration direction. `False` is backwards.
     """
 

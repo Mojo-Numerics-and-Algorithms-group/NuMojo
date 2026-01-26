@@ -289,7 +289,7 @@ struct NDArrayShape(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Int:
+    fn __getitem__(self, index: Int) raises -> Scalar[Self.element_type]:
         """
         Gets shape dimension at specified index.
 
@@ -557,17 +557,20 @@ struct NDArrayShape(
         res[axis2] = val1
         return res
 
-    fn extend(self, *shapes: Int) -> Self:
+    fn extend(self, *values: Int) -> Self:
         """
         Extend the shape by sizes of extended dimensions.
 
         Args:
-            shapes: Sizes of extended dimensions.
+            values: Sizes of extended dimensions.
 
         Returns:
             A new NDArrayShape object.
         """
-        return Self(self._buf.extend(*shapes))
+        var new_vals = List[Int]()
+        for i in range(self.ndim):
+            new_vals.append(values[i])
+        return Self(self._buf.extend(new_vals))
 
     fn flip(mut self):
         """

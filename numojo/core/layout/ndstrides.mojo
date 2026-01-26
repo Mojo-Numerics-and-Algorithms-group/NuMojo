@@ -233,12 +233,12 @@ struct NDArrayStrides(
             var temp = 1
             for i in range(self.ndim - 1, -1, -1):
                 self._buf.init_value(i, temp)
-                temp *= shape[i]
+                temp *= Int(shape[i])
         elif order == "F":
             var temp = 1
             for i in range(0, self.ndim):
                 self._buf.init_value(i, temp)
-                temp *= shape[i]
+                temp *= Int(shape[i])
         else:
             raise Error(
                 NumojoError(
@@ -614,15 +614,18 @@ struct NDArrayStrides(
 
     fn extend(self, *values: Int) -> Self:
         """
-        Extend the strides by additional values.
+        Extend the shape by sizes of extended dimensions.
 
         Args:
-            values: Additional stride values to append.
+            values: Sizes of extended dimensions.
 
         Returns:
-            A new NDArrayStrides object with the extended values.
+            A new NDArrayShape object.
         """
-        return Self(self._buf.extend(*values))
+        var new_vals = List[Int]()
+        for i in range(self.ndim):
+            new_vals.append(values[i])
+        return Self(self._buf.extend(new_vals))
 
     fn flip(mut self):
         """
@@ -694,7 +697,7 @@ struct NDArrayStrides(
         for i in range(self.ndim - 1, -1, -1):
             if shape[i] > 1 and self[i] != expected:
                 return False
-            expected *= shape[i]
+            expected *= Int(shape[i])
         return True
 
     # ===----------------------------------------------------------------------=== #
@@ -843,7 +846,7 @@ struct NDArrayStrides(
         var res = List[Int]()
         for i in range(self.ndim):
             res.append(Int(self._buf.unsafe_load(i)))
-        return res
+        return res^
 
     @always_inline("nodebug")
     fn normalize_index(self, index: Int) -> Int:
@@ -896,6 +899,7 @@ struct _StrideIter[
     """Iterator for NDArrayStrides.
 
     Parameters:
+        origin: The origin of the iterator.
         forward: The iteration direction. `False` is backwards.
     """
 

@@ -76,7 +76,9 @@ from numojo.core.indexing import (
     bool_to_numeric,
     newaxis,
 )
-from numojo.core.error import NumojoError
+from numojo.core.error import NumojoError, terminate
+from numojo.core.layout.array_methods import NewAxis, Ellipsis
+from numojo.core.indexing.slicing import IndexTypeInfo
 
 # ===----------------------------------------------------------------------===#
 # === numojo routines (creation / io / logic) ===
@@ -97,6 +99,8 @@ from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
+
+comptime IndexTypes = Variant[Slice, Int, NewAxis, Ellipsis]
 
 
 # ===-----------------------------------------------------------------------===#
@@ -781,14 +785,18 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
         var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
+        var index_type_list: List[IndexTypeInfo] = List[IndexTypeInfo](
+            capacity=self.ndim
+        )
         for i in range(len(slices)):
             slice_list.append(slices[i])
+            index_type_list.append(IndexTypeInfo(is_slice=True))
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        var narr: Self = self[slice_list^]
+        var narr: Self = self.__getitem__(slice_list^, index_type_list^)
         return narr^
 
     fn _calculate_strides(self, shape: List[Int]) -> List[Int]:
@@ -835,12 +843,17 @@ struct NDArray[dtype: DType = DType.float64](
 
         return strides^
 
-    fn __getitem__(self, var slice_list: List[Slice]) raises -> Self:
+    fn __getitem__(
+        self,
+        var slice_list: List[Slice],
+        var index_type_list: List[IndexTypeInfo],
+    ) raises -> Self:
         """
         Retrieves a sub-array from the current array using a list of slice objects, enabling advanced slicing operations across multiple dimensions.
 
         Args:
             slice_list: List of Slice objects, where each Slice defines the start, stop, and step for the corresponding dimension.
+            index_type_list: List of IndexTypeInfo objects indicating the type of each index (slice, integer, newaxis, ellipsis).
 
         Constraints:
             - The length of slice_list must not exceed the number of dimensions in the array.
@@ -865,23 +878,7 @@ struct NDArray[dtype: DType = DType.float64](
             ```
         """
         var n_slices: Int = len(slice_list)
-        # Check error cases
-        if n_slices == 0:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=(
-                        "Empty slice list provided to NDArray.__getitem__."
-                        " Provide a List with at least one slice to index the"
-                        " array."
-                    ),
-                    location="NDArray.__getitem__(slice_list: List[Slice])",
-                )
-            )
-
-        # adjust slice values for user provided slices
         var slices: List[InternalSlice] = self._adjust_slice(slice_list)
-
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slices.append(InternalSlice(0, self.shape[i], 1))
@@ -928,6 +925,33 @@ struct NDArray[dtype: DType = DType.float64](
             0,
         )
 
+        # TODO: Think about optimizing this later. It works for now.
+        var new_shape: List[Int] = List[Int]()
+        var new_ndim: Int = 0
+        var slice_count: Int = 0
+        for i in range(len(index_type_list)):
+            if index_type_list[i].is_ellipsis:
+                # handle ellipsis by adding remaining dimensions
+                var remaining_dims: Int = self.ndim - len(index_type_list) + 1
+                for _ in range(remaining_dims):
+                    new_ndim += 1
+                    new_shape.append(narr.shape[slice_count])
+                    slice_count += 1
+                break
+            elif index_type_list[i].is_newaxis:
+                new_ndim += 1
+                new_shape.append(1)
+            elif index_type_list[i].is_slice:
+                new_ndim += 1
+                new_shape.append(narr.shape[slice_count])
+                slice_count += 1
+            elif index_type_list[i].is_integer:
+                new_shape.append(narr.shape[i])
+
+        var new_strides: List[Int] = self._calculate_strides(new_shape)
+        narr.shape = NDArrayShape(shape=new_shape)
+        narr.strides = NDArrayStrides(strides=new_strides)
+        narr.ndim = new_ndim
         return narr^
 
     fn _getitem_variadic_slices(self, var *slices: Slice) raises -> Self:
@@ -1058,7 +1082,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr^
 
-    fn __getitem__(self, var *slices: Variant[Slice, Int]) raises -> Self:
+    fn __getitem__(self, var *slices: IndexTypes) raises -> Self:
         """
         Get items of NDArray with a series of either slices or integers.
 
@@ -1236,27 +1260,36 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
         var n_slices: Int = len(slices)
-        if n_slices > self.ndim:
+        if n_slices == 0:
             raise Error(
                 NumojoError(
                     category="index",
-                    message=String(
-                        "Too many indices or slices: received {} but array has"
-                        " only {} dimensions. Pass at most {} indices/slices"
-                        " (one per dimension)."
-                    ).format(n_slices, self.ndim, self.ndim),
-                    location=(
-                        "NDArray.__getitem__(*slices: Variant[Slice, Int])"
+                    message=(
+                        "Empty slice list provided to NDArray.__getitem__."
+                        " Provide a List with at least one slice to index the"
+                        " array."
                     ),
+                    location="NDArray.__getitem__(slice_list: List[Slice])",
                 )
             )
         var slice_list: List[Slice] = List[Slice]()
+        var index_type_list: List[IndexTypeInfo] = List[IndexTypeInfo](
+            capacity=self.ndim
+        )
         var count_int: Int = 0  # Count the number of Int in the argument
         var indices: List[Int] = List[Int]()
 
         for i in range(len(slices)):
+            if slices[i].isa[Ellipsis]():
+                index_type_list.append(IndexTypeInfo(is_ellipsis=True))
+                for j in range(self.ndim - n_slices + 1):
+                    slice_list.append(Slice(0, self.shape[i + j], 1))
+                break
+            if slices[i].isa[NewAxis]():
+                index_type_list.append(IndexTypeInfo(is_newaxis=True))
             if slices[i].isa[Slice]():
                 slice_list.append(slices[i][Slice])
+                index_type_list.append(IndexTypeInfo(is_slice=True))
             elif slices[i].isa[Int]():
                 var norm: Int = slices[i][Int]
                 if norm >= self.shape[i] or norm < -self.shape[i]:
@@ -1292,12 +1325,11 @@ struct NDArray[dtype: DType = DType.float64](
             narr = creation._0darray[Self.dtype](self._getitem(indices))
             return narr^
 
-        if n_slices < self.ndim:
+        if n_slices < self.ndim and not index_type_list[-1].is_ellipsis:
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        narr = self.__getitem__(slice_list^)
-        print("LOL")
+        narr = self.__getitem__(slice_list^, index_type_list^)
         return narr^
 
     fn __getitem__(self, indices: NDArray[DType.int]) raises -> Self:
@@ -3479,19 +3511,7 @@ struct NDArray[dtype: DType = DType.float64](
         - Empty slices
         - Default start/end values based on step direction
         """
-        var n_slices: Int = slice_list.__len__()
-        if n_slices > self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Too many slice dimensions: got {} but array has {}"
-                        " dims. Provide at most {} slices for this array."
-                    ).format(n_slices, self.ndim, self.ndim),
-                    location="NDArray._adjust_slice",
-                )
-            )
-
+        var n_slices: Int = len(slice_list)
         var slices = List[InternalSlice](capacity=self.ndim)
         for i in range(n_slices):
             var dim_size = self.shape[i]

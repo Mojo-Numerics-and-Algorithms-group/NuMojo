@@ -5,6 +5,62 @@ from math import ceil
 # ===----------------------------------------------------------------------=== #
 
 
+struct IndexTypeInfo(ImplicitlyCopyable):
+    var is_integer: Bool
+    var is_slice: Bool
+    var is_ellipsis: Bool
+    var is_newaxis: Bool
+
+    fn __init__(
+        out self,
+        is_integer: Bool = False,
+        is_slice: Bool = False,
+        is_ellipsis: Bool = False,
+        is_newaxis: Bool = False,
+    ):
+        self.is_integer = is_integer
+        self.is_slice = is_slice
+        self.is_ellipsis = is_ellipsis
+        self.is_newaxis = is_newaxis
+
+    fn __repr__(self) -> String:
+        return (
+            "IndexTypeInfo(is_integer={}, is_slice={}, is_ellipsis={},"
+            " is_newaxis={})".format(
+                self.is_integer,
+                self.is_slice,
+                self.is_ellipsis,
+                self.is_newaxis,
+            )
+        )
+
+    fn __str__(self) -> String:
+        return (
+            "IndexTypeInfo(is_integer={}, is_slice={}, is_ellipsis={},"
+            " is_newaxis={})".format(
+                self.is_integer,
+                self.is_slice,
+                self.is_ellipsis,
+                self.is_newaxis,
+            )
+        )
+
+    fn size(self) -> Int:
+        """
+        Returns the number of active index types in this IndexTypeInfo.
+        """
+        var size = 0
+        if self.is_integer:
+            size += 1
+        if self.is_slice:
+            size += 1
+        if self.is_ellipsis:
+            size += 1
+        if self.is_newaxis:
+            size += 1
+        return size
+
+
 struct InternalSlice(ImplicitlyCopyable):
     var start: Int
     var end: Int

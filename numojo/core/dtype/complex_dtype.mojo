@@ -67,7 +67,6 @@ comptime cinvalid = ComplexDType.invalid
 # ===----------------------------------------------------------------------=== #
 
 
-@register_passable("trivial")
 struct ComplexDType(
     Copyable,
     Equatable,
@@ -77,6 +76,7 @@ struct ComplexDType(
     Movable,
     Representable,
     Stringable,
+    TrivialRegisterType,
     Writable,
 ):
     """

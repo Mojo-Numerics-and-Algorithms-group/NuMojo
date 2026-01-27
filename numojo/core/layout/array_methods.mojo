@@ -1,8 +1,9 @@
-comptime newaxis: NewAxis = NewAxis()
-comptime ellipsis: Ellipsis = Ellipsis()
+comptime newaxis = NewAxis()
+# comptime ellipsis = __mlir_type.`!lit.ellipsis`
+comptime ellipsis = Ellipsis()
 
 
-struct Ellipsis(Stringable):
+struct Ellipsis(Equatable, Hashable, ImplicitlyCopyable, Movable, Stringable):
     """
     Represents an ellipsis (`...`) used in array slicing to indicate the inclusion of all remaining dimensions.
     This can be used to simplify slicing operations when the exact number of dimensions is not known or when you want to include all remaining dimensions without explicitly specifying them.
@@ -54,13 +55,24 @@ struct Ellipsis(Stringable):
         return False
 
 
-# TODO: add an initializer with int field to specify number of new axes to add!
-struct NewAxis(Stringable):
+# TODO: add an initializer with int field to specify number of new axes to add! Future work, for now, keep it simple.
+struct NewAxis(Equatable, Hashable, ImplicitlyCopyable, Movable, Stringable):
+    var num: Int
+
     fn __init__(out self):
         """
         Initializes a NewAxis instance.
         """
-        pass
+        self.num = 0
+
+    fn __init__(out self, num: Int):
+        """
+        Initializes a NewAxis instance with a specified number of new axes.
+
+        Args:
+            num: The number of new axes to add.
+        """
+        self.num = num
 
     fn __repr__(self) -> String:
         """

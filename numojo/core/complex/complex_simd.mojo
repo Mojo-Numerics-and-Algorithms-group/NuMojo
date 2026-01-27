@@ -28,9 +28,12 @@ Enables Python like syntax for complex numbers, e.g., (3 + 4 * `1j`)."""
 
 
 # TODO: add overloads for arithmetic functions to accept Scalar[dtype].
-@register_passable("trivial")
 struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
-    ImplicitlyCopyable, Movable, Stringable, Writable
+    ImplicitlyCopyable,
+    Movable,
+    Stringable,
+    TrivialRegisterType,
+    Writable,
 ):
     """
     A SIMD-enabled complex number container (SoA layout).
@@ -1317,8 +1320,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(self.re, -self.im)
 
 
-@register_passable("trivial")
-struct ImaginaryUnit(Boolable, Stringable, Writable):
+struct ImaginaryUnit(TrivialRegisterType, Boolable, Stringable, Writable):
     """
     Constant representing the imaginary unit complex number 0 + 1j.
 

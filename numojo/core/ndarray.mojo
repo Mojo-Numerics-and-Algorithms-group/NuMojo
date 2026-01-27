@@ -314,46 +314,6 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf = DataContainer[Self.dtype](self.size)
         self.print_options = PrintOptions()
 
-    # for creating views (unsafe!)
-    # TODO: temporarily disabled this constructor until we setup views for NDArray.
-    # fn __init__[is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]](
-    #     out self,
-    #     shape: NDArrayShape,
-    #     ref buffer: LegacyUnsafePointer[Scalar[Self.dtype], origin=view_origin],
-    #     offset: Int,
-    #     strides: NDArrayStrides,
-    # ) raises:
-    #     """
-    #     Initialize a NDArray view with explicit shape, raw buffers, offset, and strides.
-
-    #     This constructor creates a view over existing memory buffers for the real and imaginary parts,
-    #     using the provided shape, offset, and stride information. It is intended for advanced or internal
-    #     use cases where direct control over memory layout is required.
-
-    #     ***Unsafe!*** This function is unsafe and should only be used internally. The caller is responsible
-    #     for ensuring that the buffers are valid and that the shape, offset, and strides are consistent.
-
-    #     Args:
-    #         shape: NDArrayShape specifying the dimensions of the array.
-    #         buffer: Unsafe pointer to the buffer containing the real part data.
-    #         offset: Integer offset into the buffers.
-    #         strides: NDArrayStrides specifying the stride for each dimension.
-
-    #     Notes:
-    #         - No validation is performed on the buffers or metadata.
-    #         - The resulting NDArray shares memory with the provided buffers.
-    #         - Incorrect usage may lead to undefined behavior.
-    #     """
-    #     self.shape = shape
-    #     self.strides = strides
-    #     self.ndim = self.shape.ndim
-    #     self.size = self.shape.size()
-    #     self._buf = DataContainer(ptr=buffer.offset(offset))
-    #     self.flags = Flags(
-    #         self.shape, self.strides, owndata=False, writeable=False
-    #     )
-    #     self.print_options = PrintOptions()
-
     # View constructor using DataContainer refcounting
     fn __init__(
         out self,
@@ -510,13 +470,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         Returns:
             The normalized index as a non-negative integer.
-
-        Example:
-            ```mojo
-            from numojo.prelude import *
-            var mat = Matrix[f32](shape=(3, 4))
-            var norm_idx = mat.normalize(-1, mat.shape[0])  # Normalize -1 to 2
-            ```
         """
         var idx_norm = idx
         if idx_norm < 0:
@@ -631,7 +584,7 @@ struct NDArray[dtype: DType = DType.float64](
         >>>print(a[Item(1, 2)]) # gets values of the element at (1, 2).
         ```.
         """
-        if index.__len__() != self.ndim:
+        if len(index) != self.ndim:
             raise Error(
                 NumojoError(
                     category="index",
@@ -643,7 +596,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        for i in range(index.__len__()):
+        for i in range(len(index)):
             if index[i] >= self.shape[i]:
                 raise Error(
                     NumojoError(
@@ -732,9 +685,9 @@ struct NDArray[dtype: DType = DType.float64](
             return creation._0darray[Self.dtype](self._buf.ptr[norm])
 
         var out_shape = self.shape[1:]
-        var alloc_order = String("C")
+        var alloc_order: String = "C"
         if self.flags.F_CONTIGUOUS:
-            alloc_order = String("F")
+            alloc_order: String = "F"
         var result = NDArray[Self.dtype](shape=out_shape, order=alloc_order)
 
         # Fast path for C-contiguous arrays
@@ -759,7 +712,8 @@ struct NDArray[dtype: DType = DType.float64](
         norm_idx: Int,
         mut dst: NDArray[Self.dtype],
     ):
-        """Generic stride-based copier for first-axis slice (works for any layout).
+        """
+        Generic stride-based copier for first-axis slice.
         """
         var out_ndim = dst.ndim
         var total = dst.size
@@ -838,20 +792,44 @@ struct NDArray[dtype: DType = DType.float64](
         return narr^
 
     fn _calculate_strides(self, shape: List[Int]) -> List[Int]:
-        var strides = List[Int](capacity=len(shape))
+        """
+        Calculate strides for a given shape based on the array's memory layout (C or F contiguous).
 
-        if self.flags.C_CONTIGUOUS:  # C_CONTIGUOUS
-            var temp_strides = List[Int](capacity=len(shape))
-            var stride = 1
-            for i in range(len(shape) - 1, -1, -1):
-                temp_strides.append(stride)
+        This method computes the strides for each dimension of the array, which determine how many elements
+        in the underlying buffer to skip to move to the next element along a given axis. For C-contiguous
+        (row-major) arrays, strides are computed from the last dimension to the first. For F-contiguous
+        (column-major) arrays, strides are computed from the first dimension to the last.
+
+        Args:
+            shape: List of integers representing the shape of the array.
+
+        Returns:
+            List of strides for each dimension.
+
+        Notes:
+            - This implementation assumes a contiguous buffer and unit element size.
+            - For non-contiguous or custom layouts, strides may need to be computed differently.
+            - This method does not handle broadcasting or advanced memory layouts.
+
+        Example:
+            For shape [2, 3, 4] and C-contiguous order, strides will be [12, 4, 1].
+            For shape [2, 3, 4] and F-contiguous order, strides will be [1, 2, 6].
+        """
+        var ndim = len(shape)
+        var strides = List[Int](capacity=ndim)
+        if ndim == 0:
+            return strides^  # Scalar (0-D array) has no strides
+
+        if self.flags.C_CONTIGUOUS:
+            # C-order
+            var stride: Int = 1
+            for i in range(ndim - 1, -1, -1):
+                strides.insert(0, stride)
                 stride *= shape[i]
-
-            for i in range(len(temp_strides) - 1, -1, -1):
-                strides.append(temp_strides[i])
-        else:  # F_CONTIGUOUS
-            var stride = 1
-            for i in range(len(shape)):
+        else:
+            # F-order
+            var stride: Int = 1
+            for i in range(ndim):
                 strides.append(stride)
                 stride *= shape[i]
 

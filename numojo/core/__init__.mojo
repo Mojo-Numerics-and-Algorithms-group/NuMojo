@@ -9,6 +9,7 @@ Core types and utilities for NuMojo (arrays, matrices, layout, memory, dtypes, a
 from .ndarray import NDArray
 
 from .error import (
+    terminate,
     NumojoError,
 )
 

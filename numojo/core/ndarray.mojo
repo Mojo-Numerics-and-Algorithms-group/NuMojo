@@ -57,6 +57,7 @@ from memory import memset_zero, memcpy
 from python import PythonObject
 from sys import simd_width_of
 from utils import Variant
+from builtin.type_aliases import EllipsisType
 
 # ===----------------------------------------------------------------------===#
 # === numojo core ===
@@ -77,7 +78,7 @@ from numojo.core.indexing import (
     newaxis,
 )
 from numojo.core.error import NumojoError, terminate
-from numojo.core.layout.array_methods import NewAxis, Ellipsis
+from numojo.core.layout.array_methods import NewAxis
 from numojo.core.indexing.slicing import IndexTypeInfo
 
 # ===----------------------------------------------------------------------===#
@@ -100,7 +101,7 @@ import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
-comptime IndexTypes = Variant[Slice, Int, NewAxis, Ellipsis]
+comptime IndexTypes = Variant[Slice, Int, NewAxis, EllipsisType]
 
 
 # ===-----------------------------------------------------------------------===#
@@ -1280,7 +1281,7 @@ struct NDArray[dtype: DType = DType.float64](
         var indices: List[Int] = List[Int]()
 
         for i in range(len(slices)):
-            if slices[i].isa[Ellipsis]():
+            if slices[i].isa[EllipsisType]():
                 index_type_list.append(IndexTypeInfo(is_ellipsis=True))
                 for j in range(self.ndim - n_slices + 1):
                     slice_list.append(Slice(0, self.shape[i + j], 1))

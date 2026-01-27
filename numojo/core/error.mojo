@@ -92,3 +92,9 @@ struct NumojoError(Stringable, Writable):
         if self.location:
             writer.write(String(" [at ") + self.location.value() + String("]"))
         writer.write(END_COLOR)
+
+
+# Use this for fatal errors that should abort the program.
+fn terminate(message: String):
+    """Abort the program with the given error message."""
+    abort(RED_COLOR + message + END_COLOR)

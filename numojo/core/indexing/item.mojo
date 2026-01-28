@@ -386,6 +386,37 @@ struct Item(
         return Self(self._buf.pop(axis))
 
     # ===----------------------------------------------------------------------=== #
+    # Properties
+    # ===----------------------------------------------------------------------=== #
+    @always_inline("nodebug")
+    fn rank(self) -> Int:
+        """
+        Returns the number of dimensions of the Item.
+
+        Returns:
+            The rank (ndim) of the Item.
+        """
+        return self.ndim
+
+    fn sum(self) -> Scalar[Self.element_type]:
+        """
+        Compute the sum of all elements in Item.
+
+        Returns:
+            Sum of all elements in the Item.
+        """
+        return self._buf.sum()
+
+    fn product(self) -> Scalar[Self.element_type]:
+        """
+        Compute the product of all elements in the Item.
+
+        Returns:
+            Product of all elements in the Item.
+        """
+        return self._buf.product()
+
+    # ===----------------------------------------------------------------------=== #
     # Traits
     # ===----------------------------------------------------------------------=== #
 
@@ -455,6 +486,18 @@ struct Item(
             True if both items do not have identical dimensions or values.
         """
         return not self.__eq__(other)
+
+    fn __contains__(self, val: Scalar[Self.element_type]) -> Bool:
+        """
+        Check if the Item contains the given value.
+
+        Args:
+            val: Value to check for.
+
+        Returns:
+            True if the value is in the Item, False otherwise.
+        """
+        return val in self._buf
 
     @always_inline("nodebug")
     fn __contains__(self, val: Int) -> Bool:

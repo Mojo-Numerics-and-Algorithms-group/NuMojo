@@ -15,9 +15,6 @@ from numojo.core.layout.ndshape import NDArrayShape
 
 from numojo.core.error import NumojoError
 
-comptime Strides = NDArrayStrides
-"""An alias of the NDArrayStrides."""
-
 
 @register_passable
 struct NDArrayStrides(
@@ -761,6 +758,18 @@ struct NDArrayStrides(
         """
         return val in self._buf
 
+    @always_inline("nodebug")
+    fn __contains__(self, val: Scalar[Self.element_type]) -> Bool:
+        """
+        Check if the NDArrayStrides contains the given value.
+
+        Args:
+            val: Value to check for.
+
+        Returns:
+            True if the value is in the Item, False otherwise.
+        """
+        return val in self._buf
     # ===----------------------------------------------------------------------=== #
     # Static Methods
     # ===----------------------------------------------------------------------=== #

@@ -101,7 +101,7 @@ import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
-comptime IndexTypes = Variant[Slice, Int, NewAxis, EllipsisType]
+comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 
 
 # ===-----------------------------------------------------------------------===#
@@ -874,7 +874,7 @@ struct NDArray[dtype: DType = DType.float64](
             ```mojo
             import numojo as nm
             var a = nm.arange(10).reshape(nm.Shape(2, 5))
-            var b = a[[Slice(0, 2, 1), Slice(2, 4, 1)]]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
+            var b = a[Slice(0, 2, 1), Slice(2, 4, 1)]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
             print(b)
             ```
         """
@@ -1083,7 +1083,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr^
 
-    fn __getitem__(self, var *slices: IndexTypes) raises -> Self:
+    fn __getitem__(self, *slices: IndexTypes) raises -> Self:
         """
         Get items of NDArray with a series of either slices or integers.
 
@@ -3443,6 +3443,46 @@ struct NDArray[dtype: DType = DType.float64](
             result = "Cannot convert array to string.\n" + String(e)
 
         return result
+
+    # ===-------------------------------------------------------------------===#
+    # Properties
+    # ===-------------------------------------------------------------------===#
+    # TODO: rename internal shape to be _shape to keep it private and let users access shape through fn shape()
+    fn ndshape(ref self) -> ref [self.shape] NDArrayShape:
+        """
+        Returns the shape of the array.
+
+        Returns:
+            The shape of the array.
+        """
+        return self.shape
+
+    fn ndstrides(ref self) -> ref [self.strides] NDArrayStrides:
+        """
+        Returns the strides of the array.
+
+        Returns:
+            The strides of the array.
+        """
+        return self.strides
+
+    fn ndsize(self) -> Int:
+        """
+        Returns the total number of elements in the array.
+
+        Returns:
+            The total number of elements in the array.
+        """
+        return Int(self.shape.product())
+
+    fn rank(self) -> Int:
+        """
+        Returns the rank (number of dimensions) of the array.
+
+        Returns:
+            The rank of the array.
+        """
+        return self.ndim
 
     # ===-------------------------------------------------------------------===#
     # Trait dunders and iterator dunders

@@ -14,7 +14,7 @@ Attributes:
 comptime newaxis = NewAxis()
 
 # TODO: add an initializer with int field to specify number of new axes to add! Future work, for now, keep it simple.
-struct NewAxis(Equatable, Hashable, ImplicitlyCopyable, Movable, Stringable):
+struct NewAxis(ImplicitlyCopyable, Movable, Stringable, Hashable):
     """
     Represents a new axis to be inserted into an array's shape.
 

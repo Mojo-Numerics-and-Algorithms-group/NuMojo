@@ -23,7 +23,7 @@ struct IndexBuffer(
     Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
 ):
     """
-    Backend for shape/strides/item buffers.
+    Shared integer buffer backend for shape/strides/item.
     """
 
     comptime element_type: DType = DType.int
@@ -805,6 +805,15 @@ struct IndexBuffer(
             Number of elements in the IndexBuffer.
         """
         return self.ndim
+
+    fn __repr__(self) -> String:
+        """
+        Get the official string representation of the IndexBuffer.
+
+        Returns:
+            Official string representation of the IndexBuffer.
+        """
+        return self.__str__()
 
     fn __str__(self) -> String:
         """

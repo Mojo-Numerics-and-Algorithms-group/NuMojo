@@ -15,9 +15,6 @@ from numojo.core.layout.ndstrides import NDArrayStrides
 
 from numojo.core.error import NumojoError
 
-comptime Shape = NDArrayShape
-"""An alias of the NDArrayShape."""
-
 
 @register_passable
 struct NDArrayShape(
@@ -633,10 +630,27 @@ struct NDArrayShape(
         """
         return Int(self._buf.product())
 
+    fn sum(self) -> Scalar[Self.element_type]:
+        """
+        Compute the sum of all elements in NDArrayShape.
+
+        Returns:
+            Sum of all elements in the NDArrayShape.
+        """
+        return self._buf.sum()
+
+    fn product(self) -> Scalar[Self.element_type]:
+        """
+        Compute the product of all elements in the IndexBuffer.
+
+        Returns:
+            Product of all elements in the IndexBuffer.
+        """
+        return self._buf.product()
+
     # ===----------------------------------------------------------------------=== #
     # Traits
     # ===----------------------------------------------------------------------=== #
-
     @always_inline("nodebug")
     fn __len__(self) -> Int:
         """
@@ -721,10 +735,22 @@ struct NDArrayShape(
         """
         return val in self._buf
 
+    @always_inline("nodebug")
+    fn __contains__(self, val: Scalar[Self.element_type]) -> Bool:
+        """
+        Check if the NDArrayShape contains the given value.
+
+        Args:
+            val: Value to check for.
+
+        Returns:
+            True if the value is in the NDArrayShape, False otherwise.
+        """
+        return val in self._buf
+
     # ===----------------------------------------------------------------------=== #
     # Utility Methods
     # ===----------------------------------------------------------------------=== #
-
     @always_inline("nodebug")
     fn tolist(self) -> List[Int]:
         """

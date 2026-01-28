@@ -62,12 +62,13 @@ comptime __version__: String = "V0.8.0"
 # ===----------------------------------------------------------------------=== #
 
 from numojo.core.ndarray import NDArray
-from numojo.core.layout.ndshape import NDArrayShape, Shape
-from numojo.core.layout.ndstrides import NDArrayStrides, Strides
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.indexing.item import Item
 from numojo.core.indexing import IndexMethods
 from numojo.core.matrix import Matrix
-from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
+from numojo.core.complex.complex_simd import ComplexSIMD
+
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.dtype.complex_dtype import (
     ComplexDType,
@@ -114,6 +115,13 @@ from numojo.core.dtype.default_dtype import (
     boolean,
 )
 from numojo.core.error import NumojoError
+from numojo.core.type_aliases import (
+    Shape,
+    Strides,
+    ComplexScalar,
+    CScalar,
+    `1j`,
+)
 
 # ===----------------------------------------------------------------------=== #
 # Import routines and objects

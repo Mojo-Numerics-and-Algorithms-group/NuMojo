@@ -8,6 +8,14 @@ Core types and utilities for NuMojo (arrays, matrices, layout, memory, dtypes, a
 
 from .ndarray import NDArray
 
+from .type_aliases import (
+    Shape,
+    Strides,
+    ComplexScalar,
+    CScalar,
+    `1j`,
+)
+
 from .error import (
     terminate,
     NumojoError,
@@ -17,9 +25,7 @@ from .matrix import Matrix
 
 from .layout import (
     NDArrayShape,
-    Shape,
     NDArrayStrides,
-    Strides,
     Flags,
 )
 
@@ -68,9 +74,6 @@ from .dtype import (
 
 from .complex import (
     ComplexSIMD,
-    ComplexScalar,
-    CScalar,
-    `1j`,
     ComplexNDArray,
 )
 

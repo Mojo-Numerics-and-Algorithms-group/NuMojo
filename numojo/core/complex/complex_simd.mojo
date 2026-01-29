@@ -1310,7 +1310,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(self.re, -self.im)
 
 
-struct ImaginaryUnit(TrivialRegisterType, Boolable, Stringable, Writable):
+struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterType, Writable):
     """
     Constant representing the imaginary unit complex number 0 + 1j.
 

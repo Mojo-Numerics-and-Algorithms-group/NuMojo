@@ -13,8 +13,9 @@ Attributes:
 
 comptime newaxis = NewAxis()
 
+
 # TODO: add an initializer with int field to specify number of new axes to add! Future work, for now, keep it simple.
-struct NewAxis(ImplicitlyCopyable, Movable, Stringable, Hashable):
+struct NewAxis(Hashable, ImplicitlyCopyable, Movable, Stringable):
     """
     Represents a new axis to be inserted into an array's shape.
 
@@ -24,6 +25,7 @@ struct NewAxis(ImplicitlyCopyable, Movable, Stringable, Hashable):
     Attributes:
         num (Int): The number of new axes to add.
     """
+
     var num: Int
 
     fn __init__(out self):

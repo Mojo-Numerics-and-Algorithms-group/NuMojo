@@ -770,6 +770,7 @@ struct NDArrayStrides(
             True if the value is in the Item, False otherwise.
         """
         return val in self._buf
+
     # ===----------------------------------------------------------------------=== #
     # Static Methods
     # ===----------------------------------------------------------------------=== #

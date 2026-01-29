@@ -57,7 +57,8 @@ from numojo.core.layout.flags import Flags
 from numojo.core.indexing.item import Item
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
-from numojo.core.complex.complex_simd import ComplexSIMD, ComplexScalar, CScalar
+from numojo.core.complex.complex_simd import ComplexSIMD
+from numojo.core.type_aliases import ComplexScalar, CScalar
 from numojo.core.memory.data_container import DataContainer
 from numojo.core.indexing import (
     IndexMethods,

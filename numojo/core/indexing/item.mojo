@@ -123,6 +123,18 @@ struct Item(
             self._buf.init_value(i, convert_to_int(args[i]))
 
     @always_inline("nodebug")
+    fn __init__(out self, args: List[Int]):
+        """Construct the Item from a list.
+
+        Args:
+            args: Initial values.
+        """
+        self.ndim = len(args)
+        self._buf = IndexBuffer(size=self.ndim)
+        for i in range(self.ndim):
+            self._buf.init_value(i, args[i])
+
+    @always_inline("nodebug")
     fn __init__(out self, args: VariadicList[Int]):
         """Construct the Item from a variadic list.
 

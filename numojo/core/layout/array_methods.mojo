@@ -39,7 +39,7 @@ struct NewAxis(ImplicitlyCopyable, Movable, Stringable, Hashable):
         Initializes a `NewAxis` instance with a specified number of new axes.
 
         Args:
-            num (Int): The number of new axes to add.
+            num: The number of new axes to add.
         """
         self.num = num
 

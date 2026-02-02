@@ -239,62 +239,71 @@ fn format_floating_scientific[
         Error: If the dtype is not a floating-point type or if precision is negative.
     """
 
-    @parameter
-    if is_inttype[dtype]():
-        raise Error(
-            "Invalid type provided. dtype must be a floating-point type."
-        )
     if precision < 0:
         raise Error("Precision must be a non-negative integer.")
 
-    try:
-        if x == 0:
-            if sign:
-                var result: String = "+0." + "0" * precision + "e+00"
-                return result.ascii_rjust(formatted_width)
+    # FIXME: `constrained[dtype.is_floating_point(),...]` does not work here.
+    # This is because the underlying `where dtype.is_floating_point()` in log10
+    # Does not appear to recognize `constrained` properly.
+    # Additionally, Using:
+    # @parameter
+    # if not dtype.is_floating_point():
+    #     raise Error("dtype must be a floating-point type.")
+    # Does not work either.
+    # We could use `where dtype.is_floating_point()` in the `format_floating_scientific`
+    # signature, however that has viral implications else where.
+    @parameter
+    if dtype.is_floating_point():
+        try:
+            if x == 0:
+                if sign:
+                    var result: String = "+0." + "0" * precision + "e+00"
+                    return result.ascii_rjust(formatted_width)
+                else:
+                    var result: String = " 0." + "0" * precision + "e+00"
+                    return result.ascii_rjust(formatted_width)
+
+            var power: Int = Int(mt.log10(abs(x)))
+            if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
+                power -= 1
+            var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
+            var mantissa_without_sign_string = String(abs(mantissa))
+
+            var result: String
+            if x < 0:
+                result = "-" + mantissa_without_sign_string[: 2 + precision]
             else:
-                var result: String = " 0." + "0" * precision + "e+00"
-                return result.ascii_rjust(formatted_width)
+                if sign:
+                    result = "+" + mantissa_without_sign_string[: 2 + precision]
+                else:
+                    result = " " + mantissa_without_sign_string[: 2 + precision]
 
-        var power: Int = Int(mt.log10(abs(x)))
-        if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
-            power -= 1
-        var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
-        var mantissa_without_sign_string = String(abs(mantissa))
+            if suppress_scientific and abs(power) <= exponent_threshold:
+                return format_floating_precision(
+                    x, precision, sign
+                ).ascii_rjust(formatted_width)
 
-        var result: String
-        if x < 0:
-            result = "-" + mantissa_without_sign_string[: 2 + precision]
-        else:
-            if sign:
-                result = "+" + mantissa_without_sign_string[: 2 + precision]
+            var exponent_string: String
+            if power < 0:
+                if power > -10:
+                    exponent_string = String("e-0{0}").format(-power)
+                else:
+                    exponent_string = String("e-{0}").format(-power)
             else:
-                result = " " + mantissa_without_sign_string[: 2 + precision]
+                if power < 10:
+                    exponent_string = String("e+0{0}").format(power)
+                else:
+                    exponent_string = String("e+{0}").format(power)
 
-        if suppress_scientific and abs(power) <= exponent_threshold:
-            return format_floating_precision(x, precision, sign).ascii_rjust(
-                formatted_width
+            return (
+                String("{0}{1}")
+                .format(result, exponent_string)
+                .ascii_rjust(formatted_width)
             )
-
-        var exponent_string: String
-        if power < 0:
-            if power > -10:
-                exponent_string = String("e-0{0}").format(-power)
-            else:
-                exponent_string = String("e-{0}").format(-power)
-        else:
-            if power < 10:
-                exponent_string = String("e+0{0}").format(power)
-            else:
-                exponent_string = String("e+{0}").format(power)
-
-        return (
-            String("{0}{1}")
-            .format(result, exponent_string)
-            .ascii_rjust(formatted_width)
-        )
-    except:
-        raise Error("Failed to format float in scientific notation.")
+        except:
+            raise Error("Failed to format float in scientific notation.")
+    else:
+        raise Error("dtype must be a floating-point type.")
 
 
 fn format_floating_precision[

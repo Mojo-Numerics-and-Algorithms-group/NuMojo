@@ -11,12 +11,10 @@ from utils.numerics import nextafter as builtin_nextafter
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 
 
-fn round[
-    dtype: DType
-](A: MatrixBase[dtype, **_], decimals: Int = 0) -> Matrix[dtype]:
+fn round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
     # FIXME
     # The built-in `round` function is not working now.
     # It will be fixed in future.

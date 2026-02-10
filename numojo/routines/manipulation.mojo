@@ -16,14 +16,17 @@ from algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexNDArray
-from numojo.core.layout import NDArrayShape, Shape
+from numojo.core.layout import NDArrayShape
 from numojo.core.layout import NDArrayStrides
+from numojo.core.type_aliases import Shape
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
+from numojo.core.indexing import (
+    IndexMethods,
+    TraverseMethods,
+)
 from numojo.core.indexing.utility import (
     _list_of_flipped_range,
-    _get_offset,
-    _traverse_buffer_according_to_shape_and_strides,
 )
 
 # ===----------------------------------------------------------------------=== #
@@ -146,7 +149,7 @@ fn reshape[
     Returns:
         Array of the same data with a new shape.
     """
-    if A.size != shape.size_of_array():
+    if A.size != shape.size():
         raise Error("Cannot reshape: Number of elements do not match.")
 
     var array_order: String = String("C") if A.flags.C_CONTIGUOUS else String(
@@ -210,7 +213,7 @@ fn ravel[
 
 
 # TODO: Remove this one if the following function is working well:
-# `numojo.core.utility._traverse_buffer_according_to_shape_and_strides`
+# `numojo.core.utility.TraverseMethods.traverse_buffer_according_to_shape_and_strides`
 fn _set_values_according_to_shape_and_strides(
     mut I: NDArray[DType.int],
     mut index: Int,
@@ -292,7 +295,7 @@ fn transpose[
     var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
-    _traverse_buffer_according_to_shape_and_strides[I.origin](
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
 
@@ -329,7 +332,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-fn transpose[dtype: DType](A: MatrixBase[dtype, **_]) -> Matrix[dtype]:
+fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
@@ -348,9 +351,7 @@ fn transpose[dtype: DType](A: MatrixBase[dtype, **_]) -> Matrix[dtype]:
     return B^
 
 
-fn reorder_layout[
-    dtype: DType
-](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+fn reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -443,7 +444,7 @@ fn broadcast_to[
 
         (b._buf.ptr + offset).init_pointee_copy(
             a._buf.ptr[
-                _get_offset(indices, b_strides)
+                IndexMethods.get_1d_index(indices, b_strides)
             ]  # TODO: Change b_strides to b.strides when DataContainer
         )
 
@@ -453,7 +454,7 @@ fn broadcast_to[
 fn broadcast_to[
     dtype: DType
 ](
-    A: MatrixBase[dtype, **_],
+    A: Matrix[dtype],
     shape: Tuple[Int, Int],
     override_order: String = "",
 ) raises -> Matrix[dtype]:
@@ -565,7 +566,7 @@ fn _broadcast_back_to[
             remainder %= b.strides[i]
 
         (b._buf.ptr + offset).init_pointee_copy(
-            a._buf.ptr[_get_offset(indices, b_strides)]
+            a._buf.ptr[IndexMethods.get_1d_index(indices, b_strides)]
         )
 
     return b^
@@ -625,8 +626,8 @@ fn flip[
     var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
-    _traverse_buffer_according_to_shape_and_strides(
-        ptr, A.shape._move_axis_to_end(axis), A.strides._move_axis_to_end(axis)
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(
+        ptr, A.shape.move_axis_to_end(axis), A.strides.move_axis_to_end(axis)
     )
 
     print(A.size, A.shape[axis])

@@ -26,6 +26,33 @@ Notes
 - Internal code should prefer importing from the canonical submodules/packages
   (e.g. `numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`) rather
   than relying on extensive top-level re-exports.
+NuMojo Top-Level Package (`numojo`)
+==================================
+
+This is the main public entry point for NuMojo.
+
+Exports
+-------
+Core container types:
+- `Matrix` (2D array type)
+- `NDArray` (N-dimensional array type)
+- `Shape` / `NDArrayShape`, `Strides` / `NDArrayStrides`
+
+Core utilities:
+- dtype aliases (`f32`, `f64`, `i32`, `i64`, etc.) and complex dtypes
+- common error types (`IndexError`, `ShapeError`, ...)
+
+Routines
+--------
+For convenience, this module also re-exports a curated set of NumPy-like routines
+from `numojo.routines` (creation, manipulation, math, linalg, statistics, IO, etc.).
+
+Notes
+-----
+- This file is intended to provide a stable import surface for users.
+- Internal code should prefer importing from the canonical submodules/packages
+  (e.g. `numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`) rather
+  than relying on extensive top-level re-exports.
 """
 
 comptime __version__: String = "V0.8.0"
@@ -35,11 +62,13 @@ comptime __version__: String = "V0.8.0"
 # ===----------------------------------------------------------------------=== #
 
 from numojo.core.ndarray import NDArray
-from numojo.core.layout.ndshape import NDArrayShape, Shape
-from numojo.core.layout.ndstrides import NDArrayStrides, Strides
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.indexing.item import Item
+from numojo.core.indexing import IndexMethods
 from numojo.core.matrix import Matrix
-from numojo.core.complex.complex_simd import ComplexSIMD, CScalar
+from numojo.core.complex.complex_simd import ComplexSIMD
+
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.dtype.complex_dtype import (
     ComplexDType,
@@ -85,13 +114,13 @@ from numojo.core.dtype.default_dtype import (
     f64,
     boolean,
 )
-from numojo.core.error import (
-    ShapeError,
-    IndexError,
-    BroadcastError,
-    MemoryError,
-    ValueError,
-    ArithmeticError,
+from numojo.core.error import NumojoError
+from numojo.core.type_aliases import (
+    Shape,
+    Strides,
+    ComplexScalar,
+    CScalar,
+    `1j`,
 )
 
 # ===----------------------------------------------------------------------=== #
@@ -235,7 +264,6 @@ from numojo.routines.creation import (
 from numojo.routines import indexing
 from numojo.routines.indexing import `where`, compress, take_along_axis
 
-from numojo.routines.functional import apply_along_axis
 
 from numojo.routines import manipulation
 from numojo.routines.manipulation import (

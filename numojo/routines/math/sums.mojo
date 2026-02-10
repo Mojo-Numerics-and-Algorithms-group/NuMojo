@@ -3,9 +3,9 @@ from algorithm import parallelize, vectorize
 from memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix, MatrixBase
-from numojo.core.indexing.utility import (
-    _traverse_buffer_according_to_shape_and_strides,
+from numojo.core.matrix import Matrix
+from numojo.core.indexing import (
+    TraverseMethods,
 )
 from numojo.routines.creation import zeros
 
@@ -72,23 +72,22 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
 
     if (normalized_axis < 0) or (normalized_axis >= A.ndim):
         raise Error(
-            IndexError(
-                message=String(
-                    "Axis out of range: got {}; valid range is [0, {})."
-                ).format(axis, A.ndim),
-                suggestion=String(
-                    "Use a valid axis in [0, {}) or a negative axis within"
-                    " [-{}, -1]."
-                ).format(A.ndim, A.ndim),
+            NumojoError(
+                category="index",
+                message=(
+                    "Axis out of range: got {}, expected 0 <= axis < {}."
+                    .format(axis, A.ndim)
+                ),
                 location=String("routines.math.sums.sum(A, axis)"),
             )
         )
     if A.ndim == 1:
         raise Error(
-            ShapeError(
-                message=String("Cannot use axis with 1D array."),
-                suggestion=String(
-                    "Call `sum(A)` without axis, or reshape A to 2D or higher."
+            NumojoError(
+                category="shape",
+                message=String(
+                    "Cannot use axis with 1D array. Call `sum(A)` without axis,"
+                    " or reshape A to 2D or higher."
                 ),
                 location=String("routines.math.sums.sum(A, axis)"),
             )
@@ -112,7 +111,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn sum[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
+fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     Sum up all items in the Matrix.
 
@@ -137,9 +136,7 @@ fn sum[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     return res
 
 
-fn sum[
-    dtype: DType
-](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Sum up the items in a Matrix along the axis.
 
@@ -274,10 +271,12 @@ fn cumsum[
     var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
-    var _shape = B.shape._move_axis_to_end(axis)
-    var _strides = B.strides._move_axis_to_end(axis)
+    var _shape = B.shape.move_axis_to_end(axis)
+    var _strides = B.strides.move_axis_to_end(axis)
 
-    _traverse_buffer_according_to_shape_and_strides(ptr, _shape, _strides)
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(
+        ptr, _shape, _strides
+    )
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
@@ -288,7 +287,7 @@ fn cumsum[
     return B^
 
 
-fn cumsum[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 
@@ -322,9 +321,7 @@ fn cumsum[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     return result^
 
 
-fn cumsum[
-    dtype: DType
-](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 

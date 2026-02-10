@@ -76,7 +76,7 @@ struct Flags(ImplicitlyCopyable):
         writeable: Bool,
     ) raises:
         """
-        Initializes the Flags object according the shape and strides information.
+        Initializes the Flags object according to the shape and strides information.
 
         Args:
             shape: The shape of the array.
@@ -85,31 +85,42 @@ struct Flags(ImplicitlyCopyable):
             writeable: The data area can be written to.
                 If owndata is False, writeable is forced to be False.
         """
-
         var ndim = len(shape)
         # 0-D and 1-D arrays are both C and F contiguous
-        if ndim <= 1:
+        if ndim == 0 or ndim == 1:
             self.C_CONTIGUOUS = True
             self.F_CONTIGUOUS = True
         else:
-            # C-contiguity: stride[-1] == 1, and each stride[i] == stride[i+1] * shape[i+1]
-            self.C_CONTIGUOUS = strides[ndim - 1] == 1
-            if self.C_CONTIGUOUS:
-                for i in range(ndim - 2, -1, -1):
-                    if shape[i + 1] != 1:  # Skip size-1 dimensions
-                        if strides[i] != strides[i + 1] * shape[i + 1]:
+            # C-contiguity: last stride == 1, strides/shape scan from back
+            self.C_CONTIGUOUS = True
+            if strides[ndim - 1] != 1:
+                self.C_CONTIGUOUS = False
+            else:
+                var expected = strides[ndim - 1]
+                for k in range(ndim - 2, -1, -1):
+                    expected = expected * (shape[k + 1] if k + 1 < ndim else 1)
+                    # Only multiply if that dimension is not 1, otherwise skip
+                    if shape[k + 1] != 1:
+                        if strides[k] != expected:
                             self.C_CONTIGUOUS = False
                             break
-
-            # F-contiguity: stride[0] == 1, and each stride[i] == stride[i-1] * shape[i-1]
-            self.F_CONTIGUOUS = strides[0] == 1
-            if self.F_CONTIGUOUS:
-                for i in range(1, ndim):
-                    if shape[i - 1] != 1:  # Skip size-1 dimensions
-                        if strides[i] != strides[i - 1] * shape[i - 1]:
+                    else:
+                        # When shape of that dimension is 1, skip the stride check and reset expected
+                        expected = strides[k]
+            # F-contiguity: first stride == 1, strides/shape scan from front
+            self.F_CONTIGUOUS = True
+            if strides[0] != 1:
+                self.F_CONTIGUOUS = False
+            else:
+                var expected = strides[0]
+                for k in range(1, ndim):
+                    expected = expected * (shape[k - 1] if k - 1 >= 0 else 1)
+                    if shape[k - 1] != 1:
+                        if strides[k] != expected:
                             self.F_CONTIGUOUS = False
                             break
-
+                    else:
+                        expected = strides[k]
         self.OWNDATA = owndata
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
@@ -191,15 +202,12 @@ struct Flags(ImplicitlyCopyable):
             #     ).format(key)
             # )
             raise Error(
-                MemoryError(
+                NumojoError(
+                    category="memory",
                     message=String(
-                        "\n[Flags.__getitem__] Invalid field name or short"
-                        " name: '{}'."
+                        "Invalid Flags key: '{}'. Valid keys: C_CONTIGUOUS, C,"
+                        " F_CONTIGUOUS, F, OWNDATA, O, WRITEABLE, W, FORC."
                     ).format(key),
-                    suggestion=String(
-                        "Valid keys are: 'C_CONTIGUOUS', 'C', 'F_CONTIGUOUS',"
-                        " 'F', 'OWNDATA', 'O', 'WRITEABLE', 'W', 'FORC'."
-                    ),
                     location=String("numojo.core.flags.__getitem__"),
                 )
             )

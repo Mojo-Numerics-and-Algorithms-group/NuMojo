@@ -16,21 +16,14 @@ complex number operations like conjugation and absolute value.
 from math import sqrt, sin, cos
 from numojo.core.dtype import ComplexDType
 
-comptime ComplexScalar = ComplexSIMD[_, width=1]
-"""ComplexScalar alias is for internal purposes (width=1 specialization)."""
-
-comptime CScalar = ComplexSIMD[_, width=1]
-"""User-friendly alias for scalar complex numbers."""
-
-comptime `1j` = ImaginaryUnit()
-"""Constant representing the imaginary unit complex number 0 + 1j.
-Enables Python like syntax for complex numbers, e.g., (3 + 4 * `1j`)."""
-
 
 # TODO: add overloads for arithmetic functions to accept Scalar[dtype].
-@register_passable("trivial")
 struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
-    ImplicitlyCopyable, Movable, Stringable, Writable
+    ImplicitlyCopyable,
+    Movable,
+    Stringable,
+    TrivialRegisterType,
+    Writable,
 ):
     """
     A SIMD-enabled complex number container (SoA layout).
@@ -1317,8 +1310,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(self.re, -self.im)
 
 
-@register_passable("trivial")
-struct ImaginaryUnit(Boolable, Stringable, Writable):
+struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterType, Writable):
     """
     Constant representing the imaginary unit complex number 0 + 1j.
 

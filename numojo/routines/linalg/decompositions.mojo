@@ -8,7 +8,7 @@ from memory import UnsafePointer, memcpy, memset_zero
 import math as builtin_math
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 from numojo.core.matrix.base import issymmetric
 from numojo.routines.creation import zeros, eye, full
 
@@ -227,7 +227,7 @@ fn lu_decomposition[
 
 fn lu_decomposition[
     dtype: DType
-](A: MatrixBase[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
+](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     """
     Perform LU (lower-upper) decomposition for matrix.
     """
@@ -319,13 +319,13 @@ fn partial_pivoting[
 
 fn partial_pivoting[
     dtype: DType
-](A: MatrixBase[dtype, **_]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
+](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
     """
     Perform partial pivoting for matrix.
     """
     var n = A.shape[0]
     # Work on a copy that preserves the original layout
-    var result = A.create_copy()
+    var result = A.copy()
     var P = Matrix.identity[dtype](n, order=A.order())
     var s: Int = 0  # Number of row exchanges
 

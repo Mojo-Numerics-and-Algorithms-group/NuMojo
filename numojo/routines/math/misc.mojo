@@ -90,7 +90,7 @@ fn _mt_rsqrt[
     Returns:
         A SIMD equal to 1/SIMD**(1/2).
     """
-    return stdlib_math.sqrt(SIMD.__truediv__(1, value))
+    return stdlib_math.sqrt(SIMD.__truediv__(SIMD[dtype, simd_width](1), value))
 
 
 fn rsqrt[

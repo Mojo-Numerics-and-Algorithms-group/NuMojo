@@ -5,7 +5,7 @@ It is like `scipy.signal` in Python.
 """
 
 from numojo.core.ndarray import NDArray
-from numojo.core.layout import Shape
+from numojo.core.type_aliases import Shape
 from numojo.core.indexing import Item
 from numojo.routines.creation import fromstring, zeros
 from numojo.routines.math.sums import sum

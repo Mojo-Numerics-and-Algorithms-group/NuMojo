@@ -10,11 +10,13 @@ from collections.optional import Optional
 
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape
+from numojo.core.layout import NDArrayShape
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 from numojo.core.dtype.utility import is_inttype, is_floattype
 from numojo.routines.sorting import binary_sort
 from numojo.routines.math.extrema import _max, _min
+from numojo.routines.functional import apply_along_axis_reduce_to_int
 
 
 fn argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
@@ -155,13 +157,15 @@ fn argmax[
             )
         )
 
-    return numojo.apply_along_axis[func1d=argmax_1d](a=a, axis=normalized_axis)
+    return apply_along_axis_reduce_to_int[dtype, func1d=argmax_1d](
+        a=a, axis=normalized_axis
+    )
 
 
 @always_inline
 fn find_extrema_index[
     dtype: DType, find_max: Bool
-](A: MatrixBase[dtype, **_]) raises -> Scalar[DType.int, **_]:
+](A: Matrix[dtype]) raises -> Scalar[DType.int, **_]:
     """Find index of min/max value, either in whole matrix or along an axis."""
 
     var extreme_val = A[0, 0]
@@ -187,7 +191,7 @@ fn find_extrema_index[
 @always_inline
 fn find_extrema_index[
     dtype: DType, find_max: Bool
-](A: MatrixBase[dtype, **_], axis: Optional[Int]) raises -> Matrix[DType.int]:
+](A: Matrix[dtype], axis: Optional[Int]) raises -> Matrix[DType.int]:
     """Find index of min/max value, either in whole matrix or along an axis."""
 
     if axis != 0 and axis != 1:
@@ -237,14 +241,14 @@ fn find_extrema_index[
     return B^
 
 
-fn argmax[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Scalar[DType.int]:
+fn argmax[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.int]:
     """Find index of max value in a flattened matrix."""
     return find_extrema_index[dtype, True](A)
 
 
 fn argmax[
     dtype: DType
-](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[DType.int]:
+](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.int]:
     """Find indices of max values along the given axis."""
     return find_extrema_index[dtype, True](A, axis)
 
@@ -306,10 +310,12 @@ fn argmin[
             )
         )
 
-    return numojo.apply_along_axis[func1d=argmin_1d](a=a, axis=normalized_axis)
+    return apply_along_axis_reduce_to_int[dtype, func1d=argmin_1d](
+        a=a, axis=normalized_axis
+    )
 
 
-fn argmin[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Scalar[DType.int]:
+fn argmin[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.int]:
     """
     Index of the min. It is first flattened before sorting.
     """
@@ -318,7 +324,7 @@ fn argmin[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Scalar[DType.int]:
 
 fn argmin[
     dtype: DType
-](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[DType.int]:
+](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.int]:
     """
     Index of the min along the given axis.
     """

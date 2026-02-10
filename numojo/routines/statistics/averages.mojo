@@ -16,13 +16,17 @@ import math as mt
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
 from numojo.routines.math.arithmetic import add
 from numojo.routines.math.sums import sum, cumsum
 import numojo.routines.math.misc as misc
-from numojo.routines.sorting import sort
+from numojo.routines.sorting import binary_sort, sort
+from numojo.routines.functional import (
+    apply_along_axis_reduce_with_dtype,
+    apply_along_axis_reduce,
+)
 
 
 fn mean_1d[
@@ -94,14 +98,14 @@ fn mean[
             )
         )
 
-    return numojo.apply_along_axis[
-        returned_dtype=returned_dtype, func1d=mean_1d
+    return apply_along_axis_reduce_with_dtype[
+        dtype, returned_dtype=returned_dtype, func1d=mean_1d
     ](a=a, axis=normalized_axis)
 
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: MatrixBase[dtype, **_]) -> Scalar[returned_dtype]:
+](a: Matrix[dtype]) -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in the Matrix.
 
@@ -121,7 +125,7 @@ fn mean[
 
 fn mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[returned_dtype]:
+](a: Matrix[dtype], axis: Int) raises -> Matrix[returned_dtype]:
     """
     Calculate the arithmetic average of a Matrix along the axis.
 
@@ -219,8 +223,8 @@ fn median[
                 axis, a.ndim, a.ndim
             )
         )
-    return numojo.apply_along_axis[
-        returned_dtype=returned_dtype, func1d=median_1d
+    return apply_along_axis_reduce_with_dtype[
+        dtype, returned_dtype=returned_dtype, func1d=median_1d
     ](a=a, axis=normalized_axis)
 
 
@@ -300,7 +304,9 @@ fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return numojo.apply_along_axis[func1d=mode_1d](a=a, axis=normalized_axis)
+    return apply_along_axis_reduce[dtype, func1d=mode_1d](
+        a=a, axis=normalized_axis
+    )
 
 
 fn std[
@@ -372,7 +378,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the standard deviation.
 
@@ -397,9 +403,7 @@ fn std[
 
 fn std[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
-    returned_dtype
-]:
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the standard deviation along axis.
 
@@ -506,7 +510,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], ddof: Int = 0) raises -> Scalar[returned_dtype]:
+](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
     Compute the variance.
 
@@ -534,9 +538,7 @@ fn variance[
 
 fn variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](A: MatrixBase[dtype, **_], axis: Int, ddof: Int = 0) raises -> Matrix[
-    returned_dtype
-]:
+](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
     Compute the variance along axis.
 

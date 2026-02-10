@@ -10,16 +10,21 @@ Implements NDArrayStrides type.
 
 from memory import memcmp, memcpy
 from memory import UnsafePointer
+from numojo.core.indexing.index_buffer import IndexBuffer
+from numojo.core.layout.ndshape import NDArrayShape
 
-from numojo.core.error import IndexError, ValueError
-
-comptime Strides = NDArrayStrides
-"""An alias of the NDArrayStrides."""
+from numojo.core.error import NumojoError
 
 
 @register_passable
 struct NDArrayStrides(
-    ImplicitlyCopyable, Movable, Representable, Sized, Stringable, Writable
+    Equatable,
+    ImplicitlyCopyable,
+    Movable,
+    Representable,
+    Sized,
+    Stringable,
+    Writable,
 ):
     """
     Presents the strides of `NDArray` type.
@@ -29,127 +34,132 @@ struct NDArrayStrides(
     The number of dimension is checked upon creation of the strides.
     """
 
+    # ===----------------------------------------------------------------------=== #
     # Aliases
+    # ===----------------------------------------------------------------------=== #
+
     comptime element_type: DType = DType.int
     """The data type of the NDArrayStrides elements."""
-    comptime _origin: MutOrigin = MutExternalOrigin
-    """Internal origin of the NDArrayStrides instance."""
 
+    # ===----------------------------------------------------------------------=== #
     # Fields
-    var _buf: UnsafePointer[Scalar[Self.element_type], Self._origin]
+    # ===----------------------------------------------------------------------=== #
+
+    var _buf: IndexBuffer
     """Data buffer."""
     var ndim: Int
     """Number of dimensions of array. It must be larger than 0."""
 
-    @always_inline("nodebug")
-    fn __init__(out self, shape: Int) raises:
-        """
-        Initializes the NDArrayStrides with one dimension.
+    # ===----------------------------------------------------------------------=== #
+    # Lifecycle Methods
+    # ===----------------------------------------------------------------------=== #
 
-        Raises:
-            Error: If the shape is not positive.
+    @always_inline("nodebug")
+    fn __init__(out self):
+        """
+        Initializes an empty NDArrayStrides.
+        """
+        self.ndim = 0
+        self._buf = IndexBuffer()
+
+    @always_inline("nodebug")
+    fn __init__(out self, buf: IndexBuffer):
+        """
+        Initializes the NDArrayStrides from an IndexBuffer.
 
         Args:
-            shape: Size of the array.
+            buf: The IndexBuffer to initialize from.
         """
-
-        if shape < 1:
-            raise Error(
-                ShapeError(
-                    message=String(
-                        "Stride value must be positive, got {}."
-                    ).format(shape),
-                    suggestion="Use positive integers for stride value.",
-                    location="NDArrayStrides.__init__(shape: Int)",
-                )
-            )
-
-        self.ndim = 1
-        self._buf = alloc[Scalar[Self.element_type]](shape)
-        self._buf.init_pointee_copy(shape)
+        self.ndim = buf.ndim
+        self._buf = buf
 
     @always_inline("nodebug")
     fn __init__(out self, *strides: Int) raises:
         """
         Initializes the NDArrayStrides from strides.
 
-        Raises:
-           Error: If the number of dimensions is not positive.
-
         Args:
             strides: Strides of the array.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
         """
-        if len(strides) <= 0:
+        self.ndim = len(strides)
+        if self.ndim <= 0:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Number of dimensions must be positive, got {}."
-                    ).format(len(strides)),
-                    suggestion="Provide at least one stride value.",
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Number of dimensions must be positive, got {}. Provide"
+                        " at least one stride value.".format(self.ndim)
+                    ),
                     location="NDArrayStrides.__init__(*strides: Int)",
                 )
             )
 
-        self.ndim = len(strides)
-        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(strides[i])
+            self._buf.init_value(i, strides[i])
 
     @always_inline("nodebug")
     fn __init__(out self, strides: List[Int]) raises:
         """
         Initializes the NDArrayStrides from a list of strides.
 
-        Raises:
-           Error: If the number of dimensions is not positive.
-
         Args:
             strides: Strides of the array.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
         """
-        if len(strides) <= 0:
+        self.ndim = len(strides)
+        if self.ndim <= 0:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Number of dimensions must be positive, got {}."
-                    ).format(len(strides)),
-                    suggestion="Provide a non-empty list of strides.",
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Number of dimensions must be positive, got {}. Provide"
+                        " a non-empty list of strides.".format(self.ndim)
+                    ),
                     location="NDArrayStrides.__init__(strides: List[Int])",
                 )
             )
 
-        self.ndim = len(strides)
-        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(strides[i])
+            self._buf.init_value(i, strides[i])
 
     @always_inline("nodebug")
     fn __init__(out self, strides: VariadicList[Int]) raises:
         """
         Initializes the NDArrayStrides from a variadic list of strides.
 
-        Raises:
-           Error: If the number of dimensions is not positive.
-
         Args:
             strides: Strides of the array.
+
+        Raises:
+           Error: If the number of dimensions is not positive.
         """
-        if len(strides) <= 0:
+        self.ndim = len(strides)
+        if self.ndim <= 0:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Number of dimensions must be positive, got {}."
-                    ).format(len(strides)),
-                    suggestion="Provide a non-empty variadic list of strides.",
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Number of dimensions must be positive, got {}. Provide"
+                        " a non-empty variadic list of strides.".format(
+                            self.ndim
+                        )
+                    ),
                     location=(
                         "NDArrayStrides.__init__(strides: VariadicList[Int])"
                     ),
                 )
             )
 
-        self.ndim = len(strides)
-        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            (self._buf + i).init_pointee_copy(strides[i])
+            self._buf.init_value(i, strides[i])
 
     @always_inline("nodebug")
     fn __init__(out self, strides: NDArrayStrides):
@@ -160,10 +170,13 @@ struct NDArrayStrides(
         Args:
             strides: Strides of the array.
         """
-
         self.ndim = strides.ndim
-        self._buf = alloc[Scalar[Self.element_type]](self.ndim)
-        memcpy(dest=self._buf, src=strides._buf, count=strides.ndim)
+        self._buf = IndexBuffer(size=self.ndim)
+        memcpy(
+            dest=self._buf.ptr,
+            src=strides._buf.ptr,
+            count=strides.ndim,
+        )
 
     @always_inline("nodebug")
     fn __init__(
@@ -174,38 +187,37 @@ struct NDArrayStrides(
         """
         Initializes the NDArrayStrides from a shape and an order.
 
-        Raises:
-            ValueError: If the order argument is not `C` or `F`.
-
         Args:
             shape: Shape of the array.
             order: Order of the memory layout
                 (row-major "C" or column-major "F").
                 Default is "C".
-        """
 
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
+        """
         self.ndim = shape.ndim
-        self._buf = alloc[Scalar[Self.element_type]](shape.ndim)
+        self._buf = IndexBuffer(size=shape.ndim)
 
         if order == "C":
             var temp = 1
             for i in range(self.ndim - 1, -1, -1):
-                (self._buf + i).init_pointee_copy(temp)
-                temp *= shape[i]
+                self._buf.store(i, temp)
+                temp *= Int(shape[i])
         elif order == "F":
             var temp = 1
-            # Should we check for temp overflow here? Maybe no?
             for i in range(0, self.ndim):
-                (self._buf + i).init_pointee_copy(temp)
-                temp *= shape[i]
+                self._buf.store(i, temp)
+                temp *= Int(shape[i])
         else:
             raise Error(
-                ValueError(
-                    message=String(
-                        "Invalid order '{}'; expected 'C' or 'F'."
-                    ).format(order),
-                    suggestion=(
-                        "Use 'C' for row-major or 'F' for column-major layout."
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Invalid order '{}'; expected 'C' or 'F'. Use 'C' for"
+                        " row-major or 'F' for column-major layout.".format(
+                            order
+                        )
                     ),
                     location="NDArrayStrides.__init__(shape, order)",
                 )
@@ -217,14 +229,13 @@ struct NDArrayStrides(
         Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
 
-        Raises:
-            ValueError: If the order argument is not `C` or `F`.
-
         Args:
             shape: Shape of the array.
             order: Order of the memory layout
                 (row-major "C" or column-major "F").
-                Default is "C".
+
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -234,14 +245,13 @@ struct NDArrayStrides(
         Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
 
-        Raises:
-            ValueError: If the order argument is not `C` or `F`.
-
         Args:
             shape: Shape of the array.
             order: Order of the memory layout
                 (row-major "C" or column-major "F").
-                Default is "C".
+
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -255,20 +265,20 @@ struct NDArrayStrides(
         Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
 
-        Raises:
-            ValueError: If the order argument is not `C` or `F`.
-
         Args:
             shape: Shape of the array.
             order: Order of the memory layout
                 (row-major "C" or column-major "F").
-                Default is "C".
+
+        Raises:
+            ValueError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
     @always_inline("nodebug")
     fn __init__(
         out self,
+        *,
         ndim: Int,
         initialized: Bool,
     ) raises:
@@ -278,22 +288,23 @@ struct NDArrayStrides(
         without knowing the strides values.
         `ndim == 0` is allowed in this method for 0darray (numojo scalar).
 
-        Raises:
-           Error: If the number of dimensions is negative.
-
         Args:
             ndim: Number of dimensions.
             initialized: Whether the strides is initialized.
                 If yes, the values will be set to 0.
                 If no, the values will be uninitialized.
+
+        Raises:
+           Error: If the number of dimensions is negative.
         """
         if ndim < 0:
             raise Error(
-                ValueError(
-                    message=String(
+                NumojoError(
+                    category="value",
+                    message=(
                         "Number of dimensions must be non-negative, got {}."
-                    ).format(ndim),
-                    suggestion="Provide ndim >= 0.",
+                        " Provide ndim >= 0.".format(ndim)
+                    ),
                     location="NDArrayStrides.__init__(ndim, initialized)",
                 )
             )
@@ -301,65 +312,14 @@ struct NDArrayStrides(
         if ndim == 0:
             # This is a 0darray (numojo scalar)
             self.ndim = ndim
-            self._buf = alloc[Scalar[Self.element_type]](1)
-            self._buf.init_pointee_copy(0)
-
+            self._buf = IndexBuffer(size=1)
+            self._buf.init_value(0, 0)
         else:
             self.ndim = ndim
-            self._buf = alloc[Scalar[Self.element_type]](ndim)
+            self._buf = IndexBuffer(size=ndim)
             if initialized:
                 for i in range(ndim):
-                    (self._buf + i).init_pointee_copy(0)
-
-    @staticmethod
-    fn row_major(shape: NDArrayShape) raises -> NDArrayStrides:
-        """
-        Create row-major (C-style) strides from a shape.
-
-        Row-major means the last dimension has stride 1 and strides increase
-        going backwards through dimensions.
-
-        Args:
-            shape: The shape of the array.
-
-        Returns:
-            A new NDArrayStrides object with row-major memory layout.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        from numojo.prelude import *
-        var shape = Shape(2, 3, 4)
-        var strides = nm.Strides.row_major(shape)
-        print(strides)  # Strides: (12, 4, 1)
-        ```
-        """
-        return NDArrayStrides(shape=shape, order="C")
-
-    @staticmethod
-    fn col_major(shape: NDArrayShape) raises -> NDArrayStrides:
-        """
-        Create column-major (Fortran-style) strides from a shape.
-
-        Column-major means the first dimension has stride 1 and strides increase
-        going forward through dimensions.
-
-        Args:
-            shape: The shape of the array.
-
-        Returns:
-            A new NDArrayStrides object with column-major memory layout.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        from numojo.prelude import *
-        var shape = Shape(2, 3, 4)
-        var strides = nm.Strides.col_major(shape)
-        print(strides)  # Strides: (1, 2, 6)
-        ```
-        """
-        return NDArrayStrides(shape=shape, order="F")
+                    self._buf.init_value(i, 0)
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
@@ -372,217 +332,347 @@ struct NDArrayStrides(
         """
         self.ndim = other.ndim
         if other.ndim == 0:
-            self._buf = alloc[Scalar[Self.element_type]](1)
-            self._buf.init_pointee_copy(0)
+            self._buf = IndexBuffer(size=1)
+            self._buf.init_value(0, 0)
         else:
-            self._buf = alloc[Scalar[Self.element_type]](other.ndim)
-            memcpy(dest=self._buf, src=other._buf, count=other.ndim)
+            self._buf = IndexBuffer(size=other.ndim)
+            memcpy(
+                dest=self._buf.ptr,
+                src=other._buf.ptr,
+                count=other.ndim,
+            )
 
-    @always_inline("nodebug")
-    fn deep_copy(self) raises -> Self:
-        """
-        Returns a deep copy of the NDArrayStride.
-
-        Returns:
-            A new NDArrayStride with the same values and new origin.
-        """
-        var res: NDArrayStrides = NDArrayStrides(
-            ndim=self.ndim, initialized=True
-        )
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
-        return res^
-
-    fn __del__(deinit self):
-        """
-        Destructor for NDArrayStrides.
-        Frees the allocated memory for the data buffer.
-
-        Notes:
-            Even when ndim is 0, the buffer is still allocated with 1 element to avoid null pointer, so it needs to be freed here.
-        """
-        self._buf.free()
-
-    fn normalize_index(self, index: Int) -> Int:
-        """
-        Normalizes the given index to be within the valid range.
-
-        Args:
-            index: The index to normalize.
-
-        Returns:
-            The normalized index.
-        """
-        var normalized_idx: Int = index
-        if normalized_idx < 0:
-            normalized_idx += self.ndim
-        return normalized_idx
+    # ===----------------------------------------------------------------------=== #
+    # Element Access Methods
+    # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
     fn __getitem__(self, index: Int) raises -> Int:
         """
         Gets stride at specified index.
 
-        Raises:
-           Error: Index out of bound.
-
         Args:
           index: Index to get the stride.
 
         Returns:
            Stride value at the given index.
-        """
-        if index >= self.ndim or index < -self.ndim:
-            raise Error(
-                IndexError(
-                    message=String("Index {} out of range [{}, {}).").format(
-                        index, -self.ndim, self.ndim
-                    ),
-                    suggestion="Use indices in [-ndim, ndim).",
-                    location="NDArrayStrides.__getitem__",
-                )
-            )
-        var normalized_idx: Int = self.normalize_index(index)
-        return Int(self._buf[normalized_idx])
-
-    @always_inline("nodebug")
-    fn _compute_slice_params(
-        self, slice_index: Slice
-    ) raises -> Tuple[Int, Int, Int]:
-        """
-        Compute normalized slice parameters (start, step, length).
-
-        Args:
-            slice_index: The slice to compute parameters for.
-
-        Returns:
-            A tuple of (start, step, length).
 
         Raises:
-            Error: If the slice step is zero.
+           Error: Index out of bound.
         """
-        var n: Int = self.ndim
-        if n == 0:
-            return (0, 1, 0)
-
-        var step = slice_index.step.or_else(1)
-        if step == 0:
-            raise Error(
-                ValueError(
-                    message="Slice step cannot be zero.",
-                    suggestion="Use a non-zero step value.",
-                    location="NDArrayStrides._compute_slice_params",
-                )
-            )
-
-        var start: Int
-        var stop: Int
-        if step > 0:
-            start = slice_index.start.or_else(0)
-            stop = slice_index.end.or_else(n)
-        else:
-            start = slice_index.start.or_else(n - 1)
-            stop = slice_index.end.or_else(-1)
-
-        if start < 0:
-            start += n
-        if stop < 0:
-            stop += n
-
-        if step > 0:
-            if start < 0:
-                start = 0
-            if start > n:
-                start = n
-            if stop < 0:
-                stop = 0
-            if stop > n:
-                stop = n
-        else:
-            if start >= n:
-                start = n - 1
-            if start < -1:
-                start = -1
-            if stop >= n:
-                stop = n - 1
-            if stop < -1:
-                stop = -1
-
-        var length: Int = 0
-        if step > 0:
-            if start < stop:
-                length = Int((stop - start + step - 1) / step)
-        else:
-            if start > stop:
-                var neg_step = -step
-                length = Int((start - stop + neg_step - 1) / neg_step)
-
-        return (start, step, length)
+        return Int(self._buf[index])
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
         """
         Return a sliced view of the strides as a new NDArrayStrides.
-        Delegates normalization & validation to _compute_slice_params.
 
         Args:
-            slice_index: The slice to extract.
+            slice_index: Slice object defining the sub-buffer.
 
         Returns:
-            A new NDArrayStrides containing the sliced values.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var strides = nm.Strides(12, 4, 1)
-        print(strides[1:])  # Strides: (4, 1)
-        ```
+            A new NDArrayStrides representing the sliced strides.
         """
-        var updated_slice: Tuple[Int, Int, Int] = self._compute_slice_params(
-            slice_index
-        )
-        var start = updated_slice[0]
-        var step = updated_slice[1]
-        var length = updated_slice[2]
-
-        if length <= 0:
-            var empty_result = NDArrayStrides(ndim=0, initialized=False)
-            return empty_result
-
-        var result = NDArrayStrides(ndim=length, initialized=False)
-        var idx = start
-        for i in range(length):
-            (result._buf + i).init_pointee_copy(self._buf[idx])
-            idx += step
-        return result^
+        return Self(self._buf[slice_index])
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Scalar[Self.element_type]) raises:
         """
         Sets stride at specified index.
 
+        Args:
+          index: Index to set the stride.
+          val: Value to set at the given index.
+
         Raises:
            Error: Index out of bound.
-           Error: Value is not positive.
+        """
+        self._buf[index] = val
+
+    fn load[
+        width: Int = 1
+    ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
+        """
+        Load a SIMD vector from the Strides at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
 
         Args:
-          index: Index to get the stride.
-          val: Value to set at the given index.
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+
+        Raises:
+            Error: If the load exceeds the bounds of the Strides.
         """
-        if index >= self.ndim or index < -self.ndim:
+        if idx < 0 or idx + width > self.ndim:
             raise Error(
-                IndexError(
-                    message=String("Index {} out of range [{}, {}).").format(
-                        index, -self.ndim, self.ndim
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Load operation out of bounds: idx={} width={} ndim={}."
+                        " Ensure that idx and width are within valid range."
+                        .format(idx, width, self.ndim)
                     ),
-                    suggestion="Use indices in [-ndim, ndim).",
-                    location=(
-                        "NDArrayStrides.__setitem__(index: Int, val:"
-                        " Scalar[DType.int])"
-                    ),
+                    location="Strides.load",
                 )
             )
-        var normalized_idx: Int = self.normalize_index(index)
-        self._buf[normalized_idx] = val
+        return self._buf.load[width=width](idx)
+
+    fn store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self.element_type, width]) raises:
+        """
+        Store a SIMD vector into the Strides at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+
+        Raises:
+            Error: If the store exceeds the bounds of the Strides.
+        """
+        if idx < 0 or idx + width > self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Store operation out of bounds: idx={} width={}"
+                        " ndim={}. Ensure that idx and width are within valid"
+                        " range.".format(idx, width, self.ndim)
+                    ),
+                    location="Strides.store",
+                )
+            )
+        self._buf.store[width=width](idx, value)
+
+    fn unsafe_load[
+        width: Int = 1
+    ](self, idx: Int) -> SIMD[Self.element_type, width]:
+        """
+        Unsafely load a SIMD vector from the Strides at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to load from.
+
+        Returns:
+            A SIMD vector containing the loaded values.
+        """
+        return self._buf.unsafe_load[width=width](idx)
+
+    fn unsafe_store[
+        width: Int = 1
+    ](self, idx: Int, value: SIMD[Self.element_type, width]):
+        """
+        Unsafely store a SIMD vector into the Strides at the specified index.
+
+        Parameters:
+            width: The width of the SIMD vector.
+
+        Args:
+            idx: The starting index to store to.
+            value: The SIMD vector to store.
+        """
+        self._buf.unsafe_store[width=width](idx, value)
+
+    # ===----------------------------------------------------------------------=== #
+    # Transformation Methods
+    # ===----------------------------------------------------------------------=== #
+
+    fn permute(self, axes: List[Int]) raises -> Self:
+        """
+        Return new strides with axes reordered.
+
+        Args:
+            axes: New axis order. Must contain each axis exactly once.
+
+        Returns:
+            A new NDArrayStrides with axes permuted.
+
+        Raises:
+            Error: If axes length doesn't match ndim or contains invalid/duplicate axes.
+        """
+        if len(axes) != self.ndim:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "axes length {} does not match ndim {}. Provide a"
+                        " permutation of all axes."
+                    ).format(len(axes), self.ndim),
+                    location="NDArrayStrides.permute",
+                )
+            )
+
+        var normalized = IndexBuffer(size=self.ndim)
+        for i in range(self.ndim):
+            var axis = axes[i]
+            if axis < 0:
+                axis += self.ndim
+            if axis < 0 or axis >= self.ndim:
+                raise Error(
+                    NumojoError(
+                        category="index",
+                        message=(
+                            "axis {} out of range [0, {}). Provide axes in"
+                            " [-ndim, ndim)."
+                        ).format(axis, self.ndim),
+                        location="NDArrayStrides.permute",
+                    )
+                )
+            normalized.init_value(i, axis)
+
+        for i in range(self.ndim):
+            for j in range(i + 1, self.ndim):
+                if normalized[i] == normalized[j]:
+                    raise Error(
+                        NumojoError(
+                            category="index",
+                            message=(
+                                "axes must be a permutation; duplicate axis"
+                                " {} found."
+                            ).format(normalized[i]),
+                            location="NDArrayStrides.permute",
+                        )
+                    )
+
+        var result = NDArrayStrides(ndim=self.ndim, initialized=False)
+        for i in range(self.ndim):
+            result._buf.init_value(i, self._buf[Int(normalized[i])])
+        return result^
+
+    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+        """
+        Returns a new strides with the given axes swapped.
+
+        Args:
+            axis1: The first axis to swap.
+            axis2: The second axis to swap.
+
+        Returns:
+            A new strides with the given axes swapped.
+        """
+        var res = self
+        var val1 = res[axis1]
+        var val2 = res[axis2]
+        res[axis1] = val2
+        res[axis2] = val1
+        return res
+
+    fn join(self, *strides: Self) -> Self:
+        """
+        Join multiple strides into a single strides.
+
+        Args:
+            strides: Variable number of NDArrayStrides objects.
+
+        Returns:
+            A new NDArrayStrides object with all values concatenated.
+        """
+        var bufs = List[IndexBuffer]()
+        for i in range(len(strides)):
+            bufs.append(strides[i]._buf)
+        return Self(self._buf.join(bufs))
+
+    fn extend(self, *values: Int) -> Self:
+        """
+        Extend the shape by sizes of extended dimensions.
+
+        Args:
+            values: Sizes of extended dimensions.
+
+        Returns:
+            A new NDArrayShape object.
+        """
+        var new_vals = List[Int]()
+        for i in range(self.ndim):
+            new_vals.append(values[i])
+        return Self(self._buf.extend(new_vals))
+
+    fn flip(mut self):
+        """
+        Flip the items in-place.
+        """
+        self._buf.flip()
+
+    fn flipped(self) -> Self:
+        """
+        Returns a new strides by flipping the items.
+
+        Returns:
+            A new strides with the items flipped.
+        """
+        return Self(self._buf.flipped())
+
+    fn move_axis_to_end(self, axis: Int) -> Self:
+        """
+        Returns a new strides by moving the value of axis to the end.
+
+        Args:
+            axis: The axis (index) to move.
+
+        Returns:
+            A new strides with the axis moved to the end.
+        """
+        return Self(self._buf.move_axis_to_end(axis))
+
+    fn pop(self, axis: Int) raises -> Self:
+        """
+        Drops information of certain axis.
+
+        Args:
+            axis: The axis (index) to drop.
+
+        Returns:
+            A new stride with the item at the given axis (index) dropped.
+        """
+        return Self(self._buf.pop(axis))
+
+    # ===----------------------------------------------------------------------=== #
+    # Properties
+    # ===----------------------------------------------------------------------=== #
+
+    fn is_contiguous(self, shape: NDArrayShape) raises -> Bool:
+        """
+        Check if strides represent a contiguous layout for the shape.
+
+        Args:
+            shape: The shape of the array.
+
+        Returns:
+            True if the strides are contiguous.
+        """
+        if shape.ndim != self.ndim:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "shape rank {} does not match strides rank {}. Provide"
+                        " matching shape and strides."
+                    ).format(shape.ndim, self.ndim),
+                    location="NDArrayStrides.is_contiguous",
+                )
+            )
+        if self.ndim == 0:
+            return True
+        var expected = 1
+        for i in range(self.ndim - 1, -1, -1):
+            if shape[i] > 1 and self[i] != expected:
+                return False
+            expected *= Int(shape[i])
+        return True
+
+    # ===----------------------------------------------------------------------=== #
+    # Traits
+    # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
     fn __len__(self) -> Int:
@@ -615,13 +705,16 @@ struct NDArrayStrides(
         """
         var result: String = "("
         for i in range(self.ndim):
-            result += String(self._buf[i])
+            result += String(self._buf.unsafe_load(i))
             if i < self.ndim - 1:
-                result += ","
+                result += ", "
         result = result + ")"
         return result
 
     fn write_to[W: Writer](self, mut writer: W):
+        """
+        Writes the strides representation to a writer.
+        """
         writer.write(
             "Strides: " + String(self) + "  " + "ndim: " + String(self.ndim)
         )
@@ -637,16 +730,15 @@ struct NDArrayStrides(
         Returns:
             True if both strides have identical dimensions and values.
         """
-        if self.ndim != other.ndim:
-            return False
-        if memcmp(self._buf, other._buf, self.ndim) != 0:
-            return False
-        return True
+        return self._buf == other._buf
 
     @always_inline("nodebug")
     fn __ne__(self, other: Self) -> Bool:
         """
         Checks if two strides have identical dimensions and values.
+
+        Args:
+            other: The strides to compare with.
 
         Returns:
            True if both strides do not have identical dimensions or values.
@@ -658,349 +750,152 @@ struct NDArrayStrides(
         """
         Checks if the given value is present in the strides.
 
+        Args:
+            val: The value to search for.
+
         Returns:
           True if the given value is present in the strides.
         """
-        for i in range(self.ndim):
-            if self._buf[i] == val:
-                return True
-        return False
+        return val in self._buf
 
-    fn __iter__(self) raises -> _StrideIter:
+    @always_inline("nodebug")
+    fn __contains__(self, val: Scalar[Self.element_type]) -> Bool:
+        """
+        Check if the NDArrayStrides contains the given value.
+
+        Args:
+            val: Value to check for.
+
+        Returns:
+            True if the value is in the Item, False otherwise.
+        """
+        return val in self._buf
+
+    # ===----------------------------------------------------------------------=== #
+    # Static Methods
+    # ===----------------------------------------------------------------------=== #
+
+    @staticmethod
+    fn row_major(shape: NDArrayShape) raises -> NDArrayStrides:
+        """
+        Create row-major (C-style) strides from a shape.
+
+        Args:
+            shape: The shape of the array.
+
+        Returns:
+            A new NDArrayStrides object with row-major memory layout.
+        """
+        return NDArrayStrides(shape=shape, order="C")
+
+    @staticmethod
+    fn col_major(shape: NDArrayShape) raises -> NDArrayStrides:
+        """
+        Create column-major (Fortran-style) strides from a shape.
+
+        Args:
+            shape: The shape of the array.
+
+        Returns:
+            A new NDArrayStrides object with column-major memory layout.
+        """
+        return NDArrayStrides(shape=shape, order="F")
+
+    @staticmethod
+    fn default(shape: NDArrayShape) raises -> NDArrayStrides:
+        """
+        Create default (row-major) strides from a shape.
+
+        Args:
+            shape: The shape of the array.
+
+        Returns:
+            A new NDArrayStrides object with default memory layout.
+        """
+        return NDArrayStrides(shape=shape, order="C")
+
+    # ===----------------------------------------------------------------------=== #
+    # Utility Methods
+    # ===----------------------------------------------------------------------=== #
+
+    @always_inline("nodebug")
+    fn tolist(self) -> List[Int]:
+        """
+        Convert the strides to a list of integers.
+
+        Returns:
+            A list containing the stride values.
+        """
+        var res = List[Int]()
+        for i in range(self.ndim):
+            res.append(Int(self._buf.unsafe_load(i)))
+        return res^
+
+    @always_inline("nodebug")
+    fn normalize_index(self, index: Int) -> Int:
+        """
+        Normalizes the given index to be within the valid range [0, ndim).
+
+        Args:
+            index: The index to normalize.
+
+        Returns:
+            The normalized index.
+        """
+        var normalized_idx: Int = index
+        if normalized_idx < 0:
+            normalized_idx += self.ndim
+        return normalized_idx
+
+    # ===----------------------------------------------------------------------=== #
+    # Iterators
+    # ===----------------------------------------------------------------------=== #
+    fn __iter__(ref self) -> _StrideIter[origin_of(self), True]:
         """
         Iterate over elements of the NDArrayStrides, returning copied values.
 
         Returns:
             An iterator of NDArrayStrides elements.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var strides = nm.Strides(12, 4, 1)
-        for stride in strides:
-            print(stride)  # Prints: 12, 4, 1
-        ```
         """
-        return _StrideIter(
-            strides=self,
+        return _StrideIter[origin_of(self), True](
+            strides=Pointer(to=self),
             length=self.ndim,
         )
 
-    # ===-------------------------------------------------------------------===#
-    # Other methods
-    # ===-------------------------------------------------------------------===#
-
-    @always_inline("nodebug")
-    fn copy(read self) raises -> Self:
+    fn __reversed__(ref self) -> _StrideIter[origin_of(self), False]:
         """
-        Returns a deep copy of the strides.
-        """
-
-        var res = Self(ndim=self.ndim, initialized=False)
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
-        return res
-
-    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
-        """
-        Returns a new strides with the given axes swapped.
-
-        Args:
-            axis1: The first axis to swap.
-            axis2: The second axis to swap.
+        Iterate over elements of the NDArrayStrides, returning copied values.
 
         Returns:
-            A new strides with the given axes swapped.
+            An iterator of NDArrayStrides elements.
         """
-        var norm_axis1: Int = self.normalize_index(axis1)
-        var norm_axis2: Int = self.normalize_index(axis2)
-
-        if norm_axis1 < 0 or norm_axis1 >= self.ndim:
-            raise Error(
-                IndexError(
-                    message=String("axis1 {} out of range [0, {}).").format(
-                        norm_axis1, self.ndim
-                    ),
-                    suggestion="Provide axis1 in [-ndim, ndim).",
-                    location="NDArrayStrides.swapaxes",
-                )
-            )
-        if norm_axis2 < 0 or norm_axis2 >= self.ndim:
-            raise Error(
-                IndexError(
-                    message=String("axis2 {} out of range [0, {}).").format(
-                        norm_axis2, self.ndim
-                    ),
-                    suggestion="Provide axis2 in [-ndim, ndim).",
-                    location="NDArrayStrides.swapaxes",
-                )
-            )
-
-        var res = Self(ndim=self.ndim, initialized=False)
-        memcpy(dest=res._buf, src=self._buf, count=self.ndim)
-        res[axis1] = self[axis2]
-        res[axis2] = self[axis1]
-        return res^
-
-    fn join(self, *strides: Self) raises -> Self:
-        """
-        Join multiple strides into a single strides.
-
-        Args:
-            strides: Variable number of NDArrayStrides objects.
-
-        Returns:
-            A new NDArrayStrides object with all values concatenated.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var s1 = nm.Strides(12, 4)
-        var s2 = nm.Strides(1)
-        var joined = s1.join(s2)
-        print(joined)  # Strides: (12, 4, 1)
-        ```
-        """
-        var total_dims: Int = self.ndim
-        for i in range(len(strides)):
-            total_dims += strides[i].ndim
-
-        var new_strides: Self = Self(ndim=total_dims, initialized=False)
-
-        var index: Int = 0
-        for i in range(self.ndim):
-            (new_strides._buf + index).init_pointee_copy(self[i])
-            index += 1
-
-        for i in range(len(strides)):
-            for j in range(strides[i].ndim):
-                (new_strides._buf + index).init_pointee_copy(strides[i][j])
-                index += 1
-
-        return new_strides
-
-    # ===-------------------------------------------------------------------===#
-    # Other private methods
-    # ===-------------------------------------------------------------------===#
-
-    fn _extend(self, *values: Int) raises -> Self:
-        """
-        Extend the strides by additional values.
-        ***UNSAFE!*** No boundary check!
-
-        Args:
-            values: Additional stride values to append.
-
-        Returns:
-            A new NDArrayStrides object with the extended values.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var strides = nm.Strides(12, 4)
-        var extended = strides._extend(1)
-        print(extended)  # Strides: (12, 4, 1)
-        ```
-        """
-        var total_dims: Int = self.ndim + len(values)
-        var new_strides: Self = Self(ndim=total_dims, initialized=False)
-
-        var offset: UInt = 0
-        for i in range(self.ndim):
-            (new_strides._buf + offset).init_pointee_copy(self[i])
-            offset += 1
-        for value in values:
-            (new_strides._buf + offset).init_pointee_copy(value)
-            offset += 1
-
-        return new_strides^
-
-    fn _flip(self) -> Self:
-        """
-        Returns a new strides by flipping the items.
-        ***UNSAFE!*** No boundary check!
-
-        Returns:
-            A new strides with the items flipped.
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var A = nm.random.randn(2, 3, 4)
-        print(A.strides)          # Stride: [12, 4, 1]
-        print(A.strides._flip())  # Stride: [1, 4, 12]
-        ```
-        """
-
-        var strides = NDArrayStrides(self)
-        for i in range(strides.ndim):
-            strides._buf[i] = self._buf[self.ndim - 1 - i]
-        return strides
-
-    fn _move_axis_to_end(self, var axis: Int) -> Self:
-        """
-        Returns a new strides by moving the value of axis to the end.
-        ***UNSAFE!*** No boundary check!
-
-        Example:
-        ```mojo
-        import numojo as nm
-        var A = nm.random.randn(2, 3, 4)
-        print(A.strides)                       # Stride: [12, 4, 1]
-        print(A.strides._move_axis_to_end(0))  # Stride: [4, 1, 12]
-        print(A.strides._move_axis_to_end(1))  # Stride: [12, 1, 4]
-        ```
-        """
-
-        if axis < 0:
-            axis += self.ndim
-
-        var strides = NDArrayStrides(self)
-
-        if axis == self.ndim - 1:
-            return strides
-
-        var value = strides._buf[axis]
-        for i in range(axis, strides.ndim - 1):
-            strides._buf[i] = strides._buf[i + 1]
-        strides._buf[strides.ndim - 1] = value
-        return strides
-
-    fn _pop(self, axis: Int) raises -> Self:
-        """
-        Drops information of certain axis.
-        ***UNSAFE!*** No boundary check!
-
-        Args:
-            axis: The axis (index) to drop. It should be in `[0, ndim)`.
-
-        Returns:
-            A new stride with the item at the given axis (index) dropped.
-        """
-        var res = Self(ndim=self.ndim - 1, initialized=False)
-        memcpy(dest=res._buf, src=self._buf, count=axis)
-        memcpy(
-            dest=res._buf + axis,
-            src=self._buf + (axis + 1),
-            count=self.ndim - axis - 1,
+        return _StrideIter[origin_of(self), False](
+            strides=Pointer(to=self),
+            length=self.ndim,
         )
-        return res
-
-    fn load[
-        width: Int = 1
-    ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
-        """
-        Load a SIMD vector from the Strides at the specified index.
-
-        Parameters:
-            width: The width of the SIMD vector.
-
-        Args:
-            idx: The starting index to load from.
-
-        Returns:
-            A SIMD vector containing the loaded values.
-
-        Raises:
-            Error: If the load exceeds the bounds of the Strides.
-        """
-        if idx < 0 or idx + width > self.ndim:
-            raise Error(
-                IndexError(
-                    message=String(
-                        "Load operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
-                    suggestion=(
-                        "Ensure that idx and width are within valid range."
-                    ),
-                    location="Strides.load",
-                )
-            )
-
-        return self._buf.load[width=width](idx)
-
-    fn store[
-        width: Int = 1
-    ](self, idx: Int, value: SIMD[Self.element_type, width]) raises:
-        """
-        Store a SIMD vector into the Strides at the specified index.
-
-        Parameters:
-            width: The width of the SIMD vector.
-
-        Args:
-            idx: The starting index to store to.
-            value: The SIMD vector to store.
-
-        Raises:
-            Error: If the store exceeds the bounds of the Strides.
-        """
-        if idx < 0 or idx + width > self.ndim:
-            raise Error(
-                IndexError(
-                    message=String(
-                        "Store operation out of bounds: idx={} width={} ndim={}"
-                    ).format(idx, width, self.ndim),
-                    suggestion=(
-                        "Ensure that idx and width are within valid range."
-                    ),
-                    location="Strides.store",
-                )
-            )
-
-        self._buf.store[width=width](idx, value)
-
-    fn unsafe_load[
-        width: Int = 1
-    ](self, idx: Int) -> SIMD[Self.element_type, width]:
-        """
-        Unsafely load a SIMD vector from the Strides at the specified index.
-
-        Parameters:
-            width: The width of the SIMD vector.
-
-        Args:
-            idx: The starting index to load from.
-
-        Returns:
-            A SIMD vector containing the loaded values.
-        """
-        return self._buf.load[width=width](idx)
-
-    fn unsafe_store[
-        width: Int = 1
-    ](self, idx: Int, value: SIMD[Self.element_type, width]):
-        """
-        Unsafely store a SIMD vector into the Strides at the specified index.
-
-        Parameters:
-            width: The width of the SIMD vector.
-
-        Args:
-            idx: The starting index to store to.
-            value: The SIMD vector to store.
-        """
-        self._buf.store[width=width](idx, value)
 
 
 struct _StrideIter[
+    origin: ImmutOrigin = ImmutExternalOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for NDArrayStrides.
 
     Parameters:
+        origin: The origin of the iterator.
         forward: The iteration direction. `False` is backwards.
     """
 
     var index: Int
-    var strides: NDArrayStrides
+    var strides: Pointer[NDArrayStrides, Self.origin]
     var length: Int
 
     fn __init__(
         out self,
-        strides: NDArrayStrides,
+        strides: Pointer[NDArrayStrides, Self.origin],
         length: Int,
     ):
-        self.index = 0 if Self.forward else length
+        self.index = 0 if Self.forward else length - 1
         self.length = length
         self.strides = strides
 
@@ -1012,22 +907,22 @@ struct _StrideIter[
         if Self.forward:
             return self.index < self.length
         else:
-            return self.index > 0
+            return self.index >= 0
 
     fn __next__(mut self) raises -> Scalar[DType.int]:
         @parameter
         if Self.forward:
             var current_index = self.index
             self.index += 1
-            return self.strides.__getitem__(current_index)
+            return self.strides[].__getitem__(current_index)
         else:
             var current_index = self.index
             self.index -= 1
-            return self.strides.__getitem__(current_index)
+            return self.strides[].__getitem__(current_index)
 
     fn __len__(self) -> Int:
         @parameter
         if Self.forward:
             return self.length - self.index
         else:
-            return self.index
+            return self.index + 1

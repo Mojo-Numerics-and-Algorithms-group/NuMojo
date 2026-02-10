@@ -38,10 +38,10 @@ from sys import simd_width_of
 
 
 from numojo.core.layout import Flags
+from numojo.core.layout import Flags
 from numojo.core.ndarray import NDArray
-from numojo.core.complex import ComplexScalar
+from numojo.core.type_aliases import ComplexScalar
 from numojo.core.layout import NDArrayShape
-from numojo.core.indexing.utility import _get_offset
 from numojo.core.memory import DataContainer
 
 
@@ -2335,7 +2335,8 @@ fn fromstring[
             shape[level - 1] = 0
 
         if (
-            chr(Int(b)).isdigit()
+            # TODO: Check that is_ascii_digit works as expected.
+            chr(Int(b)).is_ascii_digit()
             or (chr(Int(b)) == ".")
             or (chr(Int(b)) == "-")
         ):
@@ -2547,9 +2548,9 @@ fn array[
     var len = Int(len(data.shape))
     var shape: List[Int] = List[Int]()
     for i in range(len):
-        if Int(data.shape[i]) == 1:
+        if Int(py=data.shape[i]) == 1:
             continue
-        shape.append(Int(data.shape[i]))
+        shape.append(Int(py=data.shape[i]))
 
     var np = Python.import_module("numpy")
     var np_dtype = np.float64
@@ -2628,9 +2629,9 @@ fn array[
             "Error in array: Real and imaginary data must have the same shape!"
         )
     for i in range(len):
-        if Int(real.shape[i]) == 1:
+        if Int(py=real.shape[i]) == 1:
             continue
-        shape.append(Int(real.shape[i]))
+        shape.append(Int(py=real.shape[i]))
 
     var np = Python.import_module("numpy")
     var np_dtype = np.float64
@@ -2790,7 +2791,7 @@ fn _0darray[
             c_contiguous=True, f_contiguous=True, owndata=True, writeable=False
         ),
     )
-    b._buf = DataContainer[dtype, b.origin](1)
+    b._buf = DataContainer[dtype](1)
     b._buf.ptr.init_pointee_copy(val)
     b.flags.OWNDATA = True
     return b^
@@ -2806,6 +2807,7 @@ fn _0darray[
     The strides is unitialized (0-element strides).
     The size is 1 (`=0!`).
     """
+
     var b = ComplexNDArray[cdtype](
         shape=NDArrayShape(ndim=0, initialized=False),
         strides=NDArrayStrides(ndim=0, initialized=False),
@@ -2816,8 +2818,8 @@ fn _0darray[
         ),
     )
     # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutExternalOrigin.
-    b._re._buf = DataContainer[cdtype._dtype, MutExternalOrigin](1)
-    b._im._buf = DataContainer[cdtype._dtype, MutExternalOrigin](1)
+    b._re._buf = DataContainer[cdtype._dtype](1)
+    b._im._buf = DataContainer[cdtype._dtype](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True

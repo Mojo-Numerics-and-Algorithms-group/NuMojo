@@ -16,7 +16,7 @@ from testing import TestSuite
 def test_arange():
     var np = Python.import_module("numpy")
     check(
-        nm.arange[nm.i64](0, 100),
+        nm.arange(0, 100),
         np.arange(0, 100, dtype=np.int64),
         "Arange is broken",
     )

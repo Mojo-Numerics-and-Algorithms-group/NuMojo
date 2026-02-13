@@ -60,16 +60,10 @@ comptime __version__: String = "V0.8.0"
 # ===----------------------------------------------------------------------=== #
 
 from numojo.core.ndarray import NDArray
-<<<<<<< HEAD
-from numojo.core.layout.ndshape import NDArrayShape, Shape
-from numojo.core.layout.ndstrides import NDArrayStrides, Strides
-from numojo.core.indexing.item import Item
-=======
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.indexing.item import Item
 from numojo.core.indexing import IndexMethods
->>>>>>> upstream/pre-0.9
 from numojo.core.matrix import Matrix
 from numojo.core.complex.complex_simd import ComplexSIMD
 

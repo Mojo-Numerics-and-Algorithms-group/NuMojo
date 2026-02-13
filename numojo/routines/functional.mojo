@@ -389,7 +389,7 @@ fn apply_along_axis_inplace[
 
 fn apply_along_axis_indices[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
+    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
         DType.int
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:

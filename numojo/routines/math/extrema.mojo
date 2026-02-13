@@ -83,8 +83,7 @@ fn extrema_1d[
         fn vectorize_min[
             simd_width: Int
         ](offset: Int) unified {mut value, read a} -> None:
-            # var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
-            var temp = gpu_max(a._buf.ptr.load[width=simd_width](offset))
+            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
             if temp < value:
                 value = temp
 
@@ -112,13 +111,6 @@ fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
         return extrema_1d[is_max=True](a)
     else:
         return extrema_1d[is_max=True](ravel(a))
-
-
-fn extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
-    """
-    Finds the max value in a 1-D array.
-    """
-    return extrema_1d[is_max=True](a)
 
 
 fn extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -368,7 +360,7 @@ fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
 fn _min[
     dtype: DType
-](A: MatrixBase[dtype, **_], start: Int, end: Int) raises -> Tuple[
+](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
     Scalar[dtype], Scalar[DType.int]
 ]:
     """

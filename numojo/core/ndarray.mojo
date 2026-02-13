@@ -57,32 +57,29 @@ from memory import memset_zero, memcpy
 from python import PythonObject
 from sys import simd_width_of
 from utils import Variant
+from builtin.type_aliases import EllipsisType
 
 # ===----------------------------------------------------------------------===#
 # === numojo core ===
 # ===----------------------------------------------------------------------===#
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.layout.flags import Flags
-from numojo.core.indexing.item import Item
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.memory.data_container import DataContainer
-from numojo.core.indexing.utility import (
-    _get_offset,
-    _transfer_offset,
-    _traverse_iterative,
-    _traverse_iterative_setter,
+from numojo.core.indexing import (
+    Item,
+    InternalSlice,
+    IndexMethods,
+    TraverseMethods,
+    Validator,
     to_numpy,
     bool_to_numeric,
+    newaxis,
 )
-from numojo.core.error import (
-    IndexError,
-    ShapeError,
-    BroadcastError,
-    MemoryError,
-    ValueError,
-    ArithmeticError,
-)
+from numojo.core.error import NumojoError, terminate
+from numojo.core.layout.array_methods import NewAxis
+from numojo.core.indexing.slicing import IndexTypeInfo
 
 # ===----------------------------------------------------------------------===#
 # === numojo routines (creation / io / logic) ===
@@ -103,6 +100,8 @@ from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
+
+comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 
 
 # ===-----------------------------------------------------------------------===#
@@ -138,12 +137,16 @@ struct NDArray[dtype: DType = DType.float64](
         - The order of the array: Row vs Columns major
     """
 
+    comptime _NDAxisIteratorType[
+        forward: Bool,
+    ] = _NDAxisIter[Self.dtype, forward]
+
     comptime origin: MutOrigin = MutExternalOrigin
     """Origin of the data buffer."""
     comptime width: Int = simd_width_of[Self.dtype]()
     """Vector size of the data type."""
 
-    var _buf: DataContainer[Self.dtype, Self.origin]
+    var _buf: DataContainer[Self.dtype]
     """Data buffer of the items in the NDArray."""
     var ndim: Int
     """Number of Dimensions."""
@@ -186,12 +189,11 @@ struct NDArray[dtype: DType = DType.float64](
         Note:
             This constructor should not be used by users directly. Use factory functions in `nomojo.routines.creation` module instead.
         """
-
         self.ndim = shape.ndim
         self.shape = shape
-        self.size = self.shape.size_of_array()
+        self.size = self.shape.size()
         self.strides = NDArrayStrides(shape, order=order)
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -276,9 +278,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self.shape = NDArrayShape(shape)
         self.ndim = self.shape.ndim
-        self.size = self.shape.size_of_array()
+        self.size = self.shape.size()
         self.strides = NDArrayStrides(strides=strides)
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         memset_zero(self._buf.ptr, self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
@@ -314,48 +316,33 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim = ndim
         self.size = size
         self.flags = flags
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
+        self._buf = DataContainer[Self.dtype](self.size)
         self.print_options = PrintOptions()
 
-    # for creating views (unsafe!)
-    # TODO: temporarily disabled this constructor until we setup views for NDArray.
-    # fn __init__[is_mutable: Bool, //, view_origin: Origin[mut=is_mutable]](
-    #     out self,
-    #     shape: NDArrayShape,
-    #     ref buffer: LegacyUnsafePointer[Scalar[Self.dtype], origin=view_origin],
-    #     offset: Int,
-    #     strides: NDArrayStrides,
-    # ) raises:
-    #     """
-    #     Initialize a NDArray view with explicit shape, raw buffers, offset, and strides.
+    # View constructor using DataContainer refcounting
+    fn __init__(
+        out self,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
+        data: DataContainer[Self.dtype],
+    ) raises:
+        """
+        Initialize a non-owning NDArray view with shared DataContainer.
 
-    #     This constructor creates a view over existing memory buffers for the real and imaginary parts,
-    #     using the provided shape, offset, and stride information. It is intended for advanced or internal
-    #     use cases where direct control over memory layout is required.
-
-    #     ***Unsafe!*** This function is unsafe and should only be used internally. The caller is responsible
-    #     for ensuring that the buffers are valid and that the shape, offset, and strides are consistent.
-
-    #     Args:
-    #         shape: NDArrayShape specifying the dimensions of the array.
-    #         buffer: Unsafe pointer to the buffer containing the real part data.
-    #         offset: Integer offset into the buffers.
-    #         strides: NDArrayStrides specifying the stride for each dimension.
-
-    #     Notes:
-    #         - No validation is performed on the buffers or metadata.
-    #         - The resulting NDArray shares memory with the provided buffers.
-    #         - Incorrect usage may lead to undefined behavior.
-    #     """
-    #     self.shape = shape
-    #     self.strides = strides
-    #     self.ndim = self.shape.ndim
-    #     self.size = self.shape.size_of_array()
-    #     self._buf = DataContainer(ptr=buffer.offset(offset))
-    #     self.flags = Flags(
-    #         self.shape, self.strides, owndata=False, writeable=False
-    #     )
-    #     self.print_options = PrintOptions()
+        Args:
+            shape: Shape of the view.
+            strides: Strides for the view.
+            data: DataContainer with reference counting enabled.
+        """
+        self.shape = shape
+        self.strides = strides
+        self.ndim = shape.ndim
+        self.size = shape.size()
+        self._buf = data
+        self.flags = Flags(
+            self.shape, self.strides, owndata=False, writeable=False
+        )
+        self.print_options = PrintOptions()
 
     @always_inline("nodebug")
     fn __copyinit__(out self, other: Self):
@@ -370,8 +357,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = other.shape
         self.size = other.size
         self.strides = other.strides
-        self._buf = DataContainer[Self.dtype, Self.origin](self.size)
-        memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=other.size)
+        self._buf = other._buf.copy()
         self.flags = Flags(
             c_contiguous=other.flags.C_CONTIGUOUS,
             f_contiguous=other.flags.F_CONTIGUOUS,
@@ -379,6 +365,41 @@ struct NDArray[dtype: DType = DType.float64](
             writeable=True,
         )
         self.print_options = other.print_options
+
+    fn deep_copy(self) -> Self:
+        """
+        Create a deep copy of the array.
+        """
+        var res = Self(
+            self.shape, self.strides, self.ndim, self.size, self.flags
+        )
+        memcpy(
+            dest=res._buf.get_ptr(), src=self._buf.get_ptr(), count=self.size
+        )
+        return res^
+
+    fn view(mut self) raises -> Self:
+        """
+        Create a non-owning view of the current matrix.
+
+        This method returns a new `Matrix` instance that acts as a view into the data of the current matrix (`self`). The view does not allocate new memory and directly references the existing data buffer of the matrix.
+
+        Returns:
+            A `Matrix` representing a view of `self`.
+
+        Example:
+            ```mojo
+            from numojo.prelude import *
+            var mat = Matrix[f32](shape=(3, 4))
+            # ... (initialize mat with data) ...
+            var mat_view = mat.view()  # Create a view of mat
+            ```
+        """
+        return NDArray[Self.dtype](
+            self.shape,
+            self.strides,
+            self._buf.share_with_offset(0),
+        )
 
     @always_inline("nodebug")
     fn __moveinit__(out self, deinit existing: Self):
@@ -401,8 +422,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Destroys all elements in the list and free its memory.
         """
-        if self.flags.OWNDATA:
-            self._buf.ptr.free()
+        # if self.flags.OWNDATA:
+        #     self._buf.ptr.free()
+        _ = self._buf^
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
@@ -453,13 +475,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         Returns:
             The normalized index as a non-negative integer.
-
-        Example:
-            ```mojo
-            from numojo.prelude import *
-            var mat = Matrix[f32](shape=(3, 4))
-            var norm_idx = mat.normalize(-1, mat.shape[0])  # Normalize -1 to 2
-            ```
         """
         var idx_norm = idx
         if idx_norm < 0:
@@ -490,7 +505,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * Int(self.strides._buf[i])
+            index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
         return self._buf.ptr[index_of_buffer]
 
     fn _getitem(self, indices: List[Int]) -> Scalar[Self.dtype]:
@@ -518,7 +533,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * Int(self.strides._buf[i])
+            index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
         return self._buf.ptr[index_of_buffer]
 
     fn __getitem__(self) raises -> SIMD[Self.dtype, 1]:
@@ -532,23 +547,20 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the array is not 0-d.
 
         Examples:
-
-        ```mojo
-        import numojo as nm
-        var a = nm.arange(3)[0]
-        print(a[]) # gets values of the 0-D array.
-        ```.
+            ```mojo
+            import numojo as nm
+            var a = nm.arange(3)[0]
+            print(a[]) # gets values of the 0-D array.
+            ```
         """
         if self.ndim != 0:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=(
                         "Cannot read a scalar value from a non-0D array without"
-                        " indices."
-                    ),
-                    suggestion=(
-                        "Use `a[]` for 0D arrays, or pass indices (e.g., `a[i,"
-                        " j]`) for higher-dimensional arrays."
+                        " indices. Use `a[]` for 0D arrays, or pass indices"
+                        " (e.g., `a[i, j]`) for higher-dimensional arrays."
                     ),
                     location="NDArray.__getitem__()",
                 )
@@ -577,36 +589,33 @@ struct NDArray[dtype: DType = DType.float64](
         >>>print(a[Item(1, 2)]) # gets values of the element at (1, 2).
         ```.
         """
-        if index.__len__() != self.ndim:
+        if len(index) != self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Invalid index length: expected {} but got {}."
-                    ).format(self.ndim, index.__len__()),
-                    suggestion=String(
-                        "Pass exactly {} indices (one per dimension)."
-                    ).format(self.ndim),
-                    location=String("NDArray.__getitem__(index: Item)"),
+                        "Invalid index length: expected {} but got {}. Pass"
+                        " exactly {} indices (one per dimension)."
+                    ).format(self.ndim, index.__len__(), self.ndim),
+                    location="NDArray.__getitem__(index: Item)",
                 )
             )
 
-        for i in range(index.__len__()):
+        for i in range(len(index)):
             if index[i] >= self.shape[i]:
                 raise Error(
-                    ShapeError(
+                    NumojoError(
+                        category="shape",
                         message=String(
                             "Index out of range at dim {}: got {}; valid range"
-                            " is [0, {})."
-                        ).format(i, index[i], self.shape[i]),
-                        suggestion=String(
-                            "Clamp or validate indices against the dimension"
-                            " size ({})."
-                        ).format(self.shape[i]),
-                        location=String("NDArray.__getitem__(index: Item)"),
+                            " is [0, {}). Clamp or validate indices against the"
+                            " dimension size ({})."
+                        ).format(i, index[i], self.shape[i], self.shape[i]),
+                        location="NDArray.__getitem__(index: Item)",
                     )
                 )
 
-        var idx: Int = _get_offset(index, self.strides)
+        var idx: Int = IndexMethods.get_1d_index(index, self.strides)
         return self._buf.ptr.load[width=1](idx)
 
     # Can be faster if we only return a view since we are not copying the data.
@@ -650,12 +659,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if self.ndim == 0:
             raise Error(
-                IndexError(
-                    message=String("Cannot slice a 0D array."),
-                    suggestion=String(
-                        "Use `a[]` or `a.item()` to read its value."
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Cannot slice a 0D array. Use `a[]` or `a.item()` to"
+                        " read its value."
                     ),
-                    location=String("NDArray.__getitem__(idx: Int)"),
+                    location="NDArray.__getitem__(idx: Int)",
                 )
             )
 
@@ -664,15 +674,14 @@ struct NDArray[dtype: DType = DType.float64](
             norm += self.shape[0]
         if (norm < 0) or (norm >= self.shape[0]):
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Index {} out of bounds for axis 0 (size {})."
-                    ).format(idx, self.shape[0]),
-                    suggestion=String(
-                        "Valid indices: 0 <= i < {} or negative -{} <= i < 0"
+                        "Index {} out of bounds for axis 0 (size {}). Valid"
+                        " indices: 0 <= i < {} or negative -{} <= i < 0"
                         " (negative indices wrap from the end)."
-                    ).format(self.shape[0], self.shape[0]),
-                    location=String("NDArray.__getitem__(idx: Int)"),
+                    ).format(idx, self.shape[0], self.shape[0], self.shape[0]),
+                    location="NDArray.__getitem__(idx: Int)",
                 )
             )
 
@@ -681,9 +690,9 @@ struct NDArray[dtype: DType = DType.float64](
             return creation._0darray[Self.dtype](self._buf.ptr[norm])
 
         var out_shape = self.shape[1:]
-        var alloc_order = String("C")
+        var alloc_order: String = "C"
         if self.flags.F_CONTIGUOUS:
-            alloc_order = String("F")
+            alloc_order: String = "F"
         var result = NDArray[Self.dtype](shape=out_shape, order=alloc_order)
 
         # Fast path for C-contiguous arrays
@@ -708,7 +717,8 @@ struct NDArray[dtype: DType = DType.float64](
         norm_idx: Int,
         mut dst: NDArray[Self.dtype],
     ):
-        """Generic stride-based copier for first-axis slice (works for any layout).
+        """
+        Generic stride-based copier for first-axis slice.
         """
         var out_ndim = dst.ndim
         var total = dst.size
@@ -717,19 +727,19 @@ struct NDArray[dtype: DType = DType.float64](
         var coords = List[Int](capacity=out_ndim)
         for _ in range(out_ndim):
             coords.append(0)
-        var base = norm_idx * src.strides._buf[0]
+        var base = norm_idx * src.strides.unsafe_load(0)
         for lin in range(total):
             var rem = lin
             for d in range(out_ndim - 1, -1, -1):
-                var dim = Int(dst.shape._buf[d])
+                var dim = Int(dst.shape.unsafe_load(d))
                 coords[d] = rem % dim
                 rem //= dim
             var off = base
             for d in range(out_ndim):
-                off += coords[d] * src.strides._buf[d + 1]
+                off += coords[d] * src.strides.unsafe_load(d + 1)
             var dst_off = 0
             for d in range(out_ndim):
-                dst_off += coords[d] * Int(dst.strides._buf[d])
+                dst_off += coords[d] * Int(dst.strides.unsafe_load(d))
             dst._buf.ptr[dst_off] = src._buf.ptr[off]
 
     fn __getitem__(self, var *slices: Slice) raises -> Self:
@@ -765,55 +775,86 @@ struct NDArray[dtype: DType = DType.float64](
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Too many slices provided: expected at most {} but"
-                        " got {}."
-                    ).format(self.ndim, n_slices),
-                    suggestion=String(
-                        "Provide at most {} slices for an array with {}"
+                        "Too many slices provided: expected at most {} but got"
+                        " {}. Provide at most {} slices for an array with {}"
                         " dimensions."
-                    ).format(self.ndim, self.ndim),
-                    location=String("NDArray.__getitem__(slices: Slice)"),
+                    ).format(self.ndim, n_slices, self.ndim, self.ndim),
+                    location="NDArray.__getitem__(slices: Slice)",
                 )
             )
         var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
+        var index_type_list: List[IndexTypeInfo] = List[IndexTypeInfo](
+            capacity=self.ndim
+        )
         for i in range(len(slices)):
             slice_list.append(slices[i])
+            index_type_list.append(IndexTypeInfo(is_slice=True))
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        var narr: Self = self[slice_list^]
+        var narr: Self = self.__getitem__(slice_list^, index_type_list^)
         return narr^
 
     fn _calculate_strides(self, shape: List[Int]) -> List[Int]:
-        var strides = List[Int](capacity=len(shape))
+        """
+        Calculate strides for a given shape based on the array's memory layout (C or F contiguous).
 
-        if self.flags.C_CONTIGUOUS:  # C_CONTIGUOUS
-            var temp_strides = List[Int](capacity=len(shape))
-            var stride = 1
-            for i in range(len(shape) - 1, -1, -1):
-                temp_strides.append(stride)
+        This method computes the strides for each dimension of the array, which determine how many elements
+        in the underlying buffer to skip to move to the next element along a given axis. For C-contiguous
+        (row-major) arrays, strides are computed from the last dimension to the first. For F-contiguous
+        (column-major) arrays, strides are computed from the first dimension to the last.
+
+        Args:
+            shape: List of integers representing the shape of the array.
+
+        Returns:
+            List of strides for each dimension.
+
+        Notes:
+            - This implementation assumes a contiguous buffer and unit element size.
+            - For non-contiguous or custom layouts, strides may need to be computed differently.
+            - This method does not handle broadcasting or advanced memory layouts.
+
+        Example:
+            For shape [2, 3, 4] and C-contiguous order, strides will be [12, 4, 1].
+            For shape [2, 3, 4] and F-contiguous order, strides will be [1, 2, 6].
+        """
+        var ndim = len(shape)
+        var strides = List[Int](capacity=ndim)
+        if ndim == 0:
+            return strides^  # Scalar (0-D array) has no strides
+
+        if self.flags.C_CONTIGUOUS:
+            # C-order
+            var stride: Int = 1
+            for i in range(ndim - 1, -1, -1):
+                strides.insert(0, stride)
                 stride *= shape[i]
-
-            for i in range(len(temp_strides) - 1, -1, -1):
-                strides.append(temp_strides[i])
-        else:  # F_CONTIGUOUS
-            var stride = 1
-            for i in range(len(shape)):
+        else:
+            # F-order
+            var stride: Int = 1
+            for i in range(ndim):
                 strides.append(stride)
                 stride *= shape[i]
 
         return strides^
 
-    fn __getitem__(self, var slice_list: List[Slice]) raises -> Self:
+    fn __getitem__(
+        self,
+        var slice_list: List[Slice],
+        var index_type_list: List[IndexTypeInfo],
+    ) raises -> Self:
         """
         Retrieves a sub-array from the current array using a list of slice objects, enabling advanced slicing operations across multiple dimensions.
 
         Args:
             slice_list: List of Slice objects, where each Slice defines the start, stop, and step for the corresponding dimension.
+            index_type_list: List of IndexTypeInfo objects indicating the type of each index (slice, integer, newaxis, ellipsis).
 
         Constraints:
             - The length of slice_list must not exceed the number of dimensions in the array.
@@ -833,33 +874,15 @@ struct NDArray[dtype: DType = DType.float64](
             ```mojo
             import numojo as nm
             var a = nm.arange(10).reshape(nm.Shape(2, 5))
-            var b = a[[Slice(0, 2, 1), Slice(2, 4, 1)]]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
+            var b = a[Slice(0, 2, 1), Slice(2, 4, 1)]  # Equivalent to arr[:, 2:4], returns a 2x2 sliced array.
             print(b)
             ```
         """
-        var n_slices: Int = slice_list.__len__()
-        # Check error cases
-        if n_slices == 0:
-            raise Error(
-                IndexError(
-                    message=String(
-                        "Empty slice list provided to NDArray.__getitem__."
-                    ),
-                    suggestion=String(
-                        "Provide a List with at least one slice to index the"
-                        " array."
-                    ),
-                    location=String(
-                        "NDArray.__getitem__(slice_list: List[Slice])"
-                    ),
-                )
-            )
-
-        # adjust slice values for user provided slices
-        var slices: List[Slice] = self._adjust_slice(slice_list)
+        var n_slices: Int = len(slice_list)
+        var slices: List[InternalSlice] = self._adjust_slice(slice_list)
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                slices.append(Slice(0, self.shape[i], 1))
+                slices.append(InternalSlice(0, self.shape[i], 1))
 
         var ndims: Int = 0
         var nshape: List[Int] = List[Int]()
@@ -867,15 +890,15 @@ struct NDArray[dtype: DType = DType.float64](
         var noffset: Int = 0
 
         for i in range(self.ndim):
-            var start: Int = slices[i].start.value()
-            var end: Int = slices[i].end.value()
-            var step: Int = slices[i].step.or_else(1)
+            var start: Int = slices[i].start
+            var end: Int = slices[i].end
+            var step: Int = slices[i].step
 
             var slice_len: Int
             if step > 0:
-                slice_len: Int = max(0, (end - start + (step - 1)) // step)
+                slice_len: Int = max((end - start + (step - 1)) // step, 0)
             else:
-                slice_len: Int = max(0, (start - end - step - 1) // (-step))
+                slice_len: Int = max((start - end - step - 1) // (-step), 0)
             nshape.append(slice_len)
             ncoefficients.append(self.strides[i] * step)
             ndims += 1
@@ -892,10 +915,44 @@ struct NDArray[dtype: DType = DType.float64](
         var narr: Self = Self(offset=noffset, shape=nshape, strides=nstrides)
         var index: List[Int] = List[Int](length=ndims, fill=0)
 
-        _traverse_iterative[Self.dtype](
-            self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
+        TraverseMethods.traverse_iterative[Self.dtype](
+            self,
+            narr,
+            nshape,
+            ncoefficients,
+            nstrides,
+            noffset,
+            index,
+            0,
         )
 
+        # TODO: Think about optimizing this later. It works for now.
+        var new_shape: List[Int] = List[Int]()
+        var new_ndim: Int = 0
+        var slice_count: Int = 0
+        for i in range(len(index_type_list)):
+            if index_type_list[i].is_ellipsis:
+                # handle ellipsis by adding remaining dimensions
+                var remaining_dims: Int = self.ndim - len(index_type_list) + 1
+                for _ in range(remaining_dims):
+                    new_ndim += 1
+                    new_shape.append(narr.shape[slice_count])
+                    slice_count += 1
+                break
+            elif index_type_list[i].is_newaxis:
+                new_ndim += 1
+                new_shape.append(1)
+            elif index_type_list[i].is_slice:
+                new_ndim += 1
+                new_shape.append(narr.shape[slice_count])
+                slice_count += 1
+            elif index_type_list[i].is_integer:
+                new_shape.append(narr.shape[i])
+
+        var new_strides: List[Int] = self._calculate_strides(new_shape)
+        narr.shape = NDArrayShape(shape=new_shape)
+        narr.strides = NDArrayStrides(strides=new_strides)
+        narr.ndim = new_ndim
         return narr^
 
     fn _getitem_variadic_slices(self, var *slices: Slice) raises -> Self:
@@ -922,16 +979,14 @@ struct NDArray[dtype: DType = DType.float64](
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Too many slices provided: expected at most {} but"
-                        " got {}."
-                    ).format(self.ndim, n_slices),
-                    suggestion=String(
-                        "Provide at most {} slices for an array with {}"
+                        "Too many slices provided: expected at most {} but got"
+                        " {}. Provide at most {} slices for an array with {}"
                         " dimensions."
-                    ).format(self.ndim, self.ndim),
-                    location=String("NDArray.__getitem__(slices: Slice)"),
+                    ).format(self.ndim, n_slices, self.ndim, self.ndim),
+                    location="NDArray.__getitem__(slices: Slice)",
                 )
             )
         var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
@@ -963,28 +1018,25 @@ struct NDArray[dtype: DType = DType.float64](
         Notes:
             This function is only for internal use since it's not compatible with numpy slicing.
         """
-        var n_slices: Int = slice_list.__len__()
+        var n_slices: Int = len(slice_list)
         if n_slices == 0:
             raise Error(
-                IndexError(
-                    message=String(
+                NumojoError(
+                    category="index",
+                    message=(
                         "Empty slice list provided to NDArray.__getitem__."
-                    ),
-                    suggestion=String(
-                        "Provide a List with at least one slice to index the"
+                        " Provide a List with at least one slice to index the"
                         " array."
                     ),
-                    location=String(
-                        "NDArray.__getitem__(slice_list: List[Slice])"
-                    ),
+                    location="NDArray.__getitem__(slice_list: List[Slice])",
                 )
             )
 
         # adjust slice values for user provided slices
-        var slices: List[Slice] = self._adjust_slice(slice_list)
+        var slices: List[InternalSlice] = self._adjust_slice(slice_list)
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
-                slices.append(Slice(0, self.shape[i], 1))
+                slices.append(InternalSlice(0, self.shape[i], 1))
 
         var ndims: Int = 0
         var nshape: List[Int] = List[Int]()
@@ -992,15 +1044,15 @@ struct NDArray[dtype: DType = DType.float64](
         var noffset: Int = 0
 
         for i in range(self.ndim):
-            var start: Int = slices[i].start.value()
-            var end: Int = slices[i].end.value()
-            var step: Int = slices[i].step.or_else(1)
+            var start: Int = slices[i].start
+            var end: Int = slices[i].end
+            var step: Int = slices[i].step
 
             var slice_len: Int
             if step > 0:
-                slice_len: Int = max(0, (end - start + (step - 1)) // step)
+                slice_len: Int = max((end - start + (step - 1)) // step, 0)
             else:
-                slice_len: Int = max(0, (start - end - step - 1) // (-step))
+                slice_len: Int = max((start - end - step - 1) // (-step), 0)
             if slice_len > 1:
                 nshape.append(slice_len)
                 ncoefficients.append(self.strides[i] * step)
@@ -1018,13 +1070,20 @@ struct NDArray[dtype: DType = DType.float64](
         var narr: Self = Self(offset=noffset, shape=nshape, strides=nstrides)
         var index: List[Int] = List[Int](length=ndims, fill=0)
 
-        _traverse_iterative[Self.dtype](
-            self, narr, nshape, ncoefficients, nstrides, noffset, index, 0
+        TraverseMethods.traverse_iterative[Self.dtype](
+            self,
+            narr,
+            nshape,
+            ncoefficients,
+            nstrides,
+            noffset,
+            index,
+            0,
         )
 
         return narr^
 
-    fn __getitem__(self, var *slices: Variant[Slice, Int]) raises -> Self:
+    fn __getitem__(self, *slices: IndexTypes) raises -> Self:
         """
         Get items of NDArray with a series of either slices or integers.
 
@@ -1202,43 +1261,55 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
         var n_slices: Int = len(slices)
-        if n_slices > self.ndim:
+        if n_slices == 0:
             raise Error(
-                IndexError(
-                    message=String(
-                        "Too many indices or slices: received {} but array has"
-                        " only {} dimensions."
-                    ).format(n_slices, self.ndim),
-                    suggestion=String(
-                        "Pass at most {} indices/slices (one per dimension)."
-                    ).format(self.ndim),
-                    location=String(
-                        "NDArray.__getitem__(*slices: Variant[Slice, Int])"
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Empty slice list provided to NDArray.__getitem__."
+                        " Provide a List with at least one slice to index the"
+                        " array."
                     ),
+                    location="NDArray.__getitem__(slice_list: List[Slice])",
                 )
             )
         var slice_list: List[Slice] = List[Slice]()
+        var index_type_list: List[IndexTypeInfo] = List[IndexTypeInfo](
+            capacity=self.ndim
+        )
         var count_int: Int = 0  # Count the number of Int in the argument
         var indices: List[Int] = List[Int]()
 
         for i in range(len(slices)):
+            if slices[i].isa[EllipsisType]():
+                index_type_list.append(IndexTypeInfo(is_ellipsis=True))
+                for j in range(self.ndim - n_slices + 1):
+                    slice_list.append(Slice(0, self.shape[i + j], 1))
+                break
+            if slices[i].isa[NewAxis]():
+                index_type_list.append(IndexTypeInfo(is_newaxis=True))
             if slices[i].isa[Slice]():
                 slice_list.append(slices[i][Slice])
+                index_type_list.append(IndexTypeInfo(is_slice=True))
             elif slices[i].isa[Int]():
                 var norm: Int = slices[i][Int]
                 if norm >= self.shape[i] or norm < -self.shape[i]:
                     raise Error(
-                        IndexError(
+                        NumojoError(
+                            category="index",
                             message=String(
                                 "Integer index {} out of bounds for axis {}"
-                                " (size {})."
-                            ).format(slices[i][Int], i, self.shape[i]),
-                            suggestion=String(
-                                "Valid indices: 0 <= i < {} or negative -{}"
-                                " <= i < 0 (negative indices wrap from the"
-                                " end)."
-                            ).format(self.shape[i], self.shape[i]),
-                            location=String(
+                                " (size {}). Valid indices: 0 <= i < {} or"
+                                " negative -{} <= i < 0 (negative indices wrap"
+                                " from the end)."
+                            ).format(
+                                slices[i][Int],
+                                i,
+                                self.shape[i],
+                                self.shape[i],
+                                self.shape[i],
+                            ),
+                            location=(
                                 "NDArray.__getitem__(*slices: Variant[Slice,"
                                 " Int])"
                             ),
@@ -1255,11 +1326,11 @@ struct NDArray[dtype: DType = DType.float64](
             narr = creation._0darray[Self.dtype](self._getitem(indices))
             return narr^
 
-        if n_slices < self.ndim:
+        if n_slices < self.ndim and not index_type_list[-1].is_ellipsis:
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 
-        narr = self.__getitem__(slice_list^)
+        narr = self.__getitem__(slice_list^, index_type_list^)
         return narr^
 
     fn __getitem__(self, indices: NDArray[DType.int]) raises -> Self:
@@ -1309,7 +1380,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # Get the shape of resulted array
         # var shape = indices.shape.join(self.shape._pop(0))
-        var shape = indices.shape.join(self.shape._pop(0))
+        var shape = indices.shape.join(self.shape.pop(0))
 
         var result: NDArray[Self.dtype] = NDArray[Self.dtype](shape)
         var size_per_item: Int = self.size // self.shape[0]
@@ -1318,18 +1389,17 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(indices.size):
             if indices.item(i) >= self.shape[0]:
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
                             "Index out of range at position {}: got {}; valid"
                             " range for the first dimension is [0, {})."
-                        ).format(i, indices.item(i), self.shape[0]),
-                        suggestion=String(
-                            "Validate indices against the first dimension size"
+                            " Validate indices against the first dimension size"
                             " ({})."
-                        ).format(self.shape[0]),
-                        location=String(
-                            "NDArray.__getitem__(indices: NDArray[DType.int])"
+                        ).format(
+                            i, indices.item(i), self.shape[0], self.shape[0]
                         ),
+                        location="NDArray.__getitem__(indices: NDArray[dtype])",
                     )
                 )
             memcpy(
@@ -1487,22 +1557,18 @@ struct NDArray[dtype: DType = DType.float64](
             return result^
         else:
             raise Error(
-                ShapeError(
+                NumojoError(
+                    category="shape",
                     message=String(
                         "Boolean mask shape {} is not compatible with array"
                         " shape {}. Currently supported: (1) exact shape match"
                         " for element-wise masking, (2) 1-D mask with length"
                         " matching first dimension. Broadcasting is not"
-                        " supported currently."
-                    ).format(mask.shape, self.shape),
-                    suggestion=String(
-                        "Ensure mask shape matches array shape for element-wise"
-                        " masking, or use 1-D mask with length {} for"
-                        " first-dimension indexing."
-                    ).format(self.shape[0]),
-                    location=String(
-                        "NDArray.__getitem__(mask: NDArray[DType.bool])"
-                    ),
+                        " supported currently. Ensure mask shape matches array"
+                        " shape for element-wise masking, or use 1-D mask with"
+                        " length {} for first-dimension indexing."
+                    ).format(mask.shape, self.shape, self.shape[0]),
+                    location="NDArray.__getitem__(mask: NDArray[DType.bool])",
                 )
             )
 
@@ -1598,16 +1664,14 @@ struct NDArray[dtype: DType = DType.float64](
         # For 0-D array, raise error
         if self.ndim == 0:
             raise Error(
-                IndexError(
-                    message=String(
+                NumojoError(
+                    category="index",
+                    message=(
                         "Cannot index a 0-D array (numojo scalar) with an"
-                        " integer index."
+                        " integer index. Call `a.item()` with no arguments to"
+                        " get its scalar value."
                     ),
-                    suggestion=String(
-                        "Call `a.item()` with no arguments to get its scalar"
-                        " value."
-                    ),
-                    location=String("NDArray.item(index: Int)"),
+                    location="NDArray.item(index: Int)",
                 )
             )
 
@@ -1615,15 +1679,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Index out of range: got {}; valid range is [0, {})."
-                    ).format(index, self.size),
-                    suggestion=String(
-                        "Clamp or validate the index against the array size"
+                        " Clamp or validate the index against the array size"
                         " ({})."
-                    ).format(self.size),
-                    location=String("NDArray.item(index: Int)"),
+                    ).format(index, self.size, self.size),
+                    location="NDArray.item(index: Int)",
                 )
             )
 
@@ -1634,10 +1697,10 @@ struct NDArray[dtype: DType = DType.float64](
         var item = Item(ndim=self.ndim)
 
         for i in range(self.ndim - 1, -1, -1):
-            (item._buf + i).init_pointee_copy(remainder % self.shape[i])
+            (item._buf.ptr + i).init_pointee_copy(remainder % self.shape[i])
             remainder = remainder // self.shape[i]
 
-        return self._buf.ptr[_get_offset(item, self.strides)]
+        return self._buf.ptr[IndexMethods.get_1d_index(item, self.strides)]
 
     fn item(self, *index: Int) raises -> Scalar[Self.dtype]:
         """
@@ -1676,14 +1739,13 @@ struct NDArray[dtype: DType = DType.float64](
 
         if len(index) != self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Invalid number of indices: expected {} but got {}."
-                    ).format(self.ndim, len(index)),
-                    suggestion=String(
-                        "Pass exactly {} indices (one per dimension)."
-                    ).format(self.ndim),
-                    location=String("NDArray.item(*index: Int)"),
+                        " Pass exactly {} indices (one per dimension)."
+                    ).format(self.ndim, len(index), self.ndim),
+                    location="NDArray.item(*index: Int)",
                 )
             )
 
@@ -1699,19 +1761,21 @@ struct NDArray[dtype: DType = DType.float64](
                 list_index.append(index[i])
             if (list_index[i] < 0) or (list_index[i] >= self.shape[i]):
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
                             "Index out of range at dim {}: got {}; valid range"
-                            " is [0, {})."
-                        ).format(i, list_index[i], self.shape[i]),
-                        suggestion=String(
-                            "Clamp or validate indices against the dimension"
-                            " size ({})."
-                        ).format(self.shape[i]),
-                        location=String("NDArray.item(*index: Int)"),
+                            " is [0, {}). Clamp or validate indices against the"
+                            " dimension size ({})."
+                        ).format(
+                            i, list_index[i], self.shape[i], self.shape[i]
+                        ),
+                        location="NDArray.item(*index: Int)",
                     )
                 )
-        return (self._buf.ptr + _get_offset(index, self.strides))[]
+        return (
+            self._buf.ptr + IndexMethods.get_1d_index(index, self.strides)
+        )[]
 
     fn load(self, var index: Int) raises -> Scalar[Self.dtype]:
         """
@@ -1747,17 +1811,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if index >= self.size:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Index out of range: got {}; valid range is [0, {})."
-                    ).format(index, self.size),
-                    suggestion=String(
-                        "Clamp or validate the index against the array size"
+                        " Clamp or validate the index against the array size"
                         " ({})."
-                    ).format(self.size),
-                    location=String(
-                        "NDArray.load(index: Int) -> Scalar[dtype]"
-                    ),
+                    ).format(index, self.size, self.size),
+                    location="NDArray.load(index: Int) -> Scalar[dtype]",
                 )
             )
 
@@ -1786,15 +1847,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if index >= self.size:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Index out of range: got {}; valid range is [0, {})."
-                    ).format(index, self.size),
-                    suggestion=String(
-                        "Clamp or validate the index against the array size"
+                        " Clamp or validate the index against the array size"
                         " ({})."
-                    ).format(self.size),
-                    location=String(
+                    ).format(index, self.size, self.size),
+                    location=(
                         "NDArray.load[width: Int = 1](index: Int) ->"
                         " SIMD[dtype, width]"
                     ),
@@ -1833,14 +1893,13 @@ struct NDArray[dtype: DType = DType.float64](
 
         if len(indices) != self.ndim:
             raise Error(
-                ShapeError(
+                NumojoError(
+                    category="shape",
                     message=String(
                         "Invalid number of indices: expected {} but got {}."
-                    ).format(self.ndim, len(indices)),
-                    suggestion=String(
-                        "Pass exactly {} indices (one per dimension)."
-                    ).format(self.ndim),
-                    location=String(
+                        " Pass exactly {} indices (one per dimension)."
+                    ).format(self.ndim, len(indices), self.ndim),
+                    location=(
                         "NDArray.load[width: Int = 1](*indices: Int) ->"
                         " SIMD[dtype, width]"
                     ),
@@ -1852,16 +1911,14 @@ struct NDArray[dtype: DType = DType.float64](
             var idx_i = indices[i]
             if idx_i < 0 or idx_i >= self.shape[i]:
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
                             "Index out of range at dim {}: got {}; valid range"
-                            " is [0, {})."
-                        ).format(i, idx_i, self.shape[i]),
-                        suggestion=String(
-                            "Clamp or validate indices against the dimension"
-                            " size ({})."
-                        ).format(self.shape[i]),
-                        location=String(
+                            " is [0, {}). Clamp or validate indices against the"
+                            " dimension size ({})."
+                        ).format(i, idx_i, self.shape[i], self.shape[i]),
+                        location=(
                             "NDArray.load[width: Int = 1](*indices: Int) ->"
                             " SIMD[dtype, width]"
                         ),
@@ -1872,7 +1929,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # indices_list already built above
 
-        var idx: Int = _get_offset(indices_list, self.strides)
+        var idx: Int = IndexMethods.get_1d_index(indices_list, self.strides)
         return self._buf.ptr.load[width=width](idx)
 
     # ===-------------------------------------------------------------------===#
@@ -1923,7 +1980,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
-            index_of_buffer += indices[i] * Int(self.strides._buf[i])
+            index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
         self._buf.ptr[index_of_buffer] = val
 
     fn __setitem__(self, idx: Int, val: Self) raises:
@@ -1962,15 +2019,13 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if self.ndim == 0:
             raise Error(
-                IndexError(
-                    message=String("Cannot assign into a 0D array."),
-                    suggestion=String(
-                        "Use itemset() on a 0D scalar or reshape before"
-                        " assigning."
+                NumojoError(
+                    category="index",
+                    message=(
+                        "Cannot assign into a 0D array. Use itemset() on a 0D"
+                        " scalar or reshape before assigning."
                     ),
-                    location=String(
-                        "NDArray.__setitem__(idx: Int, val: NDArray)"
-                    ),
+                    location="NDArray.__setitem__(idx: Int, val: NDArray)",
                 )
             )
 
@@ -1978,33 +2033,27 @@ struct NDArray[dtype: DType = DType.float64](
         norm = self.normalize(norm, self.shape[0])
         if (norm < 0) or (norm >= self.shape[0]):
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Index {} out of bounds for axis 0 (size {})."
-                    ).format(idx, self.shape[0]),
-                    suggestion=String("Use an index in [-{}..{}). ").format(
-                        self.shape[0], self.shape[0]
-                    ),
-                    location=String(
-                        "NDArray.__setitem__(idx: Int, val: NDArray)"
-                    ),
+                        "Index {} out of bounds for axis 0 (size {}). Use an"
+                        " index in [-{}..{})."
+                    ).format(idx, self.shape[0], self.shape[0], self.shape[0]),
+                    location="NDArray.__setitem__(idx: Int, val: NDArray)",
                 )
             )
 
         if self.shape[1:] != val.shape:
             var expected_shape: NDArrayShape = self.shape[1:]
             raise Error(
-                ShapeError(
+                NumojoError(
+                    category="shape",
                     message=String(
                         "Shape mismatch for slice assignment at axis 0 index"
-                        " {}: expected value with shape {} but got {}."
-                    ).format(norm, expected_shape, val.shape),
-                    suggestion=String(
-                        "Reshape value to {} or adjust the source index."
-                    ).format(expected_shape),
-                    location=String(
-                        "NDArray.__setitem__(idx: Int, val: NDArray)"
-                    ),
+                        " {}: expected value with shape {} but got {}. Reshape"
+                        " value to {} or adjust the source index."
+                    ).format(norm, expected_shape, val.shape, expected_shape),
+                    location="NDArray.__setitem__(idx: Int, val: NDArray)",
                 )
             )
 
@@ -2030,18 +2079,18 @@ struct NDArray[dtype: DType = DType.float64](
         var coords = List[Int](capacity=out_ndim)
         for _ in range(out_ndim):
             coords.append(0)
-        var base = norm_idx * dst.strides._buf[0]
+        var base = norm_idx * dst.strides.unsafe_load(0)
         for lin in range(total):
             var rem = lin
             for d in range(out_ndim - 1, -1, -1):
-                var dim = Int(src.shape._buf[d])
+                var dim = Int(src.shape.unsafe_load(d))
                 coords[d] = rem % dim
                 rem //= dim
             var dst_off = base
             var src_off = 0
             for d in range(out_ndim):
-                var stride_src = Int(src.strides._buf[d])
-                var stride_dst = Int(dst.strides._buf[d + 1])
+                var stride_src = Int(src.strides.unsafe_load(d))
+                var stride_dst = Int(dst.strides.unsafe_load(d + 1))
                 var c = coords[d]
                 dst_off += c * stride_dst
                 src_off += c * stride_src
@@ -2060,24 +2109,22 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If any of the indices is out of bound.
 
         Examples:
-
-        ```mojo
-        import numojo as nm
-        from numojo.prelude import *
-        var A = numojo.random.rand[numojo.i16](2, 2, 2)
-        A[Item(0, 1, 1)] = 10
-        ```.
+            ```mojo
+            import numojo as nm
+            from numojo.prelude import *
+            var A = numojo.random.rand[numojo.i16](2, 2, 2)
+            A[Item(0, 1, 1)] = 10
+            ```
         """
         if index.__len__() != self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Invalid index length: expected {} but got {}."
-                    ).format(self.ndim, index.__len__()),
-                    suggestion=String(
-                        "Pass exactly {} indices (one per dimension)."
-                    ).format(self.ndim),
-                    location=String(
+                        "Invalid index length: expected {} but got {}. Pass"
+                        " exactly {} indices (one per dimension)."
+                    ).format(self.ndim, index.__len__(), self.ndim),
+                    location=(
                         "NDArray.__setitem__(index: Item, val: Scalar[dtype])"
                     ),
                 )
@@ -2085,16 +2132,14 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(index.__len__()):
             if index[i] >= self.shape[i]:
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
                             "Index out of range at dim {}: got {}; valid range"
-                            " is [0, {})."
-                        ).format(i, index[i], self.shape[i]),
-                        suggestion=String(
-                            "Clamp or validate indices against the dimension"
-                            " size ({})."
-                        ).format(self.shape[i]),
-                        location=String(
+                            " is [0, {}). Clamp or validate indices against the"
+                            " dimension size ({})."
+                        ).format(i, index[i], self.shape[i], self.shape[i]),
+                        location=(
                             "NDArray.__setitem__(index: Item, val:"
                             " Scalar[dtype])"
                         ),
@@ -2102,7 +2147,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             index[i] = self.normalize(index[i], self.shape[i])
 
-        var idx: Int = _get_offset(index, self.strides)
+        var idx: Int = IndexMethods.get_1d_index(index, self.strides)
         self._buf.ptr.store(idx, val)
 
     # only works if array is called as array.__setitem__(), mojo compiler doesn't parse it implicitly
@@ -2132,16 +2177,14 @@ struct NDArray[dtype: DType = DType.float64](
             mask.shape != self.shape
         ):  # this behavious could be removed potentially
             raise Error(
-                ShapeError(
+                NumojoError(
+                    category="shape",
                     message=String(
-                        "Mask shape {} does not match array shape {}."
-                    ).format(mask.shape, self.shape),
-                    suggestion=String(
-                        "Provide a boolean mask with exactly the same shape"
-                        " ({})."
-                    ).format(self.shape),
-                    location=String(
-                        "NDArray.__setitem__(mask: NDArray[DType.bool], value:"
+                        "Mask shape {} does not match array shape {}. Provide a"
+                        " boolean mask with exactly the same shape ({})."
+                    ).format(mask.shape, self.shape, self.shape),
+                    location=(
+                        "NDArray.__setitem__(mask: NDArray[DType.bool], val:"
                         " Scalar[dtype])"
                     ),
                 )
@@ -2211,35 +2254,34 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var count: Int = 0
         var spec: List[Int] = List[Int]()
-        var slice_list: List[Slice] = self._adjust_slice(slices)
+        var slice_list: List[InternalSlice] = self._adjust_slice(slices)
         for i in range(n_slices):
             if (
-                slice_list[i].start.value() >= self.shape[i]
-                or slice_list[i].end.value() > self.shape[i]
+                slice_list[i].start >= self.shape[i]
+                or slice_list[i].end > self.shape[i]
             ):
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
                             "Slice out of range at dim {}: start={}, end={},"
-                            " valid bounds are [0, {}]."
+                            " valid bounds are [0, {}]. Clamp slice start/end"
+                            " to [0, {}]."
                         ).format(
                             i,
-                            slice_list[i].start.value(),
-                            slice_list[i].end.value(),
+                            slice_list[i].start,
+                            slice_list[i].end,
+                            self.shape[i],
                             self.shape[i],
                         ),
-                        suggestion=String(
-                            "Adjust the slice to lie within [0, {})."
-                        ).format(self.shape[i]),
-                        location=String(
-                            "NDArray.__setitem__(slices: List[Slice], val:"
-                            " Self)"
+                        location=(
+                            "NDArray.__setitem__(slice_list: List[Slice], val:"
+                            " NDArray)"
                         ),
                     )
                 )
             var slice_len: Int = (
-                (slice_list[i].end.value() - slice_list[i].start.value())
-                / slice_list[i].step.or_else(1)
+                (slice_list[i].end - slice_list[i].start) / slice_list[i].step
             ).__int__()
             spec.append(slice_len)
             if slice_len != 1:
@@ -2263,32 +2305,27 @@ struct NDArray[dtype: DType = DType.float64](
             if j >= self.ndim:
                 break
             var slice_len: Int = (
-                (slice_list[j].end.value() - slice_list[j].start.value())
-                / slice_list[j].step.or_else(1)
+                (slice_list[j].end - slice_list[j].start) / slice_list[j].step
             ).__int__()
             nshape.append(slice_len)
             nnum_elements *= slice_len
-            ncoefficients.append(
-                self.strides[j] * slice_list[j].step.or_else(1)
-            )
+            ncoefficients.append(self.strides[j] * slice_list[j].step)
             j += 1
 
         # TODO: We can remove this check after we have support for broadcasting
         for i in range(ndims):
             if nshape[i] != val.shape[i]:
                 raise Error(
-                    ShapeError(
+                    NumojoError(
+                        category="shape",
                         message=String(
                             "Shape mismatch at dim {}: destination has {},"
-                            " value has {}."
+                            " value has {}. Make the value shape match the"
+                            " destination slice shape."
                         ).format(i, nshape[i], val.shape[i]),
-                        suggestion=String(
-                            "Make the value shape match the destination slice"
-                            " shape."
-                        ),
-                        location=String(
-                            "NDArray.__setitem__(slices: List[Slice], val:"
-                            " Self)"
+                        location=(
+                            "NDArray.__setitem__(slice_list: List[Slice], val:"
+                            " NDArray)"
                         ),
                     )
                 )
@@ -2302,21 +2339,27 @@ struct NDArray[dtype: DType = DType.float64](
                     temp_stride *= nshape[j]
                 nstrides.append(temp_stride)
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
+                noffset += slice_list[i].start * self.strides[i]
         elif self.flags.F_CONTIGUOUS:
             noffset = 0
             nstrides.append(1)
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
             for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start.value() * self.strides[i]
+                noffset += slice_list[i].start * self.strides[i]
 
         var index = List[Int]()
         for _ in range(ndims):
             index.append(0)
 
-        _traverse_iterative_setter[Self.dtype](
-            val, self, nshape, ncoefficients, nstrides, noffset, index
+        TraverseMethods.traverse_iterative_setter[Self.dtype](
+            val,
+            self,
+            nshape,
+            ncoefficients,
+            nstrides,
+            noffset,
+            index,
         )
 
     fn __setitem__(mut self, *slices: Variant[Slice, Int], val: Self) raises:
@@ -2353,17 +2396,16 @@ struct NDArray[dtype: DType = DType.float64](
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Too many indices or slices: received {} but array has"
-                        " only {} dimensions."
-                    ).format(n_slices, self.ndim),
-                    suggestion=String(
-                        "Pass at most {} indices/slices (one per dimension)."
-                    ).format(self.ndim),
-                    location=String(
+                        " only {} dimensions. Pass at most {} indices/slices"
+                        " (one per dimension)."
+                    ).format(n_slices, self.ndim, self.ndim),
+                    location=(
                         "NDArray.__setitem__(*slices: Variant[Slice, Int], val:"
-                        " Self)"
+                        " NDArray)"
                     ),
                 )
             )
@@ -2413,35 +2455,30 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if index.ndim != 1:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Advanced index array must be 1D, got {}D."
+                        "Advanced index array must be 1D, got {}D. Use a 1D"
+                        " index array. For multi-axis indexing, index each axis"
+                        " separately."
                     ).format(index.ndim),
-                    suggestion=String(
-                        "Use a 1D index array. For multi-axis indexing, index"
-                        " each axis separately."
-                    ),
-                    location=String(
-                        "NDArray.__setitem__(index: NDArray[DType.int], val:"
-                        " NDArray)"
+                    location=(
+                        "NDArray.__setitem__(index: NDArray, val: NDArray)"
                     ),
                 )
             )
 
         if index.size > self.shape[0]:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Index array has {} elements; first dimension size"
-                        " is {}."
-                    ).format(index.size, self.shape[0]),
-                    suggestion=String(
-                        "Truncate or reshape the index array to fit within the"
-                        " first dimension ({})."
-                    ).format(self.shape[0]),
-                    location=String(
-                        "NDArray.__setitem__(index: NDArray[DType.int], val:"
-                        " NDArray)"
+                        "Index array has {} elements; first dimension size is"
+                        " {}. Truncate or reshape the index array to fit within"
+                        " the first dimension ({})."
+                    ).format(index.size, self.shape[0], self.shape[0]),
+                    location=(
+                        "NDArray.__setitem__(index: NDArray, val: NDArray)"
                     ),
                 )
             )
@@ -2457,18 +2494,17 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(index.size):
             if index.item(i) >= self.shape[0] or index.item(i) < 0:
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
                             "Index out of range at position {}: got {}; valid"
-                            " range is [0, {})."
-                        ).format(i, index.item(i), self.shape[0]),
-                        suggestion=String(
-                            "Validate indices against the first dimension size"
-                            " ({})."
-                        ).format(self.shape[0]),
-                        location=String(
-                            "NDArray.__setitem__(index: NDArray[DType.int],"
-                            " val: NDArray)"
+                            " range is [0, {}). Validate indices against the"
+                            " first dimension size ({})."
+                        ).format(
+                            i, index.item(i), self.shape[0], self.shape[0]
+                        ),
+                        location=(
+                            "NDArray.__setitem__(index: NDArray, val: NDArray)"
                         ),
                     )
                 )
@@ -2507,11 +2543,17 @@ struct NDArray[dtype: DType = DType.float64](
             mask.shape != self.shape
         ):  # this behavious could be removed potentially
             raise Error(
-                String(
-                    "\nShape of mask does not match the shape of array. "
-                    "The mask shape is {}. "
-                    "The array shape is {}."
-                ).format(mask.shape, self.shape)
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "Shape of mask does not match the shape of array. The"
+                        " mask shape is {}. The array shape is {}."
+                    ).format(mask.shape, self.shape),
+                    location=(
+                        "NDArray.__setitem__(mask: NDArray[DType.bool], val:"
+                        " NDArray)"
+                    ),
+                )
             )
 
         for i in range(mask.size):
@@ -2581,21 +2623,20 @@ struct NDArray[dtype: DType = DType.float64](
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
                     self._buf.ptr.store(
-                        _get_offset(c_coordinates, self.strides), item
+                        IndexMethods.get_1d_index(c_coordinates, self.strides),
+                        item,
                     )
 
                 self._buf.ptr.store(idx, item)
             else:
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
-                            "Index {} exceeds the array size ({})."
-                        ).format(idx, self.size),
-                        suggestion=String(
-                            "Ensure the index is within the valid range [0,"
-                            " {})."
-                        ).format(self.size),
-                        location=String(
+                            "Index {} exceeds the array size ({}). Ensure the"
+                            " index is within the valid range [0, {})."
+                        ).format(idx, self.size, self.size),
+                        location=(
                             "NDArray.itemset(index: Int, item: Scalar[dtype])"
                         ),
                     )
@@ -2606,14 +2647,13 @@ struct NDArray[dtype: DType = DType.float64](
             # If more than one index is given
             if indices.__len__() != self.ndim:
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
-                            "Invalid index length: expected {} but got {}."
-                        ).format(self.ndim, indices.__len__()),
-                        suggestion=String(
-                            "Pass exactly {} indices (one per dimension)."
-                        ).format(self.ndim),
-                        location=String(
+                            "Invalid index length: expected {} but got {}. Pass"
+                            " exactly {} indices (one per dimension)."
+                        ).format(self.ndim, indices.__len__(), self.ndim),
+                        location=(
                             "NDArray.itemset(index: List[Int], item:"
                             " Scalar[dtype])"
                         ),
@@ -2622,22 +2662,24 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(indices.__len__()):
                 if indices[i] >= self.shape[i]:
                     raise Error(
-                        IndexError(
+                        NumojoError(
+                            category="index",
                             message=String(
                                 "Index out of range at dim {}: got {}; valid"
-                                " range is [0, {})."
-                            ).format(i, indices[i], self.shape[i]),
-                            suggestion=String(
-                                "Clamp or validate indices against the"
-                                " dimension size ({})."
-                            ).format(self.shape[i]),
-                            location=String(
+                                " range is [0, {}). Clamp or validate indices"
+                                " against the dimension size ({})."
+                            ).format(
+                                i, indices[i], self.shape[i], self.shape[i]
+                            ),
+                            location=(
                                 "NDArray.itemset(index: List[Int], item:"
                                 " Scalar[dtype])"
                             ),
                         )
                     )
-            self._buf.ptr.store(_get_offset(indices, self.strides), item)
+            self._buf.ptr.store(
+                IndexMethods.get_1d_index(indices, self.strides), item
+            )
 
     fn store(self, var index: Int, val: Scalar[Self.dtype]) raises:
         """
@@ -2666,17 +2708,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index >= self.size) or (index < 0):
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Index out of range: got {}; valid range is [0, {})."
-                    ).format(index, self.size),
-                    suggestion=String(
-                        "Clamp or validate the index against the array size"
+                        " Clamp or validate the index against the array size"
                         " ({})."
-                    ).format(self.size),
-                    location=String(
-                        "NDArray.store(index: Int, val: Scalar[dtype])"
-                    ),
+                    ).format(index, self.size, self.size),
+                    location="NDArray.store(index: Int, val: Scalar[dtype])",
                 )
             )
 
@@ -2708,15 +2747,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if (index < 0) or (index >= self.size):
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Index out of range: got {}; valid range is [0, {})."
-                    ).format(index, self.size),
-                    suggestion=String(
-                        "Clamp or validate the index against the array size"
+                        " Clamp or validate the index against the array size"
                         " ({})."
-                    ).format(self.size),
-                    location=String(
+                    ).format(index, self.size, self.size),
+                    location=(
                         "NDArray.store[width: Int](index: Int, val: SIMD[dtype,"
                         " width])"
                     ),
@@ -2752,14 +2790,13 @@ struct NDArray[dtype: DType = DType.float64](
 
         if len(indices) != self.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Invalid number of indices: expected {} but got {}."
-                    ).format(self.ndim, len(indices)),
-                    suggestion=String(
-                        "Pass exactly {} indices (one per dimension)."
-                    ).format(self.ndim),
-                    location=String(
+                        " Pass exactly {} indices (one per dimension)."
+                    ).format(self.ndim, len(indices), self.ndim),
+                    location=(
                         "NDArray.store[width: Int](*indices: Int, val:"
                         " SIMD[dtype, width])"
                     ),
@@ -2769,23 +2806,21 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(self.ndim):
             if (indices[i] < 0) or (indices[i] >= self.shape[i]):
                 raise Error(
-                    IndexError(
+                    NumojoError(
+                        category="index",
                         message=String(
                             "Invalid index at dimension {}: index {} is out of"
-                            " bounds [0, {})."
-                        ).format(i, indices[i], self.shape[i]),
-                        suggestion=String(
-                            "Clamp or validate indices against the dimension"
-                            " size ({})."
-                        ).format(self.shape[i]),
-                        location=String(
+                            " bounds [0, {}). Clamp or validate indices against"
+                            " the dimension size ({})."
+                        ).format(i, indices[i], self.shape[i], self.shape[i]),
+                        location=(
                             "NDArray.store[width: Int](*indices: Int, val:"
                             " SIMD[dtype, width])"
                         ),
                     )
                 )
 
-        var idx: Int = _get_offset(indices, self.strides)
+        var idx: Int = IndexMethods.get_1d_index(indices, self.strides)
         self._buf.ptr.store(idx, val)
 
     # ===-------------------------------------------------------------------===#
@@ -2898,51 +2933,6 @@ struct NDArray[dtype: DType = DType.float64](
             )
         return self * Scalar[Self.dtype](-1.0)
 
-    # maybe they don't need conversion with astype.
-    # @always_inline("nodebug")
-    # fn __eq__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise equivalence.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other array.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other array to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.equal[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
-    # @always_inline("nodebug")
-    # fn __eq__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise equivalence.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other Scalar.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other Scalar to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.equal[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
     @always_inline("nodebug")
     fn __eq__(self, other: Self) raises -> NDArray[DType.bool]:
         """
@@ -2968,50 +2958,6 @@ struct NDArray[dtype: DType = DType.float64](
             An array of boolean values.
         """
         return comparison.equal[Self.dtype](self, other)
-
-    # @always_inline("nodebug")
-    # fn __ne__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise nonequivelence.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other array.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other array to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.not_equal[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
-    # @always_inline("nodebug")
-    # fn __ne__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise nonequivelence between scalar and Array.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other Scalar.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other Scalar to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.not_equal[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
 
     @always_inline("nodebug")
     fn __ne__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3039,50 +2985,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.not_equal[Self.dtype](self, other)
 
-    # @always_inline("nodebug")
-    # fn __lt__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise less than.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other Scalar.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other Scalar to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.less[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # @always_inline("nodebug")
-    # fn __lt__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise less than between scalar and Array.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other array.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other array to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.less[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
     @always_inline("nodebug")
     fn __lt__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
         """
@@ -3108,50 +3010,6 @@ struct NDArray[dtype: DType = DType.float64](
             An array of boolean values.
         """
         return comparison.less[Self.dtype](self, other)
-
-    # @always_inline("nodebug")
-    # fn __le__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise less than or equal to.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other Scalar.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other Scalar to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.less_equal[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # @always_inline("nodebug")
-    # fn __le__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise less than or equal to between scalar and Array.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other array.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other array to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.less_equal[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
 
     @always_inline("nodebug")
     fn __le__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3179,50 +3037,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.less_equal[Self.dtype](self, other)
 
-    # @always_inline("nodebug")
-    # fn __gt__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise greater than.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other Scalar.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other Scalar to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.greater[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # @always_inline("nodebug")
-    # fn __gt__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise greater than between scalar and Array.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other array.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other array to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.greater[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
     @always_inline("nodebug")
     fn __gt__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
         """
@@ -3248,50 +3062,6 @@ struct NDArray[dtype: DType = DType.float64](
             An array of boolean values.
         """
         return comparison.greater[Self.dtype](self, other)
-
-    # @always_inline("nodebug")
-    # fn __ge__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: Scalar[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise greater than or equal to.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other Scalar.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other Scalar to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.greater_equal[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # @always_inline("nodebug")
-    # fn __ge__[
-    #     OtherDtype: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDtype](),
-    # ](self, other: NDArray[OtherDtype]) raises -> NDArray[DType.bool]:
-    #     """
-    #     Itemwise greater than or equal to between scalar and Array.
-
-    #     Parameters:
-    #         OtherDtype: The data type of the other array.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other array to compare with.
-
-    #     Returns:
-    #         An array of boolean values.
-    #     """
-    #     return comparison.greater_equal[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
 
     @always_inline("nodebug")
     fn __ge__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3323,39 +3093,6 @@ struct NDArray[dtype: DType = DType.float64](
     # ARITHMETIC OPERATORS
     # ===-------------------------------------------------------------------===#
 
-    # fn __add__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array + scalar`.
-
-    #     Parameters:
-    #         OtherDType: The data type of the other Scalar.
-    #         ResultDType: The data type of the result array.
-
-    #     Args:
-    #         other: The other Scalar to compare with.
-
-    #     Returns:
-    #         An array of the result of the addition.
-    #     """
-    #     return math.add[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-    #
-
-    # fn __add__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = result[dtype, OtherDType](),
-    # ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array + array`.
-    #     """
-    #     return math.add[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
     fn __add__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `array + scalar`.
@@ -3367,17 +3104,6 @@ struct NDArray[dtype: DType = DType.float64](
         Enables `array + array`.
         """
         return math.add[Self.dtype](self, other)
-
-    # fn __radd__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `scalar + array`.
-    #     """
-    #     return math.add[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
 
     fn __radd__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3402,28 +3128,6 @@ struct NDArray[dtype: DType = DType.float64](
             self, other
         )
 
-    # fn __sub__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array - scalar`.
-    #     """
-    #     return math.sub[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # fn __sub__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array - array`.
-    #     """
-    #     return math.sub[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
     fn __sub__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `array - scalar`.
@@ -3435,17 +3139,6 @@ struct NDArray[dtype: DType = DType.float64](
         Enables `array - array`.
         """
         return math.sub[Self.dtype](self, other)
-
-    # fn __rsub__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `scalar - array`.
-    #     """
-    #     return math.sub[ResultDType](
-    #         other.cast[ResultDType](), self.astype[ResultDType]()
-    #     )
 
     fn __rsub__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3468,28 +3161,6 @@ struct NDArray[dtype: DType = DType.float64](
     fn __matmul__(self, other: Self) raises -> Self:
         return numojo.linalg.matmul(self, other)
 
-    # fn __mul__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array * scalar`.
-    #     """
-    #     return math.mul[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # fn __mul__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array * array`.
-    #     """
-    #     return math.mul[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
     fn __mul__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `array * scalar`.
@@ -3501,17 +3172,6 @@ struct NDArray[dtype: DType = DType.float64](
         Enables `array * array`.
         """
         return math.mul[Self.dtype](self, other)
-
-    # fn __rmul__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `scalar * array`.
-    #     """
-    #     return math.mul[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
 
     fn __rmul__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3597,28 +3257,6 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[self.width](self.size, array_scalar_vectorize)
         return new_vec^
 
-    # fn __truediv__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array / scalar`.
-    #     """
-    #     return math.div[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # fn __truediv__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array / array`.
-    #     """
-    #     return math.div[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
-
     fn __truediv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `array / scalar`.
@@ -3643,44 +3281,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self = self.__truediv__(other)
 
-    # fn __rtruediv__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, s: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `scalar / array`.
-    #     """
-    #     return math.div[ResultDType](
-    #         s.cast[ResultDType](), self.astype[ResultDType]()
-    #     )
-
     fn __rtruediv__(self, s: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar / array`.
         """
         return math.div[Self.dtype](s, self)
-
-    # fn __floordiv__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array // scalar`.
-    #     """
-    #     return math.floor_div[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # fn __floordiv__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array // array`.
-    #     """
-    #     return math.floor_div[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
 
     fn __floordiv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3706,44 +3311,11 @@ struct NDArray[dtype: DType = DType.float64](
         """
         self = self.__floordiv__(other)
 
-    # fn __rfloordiv__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `scalar // array`.
-    #     """
-    #     return math.floor_div[ResultDType](
-    #         other.cast[ResultDType](), self.astype[ResultDType]()
-    #     )
-
     fn __rfloordiv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar // array`.
         """
         return math.floor_div[Self.dtype](other, self)
-
-    # fn __mod__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array % scalar`.
-    #     """
-    #     return math.mod[ResultDType](
-    #         self.astype[ResultDType](), other.cast[ResultDType]()
-    #     )
-
-    # fn __mod__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: NDArray[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `array % array`.
-    #     """
-    #     return math.mod[ResultDType](
-    #         self.astype[ResultDType](), other.astype[ResultDType]()
-    #     )
 
     fn __mod__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3774,17 +3346,6 @@ struct NDArray[dtype: DType = DType.float64](
         Enables `scalar % array`.
         """
         return math.mod[Self.dtype](other, self)
-
-    # fn __rmod__[
-    #     OtherDType: DType,
-    #     ResultDType: DType = TypeCoercion.result[dtype, OtherDType](),
-    # ](self, other: Scalar[OtherDType]) raises -> NDArray[ResultDType]:
-    #     """
-    #     Enables `scalar % array`.
-    #     """
-    #     return math.mod[ResultDType](
-    #         other.cast[ResultDType](), self.astype[ResultDType]()
-    #     )
 
     # ===-------------------------------------------------------------------===#
     # IO dunders and relevant methods
@@ -3884,6 +3445,46 @@ struct NDArray[dtype: DType = DType.float64](
         return result
 
     # ===-------------------------------------------------------------------===#
+    # Properties
+    # ===-------------------------------------------------------------------===#
+    # TODO: rename internal shape to be _shape to keep it private and let users access shape through fn shape()
+    fn ndshape(ref self) -> ref [self.shape] NDArrayShape:
+        """
+        Returns the shape of the array.
+
+        Returns:
+            The shape of the array.
+        """
+        return self.shape
+
+    fn ndstrides(ref self) -> ref [self.strides] NDArrayStrides:
+        """
+        Returns the strides of the array.
+
+        Returns:
+            The strides of the array.
+        """
+        return self.strides
+
+    fn ndsize(self) -> Int:
+        """
+        Returns the total number of elements in the array.
+
+        Returns:
+            The total number of elements in the array.
+        """
+        return Int(self.shape.product())
+
+    fn rank(self) -> Int:
+        """
+        Returns the rank (number of dimensions) of the array.
+
+        Returns:
+            The rank of the array.
+        """
+        return self.ndim
+
+    # ===-------------------------------------------------------------------===#
     # Trait dunders and iterator dunders
     # ===-------------------------------------------------------------------===#
 
@@ -3891,7 +3492,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Returns length of 0-th dimension.
         """
-        return Int(self.shape._buf[0])
+        return Int(self.shape.unsafe_load(0))
 
     fn __iter__(
         self,
@@ -3940,7 +3541,9 @@ struct NDArray[dtype: DType = DType.float64](
             dimension=0,
         )
 
-    fn _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
+    fn _adjust_slice(
+        self, slice_list: List[Slice]
+    ) raises -> List[InternalSlice]:
         """
         Adjusts slice values to handle all possible slicing scenarios including:
         - Negative indices (Python-style wrapping)
@@ -3949,36 +3552,21 @@ struct NDArray[dtype: DType = DType.float64](
         - Empty slices
         - Default start/end values based on step direction
         """
-        var n_slices: Int = slice_list.__len__()
-        if n_slices > self.ndim:
-            raise Error(
-                IndexError(
-                    message=String(
-                        "Too many slice dimensions: got {} but array has {}"
-                        " dims."
-                    ).format(n_slices, self.ndim),
-                    suggestion=String(
-                        "Provide at most {} slices for this array."
-                    ).format(self.ndim),
-                    location=String("NDArray._adjust_slice"),
-                )
-            )
-
-        var slices = List[Slice](capacity=self.ndim)
+        var n_slices: Int = len(slice_list)
+        var slices = List[InternalSlice](capacity=self.ndim)
         for i in range(n_slices):
             var dim_size = self.shape[i]
             var step = slice_list[i].step.or_else(1)
 
             if step == 0:
                 raise Error(
-                    ValueError(
+                    NumojoError(
+                        category="value",
                         message=String(
-                            "Slice step cannot be zero (dimension {})."
+                            "Slice step cannot be zero (dimension {}). Use"
+                            " positive or negative non-zero step."
                         ).format(i),
-                        suggestion=String(
-                            "Use positive or negative non-zero step."
-                        ),
-                        location=String("NDArray._adjust_slice"),
+                        location="NDArray._adjust_slice",
                     )
                 )
 
@@ -3993,38 +3581,36 @@ struct NDArray[dtype: DType = DType.float64](
                 end = -1
 
             # start
-            if slice_list[i].start is not None:
-                start = slice_list[i].start.value()
-                if start < 0:
-                    start += dim_size
-                if step > 0:
-                    start = 0 if start < 0 else (
-                        dim_size if start > dim_size else start
-                    )
-                else:
-                    start = -1 if start < -1 else (
-                        dim_size - 1 if start >= dim_size else start
-                    )
+            var raw_start = slice_list[i].start.or_else(start)
+            if raw_start < 0:
+                raw_start += dim_size
+            if step > 0:
+                start = 0 if raw_start < 0 else (
+                    dim_size if raw_start > dim_size else raw_start
+                )
+            else:
+                start = -1 if raw_start < -1 else (
+                    dim_size - 1 if raw_start >= dim_size else raw_start
+                )
 
             # end
-            if slice_list[i].end is not None:
-                end = slice_list[i].end.value()
-                if end < 0:
-                    end += dim_size
-                if step > 0:
-                    end = 0 if end < 0 else (
-                        dim_size if end > dim_size else end
-                    )
-                else:
-                    end = -1 if end < -1 else (
-                        dim_size if end > dim_size else end
-                    )
+            var raw_end = slice_list[i].end.or_else(end)
+            if raw_end < 0:
+                raw_end += dim_size
+            if step > 0:
+                end = 0 if raw_end < 0 else (
+                    dim_size if raw_end > dim_size else raw_end
+                )
+            else:
+                end = -1 if raw_end < -1 else (
+                    dim_size if raw_end > dim_size else raw_end
+                )
 
             slices.append(
-                Slice(
-                    start=Optional(start),
-                    end=Optional(end),
-                    step=Optional(step),
+                InternalSlice(
+                    start=start,
+                    end=end,
+                    step=step,
                 )
             )
 
@@ -4172,7 +3758,9 @@ struct NDArray[dtype: DType = DType.float64](
         for index_at_axis in offsets:
             indices._buf[current_axis] = index_at_axis
             if current_axis == shape.ndim - 1:
-                var val = (self._buf.ptr + _get_offset(indices, strides))[]
+                var val = (
+                    self._buf.ptr + IndexMethods.get_1d_index(indices, strides)
+                )[]
                 if val < 0:
                     negative_sign = True
                 max_value = max(max_value, abs(val))
@@ -4508,10 +4096,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn iter_along_axis[
         forward: Bool = True
-    ](self, axis: Int, order: String = "C") raises -> _NDAxisIter[
-        # MutOrigin(origin_of(self)), Self.dtype, forward
-        unsafe_origin_mutcast[origin_of(self), mut=True],
-        Self.dtype,
+    ](self, axis: Int, order: String = "C") raises -> Self._NDAxisIteratorType[
         forward,
     ]:
         """
@@ -4605,14 +4190,14 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(axis, -self.ndim, self.ndim)
             )
 
-        return _NDAxisIter[
-            unsafe_origin_mutcast[origin_of(self), mut=True],
-            Self.dtype,
-            forward,
-        ](
-            self,
+        return Self._NDAxisIteratorType[forward,](
+            data=self._buf,
             axis=normalized_axis,
             order=order,
+            shape=self.shape,
+            strides=self.strides,
+            ndim=self.ndim,
+            size=self.size,
         )
 
     fn iter_over_dimension[
@@ -4973,7 +4558,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             Array of the same data with a new shape.
         """
-        return numojo.reshape(self, shape=shape, order=order)
+        var result = numojo.reshape(self, shape=shape, order=order)
+        return result^
 
     fn resize(mut self, shape: NDArrayShape) raises:
         """
@@ -4988,7 +4574,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var order = "C" if self.flags.C_CONTIGUOUS else "F"
 
-        if shape.size_of_array() > self.size:
+        if shape.size() > self.size:
             var other = Self(shape=shape, order=order)
             memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
             for i in range(self.size, other.size):
@@ -4997,7 +4583,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             self.shape = shape
             self.ndim = shape.ndim
-            self.size = shape.size_of_array()
+            self.size = shape.size()
             self.strides = NDArrayStrides(shape, order=order)
 
     fn round(self) raises -> Self:
@@ -5024,16 +4610,15 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.ndim > 2:
             raise Error(
-                ShapeError(
+                NumojoError(
+                    category="shape",
                     message=String(
-                        "Cannot extract row from array with {} dimensions."
-                    ).format(self.ndim),
-                    suggestion=String(
-                        "The row() method only works with 1D or 2D arrays."
+                        "Cannot extract row from array with {} dimensions. The"
+                        " row() method only works with 1D or 2D arrays."
                         " Consider using slice operations for higher"
                         " dimensional arrays."
-                    ),
-                    location=String("NDArray.row(id: Int)"),
+                    ).format(self.ndim),
+                    location="NDArray.row(id: Int)",
                 )
             )
 
@@ -5061,15 +4646,14 @@ struct NDArray[dtype: DType = DType.float64](
             normalized_axis += self.ndim
         if (normalized_axis >= self.ndim) or (normalized_axis < 0):
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
-                        "Invalid axis {}: must be in range [-{}, {})."
-                    ).format(axis, self.ndim, self.ndim),
-                    suggestion=String(
-                        "Use an axis value between -{} and {} (exclusive). "
-                        "Negative indices count from the last axis."
-                    ).format(self.ndim, self.ndim),
-                    location=String("NDArray.sort(axis: Int)"),
+                        "Invalid axis {}: must be in range [-{}, {}). Use an"
+                        " axis value between -{} and {} (exclusive). Negative"
+                        " indices count from the last axis."
+                    ).format(axis, self.ndim, self.ndim, self.ndim, self.ndim),
+                    location="NDArray.sort(axis: Int)",
                 )
             )
         numojo.sorting.sort_inplace(self, axis=normalized_axis, stable=stable)
@@ -5246,15 +4830,14 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn unsafe_ptr(
         ref self,
-    ) -> UnsafePointer[Scalar[Self.dtype], origin = Self.origin]:
+    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
         """
         Retreive pointer without taking ownership.
 
         Returns:
             Unsafe pointer to the data buffer.
         """
-        # FIXME: Check whether this is correct after fixing Origin on the NDArray unsafepointer.
-        return self._buf.get_ptr()
+        return UnsafePointer[Scalar[Self.dtype], MutAnyOrigin](self._buf.ptr)
 
     fn variance[
         returned_dtype: DType = DType.float64
@@ -5305,17 +4888,14 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if self.size != other.size:
             raise Error(
-                ShapeError(
+                NumojoError(
+                    category="shape",
                     message=String(
                         "The lengths of the two vectors do not match: {} vs {}."
-                    ).format(self.size, other.size),
-                    suggestion=String(
-                        "Ensure both vectors have the same length before"
+                        " Ensure both vectors have the same length before"
                         " performing this operation."
-                    ),
-                    location=String(
-                        "NDArray.dot/inner/related (vector length check)"
-                    ),
+                    ).format(self.size, other.size),
+                    location="NDArray.dot/inner/related (vector length check)",
                 )
             )
 
@@ -5340,31 +4920,29 @@ struct NDArray[dtype: DType = DType.float64](
             normalized_axis += self.ndim
         if (normalized_axis < 0) or (normalized_axis >= self.ndim):
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Axis {} is out of range for array with {} dimensions."
-                    ).format(axis, self.ndim),
-                    suggestion=String(
-                        "Use an axis value in the range [-{}, {})."
-                    ).format(self.ndim, self.ndim),
-                    location=String("NDArray.squeeze(axis: Int)"),
+                        " Use an axis value in the range [-{}, {})."
+                    ).format(axis, self.ndim, self.ndim, self.ndim),
+                    location="NDArray.squeeze(axis: Int)",
                 )
             )
 
         if self.shape[normalized_axis] != 1:
             raise Error(
-                ShapeError(
+                NumojoError(
+                    category="shape",
                     message=String(
-                        "Cannot squeeze axis {} with size {}."
+                        "Cannot squeeze axis {} with size {}. Only axes with"
+                        " length 1 can be removed."
                     ).format(normalized_axis, self.shape[normalized_axis]),
-                    suggestion=String(
-                        "Only axes with length 1 can be removed."
-                    ),
-                    location=String("NDArray.squeeze(axis: Int)"),
+                    location="NDArray.squeeze(axis: Int)",
                 )
             )
-        self.shape = self.shape._pop(normalized_axis)
-        self.strides = self.strides._pop(normalized_axis)
+        self.shape = self.shape.pop(normalized_axis)
+        self.strides = self.strides.pop(normalized_axis)
         self.ndim -= 1
 
 
@@ -5419,14 +4997,13 @@ struct _NDArrayIter[
 
         if dimension < 0 or dimension >= a.ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Axis {} is out of range for array with {} dimensions."
-                    ).format(dimension, a.ndim),
-                    suggestion=String(
-                        "Choose an axis in the range [0, {})."
-                    ).format(a.ndim),
-                    location=String("NDArrayIterator.__init__ (axis check)"),
+                        " Choose an axis in the range [0, {})."
+                    ).format(dimension, a.ndim, a.ndim),
+                    location="NDArrayIterator.__init__ (axis check)",
                 )
             )
 
@@ -5446,7 +5023,7 @@ struct _NDArrayIter[
 
     fn __next__(mut self) raises -> NDArray[Self.dtype]:
         var result: NDArray[Self.dtype] = NDArray[Self.dtype](
-            self.shape._pop(self.dimension)
+            self.shape.pop(self.dimension)
         )
         var current_index: Int = self.index
 
@@ -5462,15 +5039,17 @@ struct _NDArrayIter[
 
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.dimension:
-                    (item._buf + i).init_pointee_copy(remainder % self.shape[i])
+                    (item._buf.ptr + i).init_pointee_copy(
+                        remainder % self.shape[i]
+                    )
                     remainder = remainder // self.shape[i]
                 else:
-                    (item._buf + self.dimension).init_pointee_copy(
+                    (item._buf.ptr + self.dimension).init_pointee_copy(
                         current_index
                     )
 
             (result._buf.ptr + offset).init_pointee_copy(
-                self.ptr[_get_offset(item, self.strides)]
+                self.ptr[IndexMethods.get_1d_index(item, self.strides)]
             )
         return result^
 
@@ -5509,7 +5088,7 @@ struct _NDArrayIter[
             )
 
         if self.ndim > 1:
-            var result = NDArray[Self.dtype](self.shape._pop(self.dimension))
+            var result = NDArray[Self.dtype](self.shape.pop(self.dimension))
 
             for offset in range(self.size_of_item):
                 var remainder = offset
@@ -5517,15 +5096,17 @@ struct _NDArrayIter[
 
                 for i in range(self.ndim - 1, -1, -1):
                     if i != self.dimension:
-                        (item._buf + i).init_pointee_copy(
+                        (item._buf.ptr + i).init_pointee_copy(
                             remainder % self.shape[i]
                         )
                         remainder = remainder // self.shape[i]
                     else:
-                        (item._buf + self.dimension).init_pointee_copy(index)
+                        (item._buf.ptr + self.dimension).init_pointee_copy(
+                            index
+                        )
 
                 (result._buf.ptr + offset).init_pointee_copy(
-                    self.ptr[_get_offset(item, self.strides)]
+                    self.ptr[IndexMethods.get_1d_index(item, self.strides)]
                 )
             return result^
 
@@ -5536,11 +5117,336 @@ struct _NDArrayIter[
             return result^
 
 
+# struct _NDAxisIter[
+#     # is_mutable: Bool,
+#     # //,
+#     # origin: Origin[mut=is_mutable],
+#     dtype: DType,
+#     forward: Bool = True,
+#     origin: MutOrigin = MutAnyOrigin,
+# ](Copyable, Movable):
+#     # TODO:
+#     # Return a view instead of copy where possible
+#     # (when Bufferable is supported).
+#     """
+#     An iterator yielding 1-d array slices along the given axis.
+#     The yielded array slices are garanteed to be contiguous on memory.
+#     It trys to create a view where possible.
+#     It can be constructed by `NDArray.iter_along_axis()` method.
+#     The iterator is useful when applying functions along a certain axis.
+
+#     Parameters:
+#         origin: The lifetime of the underlying NDArray data.
+#         dtype: The data type of the item.
+#         forward: The iteration direction. `False` is backwards.
+
+#     Examples:
+
+#     ```
+#     [[[ 0,  1,  2,  3],
+#     [ 4,  5,  6,  7],
+#     [ 8,  9, 10, 11]],
+#     [[12, 13, 14, 15],
+#     [16, 17, 18, 19],
+#     [20, 21, 22, 23]]]
+#     ```
+#     The above array is of shape (2,3,3). Itering by `axis=0` returns:
+#     ```
+#     [0, 12], [1, 13], [2, 14], [3, 15],
+#     [4, 16], [5, 17], [6, 18], [7, 19],
+#     [8, 20], [9, 21], [10, 22], [11, 23]
+#     ```
+#     Itering by `axis=1` returns:
+#     ```
+#     [0, 4, 8], [1, 5, 9], [2, 6, 10], [3, 7, 11],
+#     [12, 16, 20], [13, 17, 21], [14, 18, 22], [15, 19, 23]
+#     ```
+#     """
+
+#     var ptr: UnsafePointer[Scalar[Self.dtype], origin = Self.origin]
+#     var axis: Int
+#     var order: String
+#     var length: Int
+#     var size: Int
+#     var ndim: Int
+#     var shape: NDArrayShape
+#     var strides: NDArrayStrides
+#     """Strides of array or view. It is not necessarily compatible with shape."""
+#     var strides_compatible: NDArrayStrides
+#     """Strides according to shape of view and along the axis."""
+#     var index: Int
+#     """Status counter."""
+#     var size_of_item: Int
+#     """Size of the result 1-d array."""
+
+#     fn __init__(
+#         out self,
+#         read a: NDArray[Self.dtype],
+#         axis: Int,
+#         order: String,
+#     ) raises:
+#         """
+#         Initialize the iterator.
+
+#         Args:
+#             a: the array.
+#             axis: Axis.
+#             order: Order to traverse the array.
+#         """
+#         if axis < 0 or axis >= a.ndim:
+#             raise Error(
+#                 NumojoError(
+#                     category="index",
+#                     message=String(
+#                         "Axis {} is out of range for array with {} dimensions."
+#                         " Choose an axis in the range [0, {})."
+#                     ).format(axis, a.ndim, a.ndim),
+#                     location="NDAxisIter.__init__ (axis check)",
+#                 )
+#             )
+
+#         self.size = a.size
+#         self.size_of_item = a.shape[axis]
+#         self.ptr = a._buf.ptr.unsafe_origin_cast[Self.origin]()
+#         self.axis = axis
+#         self.order = order
+#         self.length = self.size // self.size_of_item
+#         self.ndim = a.ndim
+#         self.shape = a.shape
+#         self.strides = a.strides
+#         # Construct the compatible strides
+#         self.strides_compatible = NDArrayStrides(
+#             ndim=self.ndim, initialized=False
+#         )
+#         (self.strides_compatible._buf.ptr + axis).init_pointee_copy(1)
+#         temp = a.shape[axis]
+#         if order == "C":
+#             for i in range(self.ndim - 1, -1, -1):
+#                 if i != axis:
+#                     (self.strides_compatible._buf.ptr + i).init_pointee_copy(temp)
+#                     temp *= a.shape[i]
+#         else:
+#             for i in range(self.ndim):
+#                 if i != axis:
+#                     (self.strides_compatible._buf.ptr + i).init_pointee_copy(temp)
+#                     temp *= a.shape[i]
+
+#         # Status of the iterator
+#         self.index = 0 if Self.forward else self.length - 1
+
+#     fn __has_next__(self) -> Bool:
+#         @parameter
+#         if Self.forward:
+#             return self.index < self.length
+#         else:
+#             return self.index >= 0
+
+#     fn __iter__(self) -> Self:
+#         return self.copy()
+
+#     fn __len__(self) -> Int:
+#         @parameter
+#         if Self.forward:
+#             return self.length - self.index
+#         else:
+#             return self.index
+
+#     fn __next__(mut self) raises -> NDArray[Self.dtype]:
+#         var res = NDArray[Self.dtype](Shape(self.size_of_item))
+#         var current_index = self.index
+
+#         @parameter
+#         if Self.forward:
+#             self.index += 1
+#         else:
+#             self.index -= 1
+
+#         var remainder = current_index * self.size_of_item
+#         var item: Item = Item(ndim=self.ndim)
+
+#         if self.order == "C":
+#             for i in range(self.ndim):
+#                 if i != self.axis:
+#                     (item._buf.ptr + i).init_pointee_copy(
+#                         remainder // self.strides_compatible[i]
+#                     )
+#                     remainder %= self.strides_compatible[i]
+#                 else:
+#                     (item._buf.ptr + i).init_pointee_copy(0)
+#         else:
+#             for i in range(self.ndim - 1, -1, -1):
+#                 if i != self.axis:
+#                     (item._buf.ptr + i).init_pointee_copy(
+#                         remainder // self.strides_compatible[i]
+#                     )
+#                     remainder %= self.strides_compatible[i]
+#                 else:
+#                     (item._buf.ptr + i).init_pointee_copy(0)
+
+#         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
+#             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+#         ):
+#             # The memory layout is C-contiguous or F-contiguous
+#             memcpy(
+#                 dest=res._buf.ptr,
+#                 src=self.ptr + IndexMethods.get_1d_index(item, self.strides),
+#                 count=self.size_of_item,
+#             )
+
+#         else:
+#             for j in range(self.size_of_item):
+#                 (res._buf.ptr + j).init_pointee_copy(
+#                     self.ptr[IndexMethods.get_1d_index(item, self.strides)]
+#                 )
+#                 item._buf[self.axis] += 1
+
+#         return res^
+
+#     fn ith(self, index: Int) raises -> NDArray[Self.dtype]:
+#         """
+#         Gets the i-th 1-d array of the iterator.
+
+#         Args:
+#             index: The index of the item. It must be non-negative.
+
+#         Returns:
+#             The i-th 1-d array of the iterator.
+#         """
+
+#         if (index >= self.length) or (index < 0):
+#             raise Error(
+#                 String(
+#                     "\nError in `NDAxisIter.ith()`: "
+#                     "Index ({}) must be in the range of [0, {})"
+#                 ).format(index, self.length)
+#             )
+
+#         var elements: NDArray[Self.dtype] = NDArray[Self.dtype](
+#             Shape(self.size_of_item)
+#         )
+
+#         var remainder: Int = index * self.size_of_item
+#         var item: Item = Item(ndim=self.ndim)
+
+#         if self.order == "C":
+#             for i in range(self.ndim):
+#                 if i != self.axis:
+#                     (item._buf.ptr + i).init_pointee_copy(
+#                         remainder // self.strides_compatible[i]
+#                     )
+#                     remainder %= self.strides_compatible[i]
+#                 else:
+#                     (item._buf.ptr + i).init_pointee_copy(0)
+#         else:
+#             for i in range(self.ndim - 1, -1, -1):
+#                 if i != self.axis:
+#                     (item._buf.ptr + i).init_pointee_copy(
+#                         remainder // self.strides_compatible[i]
+#                     )
+#                     remainder %= self.strides_compatible[i]
+#                 else:
+#                     (item._buf.ptr + i).init_pointee_copy(0)
+
+#         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
+#             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+#         ):
+#             # The memory layout is C-contiguous or F-contiguous
+#             memcpy(
+#                 dest=elements._buf.ptr,
+#                 src=self.ptr + IndexMethods.get_1d_index(item, self.strides),
+#                 count=self.size_of_item,
+#             )
+#         else:
+#             for j in range(self.size_of_item):
+#                 (elements._buf.ptr + j).init_pointee_copy(
+#                     self.ptr[IndexMethods.get_1d_index(item, self.strides)]
+#                 )
+#                 item._buf[self.axis] += 1
+
+#         return elements^
+
+#     fn ith_with_offsets(
+#         self, index: Int
+#     ) raises -> Tuple[NDArray[DType.int], NDArray[Self.dtype]]:
+#         """
+#         Gets the i-th 1-d array of the iterator and the offsets (in C-order)
+#         of its elements.
+
+#         Args:
+#             index: The index of the item. It must be non-negative.
+
+#         Returns:
+#             Offsets (in C-order) and elements of the i-th 1-d array of the
+#             iterator.
+#         """
+#         var offsets: NDArray[DType.int] = NDArray[DType.int](
+#             Shape(self.size_of_item)
+#         )
+#         var elements: NDArray[Self.dtype] = NDArray[Self.dtype](
+#             Shape(self.size_of_item)
+#         )
+
+#         if (index >= self.length) or (index < 0):
+#             raise Error(
+#                 String(
+#                     "\nError in `NDAxisIter.ith_with_offsets()`: "
+#                     "Index ({}) must be in the range of [0, {})"
+#                 ).format(index, self.length)
+#             )
+
+#         var remainder: Int = index * self.size_of_item
+#         var item: Item = Item(ndim=self.ndim)
+#         for i in range(self.axis):
+#             item._buf[i] = remainder // self.strides_compatible[i]
+#             remainder %= self.strides_compatible[i]
+#         for i in range(self.axis + 1, self.ndim):
+#             item._buf[i] = remainder // self.strides_compatible[i]
+#             remainder %= self.strides_compatible[i]
+
+#         var new_strides: NDArrayStrides = NDArrayStrides(self.shape, order="C")
+
+#         if (self.axis == self.ndim - 1) & (
+#             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+#         ):
+#             # The memory layout is C-contiguous
+#             memcpy(
+#                 dest=elements._buf.ptr,
+#                 src=self.ptr + IndexMethods.get_1d_index(item, self.strides),
+#                 count=self.size_of_item,
+#             )
+#             var begin_offset = IndexMethods.get_1d_index(item, new_strides)
+#             for j in range(self.size_of_item):
+#                 (offsets._buf.ptr + j).init_pointee_copy(begin_offset + j)
+
+#         elif (self.axis == 0) & (
+#             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
+#         ):
+#             # The memory layout is F-contiguous
+#             memcpy(
+#                 dest=elements._buf.ptr,
+#                 src=self.ptr + IndexMethods.get_1d_index(item, self.strides),
+#                 count=self.size_of_item,
+#             )
+#             for j in range(self.size_of_item):
+#                 (offsets._buf.ptr + j).init_pointee_copy(
+#                     IndexMethods.get_1d_index(item, new_strides)
+#                 )
+#                 item._buf[self.axis] += 1
+
+#         else:
+#             for j in range(self.size_of_item):
+#                 (offsets._buf.ptr + j).init_pointee_copy(
+#                     IndexMethods.get_1d_index(item, new_strides)
+#                 )
+#                 (elements._buf.ptr + j).init_pointee_copy(
+#                     self.ptr[IndexMethods.get_1d_index(item, self.strides)]
+#                 )
+#                 item._buf[self.axis] += 1
+
+#         return Tuple(offsets^, elements^)
+
+
 struct _NDAxisIter[
-    # is_mutable: Bool,
-    # //,
-    # origin: Origin[mut=is_mutable],
-    origin: MutOrigin,
     dtype: DType,
     forward: Bool = True,
 ](Copyable, Movable):
@@ -5555,7 +5461,6 @@ struct _NDAxisIter[
     The iterator is useful when applying functions along a certain axis.
 
     Parameters:
-        origin: The lifetime of the underlying NDArray data.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
 
@@ -5582,7 +5487,7 @@ struct _NDAxisIter[
     ```
     """
 
-    var ptr: UnsafePointer[Scalar[Self.dtype], origin = Self.origin]
+    var data: DataContainer[Self.dtype]
     var axis: Int
     var order: String
     var length: Int
@@ -5600,56 +5505,67 @@ struct _NDAxisIter[
 
     fn __init__(
         out self,
-        read a: NDArray[Self.dtype],
+        data: DataContainer[Self.dtype],
         axis: Int,
         order: String,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
+        ndim: Int,
+        size: Int,
     ) raises:
         """
         Initialize the iterator.
 
         Args:
-            a: the array.
+            data: the data container of the array.
             axis: Axis.
             order: Order to traverse the array.
+            shape: Shape of the array.
+            strides: Strides of the array.
+            ndim: Number of dimensions of the array.
+            size: Size of the array.
         """
-        if axis < 0 or axis >= a.ndim:
+        if axis < 0 or axis >= ndim:
             raise Error(
-                IndexError(
+                NumojoError(
+                    category="index",
                     message=String(
                         "Axis {} is out of range for array with {} dimensions."
-                    ).format(axis, a.ndim),
-                    suggestion=String(
-                        "Choose an axis in the range [0, {})."
-                    ).format(a.ndim),
-                    location=String("NDAxisIter.__init__ (axis check)"),
+                        " Choose an axis in the range [0, {})."
+                    ).format(axis, ndim, ndim),
+                    location="NDAxisIter.__init__ (axis check)",
                 )
             )
 
-        self.size = a.size
-        self.size_of_item = a.shape[axis]
-        self.ptr = a._buf.ptr.unsafe_origin_cast[Self.origin]()
+        self.data = data.copy()
+        self.size = size
+        self.size_of_item = shape[axis]
         self.axis = axis
         self.order = order
         self.length = self.size // self.size_of_item
-        self.ndim = a.ndim
-        self.shape = a.shape
-        self.strides = a.strides
+        self.ndim = ndim
+        self.shape = shape
+        self.strides = strides
         # Construct the compatible strides
         self.strides_compatible = NDArrayStrides(
-            ndim=self.ndim, initialized=False
+            ndim=self.ndim, initialized=True
         )
-        (self.strides_compatible._buf + axis).init_pointee_copy(1)
-        temp = a.shape[axis]
+        (self.strides_compatible._buf.ptr + axis).init_pointee_copy(1)
+        temp = self.shape[axis]
         if order == "C":
             for i in range(self.ndim - 1, -1, -1):
                 if i != axis:
-                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
-                    temp *= a.shape[i]
+                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                        temp
+                    )
+                    temp *= self.shape[i]
         else:
             for i in range(self.ndim):
                 if i != axis:
-                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
-                    temp *= a.shape[i]
+                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                        temp
+                    )
+                    temp *= self.shape[i]
 
         # Status of the iterator
         self.index = 0 if Self.forward else self.length - 1
@@ -5687,21 +5603,21 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (item._buf + i).init_pointee_copy(
+                    (item._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible[i]
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).init_pointee_copy(0)
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (item._buf + i).init_pointee_copy(
+                    (item._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible[i]
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).init_pointee_copy(0)
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -5709,14 +5625,15 @@ struct _NDAxisIter[
             # The memory layout is C-contiguous or F-contiguous
             memcpy(
                 dest=res._buf.ptr,
-                src=self.ptr + _get_offset(item, self.strides),
+                src=self.data.ptr
+                + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
 
         else:
             for j in range(self.size_of_item):
                 (res._buf.ptr + j).init_pointee_copy(
-                    self.ptr[_get_offset(item, self.strides)]
+                    self.data.ptr[IndexMethods.get_1d_index(item, self.strides)]
                 )
                 item._buf[self.axis] += 1
 
@@ -5743,7 +5660,7 @@ struct _NDAxisIter[
 
         var elements: NDArray[Self.dtype] = NDArray[Self.dtype](
             Shape(self.size_of_item)
-        )
+        )  # initialized doesn't do anything right now.
 
         var remainder: Int = index * self.size_of_item
         var item: Item = Item(ndim=self.ndim)
@@ -5751,21 +5668,21 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (item._buf + i).init_pointee_copy(
+                    (item._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible[i]
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).init_pointee_copy(0)
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (item._buf + i).init_pointee_copy(
+                    (item._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible[i]
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).init_pointee_copy(0)
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -5773,13 +5690,14 @@ struct _NDAxisIter[
             # The memory layout is C-contiguous or F-contiguous
             memcpy(
                 dest=elements._buf.ptr,
-                src=self.ptr + _get_offset(item, self.strides),
+                src=self.data.ptr
+                + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
         else:
             for j in range(self.size_of_item):
                 (elements._buf.ptr + j).init_pointee_copy(
-                    self.ptr[_get_offset(item, self.strides)]
+                    self.data.ptr[IndexMethods.get_1d_index(item, self.strides)]
                 )
                 item._buf[self.axis] += 1
 
@@ -5831,10 +5749,11 @@ struct _NDAxisIter[
             # The memory layout is C-contiguous
             memcpy(
                 dest=elements._buf.ptr,
-                src=self.ptr + _get_offset(item, self.strides),
+                src=self.data.ptr
+                + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
-            var begin_offset = _get_offset(item, new_strides)
+            var begin_offset = IndexMethods.get_1d_index(item, new_strides)
             for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(begin_offset + j)
 
@@ -5844,22 +5763,23 @@ struct _NDAxisIter[
             # The memory layout is F-contiguous
             memcpy(
                 dest=elements._buf.ptr,
-                src=self.ptr + _get_offset(item, self.strides),
+                src=self.data.ptr
+                + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
             for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(
-                    _get_offset(item, new_strides)
+                    IndexMethods.get_1d_index(item, new_strides)
                 )
                 item._buf[self.axis] += 1
 
         else:
             for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(
-                    _get_offset(item, new_strides)
+                    IndexMethods.get_1d_index(item, new_strides)
                 )
                 (elements._buf.ptr + j).init_pointee_copy(
-                    self.ptr[_get_offset(item, self.strides)]
+                    self.data.ptr[IndexMethods.get_1d_index(item, self.strides)]
                 )
                 item._buf[self.axis] += 1
 
@@ -5900,17 +5820,21 @@ struct _NDIter[
         self.strides_compatible = NDArrayStrides(
             ndim=self.ndim, initialized=False
         )
-        (self.strides_compatible._buf + axis).init_pointee_copy(1)
+        (self.strides_compatible._buf.ptr + axis).init_pointee_copy(1)
         temp = a.shape[axis]
         if order == "C":
             for i in range(self.ndim - 1, -1, -1):
                 if i != axis:
-                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
+                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                        temp
+                    )
                     temp *= a.shape[i]
         else:
             for i in range(self.ndim):
                 if i != axis:
-                    (self.strides_compatible._buf + i).init_pointee_copy(temp)
+                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                        temp
+                    )
                     temp *= a.shape[i]
 
         self.index = 0
@@ -5934,22 +5858,22 @@ struct _NDIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (indices._buf + i).init_pointee_copy(
+                    (indices._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf + self.axis).init_pointee_copy(remainder)
+            (indices._buf.ptr + self.axis).init_pointee_copy(remainder)
 
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (indices._buf + i).init_pointee_copy(
+                    (indices._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf + self.axis).init_pointee_copy(remainder)
+            (indices._buf.ptr + self.axis).init_pointee_copy(remainder)
 
-        return self.ptr[_get_offset(indices, self.strides)]
+        return self.ptr[IndexMethods.get_1d_index(indices, self.strides)]
 
     fn ith(self, index: Int) raises -> Scalar[Self.dtype]:
         """
@@ -5976,18 +5900,18 @@ struct _NDIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (indices._buf + i).init_pointee_copy(
+                    (indices._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf + self.axis).init_pointee_copy(remainder)
+            (indices._buf.ptr + self.axis).init_pointee_copy(remainder)
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (indices._buf + i).init_pointee_copy(
+                    (indices._buf.ptr + i).init_pointee_copy(
                         remainder // self.strides_compatible._buf[i]
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf + self.axis).init_pointee_copy(remainder)
+            (indices._buf.ptr + self.axis).init_pointee_copy(remainder)
 
-        return self.ptr[_get_offset(indices, self.strides)]
+        return self.ptr[IndexMethods.get_1d_index(indices, self.strides)]

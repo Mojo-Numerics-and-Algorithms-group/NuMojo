@@ -13,6 +13,14 @@ from utils_for_test import check, check_is_close
 from testing import TestSuite
 
 from numojo.prelude import *
+from numojo.routines.functional import (
+    apply_along_axis_reduce,
+    apply_along_axis_reduce_to_int,
+    apply_along_axis_reduce_with_dtype,
+    apply_along_axis_preserve,
+    apply_along_axis_inplace,
+    apply_along_axis_indices,
+)
 
 
 fn test_apply_along_axis() raises:
@@ -24,14 +32,18 @@ fn test_apply_along_axis() raises:
 
     for i in range(a.ndim):
         check(
-            nm.apply_along_axis[nm.sorting.quick_sort_1d](a, axis=i),
+            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](
+                a, axis=i
+            ),
             np.apply_along_axis(np.sort, axis=i, arr=anp),
             String(
                 "`apply_along_axis` C-order array along axis {} is broken"
             ).format(i),
         )
         check(
-            nm.apply_along_axis[nm.sorting.quick_sort_1d](b, axis=i),
+            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](
+                b, axis=i
+            ),
             np.apply_along_axis(np.sort, axis=i, arr=bnp),
             String(
                 "`apply_along_axis` F-order array along axis {} is broken"

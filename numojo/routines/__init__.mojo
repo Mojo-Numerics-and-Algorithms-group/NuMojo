@@ -145,8 +145,8 @@ from .creation import (
 from .indexing import `where`, compress, take_along_axis
 
 from .functional import (
-    apply_along_axis_reduce_to_int,
     apply_along_axis_reduce,
+    apply_along_axis_reduce_to_int,
     apply_along_axis_reduce_with_dtype,
     apply_along_axis_preserve,
     apply_along_axis_inplace,

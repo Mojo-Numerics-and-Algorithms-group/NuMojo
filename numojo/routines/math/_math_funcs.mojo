@@ -352,7 +352,7 @@ struct Vectorized(Backend):
             # result_array._buf.ptr.store(
             #     i, func[dtype, simdwidth](simd_data1, simd_data2)
             # )
-            bool_simd_store[simdwidth, ptr_origin = result_array.origin](
+            bool_simd_store[simdwidth](
                 result_array._buf.ptr,
                 i,
                 func[dtype, simdwidth](simd_data1, simd_data2),
@@ -440,7 +440,9 @@ struct Vectorized(Backend):
 
 # This provides a way to bypass bitpacking issues with Bool
 fn bool_simd_store[
-    simd_width: Int, *, ptr_origin: MutOrigin
+    ptr_origin: MutOrigin,
+    //,
+    simd_width: Int,
 ](
     ptr: UnsafePointer[Scalar[DType.bool], ptr_origin],
     start: Int,
@@ -450,8 +452,8 @@ fn bool_simd_store[
     Work around function for storing bools from a simd into a DTypePointer.
 
     Parameters:
-        simd_width: Number of items to be retrieved.
         ptr_origin: Origin of the pointer.
+        simd_width: Number of items to be retrieved.
 
     Args:
         ptr: Pointer to be retreived from.
@@ -766,7 +768,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             # result_array._buf.ptr.store(
             #     i, func[dtype, simdwidth](simd_data1, simd_data2)
             # )
-            bool_simd_store[simdwidth, ptr_origin = result_array.origin](
+            bool_simd_store[simdwidth](
                 result_array.unsafe_ptr(),
                 i,
                 func[dtype, simdwidth](simd_data1, simd_data2),

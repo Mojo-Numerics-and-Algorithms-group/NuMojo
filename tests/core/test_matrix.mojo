@@ -1,6 +1,6 @@
 import numojo as nm
 from numojo.prelude import *
-from numojo.core.matrix import Matrix, MatrixBase
+from numojo.core.matrix import Matrix
 from python import Python, PythonObject
 from testing.testing import assert_raises, assert_true
 from sys import is_defined
@@ -235,8 +235,8 @@ def test_logic():
         var np = Python.import_module("numpy")
 
         var Q_R = nm.linalg.qr(A)
-        Q = Q_R[0].create_copy()
-        R = Q_R[1].create_copy()
+        Q = Q_R[0].copy()
+        R = Q_R[1].copy()
 
         # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
         var id = Q.transpose() @ Q

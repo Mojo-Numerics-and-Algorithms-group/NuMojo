@@ -18,7 +18,7 @@ from sys import simd_width_of
 from algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayStrides
-import numojo.core.indexing.utility as utility
+from numojo.core.indexing import IndexMethods
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays
@@ -153,9 +153,9 @@ fn compress[
     var temp: Int = 1
     for i in range(result.ndim - 1, -1, -1):
         if i != normalized_axis:
-            (res_strides._buf + i).init_pointee_copy(temp)
+            (res_strides._buf.ptr + i).init_pointee_copy(temp)
             temp *= result.shape[i]
-    (res_strides._buf + normalized_axis).init_pointee_copy(temp)
+    (res_strides._buf.ptr + normalized_axis).init_pointee_copy(temp)
 
     var iterator = a.iter_over_dimension(normalized_axis)
 
@@ -170,7 +170,7 @@ fn compress[
 
                 # First along the axis
                 var j = normalized_axis
-                (item._buf + j).init_pointee_copy(
+                (item._buf.ptr + j).init_pointee_copy(
                     remainder // res_strides._buf[j]
                 )
                 remainder %= Int(res_strides._buf[j])
@@ -178,13 +178,14 @@ fn compress[
                 # Then along other axes
                 for j in range(result.ndim):
                     if j != normalized_axis:
-                        (item._buf + j).init_pointee_copy(
+                        (item._buf.ptr + j).init_pointee_copy(
                             remainder // res_strides._buf[j]
                         )
                         remainder %= Int(res_strides._buf[j])
 
                 (
-                    result._buf.ptr + utility._get_offset(item, result.strides)
+                    result._buf.ptr
+                    + IndexMethods.get_1d_index(item, result.strides)
                 ).init_pointee_copy(current_slice._buf.ptr[offset])
 
                 count += 1

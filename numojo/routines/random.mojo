@@ -387,7 +387,9 @@ fn randn[
 
 fn exponential[
     dtype: DType = DType.float64
-](shape: NDArrayShape, scale: Scalar[dtype] = 1.0) raises -> NDArray[dtype] where dtype.is_floating_point():
+](shape: NDArrayShape, scale: Scalar[dtype] = 1.0) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Creates an array of the given shape and populate it with random samples from
     an exponential distribution with given scale parameter.
@@ -428,7 +430,9 @@ fn exponential[
 
 fn exponential[
     dtype: DType = DType.float64
-](*shape: Int, scale: Scalar[dtype] = 1.0) raises -> NDArray[dtype] where dtype.is_floating_point():
+](*shape: Int, scale: Scalar[dtype] = 1.0) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Overloads the function `exponential(shape: NDArrayShape, rate)`.
     Creates an array of the given shape and populate it with random samples from
@@ -440,7 +444,9 @@ fn exponential[
 
 fn exponential[
     dtype: DType = DType.float64
-](shape: List[Int], scale: Scalar[dtype] = 1.0) raises -> NDArray[dtype] where dtype.is_floating_point():
+](shape: List[Int], scale: Scalar[dtype] = 1.0) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Overloads the function `exponential(shape: NDArrayShape, rate)`.
     Creates an array of the given shape and populate it with random samples from

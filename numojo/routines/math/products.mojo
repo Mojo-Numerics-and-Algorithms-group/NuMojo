@@ -4,10 +4,8 @@ from memory import UnsafePointer, memcpy, memset_zero
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix, MatrixBase
-from numojo.core.indexing.utility import (
-    _traverse_buffer_according_to_shape_and_strides,
-)
+from numojo.core.matrix import Matrix
+from numojo.core.indexing import TraverseMethods
 from numojo.routines.creation import ones
 
 
@@ -85,7 +83,7 @@ fn prod[
     return result^
 
 
-fn prod[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
+fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     Product of all items in the Matrix.
 
@@ -103,9 +101,7 @@ fn prod[dtype: DType](A: MatrixBase[dtype, **_]) -> Scalar[dtype]:
     return res
 
 
-fn prod[
-    dtype: DType
-](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Product of items in a Matrix along the axis.
 
@@ -214,10 +210,12 @@ fn cumprod[
     var I = NDArray[DType.int](Shape(A.size))
     var ptr = I._buf.ptr
 
-    var _shape = B.shape._move_axis_to_end(axis)
-    var _strides = B.strides._move_axis_to_end(axis)
+    var _shape = B.shape.move_axis_to_end(axis)
+    var _strides = B.strides.move_axis_to_end(axis)
 
-    _traverse_buffer_according_to_shape_and_strides(ptr, _shape, _strides)
+    TraverseMethods.traverse_buffer_according_to_shape_and_strides(
+        ptr, _shape, _strides
+    )
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
@@ -226,7 +224,7 @@ fn cumprod[
     return B^
 
 
-fn cumprod[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
+fn cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 
@@ -257,9 +255,7 @@ fn cumprod[dtype: DType](A: MatrixBase[dtype, **_]) raises -> Matrix[dtype]:
     return result^
 
 
-fn cumprod[
-    dtype: DType
-](A: MatrixBase[dtype, **_], axis: Int) raises -> Matrix[dtype]:
+fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumprod of Matrix along the axis.
 

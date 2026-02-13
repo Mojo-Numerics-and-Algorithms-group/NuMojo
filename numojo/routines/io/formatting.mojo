@@ -239,62 +239,71 @@ fn format_floating_scientific[
         Error: If the dtype is not a floating-point type or if precision is negative.
     """
 
-    @parameter
-    if is_inttype[dtype]():
-        raise Error(
-            "Invalid type provided. dtype must be a floating-point type."
-        )
     if precision < 0:
         raise Error("Precision must be a non-negative integer.")
 
-    try:
-        if x == 0:
-            if sign:
-                var result: String = "+0." + "0" * precision + "e+00"
-                return result.rjust(formatted_width)
+    # FIXME: `constrained[dtype.is_floating_point(),...]` does not work here.
+    # This is because the underlying `where dtype.is_floating_point()` in log10
+    # Does not appear to recognize `constrained` properly.
+    # Additionally, Using:
+    # @parameter
+    # if not dtype.is_floating_point():
+    #     raise Error("dtype must be a floating-point type.")
+    # Does not work either.
+    # We could use `where dtype.is_floating_point()` in the `format_floating_scientific`
+    # signature, however that has viral implications else where.
+    @parameter
+    if dtype.is_floating_point():
+        try:
+            if x == 0:
+                if sign:
+                    var result: String = "+0." + "0" * precision + "e+00"
+                    return result.ascii_rjust(formatted_width)
+                else:
+                    var result: String = " 0." + "0" * precision + "e+00"
+                    return result.ascii_rjust(formatted_width)
+
+            var power: Int = Int(mt.log10(abs(x)))
+            if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
+                power -= 1
+            var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
+            var mantissa_without_sign_string = String(abs(mantissa))
+
+            var result: String
+            if x < 0:
+                result = "-" + mantissa_without_sign_string[: 2 + precision]
             else:
-                var result: String = " 0." + "0" * precision + "e+00"
-                return result.rjust(formatted_width)
+                if sign:
+                    result = "+" + mantissa_without_sign_string[: 2 + precision]
+                else:
+                    result = " " + mantissa_without_sign_string[: 2 + precision]
 
-        var power: Int = Int(mt.log10(abs(x)))
-        if Scalar[dtype](0.0) < abs(x) < Scalar[dtype](1.0):
-            power -= 1
-        var mantissa: Scalar[dtype] = x / pow(10.0, power).cast[dtype]()
-        var mantissa_without_sign_string = String(abs(mantissa))
+            if suppress_scientific and abs(power) <= exponent_threshold:
+                return format_floating_precision(
+                    x, precision, sign
+                ).ascii_rjust(formatted_width)
 
-        var result: String
-        if x < 0:
-            result = "-" + mantissa_without_sign_string[: 2 + precision]
-        else:
-            if sign:
-                result = "+" + mantissa_without_sign_string[: 2 + precision]
+            var exponent_string: String
+            if power < 0:
+                if power > -10:
+                    exponent_string = String("e-0{0}").format(-power)
+                else:
+                    exponent_string = String("e-{0}").format(-power)
             else:
-                result = " " + mantissa_without_sign_string[: 2 + precision]
+                if power < 10:
+                    exponent_string = String("e+0{0}").format(power)
+                else:
+                    exponent_string = String("e+{0}").format(power)
 
-        if suppress_scientific and abs(power) <= exponent_threshold:
-            return format_floating_precision(x, precision, sign).rjust(
-                formatted_width
+            return (
+                String("{0}{1}")
+                .format(result, exponent_string)
+                .ascii_rjust(formatted_width)
             )
-
-        var exponent_string: String
-        if power < 0:
-            if power > -10:
-                exponent_string = String("e-0{0}").format(-power)
-            else:
-                exponent_string = String("e-{0}").format(-power)
-        else:
-            if power < 10:
-                exponent_string = String("e+0{0}").format(power)
-            else:
-                exponent_string = String("e+{0}").format(power)
-
-        return (
-            String("{0}{1}")
-            .format(result, exponent_string)
-            .rjust(formatted_width)
-        )
-    except:
-        raise Error("Failed to format float in scientific notation.")
+        except:
+            raise Error("Failed to format float in scientific notation.")
+    else:
+        raise Error("dtype must be a floating-point type.")
 
 
 fn format_floating_precision[
@@ -420,9 +429,9 @@ fn format_value[
     @parameter
     if is_floattype[dtype]():
         if isnan(value):
-            return nan_string.rjust(formatted_width)
+            return nan_string.ascii_rjust(formatted_width)
         if isinf(value):
-            return inf_string.rjust(formatted_width)
+            return inf_string.ascii_rjust(formatted_width)
         if float_format == "scientific":
             return format_floating_scientific(
                 value,
@@ -438,12 +447,12 @@ fn format_value[
                 print_options.precision,
                 sign,
                 suppress_small,
-            ).rjust(formatted_width)
+            ).ascii_rjust(formatted_width)
     else:
         var formatted = String(value)
         if sign and value > 0:
             formatted = "+" + formatted
-        return formatted.rjust(formatted_width)
+        return formatted.ascii_rjust(formatted_width)
 
 
 fn format_value[
@@ -540,8 +549,8 @@ fn format_value[
         imag_mag_str = String(abs_im_int)
 
     # Right justify parts
-    re_str = re_str.rjust(formatted_width)
-    imag_mag_str = imag_mag_str.rjust(formatted_width)
+    re_str = re_str.ascii_rjust(formatted_width)
+    imag_mag_str = imag_mag_str.ascii_rjust(formatted_width)
 
     return _trim_paranthesis_strings_cnumbers(
         complex_format, re_str, imag_mag_str, imag_sign_char

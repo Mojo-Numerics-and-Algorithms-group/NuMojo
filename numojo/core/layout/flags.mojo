@@ -12,8 +12,7 @@ from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 
 
-@register_passable
-struct Flags(ImplicitlyCopyable):
+struct Flags(ImplicitlyCopyable, RegisterPassable):
     """
     Information about the memory layout of the array.
     The Flags object can be accessed dictionary-like.

@@ -25,8 +25,8 @@ from numojo.core.traits.indexer_collection_element import (
 )
 
 
-@register_passable
 struct Item(
+    RegisterPassable,
     Equatable,
     ImplicitlyCopyable,
     Movable,

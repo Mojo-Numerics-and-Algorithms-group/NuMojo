@@ -16,8 +16,8 @@ from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.error import NumojoError
 
 
-@register_passable
 struct NDArrayStrides(
+    RegisterPassable,
     Equatable,
     ImplicitlyCopyable,
     Movable,

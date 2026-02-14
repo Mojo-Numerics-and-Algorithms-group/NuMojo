@@ -16,8 +16,8 @@ from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.error import NumojoError
 
 
-@register_passable
 struct NDArrayShape(
+    RegisterPassable,
     Equatable,
     ImplicitlyCopyable,
     Movable,
@@ -302,6 +302,22 @@ struct NDArrayShape(
         return Int(self._buf[index])
 
     @always_inline("nodebug")
+    fn __getitem__(self, index: Scalar[Self.element_type]) raises -> Scalar[Self.element_type]:
+        """
+        Gets shape dimension at specified index.
+
+        Args:
+          index: Index to get the shape.
+
+        Returns:
+           Shape value at the given index.
+
+        Raises:
+           Error: Index out of bound.
+        """
+        return self._buf[index]
+
+    @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayShape:
         """
         Return a sliced view of the dimension tuple as a new NDArrayShape.
@@ -327,6 +343,20 @@ struct NDArrayShape(
            Error: Index out of bound.
         """
         self._buf[index] = val
+
+    @always_inline("nodebug")
+    fn __setitem__(mut self, index: Int, val: Int) raises:
+        """
+        Sets shape at specified index.
+
+        Args:
+          index: Index to set the shape.
+          val: Value to set at the given index.
+
+        Raises:
+           Error: Index out of bound.
+        """
+        self._buf[index] = Scalar[Self.element_type](val)
 
     fn load[
         width: Int = 1

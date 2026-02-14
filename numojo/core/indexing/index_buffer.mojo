@@ -18,9 +18,8 @@ from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice
 
 
-@register_passable
 struct IndexBuffer(
-    Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
+    RegisterPassable, Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
 ):
     """
     Shared integer buffer backend for shape/strides/item.

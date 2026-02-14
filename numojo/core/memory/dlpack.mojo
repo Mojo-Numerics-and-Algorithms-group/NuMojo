@@ -254,7 +254,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
         self.byte_offset = byte_offset
 
 
-comptime DLManagedTensorDeleter = fn(
+comptime DLManagedTensorDeleter = fn (
     UnsafePointer[DLManagedTensor, MutAnyOrigin]
 ) -> None
 
@@ -467,7 +467,7 @@ fn _extract_dlpack_pointer(
     var libpath = _find_libpython_path()
     var lib = OwnedDLHandle(libpath)
 
-    comptime FnType = fn(
+    comptime FnType = fn (
         UnsafePointer[NoneType, MutAnyOrigin],
         UnsafePointer[Int8, MutAnyOrigin],
     ) -> UnsafePointer[NoneType, MutAnyOrigin]

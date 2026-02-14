@@ -56,8 +56,20 @@ from numojo.core.layout.ndstrides import NDArrayStrides
 
 # TODO: Some of these correspond to older DLPack versions. Need to upgrade this to v1.0
 struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterType):
-    """
-    DLPack version structure for compatibility checking.
+    """Represents a DLPack version structure for compatibility checking.
+
+    This structure stores major and minor version numbers to ensure compatibility
+    between different implementations of the DLPack protocol. The current
+    implementation targets DLPack version 0.8.
+
+    Attributes:
+        major: Major version number.
+        minor: Minor version number.
+
+    Constants:
+        CURRENT_MAJOR: Current major version (0).
+        CURRENT_MINOR: Current minor version (8).
+        LATEST: Latest version instance.
     """
 
     var major: UInt32
@@ -73,11 +85,24 @@ struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterType):
 
 
 struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterType):
-    """
-    Device context for tensor data.
+    """Represents a device context for tensor data.
 
     Describes where the tensor data is physically located (CPU, GPU, etc.)
-    and which specific device instance if there are multiple.
+    and which specific device instance to use if there are multiple devices
+    of the same type.
+
+    Attributes:
+        device_type: Device type code (CPU=1, CUDA=2, OPENCL=4, etc.).
+        device_id: Device ID for multiple devices of the same type (usually 0).
+
+    Constants:
+        CPU: CPU device type code (1).
+        CUDA: CUDA GPU device type code (2).
+        OPENCL: OpenCL device type code (4).
+        VULKAN: Vulkan device type code (7).
+        METAL: Metal device type code (8).
+        VPI: VPI device type code (9).
+        ROCM: ROCm device type code (10).
     """
 
     # TODO: verify all the values apart from cpu, cuda.
@@ -100,11 +125,23 @@ struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterType):
 
 
 struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterType):
-    """
-    Data type descriptor for tensor elements.
+    """Represents a data type descriptor for tensor elements.
 
-    Describes the element type using a code (int/float/etc), bit width,
-    and number of lanes (for vector types).
+    Describes the element type using a type code (int/float/complex/bool),
+    bit width (8, 16, 32, 64, etc.), and number of lanes for vector types.
+
+    Attributes:
+        code: Type code (INT=0, UINT=1, FLOAT=2, BFLOAT=4, COMPLEX=5, BOOL=6).
+        bits: Number of bits per element (8, 16, 32, 64, etc.).
+        lanes: Number of lanes (1 for scalar types, >1 for vector types).
+
+    Constants:
+        INT: Signed integer type code (0).
+        UINT: Unsigned integer type code (1).
+        FLOAT: Floating-point type code (2).
+        BFLOAT: Brain floating-point type code (4).
+        COMPLEX: Complex number type code (5).
+        BOOL: Boolean type code (6).
     """
 
     comptime INT = 0
@@ -128,14 +165,18 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterType):
 
     @staticmethod
     fn from_dtype[dtype: DType]() -> Self:
-        """
-        Convert Mojo DType to DLDataType.
+        """Converts a Mojo DType to a DLDataType descriptor.
+
+        This static method maps Mojo's native data types to the DLPack type
+        system, determining the appropriate type code (INT, UINT, FLOAT) and bit
+        width based on the input DType.
 
         Parameters:
             dtype: Mojo data type to convert.
 
         Returns:
-            Corresponding DLDataType descriptor.
+            Corresponding DLDataType descriptor with appropriate type code and
+            bit width.
         """
         var code: UInt8
         var bits: UInt8 = UInt8(size_of[dtype]() * 8)
@@ -153,14 +194,20 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterType):
         return Self(code, bits, 1)
 
     fn to_dtype(self) raises -> DType:
-        """
-        Convert DLDataType to Mojo DType.
+        """Converts a DLDataType descriptor to a Mojo DType.
+
+        This method maps DLPack type descriptors back to Mojo's native data types,
+        supporting common floating-point (float16/32/64) and integer types
+        (int8/16/32/64, uint8/16/32/64).
 
         Returns:
             Corresponding Mojo DType.
 
         Raises:
-            Error if the type is not supported.
+            Error: If the type code is not supported.
+            Error: If the bit width is not supported for the given type code.
+            Error: If vector types (lanes > 1) are encountered (not yet
+                supported).
         """
         if self.lanes != 1:
             raise Error("DLDataType: vector types not supported")
@@ -213,11 +260,20 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterType):
 
 
 struct DLTensor(ImplicitlyCopyable, Movable):
-    """
-    Core tensor structure containing data pointer and metadata.
+    """Represents the core tensor structure containing data pointer and metadata.
 
     This is the fundamental structure that describes a tensor's memory layout,
-    shape, and data type without managing its lifetime.
+    shape, strides, and data type without managing its lifetime. It provides
+    a view into tensor data without ownership semantics.
+
+    Attributes:
+        data: Opaque pointer to the tensor data.
+        device: Device where the data resides.
+        ndim: Number of dimensions.
+        dtype: Element data type descriptor.
+        shape: Pointer to shape array (size = ndim).
+        strides: Pointer to strides array in elements (size = ndim).
+        byte_offset: Byte offset from data pointer to first element.
     """
 
     var data: UnsafePointer[NoneType, MutAnyOrigin]
@@ -262,12 +318,23 @@ comptime DLManagedTensorDeleter = fn (
 # TODO: This is the old API, current API requires using DLManagedTensorVersioned which has a version field for future compatibility.
 # Need to update this to match the latest DLPack spec.
 struct DLManagedTensor(ImplicitlyCopyable, Movable):
-    """
-    Managed tensor structure that includes a deleter callback for lifetime management.
+    """Represents a managed tensor structure that includes a deleter callback
+    for lifetime management.
 
     This structure wraps a DLTensor with a deleter callback and optional
     context pointer for resource cleanup. The deleter is called by the
-    consumer when they're done with the data.
+    consumer when they're done with the data, ensuring proper memory management
+    in cross-framework data sharing scenarios.
+
+    Attributes:
+        dl_tensor: The underlying tensor structure.
+        manager_ctx: Context pointer for the deleter (stores metadata, refcount,
+            etc.).
+        deleter: Cleanup function called when consumer finishes using the tensor.
+
+    Note:
+        This implements the older DLPack API. The current specification uses
+        DLManagedTensorVersioned with a version field for forward compatibility.
     """
 
     var dl_tensor: DLTensor
@@ -294,8 +361,21 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
 
 
 struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
-    """
-    Metadata container for DLPack tensor lifetime management.
+    """Represents a metadata container for DLPack tensor lifetime management.
+
+    This structure stores all the metadata needed to manage the lifetime of a
+    DLPack tensor, including shape, strides, and the underlying data container.
+    It ensures proper cleanup of allocated resources when the tensor is no
+    longer needed.
+
+    Parameters:
+        dtype: Data type of the tensor elements.
+
+    Attributes:
+        shape: Pointer to shape array.
+        strides: Pointer to strides array.
+        ndim: Number of dimensions.
+        data_container: Container managing the actual tensor data.
     """
 
     var shape: UnsafePointer[Int64, MutAnyOrigin]
@@ -331,9 +411,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
 fn _dlpack_deleter_impl[
     dtype: DType
 ](managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]) -> None:
-    """
-    Type-specific deleter callback for DLManagedTensor.
-    """
+    """Type-specific deleter callback for DLManagedTensor."""
     if not managed_tensor_ptr:
         return
 
@@ -354,8 +432,13 @@ fn _dlpack_deleter_impl[
 fn to_dlpack[
     dtype: DType
 ](arr: NDArray[dtype]) raises -> UnsafePointer[DLManagedTensor, MutAnyOrigin]:
-    """
-    Export a NuMojo NDArray to a DLPack managed tensor for zero-copy sharing.
+    """Exports a NuMojo NDArray to a DLPack managed tensor for zero-copy sharing.
+
+    This function converts a NuMojo NDArray into a DLPack-compatible managed
+    tensor that can be consumed by other array libraries (NumPy, PyTorch, JAX,
+    etc.) without copying the underlying data. The function allocates shape and
+    strides arrays, creates metadata for lifetime management, and returns a
+    pointer to a DLManagedTensor.
 
     Parameters:
         dtype: Data type of the array elements.
@@ -366,9 +449,13 @@ fn to_dlpack[
     Returns:
         Pointer to a DLManagedTensor that can be consumed by other libraries.
 
-    Note:
-        The consumer is responsible for calling the deleter when done.
-        Do not modify the original array while the DLPack tensor is in use.
+    Raises:
+        Error: If enabling views on the data container fails.
+
+    Notes:
+        - The consumer is responsible for calling the deleter when done.
+        - Do not modify the original array while the DLPack tensor is in use.
+        - The returned tensor shares memory with the original array.
     """
     var buf = arr._buf
     try:
@@ -422,10 +509,19 @@ fn to_dlpack[
 
 # TODO: Test this function in a linux environment!
 fn _find_libpython_path() -> String:
-    """
-    Attempt to find the path to the libpython shared library for the current Python environment.
+    """Attempts to find the path to the libpython shared library for the current
+    Python environment.
+    This function searches for the libpython shared library (.dylib on macOS,
+    .so on Linux) within the Pixi environment. It uses the PIXI_ENVIRONMENT_NAME
+    environment variable to locate the correct environment directory.
 
-    Only supports pixi environments for now.
+    Returns:
+        Path to the libpython shared library if found, empty string otherwise.
+
+    Notes:
+        - Currently only supports Pixi environments.
+        - Searches in ./.pixi/envs/<env_name>/lib/ directory.
+        - Requires PIXI_ENVIRONMENT_NAME environment variable to be set.
     """
     var pixi_base = "./.pixi/envs/"
     try:
@@ -446,7 +542,7 @@ fn _find_libpython_path() -> String:
                             var full_path = env_lib_path + entry
                             if Path(full_path).exists():
                                 return full_path
-    except Exception:
+    except e:
         print("Error while searching for libpython in Pixi environment: ", e)
 
     return ""
@@ -455,14 +551,23 @@ fn _find_libpython_path() -> String:
 fn _extract_dlpack_pointer(
     capsule: PythonObject,
 ) raises -> UnsafePointer[DLManagedTensor, MutAnyOrigin]:
-    """
-    Extract the DLManagedTensor pointer from a PyCapsule.
+    """Extracts the DLManagedTensor pointer from a PyCapsule.
+
+    This function uses the Python C API to extract the raw pointer from a
+    PyCapsule object. It dynamically loads libpython, calls
+    PyCapsule_GetPointer, and validates the result before returning the pointer.
 
     Args:
-        capsule:  A PythonObject that is expected to be a PyCapsule containing a pointer to a DLManagedTensor. This is typically obtained from the __dlpack__() method of a DLPack-compatible tensor.
+        capsule: A PythonObject that is expected to be a PyCapsule containing a
+            pointer to a DLManagedTensor. This is typically obtained from the
+            __dlpack__() method of a DLPack-compatible tensor.
 
     Returns:
         Pointer to the DLManagedTensor inside the capsule.
+
+    Raises:
+        Error: If PyCapsule_GetPointer returns NULL (capsule may be invalid or
+        already consumed).
     """
     var libpath = _find_libpython_path()
     var lib = OwnedDLHandle(libpath)
@@ -498,29 +603,40 @@ fn _extract_dlpack_pointer(
 
 
 fn from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
-    """
-    Import a tensor from any DLPack-compatible library into a NuMojo NDArray using zero-copy.
-
-    This function accepts a Python object that implements the DLPack protocol (i.e., has a __dlpack__() method),
-    such as NumPy, PyTorch, JAX, or CuPy tensors. It extracts the underlying memory and metadata, and returns
-    a NuMojo NDArray that shares memory with the original tensor.
+    """Imports a tensor from any DLPack-compatible library into a NuMojo NDArray
+    using zero-copy.
+    This function accepts a Python object that implements the DLPack protocol
+    (i.e., has a __dlpack__() method), such as NumPy, PyTorch, JAX, or CuPy
+    tensors. It extracts the underlying memory and metadata through the
+    PyCapsule interface, validates device and data type compatibility, and
+    returns a NuMojo NDArray that shares memory with the original tensor.
 
     Parameters:
         dtype: The expected data type of the array elements.
 
     Args:
-        capsule: A PythonObject representing a DLPack-compatible tensor. The object must implement the __dlpack__()
-            method, which returns a PyCapsule containing a pointer to a DLManagedTensor.
+        capsule: A PythonObject representing a DLPack-compatible tensor. The
+            object must implement the __dlpack__() method, which returns a
+            PyCapsule containing a pointer to a DLManagedTensor.
 
     Returns:
-        NDArray[dtype]: A new NuMojo NDArray that shares memory with the input tensor.
+        A new NuMojo NDArray that shares memory with the input tensor.
+
+    Raises:
+        Error: If the received DLManagedTensor pointer is null.
+        Error: If the tensor is not on CPU (only CPU tensors are currently
+            supported).
+        Error: If the data type does not match the expected dtype parameter.
 
     Notes:
-        - The returned NDArray shares memory with the source tensor. Changes to one will be reflected in the other.
+        - The returned NDArray shares memory with the source tensor. Changes to
+            one will be reflected in the other.
         - Only CPU tensors are currently supported.
-        - Raises an error if the data type does not match or if the device is not CPU.
+        - If strides are not provided in the DLPack tensor, C-contiguous strides
+            are assumed.
     """
-    # This assumes that the input Python object has a __dlpack__ method that returns a PyCapsule containing a pointer to a DLManagedTensor.
+    # This assumes that the input Python object has a __dlpack__ method that
+    # returns a PyCapsule containing a pointer to a DLManagedTensor.
     # Perhaps we should add a check to verify that in future.
     var actual_capsule: PythonObject = capsule.__dlpack__()
     var managed_tensor_ptr = _extract_dlpack_pointer(actual_capsule)
@@ -578,11 +694,12 @@ fn from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
 
 
 fn from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
-    """
-    Import a NumPy array into a NuMojo NDArray via zero-copy.
+    """Imports a NumPy array into a NuMojo NDArray via zero-copy.
 
-    This is a fast path for NumPy that uses __array_interface__ to extract
-    the data pointer directly, avoiding PyCapsule overhead entirely.
+    This is a fast path specifically optimized for NumPy that uses the
+    `__array_interface__` protocol to extract the data pointer directly,
+    avoiding PyCapsule overhead entirely.
+    This method is generally faster than using from_dlpack for NumPy arrays.
 
     Parameters:
         dtype: Expected data type of the array elements.
@@ -593,9 +710,14 @@ fn from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
     Returns:
         A new NDArray that shares memory with the input array.
 
-    Note:
-        The imported array shares memory with the source. Modifications
-        to either will be visible in both.
+    Raises:
+        Error: If the array is not on CPU (only CPU tensors are supported).
+
+    Notes:
+        - The imported array shares memory with the source. Modifications to
+          either will be visible in both.
+        - This uses NumPy's `__array_interface__` instead of the DLPack protocol.
+        - Strides are converted from bytes to elements automatically.
     """
     var device_info = array.__dlpack_device__()
     var device_type = Int(py=device_info[0])

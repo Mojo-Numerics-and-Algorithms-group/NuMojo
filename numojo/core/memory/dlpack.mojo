@@ -35,13 +35,9 @@ Example:
     ```
 """
 
-from memory import UnsafePointer, memcpy
+from memory import UnsafePointer
 from sys.info import size_of
-from sys.ffi import OwnedDLHandle
 from python import PythonObject, Python
-from pathlib.path import Path
-from os.env import getenv
-from os import listdir
 
 from numojo.core.ndarray import NDArray
 from numojo.core.memory.data_container import DataContainer
@@ -507,47 +503,6 @@ fn to_dlpack[
     return managed
 
 
-# TODO: Test this function in a linux environment!
-fn _find_libpython_path() -> String:
-    """Attempts to find the path to the libpython shared library for the current
-    Python environment.
-    This function searches for the libpython shared library (.dylib on macOS,
-    .so on Linux) within the Pixi environment. It uses the PIXI_ENVIRONMENT_NAME
-    environment variable to locate the correct environment directory.
-
-    Returns:
-        Path to the libpython shared library if found, empty string otherwise.
-
-    Notes:
-        - Currently only supports Pixi environments.
-        - Searches in ./.pixi/envs/<env_name>/lib/ directory.
-        - Requires PIXI_ENVIRONMENT_NAME environment variable to be set.
-    """
-    var pixi_base = "./.pixi/envs/"
-    try:
-        if Path(pixi_base).exists():
-            var pixi_env_name = getenv("PIXI_ENVIRONMENT_NAME", "")
-            if pixi_env_name != "":
-                var env_lib_path = pixi_base + pixi_env_name + "/lib/"
-                if Path(env_lib_path).exists():
-                    var entries = listdir(env_lib_path)
-                    for entry in entries:
-                        if (
-                            entry.startswith("libpython")
-                            and entry.endswith(".dylib")
-                        ) or (
-                            entry.startswith("libpython")
-                            and entry.endswith(".so")
-                        ):
-                            var full_path = env_lib_path + entry
-                            if Path(full_path).exists():
-                                return full_path
-    except e:
-        print("Error while searching for libpython in Pixi environment: ", e)
-
-    return ""
-
-
 fn _extract_dlpack_pointer(
     capsule: PythonObject,
 ) raises -> UnsafePointer[DLManagedTensor, MutAnyOrigin]:
@@ -569,32 +524,35 @@ fn _extract_dlpack_pointer(
         Error: If PyCapsule_GetPointer returns NULL (capsule may be invalid or
         already consumed).
     """
-    var libpath = _find_libpython_path()
-    var lib = OwnedDLHandle(libpath)
+    ctypes = Python.import_module("ctypes")
 
-    comptime FnType = fn (
-        UnsafePointer[NoneType, MutAnyOrigin],
-        UnsafePointer[Int8, MutAnyOrigin],
-    ) -> UnsafePointer[NoneType, MutAnyOrigin]
-    var pycapsule_get_pointer = lib.get_function[FnType]("PyCapsule_GetPointer")
-    var capsule_pyobj = capsule._obj_ptr.bitcast[NoneType]()
+    ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [
+        ctypes.py_object,
+        ctypes.c_char_p,
+    ]
+    ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+    result_obj = ctypes.pythonapi.PyCapsule_GetPointer(
+        capsule, _get_c_char_p_from_string["dltensor"]()
+    )
 
-    var name_ptr = alloc[Int8](9)
-    var name_bytes = String("dltensor").as_bytes()
-    for i in range(8):
-        name_ptr[i] = Int8(name_bytes[i])
-    name_ptr[8] = Int8(0)
+    var p = result_obj.unsafe_get_as_pointer[DType.uint8]()
 
-    var result = pycapsule_get_pointer(capsule_pyobj, name_ptr)
-    name_ptr.free()
-
-    if not result:
+    if not p:
         raise Error(
             "_extract_dlpack_pointer: PyCapsule_GetPointer returned NULL"
             " - capsule may be invalid or already consumed"
         )
 
-    return result.bitcast[DLManagedTensor]()
+    return p.bitcast[DLManagedTensor]()
+
+
+fn _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
+    ctypes = Python.import_module("ctypes")
+
+    return ctypes.cast(
+        Int(s.as_c_string_slice().unsafe_ptr().bitcast[NoneType]()),
+        ctypes.c_char_p,
+    )
 
 
 # ===-------------------------------------------------------------------===#

@@ -18,9 +18,16 @@ from os import abort
 from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice
 
+
 # TODO: currently all constructors don't handle the size < 0 case appropriately. Need to decide whether to raise in the constructor (not sure if that's good) or abort or let this unsafe operation be handler by user.
 struct IndexBuffer(
-    RegisterPassable, Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
+    Equatable,
+    ImplicitlyCopyable,
+    Movable,
+    RegisterPassable,
+    Sized,
+    Stringable,
+    Writable,
 ):
     """
     Shared integer buffer backend for shape/strides/item.
@@ -92,7 +99,9 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(Scalar[Self.element_type](values[i]))
+            (self.ptr + i).init_pointee_copy(
+                Scalar[Self.element_type](values[i])
+            )
 
     # NOTE: In future this will be equivalent to Int.
     fn __init__(out self, *values: Scalar[Self.element_type]):
@@ -138,7 +147,9 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(Scalar[Self.element_type](values[i]))
+            (self.ptr + i).init_pointee_copy(
+                Scalar[Self.element_type](values[i])
+            )
 
     fn __init__(out self, values: VariadicList[Scalar[Self.element_type]]):
         """
@@ -168,7 +179,9 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(Scalar[Self.element_type](values[i]))
+            (self.ptr + i).init_pointee_copy(
+                Scalar[Self.element_type](values[i])
+            )
 
     fn __init__(out self, copy: Self):
         """
@@ -196,7 +209,7 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     fn get_ptr(
         ref self,
-    ) -> ref [self.ptr] UnsafePointer[Scalar[Self.element_type], Self._origin]:
+    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.element_type], Self._origin]:
         """
         Get the underlying pointer of the buffer.
 
@@ -220,7 +233,7 @@ struct IndexBuffer(
         Returns:
             UnsafePointer offset by the given amount.
         """
-        return (self.ptr + offset)
+        return self.ptr + offset
 
     fn __getitem__(self, idx: Int) raises -> Int:
         """
@@ -243,7 +256,9 @@ struct IndexBuffer(
             )
         return Int(self.ptr[index])
 
-    fn __getitem__(self, idx: Scalar[Self.element_type]) raises -> Scalar[Self.element_type]:
+    fn __getitem__(
+        self, idx: Scalar[Self.element_type]
+    ) raises -> Scalar[Self.element_type]:
         """
         Get the element at the given index.
 
@@ -314,7 +329,11 @@ struct IndexBuffer(
             )
         self.ptr[index] = Scalar[Self.element_type](value)
 
-    fn __setitem__(mut self, idx: Scalar[Self.element_type], value: Scalar[Self.element_type]) raises:
+    fn __setitem__(
+        mut self,
+        idx: Scalar[Self.element_type],
+        value: Scalar[Self.element_type],
+    ) raises:
         """
         Set the element at the given index.
 
@@ -422,7 +441,11 @@ struct IndexBuffer(
 
     fn unsafe_store[
         width: Int = 1
-    ](self, idx: Scalar[Self.element_type], value: SIMD[Self.element_type, width]):
+    ](
+        self,
+        idx: Scalar[Self.element_type],
+        value: SIMD[Self.element_type, width],
+    ):
         """
         Unsafely store a SIMD vector to the buffer at the given index.
 
@@ -988,7 +1011,9 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Iterators
     # ===----------------------------------------------------------------------=== #
-    fn __iter__(ref self) -> _IndexBufferIter[Self.element_type, origin_of(self), True]:
+    fn __iter__(
+        ref self,
+    ) -> _IndexBufferIter[Self.element_type, origin_of(self), True]:
         """
         Get a forward iterator for the IndexBuffer.
 
@@ -999,7 +1024,9 @@ struct IndexBuffer(
             Pointer(to=self), self.ndim
         )
 
-    fn __reversed__(ref self) -> _IndexBufferIter[Self.element_type, origin_of(self), False]:
+    fn __reversed__(
+        ref self,
+    ) -> _IndexBufferIter[Self.element_type, origin_of(self), False]:
         """
         Get a backward iterator for the IndexBuffer.
 

@@ -148,7 +148,7 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn get_ptr(
         ref self,
-    ) -> ref [self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """Get the data pointer."""
         return self.ptr
 

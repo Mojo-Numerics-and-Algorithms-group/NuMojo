@@ -4746,7 +4746,7 @@ struct _MatrixIter[
 # TODO: we can move the checks in these functions to the caller functions to avoid redundant checks.
 fn _arithmetic_func_matrix_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
+    simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[type, simd_width],
 ](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[dtype]:
@@ -4815,9 +4815,9 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
 
 fn _arithmetic_func_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
-        SIMD[type, simd_width]
-    ) -> SIMD[type, simd_width],
+    simd_func: fn[type: DType, simd_width: Int](SIMD[type, simd_width]) -> SIMD[
+        type, simd_width
+    ],
 ](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply a unary SIMD function element-wise to a matrix.
@@ -4850,7 +4850,7 @@ fn _arithmetic_func_matrix_to_matrix[
 
 fn _logic_func_matrix_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
+    simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[DType.bool, simd_width],
 ](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[DType.bool]:

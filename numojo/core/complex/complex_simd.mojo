@@ -173,7 +173,9 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(re, im)
 
     @staticmethod
-    fn from_polar(r: Scalar[Self.dtype], theta: Scalar[Self.dtype]) -> Self where Self.dtype.is_floating_point() :
+    fn from_polar(
+        r: Scalar[Self.dtype], theta: Scalar[Self.dtype]
+    ) -> Self where Self.dtype.is_floating_point():
         """
         Constructs a ComplexSIMD instance from polar coordinates.
 

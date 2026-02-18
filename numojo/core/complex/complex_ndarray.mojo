@@ -1065,12 +1065,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             memcpy(
                 dest=result._re._buf.ptr + i * size_per_item,
-                src=self._re._buf.ptr + indices.item(i) * Scalar[DType.int](size_per_item),
+                src=self._re._buf.ptr
+                + indices.item(i) * Scalar[DType.int](size_per_item),
                 count=size_per_item,
             )
             memcpy(
                 dest=result._im._buf.ptr + i * size_per_item,
-                src=self._im._buf.ptr + indices.item(i) * Scalar[DType.int](size_per_item),
+                src=self._im._buf.ptr
+                + indices.item(i) * Scalar[DType.int](size_per_item),
                 count=size_per_item,
             )
 
@@ -1095,7 +1097,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         var indices_array = NDArray[DType.int](shape=Shape(len(indices)))
         for i in range(len(indices)):
-            (indices_array._buf.ptr + i).init_pointee_copy(Scalar[DType.int](indices[i]))
+            (indices_array._buf.ptr + i).init_pointee_copy(
+                Scalar[DType.int](indices[i])
+            )
 
         return self[indices_array]
 

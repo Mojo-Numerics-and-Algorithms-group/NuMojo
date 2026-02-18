@@ -17,10 +17,10 @@ from numojo.core.error import NumojoError
 
 
 struct NDArrayStrides(
-    RegisterPassable,
     Equatable,
     ImplicitlyCopyable,
     Movable,
+    RegisterPassable,
     Representable,
     Sized,
     Stringable,
@@ -360,7 +360,9 @@ struct NDArrayStrides(
         return Int(self._buf[index])
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Scalar[Self.element_type]) raises -> Scalar[Self.element_type]:
+    fn __getitem__(
+        self, index: Scalar[Self.element_type]
+    ) raises -> Scalar[Self.element_type]:
         """
         Gets stride at specified index.
 
@@ -386,7 +388,11 @@ struct NDArrayStrides(
         return Self(self._buf[slice_index])
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Scalar[Self.element_type], val: Scalar[Self.element_type]) raises:
+    fn __setitem__(
+        mut self,
+        index: Scalar[Self.element_type],
+        val: Scalar[Self.element_type],
+    ) raises:
         """
         Sets stride at specified index.
 
@@ -570,7 +576,9 @@ struct NDArrayStrides(
 
         var result = NDArrayStrides(ndim=self.ndim, initialized=False)
         for i in range(self.ndim):
-            result._buf.init_value(i, Scalar[DType.int](self._buf[normalized[i]]))
+            result._buf.init_value(
+                i, Scalar[DType.int](self._buf[normalized[i]])
+            )
         return result^
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:

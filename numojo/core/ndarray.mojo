@@ -1457,7 +1457,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         var indices_array = NDArray[DType.int](shape=Shape(len(indices)))
         for i in range(len(indices)):
-            (indices_array._buf.ptr + i).init_pointee_copy(Scalar[DType.int](indices[i]))
+            (indices_array._buf.ptr + i).init_pointee_copy(
+                Scalar[DType.int](indices[i])
+            )
 
         return self[indices_array]
 
@@ -1698,7 +1700,9 @@ struct NDArray[dtype: DType = DType.float64](
         var item = Item(ndim=self.ndim)
 
         for i in range(self.ndim - 1, -1, -1):
-            (item._buf.ptr + i).init_pointee_copy(Scalar[DType.int](remainder % self.shape[i]))
+            (item._buf.ptr + i).init_pointee_copy(
+                Scalar[DType.int](remainder % self.shape[i])
+            )
             remainder = remainder // self.shape[i]
 
         return self._buf.ptr[IndexMethods.get_1d_index(item, self.strides)]
@@ -1778,7 +1782,9 @@ struct NDArray[dtype: DType = DType.float64](
             self._buf.ptr + IndexMethods.get_1d_index(index, self.strides)
         )[]
 
-    fn unsafe_load[width: Int = 1](self, var index: Int) -> SIMD[Self.dtype, width]:
+    fn unsafe_load[
+        width: Int = 1
+    ](self, var index: Int) -> SIMD[Self.dtype, width]:
         """
         Unsafely retrieve i-th item from the underlying buffer as a SIMD element of size `width`.
 
@@ -2508,7 +2514,10 @@ struct NDArray[dtype: DType = DType.float64](
         # print("output_shape\n", output_shape.__str__())
 
         for i in range(index.size):
-            if index.item(i) >= Scalar[DType.int](self.shape[0]) or index.item(i) < 0:
+            if (
+                index.item(i) >= Scalar[DType.int](self.shape[0])
+                or index.item(i) < 0
+            ):
                 raise Error(
                     NumojoError(
                         category="index",
@@ -2696,9 +2705,9 @@ struct NDArray[dtype: DType = DType.float64](
                 IndexMethods.get_1d_index(indices, self.strides), item
             )
 
-    fn unsafe_store[width: Int = 1](
-        mut self, index: Int, val: SIMD[Self.dtype, width]
-    ):
+    fn unsafe_store[
+        width: Int = 1
+    ](mut self, index: Int, val: SIMD[Self.dtype, width]):
         """
         Unsafely store a SIMD element to i-th item of the underlying buffer.
 
@@ -3478,7 +3487,7 @@ struct NDArray[dtype: DType = DType.float64](
     # Properties
     # ===-------------------------------------------------------------------===#
     # TODO: rename internal shape to be _shape to keep it private and let users access shape through fn shape()
-    fn ndshape(ref self) -> ref [self.shape] NDArrayShape:
+    fn ndshape(ref self) -> ref[self.shape] NDArrayShape:
         """
         Returns the shape of the array.
 
@@ -3487,7 +3496,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return self.shape
 
-    fn ndstrides(ref self) -> ref [self.strides] NDArrayStrides:
+    fn ndstrides(ref self) -> ref[self.strides] NDArrayStrides:
         """
         Returns the strides of the array.
 
@@ -5634,7 +5643,9 @@ struct _NDAxisIter[
             for i in range(self.ndim):
                 if i != self.axis:
                     (item._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder // self.strides_compatible[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible[i]
+                        )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
@@ -5643,7 +5654,9 @@ struct _NDAxisIter[
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
                     (item._buf.ptr + i).init_pointee_copy(
-                    Scalar[DType.int](remainder // self.strides_compatible[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible[i]
+                        )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
@@ -5699,7 +5712,9 @@ struct _NDAxisIter[
             for i in range(self.ndim):
                 if i != self.axis:
                     (item._buf.ptr + i).init_pointee_copy(
-                    Scalar[DType.int](remainder // self.strides_compatible[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible[i]
+                        )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
@@ -5708,7 +5723,9 @@ struct _NDAxisIter[
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
                     (item._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder // self.strides_compatible[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible[i]
+                        )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
@@ -5785,7 +5802,9 @@ struct _NDAxisIter[
             )
             var begin_offset = IndexMethods.get_1d_index(item, new_strides)
             for j in range(self.size_of_item):
-                (offsets._buf.ptr + j).init_pointee_copy(Scalar[DType.int](begin_offset + j))
+                (offsets._buf.ptr + j).init_pointee_copy(
+                    Scalar[DType.int](begin_offset + j)
+                )
 
         elif (self.axis == 0) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -5799,14 +5818,18 @@ struct _NDAxisIter[
             )
             for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(
-                    Scalar[DType.int](IndexMethods.get_1d_index(item, new_strides))
+                    Scalar[DType.int](
+                        IndexMethods.get_1d_index(item, new_strides)
+                    )
                 )
                 item._buf[self.axis] += 1
 
         else:
             for j in range(self.size_of_item):
                 (offsets._buf.ptr + j).init_pointee_copy(
-                    Scalar[DType.int](IndexMethods.get_1d_index(item, new_strides))
+                    Scalar[DType.int](
+                        IndexMethods.get_1d_index(item, new_strides)
+                    )
                 )
                 (elements._buf.ptr + j).init_pointee_copy(
                     self.data.ptr[IndexMethods.get_1d_index(item, self.strides)]
@@ -5889,19 +5912,27 @@ struct _NDIter[
             for i in range(self.ndim):
                 if i != self.axis:
                     (indices._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder // self.strides_compatible._buf[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible._buf[i]
+                        )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(Scalar[DType.int](remainder))
+            (indices._buf.ptr + self.axis).init_pointee_copy(
+                Scalar[DType.int](remainder)
+            )
 
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
                     (indices._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder // self.strides_compatible._buf[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible._buf[i]
+                        )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(Scalar[DType.int](remainder))
+            (indices._buf.ptr + self.axis).init_pointee_copy(
+                Scalar[DType.int](remainder)
+            )
 
         return self.ptr[IndexMethods.get_1d_index(indices, self.strides)]
 
@@ -5931,17 +5962,25 @@ struct _NDIter[
             for i in range(self.ndim):
                 if i != self.axis:
                     (indices._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder // self.strides_compatible._buf[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible._buf[i]
+                        )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(Scalar[DType.int](remainder))
+            (indices._buf.ptr + self.axis).init_pointee_copy(
+                Scalar[DType.int](remainder)
+            )
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
                     (indices._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder // self.strides_compatible._buf[i])
+                        Scalar[DType.int](
+                            remainder // self.strides_compatible._buf[i]
+                        )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(Scalar[DType.int](remainder))
+            (indices._buf.ptr + self.axis).init_pointee_copy(
+                Scalar[DType.int](remainder)
+            )
 
         return self.ptr[IndexMethods.get_1d_index(indices, self.strides)]

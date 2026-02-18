@@ -26,10 +26,10 @@ from numojo.core.traits.indexer_collection_element import (
 
 
 struct Item(
-    RegisterPassable,
     Equatable,
     ImplicitlyCopyable,
     Movable,
+    RegisterPassable,
     Representable,
     Sized,
     Stringable,
@@ -105,7 +105,9 @@ struct Item(
         self.ndim = len(args)
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, Scalar[Self.element_type](convert_to_int(args[i])))
+            self._buf.init_value(
+                i, Scalar[Self.element_type](convert_to_int(args[i]))
+            )
 
     @always_inline("nodebug")
     fn __init__[T: IndexerCollectionElement](out self, args: List[T]):
@@ -120,7 +122,9 @@ struct Item(
         self.ndim = len(args)
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, Scalar[Self.element_type](convert_to_int(args[i])))
+            self._buf.init_value(
+                i, Scalar[Self.element_type](convert_to_int(args[i]))
+            )
 
     @always_inline("nodebug")
     fn __init__(out self, args: List[Int]):

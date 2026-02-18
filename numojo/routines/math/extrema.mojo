@@ -290,6 +290,7 @@ fn _max[
 
     return (max_value, Scalar[DType.int](max_index))
 
+
 fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Finds the min value of an array.

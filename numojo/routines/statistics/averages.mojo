@@ -28,6 +28,7 @@ from numojo.routines.functional import (
     apply_along_axis_reduce,
 )
 
+
 # not sure what's the side effect of using a returned dtype and casting to it. There could be some precision loss?
 fn mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
@@ -142,9 +143,13 @@ fn mean[
     """
 
     if axis == 0:
-        return sum(a, axis=0).astype[returned_dtype]() / Scalar[returned_dtype](a.shape[0])
+        return sum(a, axis=0).astype[returned_dtype]() / Scalar[returned_dtype](
+            a.shape[0]
+        )
     elif axis == 1:
-        return sum(a, axis=1).astype[returned_dtype]() / Scalar[returned_dtype](a.shape[1])
+        return sum(a, axis=1).astype[returned_dtype]() / Scalar[returned_dtype](
+            a.shape[1]
+        )
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 

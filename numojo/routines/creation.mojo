@@ -169,7 +169,8 @@ fn arange[
         result.store[width=1](
             idx,
             ComplexSIMD[cdtype](
-                start.re + step.re * Scalar[cdtype._dtype](idx), start.im + step.im * Scalar[cdtype._dtype](idx)
+                start.re + step.re * Scalar[cdtype._dtype](idx),
+                start.im + step.im * Scalar[cdtype._dtype](idx),
             ),
         )
 
@@ -421,13 +422,18 @@ fn _linspace_serial[
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
 
     if endpoint:
-        var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](num - 1)
-        var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num - 1)
+        var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](
+            num - 1
+        )
+        var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](
+            num - 1
+        )
         for i in range(num):
             result.store[width=1](
                 i,
                 ComplexSIMD[cdtype](
-                    start.re + step_re * Scalar[dtype](i), start.im + step_im * Scalar[dtype](i)
+                    start.re + step_re * Scalar[dtype](i),
+                    start.im + step_im * Scalar[dtype](i),
                 ),
             )
 
@@ -438,7 +444,8 @@ fn _linspace_serial[
             result.store[width=1](
                 i,
                 ComplexSIMD[cdtype](
-                    start.re + step_re * Scalar[dtype](i), start.im + step_im * Scalar[dtype](i)
+                    start.re + step_re * Scalar[dtype](i),
+                    start.im + step_im * Scalar[dtype](i),
                 ),
             )
 
@@ -484,7 +491,8 @@ fn _linspace_parallel[
                 result.store[width=1](
                     idx,
                     ComplexSIMD[cdtype](
-                        start.re + step_re * Scalar[dtype](idx), start.im + step_im * Scalar[dtype](idx)
+                        start.re + step_re * Scalar[dtype](idx),
+                        start.im + step_im * Scalar[dtype](idx),
                     ),
                 )
             except:
@@ -502,7 +510,8 @@ fn _linspace_parallel[
                 result.store[width=1](
                     idx,
                     ComplexSIMD[cdtype](
-                        start.re + step_re * Scalar[dtype](idx), start.im + step_im * Scalar[dtype](idx)
+                        start.re + step_re * Scalar[dtype](idx),
+                        start.im + step_im * Scalar[dtype](idx),
                     ),
                 )
             except:
@@ -744,8 +753,12 @@ fn _logspace_serial[
     )
 
     if endpoint:
-        var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](num - 1)
-        var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num - 1)
+        var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](
+            num - 1
+        )
+        var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](
+            num - 1
+        )
         for i in range(num):
             result.store[1](
                 i,
@@ -799,8 +812,12 @@ fn _logspace_parallel[
     )
 
     if endpoint:
-        var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](num - 1)
-        var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num - 1)
+        var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](
+            num - 1
+        )
+        var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](
+            num - 1
+        )
 
         @parameter
         fn parallelized_logspace(idx: Int) -> None:

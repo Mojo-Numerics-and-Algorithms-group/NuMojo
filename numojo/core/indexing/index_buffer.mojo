@@ -13,10 +13,12 @@ small helpers for pointer access and SIMD load/store.
 from memory import UnsafePointer, memcpy, memset_zero
 from sys import simd_width_of
 from algorithm.functional import vectorize
+from os import abort
 
 from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice
 
+# TODO: currently all constructors don't handle the size < 0 case appropriately. Need to decide whether to raise in the constructor (not sure if that's good) or abort or let this unsafe operation be handler by user.
 struct IndexBuffer(
     RegisterPassable, Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
 ):
@@ -47,8 +49,9 @@ struct IndexBuffer(
         Args:
             size: Number of elements in the buffer.
         """
+
         self.ndim = size
-        if size <= 0:
+        if size == 0:
             self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
         else:
             self.ptr = alloc[Scalar[Self.element_type]](size)
@@ -167,7 +170,7 @@ struct IndexBuffer(
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(Scalar[Self.element_type](values[i]))
 
-    fn __copyinit__(out self, copy: Self):
+    fn __init__(out self, copy: Self):
         """
         Copy-initialize an IndexBuffer from ancopy IndexBuffer.
 
@@ -234,7 +237,7 @@ struct IndexBuffer(
             raise Error(
                 NumojoError(
                     category="index",
-                    message="index out of bounds",
+                    message="Index out of bounds",
                     location="IndexBuffer.__getitem__(idx: Int)",
                 )
             )
@@ -292,25 +295,6 @@ struct IndexBuffer(
 
         return new_buffer^
 
-    fn __setitem__(mut self, idx: Scalar[Self.element_type], value: Scalar[Self.element_type]) raises:
-        """
-        Set the element at the given index.
-
-        Args:
-            idx: Index of the element.
-            value: Value to set.
-        """
-        var index: Int = Int(idx) if idx >= 0 else self.ndim + Int(idx)
-        if index < 0 or index >= self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message="index out of bounds",
-                    location="IndexBuffer.__setitem__(idx: Int)",
-                )
-            )
-        self.ptr[index] = value
-
     fn __setitem__(mut self, idx: Int, value: Int) raises:
         """
         Set the element at the given index.
@@ -329,6 +313,25 @@ struct IndexBuffer(
                 )
             )
         self.ptr[index] = Scalar[Self.element_type](value)
+
+    fn __setitem__(mut self, idx: Scalar[Self.element_type], value: Scalar[Self.element_type]) raises:
+        """
+        Set the element at the given index.
+
+        Args:
+            idx: Index of the element.
+            value: Value to set.
+        """
+        var index: Int = Int(idx) if idx >= 0 else self.ndim + Int(idx)
+        if index < 0 or index >= self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="index out of bounds",
+                    location="IndexBuffer.__setitem__(idx: Int)",
+                )
+            )
+        self.ptr[index] = value
 
     fn __setitem__(mut self, slice: Slice, value: Self) raises:
         """
@@ -368,53 +371,6 @@ struct IndexBuffer(
             self.ptr[i] = value.ptr[idx]
             idx += 1
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self.element_type, width]:
-        """
-        Load a SIMD vector from the buffer at the given index.
-
-        Parameters:
-            width: Width of the SIMD vector.
-
-        Args:
-            idx: Index to load from.
-
-        Returns:
-            SIMD vector loaded from the buffer.
-        """
-        # not sure if it's right to check by including the width.
-        if idx < 0 or idx + width > self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message="index out of bounds for SIMD load",
-                    location="IndexBuffer.load[width: Int](idx: Int)",
-                )
-            )
-        return self.ptr.load[width=width](idx)
-
-    fn store[
-        width: Int = 1
-    ](self, idx: Int, value: SIMD[Self.element_type, width]) raises:
-        """
-        Store a SIMD vector to the buffer at the given index.
-
-        Parameters:
-            width: Width of the SIMD vector.
-
-        Args:
-            idx: Index to store to.
-            value: SIMD vector to store.
-        """
-        if idx < 0 or idx + width > self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message="index out of bounds for SIMD store",
-                    location="IndexBuffer.store[width: Int](idx: Int, value: SIMD)",
-                )
-            )
-        self.ptr.store[width=width](idx, value)
-
     fn unsafe_load[
         width: Int = 1
     ](self, idx: Int) -> SIMD[Self.element_type, width]:
@@ -435,6 +391,38 @@ struct IndexBuffer(
     fn unsafe_store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]):
+        """
+        Unsafely store a SIMD vector to the buffer at the given index.
+
+        Parameters:
+            width: Width of the SIMD vector.
+
+        Args:
+            idx: Index to store to.
+            value: SIMD vector to store.
+        """
+        self.ptr.store[width=width](idx, value)
+
+    fn unsafe_load[
+        width: Int = 1
+    ](self, idx: Scalar[Self.element_type]) -> SIMD[Self.element_type, width]:
+        """
+        Unsafely load a SIMD vector from the buffer at the given index.
+
+        Parameters:
+            width: Width of the SIMD vector.
+
+        Args:
+            idx: Index to load from.
+
+        Returns:
+            SIMD vector loaded from the buffer.
+        """
+        return self.ptr.load[width=width](idx)
+
+    fn unsafe_store[
+        width: Int = 1
+    ](self, idx: Scalar[Self.element_type], value: SIMD[Self.element_type, width]):
         """
         Unsafely store a SIMD vector to the buffer at the given index.
 
@@ -810,7 +798,7 @@ struct IndexBuffer(
         var n = len(perm)
         var inverted = Self(size=n)
         for i in range(n):
-            inverted.ptr[perm.ptr[i]] = i
+            inverted.ptr[perm.ptr[i]] = Scalar[DType.int](i)
         return inverted^
 
     # ===----------------------------------------------------------------------=== #
@@ -983,7 +971,8 @@ struct IndexBuffer(
             idx: Index of the element.
             value: Value to set.
         """
-        self.ptr[idx] = value
+        # self.ptr[idx] = value
+        (self.ptr + idx).init_pointee_copy(value)
 
     fn tolist(self) -> List[Scalar[Self.element_type]]:
         """

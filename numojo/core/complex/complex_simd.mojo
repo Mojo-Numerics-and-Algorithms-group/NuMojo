@@ -1441,7 +1441,7 @@ struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
             var result = `1j` + 5  # 5 + 1j
             ```
         """
-        return ComplexSIMD[ComplexDType.int, 1](other, 1)
+        return ComplexSIMD[ComplexDType.int, 1](Scalar[DType.int](other), 1)
 
     # SIMD + 1j -> ComplexSIMD
     fn __radd__[
@@ -1468,7 +1468,7 @@ struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
     # Addition: Int + 1j -> ComplexScalar
     fn __radd__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
         """Returns the sum of an integer and the imaginary unit."""
-        return ComplexSIMD[ComplexDType.int, 1](other, 1)
+        return ComplexSIMD[ComplexDType.int, 1](Scalar[DType.int](other), 1)
 
     # Subtraction: 1j - SIMD -> ComplexSIMD
     fn __sub__[
@@ -1494,7 +1494,7 @@ struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
 
     fn __sub__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
         """Returns the difference of the imaginary unit and an integer."""
-        return ComplexSIMD[ComplexDType.int, 1](-other, 1)
+        return ComplexSIMD[ComplexDType.int, 1](Scalar[DType.int](-other), 1)
 
     # Subtraction: SIMD - 1j -> ComplexSIMD
     fn __rsub__[
@@ -1521,7 +1521,7 @@ struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
     # Subtraction: Int - 1j -> ComplexScalar
     fn __rsub__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
         """Returns the difference of an integer and the imaginary unit."""
-        return ComplexSIMD[ComplexDType.int, 1](other, -1)
+        return ComplexSIMD[ComplexDType.int, 1](Scalar[DType.int](other), -1)
 
     # Multiplication: 1j * SIMD -> ComplexSIMD
     fn __mul__[
@@ -1545,7 +1545,7 @@ struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
 
     # Multiplication: 1j * Int -> ComplexScalar
     fn __mul__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
-        return ComplexSIMD[ComplexDType.int, 1](0, other)
+        return ComplexSIMD[ComplexDType.int, 1](0, Scalar[DType.int](other))
 
     fn __rmul__[
         dtype: DType,
@@ -1568,7 +1568,7 @@ struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
 
     # Multiplication: Scalar * 1j -> ComplexScalar
     fn __rmul__(self, other: Int) -> ComplexScalar[ComplexDType.int]:
-        return ComplexSIMD[ComplexDType.int, 1](0, other)
+        return ComplexSIMD[ComplexDType.int, 1](0, Scalar[DType.int](other))
 
     # Division: 1j / SIMD -> ComplexSIMD
     fn __truediv__[
@@ -1641,7 +1641,7 @@ struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
         Returns:
             ComplexScalar representing (0 - other j).
         """
-        return ComplexSIMD[ComplexDType.int, 1](0, -other)
+        return ComplexSIMD[ComplexDType.int, 1](0, Scalar[DType.int](-other))
 
     # Self-operations: 1j with 1j
     fn __mul__(self, other: ImaginaryUnit) -> Scalar[DType.float64]:

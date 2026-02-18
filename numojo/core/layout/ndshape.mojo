@@ -110,7 +110,7 @@ struct NDArrayShape(
                         location="NDArrayShape.__init__(*shape: Int)",
                     )
                 )
-            self._buf.init_value(i, shape[i])
+            self._buf.init_value(i, Scalar[DType.int](shape[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, shape: List[Int]) raises:
@@ -150,7 +150,7 @@ struct NDArrayShape(
                         location="NDArrayShape.__init__(shape: List[Int])",
                     )
                 )
-            self._buf.init_value(i, shape[i])
+            self._buf.init_value(i, Scalar[DType.int](shape[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, shape: VariadicList[Int]) raises:
@@ -193,7 +193,7 @@ struct NDArrayShape(
                         ),
                     )
                 )
-            self._buf.init_value(i, shape[i])
+            self._buf.init_value(i, Scalar[DType.int](shape[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, shape: NDArrayShape):
@@ -311,11 +311,8 @@ struct NDArrayShape(
 
         Returns:
            Shape value at the given index.
-
-        Raises:
-           Error: Index out of bound.
         """
-        return self._buf[Int(index)]
+        return self._buf[index]
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayShape:
@@ -342,7 +339,7 @@ struct NDArrayShape(
         Raises:
            Error: Index out of bound.
         """
-        self._buf[Int(index)] = Int(val)
+        self._buf[index] = val
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:
@@ -530,7 +527,7 @@ struct NDArrayShape(
                         location="NDArrayShape.permute",
                     )
                 )
-            normalized.init_value(i, axis)
+            normalized.init_value(i, Scalar[DType.int](axis))
 
         for i in range(self.ndim):
             for j in range(i + 1, self.ndim):
@@ -548,7 +545,7 @@ struct NDArrayShape(
 
         var result = NDArrayShape(ndim=self.ndim, initialized=False)
         for i in range(self.ndim):
-            result._buf.init_value(i, self._buf[Int(normalized[i])])
+            result._buf.init_value(i, Scalar[DType.int](self._buf[normalized[i]]))
         return result^
 
     fn join(self, *shapes: Self) -> Self:
@@ -880,11 +877,11 @@ struct _ShapeIter[
         if Self.forward:
             var current_index = self.index
             self.index += 1
-            return self.shape[].__getitem__(current_index)
+            return Scalar[DType.int](self.shape[].__getitem__(current_index))
         else:
             var current_index = self.index
             self.index -= 1
-            return self.shape[].__getitem__(current_index)
+            return Scalar[DType.int](self.shape[].__getitem__(current_index))
 
     fn __len__(self) -> Int:
         @parameter

@@ -99,7 +99,7 @@ struct NDArrayStrides(
 
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, strides[i])
+            self._buf.init_value(i, Scalar[DType.int](strides[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, strides: List[Int]) raises:
@@ -127,7 +127,7 @@ struct NDArrayStrides(
 
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, strides[i])
+            self._buf.init_value(i, Scalar[DType.int](strides[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, strides: VariadicList[Int]) raises:
@@ -159,7 +159,7 @@ struct NDArrayStrides(
 
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, strides[i])
+            self._buf.init_value(i, Scalar[DType.int](strides[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, strides: NDArrayStrides):
@@ -200,15 +200,15 @@ struct NDArrayStrides(
         self._buf = IndexBuffer(size=shape.ndim)
 
         if order == "C":
-            var temp = 1
+            var temp: Scalar[DType.int] = 1
             for i in range(self.ndim - 1, -1, -1):
-                self._buf.store(i, temp)
-                temp *= Int(shape[i])
+                self._buf.unsafe_store(i, temp)
+                temp *= Scalar[DType.int](shape[i])
         elif order == "F":
-            var temp = 1
+            var temp: Scalar[DType.int] = 1
             for i in range(0, self.ndim):
-                self._buf.store(i, temp)
-                temp *= Int(shape[i])
+                self._buf.unsafe_store(i, temp)
+                temp *= Scalar[DType.int](shape[i])
         else:
             raise Error(
                 NumojoError(
@@ -370,7 +370,7 @@ struct NDArrayStrides(
         Returns:
            Stride value at the given index.
         """
-        return self._buf[Int(index)]
+        return self._buf[index]
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
@@ -443,7 +443,7 @@ struct NDArrayStrides(
                     location="Strides.load",
                 )
             )
-        return self._buf.load[width=width](idx)
+        return self._buf.unsafe_load[width=width](idx)
 
     fn store[
         width: Int = 1
@@ -473,7 +473,7 @@ struct NDArrayStrides(
                     location="Strides.store",
                 )
             )
-        self._buf.store[width=width](idx, value)
+        self._buf.unsafe_store[width=width](idx, value)
 
     fn unsafe_load[
         width: Int = 1
@@ -552,7 +552,7 @@ struct NDArrayStrides(
                         location="NDArrayStrides.permute",
                     )
                 )
-            normalized.init_value(i, axis)
+            normalized.init_value(i, Scalar[DType.int](axis))
 
         for i in range(self.ndim):
             for j in range(i + 1, self.ndim):
@@ -570,7 +570,7 @@ struct NDArrayStrides(
 
         var result = NDArrayStrides(ndim=self.ndim, initialized=False)
         for i in range(self.ndim):
-            result._buf.init_value(i, self._buf[Int(normalized[i])])
+            result._buf.init_value(i, Scalar[DType.int](self._buf[normalized[i]]))
         return result^
 
     fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
@@ -938,11 +938,11 @@ struct _StrideIter[
         if Self.forward:
             var current_index = self.index
             self.index += 1
-            return self.strides[].__getitem__(current_index)
+            return Scalar[DType.int](self.strides[].__getitem__(current_index))
         else:
             var current_index = self.index
             self.index -= 1
-            return self.strides[].__getitem__(current_index)
+            return Scalar[DType.int](self.strides[].__getitem__(current_index))
 
     fn __len__(self) -> Int:
         @parameter

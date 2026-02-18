@@ -1045,7 +1045,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         # Fill in the values
         for i in range(indices.size):
-            if indices.item(i) >= self.shape[0]:
+            if indices.item(i) >= Scalar[DType.int](self.shape[0]):
                 raise Error(
                     NumojoError(
                         category="index",
@@ -1065,12 +1065,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             memcpy(
                 dest=result._re._buf.ptr + i * size_per_item,
-                src=self._re._buf.ptr + indices.item(i) * size_per_item,
+                src=self._re._buf.ptr + indices.item(i) * Scalar[DType.int](size_per_item),
                 count=size_per_item,
             )
             memcpy(
                 dest=result._im._buf.ptr + i * size_per_item,
-                src=self._im._buf.ptr + indices.item(i) * size_per_item,
+                src=self._im._buf.ptr + indices.item(i) * Scalar[DType.int](size_per_item),
                 count=size_per_item,
             )
 
@@ -1095,7 +1095,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         var indices_array = NDArray[DType.int](shape=Shape(len(indices)))
         for i in range(len(indices)):
-            (indices_array._buf.ptr + i).init_pointee_copy(indices[i])
+            (indices_array._buf.ptr + i).init_pointee_copy(Scalar[DType.int](indices[i]))
 
         return self[indices_array]
 
@@ -4260,12 +4260,12 @@ struct _ComplexNDArrayIter[
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.dimension:
                     (item._buf.ptr + i).init_pointee_copy(
-                        remainder % self.shape[i]
+                        Scalar[DType.int](remainder % self.shape[i])
                     )
                     remainder = remainder // self.shape[i]
                 else:
                     (item._buf.ptr + self.dimension).init_pointee_copy(
-                        current_index
+                        Scalar[DType.int](current_index)
                     )
 
             (result._re._buf.ptr + offset).init_pointee_copy(
@@ -4326,12 +4326,12 @@ struct _ComplexNDArrayIter[
                 for i in range(self.ndim - 1, -1, -1):
                     if i != self.dimension:
                         (item._buf.ptr + i).init_pointee_copy(
-                            remainder % self.shape[i]
+                            Scalar[DType.int](remainder % self.shape[i])
                         )
                         remainder = remainder // self.shape[i]
                     else:
                         (item._buf.ptr + self.dimension).init_pointee_copy(
-                            index
+                            Scalar[DType.int](index)
                         )
 
                 (result._re._buf.ptr + offset).init_pointee_copy(

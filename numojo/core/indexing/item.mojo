@@ -242,7 +242,7 @@ struct Item(
                     location="Item.load",
                 )
             )
-        return self._buf.load[width=width](idx)
+        return self._buf.unsafe_load[width=width](idx)
 
     fn store[
         width: Int = 1
@@ -272,7 +272,7 @@ struct Item(
                     location="Item.store",
                 )
             )
-        self._buf.store[width=width](idx, value)
+        self._buf.unsafe_store[width=width](idx, value)
 
     fn unsafe_load[
         width: Int = 1
@@ -622,11 +622,11 @@ struct _ItemIter[
         if Self.forward:
             var current_index = self.index
             self.index += 1
-            return self.item[].__getitem__(current_index)
+            return Scalar[DType.int](self.item[].__getitem__(current_index))
         else:
             var current_index = self.index
             self.index -= 1
-            return self.item[].__getitem__(current_index)
+            return Scalar[DType.int](self.item[].__getitem__(current_index))
 
     fn __len__(self) -> Int:
         @parameter

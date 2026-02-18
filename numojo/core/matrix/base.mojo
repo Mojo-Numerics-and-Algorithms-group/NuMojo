@@ -4300,7 +4300,7 @@ struct Matrix[
 
         var result = Matrix[datatype](shape=(1, num_elements), order=order)
         for i in range(num_elements):
-            result._buf.ptr[i] = start + i * step
+            result._buf.ptr[i] = start + Scalar[datatype](i) * step
 
         return result^
 
@@ -4347,10 +4347,10 @@ struct Matrix[
             )
 
         var result = Matrix[datatype](shape=(1, num), order=order)
-        var step = (stop - start) / (num - 1)
+        var step = (stop - start) / Scalar[datatype](num - 1)
 
         for i in range(num):
-            result._buf.ptr[i] = start + i * step
+            result._buf.ptr[i] = start + Scalar[datatype](i) * step
 
         return result^
 

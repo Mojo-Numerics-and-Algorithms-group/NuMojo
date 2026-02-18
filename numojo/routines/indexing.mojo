@@ -171,17 +171,17 @@ fn compress[
                 # First along the axis
                 var j = normalized_axis
                 (item._buf.ptr + j).init_pointee_copy(
-                    remainder // res_strides._buf[j]
+                    remainder // res_strides.unsafe_load(j)
                 )
-                remainder %= res_strides._buf[j]
+                remainder %= res_strides.unsafe_load(j)
 
                 # Then along other axes
                 for j in range(result.ndim):
                     if j != normalized_axis:
                         (item._buf.ptr + j).init_pointee_copy(
-                            remainder // res_strides._buf[j]
+                            remainder // res_strides.unsafe_load(j)
                         )
-                        remainder %= res_strides._buf[j]
+                        remainder %= res_strides.unsafe_load(j)
 
                 (
                     result._buf.ptr

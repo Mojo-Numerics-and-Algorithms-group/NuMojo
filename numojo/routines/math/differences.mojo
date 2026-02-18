@@ -37,7 +37,7 @@ fn gradient[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](x.shape)
-    var space: NDArray[dtype] = arange[dtype](1, x.size + 1, step=spacing)
+    var space: NDArray[dtype] = arange[dtype](1, Scalar[dtype](x.size + 1), step=spacing)
     var hu: Scalar[dtype] = space.load(1)
     var hd: Scalar[dtype] = space.load(0)
     result.store(

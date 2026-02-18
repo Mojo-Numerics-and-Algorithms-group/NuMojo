@@ -2,7 +2,7 @@
 # Rounding
 # ===------------------------------------------------------------------------===#
 
-from builtin import math as builtin_math
+import math as builtin_math
 from algorithm import parallelize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
 from utils import Variant

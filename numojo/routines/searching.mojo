@@ -43,7 +43,7 @@ fn argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
             value = ptr[]
         ptr += 1
 
-    return result
+    return Scalar[DType.int](result)
 
 
 fn argmin_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
@@ -70,7 +70,7 @@ fn argmin_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
             value = ptr[]
         ptr += 1
 
-    return result
+    return Scalar[DType.int](result)
 
 
 fn argmax[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
@@ -165,7 +165,7 @@ fn argmax[
 @always_inline
 fn find_extrema_index[
     dtype: DType, find_max: Bool
-](A: Matrix[dtype]) raises -> Scalar[DType.int, **_]:
+](A: Matrix[dtype]) raises -> Scalar[DType.int]:
     """Find index of min/max value, either in whole matrix or along an axis."""
 
     var extreme_val = A[0, 0]
@@ -174,8 +174,9 @@ fn find_extrema_index[
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
             var current = A[i, j]
-            var linear_idx = i * A.shape[1] + j
+            var linear_idx = Scalar[DType.int](i * A.shape[1] + j)
 
+            @parameter
             if find_max:
                 if current > extreme_val:
                     extreme_val = current
@@ -204,7 +205,7 @@ fn find_extrema_index[
     if axis == 1:
         for i in range(A.shape[0]):
             var extreme_val = A[i, 0]
-            var extreme_idx = 0
+            var extreme_idx: Scalar[DType.int] = 0
 
             for j in range(1, A.shape[1]):
                 var current = A[i, j]
@@ -212,17 +213,17 @@ fn find_extrema_index[
                 if find_max:
                     if current > extreme_val:
                         extreme_val = current
-                        extreme_idx = j
+                        extreme_idx = Scalar[DType.int](j)
                 else:
                     if current < extreme_val:
                         extreme_val = current
-                        extreme_idx = j
+                        extreme_idx = Scalar[DType.int](j)
 
             B[i, 0] = extreme_idx
     else:
         for j in range(A.shape[1]):
             var extreme_val = A[0, j]
-            var extreme_idx = 0
+            var extreme_idx: Scalar[DType.int] = 0
 
             for i in range(1, A.shape[0]):
                 var current = A[i, j]
@@ -230,11 +231,11 @@ fn find_extrema_index[
                 if find_max:
                     if current > extreme_val:
                         extreme_val = current
-                        extreme_idx = i
+                        extreme_idx = Scalar[DType.int](i)
                 else:
                     if current < extreme_val:
                         extreme_val = current
-                        extreme_idx = i
+                        extreme_idx = Scalar[DType.int](i)
 
             B[0, j] = extreme_idx
 

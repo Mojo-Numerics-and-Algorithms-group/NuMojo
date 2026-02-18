@@ -136,7 +136,7 @@ struct Vectorized(Backend):
 
     fn math_func_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -176,7 +176,7 @@ struct Vectorized(Backend):
 
     fn math_func_2_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -230,7 +230,7 @@ struct Vectorized(Backend):
 
     fn math_func_1_array_1_scalar_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
@@ -275,7 +275,7 @@ struct Vectorized(Backend):
 
     fn math_func_1_scalar_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
@@ -320,7 +320,7 @@ struct Vectorized(Backend):
 
     fn math_func_compare_2_arrays[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -364,7 +364,7 @@ struct Vectorized(Backend):
     # TODO: add this function for other backends
     fn math_func_compare_array_and_scalar[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
@@ -398,7 +398,7 @@ struct Vectorized(Backend):
 
     fn math_func_is[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -417,7 +417,7 @@ struct Vectorized(Backend):
 
     fn math_func_simd_int[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
@@ -579,7 +579,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -614,7 +614,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_2_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -662,7 +662,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_1_array_1_scalar_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
@@ -703,7 +703,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_1_scalar_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
@@ -744,7 +744,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_compare_2_arrays[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -781,7 +781,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_compare_array_and_scalar[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
@@ -811,7 +811,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_is[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -832,7 +832,7 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
 
     fn math_func_simd_int[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
@@ -1016,7 +1016,7 @@ struct Parallelized(Backend):
 
     fn math_func_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -1067,7 +1067,7 @@ struct Parallelized(Backend):
 
     fn math_func_2_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -1138,7 +1138,7 @@ struct Parallelized(Backend):
 
     fn math_func_1_array_1_scalar_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
@@ -1192,7 +1192,7 @@ struct Parallelized(Backend):
 
     fn math_func_1_scalar_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
@@ -1246,7 +1246,7 @@ struct Parallelized(Backend):
 
     fn math_func_compare_2_arrays[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -1306,7 +1306,7 @@ struct Parallelized(Backend):
 
     fn math_func_compare_array_and_scalar[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
@@ -1352,7 +1352,7 @@ struct Parallelized(Backend):
 
     fn math_func_is[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -1390,7 +1390,7 @@ struct Parallelized(Backend):
 
     fn math_func_simd_int[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
@@ -1607,7 +1607,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -1666,7 +1666,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_2_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -1750,7 +1750,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_1_array_1_scalar_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
@@ -1823,7 +1823,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_1_scalar_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
@@ -1896,7 +1896,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_compare_2_arrays[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -1974,7 +1974,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_compare_array_and_scalar[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
@@ -2036,7 +2036,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_is[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -2082,7 +2082,7 @@ struct VectorizedParallelized(Backend):
 
     fn math_func_simd_int[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
@@ -2265,7 +2265,7 @@ struct VectorizedParallelized(Backend):
 
 #     fn math_func_1_array_in_one_array_out[
 #         dtype: DType,
-#         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+#         func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
 #             type, simd_w
 #         ],
 #     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -2316,7 +2316,7 @@ struct VectorizedParallelized(Backend):
 
 #     fn math_func_2_array_in_one_array_out[
 #         dtype: DType,
-#         func: fn[type: DType, simd_w: Int] (
+#         func: fn[type: DType, simd_w: Int](
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[type, simd_w],
 #     ](
@@ -2384,7 +2384,7 @@ struct VectorizedParallelized(Backend):
 
 #     fn math_func_1_array_1_scalar_in_one_array_out[
 #         dtype: DType,
-#         func: fn[type: DType, simd_w: Int] (
+#         func: fn[type: DType, simd_w: Int](
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[type, simd_w],
 #     ](
@@ -2441,7 +2441,7 @@ struct VectorizedParallelized(Backend):
 
 #     fn math_func_compare_2_arrays[
 #         dtype: DType,
-#         func: fn[type: DType, simd_w: Int] (
+#         func: fn[type: DType, simd_w: Int](
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[DType.bool, simd_w],
 #     ](
@@ -2503,7 +2503,7 @@ struct VectorizedParallelized(Backend):
 
 #     fn math_func_compare_array_and_scalar[
 #         dtype: DType,
-#         func: fn[type: DType, simd_w: Int] (
+#         func: fn[type: DType, simd_w: Int](
 #             SIMD[type, simd_w], SIMD[type, simd_w]
 #         ) -> SIMD[DType.bool, simd_w],
 #     ](
@@ -2551,7 +2551,7 @@ struct VectorizedParallelized(Backend):
 
 #     fn math_func_is[
 #         dtype: DType,
-#         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+#         func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
 #             DType.bool, simd_w
 #         ],
 #     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -2591,7 +2591,7 @@ struct VectorizedParallelized(Backend):
 
 #     fn math_func_simd_int[
 #         dtype: DType,
-#         func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
+#         func: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
 #             type, simd_w
 #         ],
 #     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
@@ -2705,7 +2705,7 @@ struct Naive(Backend):
 
     fn math_func_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -2731,7 +2731,7 @@ struct Naive(Backend):
 
     fn math_func_2_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -2771,7 +2771,7 @@ struct Naive(Backend):
 
     fn math_func_1_array_1_scalar_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
@@ -2802,7 +2802,7 @@ struct Naive(Backend):
 
     fn math_func_1_scalar_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
@@ -2833,7 +2833,7 @@ struct Naive(Backend):
 
     fn math_func_compare_2_arrays[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -2862,7 +2862,7 @@ struct Naive(Backend):
 
     fn math_func_compare_array_and_scalar[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
@@ -2884,7 +2884,7 @@ struct Naive(Backend):
 
     fn math_func_is[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -2897,7 +2897,7 @@ struct Naive(Backend):
 
     fn math_func_simd_int[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
@@ -3027,7 +3027,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -3061,7 +3061,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_2_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -3112,7 +3112,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_1_array_1_scalar_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
@@ -3155,7 +3155,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_1_scalar_1_array_in_one_array_out[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](self, scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[
@@ -3198,7 +3198,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_compare_2_arrays[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -3242,7 +3242,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_compare_array_and_scalar[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](self, array1: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
@@ -3276,7 +3276,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_is[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -3297,7 +3297,7 @@ struct VectorizedVerbose(Backend):
 
     fn math_func_simd_int[
         dtype: DType,
-        func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
+        func: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
     ](self, array1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:

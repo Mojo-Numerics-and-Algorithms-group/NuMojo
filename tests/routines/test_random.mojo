@@ -174,13 +174,13 @@ def test_rand_exponential():
     # For exponential distribution, mean = 1 / rate
     assert_almost_equal(
         arr_variadic_mean,
-        1 / 2,
+        0.5,
         msg="Mean of exponential distribution with rate 2.0",
         atol=0.1,
     )
     assert_almost_equal(
         arr_list_mean,
-        1 / 0.5,
+        2.0,
         msg="Mean of exponential distribution with rate 0.5",
         atol=0.2,
     )
@@ -191,13 +191,13 @@ def test_rand_exponential():
 
     assert_almost_equal(
         arr_variadic_var,
-        1 / 2**2,
+        1.0 / 2.0**2,
         msg="Variance of exponential distribution with rate 2.0",
         atol=0.1,
     )
     assert_almost_equal(
         arr_list_var,
-        1 / 0.5**2,
+        1.0 / 0.5**2,
         msg="Variance of exponential distribution with rate 0.5",
         atol=0.5,
     )

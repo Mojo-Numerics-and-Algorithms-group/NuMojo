@@ -46,7 +46,7 @@ struct TraverseMethods:
                 strides[current_dim]
             )
             if current_dim >= shape.ndim - 1:
-                ptr.init_pointee_copy(current_sum)
+                ptr.init_pointee_copy(Scalar[DType.int](current_sum))
                 ptr += 1
             else:
                 Self.traverse_buffer_according_to_shape_and_strides(

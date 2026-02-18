@@ -51,7 +51,7 @@ from numojo.core.layout.ndstrides import NDArrayStrides
 
 
 # TODO: Some of these correspond to older DLPack versions. Need to upgrade this to v1.0
-struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterType):
+struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """Represents a DLPack version structure for compatibility checking.
 
     This structure stores major and minor version numbers to ensure compatibility
@@ -80,7 +80,7 @@ struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterType):
         self.minor = minor
 
 
-struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterType):
+struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """Represents a device context for tensor data.
 
     Describes where the tensor data is physically located (CPU, GPU, etc.)
@@ -120,7 +120,7 @@ struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterType):
         self.device_id = device_id
 
 
-struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterType):
+struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """Represents a data type descriptor for tensor elements.
 
     Describes the element type using a type code (int/float/complex/bool),
@@ -306,7 +306,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
         self.byte_offset = byte_offset
 
 
-comptime DLManagedTensorDeleter = fn (
+comptime DLManagedTensorDeleter = fn(
     UnsafePointer[DLManagedTensor, MutAnyOrigin]
 ) -> None
 

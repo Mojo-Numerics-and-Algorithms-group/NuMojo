@@ -11,7 +11,7 @@ from numojo.core.ndarray import NDArray
 
 fn math_func_1_array_in_one_array_out[
     dtype: DType,
-    func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+    func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
         type, simd_w
     ],
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -43,7 +43,7 @@ fn math_func_1_array_in_one_array_out[
 
 fn math_func_2_array_in_one_array_out[
     dtype: DType,
-    func: fn[type: DType, simd_w: Int] (
+    func: fn[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) -> SIMD[type, simd_w],
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -88,7 +88,7 @@ fn math_func_2_array_in_one_array_out[
 
 fn math_func_one_array_one_SIMD_in_one_array_out[
     dtype: DType,
-    func: fn[type: DType, simd_w: Int] (
+    func: fn[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) -> SIMD[type, simd_w],
 ](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[dtype]:

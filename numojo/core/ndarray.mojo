@@ -3560,7 +3560,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         return _NDArrayIter[origin_of(self), Self.dtype](
-            self,
+            Pointer(to=self),
             dimension=0,
         )
 
@@ -3576,7 +3576,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         return _NDArrayIter[origin_of(self), Self.dtype, forward=False](
-            self,
+            Pointer(to=self),
             dimension=0,
         )
 
@@ -4273,7 +4273,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         return _NDArrayIter[origin_of(self), Self.dtype, forward](
-            a=self,
+            a=Pointer(to=self),
             dimension=normalized_dim,
         )
 
@@ -5002,19 +5002,19 @@ struct _NDArrayIter[
     # (when Bufferable is supported).
     """
     An iterator yielding `ndim-1` array slices over the given dimension.
-    It is the default iterator of the `NDArray.__iter__() method and for loops.
+    It is the default iterator of the `NDArray.__iter__()` method and for loops.
     It can also be constructed using the `NDArray.iter_over_dimension()` method.
     It trys to create a view where possible.
 
     Parameters:
-        is_mutable: Whether the iterator is mutable.
-        origin: The lifetime of the underlying NDArray data.
+        is_mutable: Whether the iterator yields mutable references.
+        origin: The origin of the pointer to the array.
         dtype: The data type of the item.
         forward: The iteration direction. `False` is backwards.
     """
 
     var index: Int
-    var ptr: LegacyUnsafePointer[Scalar[Self.dtype], origin = Self.origin]
+    var _buf: DataContainer[Self.dtype]
     var dimension: Int
     var length: Int
     var shape: NDArrayShape
@@ -5024,47 +5024,46 @@ struct _NDArrayIter[
     var size_of_item: Int
 
     fn __init__(
-        out self, read a: NDArray[Self.dtype], read dimension: Int
+        out self, a: Pointer[NDArray[Self.dtype], Self.origin], dimension: Int
     ) raises:
         """
         Initialize the iterator.
 
         Args:
-            a: The array
+            a: The pointer to the NDArray to iterate over.
             dimension: Dimension to iterate over.
         """
 
-        if dimension < 0 or dimension >= a.ndim:
+        if dimension < 0 or dimension >= a[].ndim:
             raise Error(
                 NumojoError(
                     category="index",
                     message=String(
                         "Axis {} is out of range for array with {} dimensions."
                         " Choose an axis in the range [0, {})."
-                    ).format(dimension, a.ndim, a.ndim),
+                    ).format(dimension, a[].ndim, a[].ndim),
                     location="NDArrayIterator.__init__ (axis check)",
                 )
             )
 
-        self.ptr = a._buf.ptr
+        self._buf = a[]._buf.copy()
         self.dimension = dimension
-        self.shape = a.shape
-        self.strides = a.strides
-        self.ndim = a.ndim
-        self.length = a.shape[dimension]
-        self.size_of_item = a.size // a.shape[dimension]
+        self.shape = a[].shape
+        self.strides = a[].strides
+        self.ndim = a[].ndim
+        self.length = a[].shape[dimension]
+        self.size_of_item = a[].size // a[].shape[dimension]
         # Status of the iterator
-        self.index = 0 if Self.forward else a.shape[dimension] - 1
+        self.index = 0 if Self.forward else a[].shape[dimension] - 1
 
     # * Do we return a mutable ref as iter or copy?
     fn __iter__(self) -> Self:
         return self.copy()
 
     fn __next__(mut self) raises -> NDArray[Self.dtype]:
-        var result: NDArray[Self.dtype] = NDArray[Self.dtype](
-            self.shape.pop(self.dimension)
-        )
-        var current_index: Int = self.index
+        var new_shape = self.shape.pop(self.dimension)
+        var result = NDArray[Self.dtype](self.shape.pop(self.dimension))
+        var current_index = self.index
 
         @parameter
         if Self.forward:
@@ -5075,21 +5074,29 @@ struct _NDArrayIter[
         for offset in range(self.size_of_item):
             var remainder = offset
             var item = Item(ndim=self.ndim)
-
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.dimension:
-                    (item._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder % self.shape[i])
+                    # (item._buf.ptr + i).init_pointee_copy(
+                    #     Scalar[DType.int](remainder % self.shape[i])
+                    # )
+                    item._buf.ptr[i] = Scalar[DType.int](
+                        remainder % self.shape[i]
                     )
                     remainder = remainder // self.shape[i]
                 else:
-                    (item._buf.ptr + self.dimension).init_pointee_copy(
-                        Scalar[DType.int](current_index)
+                    # (item._buf.ptr + self.dimension).init_pointee_copy(
+                    #     Scalar[DType.int](current_index)
+                    # )
+                    item._buf.ptr[self.dimension] = Scalar[DType.int](
+                        current_index
                     )
 
-            (result._buf.ptr + offset).init_pointee_copy(
-                self.ptr[IndexMethods.get_1d_index(item, self.strides)]
-            )
+            # (result._buf.ptr + offset).init_pointee_copy(
+            #     self._buf[IndexMethods.get_1d_index(item, self.strides)]
+            # )
+            result._buf.ptr[offset] = self._buf[
+                IndexMethods.get_1d_index(item, self.strides)
+            ]
         return result^
 
     @always_inline
@@ -5145,14 +5152,14 @@ struct _NDArrayIter[
                         )
 
                 (result._buf.ptr + offset).init_pointee_copy(
-                    self.ptr[IndexMethods.get_1d_index(item, self.strides)]
+                    self._buf.ptr[IndexMethods.get_1d_index(item, self.strides)]
                 )
             return result^
 
         else:  # 0-D array
             var result: NDArray[Self.dtype] = numojo.creation._0darray[
                 Self.dtype
-            ](self.ptr[index])
+            ](self._buf.ptr[index])
             return result^
 
 

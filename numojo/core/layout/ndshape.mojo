@@ -74,7 +74,7 @@ struct NDArrayShape(
         self._buf = IndexBuffer()
 
     @always_inline("nodebug")
-    fn __init__(out self, buf: IndexBuffer):
+    fn __init__(out self, var buf: IndexBuffer):
         """
         Initializes the NDArrayShape from an IndexBuffer.
 
@@ -82,7 +82,7 @@ struct NDArrayShape(
             buf: The IndexBuffer to initialize from.
         """
         self.ndim = buf.ndim
-        self._buf = buf
+        self._buf = buf^
 
     @always_inline("nodebug")
     fn __init__(out self, *shape: Int) raises:
@@ -641,7 +641,8 @@ struct NDArrayShape(
         Returns:
             A new shape with the item at the given axis (index) dropped.
         """
-        return Self(self._buf.pop(axis))
+        var new = self._buf.pop(axis)
+        return Self(new^)
 
     # ===----------------------------------------------------------------------=== #
     # Properties
@@ -717,7 +718,7 @@ struct NDArrayShape(
         """
         var result: String = "("
         for i in range(self.ndim):
-            result += String(self._buf.unsafe_load(i))
+            result += String(self._buf.ptr[i])
             if i < self.ndim - 1:
                 result += ", "
         result += ")"

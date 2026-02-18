@@ -306,7 +306,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
         self.byte_offset = byte_offset
 
 
-comptime DLManagedTensorDeleter = fn (
+comptime DLManagedTensorDeleter = fn(
     UnsafePointer[DLManagedTensor, MutAnyOrigin]
 ) -> None
 

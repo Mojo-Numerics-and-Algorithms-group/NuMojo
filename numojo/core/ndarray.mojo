@@ -1777,6 +1777,21 @@ struct NDArray[dtype: DType = DType.float64](
             self._buf.ptr + IndexMethods.get_1d_index(index, self.strides)
         )[]
 
+    fn unsafe_load[width: Int = 1](self, var index: Int) -> SIMD[Self.dtype, width]:
+        """
+        Unsafely retrieve i-th item from the underlying buffer as a SIMD element of size `width`.
+
+        This method does not perform boundary checks. Use `load` method for safe retrieval.
+
+        Args:
+            index: Index of the item.
+
+        Returns:
+            The SIMD element at the index.
+        ```.
+        """
+        return self._buf.ptr.load[width=width](index)
+
     fn load(self, var index: Int) raises -> Scalar[Self.dtype]:
         """
         Safely retrieve i-th item from the underlying buffer.
@@ -2681,6 +2696,22 @@ struct NDArray[dtype: DType = DType.float64](
                 IndexMethods.get_1d_index(indices, self.strides), item
             )
 
+    fn unsafe_store[width: Int = 1](
+        mut self, index: Int, val: SIMD[Self.dtype, width]
+    ):
+        """
+        Unsafely store a SIMD element to i-th item of the underlying buffer.
+
+        `A.unsafe_store(i, a)` is equivalent to `A._buf.ptr.store(i, a)`.
+        It does not perform boundary check and is faster than `store`.
+
+        Args:
+            index: Index of the item.
+            val: Value to store.
+        """
+
+        self._buf.ptr.store(index, val)
+
     fn store(self, var index: Int, val: Scalar[Self.dtype]) raises:
         """
         Safely store a scalar to i-th item of the underlying buffer.
@@ -3092,7 +3123,8 @@ struct NDArray[dtype: DType = DType.float64](
     # ===-------------------------------------------------------------------===#
     # ARITHMETIC OPERATORS
     # ===-------------------------------------------------------------------===#
-
+    # TODO: 2.0 * nm.NDArray doesn't work rn. Check this and fix it.
+    # TODO: loading elements from array both safe and unsafe are not ergonomic right now. And! the fn item() returns wrong values. So use overloading for item() instead of variant like before.
     fn __add__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `array + scalar`.

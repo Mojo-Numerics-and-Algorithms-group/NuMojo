@@ -141,7 +141,7 @@ struct NDArray[dtype: DType = DType.float64](
         forward: Bool,
     ] = _NDAxisIter[Self.dtype, forward]
 
-    comptime origin: MutOrigin = MutExternalOrigin
+    comptime origin = MutExternalOrigin
     """Origin of the data buffer."""
     comptime width: Int = simd_width_of[Self.dtype]()
     """Vector size of the data type."""
@@ -345,26 +345,26 @@ struct NDArray[dtype: DType = DType.float64](
         self.print_options = PrintOptions()
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
-        Copy other into self.
+        Copy copy into self.
         It is a deep copy. So the new array owns the data.
 
         Args:
-            other: The NDArray to copy from.
+            copy: The NDArray to copy from.
         """
-        self.ndim = other.ndim
-        self.shape = other.shape
-        self.size = other.size
-        self.strides = other.strides
-        self._buf = other._buf.copy()
+        self.ndim = copy.ndim
+        self.shape = copy.shape
+        self.size = copy.size
+        self.strides = copy.strides
+        self._buf = copy._buf.copy()
         self.flags = Flags(
-            c_contiguous=other.flags.C_CONTIGUOUS,
-            f_contiguous=other.flags.F_CONTIGUOUS,
+            c_contiguous=copy.flags.C_CONTIGUOUS,
+            f_contiguous=copy.flags.F_CONTIGUOUS,
             owndata=True,
             writeable=True,
         )
-        self.print_options = other.print_options
+        self.print_options = copy.print_options
 
     fn deep_copy(self) -> Self:
         """
@@ -402,20 +402,20 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, deinit existing: Self):
+    fn __moveinit__(out self, deinit take: Self):
         """
         Move other into self.
 
         Args:
-            existing: The NDArray to move from.
+            take: The NDArray to move from.
         """
-        self.ndim = existing.ndim
-        self.shape = existing.shape
-        self.size = existing.size
-        self.strides = existing.strides
-        self.flags = existing.flags^
-        self._buf = existing._buf^
-        self.print_options = existing.print_options
+        self.ndim = take.ndim
+        self.shape = take.shape
+        self.size = take.size
+        self.strides = take.strides
+        self.flags = take.flags^
+        self._buf = take._buf^
+        self.print_options = take.print_options
 
     @always_inline("nodebug")
     fn __del__(deinit self):

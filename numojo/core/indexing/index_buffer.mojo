@@ -17,7 +17,6 @@ from algorithm.functional import vectorize
 from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice
 
-
 struct IndexBuffer(
     RegisterPassable, Equatable, ImplicitlyCopyable, Movable, Sized, Stringable, Writable
 ):
@@ -29,7 +28,7 @@ struct IndexBuffer(
     """Element type of the buffer."""
     comptime simd_width: Int = simd_width_of[DType.int]()
     """SIMD width for the element type."""
-    comptime _origin: MutOrigin = MutExternalOrigin
+    comptime _origin = MutExternalOrigin
     """Mutability origin of the buffer."""
 
     var ptr: UnsafePointer[Scalar[Self.element_type], Self._origin]
@@ -52,7 +51,7 @@ struct IndexBuffer(
         if size <= 0:
             self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
         else:
-            self.ptr = alloc[Scalar[DType.int]](size)
+            self.ptr = alloc[Scalar[Self.element_type]](size)
             memset_zero(self.ptr, size)
 
     fn __init__(
@@ -136,7 +135,7 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(Scalar[DType.int](values[i]))
+            (self.ptr + i).init_pointee_copy(Scalar[Self.element_type](values[i]))
 
     fn __init__(out self, values: VariadicList[Scalar[Self.element_type]]):
         """
@@ -166,21 +165,21 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(Scalar[DType.int](values[i]))
+            (self.ptr + i).init_pointee_copy(Scalar[Self.element_type](values[i]))
 
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
-        Copy-initialize an IndexBuffer from another IndexBuffer.
+        Copy-initialize an IndexBuffer from ancopy IndexBuffer.
 
         Args:
-            other: The other IndexBuffer to copy from.
+            copy: The copy IndexBuffer to copy from.
         """
-        self.ndim = other.ndim
-        if other.ndim <= 0:
+        self.ndim = copy.ndim
+        if copy.ndim <= 0:
             self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
             return
-        self.ptr = alloc[Scalar[Self.element_type]](other.ndim)
-        memcpy(dest=self.ptr, src=other.ptr, count=other.ndim)
+        self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
+        memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
 
     fn __del__(deinit self):
         """
@@ -329,7 +328,7 @@ struct IndexBuffer(
                     location="IndexBuffer.__setitem__(idx: Int)",
                 )
             )
-        self.ptr[index] = Scalar[DType.int](value)
+        self.ptr[index] = Scalar[Self.element_type](value)
 
     fn __setitem__(mut self, slice: Slice, value: Self) raises:
         """
@@ -1000,25 +999,25 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Iterators
     # ===----------------------------------------------------------------------=== #
-    fn __iter__(ref self) -> _IndexBufferIter[origin_of(self), True]:
+    fn __iter__(ref self) -> _IndexBufferIter[Self.element_type, origin_of(self), True]:
         """
         Get a forward iterator for the IndexBuffer.
 
         Returns:
             Forward iterator for the IndexBuffer.
         """
-        return _IndexBufferIter[origin_of(self), True](
+        return _IndexBufferIter[Self.element_type, origin_of(self), True](
             Pointer(to=self), self.ndim
         )
 
-    fn __reversed__(ref self) -> _IndexBufferIter[origin_of(self), False]:
+    fn __reversed__(ref self) -> _IndexBufferIter[Self.element_type, origin_of(self), False]:
         """
         Get a backward iterator for the IndexBuffer.
 
         Returns:
             Backward iterator for the IndexBuffer.
         """
-        return _IndexBufferIter[origin_of(self), False](
+        return _IndexBufferIter[Self.element_type, origin_of(self), False](
             Pointer(to=self), self.ndim
         )
 
@@ -1027,12 +1026,14 @@ struct IndexBuffer(
 # IndexBuffer Iterator
 # ===----------------------------------------------------------------------=== #
 struct _IndexBufferIter[
+    dtype: DType,
     origin: ImmutOrigin = ImmutExternalOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for Item.
 
     Parameters:
+        dtype: The data type of the elements in the buffer. It should be an integer type, and defaults to `DType.int`.
         origin: The mutability origin of the iterator.
         forward: The iteration direction. `False` is backwards.
     """
@@ -1060,16 +1061,16 @@ struct _IndexBufferIter[
         else:
             return self.index >= 0
 
-    fn __next__(mut self) raises -> Scalar[DType.int]:
+    fn __next__(mut self) raises -> Scalar[Self.dtype]:
         @parameter
         if Self.forward:
             var current_index = self.index
             self.index += 1
-            return Scalar[DType.int](self.item[].__getitem__(current_index))
+            return Scalar[Self.dtype](self.item[].__getitem__(current_index))
         else:
             var current_index = self.index
             self.index -= 1
-            return Scalar[DType.int](self.item[].__getitem__(current_index))
+            return Scalar[Self.dtype](self.item[].__getitem__(current_index))
 
     fn __len__(self) -> Int:
         @parameter

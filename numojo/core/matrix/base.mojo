@@ -119,7 +119,7 @@ struct Matrix[
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
-    comptime origin: MutOrigin = MutExternalOrigin
+    comptime origin = MutExternalOrigin
     """Origin of the Matrix."""
 
     comptime IteratorType[
@@ -327,14 +327,14 @@ struct Matrix[
     # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
     # TODO: Current copyinit creates an instance with same origin. This should be external origin. fix this so that we can use default `.copy()` method and remove `create_copy()` method.
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
-        Initialize a new matrix by copying data from another matrix.
+        Initialize a new matrix by copying data from ancopy matrix.
 
-        This method creates a deep copy of the `other` matrix into `self`. It ensures that the copied matrix is independent of the source matrix, with its own memory allocation.
+        This method creates a deep copy of the `copy` matrix into `self`. It ensures that the copied matrix is independent of the source matrix, with its own memory allocation.
 
         Args:
-            other: The source matrix to copy from. Must be an owning matrix.
+            copy: The source matrix to copy from. Must be an owning matrix.
 
         Example:
             ```mojo
@@ -344,15 +344,15 @@ struct Matrix[
             var mat2 = mat1.copy() # Calls __copyinit__ to create a copy of mat1
             ```
         """
-        self.shape = (other.shape[0], other.shape[1])
-        self.strides = (other.strides[0], other.strides[1])
-        self.size = other.size
-        self._buf = other._buf.copy()
+        self.shape = (copy.shape[0], copy.shape[1])
+        self.strides = (copy.strides[0], copy.strides[1])
+        self.size = copy.size
+        self._buf = copy._buf.copy()
         memcpy(
-            dest=self._buf.ptr, src=other._buf.ptr, count=other.size
+            dest=self._buf.ptr, src=copy._buf.ptr, count=copy.size
         )  # TODO: I think we should remove this.
         self.flags = Flags(
-            other.shape, other.strides, owndata=True, writeable=True
+            copy.shape, copy.strides, owndata=True, writeable=True
         )
 
     # NOTE: perhaps remove this?
@@ -402,7 +402,7 @@ struct Matrix[
         )
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, deinit other: Self):
+    fn __moveinit__(out self, deinit take: Self):
         """
         Transfer ownership of resources from `other` to `self`.
 
@@ -411,17 +411,17 @@ struct Matrix[
         is left in an invalid state and should not be used.
 
         Args:
-            other: The source matrix instance whose resources will be moved.
+            take: The source matrix instance whose resources will be moved.
 
         Notes:
             - This operation is efficient as it avoids copying data.
             - The `other` instance is deinitialized as part of this operation.
         """
-        self.shape = other.shape^
-        self.strides = other.strides^
-        self.size = other.size
-        self._buf = other._buf^
-        self.flags = other.flags^
+        self.shape = take.shape^
+        self.strides = take.strides^
+        self.size = take.size
+        self._buf = take._buf^
+        self.flags = take.flags^
 
     @always_inline("nodebug")
     fn __del__(deinit self):

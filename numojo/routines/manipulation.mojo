@@ -231,7 +231,7 @@ fn _set_values_according_to_shape_and_strides(
             previous_sum + index_of_axis * new_strides[current_dim]
         )
         if current_dim >= new_shape.ndim - 1:
-            I._buf.ptr[index] = current_sum
+            I._buf.ptr[index] = Scalar[DType.int](current_sum)
             index = index + 1
         else:
             _set_values_according_to_shape_and_strides(

@@ -414,32 +414,32 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     #     )
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
-        Copy other into self.
+        Copy copy into self.
         """
-        self._re = other._re.copy()
-        self._im = other._im.copy()
-        self.ndim = other.ndim
-        self.shape = other.shape
-        self.size = other.size
-        self.strides = other.strides
-        self.flags = other.flags
-        self.print_options = other.print_options
+        self._re = copy._re.copy()
+        self._im = copy._im.copy()
+        self.ndim = copy.ndim
+        self.shape = copy.shape
+        self.size = copy.size
+        self.strides = copy.strides
+        self.flags = copy.flags
+        self.print_options = copy.print_options
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, deinit existing: Self):
+    fn __moveinit__(out self, deinit take: Self):
         """
         Move other into self.
         """
-        self._re = existing._re^
-        self._im = existing._im^
-        self.ndim = existing.ndim
-        self.shape = existing.shape
-        self.size = existing.size
-        self.strides = existing.strides
-        self.flags = existing.flags
-        self.print_options = existing.print_options
+        self._re = take._re^
+        self._im = take._im^
+        self.ndim = take.ndim
+        self.shape = take.shape
+        self.size = take.size
+        self.strides = take.strides
+        self.flags = take.flags
+        self.print_options = take.print_options
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing

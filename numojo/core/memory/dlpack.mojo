@@ -37,7 +37,7 @@ Example:
 
 from memory import UnsafePointer, memcpy
 from sys.info import size_of
-from sys.ffi import OwnedDLHandle
+from ffi import OwnedDLHandle
 from python import PythonObject, Python
 from pathlib.path import Path
 from os.env import getenv
@@ -55,7 +55,7 @@ from numojo.core.layout.ndstrides import NDArrayStrides
 
 
 # TODO: Some of these correspond to older DLPack versions. Need to upgrade this to v1.0
-struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterType):
+struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """
     DLPack version structure for compatibility checking.
     """
@@ -72,7 +72,7 @@ struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterType):
         self.minor = minor
 
 
-struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterType):
+struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """
     Device context for tensor data.
 
@@ -99,7 +99,7 @@ struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterType):
         self.device_id = device_id
 
 
-struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterType):
+struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """
     Data type descriptor for tensor elements.
 

@@ -152,20 +152,20 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
         Initializes the Flags object by copying the information from
-        another Flags object.
+        ancopy Flags object.
 
         Args:
-            other: The Flags object to copy information from.
+            copy: The Flags object to copy information from.
         """
 
-        self.C_CONTIGUOUS = other.C_CONTIGUOUS
-        self.F_CONTIGUOUS = other.F_CONTIGUOUS
-        self.OWNDATA = other.OWNDATA
-        self.WRITEABLE = other.WRITEABLE
-        self.FORC = other.FORC
+        self.C_CONTIGUOUS = copy.C_CONTIGUOUS
+        self.F_CONTIGUOUS = copy.F_CONTIGUOUS
+        self.OWNDATA = copy.OWNDATA
+        self.WRITEABLE = copy.WRITEABLE
+        self.FORC = copy.FORC
 
     # === ---------------------------------------------------------------- === #
     # Get and set dunder methods

@@ -261,24 +261,24 @@ struct NDArrayShape(
                     self._buf.init_value(i, 1)
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
-        Initializes the NDArrayShape from another NDArrayShape.
+        Initializes the NDArrayShape from ancopy NDArrayShape.
         A deep copy of the data buffer is conducted.
 
         Args:
-            other: Another NDArrayShape to initialize from.
+            copy: Ancopy NDArrayShape to initialize from.
         """
-        self.ndim = other.ndim
-        if other.ndim == 0:
+        self.ndim = copy.ndim
+        if copy.ndim == 0:
             self._buf = IndexBuffer(size=1)
             self._buf.init_value(0, 0)
         else:
-            self._buf = IndexBuffer(size=other.ndim)
+            self._buf = IndexBuffer(size=copy.ndim)
             memcpy(
                 dest=self._buf.ptr,
-                src=other._buf.ptr,
-                count=other.ndim,
+                src=copy._buf.ptr,
+                count=copy.ndim,
             )
 
     # ===----------------------------------------------------------------------=== #
@@ -315,7 +315,7 @@ struct NDArrayShape(
         Raises:
            Error: Index out of bound.
         """
-        return self._buf[index]
+        return self._buf[Int(index)]
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayShape:
@@ -331,7 +331,7 @@ struct NDArrayShape(
         return Self(self._buf[slice_index])
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Scalar[Self.element_type]) raises:
+    fn __setitem__(mut self, index: Scalar[Self.element_type], val: Scalar[Self.element_type]) raises:
         """
         Sets shape at specified index.
 
@@ -342,7 +342,7 @@ struct NDArrayShape(
         Raises:
            Error: Index out of bound.
         """
-        self._buf[index] = val
+        self._buf[Int(index)] = Int(val)
 
     @always_inline("nodebug")
     fn __setitem__(mut self, index: Int, val: Int) raises:
@@ -356,7 +356,7 @@ struct NDArrayShape(
         Raises:
            Error: Index out of bound.
         """
-        self._buf[index] = Scalar[Self.element_type](val)
+        self._buf[index] = val
 
     fn load[
         width: Int = 1

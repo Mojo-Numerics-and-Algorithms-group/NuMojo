@@ -322,24 +322,24 @@ struct NDArrayStrides(
                     self._buf.init_value(i, 0)
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
-        Initializes the NDArrayStrides from another strides.
+        Initializes the NDArrayStrides from ancopy strides.
         A deep-copy of the elements is conducted.
 
         Args:
-            other: Strides of the array.
+            copy: Strides of the array.
         """
-        self.ndim = other.ndim
-        if other.ndim == 0:
+        self.ndim = copy.ndim
+        if copy.ndim == 0:
             self._buf = IndexBuffer(size=1)
             self._buf.init_value(0, 0)
         else:
-            self._buf = IndexBuffer(size=other.ndim)
+            self._buf = IndexBuffer(size=copy.ndim)
             memcpy(
                 dest=self._buf.ptr,
-                src=other._buf.ptr,
-                count=other.ndim,
+                src=copy._buf.ptr,
+                count=copy.ndim,
             )
 
     # ===----------------------------------------------------------------------=== #
@@ -356,11 +356,21 @@ struct NDArrayStrides(
 
         Returns:
            Stride value at the given index.
-
-        Raises:
-           Error: Index out of bound.
         """
         return Int(self._buf[index])
+
+    @always_inline("nodebug")
+    fn __getitem__(self, index: Scalar[Self.element_type]) raises -> Scalar[Self.element_type]:
+        """
+        Gets stride at specified index.
+
+        Args:
+          index: Index to get the shape.
+
+        Returns:
+           Stride value at the given index.
+        """
+        return self._buf[Int(index)]
 
     @always_inline("nodebug")
     fn __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
@@ -376,12 +386,26 @@ struct NDArrayStrides(
         return Self(self._buf[slice_index])
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Scalar[Self.element_type]) raises:
+    fn __setitem__(mut self, index: Scalar[Self.element_type], val: Scalar[Self.element_type]) raises:
         """
         Sets stride at specified index.
 
         Args:
           index: Index to set the stride.
+          val: Value to set at the given index.
+
+        Raises:
+           Error: Index out of bound.
+        """
+        self._buf[Int(index)] = Int(val)
+
+    @always_inline("nodebug")
+    fn __setitem__(mut self, index: Int, val: Int) raises:
+        """
+        Sets stride at specified index.
+
+        Args:
+          index: Index to set the shape.
           val: Value to set at the given index.
 
         Raises:

@@ -25,11 +25,11 @@ from numojo.core.traits.indexer_collection_element import (
 )
 
 
-@register_passable
 struct Item(
     Equatable,
     ImplicitlyCopyable,
     Movable,
+    RegisterPassable,
     Representable,
     Sized,
     Stringable,
@@ -105,7 +105,9 @@ struct Item(
         self.ndim = len(args)
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, convert_to_int(args[i]))
+            self._buf.init_value(
+                i, Scalar[Self.element_type](convert_to_int(args[i]))
+            )
 
     @always_inline("nodebug")
     fn __init__[T: IndexerCollectionElement](out self, args: List[T]):
@@ -120,7 +122,9 @@ struct Item(
         self.ndim = len(args)
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, convert_to_int(args[i]))
+            self._buf.init_value(
+                i, Scalar[Self.element_type](convert_to_int(args[i]))
+            )
 
     @always_inline("nodebug")
     fn __init__(out self, args: List[Int]):
@@ -132,7 +136,7 @@ struct Item(
         self.ndim = len(args)
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, args[i])
+            self._buf.init_value(i, Scalar[Self.element_type](args[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, args: VariadicList[Int]):
@@ -144,7 +148,7 @@ struct Item(
         self.ndim = len(args)
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            self._buf.init_value(i, args[i])
+            self._buf.init_value(i, Scalar[Self.element_type](args[i]))
 
     @always_inline("nodebug")
     fn __init__(out self, *, ndim: Int):
@@ -158,15 +162,15 @@ struct Item(
         memset_zero(self._buf.ptr, ndim)
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """Copy construct the Item.
 
         Args:
-            other: The Item to copy.
+            copy: The Item to copy.
         """
-        self.ndim = other.ndim
+        self.ndim = copy.ndim
         self._buf = IndexBuffer(size=self.ndim)
-        memcpy(dest=self._buf.ptr, src=other._buf.ptr, count=self.ndim)
+        memcpy(dest=self._buf.ptr, src=copy._buf.ptr, count=copy.ndim)
 
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods
@@ -242,7 +246,7 @@ struct Item(
                     location="Item.load",
                 )
             )
-        return self._buf.load[width=width](idx)
+        return self._buf.unsafe_load[width=width](idx)
 
     fn store[
         width: Int = 1
@@ -272,7 +276,7 @@ struct Item(
                     location="Item.store",
                 )
             )
-        self._buf.store[width=width](idx, value)
+        self._buf.unsafe_store[width=width](idx, value)
 
     fn unsafe_load[
         width: Int = 1
@@ -622,11 +626,11 @@ struct _ItemIter[
         if Self.forward:
             var current_index = self.index
             self.index += 1
-            return self.item[].__getitem__(current_index)
+            return Scalar[DType.int](self.item[].__getitem__(current_index))
         else:
             var current_index = self.index
             self.index -= 1
-            return self.item[].__getitem__(current_index)
+            return Scalar[DType.int](self.item[].__getitem__(current_index))
 
     fn __len__(self) -> Int:
         @parameter

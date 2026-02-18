@@ -76,7 +76,7 @@ struct ComplexDType(
     Movable,
     Representable,
     Stringable,
-    TrivialRegisterType,
+    TrivialRegisterPassable,
     Writable,
 ):
     """

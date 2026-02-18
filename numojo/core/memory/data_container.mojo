@@ -16,7 +16,7 @@ struct DataContainer[dtype: DType](
     The allocation is freed when the last reference is dropped.
     """
 
-    comptime origin: MutOrigin = MutExternalOrigin
+    comptime origin = MutExternalOrigin
     """Memory origin for the allocation."""
 
     var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
@@ -81,19 +81,19 @@ struct DataContainer[dtype: DType](
             self.ext_origin = True
 
     @always_inline
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """Copy constructor - increments refcount for shared containers."""
-        self.size = other.size
-        self.ptr = other.ptr
-        self._refcount = other._refcount
-        self.ext_origin = other.ext_origin
+        self.size = copy.size
+        self.ptr = copy.ptr
+        self._refcount = copy._refcount
+        self.ext_origin = copy.ext_origin
 
         if self._is_refcounted():
             _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
         else:
             if self.size > 0 and not self.ext_origin:
                 self.ptr = alloc[Scalar[Self.dtype]](self.size)
-                memcpy(dest=self.ptr, src=other.ptr, count=self.size)
+                memcpy(dest=self.ptr, src=copy.ptr, count=self.size)
 
     @always_inline
     fn deep_copy(self) -> DataContainer[Self.dtype]:
@@ -117,12 +117,12 @@ struct DataContainer[dtype: DType](
         return result
 
     @always_inline
-    fn __moveinit__(out self, deinit other: Self):
+    fn __moveinit__(out self, deinit take: Self):
         """Move constructor - no refcount change."""
-        self.ptr = other.ptr
-        self._refcount = other._refcount
-        self.ext_origin = other.ext_origin
-        self.size = other.size
+        self.ptr = take.ptr
+        self._refcount = take._refcount
+        self.ext_origin = take.ext_origin
+        self.size = take.size
 
     @always_inline
     fn __del__(deinit self):
@@ -148,7 +148,7 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn get_ptr(
         ref self,
-    ) -> ref [self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """Get the data pointer."""
         return self.ptr
 

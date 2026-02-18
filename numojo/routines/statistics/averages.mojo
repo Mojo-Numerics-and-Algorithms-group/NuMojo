@@ -29,6 +29,7 @@ from numojo.routines.functional import (
 )
 
 
+# not sure what's the side effect of using a returned dtype and casting to it. There could be some precision loss?
 fn mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
@@ -48,7 +49,7 @@ fn mean_1d[
         A scalar defaulting to float64.
     """
 
-    return sum(a).cast[returned_dtype]() / a.size
+    return sum(a).cast[returned_dtype]() / Scalar[returned_dtype](a.size)
 
 
 fn mean[
@@ -120,7 +121,7 @@ fn mean[
         A scalar of the returned data type.
     """
 
-    return sum(a).cast[returned_dtype]() / a.size
+    return sum(a).cast[returned_dtype]() / Scalar[returned_dtype](a.size)
 
 
 fn mean[
@@ -142,9 +143,13 @@ fn mean[
     """
 
     if axis == 0:
-        return sum(a, axis=0).astype[returned_dtype]() / a.shape[0]
+        return sum(a, axis=0).astype[returned_dtype]() / Scalar[returned_dtype](
+            a.shape[0]
+        )
     elif axis == 1:
-        return sum(a, axis=1).astype[returned_dtype]() / a.shape[1]
+        return sum(a, axis=1).astype[returned_dtype]() / Scalar[returned_dtype](
+            a.shape[1]
+        )
     else:
         raise Error(String("The axis can either be 1 or 0!"))
 
@@ -445,7 +450,7 @@ fn variance[
     return sum(
         (A.astype[returned_dtype]() - mean[returned_dtype](A))
         * (A.astype[returned_dtype]() - mean[returned_dtype](A))
-    ) / (A.size - ddof)
+    ) / Scalar[returned_dtype](A.size - ddof)
 
 
 fn variance[
@@ -505,7 +510,7 @@ fn variance[
             )
         ),
         axis=normalized_axis,
-    ) / (A.shape[normalized_axis] - ddof)
+    ) / Scalar[returned_dtype](A.shape[normalized_axis] - ddof)
 
 
 fn variance[
@@ -533,7 +538,7 @@ fn variance[
     return sum(
         (A.astype[returned_dtype]() - mean[returned_dtype](A))
         * (A.astype[returned_dtype]() - mean[returned_dtype](A))
-    ) / (A.size - ddof)
+    ) / Scalar[returned_dtype](A.size - ddof)
 
 
 fn variance[
@@ -564,12 +569,12 @@ fn variance[
             (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0))
             * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0)),
             axis=0,
-        ) / (A.shape[0] - ddof)
+        ) / Scalar[returned_dtype](A.shape[0] - ddof)
     elif axis == 1:
         return sum(
             (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1))
             * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1)),
             axis=1,
-        ) / (A.shape[1] - ddof)
+        ) / Scalar[returned_dtype](A.shape[1] - ddof)
     else:
         raise Error(String("The axis can either be 1 or 0!"))

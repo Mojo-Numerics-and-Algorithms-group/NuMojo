@@ -254,7 +254,7 @@ fn _max[
             ).format(start, end, A.size)
         )
 
-    var max_index: Scalar[DType.int] = start
+    var max_index: Int = start
 
     var rows = A.shape[0]
     var cols = A.shape[1]
@@ -288,7 +288,7 @@ fn _max[
                 max_value = current_value
                 max_index = i
 
-    return (max_value, max_index)
+    return (max_value, Scalar[DType.int](max_index))
 
 
 fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -374,7 +374,7 @@ fn _min[
             ).format(start, end, A.size)
         )
 
-    var min_index: Scalar[DType.int] = start
+    var min_index: Int = start
 
     var rows = A.shape[0]
     var cols = A.shape[1]
@@ -408,7 +408,7 @@ fn _min[
                 min_value = current_value
                 min_index = i
 
-    return (min_value, min_index)
+    return (min_value, Scalar[DType.int](min_index))
 
 
 # ===-----------------------------------------------------------------------===#

@@ -150,38 +150,38 @@ fn compress[
     var res_strides: NDArrayStrides = NDArrayStrides(
         ndim=result.ndim, initialized=False
     )
-    var temp: Int = 1
+    var temp: Scalar[DType.int] = 1
     for i in range(result.ndim - 1, -1, -1):
         if i != normalized_axis:
             (res_strides._buf.ptr + i).init_pointee_copy(temp)
-            temp *= result.shape[i]
+            temp *= Scalar[DType.int](result.shape[i])
     (res_strides._buf.ptr + normalized_axis).init_pointee_copy(temp)
 
     var iterator = a.iter_over_dimension(normalized_axis)
 
-    var count: Int = 0
+    var count: Scalar[DType.int] = 0
     for i in range(len(condition)):
         if condition.item(i):
             var current_slice = iterator.ith(i)
             for offset in range(current_slice.size):
-                var remainder: Int = count
+                var remainder: Scalar[DType.int] = count
 
                 var item: Item = Item(ndim=result.ndim)
 
                 # First along the axis
                 var j = normalized_axis
                 (item._buf.ptr + j).init_pointee_copy(
-                    remainder // res_strides._buf[j]
+                    remainder // res_strides.unsafe_load(j)
                 )
-                remainder %= Int(res_strides._buf[j])
+                remainder %= res_strides.unsafe_load(j)
 
                 # Then along other axes
                 for j in range(result.ndim):
                     if j != normalized_axis:
                         (item._buf.ptr + j).init_pointee_copy(
-                            remainder // res_strides._buf[j]
+                            remainder // res_strides.unsafe_load(j)
                         )
-                        remainder %= Int(res_strides._buf[j])
+                        remainder %= res_strides.unsafe_load(j)
 
                 (
                     result._buf.ptr

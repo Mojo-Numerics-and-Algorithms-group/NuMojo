@@ -297,6 +297,29 @@ struct DataContainer[dtype: DType](
     fn write_to[W: Writer](self, mut writer: W):
         writer.write(self.__str__())
 
+    fn share(mut self) -> DataContainer[Self.dtype]:
+        """
+        Create a shared view into this container.
+        Enables refcounting on first call, then increments the refcount.
+
+        This is the key method for creating views that properly share memory.
+        """
+        if not self._is_refcounted():
+            try:
+                self.enable_views()
+            except:
+                abort("DataContainer.share(): failed to enable views")
+
+        var result = DataContainer[Self.dtype]()
+        result.size = self.size
+        result.ptr = self.ptr
+        result._refcount = self._refcount
+        result.ext_origin = self.ext_origin
+
+        _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+
+        return result
+
     fn share_with_offset(mut self, offset: Int) -> DataContainer[Self.dtype]:
         """
         Create a shared view into this container starting at the given offset.

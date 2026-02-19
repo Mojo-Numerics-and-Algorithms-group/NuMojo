@@ -1,9 +1,14 @@
-"""
-Implements Trigonometry functions for arrays.
-"""
 # ===----------------------------------------------------------------------=== #
-# Trigonometric functions
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Trigonometric routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Trigonometric routines for NuMojo (numojo.routines.math.trig).
+
+Implements trigonometric and inverse trigonometric functions over NDArrays and Matrices.
+"""
 
 import math
 

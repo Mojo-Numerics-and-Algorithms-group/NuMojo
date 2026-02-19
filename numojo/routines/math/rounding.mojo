@@ -1,6 +1,14 @@
-# ===------------------------------------------------------------------------===#
-# Rounding
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Rounding routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Rounding routines for NuMojo (numojo.routines.math.rounding).
+
+Offers rounding, truncation, absolute value, and next-after helpers for NDArrays.
+"""
 
 import math as builtin_math
 from algorithm import parallelize

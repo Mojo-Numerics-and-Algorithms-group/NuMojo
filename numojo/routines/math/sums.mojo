@@ -1,3 +1,15 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Summation routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Summation routines for NuMojo (numojo.routines.math.sums).
+
+Provides sum reductions along axes for NDArrays and Matrices, covering both flattened and axis-aware workflows.
+"""
+
 from sys import simd_width_of
 from algorithm import parallelize, vectorize
 from memory import UnsafePointer, memset_zero, memcpy

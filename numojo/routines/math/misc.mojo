@@ -1,17 +1,18 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Miscellaneous math routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
+#  ===----------------------------------------------------------------------=== #
+"""Miscellaneous math routines for NuMojo (numojo.routines.math.misc).
 
-# ===------------------------------------------------------------------------===#
-# Miscellaneous mathematical functions
-# ===------------------------------------------------------------------------===#
+Offers utilities such as cube root, clipping, reciprocal square root, square root, and scalb for NDArrays.
+"""
 
 from algorithm import parallelize, vectorize
 from algorithm import Static2DTileUnitFunc as Tile2DFunc
-import builtin.math as builtin_math
+import math as builtin_math
 import math.math as stdlib_math
 from sys import simd_width_of
 from utils import Variant

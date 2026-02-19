@@ -2802,6 +2802,7 @@ fn _0darray[
     var b = NDArray[dtype](
         shape=NDArrayShape(ndim=0, initialized=False),
         strides=NDArrayStrides(ndim=0, initialized=False),
+        offset=0,
         ndim=0,
         size=1,
         flags=Flags(

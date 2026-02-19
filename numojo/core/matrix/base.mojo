@@ -3976,7 +3976,7 @@ struct Matrix[
         """
 
         var ndarray: NDArray[Self.dtype] = NDArray[Self.dtype](
-            shape=[self.shape[0], self.shape[1]], order=self.order()
+            shape=NDArrayShape(self.shape[0], self.shape[1]), order=self.order()
         )
         memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
 

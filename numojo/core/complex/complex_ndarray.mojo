@@ -325,8 +325,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             - The resulting array is uninitialized and should be filled before use.
             - Both real and imaginary buffers are created with the same shape, offset, and strides.
         """
-        self._re = NDArray[Self.dtype](shape, offset, strides)
-        self._im = NDArray[Self.dtype](shape, offset, strides)
+        self._re = NDArray[Self.dtype](
+            shape=shape, offset=offset, strides=strides
+        )
+        self._im = NDArray[Self.dtype](
+            shape=shape, offset=offset, strides=strides
+        )
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -365,8 +369,22 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.ndim = ndim
         self.size = size
         self.flags = flags
-        self._re = NDArray[Self.dtype](shape, strides, ndim, size, flags)
-        self._im = NDArray[Self.dtype](shape, strides, ndim, size, flags)
+        self._re = NDArray[Self.dtype](
+            shape=shape,
+            strides=strides,
+            offset=0,
+            ndim=ndim,
+            size=size,
+            flags=flags,
+        )
+        self._im = NDArray[Self.dtype](
+            shape=shape,
+            strides=strides,
+            offset=0,
+            ndim=ndim,
+            size=size,
+            flags=flags,
+        )
         self.print_options = PrintOptions(
             precision=2, edge_items=2, line_width=100, formatted_width=6
         )

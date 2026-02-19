@@ -157,6 +157,8 @@ struct NDArray[dtype: DType = DType.float64](
     """Size of NDArray."""
     var strides: NDArrayStrides
     """Contains offset, strides."""
+    var offset: Int
+    """Offset of the first element in the data buffer."""
     var flags: Flags
     """Information about the memory layout of the array."""
     var print_options: PrintOptions
@@ -194,6 +196,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = shape
         self.size = self.shape.size()
         self.strides = NDArrayStrides(shape, order=order)
+        self.offset = 0
         self._buf = DataContainer[Self.dtype](self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
@@ -253,16 +256,16 @@ struct NDArray[dtype: DType = DType.float64](
     fn __init__(
         out self,
         shape: List[Int],
-        offset: Int,
         strides: List[Int],
+        offset: Int,
     ) raises:
         """
         Initialize a NDArray with a specific shape, offset, and strides.
 
         Args:
             shape: List of integers specifying the shape of the array.
-            offset: Integer offset into the underlying buffer.
             strides: List of integers specifying the stride for each dimension.
+            offset: Integer offset into the underlying buffer.
 
         Notes:
             - This constructor is intended for advanced use cases requiring precise control over memory layout.
@@ -274,13 +277,14 @@ struct NDArray[dtype: DType = DType.float64](
             var shape = [2, 3]
             var offset = 0
             var strides = [3, 1]
-            var arr = NDArray[f32](shape, offset, strides)
+            var arr = NDArray[f32](shape, strides, offset)
             ```
         """
         self.shape = NDArrayShape(shape)
         self.ndim = self.shape.ndim
         self.size = self.shape.size()
         self.strides = NDArrayStrides(strides=strides)
+        self.offset = offset
         self._buf = DataContainer[Self.dtype](self.size)
         memset_zero(self._buf.ptr, self.size)
         self.flags = Flags(
@@ -294,16 +298,18 @@ struct NDArray[dtype: DType = DType.float64](
         strides: NDArrayStrides,
         ndim: Int,
         size: Int,
+        offset: Int,
         flags: Flags,
     ):
         """
-        Initialize a NDArray with explicit shape, strides, number of dimensions, size, and flags. This constructor creates an uninitialized NDArray with the provided properties. No compatibility checks are performed between shape, strides, ndim, size, or flags. This allows construction of arrays with arbitrary metadata, including 0-D arrays (scalars).
+        Initialize a NDArray with explicit shape, strides, number of dimensions, size, offset, and flags. This constructor creates an uninitialized NDArray with the provided properties. No compatibility checks are performed between shape, strides, ndim, size, offset, or flags. This allows construction of arrays with arbitrary metadata, including 0-D arrays (scalars).
 
         Args:
             shape: Shape of the array.
             strides: Strides for each dimension.
             ndim: Number of dimensions.
             size: Total number of elements.
+            offset: Offset of the first element in the data buffer.
             flags: Memory layout flags.
 
         Notes:
@@ -314,6 +320,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         self.shape = shape
         self.strides = strides
+        self.offset = offset
         self.ndim = ndim
         self.size = size
         self.flags = flags
@@ -323,20 +330,23 @@ struct NDArray[dtype: DType = DType.float64](
     # View constructor using DataContainer refcounting
     fn __init__(
         out self,
+        data: DataContainer[Self.dtype],
         shape: NDArrayShape,
         strides: NDArrayStrides,
-        data: DataContainer[Self.dtype],
+        offset: Int,
     ) raises:
         """
         Initialize a non-owning NDArray view with shared DataContainer.
 
         Args:
+            data: DataContainer with reference counting enabled.
             shape: Shape of the view.
             strides: Strides for the view.
-            data: DataContainer with reference counting enabled.
+            offset: Offset of the first element in the data buffer for the view.
         """
         self.shape = shape
         self.strides = strides
+        self.offset = offset
         self.ndim = shape.ndim
         self.size = shape.size()
         self._buf = data
@@ -358,6 +368,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = copy.shape
         self.size = copy.size
         self.strides = copy.strides
+        self.offset = copy.offset
         self._buf = copy._buf.copy()
         self.flags = Flags(
             c_contiguous=copy.flags.C_CONTIGUOUS,
@@ -372,7 +383,12 @@ struct NDArray[dtype: DType = DType.float64](
         Create a deep copy of the array.
         """
         var res = Self(
-            self.shape, self.strides, self.ndim, self.size, self.flags
+            shape=self.shape,
+            strides=self.strides,
+            ndim=self.ndim,
+            size=self.size,
+            offset=self.offset,
+            flags=self.flags,
         )
         memcpy(
             dest=res._buf.get_ptr(), src=self._buf.get_ptr(), count=self.size
@@ -397,9 +413,10 @@ struct NDArray[dtype: DType = DType.float64](
             ```
         """
         return NDArray[Self.dtype](
-            self.shape,
-            self.strides,
-            self._buf.share_with_offset(0),
+            data=self._buf.share(),
+            shape=self.shape,
+            strides=self.strides,
+            offset=self.offset,
         )
 
     @always_inline("nodebug")
@@ -414,6 +431,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.shape = take.shape
         self.size = take.size
         self.strides = take.strides
+        self.offset = take.offset
         self.flags = take.flags^
         self._buf = take._buf^
         self.print_options = take.print_options
@@ -507,6 +525,7 @@ struct NDArray[dtype: DType = DType.float64](
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
+        index_of_buffer += self.offset
         return self._buf.ptr[index_of_buffer]
 
     fn _getitem(self, indices: List[Int]) -> Scalar[Self.dtype]:
@@ -535,6 +554,7 @@ struct NDArray[dtype: DType = DType.float64](
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
+        index_of_buffer += self.offset
         return self._buf.ptr[index_of_buffer]
 
     fn __getitem__(self) raises -> SIMD[Self.dtype, 1]:
@@ -4231,6 +4251,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return Self._NDAxisIteratorType[forward,](
             data=self._buf,
+            offset=self.offset,
             axis=normalized_axis,
             order=order,
             shape=self.shape,
@@ -5015,6 +5036,8 @@ struct _NDArrayIter[
 
     var index: Int
     var _buf: DataContainer[Self.dtype]
+    var offset: Int
+    """Offset of the first element in the data buffer."""
     var dimension: Int
     var length: Int
     var shape: NDArrayShape
@@ -5047,6 +5070,7 @@ struct _NDArrayIter[
             )
 
         self._buf = a[]._buf.copy()
+        self.offset = a[].offset
         self.dimension = dimension
         self.shape = a[].shape
         self.strides = a[].strides
@@ -5095,7 +5119,7 @@ struct _NDArrayIter[
             #     self._buf[IndexMethods.get_1d_index(item, self.strides)]
             # )
             result._buf.ptr[offset] = self._buf[
-                IndexMethods.get_1d_index(item, self.strides)
+                self.offset + IndexMethods.get_1d_index(item, self.strides)
             ]
         return result^
 
@@ -5534,6 +5558,8 @@ struct _NDAxisIter[
     """
 
     var data: DataContainer[Self.dtype]
+    var offset: Int
+    """Offset of the first element in the data buffer."""
     var axis: Int
     var order: String
     var length: Int
@@ -5552,6 +5578,7 @@ struct _NDAxisIter[
     fn __init__(
         out self,
         data: DataContainer[Self.dtype],
+        offset: Int,
         axis: Int,
         order: String,
         shape: NDArrayShape,
@@ -5564,6 +5591,7 @@ struct _NDAxisIter[
 
         Args:
             data: the data container of the array.
+            offset: Offset of the first element in the data buffer.
             axis: Axis.
             order: Order to traverse the array.
             shape: Shape of the array.
@@ -5584,6 +5612,7 @@ struct _NDAxisIter[
             )
 
         self.data = data.copy()
+        self.offset = offset
         self.size = size
         self.size_of_item = shape[axis]
         self.axis = axis
@@ -5676,6 +5705,7 @@ struct _NDAxisIter[
             memcpy(
                 dest=res._buf.ptr,
                 src=self.data.ptr
+                + self.offset
                 + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
@@ -5683,7 +5713,10 @@ struct _NDAxisIter[
         else:
             for j in range(self.size_of_item):
                 (res._buf.ptr + j).init_pointee_copy(
-                    self.data.ptr[IndexMethods.get_1d_index(item, self.strides)]
+                    self.data.ptr[
+                        self.offset
+                        + IndexMethods.get_1d_index(item, self.strides)
+                    ]
                 )
                 item._buf[self.axis] += 1
 
@@ -5745,13 +5778,17 @@ struct _NDAxisIter[
             memcpy(
                 dest=elements._buf.ptr,
                 src=self.data.ptr
+                + self.offset
                 + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
         else:
             for j in range(self.size_of_item):
                 (elements._buf.ptr + j).init_pointee_copy(
-                    self.data.ptr[IndexMethods.get_1d_index(item, self.strides)]
+                    self.data.ptr[
+                        self.offset
+                        + IndexMethods.get_1d_index(item, self.strides)
+                    ]
                 )
                 item._buf[self.axis] += 1
 
@@ -5804,6 +5841,7 @@ struct _NDAxisIter[
             memcpy(
                 dest=elements._buf.ptr,
                 src=self.data.ptr
+                + self.offset
                 + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
@@ -5820,6 +5858,7 @@ struct _NDAxisIter[
             memcpy(
                 dest=elements._buf.ptr,
                 src=self.data.ptr
+                + self.offset
                 + IndexMethods.get_1d_index(item, self.strides),
                 count=self.size_of_item,
             )
@@ -5839,7 +5878,10 @@ struct _NDAxisIter[
                     )
                 )
                 (elements._buf.ptr + j).init_pointee_copy(
-                    self.data.ptr[IndexMethods.get_1d_index(item, self.strides)]
+                    self.data.ptr[
+                        self.offset
+                        + IndexMethods.get_1d_index(item, self.strides)
+                    ]
                 )
                 item._buf[self.axis] += 1
 
@@ -5872,7 +5914,7 @@ struct _NDIter[
         self.length = a.size
         self.order = order
         self.axis = axis
-        self.ptr = a._buf.ptr
+        self.ptr = a._buf.ptr + a.offset
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides

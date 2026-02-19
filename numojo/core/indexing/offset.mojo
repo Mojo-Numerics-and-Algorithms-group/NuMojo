@@ -1,11 +1,16 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Offset computation
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Indexing offset calculation functions.
+"""Offset computation (numojo.core.indexing.offset)
+
+Indexing offset calculation functions. These functions compute the flat index (offset)
+in memory for a given set of multi-dimensional indices and strides.
+They are used to translate multi-dimensional indexing into flat memory access,
+which is essential for efficient array operations in NuMojo.
 """
 
 from numojo.core.layout import NDArrayStrides

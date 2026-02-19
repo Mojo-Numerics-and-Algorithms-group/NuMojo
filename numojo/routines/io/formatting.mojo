@@ -1,4 +1,15 @@
-from builtin.math import pow
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Formatting
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Formatting (numojo.routines.io.formatting)
+
+This module provides functions for formatting arrays and values for printing, including options for precision, scientific notation, and complex number formatting.
+"""
+from math import pow
 import math as mt
 from utils.numerics import isnan, isinf
 

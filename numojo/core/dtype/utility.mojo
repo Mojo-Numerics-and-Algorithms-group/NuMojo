@@ -1,6 +1,14 @@
 # ===----------------------------------------------------------------------=== #
-# Type checking functions
+# NuMojo: Datatype utilities
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+"""Data type utility functions (numojo.core.dtype.utility)
+
+This module provides utility functions for checking properties of data types (DType) at both compile time and run time.
+"""
 
 
 @parameter

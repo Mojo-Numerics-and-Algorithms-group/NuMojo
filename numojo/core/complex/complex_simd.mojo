@@ -1,10 +1,12 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Complex SIMD
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
+"""ComplexSIMD (numojo.core.complex.complex_simd)
+
 Implement the ComplexSIMD type and its operations.
 
 This module provides a ComplexSIMD type that represents complex numbers using SIMD

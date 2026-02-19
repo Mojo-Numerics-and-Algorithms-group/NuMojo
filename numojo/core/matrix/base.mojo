@@ -1,5 +1,11 @@
-"""
-NuMojo Matrix Module
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Matrix
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""Matrix (numojo.core.matrix)
 
 This file implements the core 2D matrix type for the NuMojo numerical computing library. It provides efficient, flexible, and memory-safe matrix operations for scientific and engineering applications.
 

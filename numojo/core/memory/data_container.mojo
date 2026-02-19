@@ -1,3 +1,14 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: DataContainer
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""DataContainer (numojo.core.memory.data_container)
+
+DataContainer is a reference-counted data container for NDArray and Matrix.
+"""
 from memory import UnsafePointer
 from os.atomic import Atomic, Consistency, fence
 from sys import size_of

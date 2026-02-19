@@ -1,12 +1,13 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Manipulation
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+"""Manipulation routines (numojo.routines.manipulation)
 
-"""
-Array manipulation routines.
+This module implements routines that manipulate the shape and layout of arrays, such as reshaping, transposing, broadcasting, and flipping.
 """
 
 from memory import UnsafePointer, memcpy

@@ -1,40 +1,28 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: NDArray
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
+"""NDArray (numojo.core.ndarray)
 
-# ===----------------------------------------------------------------------===#
-# SECTIONS OF THE FILE:
-# `NDArray` type
-# 1. Life cycle methods.
-# 2. Indexing and slicing (get and set dunders and relevant methods).
-# 3. Operator dunders.
-# 4. IO, trait, and iterator dunders.
-# 5. Other methods (Sorted alphabetically).
+This module implements the core `NDArray` type, which is the fundamental data structure for multi-dimensional arrays in NuMojo.
+It provides efficient storage, indexing, slicing, and basic operations on N-dimensional arrays. The `NDArray` is designed to be flexible and performant, supporting various memory layouts and data types.
 
-# Iterators of `NDArray`:
-# 1. `_NDArrayIter` type
-# 2. `_NDAxisIter` type
-# 3. `_NDIter` type
-# ===----------------------------------------------------------------------===#
+SECTIONS OF THE FILE:
+`NDArray` type
+    1. Life cycle methods.
+    2. Indexing and slicing (get and set dunders and relevant methods).
+    3. Operator dunders.
+    4. IO, trait, and iterator dunders.
+    5. Other methods (Sorted alphabetically).
 
-# ===----------------------------------------------------------------------===#
-# FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
-# 1. Description *
-# 2. Parameters *
-# 3. Args *
-# 4. Constraints *
-# 4) Returns *
-# 5) Raises *
-# 6) SEE ALSO
-# 7) NOTES
-# 8) REFERENCES
-# 9) Examples *
-# (Items marked with * are flavored in "Mojo docstring style guide")
-# ===----------------------------------------------------------------------===#
-
+Iterators of `NDArray`:
+    1. `_NDArrayIter` type
+    2. `_NDAxisIter` type
+    3. `_NDIter` type
+"""
 # ===----------------------------------------------------------------------===#
 # TODO: Return views that points to the buffer of the raw array.
 #       This requires enhancement of functionalities of traits from Mojo's side.
@@ -43,11 +31,10 @@
 #       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
 # TODO: Rename some variables or methods that should not be exposed to users.
 # TODO: Special checks for 0d array (numojo scalar).
-
 # ===----------------------------------------------------------------------===#
 
 # ===----------------------------------------------------------------------===#
-# === Stdlib ===
+# Stdlib
 # ===----------------------------------------------------------------------===#
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
@@ -61,7 +48,7 @@ from utils import Variant
 from builtin.type_aliases import EllipsisType
 
 # ===----------------------------------------------------------------------===#
-# === numojo core ===
+# numojo core
 # ===----------------------------------------------------------------------===#
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.layout.flags import Flags
@@ -83,7 +70,7 @@ from numojo.core.layout.array_methods import NewAxis
 from numojo.core.indexing.slicing import IndexTypeInfo
 
 # ===----------------------------------------------------------------------===#
-# === numojo routines (creation / io / logic) ===
+# numojo routines (creation / io / logic)
 # ===----------------------------------------------------------------------===#
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
@@ -93,7 +80,7 @@ from numojo.routines.io.formatting import (
 import numojo.routines.logic.comparison as comparison
 
 # ===----------------------------------------------------------------------===#
-# === numojo routines (math / bitwise / searching) ===
+# numojo routines (math / bitwise / searching)
 # ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
 import numojo.routines.math._array_funcs as _af
@@ -103,11 +90,10 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
 comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
+"""IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
+"""
 
 
-# ===-----------------------------------------------------------------------===#
-# Implements the N-Dimensional Array.
-# ===-----------------------------------------------------------------------===#
 struct NDArray[dtype: DType = DType.float64](
     Absable,
     Copyable,
@@ -119,8 +105,6 @@ struct NDArray[dtype: DType = DType.float64](
     Stringable,
     Writable,
 ):
-    # TODO: NDArray[dtype: DType = DType.float64,
-    #               Buffer: Bufferable[dtype] = DataContainer[dtype]]
     """The N-dimensional array (NDArray).
 
     Parameters:

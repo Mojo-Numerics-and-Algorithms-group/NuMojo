@@ -1,11 +1,11 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Indexing routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implement indexing routines.
+"""Indexing routines (numojo.routines.indexing)
 
 - Generating index arrays
 - Indexing-like operations

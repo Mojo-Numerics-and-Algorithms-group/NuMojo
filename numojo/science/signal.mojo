@@ -1,5 +1,13 @@
-"""
-Implements signal processing.
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Signal processing
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""Signal processing module (`numojo.science.signal`)
+
+Implements signal processing utilities.
 
 It is like `scipy.signal` in Python.
 """

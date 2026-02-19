@@ -1,4 +1,12 @@
-"""
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Contents
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Contents routines (numojo.routines.logic.contents)
+
 Implements Checking routines: currently not SIMD due to bool bit packing issue
 """
 # ===----------------------------------------------------------------------=== #

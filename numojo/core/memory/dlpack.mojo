@@ -1,5 +1,11 @@
-"""
-DLPack Support for NuMojo
+# ===----------------------------------------------------------------------=== #
+# NuMojo: DLPack Interop Module
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""DLPack (numojo.core.memory.dlpack)
 
 This module implements the DLPack protocol for zero-copy tensor exchange
 between NuMojo and other array libraries (NumPy, PyTorch, JAX, etc.).

@@ -1,11 +1,14 @@
-# ===------------------------------------------------------------------------===#
-# Bit-wise operations
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Routines module
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Bit-wise operations module (`numojo.routines.bitwise`)
 
-# ===------------------------------------------------------------------------===#
-# Element-wise bit operations
-# ===------------------------------------------------------------------------===#
-
+This module implements bit-wise operations on NDArrays, such as bitwise AND, OR, XOR, and NOT (invert).
+"""
 
 import math
 from algorithm import parallelize

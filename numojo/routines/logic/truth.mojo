@@ -1,7 +1,14 @@
 # ===----------------------------------------------------------------------=== #
-# Truth value testing
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Truth testing
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Truth value testing (numojo.routines.logic.truth)
 
+This module implements the truth value testing functions, such as `all` and `any`, for both `NDArray` and `Matrix`.
+"""
 import math
 from algorithm import vectorize, parallelize
 from sys import simd_width_of

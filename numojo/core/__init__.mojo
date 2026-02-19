@@ -1,9 +1,16 @@
-"""
-=====================================
-Core (numojo.core)
-=====================================
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Core types and utilities (numojo.core)
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""Core (numojo.core)
 
-Core types and utilities for NuMojo (arrays, matrices, layout, memory, dtypes, and errors).
+This sub module provides the core types and utilities for NuMojo, including fundamental data structures
+like `NDArray` and `Matrix`, dtype aliases, memory layout definitions, error handling utilities, and complex number support.
+It serves as the foundational layer upon which higher-level routines and algorithms are built.
+Fundamental types and utilities for NuMojo: arrays, matrices, memory layouts, data types, and error handling.
 """
 
 from .ndarray import NDArray

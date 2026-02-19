@@ -1,20 +1,22 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Sorting routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Sorting.
+"""Sorting routines (numojo.routines.sorting)
+
+This module implements sorting routines for NDArrays and Matrices, including `sort` and `argsort` functions.
+
+SECTIONS OF THIS FILE:
+1. `sort` and `argsort` functions exposed to users.
+2. Backend multiple sorting methods that can be used in `sort`.
+    - Binary sort.
+    - Bubble sort.
+    - Quick sort (instable).
 """
 # ===----------------------------------------------------------------------=== #
-# SECTIONS OF THIS FILE:
-# 1. `sort` and `argsort` functions exposed to users.
-# 2. Backend multiple sorting methods that can be used in `sort`.
-#     - Binary sort.
-#     - Bubble sort.
-#     - Quick sort (instable).
-#
 # TODO: Add more sorting algorithms.
 # ===----------------------------------------------------------------------=== #
 

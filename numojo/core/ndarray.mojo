@@ -968,59 +968,6 @@ struct NDArray[dtype: DType = DType.float64](
         narr.ndim = new_ndim
         return narr^
 
-    fn _getitem_variadic_slices(self, var *slices: Slice) raises -> Self:
-        """Gets a sub-array by variadic slices with dimension reduction.
-
-        Unlike `__getitem__(*slices: Slice)` which is compatible with NumPy
-        slicing, this method reduces dimensions.
-
-        Args:
-            slices: A variadic list of `Slice` objects, one for each dimension
-                to be sliced.
-
-        Constraints:
-            - The number of slices provided must not exceed the number of array
-              dimensions.
-            - Each slice must be valid for its corresponding dimension.
-
-        Returns:
-            A new array instance representing the sliced view of the original
-            array.
-
-        Raises:
-            IndexError: If any slice is out of bounds for its corresponding
-                dimension.
-            ValueError: If the number of slices does not match the array's
-                dimensions.
-
-        Notes:
-            - This method is for internal purposes only and is not exposed to
-              users.
-        """
-        var n_slices: Int = slices.__len__()
-        if n_slices > self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Too many slices provided: expected at most {} but got"
-                        " {}. Provide at most {} slices for an array with {}"
-                        " dimensions."
-                    ).format(self.ndim, n_slices, self.ndim, self.ndim),
-                    location="NDArray.__getitem__(slices: Slice)",
-                )
-            )
-        var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
-        for i in range(len(slices)):
-            slice_list.append(slices[i])
-
-        if n_slices < self.ndim:
-            for i in range(n_slices, self.ndim):
-                slice_list.append(Slice(0, self.shape[i], 1))
-
-        var narr: Self = self[slice_list^]
-        return narr^
-
     fn _getitem_list_slices(self, var slice_list: List[Slice]) raises -> Self:
         """Gets a sub-array by a list of slices with dimension reduction.
 
@@ -3507,46 +3454,6 @@ struct NDArray[dtype: DType = DType.float64](
         return result
 
     # ===-------------------------------------------------------------------===#
-    # Properties
-    # ===-------------------------------------------------------------------===#
-    # TODO: rename internal shape to be _shape to keep it private and let users access shape through fn shape()
-    fn ndshape(ref self) -> ref[self.shape] NDArrayShape:
-        """
-        Returns the shape of the array.
-
-        Returns:
-            The shape of the array.
-        """
-        return self.shape
-
-    fn ndstrides(ref self) -> ref[self.strides] NDArrayStrides:
-        """
-        Returns the strides of the array.
-
-        Returns:
-            The strides of the array.
-        """
-        return self.strides
-
-    fn ndsize(self) -> Int:
-        """
-        Returns the total number of elements in the array.
-
-        Returns:
-            The total number of elements in the array.
-        """
-        return Int(self.shape.product())
-
-    fn rank(self) -> Int:
-        """
-        Returns the rank (number of dimensions) of the array.
-
-        Returns:
-            The rank of the array.
-        """
-        return self.ndim
-
-    # ===-------------------------------------------------------------------===#
     # Trait dunders and iterator dunders
     # ===-------------------------------------------------------------------===#
 
@@ -4312,53 +4219,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo.math.max(self, axis=axis)
 
-    # TODO: Remove this methods
-    fn mdot(self, other: Self) raises -> Self:
-        """
-        Dot product of two matrix. Matrix A: M * N. Matrix B: N * L.
-
-        Args:
-            other: The other matrix.
-
-        Returns:
-            The dot product of the two matrices.
-
-        Raises:
-            Error: If the arrays are not matrices.
-            Error: If the second dimension of the self array does not match the
-                first dimension of the other array.
-        """
-
-        if (self.ndim != 2) or (other.ndim != 2):
-            raise Error(
-                String(
-                    "\nError in `numojo.NDArray.mdot(self, other)`: "
-                    "The array should have only two dimensions (matrix).\n"
-                    "The self array has {} dimensions.\n"
-                    "The orther array has {} dimensions"
-                ).format(self.ndim, other.ndim)
-            )
-
-        if self.shape[1] != other.shape[0]:
-            raise Error(
-                String(
-                    "\nError in `numojo.NDArray.mdot(self, other)`: "
-                    "Second dimension of A does not match first dimension of"
-                    " B.\nA is {}x{}. \nB is {}x{}."
-                ).format(
-                    self.shape[0], self.shape[1], other.shape[0], other.shape[1]
-                )
-            )
-
-        var new_matrix = Self(Shape(self.shape[0], other.shape[1]))
-        for row in range(self.shape[0]):
-            for col in range(other.shape[1]):
-                new_matrix.__setitem__(
-                    Item(row, col),
-                    self[row : row + 1, :].vdot(other[:, col : col + 1]),
-                )
-        return new_matrix^
-
     fn mean[
         returned_dtype: DType = DType.float64
     ](self) raises -> Scalar[returned_dtype]:
@@ -4508,14 +4368,6 @@ struct NDArray[dtype: DType = DType.float64](
             a=self, order=order, axis=axis
         )
 
-    fn num_elements(self) -> Int:
-        """Retrieves the size (compatibility alias).
-
-        Returns:
-            The size of the array.
-        """
-        return self.size
-
     fn prod(self) raises -> Scalar[Self.dtype]:
         """Computes the product of all array elements.
 
@@ -4535,50 +4387,6 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         return numojo.math.prod(self, axis=axis)
-
-    # TODO: Remove this methods
-    fn rdot(self, other: Self) raises -> Self:
-        """
-        Dot product of two matrix. Matrix A: M * N. Matrix B: N * L.
-
-        Args:
-            other: The other matrix.
-
-        Returns:
-            The dot product of the two matrices.
-
-        Raises:
-            Error: If the arrays are not matrices.
-            Error: If the second dimension of the self array does not match the
-                first dimension of the other array.
-        """
-
-        if (self.ndim != 2) or (other.ndim != 2):
-            raise Error(
-                String(
-                    "\nError in `numojo.NDArray.rdot(self, other)`: "
-                    "The array should have only two dimensions (matrix)."
-                    "The self array is of {} dimensions.\n"
-                    "The other array is of {} dimensions."
-                ).format(self.ndim, other.ndim)
-            )
-        if self.shape[1] != other.shape[0]:
-            raise Error(
-                String(
-                    "\nError in `numojo.NDArray.rdot(self, other)`: "
-                    "Second dimension of A ({}) \n"
-                    "does not match first dimension of B ({})."
-                ).format(self.shape[1], other.shape[0])
-            )
-
-        var new_matrix = Self(Shape(self.shape[0], other.shape[1]))
-        for row in range(self.shape[0]):
-            for col in range(other.shape[1]):
-                new_matrix.store(
-                    col + row * other.shape[1],
-                    self.row(row).vdot(other.col(col)),
-                )
-        return new_matrix^
 
     # TODO: make it inplace?
     fn reshape(
@@ -4892,35 +4700,6 @@ struct NDArray[dtype: DType = DType.float64](
             The variance of the array along the axis.
         """
         return variance[returned_dtype](self, axis=axis, ddof=ddof)
-
-    # TODO: Remove this methods, but add it into routines.
-    fn vdot(self, other: Self) raises -> SIMD[Self.dtype, 1]:
-        """
-        Inner product of two vectors.
-
-        Args:
-            other: The other vector.
-
-        Returns:
-            The inner product of the two vectors.
-        """
-        if self.size != other.size:
-            raise Error(
-                NumojoError(
-                    category="shape",
-                    message=String(
-                        "The lengths of the two vectors do not match: {} vs {}."
-                        " Ensure both vectors have the same length before"
-                        " performing this operation."
-                    ).format(self.size, other.size),
-                    location="NDArray.dot/inner/related (vector length check)",
-                )
-            )
-
-        var sum = Scalar[Self.dtype](0)
-        for i in range(self.size):
-            sum = sum + self.load(i) * other.load(i)
-        return sum
 
     fn squeeze(mut self, axis: Int) raises:
         """Removes (squeezes) a single dimension of size 1 from the array shape.

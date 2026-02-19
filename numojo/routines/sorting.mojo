@@ -903,8 +903,8 @@ fn _quick_sort_stable_inplace[
     var pivot_index = size // 2
     var pivot_value = a._buf.ptr[pivot_index]
 
-    var left = NDArray[dtype](shape=(size), order="C")
-    var right = NDArray[dtype](shape=(size), order="C")
+    var left = NDArray[dtype](shape=NDArrayShape(size), order="C")
+    var right = NDArray[dtype](shape=NDArrayShape(size), order="C")
     var left_index = 0
     var right_index = 0
 

@@ -16,20 +16,6 @@ def test_constructors():
     assert_true(arr1.size == 60, "NDArray constructor: size")
     assert_true(arr1.dtype == DType.float32, "NDArray constructor: dtype")
 
-    var arr2 = NDArray[f32](VariadicList[Int](3, 4, 5))
-    assert_true(
-        arr2.shape[0] == 3,
-        "NDArray constructor with VariadicList: shape element 0",
-    )
-    assert_true(
-        arr2.shape[1] == 4,
-        "NDArray constructor with VariadicList: shape element 1",
-    )
-    assert_true(
-        arr2.shape[2] == 5,
-        "NDArray constructor with VariadicList: shape element 2",
-    )
-
     var arr3 = nm.full[f32](Shape(3, 4, 5), fill_value=Scalar[f32](10.0))
     # maybe it's better to return a scalar for arr[0, 0, 0]
     assert_equal(
@@ -37,7 +23,7 @@ def test_constructors():
     )
 
     var values: List[Int] = [3, 4, 5]
-    var arr4 = NDArray[f32](values^)
+    var arr4 = NDArray[f32](NDArrayShape(values^))
     assert_true(
         arr4.shape[0] == 3, "NDArray constructor with List: shape element 0"
     )

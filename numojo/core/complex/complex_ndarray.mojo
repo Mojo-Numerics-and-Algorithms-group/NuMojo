@@ -253,8 +253,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Notes:
             This constructor should not be used by users directly. Use factory functions in `numojo.routines.creation` module instead.
         """
-        self._re = NDArray[Self.dtype](shape, order)
-        self._im = NDArray[Self.dtype](shape, order)
+        self._re = NDArray[Self.dtype](NDArrayShape(shape), order)
+        self._im = NDArray[Self.dtype](NDArrayShape(shape), order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size
@@ -286,8 +286,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Notes:
             This constructor should not be used by users directly. Use factory functions in `numojo.routines.creation` module instead.
         """
-        self._re = NDArray[Self.dtype](shape, order)
-        self._im = NDArray[Self.dtype](shape, order)
+        self._re = NDArray[Self.dtype](NDArrayShape(shape), order)
+        self._im = NDArray[Self.dtype](NDArrayShape(shape), order)
         self.ndim = self._re.ndim
         self.shape = self._re.shape
         self.size = self._re.size

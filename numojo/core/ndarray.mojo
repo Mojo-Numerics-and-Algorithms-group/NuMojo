@@ -206,62 +206,6 @@ struct NDArray[dtype: DType = DType.float64](
         )
         self.print_options = PrintOptions()
 
-    @always_inline("nodebug")
-    fn __init__(
-        out self,
-        shape: List[Int],
-        order: String = "C",
-    ) raises:
-        """Initializes an NDArray with the given shape.
-
-        Overload that accepts `List[Int]`.
-
-        Args:
-            shape: A list of integers for the shape.
-            order: Memory order "C" or "F".
-
-        Example:
-            ```mojo
-            import numojo as nm
-            var a = nm.NDArray[nm.f32](
-                [2, 3], order="C"
-            )
-            ```
-
-        Note:
-            This constructor should not be used by users directly. Use factory
-            functions in `numojo.routines.creation` module instead.
-        """
-
-        self = Self(Shape(shape), order)
-
-    @always_inline("nodebug")
-    fn __init__(
-        out self,
-        shape: VariadicList[Int],
-        order: String = "C",
-    ) raises:
-        """Initializes an NDArray with the given shape.
-
-        Overload that accepts `VariadicList[Int]`.
-
-        Args:
-            shape: A variadic list of integers for the shape.
-            order: Memory order "C" or "F".
-
-        Example:
-            ```mojo
-            from numojo.prelude import *
-            var A = nm.NDArray[f32]([2, 3, 4])
-            ```
-
-        Note:
-            This constructor should not be used by users directly. Use factory
-            functions in `numojo.routines.creation` module instead.
-        """
-
-        self = Self(Shape(shape), order)
-
     fn __init__(
         out self,
         shape: List[Int],
@@ -761,8 +705,7 @@ struct NDArray[dtype: DType = DType.float64](
         norm_idx: Int,
         mut dst: NDArray[Self.dtype],
     ):
-        """Copies a first-axis slice using generic stride-based iteration.
-        """
+        """Copies a first-axis slice using generic stride-based iteration."""
         var out_ndim = dst.ndim
         var total = dst.size
         if total == 0:

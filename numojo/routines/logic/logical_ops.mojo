@@ -15,6 +15,7 @@ from numojo.core.error import NumojoError
 # TODO: add `where` argument support to logical operations
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
 
+
 # ===----------------------------------------------------------------------=== #
 # NDArray operations
 # ===----------------------------------------------------------------------=== #

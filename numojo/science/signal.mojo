@@ -43,7 +43,7 @@ fn convolve2d[
     ```
     """
 
-    var in2_mirrored: NDArray[dtype] = in2.copy()
+    var in2_mirrored: NDArray[dtype] = in2.deep_copy()
     var length: Int = in2.size
     for i in range(length):
         in2_mirrored._buf.ptr[i] = in2._buf.ptr[length - i - 1]

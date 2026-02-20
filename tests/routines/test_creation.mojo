@@ -246,6 +246,8 @@ def test_tril():
 
     var x_nm_km1 = nm.tril[nm.f32](nm_arr, k=-1)
     var x_np_km1 = np.tril(np_arr, k=-1)
+    print("x_nm_km1:\n", x_nm_km1)
+    print("x_np_km1:\n", x_np_km1)
     check(x_nm_km1, x_np_km1, "Tril is broken (k=-1)")
 
     # Test with higher dimensional array

@@ -245,7 +245,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A.copy()
+        var B = A.deep_copy()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] += B._buf.ptr[i]
         return B^
@@ -272,7 +272,7 @@ fn cumsum[
         Cumsum of array by axis.
     """
     # TODO: reduce copies if possible
-    var B: NDArray[dtype] = A.copy()
+    var B: NDArray[dtype] = A.deep_copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):

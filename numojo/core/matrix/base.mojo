@@ -149,6 +149,9 @@ struct Matrix[
     var strides: Tuple[Int, Int]
     """Strides of matrix."""
 
+    var offset: Int
+    """Offset of the first element in the data buffer."""
+
     var flags: Flags
     "Information about the memory layout of the array."
 
@@ -188,6 +191,7 @@ struct Matrix[
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
         self._buf = DataContainer[Self.dtype](size=self.size)
+        self.offset = 0
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -287,6 +291,7 @@ struct Matrix[
             )
 
         self._buf = DataContainer[Self.dtype](self.size)
+        self.offset = 0
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -297,12 +302,15 @@ struct Matrix[
         )
 
     # to construct views
+    # TODO: Add a own_data flag constructor so that we can use the overload to
+    # create deep copy of arrays by providing new datacontainer.
     @always_inline("nodebug")
     fn __init__(
         out self,
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
-        data: DataContainer[Self.dtype],
+        var data: DataContainer[Self.dtype],
+        offset: Int,
     ):
         """
         Initialize a non-owning `Matrix`.
@@ -315,8 +323,10 @@ struct Matrix[
             shape: A tuple representing the dimensions of the view as (rows, columns).
             strides: A tuple representing the memory strides for accessing elements in the view. Strides determine how to traverse the data buffer to access elements in the matrix.
             data: A DataContainer instance that holds the data buffer being referenced.
+            offset: An integer representing the offset in the data buffer where the first element of the view is located.
 
         Notes:
+            - The DataContainer provided must be a valid copy of the original data and not the original data itself since we take a owned reference to it.
             - This constructor is intended for internal use to create views into existing matrices! Users should not call this directly.
             - The view does not own the data and relies on the lifetime of the
               original data owner.
@@ -325,7 +335,8 @@ struct Matrix[
         self.shape = shape
         self.strides = strides
         self.size = shape[0] * shape[1]
-        self._buf = data
+        self._buf = data^
+        self.offset = offset
         self.flags = Flags(
             self.shape, self.strides, owndata=False, writeable=False
         )
@@ -354,9 +365,7 @@ struct Matrix[
         self.strides = (copy.strides[0], copy.strides[1])
         self.size = copy.size
         self._buf = copy._buf.copy()
-        memcpy(
-            dest=self._buf.ptr, src=copy._buf.ptr, count=copy.size
-        )  # TODO: I think we should remove this.
+        self.offset = copy.offset
         self.flags = Flags(
             copy.shape, copy.strides, owndata=True, writeable=True
         )
@@ -379,12 +388,12 @@ struct Matrix[
             var mat2 = mat1.deep_copy()  # Create a deep copy of mat1
             ```
         """
-        var copy_mat: Self
-        copy_mat = Self(self.shape)
-        memcpy(dest=copy_mat._buf.ptr, src=self._buf.ptr, count=self.size)
-        return copy_mat^
+        # This is corect only for owned matrices.
+        # For views, we gotta create copy by iterating over all elements.
+        var new_buf = self._buf.deep_copy()
+        return Self(self.shape, self.strides, new_buf^, offset=0)
 
-    fn view(mut self) -> Self:
+    fn view(mut self) raises -> Self:
         """
         Create a non-owning view of the current matrix.
 
@@ -404,7 +413,8 @@ struct Matrix[
         return Matrix[Self.dtype](
             shape=(self.shape[0], self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
-            data=self._buf.share_with_offset(0),
+            data=self._buf.share(),
+            offset=self.offset,
         )
 
     @always_inline("nodebug")
@@ -427,6 +437,7 @@ struct Matrix[
         self.strides = take.strides^
         self.size = take.size
         self._buf = take._buf^
+        self.offset = take.offset
         self.flags = take.flags^
 
     @always_inline("nodebug")
@@ -561,7 +572,8 @@ struct Matrix[
         return Matrix[Self.dtype](
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
-            data=self._buf.share_with_offset(offset),
+            data=self._buf.share(),
+            offset=self.offset + offset,
         )
 
     # for creating a copy of the row.
@@ -611,7 +623,7 @@ struct Matrix[
 
         return result^
 
-    fn get(mut self, x: Slice, y: Slice) -> Matrix[Self.dtype]:
+    fn get(mut self, x: Slice, y: Slice) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of the specified slice in the matrix.
 
@@ -644,7 +656,8 @@ struct Matrix[
                 Int(ceil((end_y - start_y) / step_y)),
             ),
             strides=(self.strides[0] * step_x, self.strides[1] * step_y),
-            data=self._buf.share_with_offset(offset),
+            data=self._buf.share(),
+            offset=self.offset + offset,
         )
 
     # for creating a copy of the slice.
@@ -749,7 +762,8 @@ struct Matrix[
                 1,
             ),
             strides=(self.strides[0] * step_x, self.strides[1]),
-            data=self._buf.share_with_offset(offset),
+            data=self._buf.share(),
+            offset=self.offset + offset,
         )
 
     fn __getitem__(self, x: Slice, var y: Int) -> Matrix[Self.dtype]:
@@ -846,7 +860,8 @@ struct Matrix[
                 Int(ceil((end_y - start_y) / step_y)),
             ),
             strides=(self.strides[0], self.strides[1] * step_y),
-            data=self._buf.share_with_offset(offset),
+            data=self._buf.share(),
+            offset=self.offset + offset,
         )
 
     fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
@@ -4633,7 +4648,7 @@ struct _MatrixIter[
     dtype: DType,
     is_mutable: Bool,
     forward: Bool = True,
-](ImplicitlyCopyable, Movable):
+](Copyable, Movable):
     """
     Iterator for Matrix that yields row views.
 
@@ -4699,7 +4714,7 @@ struct _MatrixIter[
         else:
             return self.index >= 0
 
-    fn __next__(mut self) -> Matrix[Self.dtype]:
+    fn __next__(mut self) raises -> Matrix[Self.dtype]:
         """Return a view of the next row.
 
         Returns:
@@ -4714,7 +4729,8 @@ struct _MatrixIter[
             return Matrix[Self.dtype](
                 shape=(1, self.shape[1]),
                 strides=(self.strides[0], self.strides[1]),
-                data=self._buf.share_with_offset(offset),
+                data=self._buf.share(),
+                offset=offset,
             )
         else:
             var current_index = self.index
@@ -4723,7 +4739,8 @@ struct _MatrixIter[
             return Matrix[Self.dtype](
                 shape=(1, self.shape[1]),
                 strides=(self.strides[0], self.strides[1]),
-                data=self._buf.share_with_offset(offset),
+                data=self._buf.share(),
+                offset=offset,
             )
 
     @always_inline

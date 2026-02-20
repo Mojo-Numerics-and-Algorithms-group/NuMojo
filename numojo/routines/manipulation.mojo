@@ -338,7 +338,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Transpose of matrix.
     """
     var order: String = "F"
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         order = "C"
 
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)

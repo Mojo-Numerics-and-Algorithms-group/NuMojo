@@ -253,7 +253,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     comptime width: Int = simd_width_of[dtype]()
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, "C")
 
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
     else:
         for i in range(A.shape[0]):
@@ -284,7 +284,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     ```
     """
     comptime width: Int = simd_width_of[dtype]()
-    var order: String = "C" if A.flags.C_CONTIGUOUS else "F"
+    var order: String = "C" if A.is_c_contiguous() else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
 
     if order == "C":
@@ -301,7 +301,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             vectorize[width](A.shape[0], copy_col)
 
     if axis == 0:
-        if A.flags.C_CONTIGUOUS:
+        if A.is_c_contiguous():
             for i in range(1, A.shape[0]):
 
                 @parameter
@@ -322,7 +322,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             return result^
 
     elif axis == 1:
-        if A.flags.C_CONTIGUOUS:
+        if A.is_c_contiguous():
             for i in range(A.shape[0]):
                 for j in range(1, A.shape[1]):
                     result[i, j] = result[i, j - 1] * result[i, j]

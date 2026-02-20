@@ -358,8 +358,7 @@ struct Matrix[
             ```mojo
             from numojo.prelude import *
             var mat1 = Matrix[f32](shape=(2, 3))
-            # ... (initialize mat1 with data) ...
-            var mat2 = mat1.copy() # Calls __copyinit__ to create a copy of mat1
+            var mat2 = mat1.copy()
             ```
         """
         self.shape = (copy.shape[0], copy.shape[1])
@@ -382,8 +381,11 @@ struct Matrix[
             Matrix: A deep copy of the current matrix.
 
         Example:
-            var mat1 = Matrix[f32](shape=(2, 3))
+            ```mojo
+            import numojo as nm
+            var mat1 = nm.Matrix[nm.f32](shape=(2, 3))
             var mat2 = mat1.deep_copy()
+            ```
         """
         # This is corect only for owned matrices.
         # For views, we gotta create copy by iterating over all elements.
@@ -406,8 +408,11 @@ struct Matrix[
             Matrix: A view of the current matrix.
 
         Example:
-            var mat = Matrix[f32](shape=(3, 4))
+            ```mojo
+            import numojo as nm
+            var mat = nm.Matrix[nm.f32](shape=(3, 4))
             var mat_view = mat.view()
+            ```
         """
         return Matrix[Self.dtype](
             data=self._buf.share(),

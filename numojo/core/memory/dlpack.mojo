@@ -24,8 +24,7 @@ Example:
 
     fn main() raises:
         # Create a NuMojo array
-        var arr = nm.NDArray[f32]([2, 3])
-        arr.fill(1.0)
+        var arr = nm.linspace[f32](0, 5, 6)
 
         # Import NumPy array back to NuMojo via DLPack
         var np = Python.import_module("numpy")
@@ -390,18 +389,25 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         shape: UnsafePointer[Int64, MutAnyOrigin],
         strides: UnsafePointer[Int64, MutAnyOrigin],
         ndim: Int,
-        data_container: DataContainer[Self.dtype],
+        var data_container: DataContainer[Self.dtype],
     ):
         self.shape = shape
         self.strides = strides
         self.ndim = ndim
-        self.data_container = data_container
+        self.data_container = data_container^
+
+    fn __copyinit__(out self, copy: Self):
+        self.shape = copy.shape
+        self.strides = copy.strides
+        self.ndim = copy.ndim
+        self.data_container = copy.data_container.copy()
 
     fn __del__(deinit self):
         if self.shape:
             self.shape.free()
         if self.strides:
             self.strides.free()
+        # TODO: note sure if we should free it explicitly, gotta check this.
         _ = self.data_container^
 
 
@@ -459,11 +465,7 @@ fn to_dlpack[
         - Do not modify the original array while the DLPack tensor is in use.
         - The returned tensor shares memory with the original array.
     """
-    var buf = arr._buf
-    try:
-        buf.enable_views()
-    except:
-        raise Error("to_dlpack: failed to enable views on data container")
+    var buf = arr._buf.copy()
 
     var shape_ptr = alloc[Int64](arr.ndim)
     for i in range(arr.ndim):
@@ -491,7 +493,7 @@ fn to_dlpack[
         shape_ptr,
         strides_ptr,
         arr.ndim,
-        buf.copy(),
+        buf^,
     )
 
     var ctx = alloc[DLPackMetadata[dtype]](1)
@@ -651,7 +653,7 @@ fn from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
     )
 
     var result = NDArray[dtype](shape, order="C")
-    result._buf = buf
+    result._buf = buf^
     result.strides = strides
 
     return result^
@@ -713,7 +715,7 @@ fn from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
     )
 
     var result = NDArray[dtype](shape, order="C")
-    result._buf = buf
+    result._buf = buf^
     result.strides = strides
 
     return result^

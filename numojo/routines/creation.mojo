@@ -2007,7 +2007,7 @@ fn tril[
     var final_offset: Int = 1
     var result: NDArray[
         dtype
-    ] = m.copy()  # * We should move this to be inplace operation perhaps.
+    ] = m.deep_copy()  # * We should move this to be inplace operation perhaps.
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
@@ -2070,7 +2070,7 @@ fn triu[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m.copy()
+    var result: NDArray[dtype] = m.deep_copy()
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):

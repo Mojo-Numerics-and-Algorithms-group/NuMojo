@@ -7,7 +7,9 @@
 # ===----------------------------------------------------------------------=== #
 """DataContainer (numojo.core.memory.data_container)
 
-DataContainer is a reference-counted data container for NDArray and Matrix.
+A reference-counted container for contiguous data buffers, used for NDArray and Matrix.
+
+DataContainer manages memory ownership and reference counting for shared or external data.
 """
 from memory import UnsafePointer
 from os.atomic import Atomic, Consistency, fence
@@ -15,71 +17,60 @@ from os.atomic import Atomic, Consistency, fence
 from memory import memcpy
 from os import abort
 
+
 struct Ownership(ImplicitlyCopyable):
     """
-    Ownership status for DataContainer. This is an enum encoded as a UInt8 for compact storage in the DataContainer struct.
+    Enum indicating whether a DataContainer owns its data or views external data.
 
-    There are two ownership states:
-        - Managed: The container manages its data and always uses reference counting for deallocation.
-        - External: The container views externally managed data and does not perform deallocation or refcounting
+    - Managed: Container owns its data and uses reference counting.
+    - External: Container views externally managed data and does not deallocate or refcount.
     """
 
-    var value: UInt8
-    """The ownership status encoded as an unsigned 8-bit integer."""
+    var value: __mlir_type.i1
+    """Ownership status as a boolean."""
 
-    comptime Managed = Ownership(0)
-    """Managed ownership means the container uses reference counting and frees data when the last reference is dropped."""
+    comptime Managed = Ownership(True._mlir_value)
+    """Container owns and manages its data."""
 
-    comptime External = Ownership(1)
-    """External ownership means the container views externally managed data and does not perform deallocation or refcounting."""
+    comptime External = Ownership(False._mlir_value)
+    """Container views externally managed data."""
 
-    fn __init__(out self, value: UInt8):
+    fn __init__(out self, value: __mlir_type.i1):
         """
-        Initialize the Ownership with the given status.
-
-        Args:
-            value: The ownership status encoded as an unsigned 8-bit integer. Should be one of the predefined constants (Managed, External).
+        Initialize Ownership with the given status.
         """
-        if value > 1:
-            abort("Ownership: Invalid Ownership value")
         self.value = value
 
-    fn __eq__(self, other: Ownership) -> Bool:
+    fn __eq__(self, other: Self) -> Bool:
         """
-        Check if two Ownership instances are equal based on their owner status.
+        Return True if both Ownership instances have the same status.
+        """
+        return ~(self != other)
 
-        Args:
-            other: Another Ownership instance to compare against.
+    fn __ne__(self, other: Self) -> Bool:
         """
-        return self.value == other.value
+        Return True if Ownership instances have different statuses.
+        """
+        return self ^ other
 
-    fn __neq__(self, other: Ownership) -> Bool:
+    fn __xor__(self, other: Self) -> Bool:
         """
-        Check if two Ownership instances are not equal based on their owner status.
-
-        Args:
-            other: Another Ownership instance to compare against.
+        Return True if Ownership statuses differ.
         """
-        return self.value != other.value
+        return __mlir_op.`pop.xor`(self.value, other.value)
 
     fn __str__(self) -> String:
         """
-        Return a string representation of the Ownership status.
-
-        Returns:
-            A string representing the ownership status (Managed, External).
+        Return "Managed" or "External" based on ownership status.
         """
-        if self.value == Ownership.Managed.value:
+        if self == Ownership.Managed:
             return "Managed"
         else:
             return "External"
 
     fn write_to[W: Writer](self, mut writer: W):
         """
-        Write the string representation of the Ownership status to a writer.
-
-        Args:
-            writer: A writer to which the ownership status string will be written.
+        Write the ownership status as a string to the writer.
         """
         writer.write(self.__str__())
 
@@ -88,23 +79,20 @@ struct DataContainer[dtype: DType](
     Copyable & Movable & Sized & Stringable & Writable
 ):
     """
-    A flexible, reference-counted data container.
+    Reference-counted container for a contiguous buffer of elements.
 
-    DataContainer can either manage its memory with reference counting or provide a view into externally
-    managed data. It manages a contiguous buffer of `Scalar[Self.dtype]` elements, with ownership semantics
-    controlled by the `ownership` field.
+    DataContainer can either own its memory (managed) or provide a view into external data (external).
+    Managed containers use reference counting for shared ownership. External containers do not manage or free memory.
 
-    Managed containers always allocate and use a refcount, so shared views can be created without a
-    separate enable step. External containers never allocate a refcount and never free data.
-
-    Copying a managed DataContainer increments the refcount; copying an external container preserves a
-    non-owning view. Use `deep_copy()` to create an owned copy of any container.
+    Copying a managed DataContainer with `.copy()` increments the reference count that still points to the same data.
+    Copying an external container creates another non-owning view.
+    Use `deep_copy()` to create an owned instance.
 
     Fields:
-        - ptr: Pointer to the data array.
-        - _refcount: Pointer to the atomic reference count for managed containers (null for external).
-        - ownership: Ownership status of the container (Managed, External).
-        - size: Number of elements in the data array.
+        ptr: Pointer to the data array.
+        _refcount: Pointer to the atomic reference count (null for external).
+        ownership: Ownership status (Managed or External).
+        size: Number of elements in the data array.
     """
 
     comptime origin = MutExternalOrigin
@@ -122,10 +110,13 @@ struct DataContainer[dtype: DType](
     var size: Int
     """Number of elements in the data array."""
 
+    # ===----------------------------------------------------------------------===#
+    # Constructors and Destructor
+    # ===----------------------------------------------------------------------===#
     @always_inline
     fn __init__(out self):
         """
-        Initialize an empty container with no allocation and managed ownership.
+        Create an empty, managed DataContainer.
         """
         self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
         self._refcount = alloc[Atomic[DType.uint64]](1)
@@ -136,10 +127,10 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn __init__(out self, size: Int):
         """
-        Allocate a managed buffer of `size` elements.
+        Create a managed DataContainer with a buffer of `size` elements.
 
         Args:
-            size: Number of elements to allocate.
+            size: Number of elements to allocate (must be non-negative).
         """
         if size < 0:
             abort("DataContainer: __init__() size must be non-negative")
@@ -162,15 +153,15 @@ struct DataContainer[dtype: DType](
         copy: Bool = False,
     ):
         """
-        Create a view into an existing allocation.
+        Create a DataContainer from an existing buffer.
 
-        If `copy` is True, this deep-copies into managed storage.
-        Otherwise, the container is marked as external and does not refcount.
+        If `copy` is True, the data is deep-copied into managed storage.
+        If `copy` is False, the container is external and does not manage or free the memory.
 
         Args:
-            ptr: Pointer to an existing data buffer.
-            size: Number of elements in the buffer.
-            copy: Whether to deep-copy into owned storage.
+            ptr: Pointer to an existing data buffer (must be non-null).
+            size: Number of elements in the buffer (must be non-negative).
+            copy: If True, deep-copy into owned storage.
         """
         if size < 0:
             abort("DataContainer: __init__() size must be non-negative")
@@ -191,10 +182,12 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn __copyinit__(out self, copy: Self):
         """
-        Copy constructor - increments refcount for managed containers.
+        Copy constructor.
+
+        Increments the reference count for managed containers.
 
         Args:
-            copy: The DataContainer to copy from.
+            copy: DataContainer to copy from.
         """
         self.size = copy.size
         self.ptr = copy.ptr
@@ -206,7 +199,7 @@ struct DataContainer[dtype: DType](
 
     fn deep_copy(self) -> Self:
         """
-        Create a deep copy of this DataContainer, regardless of refcounting or ownership.
+        Create a deep copy of the DataContainer.
 
         Returns:
             A new DataContainer with its own copy of the data.
@@ -221,10 +214,12 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn __moveinit__(out self, deinit take: Self):
         """
-        Move constructor - no refcount change.
+        Move constructor.
+
+        Transfers ownership without changing the reference count.
 
         Args:
-            take: The DataContainer to move from.
+            take: DataContainer to move from.
         """
         self.ptr = take.ptr
         self._refcount = take._refcount
@@ -234,7 +229,9 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn __del__(deinit self):
         """
-        Destructor - decrements refcount and frees allocation if last reference.
+        Destructor.
+
+        Decrements the reference count and frees memory if this is the last reference.
         """
         if self.ownership == Ownership.External:
             return
@@ -250,15 +247,18 @@ struct DataContainer[dtype: DType](
             self.ptr.free()
         self._refcount.free()
 
+    # ===----------------------------------------------------------------------===#
+    # Data Access Methods
+    # ===----------------------------------------------------------------------===#
     @always_inline
     fn get_ptr(
         ref self,
-    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref [self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """
-        Get the data pointer.
+        Return a reference to the data pointer.
 
         Returns:
-            A reference to the data pointer.
+            Reference to the data pointer.
         """
         return self.ptr
 
@@ -267,91 +267,85 @@ struct DataContainer[dtype: DType](
         self, offset: Int
     ) -> UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """
-        Get a pointer offset from the start.
+        Return a pointer offset by the specified number of elements.
 
         Args:
-            offset: The element offset to apply to the pointer.
+            offset: Number of elements to offset from the start.
+
+        Returns:
+            Pointer to the element at the given offset.
         """
         return self.ptr + offset
 
     @always_inline
     fn __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
         """
-        Get the element at the given index.
+        Return the element at the specified index.
 
         Args:
-            idx: The index of the element to retrieve. Supports negative indexing.
-
-        Raises:
-            Error: If the index is out of bounds.
+            idx: Index of the element to retrieve.
 
         Returns:
-            The element at the specified index.
+            The element at the given index.
 
         Notes:
-            Caller must ensure that the index is valid.
-            No bounds checking is performed in this method for performance reasons.
+            No bounds checking is performed. Caller must ensure index is valid.
         """
         return self.ptr[idx]
 
     @always_inline
     fn __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
         """
-        Set the element at the given index.
+        Set the element at the specified index to the given value.
 
         Args:
-            idx: The index of the element to set. Supports negative indexing.
-            val: The value to set at the specified index.
-
-        Raises:
-            Error: If the index is out of bounds.
+            idx: Index of the element to set.
+            val: Value to assign.
 
         Notes:
-            Caller must ensure that the index is valid.
-            No bounds checking is performed in this method for performance reasons.
+            No bounds checking is performed. Caller must ensure index is valid.
         """
         self.ptr[idx] = val
 
     @always_inline
     fn load[width: Int](self, offset: Int) -> SIMD[Self.dtype, width]:
         """
-        Load a SIMD vector from the given offset.
+        Load a SIMD vector of the specified width from the given offset.
 
         Parameters:
-            width: The width of the SIMD vector to load.
+            width: Number of elements in the SIMD vector.
 
         Args:
-            offset: The element offset from which to load the SIMD vector.
+            offset: Index of the first element to load.
 
         Returns:
-            A SIMD vector of the specified width loaded from the given offset.
+            SIMD vector of type `Self.dtype` and length `width` loaded from the specified offset.
 
         Notes:
-            Caller must ensure that the offset is valid and that there are enough elements
-            remaining in the container to load a full SIMD vector of the specified width.
-            No bounds checking is performed in this method for performance reasons.
+            No bounds checking is performed. Caller must ensure there are enough elements from `offset`.
         """
         return self.ptr.load[width=width](offset)
 
     @always_inline
     fn store[width: Int](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """
-        Store a SIMD vector at the given offset.
+        Store a SIMD vector of the specified width at the given offset.
 
         Parameters:
-            width: The width of the SIMD vector to store.
+            width: Number of elements in the SIMD vector.
 
         Args:
-            offset: The element offset at which to store the SIMD vector.
-            value: The SIMD vector to store at the specified offset.
+            offset: Index at which to store the SIMD vector.
+            value: SIMD vector to store.
 
         Notes:
-            Caller must ensure that the offset is valid and that there are enough elements
-            remaining in the container to load a full SIMD vector of the specified width.
-            No bounds checking is performed in this method for performance reasons.
+            No bounds checking is performed. Caller must ensure there are enough elements from `offset`.
         """
         self.ptr.store[width=width](offset, value)
 
+    # ===----------------------------------------------------------------------===#
+    # Trait Implementations
+    # ===----------------------------------------------------------------------===#
     @always_inline
     fn __len__(self) -> Int:
         """
@@ -362,6 +356,35 @@ struct DataContainer[dtype: DType](
         """
         return self.size
 
+
+    @always_inline
+    fn __str__(self) -> String:
+        if self.ownership == Ownership.External:
+            return "DataContainer(external, size=" + String(self.size) + ")"
+        return (
+            "DataContainer(managed, size="
+            + String(self.size)
+            + ", refcount="
+            + String(self.ref_count())
+            + ")"
+        )
+
+    @always_inline
+    fn write_to[W: Writer](self, mut writer: W):
+        if self.ownership == Ownership.External:
+            writer.write("DataContainer(external, size=")
+            writer.write(String(self.size))
+            writer.write(")")
+        else:
+            writer.write("DataContainer(managed, size=")
+            writer.write(String(self.size))
+            writer.write(", refcount=")
+            writer.write(String(self.ref_count()))
+            writer.write(")")
+
+    # ===----------------------------------------------------------------------===#
+    # Reference Counting and Sharing
+    # ===----------------------------------------------------------------------===#
     @always_inline
     fn is_refcounted(ref self) -> Bool:
         """
@@ -386,34 +409,6 @@ struct DataContainer[dtype: DType](
             return 0
         return self._refcount[].load[ordering = Consistency.MONOTONIC]()
 
-    @always_inline
-    fn __str__(self) -> String:
-        if self.ownership == Ownership.External:
-            return (
-                "DataContainer(external, size="
-                + String(self.size)
-                + ")"
-            )
-        return (
-            "DataContainer(managed, size="
-            + String(self.size)
-            + ", refcount="
-            + String(self.ref_count())
-            + ")"
-        )
-
-    @always_inline
-    fn write_to[W: Writer](self, mut writer: W):
-        if self.ownership == Ownership.External:
-            writer.write("DataContainer(external, size=")
-            writer.write(String(self.size))
-            writer.write(")")
-        else:
-            writer.write("DataContainer(managed, size=")
-            writer.write(String(self.size))
-            writer.write(", refcount=")
-            writer.write(String(self.ref_count()))
-            writer.write(")")
 
     fn share(mut self) raises -> DataContainer[Self.dtype]:
         """

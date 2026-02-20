@@ -360,8 +360,10 @@ fn format_floating_precision[
     var scaling_factor = Scalar[dtype](10**precision)
     var rounded_value = round(value * scaling_factor) / scaling_factor
 
-    var integer_part = Scalar[dtype](rounded_value)
-    var fractional_part = abs(rounded_value - integer_part)
+    # var integer_part = Scalar[dtype](rounded_value)
+    var integer_part = Int(rounded_value)
+    # var result = String(integer_part)
+    var fractional_part = abs(rounded_value - Scalar[dtype](integer_part))
 
     var result = String(integer_part)
     if Scalar[dtype](0) > rounded_value > Scalar[dtype](-1):
@@ -371,9 +373,10 @@ fn format_floating_precision[
         result += "."
         for _ in range(precision):
             fractional_part *= 10
-            var digit = Scalar[dtype](fractional_part)
+            # var digit = Scalar[dtype](fractional_part)
+            var digit = Int(fractional_part)
             result += String(digit)
-            fractional_part -= digit
+            fractional_part -= Scalar[dtype](digit)
 
     if sign and value > 0:
         result = "+" + result

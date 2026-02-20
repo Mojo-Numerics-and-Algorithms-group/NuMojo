@@ -1,5 +1,11 @@
-"""
-Linear Algebra Solver
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Solving
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Linear Algebra Solver (numojo.routines.linalg.solving)
 
 Provides:
     - Solver of `Ax = y` using LU decomposition algorithm.

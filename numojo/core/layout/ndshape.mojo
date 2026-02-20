@@ -1,11 +1,16 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: NDArrayShape type
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implements NDArrayShape type.
+"""NDArrayShape (numojo.core.layout.ndshape)
+
+Implements NDArrayShape type representing the shape of an NDArray.
+The shape is stored as a contiguous buffer of integers, with the number of dimensions (ndim) tracked separately.
+The NDArrayShape provides methods for element access, shape transformations (e.g., permute, reverse),
+and properties like size and rank.
 """
 
 from memory import memcpy, memcmp

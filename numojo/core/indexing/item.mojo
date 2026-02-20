@@ -1,13 +1,16 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Item
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
+"""Item (numojo.core.indexing.item)
+
 Implements Item type.
 
-`Item` is a series of `Int` on the heap.
+`Item` is a series of `Int` on the heap used to index into N-dimensional arrays.
+It is used for multi-dimensional indexing, such as `arr[Item(1, 2, 3)]` to access `arr[1, 2, 3]`.
 """
 
 from builtin.int import index as convert_to_int

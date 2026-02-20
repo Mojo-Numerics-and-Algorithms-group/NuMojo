@@ -1,3 +1,15 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Product routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Product routines for NuMojo (numojo.routines.math.products).
+
+Implements product and cumulative product reductions for NDArrays and Matrices.
+"""
+
 from algorithm.functional import parallelize, vectorize
 from sys import simd_width_of
 from memory import UnsafePointer, memcpy, memset_zero
@@ -173,7 +185,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A.copy()
+        var B = A.deep_copy()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] *= B._buf.ptr[i]
         return B^
@@ -199,7 +211,7 @@ fn cumprod[
         Cumprod of array by axis.
     """
     # TODO: reduce copies if possible
-    var B: NDArray[dtype] = A.copy()
+    var B: NDArray[dtype] = A.deep_copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):

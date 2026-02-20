@@ -1,11 +1,14 @@
-"""
-Interpolate Module - Implements interpolation functions
-"""
 # ===----------------------------------------------------------------------=== #
-# Interpolate Module - Implements interpolation functions
-# Last updated: 2024-06-14
+# NuMojo: Interpolate
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+"""Interpolate Module (numojo.science.interpolate)
 
+Implements interpolation functions.
+"""
 
 from numojo.core.ndarray import NDArray, NDArrayShape
 

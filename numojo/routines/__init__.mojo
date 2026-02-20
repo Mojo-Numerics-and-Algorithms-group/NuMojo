@@ -1,8 +1,13 @@
-"""
-NuMojo Routines Package (`numojo.routines`)
-==========================================
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Routines module
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Routines module (numojo.routines)
 
-This package groups NumPy-like functionality by topic (math, linalg, statistics,
+This modules groups NumPy-like functionality by topic (math, linalg, statistics,
 creation, manipulation, etc.).
 
 What this `__init__` exports:

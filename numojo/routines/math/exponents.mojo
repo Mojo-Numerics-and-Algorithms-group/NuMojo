@@ -1,7 +1,14 @@
-# ===------------------------------------------------------------------------===#
-# Exponents and logarithms
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Exponential routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Exponential routines for NuMojo (numojo.routines.math.exponents).
 
+Provides element-wise exponential and logarithmic transformations for NDArrays.
+"""
 
 import math
 from algorithm import parallelize
@@ -12,9 +19,6 @@ import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 
 comptime ln = log
-"""
-Natural Log equivalent to log.
-"""
 
 
 fn exp[

@@ -1,11 +1,11 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Creation routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
-"""
-Array creation routine.
+#  ===----------------------------------------------------------------------=== #
+"""Creation routines (numojo.routines.creation)
 
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
@@ -24,11 +24,10 @@ overload for each function. This makes maintenance easier. Example:
 - Other functions calls `zeros`, `ones`, `full`.
 
 If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
-
 """
 
 from algorithm import parallelize, vectorize
-from builtin.math import pow
+from math import pow
 from collections import Dict
 from collections.optional import Optional
 from memory import UnsafePointer, memset_zero, memset, memcpy
@@ -2008,7 +2007,7 @@ fn tril[
     var final_offset: Int = 1
     var result: NDArray[
         dtype
-    ] = m.copy()  # * We should move this to be inplace operation perhaps.
+    ] = m.deep_copy()  # * We should move this to be inplace operation perhaps.
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
@@ -2071,7 +2070,7 @@ fn triu[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m.copy()
+    var result: NDArray[dtype] = m.deep_copy()
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):

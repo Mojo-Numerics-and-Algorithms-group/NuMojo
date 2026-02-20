@@ -1,8 +1,16 @@
 # ===----------------------------------------------------------------------=== #
-# Searching
+# NuMojo: Searching routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+""""Searching routines (numojo.routines.searching)
 
-import builtin.math as builtin_math
+This module implements searching routines for finding indices of extrema (argmax and argmin) in NDArrays and Matrices.
+"""
+
+import math as builtin_math
 import math
 from algorithm import vectorize
 from sys import simd_width_of

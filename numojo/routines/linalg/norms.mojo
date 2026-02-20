@@ -1,6 +1,14 @@
 # ===----------------------------------------------------------------------=== #
-# Norms and other numbers
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Norms
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Norms and other numbers (numojo.routines.linalg.norms)
+
+This module provides functions for computing quantities related to linear algebra, such as determinants and traces.
+"""
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix

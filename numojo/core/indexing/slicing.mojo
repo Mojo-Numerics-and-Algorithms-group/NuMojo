@@ -1,10 +1,21 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Slicing
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""Slicing (numojo.core.indexing.slicing)
+
+This module defines internal data structures and utilities for handling slicing operations in NuMojo.
+"""
+
 from math import ceil
 
-# ===----------------------------------------------------------------------=== #
-# Internal Data Structures
-# ===----------------------------------------------------------------------=== #
 
-
+# ===----------------------------------------------------------------------=== #
+# Internal Data Structure: IndexTypeInfo
+# ===----------------------------------------------------------------------=== #
 struct IndexTypeInfo(ImplicitlyCopyable):
     var is_integer: Bool
     var is_slice: Bool
@@ -61,6 +72,9 @@ struct IndexTypeInfo(ImplicitlyCopyable):
         return size
 
 
+# ===----------------------------------------------------------------------=== #
+# Internal Data Structure: InternalSlice
+# ===----------------------------------------------------------------------=== #
 struct InternalSlice(ImplicitlyCopyable):
     var start: Int
     var end: Int

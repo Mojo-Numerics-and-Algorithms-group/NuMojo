@@ -1,12 +1,13 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Manipulation
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+"""Manipulation routines (numojo.routines.manipulation)
 
-"""
-Array manipulation routines.
+This module implements routines that manipulate the shape and layout of arrays, such as reshaping, transposing, broadcasting, and flipping.
 """
 
 from memory import UnsafePointer, memcpy
@@ -577,7 +578,7 @@ fn _broadcast_back_to[
 # ===----------------------------------------------------------------------=== #
 
 
-fn flip[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
+fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns flipped array and keep the shape.
 
@@ -585,12 +586,12 @@ fn flip[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
         dtype: DType.
 
     Args:
-        A: A NDArray.
+        array: A NDArray.
 
     Returns:
         Flipped array.
     """
-
+    var A = array.deep_copy()
     for i in range(A.size // 2):
         var temp = A._buf.ptr[i]
         A._buf.ptr[i] = A._buf.ptr[A.size - 1 - i]
@@ -601,7 +602,7 @@ fn flip[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
 
 fn flip[
     dtype: DType
-](var A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
+](array: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns flipped array along the given axis.
 
@@ -609,13 +610,13 @@ fn flip[
         dtype: DType.
 
     Args:
-        A: A NDArray.
+        array: A NDArray.
         axis: Axis along which to flip.
 
     Returns:
         Flipped array along the given axis.
     """
-
+    var A = array.deep_copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):

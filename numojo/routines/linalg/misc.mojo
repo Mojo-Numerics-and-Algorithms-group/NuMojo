@@ -1,13 +1,14 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Misc
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
+#  ===----------------------------------------------------------------------=== #
+"""Miscellaneous Linear Algebra Routines (numojo.routines.linalg.misc)
 
-# ===----------------------------------------------------------------------=== #
-# Miscellaneous Linear Algebra Routines
-# ===----------------------------------------------------------------------=== #
+This module provides miscellaneous linear algebra routines, such as extracting diagonals and checking for symmetry.
+"""
 
 from sys import simd_width_of
 from algorithm import parallelize, vectorize

@@ -1,15 +1,14 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Averages routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
+#  ===----------------------------------------------------------------------=== #
+"""Averages and dispersion routines for NuMojo (numojo.routines.statistics.averages).
+
+Implements mean, median, mode, variance, and standard deviation helpers for NDArrays and Matrices.
 """
-Averages and variances
-"""
-# ===----------------------------------------------------------------------=== #
-# Averages and variances
-# ===----------------------------------------------------------------------=== #
 
 from collections.optional import Optional
 import math as mt

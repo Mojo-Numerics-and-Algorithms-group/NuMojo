@@ -1,40 +1,28 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: NDArray
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
-
+# See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
+#  ===----------------------------------------------------------------------=== #
+"""NDArray (numojo.core.ndarray)
 
-# ===----------------------------------------------------------------------===#
-# SECTIONS OF THE FILE:
-# `NDArray` type
-# 1. Life cycle methods.
-# 2. Indexing and slicing (get and set dunders and relevant methods).
-# 3. Operator dunders.
-# 4. IO, trait, and iterator dunders.
-# 5. Other methods (Sorted alphabetically).
+This module implements the core `NDArray` type, which is the fundamental data structure for multi-dimensional arrays in NuMojo.
+It provides efficient storage, indexing, slicing, and basic operations on N-dimensional arrays. The `NDArray` is designed to be flexible and performant, supporting various memory layouts and data types.
 
-# Iterators of `NDArray`:
-# 1. `_NDArrayIter` type
-# 2. `_NDAxisIter` type
-# 3. `_NDIter` type
-# ===----------------------------------------------------------------------===#
+SECTIONS OF THE FILE:
+`NDArray` type
+    1. Life cycle methods.
+    2. Indexing and slicing (get and set dunders and relevant methods).
+    3. Operator dunders.
+    4. IO, trait, and iterator dunders.
+    5. Other methods (Sorted alphabetically).
 
-# ===----------------------------------------------------------------------===#
-# FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
-# 1. Description *
-# 2. Parameters *
-# 3. Args *
-# 4. Constraints *
-# 4) Returns *
-# 5) Raises *
-# 6) SEE ALSO
-# 7) NOTES
-# 8) REFERENCES
-# 9) Examples *
-# (Items marked with * are flavored in "Mojo docstring style guide")
-# ===----------------------------------------------------------------------===#
-
+Iterators of `NDArray`:
+    1. `_NDArrayIter` type
+    2. `_NDAxisIter` type
+    3. `_NDIter` type
+"""
 # ===----------------------------------------------------------------------===#
 # TODO: Return views that points to the buffer of the raw array.
 #       This requires enhancement of functionalities of traits from Mojo's side.
@@ -43,11 +31,10 @@
 #       RefData type has an extra property `indices`: getitem(i) -> A[I[i]].
 # TODO: Rename some variables or methods that should not be exposed to users.
 # TODO: Special checks for 0d array (numojo scalar).
-
 # ===----------------------------------------------------------------------===#
 
 # ===----------------------------------------------------------------------===#
-# === Stdlib ===
+# Stdlib
 # ===----------------------------------------------------------------------===#
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
@@ -61,7 +48,7 @@ from utils import Variant
 from builtin.type_aliases import EllipsisType
 
 # ===----------------------------------------------------------------------===#
-# === numojo core ===
+# numojo core
 # ===----------------------------------------------------------------------===#
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.layout.flags import Flags
@@ -83,7 +70,7 @@ from numojo.core.layout.array_methods import NewAxis
 from numojo.core.indexing.slicing import IndexTypeInfo
 
 # ===----------------------------------------------------------------------===#
-# === numojo routines (creation / io / logic) ===
+# numojo routines (creation / io / logic)
 # ===----------------------------------------------------------------------===#
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
@@ -93,7 +80,7 @@ from numojo.routines.io.formatting import (
 import numojo.routines.logic.comparison as comparison
 
 # ===----------------------------------------------------------------------===#
-# === numojo routines (math / bitwise / searching) ===
+# numojo routines (math / bitwise / searching)
 # ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
 import numojo.routines.math._array_funcs as _af
@@ -103,11 +90,10 @@ import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 
 comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
+"""IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
+"""
 
 
-# ===-----------------------------------------------------------------------===#
-# Implements the N-Dimensional Array.
-# ===-----------------------------------------------------------------------===#
 struct NDArray[dtype: DType = DType.float64](
     Absable,
     Copyable,
@@ -119,8 +105,6 @@ struct NDArray[dtype: DType = DType.float64](
     Stringable,
     Writable,
 ):
-    # TODO: NDArray[dtype: DType = DType.float64,
-    #               Buffer: Bufferable[dtype] = DataContainer[dtype]]
     """The N-dimensional array (NDArray).
 
     Parameters:
@@ -295,29 +279,49 @@ struct NDArray[dtype: DType = DType.float64](
     # View constructor using DataContainer refcounting
     fn __init__(
         out self,
-        data: DataContainer[Self.dtype],
+        var data: DataContainer[Self.dtype],
+        is_view: Bool,
         shape: NDArrayShape,
         strides: NDArrayStrides,
         offset: Int,
     ) raises:
-        """Initializes a non-owning NDArray view with shared DataContainer.
+        """
+        Initializes an NDArray as either an owning array or a non-owning view based on the provided
+        DataContainer and the `is_view` flag.
 
         Args:
-            data: The DataContainer with reference counting enabled.
-            shape: The shape of the view.
-            strides: The strides for the view.
-            offset: The offset of the first element in the data buffer for the
-                view.
+            data: Reference-counted DataContainer holding array data.
+            is_view: If True, creates a non-owning view; if False, owns the data i.e equivalent to deep copy.
+            shape: Shape of the view.
+            strides: Strides for the view.
+            offset: Offset of the first element in the data buffer.
+
+        Notes:
+            Ownership is determined by `is_view` and the DataContainer's reference count:
+            - If `is_view` is True and ref count is 1, the created NDArray will be a view and does not own the data.
+            - If `is_view` is False and ref count is 1, the NDArray owns the data. This is used to create deep copy of arrays.
         """
         self.shape = shape
         self.strides = strides
         self.offset = offset
         self.ndim = shape.ndim
         self.size = shape.size()
-        self._buf = data
-        self.flags = Flags(
-            self.shape, self.strides, owndata=False, writeable=False
-        )
+        self._buf = data^
+        # Just another check to ensure we don't assign the owndata label incorrectly.
+        if not is_view and self._buf.ref_count() == 1:
+            self.flags = Flags(
+                self.shape,
+                self.strides,
+                owndata=True,
+                writeable=False,  # should be true I guess?
+            )
+        else:
+            self.flags = Flags(
+                self.shape,
+                self.strides,
+                owndata=False,
+                writeable=False,
+            )
         self.print_options = PrintOptions()
 
     @always_inline("nodebug")
@@ -343,43 +347,47 @@ struct NDArray[dtype: DType = DType.float64](
         )
         self.print_options = copy.print_options
 
-    fn deep_copy(self) -> Self:
-        """Creates a deep copy of the array."""
-        var res = Self(
-            shape=self.shape,
-            strides=self.strides,
-            ndim=self.ndim,
-            size=self.size,
-            offset=self.offset,
-            flags=self.flags,
-        )
-        memcpy(
-            dest=res._buf.get_ptr(), src=self._buf.get_ptr(), count=self.size
-        )
-        return res^
-
-    fn view(mut self) raises -> Self:
-        """Creates a non-owning view of the current array.
-
-        Returns a new `NDArray` instance that acts as a view into the data of
-        the current array (`self`). The view does not allocate new memory and
-        directly references the existing data buffer.
+    fn deep_copy(self) raises -> Self:
+        """
+        Create a deep copy of the NDArray.
 
         Returns:
-            An `NDArray` representing a view of `self`.
+            A new NDArray instance with its own data buffer, identical to `self`.
+            Changes to the copy do not affect the original array.
 
         Example:
             ```mojo
-            from numojo.prelude import *
-            var arr = nm.NDArray[f32](
-                nm.Shape(3, 4)
-            )
-            # ... (initialize arr with data) ...
-            var v = arr.view()  # Create a view
+            import numojo as nm
+            var arr = nm.ones[nm.f32](nm.Shape(2, 3))
+            var arr_copy = arr.deep_copy()
+            ```
+        """
+        var new_buf = self._buf.deep_copy()
+        return Self(
+            data=new_buf^,
+            is_view=False,
+            shape=self.shape,
+            strides=self.strides,
+            offset=self.offset,
+        )
+
+    fn view(mut self) raises -> Self:
+        """
+        Create a non-owning view of the current NDArray.
+
+        Returns:
+            A new NDArray instance that shares the data buffer with `self` and does not allocate new memory.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            var arr = nm.NDArray[nm.f32](nm.Shape(3, 4))
+            var v = arr.view()  # Create a view into arr
             ```
         """
         return NDArray[Self.dtype](
             data=self._buf.share(),
+            is_view=True,
             shape=self.shape,
             strides=self.strides,
             offset=self.offset,
@@ -3959,17 +3967,6 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(height):
             buffer.store(i, self._buf.ptr.load[width=1](id + i * width))
         return buffer^
-
-    # fn copy(self) raises -> Self:
-    #     # TODO: Add logics for non-contiguous arrays when views are implemented.
-    #     """
-    #     Returns a copy of the array that owns the data.
-    #     The returned array will be contiguous in memory.
-
-    #     Returns:
-    #         A copy of the array.
-    #     """
-    #     return Self.__copyinit__(self)
 
     fn cumprod(self) raises -> NDArray[Self.dtype]:
         """Returns the cumulative product of all items of an array. The array is

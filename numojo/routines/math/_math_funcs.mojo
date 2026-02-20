@@ -1,11 +1,14 @@
-"""
-Implements backend functions for mathematics
-"""
 # ===----------------------------------------------------------------------=== #
-# Implements generic reusable functions for math
-# Last updated: 2024-06-16
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Math backend helpers
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Math backend helpers for NuMojo (numojo.routines.math._math_funcs).
 
+Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
+"""
 
 from testing import assert_raises
 from algorithm.functional import parallelize, vectorize

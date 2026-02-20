@@ -1,6 +1,11 @@
-"""
-NuMojo Science Package (`numojo.science`)
-========================================
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Science module
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""NuMojo Science Package (numojo.science)
 
 This package contains higher-level, domain-focused modules built on top of the
 core array/matrix types and the routines layer.

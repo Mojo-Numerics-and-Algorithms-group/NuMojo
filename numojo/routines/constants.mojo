@@ -1,10 +1,15 @@
-"""
-Constants
-"""
 # ===----------------------------------------------------------------------=== #
-# Implements Constants
-# Last updated: 2024-06-16
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Constants
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Constants (numojo.routines.constants)
+
+This module defines physical and mathematical constants for use in numerical computations.
+The constants are defined as class attributes of the `Constants` class, which is designed to be immutable and efficient for compile-time evaluation.
+"""
 
 
 struct Constants(AnyType, Copyable, Movable):

@@ -1,11 +1,15 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Traversal
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
+"""Traversal (numojo.core.indexing.traversal)
+
 Functions to traverse a multi-dimensional array.
+This module provides both recursive and iterative traversal methods,
+which can be used for various indexing and slicing operations in NuMojo.
 """
 
 from memory import UnsafePointer

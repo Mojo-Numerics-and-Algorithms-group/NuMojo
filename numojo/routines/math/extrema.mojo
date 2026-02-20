@@ -1,29 +1,19 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Extrema routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
+#  ===----------------------------------------------------------------------=== #
+"""Extrema routines for NuMojo (numojo.routines.math.extrema).
 
+Contains min/max helpers for NDArrays and Matrices, including axis-aware reductions and matrix-friendly implementations.
 """
-Extrema finding
-"""
-
-# ===-----------------------------------------------------------------------===#
-# SECTIONS:
-# 1. Find extrema in elements of a single array.
-# 2. Element-wise between elements of two arrays.
-#
-# TODO:
-# 1) Add support for axis parameter.
-# 2) Currently, constrained is crashing mojo, so commented it out and added raise Error. Check later.
-# 3) Relax constrained[] to let user get whatever output they want, but make a warning instead.
-# ===-----------------------------------------------------------------------===#
 
 from algorithm import vectorize, parallelize
 import math.math as stdlib_math
-from builtin.math import max as builtin_max
-from builtin.math import min as builtin_min
+from math import max as builtin_max
+from math import min as builtin_min
 from collections.optional import Optional
 from sys import simd_width_of
 

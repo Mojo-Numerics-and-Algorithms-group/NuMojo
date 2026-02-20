@@ -1,3 +1,14 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Files
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""File I/O (numojo.routines.io.files)
+
+This module provides functions for reading and writing arrays to and from files.
+"""
 from numojo.routines.creation import fromstring
 from collections.optional import Optional
 from python import Python, PythonObject

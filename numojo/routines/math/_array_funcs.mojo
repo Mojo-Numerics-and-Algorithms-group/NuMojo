@@ -1,7 +1,15 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: NDArray array helpers
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""NDArray array helpers for NuMojo (numojo.routines.math._array_funcs).
+
+Provides SIMD-friendly helpers to apply functions across NDArray buffers.
 """
-Implementing backend for array keeping it simple for now
-"""
-# from ..traits.NDArrayTraits import NDArrayBackend
+
 from algorithm.functional import parallelize, vectorize
 from sys.info import num_physical_cores
 from sys import simd_width_of

@@ -1,9 +1,14 @@
-"""
-Implements Hyperbolic functions for arrays.
-"""
 # ===----------------------------------------------------------------------=== #
-# Hyperbolic functions
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Hyperbolic routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Hyperbolic routines for NuMojo (numojo.routines.math.hyper).
+
+Implements hyperbolic and inverse hyperbolic trigonometric functions operating on NDArrays and Matrices.
+"""
 
 import math
 

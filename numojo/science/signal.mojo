@@ -1,5 +1,13 @@
-"""
-Implements signal processing.
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Signal processing
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""Signal processing module (`numojo.science.signal`)
+
+Implements signal processing utilities.
 
 It is like `scipy.signal` in Python.
 """
@@ -35,7 +43,7 @@ fn convolve2d[
     ```
     """
 
-    var in2_mirrored: NDArray[dtype] = in2.copy()
+    var in2_mirrored: NDArray[dtype] = in2.deep_copy()
     var length: Int = in2.size
     for i in range(length):
         in2_mirrored._buf.ptr[i] = in2._buf.ptr[length - i - 1]

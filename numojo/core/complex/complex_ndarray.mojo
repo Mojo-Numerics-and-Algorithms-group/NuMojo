@@ -1,10 +1,18 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Complex NDArray
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+""""ComplexNDArray (numojo.core.complex.complex_ndarray)
 
+Complex NDArray support for NuMojo.
+
+This module provides the `ComplexNDArray` type, which represents N-dimensional arrays
+of complex numbers. It includes lifecycle methods, indexing and slicing, operator
+overloads, IO, trait, and iterator methods, as well as other utility functions.
+"""
 # ===----------------------------------------------------------------------===#
 # SECTIONS OF THE FILE:
 
@@ -14,21 +22,6 @@
 # 3. Operator dunders.
 # 4. IO, trait, and iterator dunders.
 # 5. Other methods (Sorted alphabetically).
-# ===----------------------------------------------------------------------===#
-
-# ===----------------------------------------------------------------------===#
-# FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
-# 1. Description *
-# 2. Parameters *
-# 3. Args *
-# 4. Constraints *
-# 4) Returns *
-# 5) Raises *
-# 6) SEE ALSO
-# 7) NOTES
-# 8) REFERENCES
-# 9) Examples *
-# (Items marked with * are flavored in "Mojo docstring style guide")
 # ===----------------------------------------------------------------------===#
 
 # ===----------------------------------------------------------------------===#

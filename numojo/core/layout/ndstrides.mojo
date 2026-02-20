@@ -1,11 +1,14 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: NDArrayStrides type
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implements NDArrayStrides type.
+"""NDArrayStrides (numojo.core.layout.ndstrides)
+
+Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDArray,
+which is used to calculate the memory offset for each dimension when indexing into the array.
 """
 
 from memory import memcmp, memcpy

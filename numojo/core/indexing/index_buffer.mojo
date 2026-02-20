@@ -1,10 +1,12 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: IndexBuffer
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
+"""IndexBuffer (numojo.core.indexing.index_buffer)
+
 Shared integer buffer backend for shape/strides/item.
 
 This type owns a contiguous heap buffer of Ints and provides

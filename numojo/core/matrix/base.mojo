@@ -308,7 +308,7 @@ struct Matrix[
     fn __init__(
         out self,
         var data: DataContainer[Self.dtype],
-        is_view: Bool, # maybe make this a parameter in future.
+        is_view: Bool,  # maybe make this a parameter in future.
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
         offset: Int,

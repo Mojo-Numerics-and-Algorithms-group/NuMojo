@@ -279,29 +279,49 @@ struct NDArray[dtype: DType = DType.float64](
     # View constructor using DataContainer refcounting
     fn __init__(
         out self,
-        data: DataContainer[Self.dtype],
+        var data: DataContainer[Self.dtype],
+        is_view: Bool,
         shape: NDArrayShape,
         strides: NDArrayStrides,
         offset: Int,
     ) raises:
-        """Initializes a non-owning NDArray view with shared DataContainer.
+        """
+        Initializes an NDArray as either an owning array or a non-owning view based on the provided
+        DataContainer and the `is_view` flag.
 
         Args:
-            data: The DataContainer with reference counting enabled.
-            shape: The shape of the view.
-            strides: The strides for the view.
-            offset: The offset of the first element in the data buffer for the
-                view.
+            data: Reference-counted DataContainer holding array data.
+            is_view: If True, creates a non-owning view; if False, owns the data i.e equivalent to deep copy.
+            shape: Shape of the view.
+            strides: Strides for the view.
+            offset: Offset of the first element in the data buffer.
+
+        Notes:
+            Ownership is determined by `is_view` and the DataContainer's reference count:
+            - If `is_view` is True and ref count is 1, the created NDArray will be a view and does not own the data.
+            - If `is_view` is False and ref count is 1, the NDArray owns the data. This is used to create deep copy of arrays.
         """
         self.shape = shape
         self.strides = strides
         self.offset = offset
         self.ndim = shape.ndim
         self.size = shape.size()
-        self._buf = data
-        self.flags = Flags(
-            self.shape, self.strides, owndata=False, writeable=False
-        )
+        self._buf = data^
+        # Just another check to ensure we don't assign the owndata label incorrectly.
+        if not is_view and self._buf.ref_count() == 1:
+            self.flags = Flags(
+                self.shape,
+                self.strides,
+                owndata=True,
+                writeable=False,  # should be true I guess?
+            )
+        else:
+            self.flags = Flags(
+                self.shape,
+                self.strides,
+                owndata=False,
+                writeable=False,
+            )
         self.print_options = PrintOptions()
 
     @always_inline("nodebug")
@@ -327,43 +347,47 @@ struct NDArray[dtype: DType = DType.float64](
         )
         self.print_options = copy.print_options
 
-    fn deep_copy(self) -> Self:
-        """Creates a deep copy of the array."""
-        var res = Self(
-            shape=self.shape,
-            strides=self.strides,
-            ndim=self.ndim,
-            size=self.size,
-            offset=self.offset,
-            flags=self.flags,
-        )
-        memcpy(
-            dest=res._buf.get_ptr(), src=self._buf.get_ptr(), count=self.size
-        )
-        return res^
-
-    fn view(mut self) raises -> Self:
-        """Creates a non-owning view of the current array.
-
-        Returns a new `NDArray` instance that acts as a view into the data of
-        the current array (`self`). The view does not allocate new memory and
-        directly references the existing data buffer.
+    fn deep_copy(self) raises -> Self:
+        """
+        Create a deep copy of the NDArray.
 
         Returns:
-            An `NDArray` representing a view of `self`.
+            A new NDArray instance with its own data buffer, identical to `self`.
+            Changes to the copy do not affect the original array.
 
         Example:
             ```mojo
-            from numojo.prelude import *
-            var arr = nm.NDArray[f32](
-                nm.Shape(3, 4)
-            )
-            # ... (initialize arr with data) ...
-            var v = arr.view()  # Create a view
+            import numojo as nm
+            var arr = nm.ones[nm.f32](nm.Shape(2, 3))
+            var arr_copy = arr.deep_copy()
+            ```
+        """
+        var new_buf = self._buf.deep_copy()
+        return Self(
+            data=new_buf^,
+            is_view=False,
+            shape=self.shape,
+            strides=self.strides,
+            offset=self.offset,
+        )
+
+    fn view(mut self) raises -> Self:
+        """
+        Create a non-owning view of the current NDArray.
+
+        Returns:
+            A new NDArray instance that shares the data buffer with `self` and does not allocate new memory.
+
+        Example:
+            ```mojo
+            import numojo as nm
+            var arr = nm.NDArray[nm.f32](nm.Shape(3, 4))
+            var v = arr.view()  # Create a view into arr
             ```
         """
         return NDArray[Self.dtype](
             data=self._buf.share(),
+            is_view=True,
             shape=self.shape,
             strides=self.strides,
             offset=self.offset,
@@ -3943,17 +3967,6 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(height):
             buffer.store(i, self._buf.ptr.load[width=1](id + i * width))
         return buffer^
-
-    # fn copy(self) raises -> Self:
-    #     # TODO: Add logics for non-contiguous arrays when views are implemented.
-    #     """
-    #     Returns a copy of the array that owns the data.
-    #     The returned array will be contiguous in memory.
-
-    #     Returns:
-    #         A copy of the array.
-    #     """
-    #     return Self.__copyinit__(self)
 
     fn cumprod(self) raises -> NDArray[Self.dtype]:
         """Returns the cumulative product of all items of an array. The array is

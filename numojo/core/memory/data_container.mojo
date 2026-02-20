@@ -253,7 +253,7 @@ struct DataContainer[dtype: DType](
     @always_inline
     fn get_ptr(
         ref self,
-    ) -> ref [self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """
         Return a reference to the data pointer.
 
@@ -356,7 +356,6 @@ struct DataContainer[dtype: DType](
         """
         return self.size
 
-
     @always_inline
     fn __str__(self) -> String:
         if self.ownership == Ownership.External:
@@ -408,7 +407,6 @@ struct DataContainer[dtype: DType](
         if not self.is_refcounted():
             return 0
         return self._refcount[].load[ordering = Consistency.MONOTONIC]()
-
 
     fn share(mut self) raises -> DataContainer[Self.dtype]:
         """

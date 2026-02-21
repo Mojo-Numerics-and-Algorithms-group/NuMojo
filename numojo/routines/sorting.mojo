@@ -227,7 +227,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """
 
     if a.ndim == 1:
-        a_flattened = a.copy()
+        a_flattened = a.contiguous()
     else:
         a_flattened = ravel(a)
 
@@ -354,7 +354,7 @@ fn argsort[
 
 
 fn binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
-    var result: NDArray[dtype] = a.copy()
+    var result: NDArray[dtype] = a.contiguous()
     for end in range(result.size, 1, -1):
         for i in range(1, end):
             if result._buf.ptr[i - 1] > result._buf.ptr[i]:
@@ -434,7 +434,7 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
         The sorted NDArray.
     """
     # * We can make it into a in place operation to avoid copy.
-    var result: NDArray[dtype] = ndarray.copy()
+    var result: NDArray[dtype] = ndarray.contiguous()
     var length: Int = ndarray.size
 
     for i in range(length):
@@ -469,7 +469,7 @@ fn quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     # * copies are temporary solution for now.
     var result: NDArray[dtype]
     if a.ndim == 1:
-        result = a.copy()
+        result = a.contiguous()
     else:
         result = ravel(a)
 
@@ -494,7 +494,7 @@ fn quick_sort_stable_1d[
     """
     var result: NDArray[dtype]
     if a.ndim == 1:
-        result = a.copy()
+        result = a.contiguous()
     else:
         result = ravel(a)
 
@@ -565,7 +565,7 @@ fn argsort_quick_sort_1d[
         Indices that would sort an array.
     """
 
-    var result: NDArray[dtype] = a.copy()
+    var result: NDArray[dtype] = a.contiguous()
     var indices = arange[DType.int](Scalar[DType.int](result.size))
     _quick_sort_inplace(result, indices)
     return indices^

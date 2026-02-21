@@ -22,7 +22,7 @@ from numojo.core.indexing import (
 from numojo.routines.creation import zeros
 
 
-fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
+fn sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Returns sum of all items in the array.
 
@@ -44,6 +44,8 @@ fn sum[dtype: DType](A: NDArray[dtype]) -> Scalar[dtype]:
         Scalar.
     """
 
+    if not A.is_c_contiguous():
+        return sum(A.contiguous())
     comptime width: Int = simd_width_of[dtype]()
     var result: Scalar[dtype] = Scalar[dtype](0)
 
@@ -137,6 +139,8 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     print(mat.sum(A))
     ```
     """
+    if not A.is_c_contiguous():
+        return sum(A.contiguous())
     var res = Scalar[dtype](0)
     comptime width: Int = simd_width_of[dtype]()
 
@@ -245,7 +249,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A.deep_copy()
+        var B = A.contiguous()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] += B._buf.ptr[i]
         return B^
@@ -272,7 +276,7 @@ fn cumsum[
         Cumsum of array by axis.
     """
     # TODO: reduce copies if possible
-    var B: NDArray[dtype] = A.deep_copy()
+    var B: NDArray[dtype] = A.contiguous()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
@@ -313,6 +317,8 @@ fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     print(mat.cumsum(A))
     ```
     """
+    if not A.is_c_contiguous():
+        return cumsum(A.contiguous())
     var reorder = False
     var order = "C" if A.is_c_contiguous() else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)

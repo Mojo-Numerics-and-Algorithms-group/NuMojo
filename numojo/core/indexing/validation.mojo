@@ -1,11 +1,13 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Validation module
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Validation module for indexing.
+"""Validation (numojo.core.indexing.validation)
+
+Contains utilities for validating indices, shapes, and axes for various indexing and reduction operations.
 """
 
 from numojo.core.error import NumojoError

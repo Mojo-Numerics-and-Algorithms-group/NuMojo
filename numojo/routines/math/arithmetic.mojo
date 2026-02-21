@@ -1,10 +1,14 @@
-"""
-Implements arithmetic operations functions
-"""
 # ===----------------------------------------------------------------------=== #
-# Arithmetic operations functions
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Arithmetic routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Arithmetic routines for NuMojo (numojo.routines.math.arithmetic).
 
+Implements addition, subtraction, multiplication, division, floor division, fused multiply-add, and remainder helpers for NDArrays.
+"""
 
 from algorithm import parallelize, Static2DTileUnitFunc as Tile2DFunc
 import math

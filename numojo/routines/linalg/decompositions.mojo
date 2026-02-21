@@ -1,6 +1,14 @@
 # ===----------------------------------------------------------------------=== #
-# Decompositions
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Decompositions
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Decompositions (numojo.routines.linalg.decompositions)
+
+This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
+"""
 from sys import simd_width_of
 from algorithm import parallelize, vectorize
 from memory import UnsafePointer, memcpy, memset_zero
@@ -388,7 +396,7 @@ fn qr[
 
     var R: Matrix[dtype]
 
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         reorder = True
 
     if reorder:
@@ -472,7 +480,7 @@ fn eig[
         raise Error("Matrix is not symmetric.")
 
     var T: Matrix[dtype]
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         T = A.reorder_layout()
     else:
         T = A.copy()
@@ -509,7 +517,7 @@ fn eig[
     for i in range(n):
         D._store(i, i, T._load(i, i))
 
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         Q_total = Q_total.reorder_layout()
 
     return Q_total^, D^

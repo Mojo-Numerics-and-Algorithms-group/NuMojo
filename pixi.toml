@@ -1,25 +1,25 @@
 [workspace]
-channels = [
-    "https://conda.modular.com/max-nightly/",
-    "conda-forge",
-    "https://conda.modular.com/max",
-    "https://repo.prefix.dev/modular-community",
+authors = [
+  "Shivasankar <shivasankar.ka@gmail.com>",
+  "MadAlex1997 <>",
+  "Yuhao Zhu (朱宇浩) <dr.yuhao.zhu@outlook.com>",
+  "mmenendezg <>",
+  "sandstromviktor <>",
+  "durnwalder <>",
 ]
+channels = [
+  "https://conda.modular.com/max-nightly/",
+  "conda-forge",
+  "https://conda.modular.com/max",
+  "https://repo.prefix.dev/modular-community",
+]
+description = "NuMojo is a library for numerical computing written in Mojo 🔥"
+license = "Apache-2.0"
+name = "NuMojo"
 platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
-name = "NuMojo"
-version = "0.8.0"
-description = "NuMojo is a library for numerical computing written in Mojo 🔥"
-authors = [
-    "Shivasankar <shivasankar.ka@gmail.com>",
-    "MadAlex1997 <>",
-    "Yuhao Zhu (朱宇浩) <dr.yuhao.zhu@outlook.com>",
-    "mmenendezg <>",
-    "sandstromviktor <>",
-    "durnwalder <>",
-]
-license = "Apache-2.0"
 readme = "README.MD"
+version = "0.8.0"
 
 [package]
 name = "numojo"
@@ -27,76 +27,42 @@ version = "0.8.0"
 
 [package.build]
 backend = {name = "pixi-build-mojo", version = "0.*", channels = [
-    "https://prefix.dev/pixi-build-backends",
-    "https://prefix.dev/conda-forge",
+  "https://prefix.dev/pixi-build-backends",
+  "https://prefix.dev/conda-forge",
 ]}
 
 [package.build.config.pkg]
 name = "numojo"
 
 [package.host-dependencies]
-modular = ">=26.1.0.dev2026012405,<27"
+modular = ">=26.2.0.dev2026021805,<27"
 
 [package.build-dependencies]
-modular = ">=26.1.0.dev2026012405,<27"
+modular = ">=26.2.0.dev2026021805,<27"
 
 [package.run-dependencies]
-modular = ">=26.1.0.dev2026012405,<27"
+modular = ">=26.2.0.dev2026021805,<27"
 
 [tasks]
 # compile the package and copy it to the tests folder
-package = "pixi run mojo package numojo && cp numojo.mojopkg tests/"
 p = "clear && pixi run package"
+package = "pixi run mojo package numojo && cp numojo.mojopkg tests/"
 
 # format the package
 format = "pixi run mojo format ./numojo/ && pixi run mojo format ./tests/"
 
 # to run individual test files
-run-test = { cmd = "pixi run mojo run -I tests/ $TEST_FILE", env = { TEST_FILE = "" } }
+run-test = {cmd = "pixi run mojo run -I tests/ $TEST_FILE", env = {TEST_FILE = ""}}
 
-# Test core category
-test_core = """
-pixi run package && \
-pixi run mojo run -I tests/ tests/core/test_array_indexing_and_slicing.mojo && \
-pixi run mojo run -I tests/ tests/core/test_array_methods.mojo && \
-pixi run mojo run -I tests/ tests/core/test_bool_masks.mojo && \
-pixi run mojo run -I tests/ tests/core/test_complexArray.mojo && \
-pixi run mojo run -I tests/ tests/core/test_complexSIMD.mojo && \
-pixi run mojo run -I tests/ tests/core/test_matrix.mojo && \
-pixi run mojo run -I tests/ -D F_CONTIGUOUS tests/core/test_matrix.mojo && \
-pixi run mojo run -I tests/ tests/core/test_shape_strides_item.mojo && \
-rm tests/numojo.mojopkg
-"""
-
-# Test routines category
-test_routines = """
-pixi run package && \
-pixi run mojo run -I tests/ tests/routines/test_creation.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_functional.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_indexing.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_io.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_linalg.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_manipulation.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_math.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_random.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_statistics.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_sorting.mojo && \
-pixi run mojo run -I tests/ tests/routines/test_searching.mojo && \
-rm tests/numojo.mojopkg
-"""
-
-# Test science category
-test_signal = "pixi run package && pixi run mojo run -I tests/ tests/science/test_signal.mojo && rm tests/numojo.mojopkg"
-
-test = """
-pixi run test_core && \
-pixi run test_routines && \
-pixi run test_signal
-"""
+# Test by category (using shell scripts that auto-discover test files)
+test = "pixi run package && bash tests/test_all.sh"
+test_core = "pixi run package && bash tests/test_core.sh"
+test_routines = "pixi run package && bash tests/test_routines.sh"
+test_science = "pixi run package && bash tests/test_science.sh"
 
 # run all final checks before a commit
-final = "pixi run format && pixi run test"
 f = "clear && pixi run final"
+final = "pixi run format && pixi run test"
 
 # Automatically Generate doc pages
 doc_pages = "mojo doc numojo/ -o docs.json"
@@ -105,7 +71,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
-python = ">=3.14.2,<3.15"
-numpy = ">=2.4.1,<3"
+modular = ">=26.2.0.dev2026021805,<27"
+numpy = ">=2.4.2,<3"
+python = ">=3.14.3,<3.15"
 scipy = ">=1.17.0,<2"
-modular = ">=26.2.0.dev2026012705,<27"

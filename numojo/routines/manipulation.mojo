@@ -1,12 +1,13 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Manipulation
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+"""Manipulation routines (numojo.routines.manipulation)
 
-"""
-Array manipulation routines.
+This module implements routines that manipulate the shape and layout of arrays, such as reshaping, transposing, broadcasting, and flipping.
 """
 
 from memory import UnsafePointer, memcpy
@@ -152,7 +153,7 @@ fn reshape[
     if A.size != shape.size():
         raise Error("Cannot reshape: Number of elements do not match.")
 
-    var array_order: String = String("C") if A.flags.C_CONTIGUOUS else String(
+    var array_order: String = String("C") if A.is_c_contiguous() else String(
         "F"
     )
 
@@ -231,7 +232,7 @@ fn _set_values_according_to_shape_and_strides(
             previous_sum + index_of_axis * new_strides[current_dim]
         )
         if current_dim >= new_shape.ndim - 1:
-            I._buf.ptr[index] = current_sum
+            I._buf.ptr[index] = Scalar[DType.int](current_sum)
             index = index + 1
         else:
             _set_values_according_to_shape_and_strides(
@@ -292,7 +293,7 @@ fn transpose[
     for i in range(A.ndim):
         new_strides._buf[i] = A.strides[axes[i]]
 
-    var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
+    var array_order: String = "C" if A.is_c_contiguous() else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
     TraverseMethods.traverse_buffer_according_to_shape_and_strides(
@@ -315,7 +316,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         return A.copy()
     if A.ndim == 2:
-        var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
+        var array_order = "C" if A.is_c_contiguous() else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
             memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
@@ -337,7 +338,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Transpose of matrix.
     """
     var order: String = "F"
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         order = "C"
 
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)
@@ -577,7 +578,7 @@ fn _broadcast_back_to[
 # ===----------------------------------------------------------------------=== #
 
 
-fn flip[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
+fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns flipped array and keep the shape.
 
@@ -585,12 +586,12 @@ fn flip[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
         dtype: DType.
 
     Args:
-        A: A NDArray.
+        array: A NDArray.
 
     Returns:
         Flipped array.
     """
-
+    var A = array.deep_copy()
     for i in range(A.size // 2):
         var temp = A._buf.ptr[i]
         A._buf.ptr[i] = A._buf.ptr[A.size - 1 - i]
@@ -601,7 +602,7 @@ fn flip[dtype: DType](var A: NDArray[dtype]) raises -> NDArray[dtype]:
 
 fn flip[
     dtype: DType
-](var A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
+](array: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
     Returns flipped array along the given axis.
 
@@ -609,13 +610,13 @@ fn flip[
         dtype: DType.
 
     Args:
-        A: A NDArray.
+        array: A NDArray.
         axis: Axis along which to flip.
 
     Returns:
         Flipped array along the given axis.
     """
-
+    var A = array.deep_copy()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):

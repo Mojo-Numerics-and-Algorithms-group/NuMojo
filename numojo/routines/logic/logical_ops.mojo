@@ -1,11 +1,21 @@
 # ===----------------------------------------------------------------------=== #
-# Logical Operations Module
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Logical ops
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Logical Operations Module (numojo.routines.logic.logical_ops)
+
+This module implements element-wise logical operations for NDArray, ComplexNDArray, and Matrix types in the NuMojo library.
+"""
 from numojo.core.error import NumojoError
 
 
 # TODO: add `where` argument support to logical operations
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
+
+
 # ===----------------------------------------------------------------------=== #
 # NDArray operations
 # ===----------------------------------------------------------------------=== #

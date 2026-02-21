@@ -1,12 +1,14 @@
-"""
-Implements comparison math currently not using backend due to bool bitpacking issue
-"""
 # ===----------------------------------------------------------------------=== #
-# Implements comparison functions
-# Last updated: 2024-06-16
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Comparison
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Comparison routines (numojo.routines.logic.comparison)
 
-
+Implements comparison math routines for NDArrays and Matrices.
+"""
 import math
 
 import numojo.routines.math._math_funcs as _mf

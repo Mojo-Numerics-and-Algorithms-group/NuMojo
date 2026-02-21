@@ -255,11 +255,11 @@ pixi install
 **Version Compatibility:**
 
 | NuMojo Version | Required Mojo Version |
-| -------------- | -------------------- |
-| v0.8.0         | ==25.7              |
-| v0.7.0         | ==25.3              |
-| v0.6.1         | ==25.2              |
-| v0.6.0         | ==25.2              |
+| -------------- | --------------------- |
+| v0.8.0         | ==25.7                |
+| v0.7.0         | ==25.3                |
+| v0.6.1         | ==25.2                |
+| v0.6.0         | ==25.2                |
 
 ### Method 3: Build Standalone Package
 

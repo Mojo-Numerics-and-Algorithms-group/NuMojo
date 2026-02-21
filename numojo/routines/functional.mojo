@@ -1,11 +1,13 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Functional
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
-"""
-Functional programming.
+#  ===----------------------------------------------------------------------=== #
+"""Functional programming (numojo.routines.functional)
+
+This module implements functional programming utilities for NDArray operations, such as `apply_along_axis`.
 """
 
 from algorithm.functional import vectorize, parallelize
@@ -80,7 +82,7 @@ from numojo.core.ndarray import NDArray
 
 fn apply_along_axis_reduce_to_int[
     dtype: DType,
-    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
+    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
         DType.int
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
@@ -129,7 +131,7 @@ fn apply_along_axis_reduce_to_int[
 
 fn apply_along_axis_reduce[
     dtype: DType,
-    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> Scalar[
+    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
         dtype_func
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -192,7 +194,7 @@ fn apply_along_axis_reduce[
 fn apply_along_axis_reduce_with_dtype[
     dtype: DType,
     returned_dtype: DType,
-    func1d: fn[dtype_func: DType, returned_dtype_func: DType] (
+    func1d: fn[dtype_func: DType, returned_dtype_func: DType](
         NDArray[dtype_func]
     ) raises -> Scalar[returned_dtype_func],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
@@ -246,7 +248,7 @@ fn apply_along_axis_reduce_with_dtype[
 
 fn apply_along_axis_preserve[
     dtype: DType,
-    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
+    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
         dtype_func
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -271,7 +273,7 @@ fn apply_along_axis_preserve[
     # The final output array will have the same shape as the input array
     var result: NDArray[dtype] = NDArray[dtype](a.shape)
 
-    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+    if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
         fn parallelized_func_c(i: Int):
@@ -324,7 +326,7 @@ fn apply_along_axis_preserve[
 
 fn apply_along_axis_inplace[
     dtype: DType,
-    func1d: fn[dtype_func: DType] (mut NDArray[dtype_func]) raises -> None,
+    func1d: fn[dtype_func: DType](mut NDArray[dtype_func]) raises -> None,
 ](mut a: NDArray[dtype], axis: Int) raises -> None:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
@@ -342,7 +344,7 @@ fn apply_along_axis_inplace[
     # The iterator along the axis
     var iterator = a.iter_along_axis(axis=axis)
 
-    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+    if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
         fn parallelized_func_c(i: Int):
@@ -389,7 +391,7 @@ fn apply_along_axis_inplace[
 
 fn apply_along_axis_indices[
     dtype: DType,
-    func1d: fn[dtype_func: DType] (NDArray[dtype_func]) raises -> NDArray[
+    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
         DType.int
     ],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
@@ -416,7 +418,7 @@ fn apply_along_axis_indices[
     # The final output array will have the same shape as the input array
     var res = NDArray[DType.int](a.shape)
 
-    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+    if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
         fn parallelized_func_c(i: Int):

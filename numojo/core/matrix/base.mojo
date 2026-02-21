@@ -1,5 +1,11 @@
-"""
-NuMojo Matrix Module
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Matrix
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+"""Matrix (numojo.core.matrix)
 
 This file implements the core 2D matrix type for the NuMojo numerical computing library. It provides efficient, flexible, and memory-safe matrix operations for scientific and engineering applications.
 
@@ -119,7 +125,7 @@ struct Matrix[
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
-    comptime origin: MutOrigin = MutExternalOrigin
+    comptime origin = MutExternalOrigin
     """Origin of the Matrix."""
 
     comptime IteratorType[
@@ -142,6 +148,9 @@ struct Matrix[
 
     var strides: Tuple[Int, Int]
     """Strides of matrix."""
+
+    var offset: Int
+    """Offset of the first element in the data buffer."""
 
     var flags: Flags
     "Information about the memory layout of the array."
@@ -182,6 +191,7 @@ struct Matrix[
             self.strides = (1, shape[0])
         self.size = shape[0] * shape[1]
         self._buf = DataContainer[Self.dtype](size=self.size)
+        self.offset = 0
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -281,6 +291,7 @@ struct Matrix[
             )
 
         self._buf = DataContainer[Self.dtype](self.size)
+        self.offset = 0
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -291,118 +302,128 @@ struct Matrix[
         )
 
     # to construct views
+    # TODO: Add a own_data flag constructor so that we can use the overload to
+    # create deep copy of arrays by providing new datacontainer.
     @always_inline("nodebug")
     fn __init__(
         out self,
+        var data: DataContainer[Self.dtype],
+        is_view: Bool,  # maybe make this a parameter in future.
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
-        data: DataContainer[Self.dtype],
+        offset: Int,
     ):
         """
-        Initialize a non-owning `Matrix`.
-
-        This constructor creates a Matrix instance that acts as a view into an
-        existing data buffer. The view does not allocate or manage memory; it
-        references data owned by another Matrix. It is an unsafe operation and should not be called by users directly.
+        Initialize a Matrix as either an owning array or a non-owning view.
 
         Args:
-            shape: A tuple representing the dimensions of the view as (rows, columns).
-            strides: A tuple representing the memory strides for accessing elements in the view. Strides determine how to traverse the data buffer to access elements in the matrix.
-            data: A DataContainer instance that holds the data buffer being referenced.
+            data: DataContainer holding the matrix data.
+            is_view: If True, creates a non-owning view; if False, creates an owning matrix.
+            shape: Shape of the matrix as (rows, columns).
+            strides: Strides for the matrix.
+            offset: Offset of the first element in the data buffer.
 
         Notes:
-            - This constructor is intended for internal use to create views into existing matrices! Users should not call this directly.
-            - The view does not own the data and relies on the lifetime of the
-              original data owner.
-            - Modifications to the view affect the original data by default.
+            Ownership is determined by the `is_view` flag and the DataContainer's reference count.
+            - If `is_view` is True, the Matrix is a view and does not own the data.
+            - If `is_view` is False and the DataContainer's reference count is 1, the Matrix owns the data.
         """
         self.shape = shape
         self.strides = strides
         self.size = shape[0] * shape[1]
-        self._buf = data
-        self.flags = Flags(
-            self.shape, self.strides, owndata=False, writeable=False
-        )
+        self._buf = data^
+        if not is_view and self._buf.ref_count() == 1:
+            self.flags = Flags(
+                self.shape, self.strides, owndata=True, writeable=False
+            )
+        else:
+            self.flags = Flags(
+                self.shape, self.strides, owndata=False, writeable=False
+            )
+        self.offset = offset
 
     # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
     # TODO: Current copyinit creates an instance with same origin. This should be external origin. fix this so that we can use default `.copy()` method and remove `create_copy()` method.
     @always_inline("nodebug")
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
-        Initialize a new matrix by copying data from another matrix.
+        Initialize a new matrix by copying data from ancopy matrix.
 
-        This method creates a deep copy of the `other` matrix into `self`. It ensures that the copied matrix is independent of the source matrix, with its own memory allocation.
+        This method creates a deep copy of the `copy` matrix into `self`. It ensures that the copied matrix is independent of the source matrix, with its own memory allocation.
 
         Args:
-            other: The source matrix to copy from. Must be an owning matrix.
+            copy: The source matrix to copy from. Must be an owning matrix.
 
         Example:
             ```mojo
             from numojo.prelude import *
             var mat1 = Matrix[f32](shape=(2, 3))
-            # ... (initialize mat1 with data) ...
-            var mat2 = mat1.copy() # Calls __copyinit__ to create a copy of mat1
+            var mat2 = mat1.copy()
             ```
         """
-        self.shape = (other.shape[0], other.shape[1])
-        self.strides = (other.strides[0], other.strides[1])
-        self.size = other.size
-        self._buf = other._buf.copy()
-        memcpy(
-            dest=self._buf.ptr, src=other._buf.ptr, count=other.size
-        )  # TODO: I think we should remove this.
+        self.shape = (copy.shape[0], copy.shape[1])
+        self.strides = (copy.strides[0], copy.strides[1])
+        self.size = copy.size
+        self._buf = copy._buf.copy()
+        self.offset = copy.offset
         self.flags = Flags(
-            other.shape, other.strides, owndata=True, writeable=True
+            copy.shape, copy.strides, owndata=True, writeable=True
         )
 
     # NOTE: perhaps remove this?
     fn deep_copy(self) -> Self:
         """
-        Create a deep copy of the current matrix.
+        Returns a deep copy of the matrix.
 
-        This method returns a new matrix instance that is a deep copy of the current matrix (`self`). The new matrix will have its own independent copy of the data, shape, and strides.
+        The new matrix has its own independent data buffer, shape, and strides.
 
         Returns:
-            A new `Matrix` instance that is a deep copy of `self`.
+            Matrix: A deep copy of the current matrix.
 
         Example:
             ```mojo
-            from numojo.prelude import *
-            var mat1 = Matrix[f32](shape=(2, 3))
-            # ... (initialize mat1 with data) ...
-            var mat2 = mat1.deep_copy()  # Create a deep copy of mat1
+            import numojo as nm
+            var mat1 = nm.Matrix[nm.f32](shape=(2, 3))
+            var mat2 = mat1.deep_copy()
             ```
         """
-        var copy_mat: Self
-        copy_mat = Self(self.shape)
-        memcpy(dest=copy_mat._buf.ptr, src=self._buf.ptr, count=self.size)
-        return copy_mat^
+        # This is corect only for owned matrices.
+        # For views, we gotta create copy by iterating over all elements.
+        var new_buf = self._buf.deep_copy()
+        return Self(
+            data=new_buf^,
+            is_view=False,
+            shape=self.shape,
+            strides=self.strides,
+            offset=self.offset,
+        )
 
-    fn view(mut self) -> Self:
+    fn view(mut self) raises -> Self:
         """
-        Create a non-owning view of the current matrix.
+        Returns a non-owning view of the current matrix.
 
-        This method returns a new `Matrix` instance that acts as a view into the data of the current matrix (`self`). The view does not allocate new memory and directly references the existing data buffer of the matrix.
+        The view shares the underlying data buffer with the original matrix and does not allocate new memory.
 
         Returns:
-            A `Matrix` representing a view of `self`.
+            Matrix: A view of the current matrix.
 
         Example:
             ```mojo
-            from numojo.prelude import *
-            var mat = Matrix[f32](shape=(3, 4))
-            # ... (initialize mat with data) ...
-            var mat_view = mat.view()  # Create a view of mat
+            import numojo as nm
+            var mat = nm.Matrix[nm.f32](shape=(3, 4))
+            var mat_view = mat.view()
             ```
         """
         return Matrix[Self.dtype](
+            data=self._buf.share(),
+            is_view=True,
             shape=(self.shape[0], self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
-            data=self._buf.share_with_offset(0),
+            offset=self.offset,
         )
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, deinit other: Self):
+    fn __moveinit__(out self, deinit take: Self):
         """
         Transfer ownership of resources from `other` to `self`.
 
@@ -411,17 +432,18 @@ struct Matrix[
         is left in an invalid state and should not be used.
 
         Args:
-            other: The source matrix instance whose resources will be moved.
+            take: The source matrix instance whose resources will be moved.
 
         Notes:
             - This operation is efficient as it avoids copying data.
             - The `other` instance is deinitialized as part of this operation.
         """
-        self.shape = other.shape^
-        self.strides = other.strides^
-        self.size = other.size
-        self._buf = other._buf^
-        self.flags = other.flags^
+        self.shape = take.shape^
+        self.strides = take.strides^
+        self.size = take.size
+        self._buf = take._buf^
+        self.offset = take.offset
+        self.flags = take.flags^
 
     @always_inline("nodebug")
     fn __del__(deinit self):
@@ -553,9 +575,11 @@ struct Matrix[
         var x_norm = Validator.normalize(x, self.shape[0])
         var offset = x_norm * self.strides[0]
         return Matrix[Self.dtype](
+            data=self._buf.share(),
+            is_view=True,
             shape=(1, self.shape[1]),
             strides=(self.strides[0], self.strides[1]),
-            data=self._buf.share_with_offset(offset),
+            offset=self.offset + offset,
         )
 
     # for creating a copy of the row.
@@ -596,7 +620,7 @@ struct Matrix[
         var result = Matrix[Self.dtype](
             shape=(1, self.shape[1]), order=self.order()
         )
-        if self.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
             var ptr = self._buf.offset(x_norm * self.strides[0])
             memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
         else:
@@ -605,7 +629,7 @@ struct Matrix[
 
         return result^
 
-    fn get(mut self, x: Slice, y: Slice) -> Matrix[Self.dtype]:
+    fn get(mut self, x: Slice, y: Slice) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of the specified slice in the matrix.
 
@@ -633,12 +657,14 @@ struct Matrix[
 
         var offset = start_x * self.strides[0] + start_y * self.strides[1]
         return Matrix[Self.dtype](
+            data=self._buf.share(),
+            is_view=True,
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
                 Int(ceil((end_y - start_y) / step_y)),
             ),
             strides=(self.strides[0] * step_x, self.strides[1] * step_y),
-            data=self._buf.share_with_offset(offset),
+            offset=self.offset + offset,
         )
 
     # for creating a copy of the slice.
@@ -738,12 +764,14 @@ struct Matrix[
 
         var offset = start_x * self.strides[0] + y * self.strides[1]
         return Matrix[Self.dtype](
+            data=self._buf.share(),
+            is_view=True,
             shape=(
                 Int(ceil((end_x - start_x) / step_x)),
                 1,
             ),
             strides=(self.strides[0] * step_x, self.strides[1]),
-            data=self._buf.share_with_offset(offset),
+            offset=self.offset + offset,
         )
 
     fn __getitem__(self, x: Slice, var y: Int) -> Matrix[Self.dtype]:
@@ -835,12 +863,14 @@ struct Matrix[
 
         var offset = x * self.strides[0] + start_y * self.strides[1]
         return Matrix[Self.dtype](
+            data=self._buf.share(),
+            is_view=True,
             shape=(
                 1,
                 Int(ceil((end_y - start_y) / step_y)),
             ),
             strides=(self.strides[0], self.strides[1] * step_y),
-            data=self._buf.share_with_offset(offset),
+            offset=self.offset + offset,
         )
 
     fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
@@ -1111,8 +1141,8 @@ struct Matrix[
                 )
             )
 
-        if self.flags.C_CONTIGUOUS:
-            if value.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
+            if value.is_c_contiguous():
                 var dest_ptr = self._buf.offset(x * self.strides[0])
                 memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
             else:
@@ -1121,7 +1151,7 @@ struct Matrix[
 
         # For F-contiguous
         else:
-            if value.flags.F_CONTIGUOUS:
+            if value.is_f_contiguous():
                 for j in range(self.shape[1]):
                     self._buf.offset(x + j * self.strides[1]).store(
                         value._buf.ptr.load(j * value.strides[1])
@@ -1197,8 +1227,8 @@ struct Matrix[
                 )
             )
 
-        if self.flags.C_CONTIGUOUS:
-            if value.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
+            if value.is_c_contiguous():
                 var dest_ptr = self._buf.offset(x * self.strides[0])
                 memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
             else:
@@ -1207,7 +1237,7 @@ struct Matrix[
 
         # For F-contiguous
         else:
-            if value.flags.F_CONTIGUOUS:
+            if value.is_f_contiguous():
                 for j in range(self.shape[1]):
                     self._buf.offset(x + j * self.strides[1]).store(
                         value._buf.ptr.load(j * value.strides[1])
@@ -3441,9 +3471,86 @@ struct Matrix[
             ```
         """
         var order: String = "F"
-        if self.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
             order = "C"
         return order
+
+    @always_inline
+    fn is_c_contiguous(self) -> Bool:
+        """Checks if the matrix is strictly C-contiguous (dense row-major).
+
+        For a 2-D matrix this means `strides == (shape[1], 1)`.
+
+        Computed from the current strides and shape (not cached flags),
+        so the result is always up-to-date.
+
+        Returns:
+            True if the matrix is C-contiguous.
+        """
+        return self.strides[1] == 1 and self.strides[0] == self.shape[1]
+
+    @always_inline
+    fn is_f_contiguous(self) -> Bool:
+        """Checks if the matrix is strictly F-contiguous (dense column-major).
+
+        For a 2-D matrix this means `strides == (1, shape[0])`.
+
+        Computed from the current strides and shape (not cached flags).
+
+        Returns:
+            True if the matrix is F-contiguous.
+        """
+        return self.strides[0] == 1 and self.strides[1] == self.shape[0]
+
+    @always_inline
+    fn is_row_contiguous(self) -> Bool:
+        """Checks if elements within each row are contiguous.
+
+        This is a relaxation of C-contiguous: only `stride[1] == 1`.
+        Rows may have padding between them.
+
+        Returns:
+            True if stride[1] == 1.
+        """
+        return self.strides[1] == 1
+
+    @always_inline
+    fn is_col_contiguous(self) -> Bool:
+        """Checks if elements within each column are contiguous.
+
+        This is a relaxation of F-contiguous: only `stride[0] == 1`.
+        Columns may have padding between them.
+
+        Returns:
+            True if stride[0] == 1.
+        """
+        return self.strides[0] == 1
+
+    fn contiguous(self) -> Self:
+        """Returns a new C-contiguous matrix owning a copy of the data.
+
+        Always creates a new owned matrix, even if the source is already
+        C-contiguous. This ensures consistent behavior.
+
+        Returns:
+            A new owned, C-contiguous Matrix with the same data.
+        """
+        var result = Self(shape=self.shape, order="C")
+        if self.is_c_contiguous():
+            memcpy(
+                dest=result._buf.ptr,
+                src=self._buf.ptr + self.offset,
+                count=self.size,
+            )
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    result._store(
+                        i,
+                        j,
+                        self._load(i, j),
+                    )
+        return result^
 
     fn max(self) raises -> Scalar[Self.dtype]:
         """
@@ -3636,14 +3743,14 @@ struct Matrix[
             )
         var res = Matrix[Self.dtype](shape=shape, order=order)
 
-        if self.flags.C_CONTIGUOUS and order == "F":
+        if self.is_c_contiguous() and order == "F":
             for i in range(shape[0]):
                 for j in range(shape[1]):
                     var flat_idx = i * shape[1] + j
                     res._buf[
                         j * res.strides[1] + i * res.strides[0]
                     ] = self._buf[flat_idx]
-        elif self.flags.F_CONTIGUOUS and order == "C":
+        elif self.is_f_contiguous() and order == "C":
             var k = 0
             for row in range(self.shape[0]):
                 for col in range(self.shape[1]):
@@ -3686,7 +3793,7 @@ struct Matrix[
         """
         if shape[0] * shape[1] > self.size:
             var other = Matrix[Self.dtype](shape=shape, order=self.order())
-            if self.flags.C_CONTIGUOUS:
+            if self.is_c_contiguous():
                 memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
                 for i in range(self.size, other.size):
                     other._buf.ptr[i] = 0
@@ -3713,7 +3820,7 @@ struct Matrix[
             self.shape[1] = shape[1]
             self.size = shape[0] * shape[1]
 
-            if self.flags.C_CONTIGUOUS:
+            if self.is_c_contiguous():
                 self.strides[0] = shape[1]
             else:
                 self.strides[1] = shape[0]
@@ -3976,7 +4083,7 @@ struct Matrix[
         """
 
         var ndarray: NDArray[Self.dtype] = NDArray[Self.dtype](
-            shape=[self.shape[0], self.shape[1]], order=self.order()
+            shape=NDArrayShape(self.shape[0], self.shape[1]), order=self.order()
         )
         memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
 
@@ -4038,7 +4145,7 @@ struct Matrix[
             elif Self.dtype == DType.int:
                 np_dtype = np.int64
 
-            var order = "C" if self.flags.C_CONTIGUOUS else "F"
+            var order = "C" if self.is_c_contiguous() else "F"
             numpyarray = np.empty(
                 np_arr_dim, dtype=np_dtype, order=PythonObject(order)
             )
@@ -4300,7 +4407,7 @@ struct Matrix[
 
         var result = Matrix[datatype](shape=(1, num_elements), order=order)
         for i in range(num_elements):
-            result._buf.ptr[i] = start + i * step
+            result._buf.ptr[i] = start + Scalar[datatype](i) * step
 
         return result^
 
@@ -4347,10 +4454,10 @@ struct Matrix[
             )
 
         var result = Matrix[datatype](shape=(1, num), order=order)
-        var step = (stop - start) / (num - 1)
+        var step = (stop - start) / Scalar[datatype](num - 1)
 
         for i in range(num):
-            result._buf.ptr[i] = start + i * step
+            result._buf.ptr[i] = start + Scalar[datatype](i) * step
 
         return result^
 
@@ -4627,7 +4734,7 @@ struct _MatrixIter[
     dtype: DType,
     is_mutable: Bool,
     forward: Bool = True,
-](ImplicitlyCopyable, Movable):
+](Copyable, Movable):
     """
     Iterator for Matrix that yields row views.
 
@@ -4693,7 +4800,7 @@ struct _MatrixIter[
         else:
             return self.index >= 0
 
-    fn __next__(mut self) -> Matrix[Self.dtype]:
+    fn __next__(mut self) raises -> Matrix[Self.dtype]:
         """Return a view of the next row.
 
         Returns:
@@ -4706,18 +4813,22 @@ struct _MatrixIter[
             self.index += 1
             var offset = current_index * self.strides[0]
             return Matrix[Self.dtype](
+                data=self._buf.share(),
+                is_view=True,
                 shape=(1, self.shape[1]),
                 strides=(self.strides[0], self.strides[1]),
-                data=self._buf.share_with_offset(offset),
+                offset=offset,
             )
         else:
             var current_index = self.index
             self.index -= 1
             var offset = current_index * self.strides[0]
             return Matrix[Self.dtype](
+                data=self._buf.share(),
+                is_view=True,
                 shape=(1, self.shape[1]),
                 strides=(self.strides[0], self.strides[1]),
-                data=self._buf.share_with_offset(offset),
+                offset=offset,
             )
 
     @always_inline
@@ -4746,7 +4857,7 @@ struct _MatrixIter[
 # TODO: we can move the checks in these functions to the caller functions to avoid redundant checks.
 fn _arithmetic_func_matrix_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
+    simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[type, simd_width],
 ](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[dtype]:
@@ -4815,9 +4926,9 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
 
 fn _arithmetic_func_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
-        SIMD[type, simd_width]
-    ) -> SIMD[type, simd_width],
+    simd_func: fn[type: DType, simd_width: Int](SIMD[type, simd_width]) -> SIMD[
+        type, simd_width
+    ],
 ](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply a unary SIMD function element-wise to a matrix.
@@ -4850,7 +4961,7 @@ fn _arithmetic_func_matrix_to_matrix[
 
 fn _logic_func_matrix_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int] (
+    simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[DType.bool, simd_width],
 ](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[DType.bool]:

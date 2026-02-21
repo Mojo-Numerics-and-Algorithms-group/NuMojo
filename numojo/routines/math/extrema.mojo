@@ -1,29 +1,19 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Extrema routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-# ===----------------------------------------------------------------------=== #
+#  ===----------------------------------------------------------------------=== #
+"""Extrema routines for NuMojo (numojo.routines.math.extrema).
 
+Contains min/max helpers for NDArrays and Matrices, including axis-aware reductions and matrix-friendly implementations.
 """
-Extrema finding
-"""
-
-# ===-----------------------------------------------------------------------===#
-# SECTIONS:
-# 1. Find extrema in elements of a single array.
-# 2. Element-wise between elements of two arrays.
-#
-# TODO:
-# 1) Add support for axis parameter.
-# 2) Currently, constrained is crashing mojo, so commented it out and added raise Error. Check later.
-# 3) Relax constrained[] to let user get whatever output they want, but make a warning instead.
-# ===-----------------------------------------------------------------------===#
 
 from algorithm import vectorize, parallelize
 import math.math as stdlib_math
-from builtin.math import max as builtin_max
-from builtin.math import min as builtin_min
+from math import max as builtin_max
+from math import min as builtin_min
 from collections.optional import Optional
 from sys import simd_width_of
 
@@ -254,7 +244,7 @@ fn _max[
             ).format(start, end, A.size)
         )
 
-    var max_index: Scalar[DType.int] = start
+    var max_index: Int = start
 
     var rows = A.shape[0]
     var cols = A.shape[1]
@@ -262,7 +252,7 @@ fn _max[
     var start_row: Int
     var start_col: Int
 
-    if A.flags.F_CONTIGUOUS:
+    if A.is_f_contiguous():
         start_col = start // rows
         start_row = start % rows
     else:
@@ -275,7 +265,7 @@ fn _max[
         var row: Int
         var col: Int
 
-        if A.flags.F_CONTIGUOUS:
+        if A.is_f_contiguous():
             col = i // rows
             row = i % rows
         else:
@@ -288,7 +278,7 @@ fn _max[
                 max_value = current_value
                 max_index = i
 
-    return (max_value, max_index)
+    return (max_value, Scalar[DType.int](max_index))
 
 
 fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -374,7 +364,7 @@ fn _min[
             ).format(start, end, A.size)
         )
 
-    var min_index: Scalar[DType.int] = start
+    var min_index: Int = start
 
     var rows = A.shape[0]
     var cols = A.shape[1]
@@ -382,7 +372,7 @@ fn _min[
     var start_row: Int
     var start_col: Int
 
-    if A.flags.F_CONTIGUOUS:
+    if A.is_f_contiguous():
         start_col = start // rows
         start_row = start % rows
     else:
@@ -395,7 +385,7 @@ fn _min[
         var row: Int
         var col: Int
 
-        if A.flags.F_CONTIGUOUS:
+        if A.is_f_contiguous():
             col = i // rows
             row = i % rows
         else:
@@ -408,7 +398,7 @@ fn _min[
                 min_value = current_value
                 min_index = i
 
-    return (min_value, min_index)
+    return (min_value, Scalar[DType.int](min_index))
 
 
 # ===-----------------------------------------------------------------------===#

@@ -1,56 +1,53 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: A numerical computation library for Mojo.
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
 NuMojo Top-Level Package (`numojo`)
 ==================================
 
-This is the main public entry point for NuMojo.
+Central public surface for NuMojo that exposes the primary containers, dtype helpers, common errors,
+and a curated set of NumPy-inspired routines.
 
 Exports
 -------
 Core container types:
-- `Matrix` (2D array type)
-- `NDArray` (N-dimensional array type)
+- `Matrix` and `NDArray`
 - `Shape` / `NDArrayShape`, `Strides` / `NDArrayStrides`
 
 Core utilities:
-- dtype aliases (`f32`, `f64`, `i32`, `i64`, etc.) and complex dtypes
-- common error types (`IndexError`, `ShapeError`, ...)
+- dtype aliases (`f32`, `f64`, `i32`, `i64`, ...) along with their complex counterparts and SIMD helpers
+- shared error types such as `NumojoError`, `IndexError`, and `ShapeError`
 
 Routines
 --------
-For convenience, this module also re-exports a curated set of NumPy-like routines
-from `numojo.routines` (creation, manipulation, math, linalg, statistics, IO, etc.).
+Re-exports a carefully selected subset of functionality from `numojo.routines` covering creation,
+manipulation, math, logic, statistics, I/O, and related domains so users have a stable convenience import.
 
 Notes
 -----
-- This file is intended to provide a stable import surface for users.
-- Internal code should prefer importing from the canonical submodules/packages
-  (e.g. `numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`) rather
-  than relying on extensive top-level re-exports.
+- This module is intended to provide a stable import surface for users.
+- Internal code should prefer importing directly from the canonical submodules/packages
+  (`numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`, etc.) rather than relying on
+  extensive top-level re-exports.
+- Public APIs in this module adhere to the Mojo docstring style guide to keep documentation precise
+  and predictable for users.
 
-This is the main public entry point for NuMojo.
-
-Exports
--------
-Core container types:
-- `Matrix` (2D array type)
-- `NDArray` (N-dimensional array type)
-- `Shape` / `NDArrayShape`, `Strides` / `NDArrayStrides`
-
-Core utilities:
-- dtype aliases (`f32`, `f64`, `i32`, `i64`, etc.) and complex dtypes
-- common error types (`IndexError`, `ShapeError`, ...)
-
-Routines
---------
-For convenience, this module also re-exports a curated set of NumPy-like routines
-from `numojo.routines` (creation, manipulation, math, linalg, statistics, IO, etc.).
-
-Notes
------
-- This file is intended to provide a stable import surface for users.
-- Internal code should prefer importing from the canonical submodules/packages
-  (e.g. `numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`) rather
-  than relying on extensive top-level re-exports.
+FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
+1. Description *
+2. Parameters *
+3. Args *
+4. Constraints *
+5. Returns *
+6. Raises *
+7. SEE ALSO
+8. NOTES
+9. REFERENCES
+10. Examples *
+(Items marked with * are defined by the Mojo docstring style guide.)
 """
 
 comptime __version__: String = "V0.8.0"

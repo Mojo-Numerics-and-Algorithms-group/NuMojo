@@ -1,4 +1,15 @@
-from builtin.math import pow
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Formatting
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Formatting (numojo.routines.io.formatting)
+
+This module provides functions for formatting arrays and values for printing, including options for precision, scientific notation, and complex number formatting.
+"""
+from math import pow
 import math as mt
 from utils.numerics import isnan, isinf
 
@@ -346,11 +357,13 @@ fn format_floating_precision[
             result += "0"
         return result
 
-    var scaling_factor = 10**precision
+    var scaling_factor = Scalar[dtype](10**precision)
     var rounded_value = round(value * scaling_factor) / scaling_factor
 
+    # var integer_part = Scalar[dtype](rounded_value)
     var integer_part = Int(rounded_value)
-    var fractional_part = abs(rounded_value - integer_part)
+    # var result = String(integer_part)
+    var fractional_part = abs(rounded_value - Scalar[dtype](integer_part))
 
     var result = String(integer_part)
     if Scalar[dtype](0) > rounded_value > Scalar[dtype](-1):
@@ -360,9 +373,10 @@ fn format_floating_precision[
         result += "."
         for _ in range(precision):
             fractional_part *= 10
+            # var digit = Scalar[dtype](fractional_part)
             var digit = Int(fractional_part)
             result += String(digit)
-            fractional_part -= digit
+            fractional_part -= Scalar[dtype](digit)
 
     if sign and value > 0:
         result = "+" + result

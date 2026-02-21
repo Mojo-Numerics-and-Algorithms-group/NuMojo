@@ -1,7 +1,15 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: NDArray array helpers
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""NDArray array helpers for NuMojo (numojo.routines.math._array_funcs).
+
+Provides SIMD-friendly helpers to apply functions across NDArray buffers.
 """
-Implementing backend for array keeping it simple for now
-"""
-# from ..traits.NDArrayTraits import NDArrayBackend
+
 from algorithm.functional import parallelize, vectorize
 from sys.info import num_physical_cores
 from sys import simd_width_of
@@ -11,7 +19,7 @@ from numojo.core.ndarray import NDArray
 
 fn math_func_1_array_in_one_array_out[
     dtype: DType,
-    func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w]) -> SIMD[
+    func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
         type, simd_w
     ],
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -43,7 +51,7 @@ fn math_func_1_array_in_one_array_out[
 
 fn math_func_2_array_in_one_array_out[
     dtype: DType,
-    func: fn[type: DType, simd_w: Int] (
+    func: fn[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) -> SIMD[type, simd_w],
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -88,7 +96,7 @@ fn math_func_2_array_in_one_array_out[
 
 fn math_func_one_array_one_SIMD_in_one_array_out[
     dtype: DType,
-    func: fn[type: DType, simd_w: Int] (
+    func: fn[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) -> SIMD[type, simd_w],
 ](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[dtype]:

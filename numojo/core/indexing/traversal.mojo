@@ -1,11 +1,15 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Traversal
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
+"""Traversal (numojo.core.indexing.traversal)
+
 Functions to traverse a multi-dimensional array.
+This module provides both recursive and iterative traversal methods,
+which can be used for various indexing and slicing operations in NuMojo.
 """
 
 from memory import UnsafePointer
@@ -46,7 +50,7 @@ struct TraverseMethods:
                 strides[current_dim]
             )
             if current_dim >= shape.ndim - 1:
-                ptr.init_pointee_copy(current_sum)
+                ptr.init_pointee_copy(Scalar[DType.int](current_sum))
                 ptr += 1
             else:
                 Self.traverse_buffer_according_to_shape_and_strides(

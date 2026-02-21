@@ -1,19 +1,20 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Flags
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implements Flags type.
+"""Flags (numojo.core.layout.flags)
+
+Implements Flags type to represent the memory layout information of NuMojo arrays.
 """
 
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 
 
-@register_passable
-struct Flags(ImplicitlyCopyable):
+struct Flags(ImplicitlyCopyable, RegisterPassable):
     """
     Information about the memory layout of the array.
     The Flags object can be accessed dictionary-like.
@@ -153,20 +154,20 @@ struct Flags(ImplicitlyCopyable):
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """
         Initializes the Flags object by copying the information from
-        another Flags object.
+        ancopy Flags object.
 
         Args:
-            other: The Flags object to copy information from.
+            copy: The Flags object to copy information from.
         """
 
-        self.C_CONTIGUOUS = other.C_CONTIGUOUS
-        self.F_CONTIGUOUS = other.F_CONTIGUOUS
-        self.OWNDATA = other.OWNDATA
-        self.WRITEABLE = other.WRITEABLE
-        self.FORC = other.FORC
+        self.C_CONTIGUOUS = copy.C_CONTIGUOUS
+        self.F_CONTIGUOUS = copy.F_CONTIGUOUS
+        self.OWNDATA = copy.OWNDATA
+        self.WRITEABLE = copy.WRITEABLE
+        self.FORC = copy.FORC
 
     # === ---------------------------------------------------------------- === #
     # Get and set dunder methods

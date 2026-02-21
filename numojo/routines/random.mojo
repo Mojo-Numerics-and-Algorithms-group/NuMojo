@@ -1,13 +1,12 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Random routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 
-"""
-numojo.routines.random
-----------------------
+"""Random (numojo.routines.random)
 
 Creates array of the given shape and populate it with random samples from
 a certain distribution.

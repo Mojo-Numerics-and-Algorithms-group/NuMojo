@@ -1,20 +1,19 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Utility functions
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-"""
-# ===----------------------------------------------------------------------=== #
-# SECTIONS OF THE FILE:
-#
-# 1. NDArray dtype conversions.
-# 2. Numojo.NDArray to other collections.
-# 3. Miscellaneous utility functions.
-# ===----------------------------------------------------------------------=== #
+"""Utility functions (numojo.core.indexing.utility)
 
+Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
+
+SECTIONS OF THE FILE:
+1. NDArray dtype conversions.
+2. Numojo.NDArray to other collections.
+3. Miscellaneous utility functions.
+"""
 from algorithm.functional import vectorize, parallelize
 from collections import Dict
 from memory import memcpy

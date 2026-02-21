@@ -1,3 +1,15 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Math routines submodule
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Math routines for NuMojo (numojo.routines.math).
+
+Aggregates arithmetic, trigonometric, hyperbolic, and utility routines for NDArrays and Matrices.
+"""
+
 from .arithmetic import add, sub, diff, mod, mul, div, floor_div, fma, remainder
 from .differences import gradient, trapz
 from .exponents import exp, exp2, expm1, log, ln, log2, log10, log1p

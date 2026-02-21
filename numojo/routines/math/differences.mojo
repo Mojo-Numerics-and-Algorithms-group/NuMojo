@@ -1,6 +1,14 @@
 # ===----------------------------------------------------------------------=== #
-# Differences
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Difference routines
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Difference routines for NuMojo (numojo.routines.math.differences).
+
+Implements gradient and trapezoidal integration helpers for numerical differentiation and integration tasks.
+"""
 
 import math
 from algorithm import parallelize
@@ -37,7 +45,9 @@ fn gradient[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](x.shape)
-    var space: NDArray[dtype] = arange[dtype](1, x.size + 1, step=spacing)
+    var space: NDArray[dtype] = arange[dtype](
+        1, Scalar[dtype](x.size + 1), step=spacing
+    )
     var hu: Scalar[dtype] = space.load(1)
     var hd: Scalar[dtype] = space.load(0)
     result.store(

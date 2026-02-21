@@ -1,20 +1,22 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Sorting routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-Sorting.
+"""Sorting routines (numojo.routines.sorting)
+
+This module implements sorting routines for NDArrays and Matrices, including `sort` and `argsort` functions.
+
+SECTIONS OF THIS FILE:
+1. `sort` and `argsort` functions exposed to users.
+2. Backend multiple sorting methods that can be used in `sort`.
+    - Binary sort.
+    - Bubble sort.
+    - Quick sort (instable).
 """
 # ===----------------------------------------------------------------------=== #
-# SECTIONS OF THIS FILE:
-# 1. `sort` and `argsort` functions exposed to users.
-# 2. Backend multiple sorting methods that can be used in `sort`.
-#     - Binary sort.
-#     - Bubble sort.
-#     - Quick sort (instable).
-#
 # TODO: Add more sorting algorithms.
 # ===----------------------------------------------------------------------=== #
 
@@ -229,7 +231,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     else:
         a_flattened = ravel(a)
 
-    var indices = arange[DType.int](a_flattened.size)
+    var indices = arange[DType.int](Scalar[DType.int](a_flattened.size))
 
     _quick_sort_inplace(a_flattened, indices)
 
@@ -283,7 +285,7 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.int]:
     """
     var I = Matrix[DType.int](shape=(1, A.size), order=A.order())
     for i in range(I.size):
-        I._buf.ptr[i] = i
+        I._buf.ptr[i] = Scalar[DType.int](i)
     var B: Matrix[dtype]
     if A.order() == "C":
         B = A.flatten()
@@ -311,7 +313,7 @@ fn argsort[
 
             for j in range(A.shape[1]):
                 row._store(0, j, A._load(i, j))
-                idx._store(0, j, j)
+                idx._store(0, j, Scalar[DType.int](j))
 
             _quick_sort_inplace(row, idx, 0, row.size - 1)
 
@@ -329,7 +331,7 @@ fn argsort[
 
             for i in range(A.shape[0]):
                 col._store(i, 0, A._load(i, j))
-                idx._store(i, 0, i)
+                idx._store(i, 0, Scalar[DType.int](i))
 
             _quick_sort_inplace(col, idx, 0, col.size - 1)
 
@@ -564,7 +566,7 @@ fn argsort_quick_sort_1d[
     """
 
     var result: NDArray[dtype] = a.copy()
-    var indices = arange[DType.int](result.size)
+    var indices = arange[DType.int](Scalar[DType.int](result.size))
     _quick_sort_inplace(result, indices)
     return indices^
 
@@ -903,8 +905,8 @@ fn _quick_sort_stable_inplace[
     var pivot_index = size // 2
     var pivot_value = a._buf.ptr[pivot_index]
 
-    var left = NDArray[dtype](shape=(size), order="C")
-    var right = NDArray[dtype](shape=(size), order="C")
+    var left = NDArray[dtype](shape=NDArrayShape(size), order="C")
+    var right = NDArray[dtype](shape=NDArrayShape(size), order="C")
     var left_index = 0
     var right_index = 0
 

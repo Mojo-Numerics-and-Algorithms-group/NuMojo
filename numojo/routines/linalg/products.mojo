@@ -1,10 +1,14 @@
-"""
-Matrix and vector products
-"""
 # ===----------------------------------------------------------------------=== #
-# Matrix and vector products
-# ===----------------------------------------------------------------------=== #
+# NuMojo: Products
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Matrix and vector products (numojo.routines.linalg.products)
 
+This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
+"""
 
 import math
 from algorithm import parallelize, vectorize
@@ -400,7 +404,7 @@ fn matmul[
 
     var result: Matrix[dtype]
 
-    if A.flags.C_CONTIGUOUS and B.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous() and B.is_c_contiguous():
         result = Matrix.zeros[dtype](
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
@@ -425,7 +429,7 @@ fn matmul[
                 vectorize[width](B.shape[1], dot)
 
         parallelize[calculate_resultresult](A.shape[0], A.shape[0])
-    elif A.flags.F_CONTIGUOUS and B.flags.F_CONTIGUOUS:
+    elif A.is_f_contiguous() and B.is_f_contiguous():
         result = Matrix.zeros[dtype](
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )
@@ -450,7 +454,7 @@ fn matmul[
                 vectorize[width](A.shape[0], dot_F)
 
         parallelize[calculate_FF](B.shape[1], B.shape[1])
-    elif A.flags.C_CONTIGUOUS and B.flags.F_CONTIGUOUS:
+    elif A.is_c_contiguous() and B.is_f_contiguous():
         result = Matrix.zeros[dtype](
             shape=(A.shape[0], B.shape[1]), order=B.order()
         )

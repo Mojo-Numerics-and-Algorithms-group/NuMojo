@@ -153,7 +153,7 @@ fn reshape[
     if A.size != shape.size():
         raise Error("Cannot reshape: Number of elements do not match.")
 
-    var array_order: String = String("C") if A.flags.C_CONTIGUOUS else String(
+    var array_order: String = String("C") if A.is_c_contiguous() else String(
         "F"
     )
 
@@ -293,7 +293,7 @@ fn transpose[
     for i in range(A.ndim):
         new_strides._buf[i] = A.strides[axes[i]]
 
-    var array_order: String = "C" if A.flags.C_CONTIGUOUS else "F"
+    var array_order: String = "C" if A.is_c_contiguous() else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
     var ptr = I._buf.get_ptr()
     TraverseMethods.traverse_buffer_according_to_shape_and_strides(
@@ -316,7 +316,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         return A.copy()
     if A.ndim == 2:
-        var array_order = "C" if A.flags.C_CONTIGUOUS else "F"
+        var array_order = "C" if A.is_c_contiguous() else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
             memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
@@ -338,7 +338,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Transpose of matrix.
     """
     var order: String = "F"
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         order = "C"
 
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)

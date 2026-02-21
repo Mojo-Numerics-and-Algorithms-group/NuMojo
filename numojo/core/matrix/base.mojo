@@ -620,7 +620,7 @@ struct Matrix[
         var result = Matrix[Self.dtype](
             shape=(1, self.shape[1]), order=self.order()
         )
-        if self.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
             var ptr = self._buf.offset(x_norm * self.strides[0])
             memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
         else:
@@ -1141,8 +1141,8 @@ struct Matrix[
                 )
             )
 
-        if self.flags.C_CONTIGUOUS:
-            if value.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
+            if value.is_c_contiguous():
                 var dest_ptr = self._buf.offset(x * self.strides[0])
                 memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
             else:
@@ -1151,7 +1151,7 @@ struct Matrix[
 
         # For F-contiguous
         else:
-            if value.flags.F_CONTIGUOUS:
+            if value.is_f_contiguous():
                 for j in range(self.shape[1]):
                     self._buf.offset(x + j * self.strides[1]).store(
                         value._buf.ptr.load(j * value.strides[1])
@@ -1227,8 +1227,8 @@ struct Matrix[
                 )
             )
 
-        if self.flags.C_CONTIGUOUS:
-            if value.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
+            if value.is_c_contiguous():
                 var dest_ptr = self._buf.offset(x * self.strides[0])
                 memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
             else:
@@ -1237,7 +1237,7 @@ struct Matrix[
 
         # For F-contiguous
         else:
-            if value.flags.F_CONTIGUOUS:
+            if value.is_f_contiguous():
                 for j in range(self.shape[1]):
                     self._buf.offset(x + j * self.strides[1]).store(
                         value._buf.ptr.load(j * value.strides[1])
@@ -3471,9 +3471,86 @@ struct Matrix[
             ```
         """
         var order: String = "F"
-        if self.flags.C_CONTIGUOUS:
+        if self.is_c_contiguous():
             order = "C"
         return order
+
+    @always_inline
+    fn is_c_contiguous(self) -> Bool:
+        """Checks if the matrix is strictly C-contiguous (dense row-major).
+
+        For a 2-D matrix this means `strides == (shape[1], 1)`.
+
+        Computed from the current strides and shape (not cached flags),
+        so the result is always up-to-date.
+
+        Returns:
+            True if the matrix is C-contiguous.
+        """
+        return self.strides[1] == 1 and self.strides[0] == self.shape[1]
+
+    @always_inline
+    fn is_f_contiguous(self) -> Bool:
+        """Checks if the matrix is strictly F-contiguous (dense column-major).
+
+        For a 2-D matrix this means `strides == (1, shape[0])`.
+
+        Computed from the current strides and shape (not cached flags).
+
+        Returns:
+            True if the matrix is F-contiguous.
+        """
+        return self.strides[0] == 1 and self.strides[1] == self.shape[0]
+
+    @always_inline
+    fn is_row_contiguous(self) -> Bool:
+        """Checks if elements within each row are contiguous.
+
+        This is a relaxation of C-contiguous: only `stride[1] == 1`.
+        Rows may have padding between them.
+
+        Returns:
+            True if stride[1] == 1.
+        """
+        return self.strides[1] == 1
+
+    @always_inline
+    fn is_col_contiguous(self) -> Bool:
+        """Checks if elements within each column are contiguous.
+
+        This is a relaxation of F-contiguous: only `stride[0] == 1`.
+        Columns may have padding between them.
+
+        Returns:
+            True if stride[0] == 1.
+        """
+        return self.strides[0] == 1
+
+    fn contiguous(self) -> Self:
+        """Returns a new C-contiguous matrix owning a copy of the data.
+
+        Always creates a new owned matrix, even if the source is already
+        C-contiguous. This ensures consistent behavior.
+
+        Returns:
+            A new owned, C-contiguous Matrix with the same data.
+        """
+        var result = Self(shape=self.shape, order="C")
+        if self.is_c_contiguous():
+            memcpy(
+                dest=result._buf.ptr,
+                src=self._buf.ptr + self.offset,
+                count=self.size,
+            )
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    result._store(
+                        i,
+                        j,
+                        self._load(i, j),
+                    )
+        return result^
 
     fn max(self) raises -> Scalar[Self.dtype]:
         """
@@ -3666,14 +3743,14 @@ struct Matrix[
             )
         var res = Matrix[Self.dtype](shape=shape, order=order)
 
-        if self.flags.C_CONTIGUOUS and order == "F":
+        if self.is_c_contiguous() and order == "F":
             for i in range(shape[0]):
                 for j in range(shape[1]):
                     var flat_idx = i * shape[1] + j
                     res._buf[
                         j * res.strides[1] + i * res.strides[0]
                     ] = self._buf[flat_idx]
-        elif self.flags.F_CONTIGUOUS and order == "C":
+        elif self.is_f_contiguous() and order == "C":
             var k = 0
             for row in range(self.shape[0]):
                 for col in range(self.shape[1]):
@@ -3716,7 +3793,7 @@ struct Matrix[
         """
         if shape[0] * shape[1] > self.size:
             var other = Matrix[Self.dtype](shape=shape, order=self.order())
-            if self.flags.C_CONTIGUOUS:
+            if self.is_c_contiguous():
                 memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
                 for i in range(self.size, other.size):
                     other._buf.ptr[i] = 0
@@ -3743,7 +3820,7 @@ struct Matrix[
             self.shape[1] = shape[1]
             self.size = shape[0] * shape[1]
 
-            if self.flags.C_CONTIGUOUS:
+            if self.is_c_contiguous():
                 self.strides[0] = shape[1]
             else:
                 self.strides[1] = shape[0]
@@ -4068,7 +4145,7 @@ struct Matrix[
             elif Self.dtype == DType.int:
                 np_dtype = np.int64
 
-            var order = "C" if self.flags.C_CONTIGUOUS else "F"
+            var order = "C" if self.is_c_contiguous() else "F"
             numpyarray = np.empty(
                 np_arr_dim, dtype=np_dtype, order=PythonObject(order)
             )

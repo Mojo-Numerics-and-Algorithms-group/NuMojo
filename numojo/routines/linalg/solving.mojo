@@ -133,7 +133,7 @@ fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
             String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
         )
     var order: String = "F"
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         order = "C"
 
     var I = Matrix.identity[dtype](A.shape[0], order=order)
@@ -382,7 +382,7 @@ fn solve[
     """
     Solve `AX = Y` using LUP decomposition.
     """
-    if A.flags.C_CONTIGUOUS != Y.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous() != Y.is_c_contiguous():
         raise Error("Input matrices A and Y must have the same memory layout")
 
     var U: Matrix[dtype]

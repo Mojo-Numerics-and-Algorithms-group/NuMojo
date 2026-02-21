@@ -43,7 +43,7 @@ fn `where`[
 
     """
     if not mask.is_c_contiguous():
-        return where(x, scalar, mask.contiguous())
+        return `where`(x, scalar, mask.contiguous())
 
     for i in range(x.size):
         if mask._buf.ptr[i] == True:
@@ -70,9 +70,9 @@ fn `where`[
 
     """
     if not mask.is_c_contiguous():
-        return where(x, y, mask.contiguous())
+        return `where`(x, y, mask.contiguous())
     if not y.is_c_contiguous():
-        return where(x, y.contiguous(), mask)
+        return `where`(x, y.contiguous(), mask)
 
     if x.shape != y.shape:
         raise Error("Shape mismatch error: x and y must have the same shape")

@@ -48,9 +48,9 @@ fn cbrt[
 
 fn clip[
     dtype: DType, //
-](a: NDArray[dtype], a_min: Scalar[dtype], a_max: Scalar[dtype]) -> NDArray[
-    dtype
-]:
+](
+    a: NDArray[dtype], a_min: Scalar[dtype], a_max: Scalar[dtype]
+) raises -> NDArray[dtype]:
     """
     Limit the values in an array between [a_min, a_max].
     If a_min is greater than a_max, the value is equal to a_max.
@@ -67,7 +67,7 @@ fn clip[
         An array with the clipped values.
     """
 
-    var result = a.copy()  # Deep copy of the array
+    var result = a.contiguous()  # Owned, C-contiguous copy
 
     for i in range(result.size):
         if result._buf.ptr[i] < a_min:

@@ -170,7 +170,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     if axis == 0:
         var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
 
-        if A.flags.F_CONTIGUOUS:
+        if A.is_f_contiguous():
 
             @parameter
             fn calc_columns(j: Int):
@@ -203,7 +203,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     elif axis == 1:
         var B = Matrix.zeros[dtype](shape=(A.shape[0], 1), order=A.order())
 
-        if A.flags.C_CONTIGUOUS:
+        if A.is_c_contiguous():
 
             @parameter
             fn cal_rows(i: Int):
@@ -314,11 +314,11 @@ fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     ```
     """
     var reorder = False
-    var order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var order = "C" if A.is_c_contiguous() else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
     memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
 
-    if A.flags.F_CONTIGUOUS:
+    if A.is_f_contiguous():
         reorder = True
         result = result.reorder_layout()
 
@@ -351,12 +351,12 @@ fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
 
     comptime width: Int = simd_width_of[dtype]()
-    var order = "C" if A.flags.C_CONTIGUOUS else "F"
+    var order = "C" if A.is_c_contiguous() else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
     memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
 
     if axis == 0:
-        if result.flags.C_CONTIGUOUS:
+        if result.is_c_contiguous():
             for i in range(1, A.shape[0]):
 
                 @parameter
@@ -379,7 +379,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             return result^
 
     elif axis == 1:
-        if A.flags.C_CONTIGUOUS:
+        if A.is_c_contiguous():
             for i in range(A.shape[0]):
                 for j in range(1, A.shape[1]):
                     result[i, j] = result[i, j - 1] + result[i, j]

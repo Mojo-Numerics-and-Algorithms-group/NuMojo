@@ -252,7 +252,7 @@ fn _max[
     var start_row: Int
     var start_col: Int
 
-    if A.flags.F_CONTIGUOUS:
+    if A.is_f_contiguous():
         start_col = start // rows
         start_row = start % rows
     else:
@@ -265,7 +265,7 @@ fn _max[
         var row: Int
         var col: Int
 
-        if A.flags.F_CONTIGUOUS:
+        if A.is_f_contiguous():
             col = i // rows
             row = i % rows
         else:
@@ -372,7 +372,7 @@ fn _min[
     var start_row: Int
     var start_col: Int
 
-    if A.flags.F_CONTIGUOUS:
+    if A.is_f_contiguous():
         start_col = start // rows
         start_row = start % rows
     else:
@@ -385,7 +385,7 @@ fn _min[
         var row: Int
         var col: Int
 
-        if A.flags.F_CONTIGUOUS:
+        if A.is_f_contiguous():
             col = i // rows
             row = i % rows
         else:

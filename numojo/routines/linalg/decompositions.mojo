@@ -396,7 +396,7 @@ fn qr[
 
     var R: Matrix[dtype]
 
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         reorder = True
 
     if reorder:
@@ -480,7 +480,7 @@ fn eig[
         raise Error("Matrix is not symmetric.")
 
     var T: Matrix[dtype]
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         T = A.reorder_layout()
     else:
         T = A.copy()
@@ -517,7 +517,7 @@ fn eig[
     for i in range(n):
         D._store(i, i, T._load(i, i))
 
-    if A.flags.C_CONTIGUOUS:
+    if A.is_c_contiguous():
         Q_total = Q_total.reorder_layout()
 
     return Q_total^, D^

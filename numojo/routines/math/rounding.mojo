@@ -26,6 +26,8 @@ fn round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
     # FIXME
     # The built-in `round` function is not working now.
     # It will be fixed in future.
+    if not A.is_c_contiguous():
+        return round(A.contiguous(), decimals)
     var res = Matrix.zeros[dtype](A.shape)
     for i in range(A.size):
         res._buf.ptr[i] = builtin_math.round(A._buf.ptr[i], ndigits=decimals)

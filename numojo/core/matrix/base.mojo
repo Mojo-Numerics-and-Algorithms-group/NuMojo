@@ -2200,6 +2200,8 @@ struct Matrix[
             print(A ** 2)
             ```
         """
+        if not self.is_c_contiguous():
+            return self.contiguous().__pow__(rhs)
         var result: Matrix[Self.dtype] = Matrix[Self.dtype](
             shape=self.shape, order=self.order()
         )
@@ -3319,11 +3321,12 @@ struct Matrix[
             print(B)  # Outputs a Matrix[i8] with values [[1], [2], [3]]
             ```
         """
+        var src = self.contiguous()
         var casted_matrix = Matrix[asdtype](
-            shape=(self.shape[0], self.shape[1]), order=self.order()
+            shape=(src.shape[0], src.shape[1]), order=src.order()
         )
-        for i in range(self.size):
-            casted_matrix._buf.ptr[i] = self._buf.ptr[i].cast[asdtype]()
+        for i in range(src.size):
+            casted_matrix._buf.ptr[i] = src._buf.ptr[i].cast[asdtype]()
         return casted_matrix^
 
     fn cumprod(self) raises -> Matrix[Self.dtype]:
@@ -3433,8 +3436,9 @@ struct Matrix[
             print(A.flatten())
             ```
         """
-        var res = Matrix[Self.dtype](shape=(1, self.size), order=self.order())
-        memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
+        var src = self.contiguous()
+        var res = Matrix[Self.dtype](shape=(1, src.size), order=src.order())
+        memcpy(dest=res._buf.ptr, src=src._buf.ptr, count=res.size)
         return res^
 
     fn inv(self) raises -> Matrix[Self.dtype]:
@@ -4082,10 +4086,11 @@ struct Matrix[
             ```
         """
 
+        var src = self.contiguous()
         var ndarray: NDArray[Self.dtype] = NDArray[Self.dtype](
-            shape=NDArrayShape(self.shape[0], self.shape[1]), order=self.order()
+            shape=NDArrayShape(src.shape[0], src.shape[1]), order=src.order()
         )
-        memcpy(dest=ndarray._buf.ptr, src=self._buf.ptr, count=ndarray.size)
+        memcpy(dest=ndarray._buf.ptr, src=src._buf.ptr, count=ndarray.size)
 
         return ndarray^
 
@@ -4145,14 +4150,15 @@ struct Matrix[
             elif Self.dtype == DType.int:
                 np_dtype = np.int64
 
-            var order = "C" if self.is_c_contiguous() else "F"
+            var src = self.contiguous()
+            var order = "C" if src.is_c_contiguous() else "F"
             numpyarray = np.empty(
                 np_arr_dim, dtype=np_dtype, order=PythonObject(order)
             )
             var pointer_d = numpyarray.__array_interface__[
                 PythonObject("data")
             ][0].unsafe_get_as_pointer[Self.dtype]()
-            memcpy(dest=pointer_d, src=self._buf.get_ptr(), count=self.size)
+            memcpy(dest=pointer_d, src=src._buf.get_ptr(), count=src.size)
 
             return numpyarray^
 

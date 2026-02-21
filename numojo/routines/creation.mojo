@@ -2201,7 +2201,7 @@ fn astype[
         A NDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    var array_order: String = "C" if a.flags.C_CONTIGUOUS else "F"
+    var array_order: String = "C" if a.is_c_contiguous() else "F"
     var result: NDArray[target] = NDArray[target](a.shape, order=array_order)
 
     @parameter

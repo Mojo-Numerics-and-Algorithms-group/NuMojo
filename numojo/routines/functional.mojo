@@ -273,7 +273,7 @@ fn apply_along_axis_preserve[
     # The final output array will have the same shape as the input array
     var result: NDArray[dtype] = NDArray[dtype](a.shape)
 
-    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+    if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
         fn parallelized_func_c(i: Int):
@@ -344,7 +344,7 @@ fn apply_along_axis_inplace[
     # The iterator along the axis
     var iterator = a.iter_along_axis(axis=axis)
 
-    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+    if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
         fn parallelized_func_c(i: Int):
@@ -418,7 +418,7 @@ fn apply_along_axis_indices[
     # The final output array will have the same shape as the input array
     var res = NDArray[DType.int](a.shape)
 
-    if a.flags.C_CONTIGUOUS and (axis == a.ndim - 1):
+    if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
         fn parallelized_func_c(i: Int):

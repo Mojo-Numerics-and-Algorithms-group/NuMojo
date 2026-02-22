@@ -603,7 +603,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
 
         var idx: Int = IndexMethods.get_1d_index(index, self.strides)
-        return self._buf.ptr.load[width=1](idx)
+        return self._buf.ptr.load[width=1](self.offset + idx)
 
     # Can be faster if we only return a view since we are not copying the data.
     fn __getitem__(self, idx: Int) raises -> Self:
@@ -677,7 +677,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # 1-D -> scalar (0-D array wrapper)
         if self.ndim == 1:
-            return creation._0darray[Self.dtype](self._buf.ptr[norm])
+            return creation._0darray[Self.dtype](self._buf.ptr[self.offset + norm])
 
         var out_shape = self.shape[1:]
         var alloc_order: String = "C"
@@ -690,7 +690,7 @@ struct NDArray[dtype: DType = DType.float64](
             var block = self.size // self.shape[0]
             memcpy(
                 dest=result._buf.ptr,
-                src=self._buf.ptr + norm * block,
+                src=self._buf.ptr + self.offset + norm * block,
                 count=block,
             )
             return result^
@@ -715,7 +715,7 @@ struct NDArray[dtype: DType = DType.float64](
         var coords = List[Int](capacity=out_ndim)
         for _ in range(out_ndim):
             coords.append(0)
-        var base = norm_idx * Int(src.strides.unsafe_load(0))
+        var base = src.offset + norm_idx * Int(src.strides.unsafe_load(0))
         for lin in range(total):
             var rem = lin
             for d in range(out_ndim - 1, -1, -1):
@@ -725,7 +725,7 @@ struct NDArray[dtype: DType = DType.float64](
             var off = base
             for d in range(out_ndim):
                 off += coords[d] * Int(src.strides.unsafe_load(d + 1))
-            var dst_off = 0
+            var dst_off = dst.offset
             for d in range(out_ndim):
                 dst_off += coords[d] * Int(dst.strides.unsafe_load(d))
             dst._buf.ptr[dst_off] = src._buf.ptr[off]
@@ -902,7 +902,7 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var nshape: List[Int] = List[Int]()
         var ncoefficients: List[Int] = List[Int]()
-        var noffset: Int = 0
+        var noffset: Int = self.offset
 
         for i in range(self.ndim):
             var start: Int = slices[i].start
@@ -927,7 +927,7 @@ struct NDArray[dtype: DType = DType.float64](
         var nstrides: List[Int] = self._calculate_strides(
             nshape,
         )
-        var narr: Self = Self(offset=noffset, shape=nshape, strides=nstrides)
+        var narr: Self = Self(offset=0, shape=nshape, strides=nstrides)
         var index: List[Int] = List[Int](length=ndims, fill=0)
 
         TraverseMethods.traverse_iterative[Self.dtype](
@@ -1018,7 +1018,7 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var nshape: List[Int] = List[Int]()
         var ncoefficients: List[Int] = List[Int]()
-        var noffset: Int = 0
+        var noffset: Int = self.offset
 
         for i in range(self.ndim):
             var start: Int = slices[i].start
@@ -1044,7 +1044,7 @@ struct NDArray[dtype: DType = DType.float64](
         var nstrides: List[Int] = self._calculate_strides(
             nshape,
         )
-        var narr: Self = Self(offset=noffset, shape=nshape, strides=nstrides)
+        var narr: Self = Self(offset=0, shape=nshape, strides=nstrides)
         var index: List[Int] = List[Int](length=ndims, fill=0)
 
         TraverseMethods.traverse_iterative[Self.dtype](
@@ -1387,7 +1387,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             memcpy(
                 dest=result._buf.ptr + i * size_per_item,
-                src=self._buf.ptr + Int(indices.item(i)) * size_per_item,
+                src=self._buf.ptr + self.offset + Int(indices.item(i)) * size_per_item,
                 count=size_per_item,
             )
 
@@ -1494,6 +1494,7 @@ struct NDArray[dtype: DType = DType.float64](
         # if array shape is equal to mask shape,
         # return a flattened array of the values where mask is True
         if mask.shape == self.shape:
+            var self_c = self.contiguous()
             var len_of_result = 0
 
             for i in range(mask.size):
@@ -1506,7 +1507,7 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(mask.size):
                 if mask.item(i):
                     (result._buf.ptr + offset).init_pointee_copy(
-                        self._buf.ptr[i]
+                        self_c._buf.ptr[i]
                     )
                     offset += 1
 
@@ -1516,6 +1517,7 @@ struct NDArray[dtype: DType = DType.float64](
         # if array shape is not equal to mask shape,
         # return items from the 0-th dimension of the array where mask is True
         elif mask.ndim == 1 and mask.shape[0] == self.shape[0]:
+            var self_c = self.contiguous()
             var len_of_result = 0
 
             # Count number of True
@@ -1536,7 +1538,7 @@ struct NDArray[dtype: DType = DType.float64](
                 if mask.item(i):
                     memcpy(
                         dest=result._buf.ptr + offset * size_per_item,
-                        src=self._buf.ptr + i * size_per_item,
+                        src=self_c._buf.ptr + i * size_per_item,
                         count=size_per_item,
                     )
                     offset += 1
@@ -1789,8 +1791,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The SIMD element at the index.
         """
-        return self._buf.ptr.load[width=width](index)
-
+        return self._buf.ptr.load[width=width](self.offset + index)
     fn load(self, var index: Int) raises -> Scalar[Self.dtype]:
         """Safely retrieves the i-th item from the underlying buffer.
 
@@ -1835,7 +1836,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        return self._buf.ptr[index]
+        return self._buf.ptr[self.offset + index]
 
     fn load[
         width: Int = 1
@@ -1873,7 +1874,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        return self._buf.ptr.load[width=width](index)
+        return self._buf.ptr.load[width=width](self.offset + index)
 
     fn load[
         width: Int = 1
@@ -1942,7 +1943,7 @@ struct NDArray[dtype: DType = DType.float64](
         # indices_list already built above
 
         var idx: Int = IndexMethods.get_1d_index(indices_list, self.strides)
-        return self._buf.ptr.load[width=width](idx)
+        return self._buf.ptr.load[width=width](self.offset + idx)
 
     # ===-------------------------------------------------------------------===#
     # Setter dunders and other setter methods
@@ -1993,7 +1994,7 @@ struct NDArray[dtype: DType = DType.float64](
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
-        self._buf.ptr[index_of_buffer] = val
+        self._buf.ptr[self.offset + index_of_buffer] = val
 
     fn __setitem__(self, idx: Int, val: Self) raises:
         """Assigns a single first-axis slice.
@@ -2076,7 +2077,9 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous() and val.is_c_contiguous():
             var block = self.size // self.shape[0]
             memcpy(
-                dest=self._buf.ptr + norm * block, src=val._buf.ptr, count=block
+                dest=self._buf.ptr + self.offset + norm * block,
+                src=val._buf.ptr + val.offset,
+                count=block,
             )
             return
 
@@ -2094,7 +2097,7 @@ struct NDArray[dtype: DType = DType.float64](
         var coords = List[Int](capacity=out_ndim)
         for _ in range(out_ndim):
             coords.append(0)
-        var base = norm_idx * Int(dst.strides.unsafe_load(0))
+        var base = dst.offset + norm_idx * Int(dst.strides.unsafe_load(0))
         for lin in range(total):
             var rem = lin
             for d in range(out_ndim - 1, -1, -1):
@@ -2102,7 +2105,7 @@ struct NDArray[dtype: DType = DType.float64](
                 coords[d] = rem % dim
                 rem //= dim
             var dst_off = base
-            var src_off = 0
+            var src_off = src.offset
             for d in range(out_ndim):
                 var stride_src = Int(src.strides.unsafe_load(d))
                 var stride_dst = Int(dst.strides.unsafe_load(d + 1))
@@ -2163,7 +2166,7 @@ struct NDArray[dtype: DType = DType.float64](
             index[i] = self.normalize(index[i], self.shape[i])
 
         var idx: Int = IndexMethods.get_1d_index(index, self.strides)
-        self._buf.ptr.store(idx, val)
+        self._buf.ptr.store(self.offset + idx, val)
 
     # only works if array is called as array.__setitem__(), mojo compiler doesn't parse it implicitly
     fn __setitem__(
@@ -2207,7 +2210,7 @@ struct NDArray[dtype: DType = DType.float64](
         var mask_c = mask.contiguous()
         for i in range(mask_c.size):
             if mask_c._buf.ptr.load[width=1](i):
-                self._buf.ptr.store(i, value)
+                self.itemset(i, value)
 
     fn __setitem__(mut self, *slices: Slice, val: Self) raises:
         """Sets the elements of the array at the slices with the given array.
@@ -2347,7 +2350,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var noffset: Int = 0
         if self.is_c_contiguous():
-            noffset = 0
+            noffset = self.offset
             for i in range(ndims):
                 var temp_stride: Int = 1
                 for j in range(i + 1, ndims):  # temp
@@ -2356,7 +2359,7 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(slice_list.__len__()):
                 noffset += slice_list[i].start * self.strides[i]
         elif self.is_f_contiguous():
-            noffset = 0
+            noffset = self.offset
             nstrides.append(1)
             for i in range(0, ndims - 1):
                 nstrides.append(nstrides[i] * nshape[i])
@@ -2367,8 +2370,9 @@ struct NDArray[dtype: DType = DType.float64](
         for _ in range(ndims):
             index.append(0)
 
+        var val_c = val.contiguous()
         TraverseMethods.traverse_iterative_setter[Self.dtype](
-            val,
+            val_c,
             self,
             nshape,
             ncoefficients,
@@ -2575,7 +2579,7 @@ struct NDArray[dtype: DType = DType.float64](
         var val_c = val.contiguous()
         for i in range(mask_c.size):
             if mask_c._buf.ptr.load(i):
-                self._buf.ptr.store(i, val_c._buf.ptr.load(i))
+                self.itemset(i, val_c._buf.ptr.load(i))
 
     fn itemset(
         mut self, index: Variant[Int, List[Int]], item: Scalar[Self.dtype]
@@ -2641,11 +2645,14 @@ struct NDArray[dtype: DType = DType.float64](
                         idx = idx - c_stride[i] * coordinate
                         c_coordinates.append(coordinate)
                     self._buf.ptr.store(
-                        IndexMethods.get_1d_index(c_coordinates, self.strides),
+                        self.offset
+                        + IndexMethods.get_1d_index(
+                            c_coordinates, self.strides
+                        ),
                         item,
                     )
-
-                self._buf.ptr.store(idx, item)
+                else:
+                    self._buf.ptr.store(self.offset + idx, item)
             else:
                 raise Error(
                     NumojoError(
@@ -2696,7 +2703,9 @@ struct NDArray[dtype: DType = DType.float64](
                         )
                     )
             self._buf.ptr.store(
-                IndexMethods.get_1d_index(indices, self.strides), item
+                self.offset
+                + IndexMethods.get_1d_index(indices, self.strides),
+                item,
             )
 
     fn unsafe_store[
@@ -2713,7 +2722,7 @@ struct NDArray[dtype: DType = DType.float64](
             val: The value to store.
         """
 
-        self._buf.ptr.store(index, val)
+        self._buf.ptr.store(self.offset + index, val)
 
     fn store(self, var index: Int, val: Scalar[Self.dtype]) raises:
         """Safely stores a scalar to the i-th item of the underlying buffer.
@@ -2752,7 +2761,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        self._buf.ptr[index] = val
+        self._buf.ptr[self.offset + index] = val
 
     fn store[
         width: Int
@@ -2793,7 +2802,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        self._buf.ptr.store(index, val)
+        self._buf.ptr.store(self.offset + index, val)
 
     fn store[
         width: Int = 1
@@ -2852,7 +2861,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
 
         var idx: Int = IndexMethods.get_1d_index(indices, self.strides)
-        self._buf.ptr.store(idx, val)
+        self._buf.ptr.store(self.offset + idx, val)
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
@@ -3395,7 +3404,7 @@ struct NDArray[dtype: DType = DType.float64](
         if self.ndim == 0:
             # For 0-D array (numojo scalar), we can directly write the value
             writer.write(
-                String(self._buf.ptr[])
+                String((self._buf.ptr + self.offset)[])
                 + String(
                     "  (0darray["
                     + _concise_dtype_str(self.dtype)
@@ -3735,7 +3744,9 @@ struct NDArray[dtype: DType = DType.float64](
             indices._buf[current_axis] = index_at_axis
             if current_axis == shape.ndim - 1:
                 var val = (
-                    self._buf.ptr + IndexMethods.get_1d_index(indices, strides)
+                    self._buf.ptr
+                    + self.offset
+                    + IndexMethods.get_1d_index(indices, strides)
                 )[]
                 if val < 0:
                     negative_sign = True

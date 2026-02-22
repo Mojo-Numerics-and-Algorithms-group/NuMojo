@@ -153,6 +153,10 @@ fn reshape[
     if A.size != shape.size():
         raise Error("Cannot reshape: Number of elements do not match.")
 
+    # View safety guard: ensure input is C-contiguous before memcpy.
+    if not A.is_c_contiguous():
+        return reshape(A.contiguous(), shape, order)
+
     var array_order: String = String("C") if A.is_c_contiguous() else String(
         "F"
     )
@@ -183,6 +187,10 @@ fn ravel[
     Return:
         A contiguous flattened array.
     """
+
+    # View safety guard: ensure input is C-contiguous before memcpy.
+    if not a.is_c_contiguous():
+        return ravel(a.contiguous(), order)
 
     var axis: Int
     if order == "C":
@@ -285,6 +293,10 @@ fn transpose[
                 ).format(i)
             )
 
+    # View safety guard: ensure input is C-contiguous.
+    if not A.is_c_contiguous():
+        return transpose(A.contiguous(), axes)
+
     var new_shape: NDArrayShape = NDArrayShape(shape=A.shape)
     for i in range(A.ndim):
         new_shape._buf[i] = A.shape[axes[i]]
@@ -302,7 +314,7 @@ fn transpose[
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B._buf.ptr[i] = A._buf.ptr[I._buf.ptr[i]]
+        B._buf.ptr[i] = (A._buf.ptr + A.offset)[Int(I._buf.ptr[i])]
     return B^
 
 
@@ -315,6 +327,9 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     if A.ndim == 1:
         return A.copy()
+    # View safety guard: ensure input is C-contiguous.
+    if not A.is_c_contiguous():
+        return transpose(A.contiguous())
     if A.ndim == 2:
         var array_order = "C" if A.is_c_contiguous() else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
@@ -404,6 +419,10 @@ fn broadcast_to[
                 a.shape, shape
             )
         )
+
+    # View safety guard: ensure input is C-contiguous.
+    if not a.is_c_contiguous():
+        return broadcast_to(a.contiguous(), shape)
 
     # Check whether broadcasting is possible or not.
     # We compare the shape from the trailing dimensions.
@@ -591,7 +610,7 @@ fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         Flipped array.
     """
-    var A = array.deep_copy()
+    var A = array.contiguous()  # Owned, C-contiguous copy
     for i in range(A.size // 2):
         var temp = A._buf.ptr[i]
         A._buf.ptr[i] = A._buf.ptr[A.size - 1 - i]
@@ -616,7 +635,7 @@ fn flip[
     Returns:
         Flipped array along the given axis.
     """
-    var A = array.deep_copy()
+    var A = array.contiguous()  # Owned, C-contiguous copy
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
@@ -631,7 +650,6 @@ fn flip[
         ptr, A.shape.move_axis_to_end(axis), A.strides.move_axis_to_end(axis)
     )
 
-    print(A.size, A.shape[axis])
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] // 2):
             var temp = A._buf.ptr[I._buf.ptr[i + j]]

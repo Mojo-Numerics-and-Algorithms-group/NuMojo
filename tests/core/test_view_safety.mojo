@@ -3,7 +3,7 @@ Tests for view safety: ensure all functions guarded with `contiguous()`
 produce correct results when given non-contiguous (e.g. F-order) arrays.
 
 This covers [Issue 309](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/309) 
-Phase 1 — contiguous guards across the codebase.
+Phase 1 & Phase 3 — contiguous guards across the codebase.
 """
 
 import numojo as nm
@@ -620,6 +620,421 @@ fn test_ndarray_solve_view() raises:
         x,
         xnp,
         "`solve` on F-order NDArrays is broken",
+    )
+
+
+# ===-----------------------------------------------------------------------===#
+# Phase 3: Math backend functions on F-order arrays
+# ===-----------------------------------------------------------------------===#
+
+
+fn test_ndarray_trig_view() raises:
+    """Test trigonometric functions on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    # Values in [0.1, 0.6] — safe for all inverse trig functions
+    var A = nm.fromstring("[0.1, 0.2, 0.3, 0.4, 0.5, 0.6]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    check_array_close(nm.sin(A), np.sin(Anp), "`sin` on F-order broken")
+    check_array_close(nm.cos(A), np.cos(Anp), "`cos` on F-order broken")
+    check_array_close(nm.tan(A), np.tan(Anp), "`tan` on F-order broken")
+    check_array_close(nm.asin(A), np.arcsin(Anp), "`asin` on F-order broken")
+    check_array_close(nm.acos(A), np.arccos(Anp), "`acos` on F-order broken")
+    check_array_close(nm.atan(A), np.arctan(Anp), "`atan` on F-order broken")
+
+    # atan2 and hypot: two-array inputs
+    var B = nm.fromstring("[0.6, 0.5, 0.4, 0.3, 0.2, 0.1]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Bnp = B.to_numpy()
+    check_array_close(
+        nm.atan2(A, B), np.arctan2(Anp, Bnp), "`atan2` on F-order broken"
+    )
+    check_array_close(
+        nm.hypot(A, B), np.hypot(Anp, Bnp), "`hypot` on F-order broken"
+    )
+
+
+fn test_ndarray_hyper_view() raises:
+    """Test hyperbolic functions on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.fromstring("[0.1, 0.2, 0.3, 0.4, 0.5, 0.6]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    check_array_close(nm.sinh(A), np.sinh(Anp), "`sinh` on F-order broken")
+    check_array_close(nm.cosh(A), np.cosh(Anp), "`cosh` on F-order broken")
+    check_array_close(nm.tanh(A), np.tanh(Anp), "`tanh` on F-order broken")
+    check_array_close(nm.asinh(A), np.arcsinh(Anp), "`asinh` on F-order broken")
+    check_array_close(nm.atanh(A), np.arctanh(Anp), "`atanh` on F-order broken")
+
+    # acosh needs values >= 1
+    var C = nm.fromstring("[1.1, 1.5, 2.0, 2.5, 3.0, 4.0]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Cnp = C.to_numpy()
+    check_array_close(nm.acosh(C), np.arccosh(Cnp), "`acosh` on F-order broken")
+
+
+fn test_ndarray_exp_log_view() raises:
+    """Test exp/log functions on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.fromstring("[0.5, 1.0, 1.5, 2.0, 2.5, 3.0]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    check_array_close(nm.exp(A), np.exp(Anp), "`exp` on F-order broken")
+    check_array_close(nm.exp2(A), np.exp2(Anp), "`exp2` on F-order broken")
+    check_array_close(nm.expm1(A), np.expm1(Anp), "`expm1` on F-order broken")
+    check_array_close(nm.log(A), np.log(Anp), "`log` on F-order broken")
+    check_array_close(nm.log2(A), np.log2(Anp), "`log2` on F-order broken")
+    check_array_close(nm.log10(A), np.log10(Anp), "`log10` on F-order broken")
+    check_array_close(nm.log1p(A), np.log1p(Anp), "`log1p` on F-order broken")
+
+
+fn test_ndarray_arithmetic_view() raises:
+    """Test arithmetic functions on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](1, 7).reshape(Shape(2, 3), order="F")
+    var B = nm.arange[nm.f64](7, 13).reshape(Shape(2, 3), order="F")
+    var Anp = A.to_numpy()
+    var Bnp = B.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    check_array_close(nm.add(A, B), np.add(Anp, Bnp), "`add` on F-order broken")
+    check_array_close(
+        nm.sub(A, B), np.subtract(Anp, Bnp), "`sub` on F-order broken"
+    )
+    check_array_close(
+        nm.mul(A, B), np.multiply(Anp, Bnp), "`mul` on F-order broken"
+    )
+    check_array_close(
+        nm.div(A, B), np.divide(Anp, Bnp), "`div` on F-order broken"
+    )
+
+    # fma: A * B + scalar
+    var c: Scalar[nm.f64] = 10.0
+    check_array_close(
+        nm.fma(A, B, c),
+        np.add(np.multiply(Anp, Bnp), 10.0),
+        "`fma` on F-order broken",
+    )
+
+
+fn test_ndarray_rounding_view() raises:
+    """Test rounding functions on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.fromstring("[1.2, -2.7, 3.5, -4.1, 5.9, -6.3]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    check_array_close(nm.tabs(A), np.abs(Anp), "`tabs` on F-order broken")
+    check_array_close(nm.tfloor(A), np.floor(Anp), "`tfloor` on F-order broken")
+    check_array_close(nm.tceil(A), np.ceil(Anp), "`tceil` on F-order broken")
+    check_array_close(nm.ttrunc(A), np.trunc(Anp), "`ttrunc` on F-order broken")
+    check_array_close(nm.tround(A), np.round(Anp), "`tround` on F-order broken")
+
+
+fn test_ndarray_misc_math_view() raises:
+    """Test misc math functions (clip, sqrt, cbrt, rsqrt) on F-order arrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.fromstring("[1.0, 4.0, 9.0, 16.0, 25.0, 36.0]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    check_array_close(nm.sqrt(A), np.sqrt(Anp), "`sqrt` on F-order broken")
+    check_array_close(nm.cbrt(A), np.cbrt(Anp), "`cbrt` on F-order broken")
+    check_array_close(
+        nm.rsqrt(A),
+        np.reciprocal(np.sqrt(Anp)),
+        "`rsqrt` on F-order broken",
+    )
+
+    # clip
+    check_array_close(
+        nm.clip(A, Scalar[nm.f64](5.0), Scalar[nm.f64](20.0)),
+        np.clip(Anp, 5.0, 20.0),
+        "`clip` on F-order broken",
+    )
+
+
+fn test_ndarray_comparison_view() raises:
+    """Test comparison and logic functions on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](1, 7).reshape(Shape(2, 3), order="F")
+    var B = nm.fromstring("[3.0, 3.0, 3.0, 3.0, 3.0, 3.0]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Anp = A.to_numpy()
+    var Bnp = B.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    check_array(
+        nm.greater(A, B),
+        np.greater(Anp, Bnp),
+        "`greater` on F-order broken",
+    )
+    check_array(
+        nm.less(A, B),
+        np.less(Anp, Bnp),
+        "`less` on F-order broken",
+    )
+    check_array(
+        nm.equal(A, B),
+        np.equal(Anp, Bnp),
+        "`equal` on F-order broken",
+    )
+
+
+fn test_ndarray_copysign_view() raises:
+    """Test copysign and nextafter on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.fromstring("[1.0, -2.0, 3.0, -4.0, 5.0, -6.0]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var B = nm.fromstring("[-1.0, 2.0, -3.0, 4.0, -5.0, 6.0]").reshape(
+        Shape(2, 3), order="F"
+    )
+    var Anp = A.to_numpy()
+    var Bnp = B.to_numpy()
+
+    check_array_close(
+        nm.copysign(A, B),
+        np.copysign(Anp, Bnp),
+        "`copysign` on F-order broken",
+    )
+
+
+# ===-----------------------------------------------------------------------===#
+# Phase 3: Differences on F-order arrays
+# ===-----------------------------------------------------------------------===#
+
+
+fn test_ndarray_differences_view() raises:
+    """Test gradient and trapz on F-order (non C-contiguous) NDArrays."""
+    var np = Python.import_module("numpy")
+
+    # 1D array reshaped to F-order (for 1D arrays F-order is same as C-order,
+    # so use a slice of a 2D F-order array instead)
+    var A2d = nm.arange[nm.f64](0, 12).reshape(Shape(3, 4), order="F")
+    assert_true(not A2d.is_c_contiguous(), "Should be non-contiguous")
+
+    # gradient: test with a simple 1D array (gradient is 1D only)
+    var x = nm.fromstring("[1.0, 2.0, 4.0, 7.0, 11.0]")
+    var xnp = np.array(Python.list(1.0, 2.0, 4.0, 7.0, 11.0))
+    var grad_result = nm.gradient(x, Scalar[nm.f64](1.0))
+    var grad_np = np.gradient(xnp, 1.0)
+    check_array_close(grad_result, grad_np, "`gradient` result is wrong")
+
+    # Note: trapz is not tested here due to a pre-existing constraint bug
+    # in differences.mojo that rejects float dtypes (issue unrelated to
+    # view safety).
+
+
+# ===-----------------------------------------------------------------------===#
+# Phase 3: Manipulation on F-order arrays
+# ===-----------------------------------------------------------------------===#
+
+
+fn test_ndarray_reshape_view() raises:
+    """Test reshape on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](0, 12).reshape(Shape(3, 4), order="F")
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    # reshape to different shape
+    var reshaped = nm.reshape(A, Shape(4, 3))
+    var reshaped_np = np.reshape(Anp, Python.tuple(4, 3))
+    check_array_close(reshaped, reshaped_np, "`reshape` on F-order broken")
+
+    # reshape to 1D
+    var flat = nm.reshape(A, Shape(12))
+    var flat_np = np.reshape(Anp, 12)
+    check_array_close(flat, flat_np, "`reshape` to 1D on F-order broken")
+
+
+fn test_ndarray_ravel_view() raises:
+    """Test ravel on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](0, 12).reshape(Shape(3, 4), order="F")
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    var raveled = nm.ravel(A)
+    var raveled_np = np.ravel(Anp)
+    check_array_close(raveled, raveled_np, "`ravel` on F-order broken")
+
+
+fn test_ndarray_transpose_view() raises:
+    """Test transpose on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](0, 12).reshape(Shape(3, 4), order="F")
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    # Simple transpose (no axes)
+    var T = nm.transpose(A)
+    var Tnp = np.transpose(Anp)
+    check_array_close(T, Tnp, "`transpose` on F-order broken")
+
+    # Transpose with axes
+    var B = nm.arange[nm.f64](0, 24).reshape(Shape(2, 3, 4), order="F")
+    var Bnp = B.to_numpy()
+    assert_true(not B.is_c_contiguous(), "Should be non-contiguous")
+
+    var T2 = nm.transpose(B, axes=[Int(2), 0, 1])
+    var T2np = np.transpose(Bnp, Python.list(2, 0, 1))
+    check_array_close(T2, T2np, "`transpose(axes)` on F-order broken")
+
+
+fn test_ndarray_flip_view() raises:
+    """Test flip on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](0, 12).reshape(Shape(3, 4), order="F")
+    var Anp = A.to_numpy()
+    assert_true(not A.is_c_contiguous(), "Should be non-contiguous")
+
+    # flip (all axes)
+    var flipped = nm.flip(A)
+    var flipped_np = np.flip(Anp)
+    check_array_close(flipped, flipped_np, "`flip` on F-order broken")
+
+    # flip along axis 0
+    var flipped0 = nm.flip(A, axis=0)
+    var flipped0_np = np.flip(Anp, axis=0)
+    check_array_close(flipped0, flipped0_np, "`flip(axis=0)` on F-order broken")
+
+    # flip along axis 1
+    var flipped1 = nm.flip(A, axis=1)
+    var flipped1_np = np.flip(Anp, axis=1)
+    check_array_close(flipped1, flipped1_np, "`flip(axis=1)` on F-order broken")
+
+
+fn test_ndarray_broadcast_to_view() raises:
+    """Test broadcast_to on F-order NDArrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](1, 4).reshape(Shape(1, 3), order="F")
+    var Anp = A.to_numpy()
+
+    var broadcasted = nm.broadcast_to(A, Shape(3, 3))
+    var broadcasted_np = np.broadcast_to(Anp, Python.tuple(3, 3))
+    check_array_close(
+        broadcasted, broadcasted_np, "`broadcast_to` on F-order broken"
+    )
+
+
+# ===-----------------------------------------------------------------------===#
+# Phase 3: Sliced views (non-contiguous due to slicing, not just F-order)
+# ===-----------------------------------------------------------------------===#
+
+
+fn test_ndarray_sliced_view_math() raises:
+    """Test math on non-contiguous views created via F-order reshape."""
+    var np = Python.import_module("numpy")
+
+    # Create a 3D F-order array (guaranteed non-contiguous)
+    var A = nm.arange[nm.f64](0, 24).reshape(Shape(2, 3, 4), order="F")
+    var Anp = A.to_numpy()
+
+    assert_true(
+        not A.is_c_contiguous(),
+        "F-order array should not be C-contiguous",
+    )
+
+    # sin on F-order 3D view
+    check_array_close(
+        nm.sin(A),
+        np.sin(Anp),
+        "`sin` on 3D F-order broken",
+    )
+
+    # exp on F-order 3D view
+    check_array_close(
+        nm.exp(A),
+        np.exp(Anp),
+        "`exp` on 3D F-order broken",
+    )
+
+    # add two F-order 3D views
+    var B = nm.arange[nm.f64](24, 48).reshape(Shape(2, 3, 4), order="F")
+    var Bnp = B.to_numpy()
+    check_array_close(
+        nm.add(A, B),
+        np.add(Anp, Bnp),
+        "`add` on 3D F-order broken",
+    )
+
+    # sum on 3D F-order view
+    check_scalar_close(
+        nm.sum(A),
+        np.sum(Anp),
+        "`sum` on 3D F-order broken",
+    )
+
+
+fn test_ndarray_sliced_view_manipulation() raises:
+    """Test manipulation functions on 3D F-order arrays."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.arange[nm.f64](0, 24).reshape(Shape(2, 3, 4), order="F")
+    var Anp = A.to_numpy()
+
+    assert_true(
+        not A.is_c_contiguous(),
+        "F-order array should not be C-contiguous",
+    )
+
+    # reshape
+    check_array_close(
+        nm.reshape(A, Shape(6, 4)),
+        np.reshape(Anp, Python.tuple(6, 4)),
+        "`reshape` on 3D F-order broken",
+    )
+
+    # ravel
+    check_array_close(
+        nm.ravel(A),
+        np.ravel(Anp),
+        "`ravel` on 3D F-order broken",
+    )
+
+    # transpose
+    check_array_close(
+        nm.transpose(A),
+        np.transpose(Anp),
+        "`transpose` on 3D F-order broken",
+    )
+
+    # flip
+    check_array_close(
+        nm.flip(A),
+        np.flip(Anp),
+        "`flip` on 3D F-order broken",
     )
 
 

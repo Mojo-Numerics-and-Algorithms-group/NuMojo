@@ -3885,7 +3885,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return creation.astype[target](self)
 
-    fn clip(self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]) -> Self:
+    fn clip(
+        self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]
+    ) raises -> Self:
         """Limits the values in an array between `[a_min, a_max]`.
 
         If `a_min` is greater than `a_max`, the value is equal to `a_max`. See

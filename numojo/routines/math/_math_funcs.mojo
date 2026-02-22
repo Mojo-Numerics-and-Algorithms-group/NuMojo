@@ -62,6 +62,20 @@ struct Vectorized(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
 
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1.contiguous(), array2, array3
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2.contiguous(), array3
+            )
+        if not array3.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2, array3.contiguous()
+            )
+
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -114,6 +128,12 @@ struct Vectorized(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
 
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](array1.contiguous(), array2, simd)
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](array1, array2.contiguous(), simd)
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -157,10 +177,18 @@ struct Vectorized(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
 
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_in_one_array_out[dtype, func](
+                array.contiguous()
+            )
+
         # For 0darray (numojo scalar)
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
-            var result_array = _0darray(val=func[dtype, 1](array._buf.ptr[]))
+            var result_array = _0darray(
+                val=func[dtype, 1]((array._buf.ptr + array.offset)[])
+            )
             return result_array^
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
@@ -202,6 +230,16 @@ struct Vectorized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1, array2.contiguous()
+            )
 
         if array1.shape != array2.shape:
             raise Error(
@@ -254,6 +292,12 @@ struct Vectorized(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
 
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_1_scalar_in_one_array_out[
+                dtype, func
+            ](array.contiguous(), scalar)
+
         # For 0darray (numojo scalar)
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
@@ -299,6 +343,12 @@ struct Vectorized(Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
 
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_scalar_1_array_in_one_array_out[
+                dtype, func
+            ](scalar, array.contiguous())
+
         # For 0darray (numojo scalar)
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
@@ -329,6 +379,16 @@ struct Vectorized(Backend):
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1, array2.contiguous()
+            )
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -373,6 +433,12 @@ struct Vectorized(Backend):
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_array_and_scalar[dtype, func](
+                array1.contiguous(), scalar
+            )
+
         # For 0darray (numojo scalar)
         # Treat it as a scalar and apply the function
         if array1.ndim == 0:
@@ -405,6 +471,10 @@ struct Vectorized(Backend):
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_is[dtype, func](array.contiguous())
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -424,6 +494,12 @@ struct Vectorized(Backend):
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_simd_int[dtype, func](
+                array.contiguous(), intval
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -505,6 +581,20 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             A a new NDArray that is NDArray with the function func applied.
         """
 
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1.contiguous(), array2, array3
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2.contiguous(), array3
+            )
+        if not array3.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2, array3.contiguous()
+            )
+
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -555,6 +645,12 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](array1.contiguous(), array2, simd)
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](array1, array2.contiguous(), simd)
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -599,6 +695,12 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_in_one_array_out[dtype, func](
+                array.contiguous()
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -640,6 +742,15 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1, array2.contiguous()
+            )
 
         if array1.shape != array2.shape:
             raise Error(
@@ -685,6 +796,11 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_1_scalar_in_one_array_out[
+                dtype, func
+            ](array.contiguous(), scalar)
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
@@ -726,6 +842,11 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_scalar_1_array_in_one_array_out[
+                dtype, func
+            ](scalar, array.contiguous())
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
@@ -753,6 +874,16 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1, array2.contiguous()
+            )
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -790,6 +921,12 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_array_and_scalar[dtype, func](
+                array1.contiguous(), scalar
+            )
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -818,6 +955,10 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_is[dtype, func](array.contiguous())
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -839,6 +980,12 @@ struct VectorizedUnroll[unroll_factor: Int = 1](Backend):
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_simd_int[dtype, func](
+                array.contiguous(), intval
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -894,6 +1041,19 @@ struct Parallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1.contiguous(), array2, array3
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2.contiguous(), array3
+            )
+        if not array3.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2, array3.contiguous()
+            )
 
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
@@ -970,6 +1130,12 @@ struct Parallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](array1.contiguous(), array2, simd)
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](array1, array2.contiguous(), simd)
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -1036,6 +1202,12 @@ struct Parallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_in_one_array_out[dtype, func](
+                array.contiguous()
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = 1
         var num_cores: Int = num_physical_cores()
@@ -1093,6 +1265,15 @@ struct Parallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1, array2.contiguous()
+            )
 
         if array1.shape != array2.shape:
             raise Error(
@@ -1161,6 +1342,11 @@ struct Parallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_1_scalar_in_one_array_out[
+                dtype, func
+            ](array.contiguous(), scalar)
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = 1
@@ -1215,6 +1401,11 @@ struct Parallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_scalar_1_array_in_one_array_out[
+                dtype, func
+            ](scalar, array.contiguous())
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = 1
@@ -1255,6 +1446,16 @@ struct Parallelized(Backend):
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1, array2.contiguous()
+            )
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -1315,6 +1516,12 @@ struct Parallelized(Backend):
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_array_and_scalar[dtype, func](
+                array1.contiguous(), scalar
+            )
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -1359,6 +1566,10 @@ struct Parallelized(Backend):
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_is[dtype, func](array.contiguous())
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = 1
         var num_cores: Int = num_physical_cores()
@@ -1397,6 +1608,12 @@ struct Parallelized(Backend):
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_simd_int[dtype, func](
+                array.contiguous(), intval
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -1450,6 +1667,19 @@ struct VectorizedParallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1.contiguous(), array2, array3
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2.contiguous(), array3
+            )
+        if not array3.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2, array3.contiguous()
+            )
 
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
@@ -1545,6 +1775,12 @@ struct VectorizedParallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](array1.contiguous(), array2, simd)
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](array1, array2.contiguous(), simd)
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -1627,6 +1863,12 @@ struct VectorizedParallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_in_one_array_out[dtype, func](
+                array.contiguous()
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
@@ -1692,6 +1934,15 @@ struct VectorizedParallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1, array2.contiguous()
+            )
 
         if array1.shape != array2.shape:
             raise Error(
@@ -1773,6 +2024,11 @@ struct VectorizedParallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_1_scalar_in_one_array_out[
+                dtype, func
+            ](array.contiguous(), scalar)
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
@@ -1846,6 +2102,11 @@ struct VectorizedParallelized(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_scalar_1_array_in_one_array_out[
+                dtype, func
+            ](scalar, array.contiguous())
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
@@ -1905,6 +2166,16 @@ struct VectorizedParallelized(Backend):
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1, array2.contiguous()
+            )
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -1983,6 +2254,12 @@ struct VectorizedParallelized(Backend):
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_array_and_scalar[dtype, func](
+                array1.contiguous(), scalar
+            )
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -2043,6 +2320,10 @@ struct VectorizedParallelized(Backend):
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_is[dtype, func](array.contiguous())
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[dtype]()
         var num_cores: Int = num_physical_cores()
@@ -2089,6 +2370,12 @@ struct VectorizedParallelized(Backend):
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_simd_int[dtype, func](
+                array.contiguous(), intval
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -2648,6 +2935,19 @@ struct Naive(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1.contiguous(), array2, array3
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2.contiguous(), array3
+            )
+        if not array3.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2, array3.contiguous()
+            )
 
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
@@ -2690,6 +2990,12 @@ struct Naive(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](array1.contiguous(), array2, simd)
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](array1, array2.contiguous(), simd)
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -2725,6 +3031,12 @@ struct Naive(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_in_one_array_out[dtype, func](
+                array.contiguous()
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
 
         for i in range(array.size):
@@ -2757,6 +3069,15 @@ struct Naive(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1, array2.contiguous()
+            )
 
         if array1.shape != array2.shape:
             raise Error(
@@ -2794,6 +3115,12 @@ struct Naive(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_1_scalar_in_one_array_out[
+                dtype, func
+            ](array.contiguous(), scalar)
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         for i in range(array.size):
             var simd_data1 = array._buf.ptr.load[width=1](i)
@@ -2825,6 +3152,12 @@ struct Naive(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_scalar_1_array_in_one_array_out[
+                dtype, func
+            ](scalar, array.contiguous())
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         for i in range(array.size):
             var simd_data1 = array._buf.ptr.load[width=1](i)
@@ -2842,6 +3175,16 @@ struct Naive(Backend):
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1, array2.contiguous()
+            )
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -2871,6 +3214,12 @@ struct Naive(Backend):
     ](self, array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_array_and_scalar[dtype, func](
+                array1.contiguous(), scalar
+            )
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -2891,6 +3240,10 @@ struct Naive(Backend):
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_is[dtype, func](array.contiguous())
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
 
         for i in range(array.size):
@@ -2904,6 +3257,12 @@ struct Naive(Backend):
             type, simd_w
         ],
     ](self, array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_simd_int[dtype, func](
+                array.contiguous(), intval
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
 
         for i in range(array.size):
@@ -2948,6 +3307,19 @@ struct VectorizedVerbose(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1.contiguous(), array2, array3
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2.contiguous(), array3
+            )
+        if not array3.is_c_contiguous():
+            return self.math_func_fma[dtype](
+                array1, array2, array3.contiguous()
+            )
 
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
@@ -3001,6 +3373,12 @@ struct VectorizedVerbose(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_fma[dtype](array1.contiguous(), array2, simd)
+        if not array2.is_c_contiguous():
+            return self.math_func_fma[dtype](array1, array2.contiguous(), simd)
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -3047,6 +3425,12 @@ struct VectorizedVerbose(Backend):
         Returns:
             A new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_in_one_array_out[dtype, func](
+                array.contiguous()
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
@@ -3087,6 +3471,15 @@ struct VectorizedVerbose(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_2_array_in_one_array_out[dtype, func](
+                array1, array2.contiguous()
+            )
 
         if array1.shape != array2.shape:
             raise Error(
@@ -3135,6 +3528,12 @@ struct VectorizedVerbose(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_array_1_scalar_in_one_array_out[
+                dtype, func
+            ](array.contiguous(), scalar)
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
@@ -3178,6 +3577,12 @@ struct VectorizedVerbose(Backend):
         Returns:
             A a new NDArray that is NDArray with the function func applied.
         """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_1_scalar_1_array_in_one_array_out[
+                dtype, func
+            ](scalar, array.contiguous())
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
@@ -3207,6 +3612,16 @@ struct VectorizedVerbose(Backend):
     ](self, array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure inputs are C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return self.math_func_compare_2_arrays[dtype, func](
+                array1, array2.contiguous()
+            )
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error shapes must match for this function"
@@ -3251,6 +3666,12 @@ struct VectorizedVerbose(Backend):
     ](self, array1: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[
         DType.bool
     ]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_compare_array_and_scalar[dtype, func](
+                array1.contiguous(), scalar
+            )
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
@@ -3283,6 +3704,10 @@ struct VectorizedVerbose(Backend):
             DType.bool, simd_w
         ],
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return self.math_func_is[dtype, func](array.contiguous())
+
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[dtype]()
         for i in range(0, width * (array.size // width), width):
@@ -3304,6 +3729,12 @@ struct VectorizedVerbose(Backend):
             type, simd_w
         ],
     ](self, array1: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array1.is_c_contiguous():
+            return self.math_func_simd_int[dtype, func](
+                array1.contiguous(), intval
+            )
+
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
         for i in range(0, width * (array1.size // width), width):

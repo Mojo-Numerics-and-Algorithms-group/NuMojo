@@ -36,6 +36,12 @@ fn math_func_1_array_in_one_array_out[
     Returns:
         A new NDArray that is the result of applying the function to the NDArray.
     """
+    # View safety guard: ensure input is C-contiguous before SIMD access.
+    if not array.is_c_contiguous():
+        return math_func_1_array_in_one_array_out[dtype, func](
+            array.contiguous()
+        )
+
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
     comptime width = simd_width_of[dtype]()
 
@@ -72,6 +78,16 @@ fn math_func_2_array_in_one_array_out[
     Returns:
         A new NDArray that is the result of applying the function to the input NDArrays.
     """
+
+    # View safety guard: ensure inputs are C-contiguous before SIMD access.
+    if not array1.is_c_contiguous():
+        return math_func_2_array_in_one_array_out[dtype, func](
+            array1.contiguous(), array2
+        )
+    if not array2.is_c_contiguous():
+        return math_func_2_array_in_one_array_out[dtype, func](
+            array1, array2.contiguous()
+        )
 
     if array1.shape != array2.shape:
         raise Error("Shape Mismatch error shapes must match for this function")
@@ -114,6 +130,11 @@ fn math_func_one_array_one_SIMD_in_one_array_out[
     Returns:
         A new NDArray that is the result of applying the function to the input NDArray and SIMD value.
     """
+    # View safety guard: ensure input is C-contiguous before SIMD access.
+    if not array.is_c_contiguous():
+        return math_func_one_array_one_SIMD_in_one_array_out[dtype, func](
+            array.contiguous(), scalar
+        )
 
     var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
     comptime width = simd_width_of[dtype]()

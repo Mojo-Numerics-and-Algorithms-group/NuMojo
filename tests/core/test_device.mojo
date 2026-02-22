@@ -5,7 +5,7 @@ from testing import TestSuite
 
 def test_default_init():
     var d = Device()
-    assert_equal(d.type, "", "default init type")
+    assert_equal(d.type, "cpu", "default init type")
     assert_equal(d.name, "", "default init name")
     assert_equal(d.id, 0, "default init id")
 
@@ -118,6 +118,23 @@ def test_parse_negative_id_falls_back():
 def test_parse_non_numeric_id_falls_back():
     var d = Device.parse_device_string("cuda:abc")
     assert_equal(d.type, "cpu", "parse non-numeric id fallback type")
+
+
+def test_parse_string_containing_cpu_not_matched():
+    """Ensure that strings like 'mycpu' or 'notcpu' are not matched as CPU."""
+    var d = Device.parse_device_string("mycpu")
+    assert_equal(d.type, "cpu", "parse 'mycpu' fallback type")
+    assert_equal(d.name, "", "parse 'mycpu' fallback name")
+    # 'mycpu' is not a valid backend, so it should fall back to CPU
+    # but importantly, it should NOT be matched by the "cpu" in text check
+
+
+def test_default_init_is_cpu():
+    """Default-constructed device should behave as CPU."""
+    var d = Device()
+    assert_true(d.is_cpu(), "default device is_cpu()")
+    assert_true(d.is_available(), "default device is_available()")
+    assert_true(d == Device.CPU, "default device equals CPU constant")
 
 
 def test_unchecked_init():

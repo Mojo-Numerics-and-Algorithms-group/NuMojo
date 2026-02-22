@@ -77,8 +77,8 @@ struct Device(
     # ===------------------------------------------------------------------=== #
 
     fn __init__(out self):
-        """Initialize a default (empty) device."""
-        self.type = ""
+        """Initialize a default CPU device."""
+        self.type = "cpu"
         self.name = ""
         self.id = 0
 
@@ -168,11 +168,7 @@ struct Device(
     @staticmethod
     fn _cpu_fallback() -> Device:
         """Return a default CPU device."""
-        var d = Device()
-        d.type = "cpu"
-        d.name = ""
-        d.id = 0
-        return d
+        return Device()
 
     # ===------------------------------------------------------------------=== #
     # Trait implementations
@@ -382,7 +378,7 @@ struct Device(
         Raises:
             Error when "gpu" is specified but no GPU backend is available.
         """
-        if text == "cpu" or "cpu" in text:
+        if text == "cpu" or text.startswith("cpu:"):
             return Device.CPU
 
         var backend: String = ""

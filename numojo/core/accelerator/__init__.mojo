@@ -12,3 +12,5 @@ Accelerator (numojo.core.accelerator)
 
 Accelerator (GPU) support namespace for NuMojo.
 """
+
+from .device import Device

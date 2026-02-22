@@ -1,85 +1,401 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Device struct for CPU/GPU execution
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+#  ===----------------------------------------------------------------------=== #
+"""Device (numojo.core.accelerator.device)
+
+This module defines the `Device` struct, which represents an execution device for array and matrix operations.
+It supports CPU and GPU devices, with GPU backends for NVIDIA CUDA, AMD ROCm, and Apple Metal.
+"""
 from sys.info import (
     has_nvidia_gpu_accelerator,
     has_amd_gpu_accelerator,
     has_apple_gpu_accelerator,
 )
-from testing import assert_true
+
+from numojo.core.error import NumojoError
 
 comptime cpu = Device.CPU
-"""CPU device alias for convenience."""
-comptime gpu = Device.GPU
-"""Generic GPU device alias for convenience (selects best available GPU)."""
 comptime cuda = Device.CUDA
-"""NVIDIA CUDA GPU device alias for convenience."""
 comptime rocm = Device.ROCM
-"""AMD ROCm GPU device alias for convenience."""
 comptime mps = Device.MPS
-"""Apple Metal GPU device alias for convenience."""
 
-struct Device(ImplicitlyCopyable, Movable, Representable, Stringable, Writable):
-    """Execution device for arrays/matrices.
+struct Device(
+    ImplicitlyCopyable,
+    Movable,
+    Representable,
+    Stringable,
+    Writable,
+    Equatable,
+):
+    """Represents an execution device for array and matrix operations.
 
-    Fields:
-    - type: "cpu" | "gpu"
-    - name: backend identifier ("" for CPU, "cuda" | "rocm" | "mps" for GPU)
-    - id:   device index on that backend (0-based)
+    A `Device` identifies where computation should run, analogous to
+    `torch.device` in PyTorch. Each device has a type ("cpu" or "gpu"),
+    an optional backend name ("cuda", "rocm", or "mps" for GPUs), and
+    a zero-based device index.
 
-    Comptimes:
-    - CPU       -> CPU execution
-    - GPU       -> Best available GPU (falls back to CPU if none)
-    - CUDA      -> NVIDIA CUDA GPU
-    - ROCM      -> AMD ROCm GPU
-    - MPS       -> Apple Metal GPU
+    Use the predefined comptime constants for common devices:
+        - `Device.CPU`  — CPU execution.
+        - `Device.CUDA` — NVIDIA CUDA GPU.
+        - `Device.ROCM` — AMD ROCm GPU.
+        - `Device.MPS`  — Apple Metal GPU.
+
+    Devices can also be constructed from torch-style strings:
+        ```
+        var dev = Device("cuda:0")
+        var cpu = Device("cpu")
+        ```
     """
 
     var type: String
+    """Device type: "cpu" or "gpu"."""
     var name: String
+    """Backend identifier: "" for CPU, "cuda" | "rocm" | "mps" for GPU."""
     var id: Int
+    """Zero-based device index on the backend."""
 
-    comptime CPU = Device(type="cpu", name="", id=0)
-    comptime GPU = Device(type="gpu", name=Device.preferred_gpu_backend(), id=0)
+    # ===------------------------------------------------------------------=== #
+    # Comptime device constants
+    # ===------------------------------------------------------------------=== #
 
-    comptime CUDA = Device(type="gpu", name="cuda", id=0)
-    comptime ROCM = Device(type="gpu", name="rocm", id=0)
-    comptime MPS = Device(type="gpu", name="mps", id=0)
+    comptime CPU = Device._unchecked_init(type="cpu", name="", id=0)
+    """CPU device."""
+    comptime CUDA = Device._unchecked_init(type="gpu", name="cuda", id=0)
+    """NVIDIA CUDA GPU device."""
+    comptime ROCM = Device._unchecked_init(type="gpu", name="rocm", id=0)
+    """AMD ROCm GPU device."""
+    comptime MPS = Device._unchecked_init(type="gpu", name="mps", id=0)
+    """Apple Metal GPU device."""
 
-    @parameter
+    # ===------------------------------------------------------------------=== #
+    # Constructors
+    # ===------------------------------------------------------------------=== #
+
+    fn __init__(out self):
+        """Initialize a default (empty) device."""
+        self.type = ""
+        self.name = ""
+        self.id = 0
+
+    fn __init__(out self, text: String) raises:
+        """Initialize a device by parsing a torch-style device string.
+
+        Supported formats: "cpu", "cuda", "cuda:0", "rocm", "rocm:1",
+        "mps", "mps:0", "gpu".
+
+        Args:
+            text: A device string to parse.
+
+        Raises:
+            Error on invalid device string format.
+        """
+        var parsed = Device.parse_device_string(text)
+        self.type = parsed.type
+        self.name = parsed.name
+        self.id = parsed.id
+
+    fn __init__(out self, type: String, name: String, id: Int):
+        """Initialize a device with explicit type, name, and index.
+
+        Validates the arguments and falls back to CPU if the requested
+        GPU backend is not available on the current system.
+
+        Args:
+            type: Device type, must be "cpu" or "gpu".
+            name: Backend name ("" for CPU; "cuda", "rocm", or "mps" for GPU).
+            id: Zero-based device index (must be 0 for CPU, >= 0 for GPU).
+        """
+        if type != "cpu" and type != "gpu":
+            print("Invalid device type '" + type + "'. Defaulting to CPU.")
+            self = Device._cpu_fallback()
+            return
+
+        if type == "gpu" and name == "":
+            self = Device._cpu_fallback()
+            return
+
+        if type == "cpu":
+            if name != "":
+                print(
+                    "CPU device name must be empty. Defaulting to CPU."
+                )
+                self = Device._cpu_fallback()
+                return
+            if id != 0:
+                print(
+                    "CPU device id must be 0. Defaulting to CPU."
+                )
+                self = Device._cpu_fallback()
+                return
+            self.type = "cpu"
+            self.name = ""
+            self.id = 0
+            return
+
+        if name != "cuda" and name != "rocm" and name != "mps":
+            print(
+                "Invalid GPU backend '" + name + "'. Defaulting to CPU."
+            )
+            self = Device._cpu_fallback()
+            return
+
+        if id < 0:
+            print("GPU device id must be non-negative. Defaulting to CPU.")
+            self = Device._cpu_fallback()
+            return
+
+        if name == "cuda" and not has_nvidia_gpu_accelerator():
+            self = Device._cpu_fallback()
+            return
+        if name == "rocm" and not has_amd_gpu_accelerator():
+            self = Device._cpu_fallback()
+            return
+        if name == "mps" and not has_apple_gpu_accelerator():
+            self = Device._cpu_fallback()
+            return
+
+        self.type = type
+        self.name = name
+        self.id = id
+
     @staticmethod
-    fn preferred_gpu_backend() -> String:
-        """Return best available GPU backend name, or "" if none."""
+    fn _unchecked_init(
+        out device: Device, type: String, name: String, id: Int
+    ):
+        """Create a device without any validation. For internal/comptime use."""
+        device = Device()
+        device.type = type
+        device.name = name
+        device.id = id
+
+    @staticmethod
+    fn _cpu_fallback() -> Device:
+        """Return a default CPU device."""
+        var d = Device()
+        d.type = "cpu"
+        d.name = ""
+        d.id = 0
+        return d
+
+    # ===------------------------------------------------------------------=== #
+    # Trait implementations
+    # ===------------------------------------------------------------------=== #
+
+    fn __str__(self) -> String:
+        """Return a human-readable string representation.
+
+        Returns:
+            A string like `Device(type='cpu', name='', id=0)`.
+        """
+        return (
+            "Device(type='"
+            + self.type
+            + "', name='"
+            + self.name
+            + "', id="
+            + String(self.id)
+            + ")"
+        )
+
+    fn __repr__(self) -> String:
+        """Return the canonical string representation.
+
+        Returns:
+            Same as `__str__`.
+        """
+        return self.__str__()
+
+    fn write_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+
+        Args:
+            writer: The writer to write to.
+        """
+        writer.write(self.__str__())
+
+    fn __eq__(self, other: Self) -> Bool:
+        """Check equality with another device.
+
+        Args:
+            other: The device to compare against.
+
+        Returns:
+            True if type, name, and id all match.
+        """
+        return (
+            self.type == other.type
+            and self.name == other.name
+            and self.id == other.id
+        )
+
+    fn __ne__(self, other: Self) -> Bool:
+        """Check inequality with another device.
+
+        Args:
+            other: The device to compare against.
+
+        Returns:
+            True if the devices differ in any field.
+        """
+        return not self.__eq__(other)
+
+    # ===------------------------------------------------------------------=== #
+    # Instance methods
+    # ===------------------------------------------------------------------=== #
+
+    fn is_cpu(self) -> Bool:
+        """Check if this is a CPU device.
+
+        Returns:
+            True if the device type is "cpu".
+        """
+        return self.type == "cpu"
+
+    fn is_gpu(self) -> Bool:
+        """Check if this is a GPU device.
+
+        Returns:
+            True if the device type is "gpu".
+        """
+        return self.type == "gpu"
+
+    fn is_available(self) -> Bool:
+        """Check if this device is available on the current system.
+
+        Returns:
+            True if the device hardware is present. CPU always returns True.
+        """
+        if self.type == "cpu":
+            return True
+        if self.type == "gpu":
+            if self.name == "cuda":
+                return has_nvidia_gpu_accelerator()
+            elif self.name == "rocm":
+                return has_amd_gpu_accelerator()
+            elif self.name == "mps":
+                return has_apple_gpu_accelerator()
+        return False
+
+    # ===------------------------------------------------------------------=== #
+    # Static methods
+    # ===------------------------------------------------------------------=== #
+
+    @staticmethod
+    fn default_device() -> Device:
+        """Return the best available device: GPU if present, otherwise CPU.
+
+        Returns:
+            A `Device` for the first available GPU backend, or `Device.CPU`.
+        """
+        var backend: String
+        try:
+            backend = Device.available_gpu()
+        except:
+            return Device.CPU
+
+        return Device(type="gpu", name=backend, id=0)
+
+    @staticmethod
+    @parameter
+    fn available_gpu() raises -> String:
+        """Return the name of the best available GPU backend.
+
+        Checks in order: CUDA → ROCm → MPS.
+
+        Returns:
+            "cuda", "rocm", or "mps" depending on available hardware.
+
+        Raises:
+            NumojoError if no GPU accelerator is detected.
+        """
         @parameter
         if has_nvidia_gpu_accelerator():
             return "cuda"
+
+        @parameter
         if has_amd_gpu_accelerator():
             return "rocm"
+
+        @parameter
         if has_apple_gpu_accelerator():
             return "mps"
-        return ""
+        else:
+            raise NumojoError(
+                category="value",
+                message="No GPU accelerators detected.",
+                location="Device.available_gpu()",
+            )
 
-    @parameter
     @staticmethod
-    fn parse_device_string(text: String) -> Device:
-        """Parse torch-like device strings.
+    @parameter
+    fn available_devices() -> String:
+        """List all available devices on the current system.
 
-        Supported:
-        - "cpu"
-        - "cuda", "cuda:0"
-        - "rocm", "rocm:0"
-        - "mps", "mps:0"
-        - "gpu" (best available GPU, or CPU if none)
+        Returns:
+            A formatted multi-line string of available devices.
         """
-        if text == "cpu":
+        var result: String = "\n"
+        result += "  • " + String(Device.CPU) + " (Default CPU device)\n"
+
+        @parameter
+        if has_nvidia_gpu_accelerator():
+            result += "  • " + String(Device.CUDA) + " (NVIDIA CUDA GPU)\n"
+
+        @parameter
+        if has_amd_gpu_accelerator():
+            result += "  • " + String(Device.ROCM) + " (AMD ROCm GPU)\n"
+
+        @parameter
+        if has_apple_gpu_accelerator():
+            result += "  • " + String(Device.MPS) + " (Apple Metal GPU)\n"
+
+        @parameter
+        if not (
+            has_nvidia_gpu_accelerator()
+            or has_amd_gpu_accelerator()
+            or has_apple_gpu_accelerator()
+        ):
+            result += "  (No GPU accelerators detected)"
+
+        return result
+
+    @staticmethod
+    @parameter
+    fn parse_device_string(text: String) raises -> Device:
+        """Parse a torch-style device string into a `Device`.
+
+        Supported formats:
+            - "cpu"
+            - "cuda", "cuda:0", "cuda:1", ...
+            - "rocm", "rocm:0", "rocm:1", ...
+            - "mps", "mps:0", "mps:1", ...
+            - "gpu" (resolves to best available GPU backend)
+
+        Args:
+            text: The device string to parse.
+
+        Returns:
+            The parsed `Device`. Falls back to `Device.CPU` for
+            unrecognized or invalid strings.
+
+        Raises:
+            Error when "gpu" is specified but no GPU backend is available.
+        """
+        if text == "cpu" or "cpu" in text:
             return Device.CPU
-        if text == "gpu":
-            var backend = Device.preferred_gpu_backend()
-            if backend == "":
-                return Device.CPU
-            return Device(type="gpu", name=backend, id=0)
 
         var backend: String = ""
         var id: Int = 0
         var seen_colon: Bool = False
         var id_str: String = ""
+
         for ch in text.codepoint_slices():
             if not seen_colon and ch == ":":
                 seen_colon = True
@@ -93,9 +409,7 @@ struct Device(ImplicitlyCopyable, Movable, Representable, Stringable, Writable):
             return Device.CPU
 
         if backend == "gpu":
-            backend = Device.preferred_gpu_backend()
-            if backend == "":
-                return Device.CPU
+            backend = Device.available_gpu()
 
         if seen_colon and id_str == "":
             return Device.CPU
@@ -124,146 +438,24 @@ struct Device(ImplicitlyCopyable, Movable, Representable, Stringable, Writable):
 
         return Device.CPU
 
-    fn __init__(out self, text: String):
-        try:
-            var parsed = Device.parse_device_string(text)
-            self.type = parsed.type
-            self.name = parsed.name
-            self.id = parsed.id
-        except e:
-            print("Invalid device type provided. Defaulting to CPU.")
-            self.type = "cpu"
-            self.name = ""
-            self.id = 0
 
-    fn __init__(out self, type: String, name: String, id: Int):
-        try:
-            if type == "gpu" and name == "":
-                self.type = "cpu"
-                self.name = ""
-                self.id = 0
-                return
-            assert_true(
-                type == "cpu" or type == "gpu",
-                "Device type must be 'cpu' or 'gpu'",
-            )
-            if type == "cpu":
-                assert_true(name == "", "CPU device name must be empty string")
-                assert_true(id == 0, "CPU device id must be 0")
-            else:
-                assert_true(
-                    name == "cuda" or name == "rocm" or name == "mps",
-                    "Invalid GPU device name",
-                )
-                assert_true(id >= 0, "GPU device id must be non-negative")
-                if name == "cuda" and not has_nvidia_gpu_accelerator():
-                    self.type = "cpu"
-                    self.name = ""
-                    self.id = 0
-                    return
-                if name == "rocm" and not has_amd_gpu_accelerator():
-                    self.type = "cpu"
-                    self.name = ""
-                    self.id = 0
-                    return
-                if name == "mps" and not has_apple_gpu_accelerator():
-                    self.type = "cpu"
-                    self.name = ""
-                    self.id = 0
-                    return
-            self.type = type
-            self.name = name
-            self.id = id
-        except e:
-            print("Invalid device type provided. Defaulting to CPU.")
-            self.type = "cpu"
-            self.name = ""
-            self.id = 0
-
-    fn __repr__(self) -> String:
-        return self.__str__()
-
-    @staticmethod
-    fn default_device() -> Device:
-        """Choose a sensible default device: prefer any available GPU, else CPU."""
-        var backend = Device.preferred_gpu_backend()
-        if backend == "":
-            return Device.CPU
-        return Device(type="gpu", name=backend, id=0)
-
-    @staticmethod
-    fn require_gpu() raises -> Device:
-        """Choose the best available GPU, or raise if none is available."""
-        var backend = Device.preferred_gpu_backend()
-        if backend == "":
-            raise Error("No GPU accelerator available on this system")
-        return Device(type="gpu", name=backend, id=0)
-
-    fn is_available(self) -> Bool:
-        """Check if this device is available on the current system."""
-        if self.type == "cpu":
-            return True
-        if self.name == "cuda":
-            return has_nvidia_gpu_accelerator()
-        if self.name == "rocm":
-            return has_amd_gpu_accelerator()
-        if self.name == "mps":
-            return has_apple_gpu_accelerator()
-        return False
-
-    @staticmethod
-    @parameter
-    fn list_available_devices() -> String:
-        """List all available devices on the current system."""
-        var devices_string: String = "\n"
-        devices_string += (
-            "  • " + String(Device.CPU) + " (Default CPU device)\n"
-        )
-
-        if has_nvidia_gpu_accelerator():
-            devices_string += (
-                "  • " + String(Device.CUDA) + " (NVIDIA CUDA GPU)\n"
-            )
-        if has_amd_gpu_accelerator():
-            devices_string += "  • " + String(Device.ROCM) + " (AMD ROCm GPU)\n"
-        if has_apple_gpu_accelerator():
-            devices_string += (
-                "  • " + String(Device.MPS) + " (Apple Metal GPU)\n"
-            )
-
-        if not (
-            has_nvidia_gpu_accelerator()
-            or has_amd_gpu_accelerator()
-            or has_apple_gpu_accelerator()
-        ):
-            devices_string += "  (No GPU accelerators detected)"
-
-        return devices_string
-
-    fn __str__(self) -> String:
-        try:
-            return String("Device(type='{}', name='{}', id={})").format(
-                self.type, self.name, self.id
-            )
-        except:
-            return "Device(Invalid)"
-
-    fn write_to[W: Writer](self, mut writer: W):
-        writer.write(self.__str__())
-
-    fn __eq__(self, other: Self) -> Bool:
-        return (
-            (self.type == other.type)
-            and (self.id == other.id)
-            and (self.name == other.name)
-        )
-
-    fn __ne__(self, other: Self) -> Bool:
-        return not self.__eq__(other)
+# ===----------------------------------------------------------------------=== #
+# Module-level functions
+# ===----------------------------------------------------------------------=== #
 
 
 @parameter
 fn is_accelerator_available[device: Device]() -> Bool:
+    """Check at compile time whether the given device's GPU accelerator exists.
+
+    Parameters:
+        device: The device to check.
+
+    Returns:
+        True if the device is a GPU and its backend hardware is available.
+        Always returns False for CPU or unknown backends.
+    """
+
     @parameter
     if device.type != "gpu":
         return False

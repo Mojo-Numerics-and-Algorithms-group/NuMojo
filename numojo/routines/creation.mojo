@@ -1798,31 +1798,33 @@ fn diag[
         ```
     """
     if v.ndim == 1:
-        var n: Int = v.size
+        var v_c = v.contiguous()
+        var n: Int = v_c.size
         var result: NDArray[dtype] = zeros[dtype](
             NDArrayShape(n + abs(k), n + abs(k))
         )
         if k >= 0:
             for i in range(n):
-                result._buf.ptr[i * (n + abs(k) + 1) + k] = v._buf.ptr[i]
+                result._buf.ptr[i * (n + abs(k) + 1) + k] = v_c._buf.ptr[i]
             return result^
         else:
             for i in range(n):
                 result._buf.ptr[
                     result.size - 1 - i * (result.shape[1] + 1) + k
-                ] = v._buf.ptr[n - 1 - i]
+                ] = v_c._buf.ptr[n - 1 - i]
         return result^
     elif v.ndim == 2:
-        var m: Int = v.shape[0]
-        var n: Int = v.shape[1]
+        var v_c = v.contiguous()
+        var m: Int = v_c.shape[0]
+        var n: Int = v_c.shape[1]
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(n - abs(k)))
         if k >= 0:
             for i in range(n - abs(k)):
-                result._buf.ptr[i] = v._buf.ptr[i * (n + 1) + k]
+                result._buf.ptr[i] = v_c._buf.ptr[i * (n + 1) + k]
         else:
             for i in range(n - abs(k)):
-                result._buf.ptr[m - abs(k) - 1 - i] = v._buf.ptr[
-                    v.size - 1 - i * (v.shape[1] + 1) + k
+                result._buf.ptr[m - abs(k) - 1 - i] = v_c._buf.ptr[
+                    v_c.size - 1 - i * (v_c.shape[1] + 1) + k
                 ]
         return result^
     else:

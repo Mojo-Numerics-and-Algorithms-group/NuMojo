@@ -106,6 +106,9 @@ fn trace[
     Returns:
         The trace of the NDArray.
     """
+    if not array.is_c_contiguous():
+        return trace(array.contiguous(), offset, axis1, axis2)
+
     if array.ndim != 2:
         raise Error("Trace is currently only supported for 2D arrays")
     if axis1 > array.ndim - 1 or axis2 > array.ndim - 1:

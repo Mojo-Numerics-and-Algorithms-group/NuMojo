@@ -295,6 +295,11 @@ fn solve[
 
     """
 
+    if not A.is_c_contiguous():
+        return solve(A.contiguous(), Y)
+    if not Y.is_c_contiguous():
+        return solve(A, Y.contiguous())
+
     var U: NDArray[dtype]
     var L: NDArray[dtype]
     var L_U: Tuple[NDArray[dtype], NDArray[dtype]] = lu_decomposition[dtype](A)

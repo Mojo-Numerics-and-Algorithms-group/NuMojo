@@ -44,6 +44,8 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
         Scalar.
     """
 
+    if not A.is_c_contiguous():
+        return prod(A.contiguous())
     comptime width: Int = simd_width_of[dtype]()
     var res = Scalar[dtype](1)
 
@@ -102,6 +104,8 @@ fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     Args:
         A: Matrix.
     """
+    if not A.is_c_contiguous():
+        return prod(A.contiguous())
     var res = Scalar[dtype](1)
     comptime width: Int = simd_width_of[dtype]()
 
@@ -185,7 +189,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
 
     if A.ndim == 1:
-        var B = A.deep_copy()
+        var B = A.contiguous()
         for i in range(A.size - 1):
             B._buf.ptr[i + 1] *= B._buf.ptr[i]
         return B^
@@ -211,7 +215,7 @@ fn cumprod[
         Cumprod of array by axis.
     """
     # TODO: reduce copies if possible
-    var B: NDArray[dtype] = A.deep_copy()
+    var B: NDArray[dtype] = A.contiguous()
     if axis < 0:
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):

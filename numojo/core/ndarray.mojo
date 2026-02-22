@@ -677,7 +677,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         # 1-D -> scalar (0-D array wrapper)
         if self.ndim == 1:
-            return creation._0darray[Self.dtype](self._buf.ptr[self.offset + norm])
+            return creation._0darray[Self.dtype](
+                self._buf.ptr[self.offset + norm]
+            )
 
         var out_shape = self.shape[1:]
         var alloc_order: String = "C"
@@ -1387,7 +1389,9 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             memcpy(
                 dest=result._buf.ptr + i * size_per_item,
-                src=self._buf.ptr + self.offset + Int(indices.item(i)) * size_per_item,
+                src=self._buf.ptr
+                + self.offset
+                + Int(indices.item(i)) * size_per_item,
                 count=size_per_item,
             )
 
@@ -1792,6 +1796,7 @@ struct NDArray[dtype: DType = DType.float64](
             The SIMD element at the index.
         """
         return self._buf.ptr.load[width=width](self.offset + index)
+
     fn load(self, var index: Int) raises -> Scalar[Self.dtype]:
         """Safely retrieves the i-th item from the underlying buffer.
 
@@ -2703,8 +2708,7 @@ struct NDArray[dtype: DType = DType.float64](
                         )
                     )
             self._buf.ptr.store(
-                self.offset
-                + IndexMethods.get_1d_index(indices, self.strides),
+                self.offset + IndexMethods.get_1d_index(indices, self.strides),
                 item,
             )
 

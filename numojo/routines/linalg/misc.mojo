@@ -42,6 +42,9 @@ fn diagonal[
     if a.ndim != 2:
         raise Error("\nError in `diagonal`: Only supports 2D arrays")
 
+    if not a.is_c_contiguous():
+        return diagonal(a.contiguous(), offset)
+
     var m: Int = a.shape[0]
     var n: Int = a.shape[1]
 

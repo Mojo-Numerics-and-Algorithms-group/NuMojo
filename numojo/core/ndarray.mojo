@@ -2204,8 +2204,9 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        for i in range(mask.size):
-            if mask._buf.ptr.load[width=1](i):
+        var mask_c = mask.contiguous()
+        for i in range(mask_c.size):
+            if mask_c._buf.ptr.load[width=1](i):
                 self._buf.ptr.store(i, value)
 
     fn __setitem__(mut self, *slices: Slice, val: Self) raises:
@@ -2570,9 +2571,11 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        for i in range(mask.size):
-            if mask._buf.ptr.load(i):
-                self._buf.ptr.store(i, val._buf.ptr.load(i))
+        var mask_c = mask.contiguous()
+        var val_c = val.contiguous()
+        for i in range(mask_c.size):
+            if mask_c._buf.ptr.load(i):
+                self._buf.ptr.store(i, val_c._buf.ptr.load(i))
 
     fn itemset(
         mut self, index: Variant[Int, List[Int]], item: Scalar[Self.dtype]
@@ -3215,15 +3218,16 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return bitwise.invert[Self.dtype](self)
 
-    fn __pow__(self, p: Int) -> Self:
+    fn __pow__(self, p: Int) raises -> Self:
         return self._elementwise_pow(p)
 
     # Shouldn't this be inplace?
     fn __pow__(self, rhs: Scalar[Self.dtype]) raises -> Self:
         """Computes element-wise power of items."""
-        var result: Self = self.copy()
-        for i in range(self.size):
-            result._buf.ptr[i] = self._buf.ptr[i].__pow__(rhs)
+        var src = self.contiguous()
+        var result: Self = Self(shape=self.shape, order="C")
+        for i in range(src.size):
+            result._buf.ptr[i] = src._buf.ptr[i].__pow__(rhs)
         return result^
 
     fn __pow__(self, p: Self) raises -> Self:
@@ -3237,40 +3241,40 @@ struct NDArray[dtype: DType = DType.float64](
                 ).format(self.size, p.size)
             )
 
+        var src = self.contiguous()
+        var p_c = p.contiguous()
         var result = NDArray[Self.dtype](self.shape)
 
         @parameter
         fn vectorized_pow[
             simd_width: Int
-        ](index: Int) unified {mut result, read self, read p}:
+        ](index: Int) unified {mut result, read src, read p_c}:
             result._buf.ptr.store(
                 index,
-                self._buf.ptr.load[width=simd_width](index)
-                ** p._buf.ptr.load[width=simd_width](index),
+                src._buf.ptr.load[width=simd_width](index)
+                ** p_c._buf.ptr.load[width=simd_width](index),
             )
 
         vectorize[self.width](self.size, vectorized_pow)
         return result^
 
-    fn __ipow__(mut self, p: Int):
+    fn __ipow__(mut self, p: Int) raises:
         self = self.__pow__(p)
 
-    fn _elementwise_pow(self, p: Int) -> Self:
-        var new_vec: Self = self.copy()
+    fn _elementwise_pow(self, p: Int) raises -> Self:
+        var src = self.contiguous()
 
         @parameter
         fn array_scalar_vectorize[
             simd_width: Int
-        ](index: Int) unified {mut new_vec, read self, read p} -> None:
-            new_vec._buf.ptr.store(
+        ](index: Int) unified {mut src, read p} -> None:
+            src._buf.ptr.store(
                 index,
-                builtin_math.pow(
-                    self._buf.ptr.load[width=simd_width](index), p
-                ),
+                builtin_math.pow(src._buf.ptr.load[width=simd_width](index), p),
             )
 
         vectorize[self.width](self.size, array_scalar_vectorize)
-        return new_vec^
+        return src^
 
     fn __truediv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3881,7 +3885,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return creation.astype[target](self)
 
-    fn clip(self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]) -> Self:
+    fn clip(
+        self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]
+    ) raises -> Self:
         """Limits the values in an array between `[a_min, a_max]`.
 
         If `a_min` is greater than `a_max`, the value is equal to `a_max`. See

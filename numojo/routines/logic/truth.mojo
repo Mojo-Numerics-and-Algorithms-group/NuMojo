@@ -25,6 +25,8 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     Args:
         A: Matrix.
     """
+    if not A.is_c_contiguous():
+        return all(A.contiguous())
     var res = Scalar[dtype](1)
     comptime width: Int = simd_width_of[dtype]()
 
@@ -135,6 +137,8 @@ fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     Args:
         A: Matrix.
     """
+    if not A.is_c_contiguous():
+        return any(A.contiguous())
     var res = Scalar[dtype](0)
     comptime width: Int = simd_width_of[dtype]()
 

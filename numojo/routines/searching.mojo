@@ -41,6 +41,9 @@ fn argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
         The index of the maximum value in the buffer.
     """
 
+    if not a.is_c_contiguous():
+        return argmax_1d(a.contiguous())
+
     var ptr = a._buf.ptr
     var value = ptr[]
     var result: Int = 0
@@ -67,6 +70,9 @@ fn argmin_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     Returns:
         The index of the minimum value in the buffer.
     """
+
+    if not a.is_c_contiguous():
+        return argmin_1d(a.contiguous())
 
     var ptr = a._buf.ptr
     var value = ptr[]

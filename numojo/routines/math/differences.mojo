@@ -45,6 +45,11 @@ fn gradient[
     """
 
     var result: NDArray[dtype] = NDArray[dtype](x.shape)
+
+    # View safety guard: ensure input is C-contiguous before linear access.
+    if not x.is_c_contiguous():
+        return gradient[dtype](x.contiguous(), spacing)
+
     var space: NDArray[dtype] = arange[dtype](
         1, Scalar[dtype](x.size + 1), step=spacing
     )
@@ -106,6 +111,12 @@ fn trapz[
 
     if x.shape != y.shape:
         raise Error("x and y must have the same shape")
+
+    # View safety guard: ensure inputs are C-contiguous before linear access.
+    if not x.is_c_contiguous():
+        return trapz[dtype](y, x.contiguous())
+    if not y.is_c_contiguous():
+        return trapz[dtype](y.contiguous(), x)
 
     var integral: Scalar[dtype] = 0.0
     for i in range(x.size - 1):

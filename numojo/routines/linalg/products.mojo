@@ -90,6 +90,11 @@ fn dot[
         The dot product of two arrays.
     """
 
+    if not array1.is_c_contiguous():
+        return dot(array1.contiguous(), array2)
+    if not array2.is_c_contiguous():
+        return dot(array1, array2.contiguous())
+
     comptime width = simd_width_of[dtype]()
     if array1.ndim == array2.ndim == 1:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
@@ -130,6 +135,11 @@ fn matmul_tiled_unrolled_parallelized[
     """
     Matrix multiplication vectorized, tiled, unrolled, and parallelized.
     """
+    if not A.is_c_contiguous():
+        return matmul_tiled_unrolled_parallelized(A.contiguous(), B)
+    if not B.is_c_contiguous():
+        return matmul_tiled_unrolled_parallelized(A, B.contiguous())
+
     comptime width = max(simd_width_of[dtype](), 16)
     var result: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
     var t0 = A.shape[0]
@@ -230,6 +240,11 @@ fn matmul_2darray[
         matrices.
     """
 
+    if not A.is_c_contiguous():
+        return matmul_2darray(A.contiguous(), B)
+    if not B.is_c_contiguous():
+        return matmul_2darray(A, B.contiguous())
+
     comptime width = max(simd_width_of[dtype](), 16)
 
     if A.ndim * B.ndim == 1:
@@ -318,6 +333,11 @@ fn matmul[
         `(i,j,k) @ (i,k,l) -> (i,j,l)` and
         `(i,j,k,l) @ (i,j,l,m) -> (i,j,k,m)`.
     """
+
+    if not A.is_c_contiguous():
+        return matmul(A.contiguous(), B)
+    if not B.is_c_contiguous():
+        return matmul(A, B.contiguous())
 
     if (A.ndim <= 2) and (B.ndim <= 2):
         return matmul_2darray(A, B)

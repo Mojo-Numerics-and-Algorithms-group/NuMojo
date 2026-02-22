@@ -49,6 +49,9 @@ fn extrema_1d[
         Max value.
     """
 
+    if not a.is_c_contiguous():
+        return extrema_1d[is_max](a.contiguous())
+
     comptime simd_width = builtin_max(simd_width_of[dtype](), 64)
     var value = a._buf.load[width=1](0)
 
@@ -457,6 +460,12 @@ fn minimum[
     Returns:
         The element wise minimum of the two arrays as a array of `dtype`.
     """
+
+    if not array1.is_c_contiguous():
+        return minimum(array1.contiguous(), array2)
+    if not array2.is_c_contiguous():
+        return minimum(array1, array2.contiguous())
+
     var result: NDArray[dtype] = NDArray[dtype](array1.shape)
 
     comptime width = simd_width_of[dtype]()
@@ -494,6 +503,11 @@ fn maximum[
     Returns:
         The element wise maximum of the two arrays as a array of `dtype`.
     """
+
+    if not array1.is_c_contiguous():
+        return maximum(array1.contiguous(), array2)
+    if not array2.is_c_contiguous():
+        return maximum(array1, array2.contiguous())
 
     var result: NDArray[dtype] = NDArray[dtype](array1.shape)
     comptime width = simd_width_of[dtype]()

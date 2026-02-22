@@ -261,10 +261,6 @@ fn randint[
         An array of random integers from [0, high).
     """
 
-    @parameter
-    if not dtype.is_integral():
-        raise Error("Only Integral values can be sampled using this function.")
-
     if high <= 0:
         raise Error("High must be greater than 0.")
 

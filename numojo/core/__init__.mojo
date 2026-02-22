@@ -86,6 +86,8 @@ from .complex import (
 
 from .memory import DataContainer
 
+from .accelerator import Device, cuda, mps, rocm
+
 from .indexing import Item, IndexMethods, TraverseMethods, Validator
 
 import .dtype

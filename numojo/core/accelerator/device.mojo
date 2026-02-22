@@ -23,13 +23,14 @@ comptime cuda = Device.CUDA
 comptime rocm = Device.ROCM
 comptime mps = Device.MPS
 
+
 struct Device(
+    Equatable,
     ImplicitlyCopyable,
     Movable,
     Representable,
     Stringable,
     Writable,
-    Equatable,
 ):
     """Represents an execution device for array and matrix operations.
 
@@ -120,15 +121,11 @@ struct Device(
 
         if type == "cpu":
             if name != "":
-                print(
-                    "CPU device name must be empty. Defaulting to CPU."
-                )
+                print("CPU device name must be empty. Defaulting to CPU.")
                 self = Device._cpu_fallback()
                 return
             if id != 0:
-                print(
-                    "CPU device id must be 0. Defaulting to CPU."
-                )
+                print("CPU device id must be 0. Defaulting to CPU.")
                 self = Device._cpu_fallback()
                 return
             self.type = "cpu"
@@ -137,9 +134,7 @@ struct Device(
             return
 
         if name != "cuda" and name != "rocm" and name != "mps":
-            print(
-                "Invalid GPU backend '" + name + "'. Defaulting to CPU."
-            )
+            print("Invalid GPU backend '" + name + "'. Defaulting to CPU.")
             self = Device._cpu_fallback()
             return
 
@@ -163,9 +158,7 @@ struct Device(
         self.id = id
 
     @staticmethod
-    fn _unchecked_init(
-        out device: Device, type: String, name: String, id: Int
-    ):
+    fn _unchecked_init(out device: Device, type: String, name: String, id: Int):
         """Create a device without any validation. For internal/comptime use."""
         device = Device()
         device.type = type
@@ -315,6 +308,7 @@ struct Device(
         Raises:
             NumojoError if no GPU accelerator is detected.
         """
+
         @parameter
         if has_nvidia_gpu_accelerator():
             return "cuda"

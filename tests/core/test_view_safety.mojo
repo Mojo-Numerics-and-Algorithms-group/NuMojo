@@ -1,17 +1,19 @@
 """
 Tests for view safety: ensure all functions guarded with `contiguous()`
-produce correct results when given non-contiguous (e.g. F-order) arrays.
+produce correct results when given non-contiguous (e.g. F-order) arrays,
+and that core getters/setters honour the `offset` field on views.
 
 This covers [Issue 309](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/309) 
-Phase 1 & Phase 3 — contiguous guards across the codebase.
+Phase 1, 3 & 4 — contiguous guards and offset-aware accessors across the codebase.
 """
 
 import numojo as nm
 from numojo.prelude import *
 from numojo.core.matrix import Matrix
+from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.routines.math.extrema import minimum
 from python import Python, PythonObject
-from testing.testing import assert_true
+from testing.testing import assert_true, assert_equal
 from testing import TestSuite
 
 
@@ -1036,6 +1038,298 @@ fn test_ndarray_sliced_view_manipulation() raises:
         np.flip(Anp),
         "`flip` on 3D F-order broken",
     )
+
+
+# ===-----------------------------------------------------------------------===#
+# Phase 4 — Offset-aware core getters / setters
+# ===-----------------------------------------------------------------------===#
+
+
+fn _make_1d_offset_view(
+    parent: nm.NDArray[nm.f64], offset: Int, size: Int
+) raises -> nm.NDArray[nm.f64]:
+    """Create a 1-D view into `parent` starting at `offset` with `size` elems.
+    """
+    var view = parent.copy()
+    view.offset = offset
+    view.size = size
+    view.shape = NDArrayShape(size)
+    view.ndim = 1
+    view.strides = NDArrayStrides(shape=view.shape)
+    return view^
+
+
+fn _make_2d_offset_view(
+    parent: nm.NDArray[nm.f64],
+    offset: Int,
+    rows: Int,
+    cols: Int,
+    stride0: Int,
+    stride1: Int,
+) raises -> nm.NDArray[nm.f64]:
+    """Create a 2-D view into `parent`."""
+    var view = parent.copy()
+    view.offset = offset
+    view.size = rows * cols
+    view.shape = NDArrayShape(rows, cols)
+    view.ndim = 2
+    view.strides = NDArrayStrides(stride0, stride1)
+    return view^
+
+
+fn test_offset_view_load_store() raises:
+    """Test load/store/unsafe_load/unsafe_store on 1-D offset views."""
+    # parent = [0, 1, 2, ..., 11]
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=4, size=8)
+
+    # load — should read from parent[offset + i]
+    assert_true(view.load(0) == 4.0, "load(0) on offset view")
+    assert_true(view.load(3) == 7.0, "load(3) on offset view")
+    assert_true(view.load(7) == 11.0, "load(7) on offset view")
+
+    # unsafe_load
+    assert_true(view.unsafe_load(0) == 4.0, "unsafe_load(0) on offset view")
+    assert_true(view.unsafe_load(5) == 9.0, "unsafe_load(5) on offset view")
+
+    # store — should write to parent[offset + i]
+    view.store(0, Scalar[nm.f64](99.0))
+    assert_true(parent.load(4) == 99.0, "store reflected in parent")
+    assert_true(view.load(0) == 99.0, "store on offset view readable")
+
+    # unsafe_store
+    view.unsafe_store(1, Scalar[nm.f64](88.0))
+    assert_true(parent.load(5) == 88.0, "unsafe_store reflected in parent")
+
+
+fn test_offset_view_item_and_itemset() raises:
+    """Test item() and itemset() on offset views."""
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=4, size=8)
+
+    # item(flat index) — C-order
+    assert_true(view.item(0) == 4.0, "item(0) on offset view")
+    assert_true(view.item(7) == 11.0, "item(7) on offset view")
+
+    # itemset(flat_index, val)
+    view.itemset(2, Scalar[nm.f64](77.0))
+    assert_true(view.item(2) == 77.0, "itemset(2) on offset view")
+    assert_true(parent.load(6) == 77.0, "itemset reflected in parent")
+
+    # itemset(List[Int], val) — coordinate form
+    var idx3 = List[Int]()
+    idx3.append(3)
+    view.itemset(idx3^, Scalar[nm.f64](66.0))
+    assert_true(view.item(3) == 66.0, "itemset(List) on offset view")
+    assert_true(parent.load(7) == 66.0, "itemset(List) reflected in parent")
+
+
+fn test_offset_view_getitem_setitem_item() raises:
+    """Test __getitem__(Item) and __setitem__(Item, Scalar) on offset views."""
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=3, size=9)
+
+    # __getitem__(Item) — coordinate access
+    assert_true(view[Item(0)] == 3.0, "__getitem__(Item(0)) offset view")
+    assert_true(view[Item(5)] == 8.0, "__getitem__(Item(5)) offset view")
+
+    # __setitem__(Item, Scalar)
+    view[Item(1)] = Scalar[nm.f64](42.0)
+    assert_true(view[Item(1)] == 42.0, "__setitem__(Item) on offset view")
+    assert_true(parent.load(4) == 42.0, "__setitem__(Item) in parent")
+
+
+fn test_offset_view_getitem_int() raises:
+    """Test __getitem__(idx: Int) which returns 0-D for 1-D arrays."""
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=2, size=10)
+
+    # 1-D view → 0-D scalar
+    var s0 = view[0]
+    assert_true(s0.item() == 2.0, "view[0] → 0-D = parent[2]")
+
+    var s4 = view[4]
+    assert_true(s4.item() == 6.0, "view[4] → 0-D = parent[6]")
+
+
+fn test_offset_view_2d_getitem_int() raises:
+    """Test __getitem__(idx: Int) on a 2-D offset view (returns a row)."""
+    # parent = [0, 1, ..., 23], reshaped to 4x6, then view rows 2-3
+    var parent = nm.arange[nm.f64](0, 24)
+    # Create a 2x6 C-contiguous view starting at row 2 (offset = 12)
+    var view = _make_2d_offset_view(
+        parent, offset=12, rows=2, cols=6, stride0=6, stride1=1
+    )
+
+    # view[0] should give row 2 of parent = [12, 13, 14, 15, 16, 17]
+    var row0 = view[0]
+    assert_true(row0.item(0) == 12.0, "2D view[0] first elem")
+    assert_true(row0.item(5) == 17.0, "2D view[0] last elem")
+
+    # view[1] should give row 3 of parent = [18, 19, 20, 21, 22, 23]
+    var row1 = view[1]
+    assert_true(row1.item(0) == 18.0, "2D view[1] first elem")
+    assert_true(row1.item(5) == 23.0, "2D view[1] last elem")
+
+
+fn test_offset_view_setitem_int() raises:
+    """Test __setitem__(idx: Int, val: Self) on a 2-D offset view."""
+    var parent = nm.arange[nm.f64](0, 24)
+    var view = _make_2d_offset_view(
+        parent, offset=12, rows=2, cols=6, stride0=6, stride1=1
+    )
+
+    # Replace row 0 of view (= row 2 of parent)
+    var new_row = nm.full[nm.f64](Shape(6), fill_value=99.0)
+    view[0] = new_row
+
+    # Check the parent was modified at positions 12-17
+    for i in range(6):
+        assert_true(
+            parent.load(12 + i) == 99.0,
+            String("setitem(int) parent[{}] should be 99").format(12 + i),
+        )
+
+    # Row 1 of view (= row 3 of parent) should be unchanged
+    assert_true(parent.load(18) == 18.0, "setitem(int) parent[18] unchanged")
+
+
+fn test_offset_view_load_variadic() raises:
+    """Test load[width](*indices) and store[width](*indices) on 2-D view."""
+    var parent = nm.arange[nm.f64](0, 24)
+    var view = _make_2d_offset_view(
+        parent, offset=6, rows=3, cols=6, stride0=6, stride1=1
+    )
+
+    # load(row, col) should use view strides + view offset
+    assert_true(view.load(0, 0) == 6.0, "load(0,0) on 2D offset view")
+    assert_true(view.load(1, 3) == 15.0, "load(1,3) on 2D offset view")
+    assert_true(view.load(2, 5) == 23.0, "load(2,5) on 2D offset view")
+
+    # store(*indices)
+    view.store(0, 2, val=Scalar[nm.f64](55.0))
+    assert_true(parent.load(8) == 55.0, "store(0,2) reflected in parent")
+
+
+fn test_offset_view_mask_getter() raises:
+    """Test __getitem__(mask) on an offset view."""
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=4, size=8)
+    # view = [4, 5, 6, 7, 8, 9, 10, 11]
+
+    # Create mask: select elements > 8
+    var mask = nm.NDArray[DType.bool](shape=NDArrayShape(8))
+    for i in range(8):
+        if view.item(i) > 8.0:
+            var idx = List[Int]()
+            idx.append(i)
+            mask.itemset(idx^, Scalar[DType.bool](True))
+        else:
+            var idx = List[Int]()
+            idx.append(i)
+            mask.itemset(idx^, Scalar[DType.bool](False))
+
+    var result = view.__getitem__(mask)
+    # Should get [9, 10, 11]
+    assert_true(result.size == 3, "mask getter result size")
+    assert_true(result.item(0) == 9.0, "mask getter first")
+    assert_true(result.item(1) == 10.0, "mask getter second")
+    assert_true(result.item(2) == 11.0, "mask getter third")
+
+
+fn test_offset_view_mask_setter() raises:
+    """Test __setitem__(mask, Scalar) on an offset view."""
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=4, size=8)
+    # view = [4, 5, 6, 7, 8, 9, 10, 11]
+
+    # Mask: set elements > 9 to -1
+    var mask = nm.NDArray[DType.bool](shape=NDArrayShape(8))
+    for i in range(8):
+        if view.item(i) > 9.0:
+            var idx = List[Int]()
+            idx.append(i)
+            mask.itemset(idx^, Scalar[DType.bool](True))
+        else:
+            var idx = List[Int]()
+            idx.append(i)
+            mask.itemset(idx^, Scalar[DType.bool](False))
+
+    view.__setitem__(mask, Scalar[nm.f64](-1.0))
+
+    # view[6] (parent[10]) and view[7] (parent[11]) should be -1
+    assert_true(view.item(6) == -1.0, "mask setter view[6]")
+    assert_true(view.item(7) == -1.0, "mask setter view[7]")
+    assert_true(parent.load(10) == -1.0, "mask setter parent[10]")
+    assert_true(parent.load(11) == -1.0, "mask setter parent[11]")
+
+    # Others unchanged
+    assert_true(view.item(0) == 4.0, "mask setter view[0] unchanged")
+    assert_true(view.item(5) == 9.0, "mask setter view[5] unchanged")
+
+
+fn test_offset_view_write_to_0d() raises:
+    """Test that printing a 1-D offset view shows the correct values."""
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=4, size=4)
+    # view = [4, 5, 6, 7]
+
+    var s = String(view)
+    assert_true("4.0" in s, "offset view print contains first elem")
+    assert_true("7.0" in s, "offset view print contains last elem")
+
+
+fn test_offset_view_setitem_item_unsafe() raises:
+    """Test _setitem (internal unsafe setter) on offset view."""
+    var parent = nm.arange[nm.f64](0, 12)
+    var view = _make_1d_offset_view(parent, offset=3, size=9)
+
+    view._setitem(2, val=Scalar[nm.f64](55.0))
+    assert_true(
+        parent.load(5) == 55.0, "_setitem(2) on offset view -> parent[5]"
+    )
+
+
+fn test_offset_view_slice_getitem() raises:
+    """Test __getitem__(slices) on a 2-D offset view."""
+    var parent = nm.arange[nm.f64](0, 24)
+    var view = _make_2d_offset_view(
+        parent, offset=6, rows=3, cols=6, stride0=6, stride1=1
+    )
+
+    # Slice view[0:2, 1:4] = rows 0-1, cols 1-3 of the view
+    # view row 0 = parent[6..11] = [6,7,8,9,10,11], cols 1-3 = [7,8,9]
+    # view row 1 = parent[12..17] = [12,13,14,15,16,17], cols 1-3 = [13,14,15]
+    var sliced = view[0:2, 1:4]
+    assert_true(sliced.shape[0] == 2, "slice shape[0]")
+    assert_true(sliced.shape[1] == 3, "slice shape[1]")
+    assert_true(sliced.item(0) == 7.0, "slice [0,0]")
+    assert_true(sliced.item(1) == 8.0, "slice [0,1]")
+    assert_true(sliced.item(2) == 9.0, "slice [0,2]")
+    assert_true(sliced.item(3) == 13.0, "slice [1,0]")
+
+
+fn test_offset_view_slice_setitem() raises:
+    """Test __setitem__(slices, val) on a 2-D offset view."""
+    var parent = nm.arange[nm.f64](0, 24)
+    var view = _make_2d_offset_view(
+        parent, offset=6, rows=3, cols=6, stride0=6, stride1=1
+    )
+
+    # Set view[0:2, 0:3] = [[99, 99, 99], [99, 99, 99]]
+    var fill = nm.full[nm.f64](Shape(2, 3), fill_value=99.0)
+    view[0:2, 0:3] = fill
+
+    # parent[6..8] (view row 0, cols 0-2) should be 99
+    assert_true(parent.load(6) == 99.0, "slice set parent[6]")
+    assert_true(parent.load(7) == 99.0, "slice set parent[7]")
+    assert_true(parent.load(8) == 99.0, "slice set parent[8]")
+    # parent[12..14] (view row 1, cols 0-2) should be 99
+    assert_true(parent.load(12) == 99.0, "slice set parent[12]")
+    assert_true(parent.load(13) == 99.0, "slice set parent[13]")
+    assert_true(parent.load(14) == 99.0, "slice set parent[14]")
+    # parent[15] should be unchanged
+    assert_true(parent.load(15) == 15.0, "slice set parent[15] unchanged")
 
 
 # ===-----------------------------------------------------------------------===#

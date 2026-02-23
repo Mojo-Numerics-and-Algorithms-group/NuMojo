@@ -17,6 +17,8 @@ from os.atomic import Atomic, Consistency, fence
 from memory import memcpy
 from os import abort
 
+from numojo.core.error import NumojoError
+
 
 struct Ownership(ImplicitlyCopyable):
     """
@@ -428,13 +430,13 @@ struct DataContainer[dtype: DType](
                 )
             )
 
-        var result = DataContainer[Self.dtype]()
-        result.size = self.size
-        result.ptr = self.ptr
+        _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+
+        # Build the shared handle without allocating a new refcount.
+        # The ptr-based ctor creates an External view; we then override
+        # the fields to share the managed refcount.
+        var result = DataContainer[Self.dtype](self.ptr, self.size)
         result._refcount = self._refcount
         result.ownership = self.ownership
-
-        if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
 
         return result^

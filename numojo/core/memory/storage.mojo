@@ -497,7 +497,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
     # Access
     # ===----------------------------------------------------------------------===#
 
-    fn get_buffer(ref self) -> ref [self.buffer] DeviceBuffer[Self.dtype]:
+    fn get_buffer(ref self) -> ref[self.buffer] DeviceBuffer[Self.dtype]:
         """Return a reference to the underlying `DeviceBuffer`.
 
         Returns:
@@ -570,8 +570,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         """
         if size < 0:
             abort(
-                "AcceleratorDataContainer: __init__() size must be"
-                " non-negative"
+                "AcceleratorDataContainer: __init__() size must be non-negative"
             )
 
         self.size = size
@@ -627,8 +626,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         ]()
         if size < 0:
             abort(
-                "AcceleratorDataContainer: __init__() size must be"
-                " non-negative"
+                "AcceleratorDataContainer: __init__() size must be non-negative"
             )
         if not ptr:
             abort("AcceleratorDataContainer: __init__() ptr must be non-null")
@@ -712,9 +710,9 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     @always_inline
     fn load[
         width: Int
-    ](
-        self, offset: Int
-    ) -> SIMD[Self.dtype, width] where Self.device.type == "cpu":
+    ](self, offset: Int) -> SIMD[Self.dtype, width] where (
+        Self.device.type == "cpu"
+    ):
         """Load a SIMD vector of `width` elements starting at `offset`.
 
         No bounds checking is performed.
@@ -736,9 +734,9 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     @always_inline
     fn store[
         width: Int
-    ](
-        mut self, offset: Int, value: SIMD[Self.dtype, width]
-    ) where Self.device.type == "cpu":
+    ](mut self, offset: Int, value: SIMD[Self.dtype, width]) where (
+        Self.device.type == "cpu"
+    ):
         """Store a SIMD vector of `width` elements starting at `offset`.
 
         No bounds checking is performed.
@@ -776,6 +774,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             A string indicating the device backend, size, and (for CPU)
             the underlying `HostStorage` representation.
         """
+
         @parameter
         if Self.device.type == "cpu":
             if self.host_storage:
@@ -787,9 +786,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             return "AcceleratorDataContainer(cpu, empty)"
         else:
             return (
-                "AcceleratorDataContainer(gpu, size="
-                + String(self.size)
-                + ")"
+                "AcceleratorDataContainer(gpu, size=" + String(self.size) + ")"
             )
 
     @always_inline

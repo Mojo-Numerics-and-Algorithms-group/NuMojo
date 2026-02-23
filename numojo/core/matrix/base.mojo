@@ -2623,9 +2623,7 @@ struct Matrix[
 
         vectorize[width](self.size, vec_floordiv_scalar)
 
-    fn __mod__(
-        self, other: Matrix[Self.dtype]
-    ) raises -> Matrix[Self.dtype]:
+    fn __mod__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Compute element-wise modulo of two matrices.
 

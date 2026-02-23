@@ -84,8 +84,12 @@ from .complex import (
     ComplexNDArray,
 )
 
-from .memory import DataContainer
-
+from .memory import (
+    DataContainer,
+    HostStorage,
+    DeviceStorage,
+    AcceleratorDataContainer,
+)
 from .accelerator import Device, cpu, cuda, mps, rocm
 
 from .indexing import Item, IndexMethods, TraverseMethods, Validator

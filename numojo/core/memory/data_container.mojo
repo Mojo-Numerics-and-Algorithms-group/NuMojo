@@ -158,7 +158,8 @@ struct DataContainer[dtype: DType](
         Create a DataContainer from an existing buffer.
 
         If `copy` is True, the data is deep-copied into managed storage.
-        If `copy` is False, the container is external and does not manage or free the memory.
+        If `copy` is False, the container is external and does not manage or
+        free the memory.
 
         Args:
             ptr: Pointer to an existing data buffer (must be non-null).
@@ -435,7 +436,8 @@ struct DataContainer[dtype: DType](
         # Build the shared handle without allocating a new refcount.
         # The ptr-based ctor creates an External view; we then override
         # the fields to share the managed refcount.
-        var result = DataContainer[Self.dtype](self.ptr, self.size)
+        # Note that when copy is False, the ptr is null and no alloc occurs.
+        var result = DataContainer[Self.dtype](self.ptr, self.size, copy=False)
         result._refcount = self._refcount
         result.ownership = self.ownership
 

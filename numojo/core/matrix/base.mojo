@@ -2215,7 +2215,7 @@ struct Matrix[
         vectorize[width](self.size, vec_pow)
         return result^
 
-    fn __iadd__(mut self, other: Matrix[Self.dtype, **_]) raises:
+    fn __iadd__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Add another matrix to this matrix in-place.
 
@@ -2284,7 +2284,7 @@ struct Matrix[
 
         vectorize[width](self.size, vec_add_scalar)
 
-    fn __isub__(mut self, other: Matrix[Self.dtype, **_]) raises:
+    fn __isub__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Subtract another matrix from this matrix in-place.
 
@@ -2353,7 +2353,7 @@ struct Matrix[
 
         vectorize[width](self.size, vec_sub_scalar)
 
-    fn __imul__(mut self, other: Matrix[Self.dtype, **_]) raises:
+    fn __imul__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Multiply this matrix by another matrix element-wise in-place.
 
@@ -2422,7 +2422,7 @@ struct Matrix[
 
         vectorize[width](self.size, vec_mul_scalar)
 
-    fn __itruediv__(mut self, other: Matrix[Self.dtype, **_]) raises:
+    fn __itruediv__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Divide this matrix by another matrix element-wise in-place.
 
@@ -2492,7 +2492,7 @@ struct Matrix[
         vectorize[width](self.size, vec_div_scalar)
 
     fn __floordiv__(
-        self, other: Matrix[Self.dtype, **_]
+        self, other: Matrix[Self.dtype]
     ) raises -> Matrix[Self.dtype]:
         """
         Floor divide two matrices element-wise.
@@ -2552,7 +2552,7 @@ struct Matrix[
         """
         return self // broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __ifloordiv__(mut self, other: Matrix[Self.dtype, **_]) raises:
+    fn __ifloordiv__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Floor divide this matrix by another matrix element-wise in-place.
 
@@ -2624,7 +2624,7 @@ struct Matrix[
         vectorize[width](self.size, vec_floordiv_scalar)
 
     fn __mod__(
-        self, other: Matrix[Self.dtype, **_]
+        self, other: Matrix[Self.dtype]
     ) raises -> Matrix[Self.dtype]:
         """
         Compute element-wise modulo of two matrices.
@@ -2682,7 +2682,7 @@ struct Matrix[
         """
         return self % broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __imod__(mut self, other: Matrix[Self.dtype, **_]) raises:
+    fn __imod__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Compute element-wise modulo with another matrix in-place.
 
@@ -4866,7 +4866,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[type, simd_width],
-](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[dtype]:
+](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Perform element-wise arithmetic operation between two matrices using a SIMD function.
 
@@ -4970,7 +4970,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
     ) -> SIMD[DType.bool, simd_width],
-](A: Matrix[dtype, **_], B: Matrix[dtype, **_]) raises -> Matrix[DType.bool]:
+](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[DType.bool]:
     """
     Perform element-wise logical comparison between two matrices using a SIMD function.
 

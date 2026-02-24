@@ -186,7 +186,7 @@ struct ComplexDType(
     # Fields.
     # ===----------------------------------------------------------------------=== #
 
-    var _dtype: DType
+    var dtype: DType
     """The underlying storage for the ComplexDType value."""
 
     # ===-------------------------------------------------------------------===#
@@ -200,7 +200,7 @@ struct ComplexDType(
         Args:
             mlir_value: The MLIR ComplexDType.
         """
-        self._dtype = DType(mlir_value=mlir_value)
+        self.dtype = DType(mlir_value=mlir_value)
 
     @staticmethod
     fn _from_str(str: StringSlice) -> ComplexDType:
@@ -346,7 +346,7 @@ struct ComplexDType(
         Returns:
             The kgen.ComplexDType value.
         """
-        return self._dtype.get_value()
+        return self.dtype.get_value()
 
     @doc_private
     @staticmethod
@@ -361,7 +361,7 @@ struct ComplexDType(
     @always_inline("nodebug")
     fn _as_ui8(self) -> UInt8._mlir_type:
         return __mlir_op.`pop.cast_from_builtin`[_type = UInt8._mlir_type](
-            __mlir_op.`pop.dtype.to_ui8`(self._dtype.get_value())
+            __mlir_op.`pop.dtype.to_ui8`(self.dtype.get_value())
         )
 
     @doc_private
@@ -671,7 +671,7 @@ struct ComplexDType(
         abort("invalid dtype")
 
     fn component_dtype(self) -> DType:
-        return self._dtype
+        return self.dtype
 
 
 fn _concise_dtype_str(cdtype: ComplexDType) -> String:

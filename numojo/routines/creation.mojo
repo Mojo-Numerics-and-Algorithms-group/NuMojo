@@ -168,8 +168,8 @@ fn arange[
         result.store[width=1](
             idx,
             ComplexSIMD[cdtype](
-                start.re + step.re * Scalar[cdtype._dtype](idx),
-                start.im + step.im * Scalar[cdtype._dtype](idx),
+                start.re + step.re * Scalar[cdtype.dtype](idx),
+                start.im + step.im * Scalar[cdtype.dtype](idx),
             ),
         )
 
@@ -206,7 +206,7 @@ fn arange[
     for i in range(size_re):
         result.store[width=1](
             i,
-            ComplexSIMD[cdtype](Scalar[cdtype._dtype](i)),
+            ComplexSIMD[cdtype](Scalar[cdtype.dtype](i)),
         )
 
     return result^
@@ -417,7 +417,7 @@ fn _linspace_serial[
     Returns:
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    comptime dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype.dtype
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
 
     if endpoint:
@@ -474,7 +474,7 @@ fn _linspace_parallel[
     Returns:
         A ComplexNDArray of `dtype` with `num` linearly spaced elements between `start` and `stop`.
     """
-    comptime dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype.dtype
     comptime nelts = simd_width_of[dtype]()
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num))
 
@@ -746,7 +746,7 @@ fn _logspace_serial[
     Returns:
         A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    comptime dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype.dtype
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
         NDArrayShape(num)
     )
@@ -805,7 +805,7 @@ fn _logspace_parallel[
     Returns:
         A ComplexNDArray of `dtype` with `num` logarithmic spaced elements between `start` and `stop`.
     """
-    comptime dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype.dtype
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](
         NDArrayShape(num)
     )
@@ -944,7 +944,7 @@ fn geomspace[
     constrained[
         not cdtype.is_integral(), "Int type will result to precision errors."
     ]()
-    comptime dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype.dtype
     var a: ComplexSIMD[cdtype] = start
 
     if endpoint:
@@ -1849,8 +1849,8 @@ fn diag[
         If v is 2-D: A 1-D ComplexNDArray containing the k-th diagonal.
     """
     return ComplexNDArray[cdtype](
-        re=diag[cdtype._dtype](v._re, k),
-        im=diag[cdtype._dtype](v._im, k),
+        re=diag[cdtype.dtype](v._re, k),
+        im=diag[cdtype.dtype](v._im, k),
     )
 
 
@@ -1915,8 +1915,8 @@ fn diagflat[
         A 2-D ComplexNDArray with the flattened input as the k-th diagonal.
     """
     return ComplexNDArray[cdtype](
-        re=diagflat[cdtype._dtype](v._re, k),
-        im=diagflat[cdtype._dtype](v._im, k),
+        re=diagflat[cdtype.dtype](v._re, k),
+        im=diagflat[cdtype.dtype](v._im, k),
     )
 
 
@@ -1984,8 +1984,8 @@ fn tri[
         A 2-D ComplexNDArray of shape (N, M) with ones on and below the k-th diagonal.
     """
     return ComplexNDArray[cdtype](
-        re=tri[cdtype._dtype](N, M, k),
-        im=tri[cdtype._dtype](N, M, k),
+        re=tri[cdtype.dtype](N, M, k),
+        im=tri[cdtype.dtype](N, M, k),
     )
 
 
@@ -2049,8 +2049,8 @@ fn tril[
         A ComplexNDArray with elements above the k-th diagonal zeroed out.
     """
     return ComplexNDArray[cdtype](
-        re=tril[cdtype._dtype](m._re, k),
-        im=tril[cdtype._dtype](m._im, k),
+        re=tril[cdtype.dtype](m._re, k),
+        im=tril[cdtype.dtype](m._im, k),
     )
 
 
@@ -2112,8 +2112,8 @@ fn triu[
         A ComplexNDArray with elements below the k-th diagonal zeroed out.
     """
     return ComplexNDArray[cdtype](
-        re=triu[cdtype._dtype](m._re, k),
-        im=triu[cdtype._dtype](m._im, k),
+        re=triu[cdtype.dtype](m._re, k),
+        im=triu[cdtype.dtype](m._im, k),
     )
 
 
@@ -2175,8 +2175,8 @@ fn vander[
         A Complex Vandermonde matrix.
     """
     return ComplexNDArray[cdtype](
-        re=vander[cdtype._dtype](x._re, N, increasing),
-        im=vander[cdtype._dtype](x._im, N, increasing),
+        re=vander[cdtype.dtype](x._re, N, increasing),
+        im=vander[cdtype.dtype](x._im, N, increasing),
     )
 
 
@@ -2271,7 +2271,7 @@ fn astype[
         A ComplexNDArray with the same shape and strides as `a`
         but with elements casted to `target`.
     """
-    comptime target_dtype: DType = target._dtype
+    comptime target_dtype: DType = target.dtype
     return ComplexNDArray[target](
         re=astype[target_dtype](a._re),
         im=astype[target_dtype](a._im),
@@ -2639,7 +2639,7 @@ fn array[
     Returns:
         A ComplexNDArray constructed from real and imaginary data, shape and order.
     """
-    comptime dtype: DType = cdtype._dtype
+    comptime dtype: DType = cdtype.dtype
     var len = Int(len(real.shape))
     var shape: List[Int] = List[Int]()
     if real.shape != imag.shape:
@@ -2837,8 +2837,8 @@ fn _0darray[
         ),
     )
     # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutExternalOrigin.
-    b._re._buf = DataContainer[cdtype._dtype](1)
-    b._im._buf = DataContainer[cdtype._dtype](1)
+    b._re._buf = DataContainer[cdtype.dtype](1)
+    b._im._buf = DataContainer[cdtype.dtype](1)
     b._re._buf.ptr.init_pointee_copy(val.re)
     b._im._buf.ptr.init_pointee_copy(val.im)
     b.flags.OWNDATA = True

@@ -30,18 +30,17 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
   "https://prefix.dev/pixi-build-backends",
   "https://prefix.dev/conda-forge",
 ]}
-
 [package.build.config.pkg]
 name = "numojo"
 
 [package.host-dependencies]
-modular = ">=26.2.0.dev2026021805,<27"
+modular = "==26.2.0.dev2026021805"
 
 [package.build-dependencies]
-modular = ">=26.2.0.dev2026021805,<27"
+modular = "==26.2.0.dev2026021805"
 
 [package.run-dependencies]
-modular = ">=26.2.0.dev2026021805,<27"
+modular = "==26.2.0.dev2026021805"
 
 [tasks]
 # compile the package and copy it to the tests folder

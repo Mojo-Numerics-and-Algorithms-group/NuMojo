@@ -457,13 +457,13 @@ struct DataContainer[dtype: DType](
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
-
         var result = DataContainer[Self.dtype](
             ptr=self.ptr,
             size=self.size,
             refcount=self._refcount,
             ownership=self.ownership,
         )
+
+        _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
 
         return result^

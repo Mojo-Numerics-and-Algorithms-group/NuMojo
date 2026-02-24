@@ -46,8 +46,8 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
         # SIMD width=2:
         var a2 = ComplexSIMD[cf32, 2](
-            SIMD[cf32._dtype, 2](1.0, 1.5),
-            SIMD[cf32._dtype, 2](2.0, -0.5)
+            SIMD[cf32.dtype, 2](1.0, 1.5),
+            SIMD[cf32.dtype, 2](2.0, -0.5)
         )
         print(a2) # ( [1.0 2.0] + [1.5 -0.5]j )
         ```
@@ -58,7 +58,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         ComplexSIMD[cf64].from_polar(2.0, 0.5)
     """
 
-    comptime dtype: DType = Self.cdtype._dtype
+    comptime dtype: DType = Self.cdtype.dtype
     """Component dtype (underlying real/imag dtype)."""
 
     var re: SIMD[Self.dtype, Self.width]

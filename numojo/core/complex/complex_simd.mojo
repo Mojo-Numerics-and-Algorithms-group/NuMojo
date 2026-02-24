@@ -107,6 +107,30 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         self.re = val
         self.im = val
 
+    @always_inline
+    fn __init__(out self, re: Int, im: Int):
+        """
+        Constructs a ComplexSIMD from scalar integer real and imaginary values, broadcasted to SIMD lanes.
+
+        Args:
+            re: Integer value for the real component.
+            im: Integer value for the imaginary component.
+        """
+        self.re = Self._broadcast(Scalar[Self.dtype](re))
+        self.im = Self._broadcast(Scalar[Self.dtype](im))
+
+    @always_inline
+    fn __init__(out self, val: Int):
+        """
+        Constructs a ComplexSIMD where both real and imaginary parts are set to the same integer value broadcasted to SIMD lanes.
+
+        Args:
+            val: Integer value to broadcast to both real and imaginary components.
+        """
+        var simd_val = Self._broadcast(Scalar[Self.dtype](val))
+        self.re = simd_val
+        self.im = simd_val
+
     # Factory constructors.
     @staticmethod
     fn zero() -> Self:

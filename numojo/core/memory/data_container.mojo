@@ -17,6 +17,8 @@ from os.atomic import Atomic, Consistency, fence
 from memory import memcpy
 from os import abort
 
+from numojo.core.error import NumojoError
+
 
 struct Ownership(ImplicitlyCopyable):
     """
@@ -156,7 +158,8 @@ struct DataContainer[dtype: DType](
         Create a DataContainer from an existing buffer.
 
         If `copy` is True, the data is deep-copied into managed storage.
-        If `copy` is False, the container is external and does not manage or free the memory.
+        If `copy` is False, the container is external and does not manage or
+        free the memory.
 
         Args:
             ptr: Pointer to an existing data buffer (must be non-null).
@@ -178,6 +181,32 @@ struct DataContainer[dtype: DType](
             self._refcount = UnsafePointer[Atomic[DType.uint64], Self.origin]()
             self.ptr = ptr
             self.ownership = Ownership.External
+
+    @always_inline
+    fn __init__(
+        out self,
+        *,
+        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        size: Int,
+        refcount: UnsafePointer[Atomic[DType.uint64], Self.origin],
+        ownership: Ownership,
+    ):
+        """Create a DataContainer that shares an existing buffer and refcount.
+
+        This constructor is used internally by `share()` to create a shared
+        handle without allocating a new refcount. No validation is performed;
+        the caller must ensure all arguments are valid.
+
+        Args:
+            ptr: Pointer to the shared data buffer.
+            size: Number of elements in the buffer.
+            refcount: Pointer to the shared atomic reference count.
+            ownership: Ownership mode (should be Managed for shared handles).
+        """
+        self.ptr = ptr
+        self.size = size
+        self._refcount = refcount
+        self.ownership = ownership
 
     @always_inline
     fn __copyinit__(out self, copy: Self):
@@ -428,13 +457,13 @@ struct DataContainer[dtype: DType](
                 )
             )
 
-        var result = DataContainer[Self.dtype]()
-        result.size = self.size
-        result.ptr = self.ptr
-        result._refcount = self._refcount
-        result.ownership = self.ownership
+        _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
 
-        if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+        var result = DataContainer[Self.dtype](
+            ptr=self.ptr,
+            size=self.size,
+            refcount=self._refcount,
+            ownership=self.ownership,
+        )
 
         return result^

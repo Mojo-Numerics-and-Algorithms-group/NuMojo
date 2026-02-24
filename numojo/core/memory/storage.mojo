@@ -19,16 +19,16 @@ This module provides three storage structs:
 from memory import UnsafePointer
 from os.atomic import Atomic, Consistency, fence
 from os import abort
-from sys import size_of
 from collections.optional import Optional
 from sys.info import has_accelerator
 from memory import memcpy
 
-from gpu.host import DeviceBuffer, DeviceContext, HostBuffer
+from gpu.host import DeviceBuffer, DeviceContext
 
 from numojo.core.accelerator import Device
 from numojo.core.accelerator.device import is_accelerator_available
 from numojo.core.memory.data_container import Ownership
+from numojo.core.error import NumojoError
 
 
 # ===----------------------------------------------------------------------=== #
@@ -140,6 +140,32 @@ struct HostStorage[dtype: DType](
             self._refcount = UnsafePointer[Atomic[DType.uint64], Self.origin]()
             self.ptr = ptr
             self.ownership = Ownership.External
+
+    @always_inline
+    fn __init__(
+        out self,
+        *,
+        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        size: Int,
+        refcount: UnsafePointer[Atomic[DType.uint64], Self.origin],
+        ownership: Ownership,
+    ):
+        """Create a HostStorage that shares an existing buffer and refcount.
+
+        This constructor is used internally by `share()` to create a shared
+        handle without allocating a new refcount. No validation is performed;
+        the caller must ensure all arguments are valid.
+
+        Args:
+            ptr: Pointer to the shared data buffer.
+            size: Number of elements in the buffer.
+            refcount: Pointer to the shared atomic reference count.
+            ownership: Ownership mode (should be Managed for shared handles).
+        """
+        self.ptr = ptr
+        self.size = size
+        self._refcount = refcount
+        self.ownership = ownership
 
     @always_inline
     fn __copyinit__(out self, copy: Self):
@@ -402,13 +428,14 @@ struct HostStorage[dtype: DType](
                 )
             )
 
-        var result = HostStorage[Self.dtype]()
-        result.size = self.size
-        result.ptr = self.ptr
-        result._refcount = self._refcount
-        result.ownership = self.ownership
-
         _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+
+        var result = HostStorage[Self.dtype](
+            ptr=self.ptr,
+            size=self.size,
+            refcount=self._refcount,
+            ownership=self.ownership,
+        )
 
         return result^
 
@@ -451,8 +478,11 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
             Error: If no GPU accelerator is available.
         """
         constrained[
-            has_accelerator(), "NuMojo: No GPU device available detected."
+            is_accelerator_available[Self.device](),
+            "NuMojo: The requested GPU device is not available.",
         ]()
+        # TODO: Use a device-specific or cached DeviceContext instead of
+        # the default one, so the correct backend is selected.
         self.buffer = DeviceContext().enqueue_create_buffer[Self.dtype](size)
         self.size = size
 
@@ -492,6 +522,47 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         """
         self.buffer = take.buffer^
         self.size = take.size
+
+    # ===----------------------------------------------------------------------===#
+    # Trait Implementations
+    # ===----------------------------------------------------------------------===#
+
+    @always_inline
+    fn __len__(self) -> Int:
+        """Return the number of elements.
+
+        Returns:
+            `self.size`.
+        """
+        return self.size
+
+    @always_inline
+    fn __str__(self) -> String:
+        """Return a human-readable summary of the container.
+
+        Returns:
+            A string of the form
+            ``DeviceStorage(device, size=N)``.
+        """
+        return (
+            "DeviceStorage("
+            + String(Self.device)
+            + ", size="
+            + String(self.size)
+            + ")"
+        )
+
+    @always_inline
+    fn write_to[W: Writer](self, mut writer: W):
+        """Write a human-readable summary to `writer`.
+
+        Parameters:
+            W: The writer type.
+
+        Args:
+            writer: Destination writer.
+        """
+        writer.write(self.__str__())
 
     # ===----------------------------------------------------------------------===#
     # Access
@@ -672,6 +743,25 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     # ===----------------------------------------------------------------------===#
 
     @always_inline
+    fn offset(
+        self, offset: Int
+    ) -> UnsafePointer[Scalar[Self.dtype], MutExternalOrigin] where (
+        Self.device.type == "cpu"
+    ):
+        """Return a pointer advanced by `offset` elements.
+
+        Args:
+            offset: Number of elements to advance.
+
+        Returns:
+            `self.host_storage.ptr + offset`.
+
+        Constraints:
+            CPU containers only.
+        """
+        return self.host_storage.unsafe_value().ptr + offset
+
+    @always_inline
     fn __getitem__(
         self, idx: Int
     ) -> Scalar[Self.dtype] where Self.device.type == "cpu":
@@ -834,8 +924,8 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             )
             var ctx = self.device_storage.unsafe_value().buffer.context()
             ctx.enqueue_copy(
-                self.device_storage.unsafe_value().buffer,
                 result.device_storage.unsafe_value().buffer,
+                self.device_storage.unsafe_value().buffer,
             )
             return result^
 
@@ -935,7 +1025,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         ]()
         return self.device_storage.unsafe_value().unsafe_ptr()
 
-    fn host_buffer(self) raises -> HostStorage[Self.dtype]:
+    fn host_buffer(self) -> HostStorage[Self.dtype]:
         """Return a shallow copy of the underlying `HostStorage`.
 
         The returned copy shares the same data pointer and refcount
@@ -953,7 +1043,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         ]()
         return self.host_storage.unsafe_value().copy()
 
-    fn device_buffer(self) raises -> DeviceStorage[Self.dtype, Self.device]:
+    fn device_buffer(self) -> DeviceStorage[Self.dtype, Self.device]:
         """Return a shallow copy of the underlying `DeviceStorage`.
 
         Constraints:

@@ -3141,22 +3141,118 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.add[Self.dtype](self, other)
 
-    # TODO make an inplace version of arithmetic functions for the i dunders
+    # ===--- In-place helper methods (view-safe) ---===#
+
+    fn _inplace_scalar_op[
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](mut self, other: SIMD[Self.dtype, 1]):
+        """Apply a binary SIMD operation in-place: self[i] = func(self[i], s).
+
+        This method is view-safe: it writes directly into the underlying
+        buffer at the correct offset and strides, so views of a parent
+        array are modified in-place (matching NumPy semantics for +=, etc.).
+
+        Parameters:
+            func: The SIMD-compatible binary function to apply element-wise.
+
+        Args:
+            other: The scalar operand.
+        """
+
+        if self.is_c_contiguous():
+
+            @parameter
+            fn vec_op[w: Int](i: Int) unified {mut self, read other}:
+                self._buf.ptr.store(
+                    self.offset + i,
+                    func[Self.dtype, w](
+                        self._buf.ptr.load[width=w](self.offset + i),
+                        SIMD[Self.dtype, w](other),
+                    ),
+                )
+
+            vectorize[self.width](self.size, vec_op)
+        else:
+            for i in range(self.size):
+                var remainder = i
+                var idx = self.offset
+                for dim in range(self.ndim - 1, -1, -1):
+                    var dim_size = Int(self.shape.unsafe_load(dim))
+                    var coord = remainder % dim_size
+                    remainder //= dim_size
+                    idx += coord * Int(self.strides.unsafe_load(dim))
+                self._buf.ptr[idx] = func[Self.dtype, 1](
+                    self._buf.ptr[idx], other
+                )
+
+    fn _inplace_array_op[
+        func: fn[type: DType, simd_w: Int] (
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](mut self, other: Self) raises:
+        """Apply a binary SIMD operation in-place: self[i] = func(self[i], o[i]).
+
+        This method is view-safe: it writes directly into the underlying
+        buffer at the correct offset and strides, so views of a parent
+        array are modified in-place (matching NumPy semantics for +=, etc.).
+
+        Parameters:
+            func: The SIMD-compatible binary function to apply element-wise.
+
+        Args:
+            other: The array operand. Must have the same size as self.
+
+        Raises:
+            Error: If the arrays do not have the same size.
+        """
+
+        if self.size != other.size:
+            raise Error(
+                String(
+                    "Size mismatch in in-place operation: self has {}"
+                    " elements, other has {} elements."
+                ).format(self.size, other.size)
+            )
+
+        var other_c = other.contiguous()
+
+        if self.is_c_contiguous():
+
+            @parameter
+            fn vec_op[w: Int](i: Int) unified {mut self, read other_c}:
+                self._buf.ptr.store(
+                    self.offset + i,
+                    func[Self.dtype, w](
+                        self._buf.ptr.load[width=w](self.offset + i),
+                        other_c._buf.ptr.load[width=w](i),
+                    ),
+                )
+
+            vectorize[self.width](self.size, vec_op)
+        else:
+            for i in range(self.size):
+                var remainder = i
+                var idx = self.offset
+                for dim in range(self.ndim - 1, -1, -1):
+                    var dim_size = Int(self.shape.unsafe_load(dim))
+                    var coord = remainder % dim_size
+                    remainder //= dim_size
+                    idx += coord * Int(self.strides.unsafe_load(dim))
+                self._buf.ptr[idx] = func[Self.dtype, 1](
+                    self._buf.ptr[idx], other_c._buf.ptr[i]
+                )
+
+    # ===--- In-place arithmetic operators ---===#
+
     fn __iadd__(mut self, other: SIMD[Self.dtype, 1]) raises:
-        """
-        Enables `array += scalar`.
-        """
-        self = _af.math_func_one_array_one_SIMD_in_one_array_out[
-            Self.dtype, SIMD.__add__
-        ](self, other)
+        """Enables `array += scalar`. View-safe: modifies buffer in-place."""
+        self._inplace_scalar_op[SIMD.__add__](other)
 
     fn __iadd__(mut self, other: Self) raises:
-        """
-        Enables `array *= array`.
-        """
-        self = _af.math_func_2_array_in_one_array_out[Self.dtype, SIMD.__add__](
-            self, other
-        )
+        """Enables `array += array`. View-safe: modifies buffer in-place."""
+        self._inplace_array_op[SIMD.__add__](other)
 
     fn __sub__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -3177,16 +3273,12 @@ struct NDArray[dtype: DType = DType.float64](
         return math.sub[Self.dtype](other, self)
 
     fn __isub__(mut self, other: SIMD[Self.dtype, 1]) raises:
-        """
-        Enables `array -= scalar`.
-        """
-        self = self - other
+        """Enables `array -= scalar`. View-safe: modifies buffer in-place."""
+        self._inplace_scalar_op[SIMD.__sub__](other)
 
     fn __isub__(mut self, other: Self) raises:
-        """
-        Enables `array -= array`.
-        """
-        self = self - other
+        """Enables `array -= array`. View-safe: modifies buffer in-place."""
+        self._inplace_array_op[SIMD.__sub__](other)
 
     fn __matmul__(self, other: Self) raises -> Self:
         return numojo.linalg.matmul(self, other)
@@ -3210,16 +3302,12 @@ struct NDArray[dtype: DType = DType.float64](
         return math.mul[Self.dtype](self, other)
 
     fn __imul__(mut self, other: SIMD[Self.dtype, 1]) raises:
-        """
-        Enables `array *= scalar`.
-        """
-        self = self * other
+        """Enables `array *= scalar`. View-safe: modifies buffer in-place."""
+        self._inplace_scalar_op[SIMD.__mul__](other)
 
     fn __imul__(mut self, other: Self) raises:
-        """
-        Enables `array *= array`.
-        """
-        self = self * other
+        """Enables `array *= array`. View-safe: modifies buffer in-place."""
+        self._inplace_array_op[SIMD.__mul__](other)
 
     fn __abs__(self) -> Self:
         return abs(self)
@@ -3272,7 +3360,31 @@ struct NDArray[dtype: DType = DType.float64](
         return result^
 
     fn __ipow__(mut self, p: Int) raises:
-        self = self.__pow__(p)
+        """Enables `array **= int`. View-safe: modifies buffer in-place."""
+        if self.is_c_contiguous():
+
+            @parameter
+            fn vec_pow[w: Int](i: Int) unified {mut self, read p}:
+                self._buf.ptr.store(
+                    self.offset + i,
+                    builtin_math.pow(
+                        self._buf.ptr.load[width=w](self.offset + i), p
+                    ),
+                )
+
+            vectorize[self.width](self.size, vec_pow)
+        else:
+            for i in range(self.size):
+                var remainder = i
+                var idx = self.offset
+                for dim in range(self.ndim - 1, -1, -1):
+                    var dim_size = Int(self.shape.unsafe_load(dim))
+                    var coord = remainder % dim_size
+                    remainder //= dim_size
+                    idx += coord * Int(self.strides.unsafe_load(dim))
+                self._buf.ptr[idx] = builtin_math.pow(
+                    self._buf.ptr[idx], p
+                )
 
     fn _elementwise_pow(self, p: Int) raises -> Self:
         var src = self.contiguous()
@@ -3302,16 +3414,12 @@ struct NDArray[dtype: DType = DType.float64](
         return math.div[Self.dtype](self, other)
 
     fn __itruediv__(mut self, s: SIMD[Self.dtype, 1]) raises:
-        """
-        Enables `array /= scalar`.
-        """
-        self = self.__truediv__(s)
+        """Enables `array /= scalar`. View-safe: modifies buffer in-place."""
+        self._inplace_scalar_op[SIMD.__truediv__](s)
 
     fn __itruediv__(mut self, other: Self) raises:
-        """
-        Enables `array /= array`.
-        """
-        self = self.__truediv__(other)
+        """Enables `array /= array`. View-safe: modifies buffer in-place."""
+        self._inplace_array_op[SIMD.__truediv__](other)
 
     fn __rtruediv__(self, s: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3332,16 +3440,12 @@ struct NDArray[dtype: DType = DType.float64](
         return math.floor_div[Self.dtype](self, other)
 
     fn __ifloordiv__(mut self, s: SIMD[Self.dtype, 1]) raises:
-        """
-        Enables `array //= scalar`.
-        """
-        self = self.__floordiv__(s)
+        """Enables `array //= scalar`. View-safe: modifies buffer in-place."""
+        self._inplace_scalar_op[SIMD.__floordiv__](s)
 
     fn __ifloordiv__(mut self, other: Self) raises:
-        """
-        Enables `array //= array`.
-        """
-        self = self.__floordiv__(other)
+        """Enables `array //= array`. View-safe: modifies buffer in-place."""
+        self._inplace_array_op[SIMD.__floordiv__](other)
 
     fn __rfloordiv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3362,16 +3466,12 @@ struct NDArray[dtype: DType = DType.float64](
         return math.mod[Self.dtype](self, other)
 
     fn __imod__(mut self, other: SIMD[Self.dtype, 1]) raises:
-        """
-        Enables `array %= scalar`.
-        """
-        self = math.mod[Self.dtype](self, other)
+        """Enables `array %= scalar`. View-safe: modifies buffer in-place."""
+        self._inplace_scalar_op[SIMD.__mod__](other)
 
     fn __imod__(mut self, other: NDArray[Self.dtype]) raises:
-        """
-        Enables `array %= array`.
-        """
-        self = math.mod[Self.dtype](self, other)
+        """Enables `array %= array`. View-safe: modifies buffer in-place."""
+        self._inplace_array_op[SIMD.__mod__](other)
 
     fn __rmod__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """

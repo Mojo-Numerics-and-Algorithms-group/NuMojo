@@ -3144,7 +3144,7 @@ struct NDArray[dtype: DType = DType.float64](
     # ===--- In-place helper methods (view-safe) ---===#
 
     fn _inplace_scalar_op[
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](mut self, other: SIMD[Self.dtype, 1]):
@@ -3188,7 +3188,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
 
     fn _inplace_array_op[
-        func: fn[type: DType, simd_w: Int] (
+        func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](mut self, other: Self) raises:
@@ -3382,9 +3382,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf.ptr[idx] = builtin_math.pow(
-                    self._buf.ptr[idx], p
-                )
+                self._buf.ptr[idx] = builtin_math.pow(self._buf.ptr[idx], p)
 
     fn _elementwise_pow(self, p: Int) raises -> Self:
         var src = self.contiguous()

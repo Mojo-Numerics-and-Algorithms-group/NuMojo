@@ -1174,9 +1174,7 @@ struct Matrix[
                     self._buf.offset(
                         self.offset + x + j * self.strides[1]
                     ).store(
-                        value._buf.ptr.load(
-                            value.offset + j * value.strides[1]
-                        )
+                        value._buf.ptr.load(value.offset + j * value.strides[1])
                     )
             else:
                 for j in range(self.shape[1]):
@@ -1270,9 +1268,7 @@ struct Matrix[
                     self._buf.offset(
                         self.offset + x + j * self.strides[1]
                     ).store(
-                        value._buf.ptr.load(
-                            value.offset + j * value.strides[1]
-                        )
+                        value._buf.ptr.load(value.offset + j * value.strides[1])
                     )
             else:
                 for j in range(self.shape[1]):
@@ -2697,7 +2693,9 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_floordiv_scalar[w: Int](i: Int) unified {mut self, read other}:
+            fn vec_floordiv_scalar[
+                w: Int
+            ](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a // other)
 
@@ -3512,9 +3510,7 @@ struct Matrix[
         """
         if self.is_c_contiguous():
             for i in range(self.size):
-                (self._buf.ptr + self.offset + i).init_pointee_copy(
-                    fill_value
-                )
+                (self._buf.ptr + self.offset + i).init_pointee_copy(fill_value)
         else:
             for i in range(self.shape[0]):
                 for j in range(self.shape[1]):

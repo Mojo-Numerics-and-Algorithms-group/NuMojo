@@ -42,12 +42,11 @@ fn `where`[
         mask: A NDArray.
 
     """
-    if not mask.is_c_contiguous():
-        return `where`(x, scalar, mask.contiguous())
+    var mask_c = mask.contiguous()
 
     for i in range(x.size):
-        if mask._buf.ptr[i] == True:
-            x._buf.ptr.store(i, scalar)
+        if mask_c._buf.ptr[i] == True:
+            x.itemset(i, scalar)
 
 
 # TODO: do it with vectorization
@@ -69,16 +68,15 @@ fn `where`[
         mask: NDArray[DType.bool].
 
     """
-    if not mask.is_c_contiguous():
-        return `where`(x, y, mask.contiguous())
-    if not y.is_c_contiguous():
-        return `where`(x, y.contiguous(), mask)
-
     if x.shape != y.shape:
         raise Error("Shape mismatch error: x and y must have the same shape")
+
+    var mask_c = mask.contiguous()
+    var y_c = y.contiguous()
+
     for i in range(x.size):
-        if mask._buf.ptr[i] == True:
-            x._buf.ptr.store(i, y._buf.ptr[i])
+        if mask_c._buf.ptr[i] == True:
+            x.itemset(i, y_c._buf.ptr[i])
 
 
 # ===----------------------------------------------------------------------=== #

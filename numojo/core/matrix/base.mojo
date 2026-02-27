@@ -240,7 +240,16 @@ struct Matrix[
             data: The source matrix to copy from.
         """
         self = Self(data.shape, data.order())
-        memcpy(dest=self._buf.ptr, src=data._buf.ptr, count=data.size)
+        if data.is_c_contiguous() or data.is_f_contiguous():
+            memcpy(
+                dest=self._buf.ptr,
+                src=data._buf.ptr + data.offset,
+                count=data.size,
+            )
+        else:
+            for i in range(data.shape[0]):
+                for j in range(data.shape[1]):
+                    self._store(i, j, data._load(i, j))
 
     @always_inline("nodebug")
     fn __init__(
@@ -534,7 +543,8 @@ struct Matrix[
         var y_norm: Int
         x_norm, y_norm = self.validate_and_normalize(x, y)
         return self._buf[
-            IndexMethods.get_1d_index((x_norm, y_norm), self.strides)
+            self.offset
+            + IndexMethods.get_1d_index((x_norm, y_norm), self.strides)
         ]
 
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
@@ -621,7 +631,7 @@ struct Matrix[
             shape=(1, self.shape[1]), order=self.order()
         )
         if self.is_c_contiguous():
-            var ptr = self._buf.offset(x_norm * self.strides[0])
+            var ptr = self._buf.offset(self.offset + x_norm * self.strides[0])
             memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
         else:
             for j in range(self.shape[1]):
@@ -1007,7 +1017,7 @@ struct Matrix[
                 )
             )
         var idx_norm = Validator.normalize(idx, self.size)
-        return self._buf.ptr.load[width=width](idx_norm)
+        return self._buf.ptr.load[width=width](self.offset + idx_norm)
 
     fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[Self.dtype, width]:
         """
@@ -1015,7 +1025,7 @@ struct Matrix[
         Unsafe: No boundary check!
         """
         return self._buf.ptr.load[width=width](
-            x * self.strides[0] + y * self.strides[1]
+            self.offset + x * self.strides[0] + y * self.strides[1]
         )
 
     fn _load[width: Int = 1](self, idx: Int) -> SIMD[Self.dtype, width]:
@@ -1023,7 +1033,7 @@ struct Matrix[
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
-        return self._buf.ptr.load[width=width](idx)
+        return self._buf.ptr.load[width=width](self.offset + idx)
 
     fn __setitem__(mut self, x: Int, y: Int, value: Scalar[Self.dtype]) raises:
         """
@@ -1073,7 +1083,9 @@ struct Matrix[
         var y_norm: Int = Validator.normalize(y, self.shape[1])
 
         self._buf.store(
-            IndexMethods.get_1d_index((x_norm, y_norm), self.strides), value
+            self.offset
+            + IndexMethods.get_1d_index((x_norm, y_norm), self.strides),
+            value,
         )
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
@@ -1143,8 +1155,14 @@ struct Matrix[
 
         if self.is_c_contiguous():
             if value.is_c_contiguous():
-                var dest_ptr = self._buf.offset(x * self.strides[0])
-                memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
+                var dest_ptr = self._buf.offset(
+                    self.offset + x * self.strides[0]
+                )
+                memcpy(
+                    dest=dest_ptr,
+                    src=value._buf.ptr + value.offset,
+                    count=self.shape[1],
+                )
             else:
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
@@ -1153,8 +1171,10 @@ struct Matrix[
         else:
             if value.is_f_contiguous():
                 for j in range(self.shape[1]):
-                    self._buf.offset(x + j * self.strides[1]).store(
-                        value._buf.ptr.load(j * value.strides[1])
+                    self._buf.offset(
+                        self.offset + x + j * self.strides[1]
+                    ).store(
+                        value._buf.ptr.load(value.offset + j * value.strides[1])
                     )
             else:
                 for j in range(self.shape[1]):
@@ -1229,8 +1249,14 @@ struct Matrix[
 
         if self.is_c_contiguous():
             if value.is_c_contiguous():
-                var dest_ptr = self._buf.offset(x * self.strides[0])
-                memcpy(dest=dest_ptr, src=value._buf.ptr, count=self.shape[1])
+                var dest_ptr = self._buf.offset(
+                    self.offset + x * self.strides[0]
+                )
+                memcpy(
+                    dest=dest_ptr,
+                    src=value._buf.ptr + value.offset,
+                    count=self.shape[1],
+                )
             else:
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
@@ -1239,8 +1265,10 @@ struct Matrix[
         else:
             if value.is_f_contiguous():
                 for j in range(self.shape[1]):
-                    self._buf.offset(x + j * self.strides[1]).store(
-                        value._buf.ptr.load(j * value.strides[1])
+                    self._buf.offset(
+                        self.offset + x + j * self.strides[1]
+                    ).store(
+                        value._buf.ptr.load(value.offset + j * value.strides[1])
                     )
             else:
                 for j in range(self.shape[1]):
@@ -1681,14 +1709,16 @@ struct Matrix[
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.ptr.store(x * self.strides[0] + y * self.strides[1], simd)
+        self._buf.ptr.store(
+            self.offset + x * self.strides[0] + y * self.strides[1], simd
+        )
 
     fn _store_idx[width: Int = 1](self, idx: Int, val: SIMD[Self.dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.ptr.store(idx, val)
+        self._buf.ptr.store(self.offset + idx, val)
 
     fn store[
         width: Int = 1
@@ -1728,7 +1758,7 @@ struct Matrix[
                 )
             )
         var idx_norm = Validator.normalize(idx, self.size)
-        self._buf.ptr.store[width=width](idx_norm, val)
+        self._buf.ptr.store[width=width](self.offset + idx_norm, val)
 
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
@@ -2200,7 +2230,7 @@ struct Matrix[
             print(A ** 2)
             ```
         """
-        if not self.is_c_contiguous():
+        if not self.is_c_contiguous() or self.offset != 0:
             return self.contiguous().__pow__(rhs)
         var result: Matrix[Self.dtype] = Matrix[Self.dtype](
             shape=self.shape, order=self.order()
@@ -2251,15 +2281,20 @@ struct Matrix[
                     location="Matrix.__iadd__",
                 )
             )
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous() and other.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_add[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            var b = other._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a + b)
+            @parameter
+            fn vec_add[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                var b = other._buf.ptr.load[width=w](other.offset + i)
+                self._buf.ptr.store(self.offset + i, a + b)
 
-        vectorize[width](self.size, vec_add)
+            vectorize[width](self.size, vec_add)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) + other._load(i, j))
 
     fn __iadd__(mut self, other: Scalar[Self.dtype]):
         """
@@ -2275,14 +2310,19 @@ struct Matrix[
             A += 2  # A is modified in-place
             ```
         """
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_add_scalar[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a + other)
+            @parameter
+            fn vec_add_scalar[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                self._buf.ptr.store(self.offset + i, a + other)
 
-        vectorize[width](self.size, vec_add_scalar)
+            vectorize[width](self.size, vec_add_scalar)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) + other)
 
     fn __isub__(mut self, other: Matrix[Self.dtype]) raises:
         """
@@ -2320,15 +2360,20 @@ struct Matrix[
                     location="Matrix.__isub__",
                 )
             )
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous() and other.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_sub[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            var b = other._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a - b)
+            @parameter
+            fn vec_sub[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                var b = other._buf.ptr.load[width=w](other.offset + i)
+                self._buf.ptr.store(self.offset + i, a - b)
 
-        vectorize[width](self.size, vec_sub)
+            vectorize[width](self.size, vec_sub)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) - other._load(i, j))
 
     fn __isub__(mut self, other: Scalar[Self.dtype]):
         """
@@ -2344,14 +2389,19 @@ struct Matrix[
             A -= 2  # A is modified in-place
             ```
         """
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_sub_scalar[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a - other)
+            @parameter
+            fn vec_sub_scalar[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                self._buf.ptr.store(self.offset + i, a - other)
 
-        vectorize[width](self.size, vec_sub_scalar)
+            vectorize[width](self.size, vec_sub_scalar)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) - other)
 
     fn __imul__(mut self, other: Matrix[Self.dtype]) raises:
         """
@@ -2389,15 +2439,20 @@ struct Matrix[
                     location="Matrix.__imul__",
                 )
             )
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous() and other.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_mul[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            var b = other._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a * b)
+            @parameter
+            fn vec_mul[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                var b = other._buf.ptr.load[width=w](other.offset + i)
+                self._buf.ptr.store(self.offset + i, a * b)
 
-        vectorize[width](self.size, vec_mul)
+            vectorize[width](self.size, vec_mul)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) * other._load(i, j))
 
     fn __imul__(mut self, other: Scalar[Self.dtype]):
         """
@@ -2413,14 +2468,19 @@ struct Matrix[
             A *= 2  # A is modified in-place
             ```
         """
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_mul_scalar[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a * other)
+            @parameter
+            fn vec_mul_scalar[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                self._buf.ptr.store(self.offset + i, a * other)
 
-        vectorize[width](self.size, vec_mul_scalar)
+            vectorize[width](self.size, vec_mul_scalar)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) * other)
 
     fn __itruediv__(mut self, other: Matrix[Self.dtype]) raises:
         """
@@ -2458,15 +2518,20 @@ struct Matrix[
                     location="Matrix.__itruediv__",
                 )
             )
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous() and other.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_div[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            var b = other._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a / b)
+            @parameter
+            fn vec_div[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                var b = other._buf.ptr.load[width=w](other.offset + i)
+                self._buf.ptr.store(self.offset + i, a / b)
 
-        vectorize[width](self.size, vec_div)
+            vectorize[width](self.size, vec_div)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) / other._load(i, j))
 
     fn __itruediv__(mut self, other: Scalar[Self.dtype]):
         """
@@ -2482,14 +2547,19 @@ struct Matrix[
             A /= 2  # A is modified in-place
             ```
         """
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_div_scalar[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a / other)
+            @parameter
+            fn vec_div_scalar[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                self._buf.ptr.store(self.offset + i, a / other)
 
-        vectorize[width](self.size, vec_div_scalar)
+            vectorize[width](self.size, vec_div_scalar)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) / other)
 
     fn __floordiv__(
         self, other: Matrix[Self.dtype]
@@ -2590,15 +2660,20 @@ struct Matrix[
                     location="Matrix.__ifloordiv__",
                 )
             )
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous() and other.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_floordiv[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            var b = other._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a // b)
+            @parameter
+            fn vec_floordiv[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                var b = other._buf.ptr.load[width=w](other.offset + i)
+                self._buf.ptr.store(self.offset + i, a // b)
 
-        vectorize[width](self.size, vec_floordiv)
+            vectorize[width](self.size, vec_floordiv)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) // other._load(i, j))
 
     fn __ifloordiv__(mut self, other: Scalar[Self.dtype]):
         """
@@ -2614,14 +2689,21 @@ struct Matrix[
             A //= 2  # A is modified in-place
             ```
         """
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_floordiv_scalar[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a // other)
+            @parameter
+            fn vec_floordiv_scalar[
+                w: Int
+            ](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                self._buf.ptr.store(self.offset + i, a // other)
 
-        vectorize[width](self.size, vec_floordiv_scalar)
+            vectorize[width](self.size, vec_floordiv_scalar)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) // other)
 
     fn __mod__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
@@ -2717,15 +2799,20 @@ struct Matrix[
                     location="Matrix.__imod__",
                 )
             )
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous() and other.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_mod[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            var b = other._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a % b)
+            @parameter
+            fn vec_mod[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                var b = other._buf.ptr.load[width=w](other.offset + i)
+                self._buf.ptr.store(self.offset + i, a % b)
 
-        vectorize[width](self.size, vec_mod)
+            vectorize[width](self.size, vec_mod)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) % other._load(i, j))
 
     fn __imod__(mut self, other: Scalar[Self.dtype]):
         """
@@ -2741,14 +2828,19 @@ struct Matrix[
             A %= 3  # A is modified in-place
             ```
         """
-        comptime width = simd_width_of[Self.dtype]()
+        if self.is_c_contiguous():
+            comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        fn vec_mod_scalar[w: Int](i: Int) unified {mut self, read other}:
-            var a = self._buf.ptr.load[width=w](i)
-            self._buf.ptr.store(i, a % other)
+            @parameter
+            fn vec_mod_scalar[w: Int](i: Int) unified {mut self, read other}:
+                var a = self._buf.ptr.load[width=w](self.offset + i)
+                self._buf.ptr.store(self.offset + i, a % other)
 
-        vectorize[width](self.size, vec_mod_scalar)
+            vectorize[width](self.size, vec_mod_scalar)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, self._load(i, j) % other)
 
     fn __lt__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
         """
@@ -3416,8 +3508,13 @@ struct Matrix[
 
         See also: `Matrix.full`
         """
-        for i in range(self.size):
-            self._buf.ptr[i] = fill_value
+        if self.is_c_contiguous():
+            for i in range(self.size):
+                (self._buf.ptr + self.offset + i).init_pointee_copy(fill_value)
+        else:
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    self._store(i, j, fill_value)
 
     # * Make it inplace?
     fn flatten(self) -> Matrix[Self.dtype]:
@@ -3751,13 +3848,15 @@ struct Matrix[
                     var flat_idx = i * shape[1] + j
                     res._buf[
                         j * res.strides[1] + i * res.strides[0]
-                    ] = self._buf[flat_idx]
+                    ] = self._buf[self.offset + flat_idx]
         elif self.is_f_contiguous() and order == "C":
             var k = 0
             for row in range(self.shape[0]):
                 for col in range(self.shape[1]):
                     var val = self._buf.ptr[
-                        row * self.strides[0] + col * self.strides[1]
+                        self.offset
+                        + row * self.strides[0]
+                        + col * self.strides[1]
                     ]
                     var dest_row = Int(k // shape[1])
                     var dest_col = k % shape[1]
@@ -3766,7 +3865,11 @@ struct Matrix[
                     ] = val
                     k += 1
         else:
-            memcpy(dest=res._buf.ptr, src=self._buf.ptr, count=res.size)
+            memcpy(
+                dest=res._buf.ptr,
+                src=self._buf.ptr + self.offset,
+                count=res.size,
+            )
         return res^
 
     # NOTE: not sure if `where` clause works correctly here yet.
@@ -3796,7 +3899,11 @@ struct Matrix[
         if shape[0] * shape[1] > self.size:
             var other = Matrix[Self.dtype](shape=shape, order=self.order())
             if self.is_c_contiguous():
-                memcpy(dest=other._buf.ptr, src=self._buf.ptr, count=self.size)
+                memcpy(
+                    dest=other._buf.ptr,
+                    src=self._buf.ptr + self.offset,
+                    count=self.size,
+                )
                 for i in range(self.size, other.size):
                     other._buf.ptr[i] = 0
             else:
@@ -3806,7 +3913,7 @@ struct Matrix[
                 for j in range(min_cols):
                     for i in range(min_rows):
                         other._buf.ptr[i + j * shape[0]] = self._buf.ptr[
-                            i + j * self.shape[0]
+                            self.offset + i + j * self.shape[0]
                         ]
                     for i in range(min_rows, shape[0]):
                         other._buf.ptr[i + j * shape[0]] = 0

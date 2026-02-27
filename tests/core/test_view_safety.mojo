@@ -1333,6 +1333,261 @@ fn test_offset_view_slice_setitem() raises:
 
 
 # ===-----------------------------------------------------------------------===#
+# Phase 4+ tests: In-place operators, Matrix view safety, where, ravel
+# ===-----------------------------------------------------------------------===#
+
+
+fn test_inplace_iadd_scalar_view() raises:
+    """Test += scalar on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](0, 10)
+    var view = _make_1d_offset_view(parent, offset=3, size=4)  # [3,4,5,6]
+    view += 100.0
+
+    # The parent should be modified at positions 3-6
+    assert_true(parent.load(0) == 0.0, "iadd parent[0] unchanged")
+    assert_true(parent.load(2) == 2.0, "iadd parent[2] unchanged")
+    assert_true(parent.load(3) == 103.0, "iadd parent[3]")
+    assert_true(parent.load(4) == 104.0, "iadd parent[4]")
+    assert_true(parent.load(5) == 105.0, "iadd parent[5]")
+    assert_true(parent.load(6) == 106.0, "iadd parent[6]")
+    assert_true(parent.load(7) == 7.0, "iadd parent[7] unchanged")
+
+
+fn test_inplace_isub_scalar_view() raises:
+    """Test -= scalar on a C-contiguous view with offset."""
+    var parent = nm.full[nm.f64](10, fill_value=50.0)
+    var view = _make_1d_offset_view(parent, offset=2, size=3)
+    view -= 10.0
+
+    assert_true(parent.load(1) == 50.0, "isub parent[1] unchanged")
+    assert_true(parent.load(2) == 40.0, "isub parent[2]")
+    assert_true(parent.load(3) == 40.0, "isub parent[3]")
+    assert_true(parent.load(4) == 40.0, "isub parent[4]")
+    assert_true(parent.load(5) == 50.0, "isub parent[5] unchanged")
+
+
+fn test_inplace_imul_scalar_view() raises:
+    """Test *= scalar on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](1, 9)  # [1,2,3,4,5,6,7,8]
+    var view = _make_1d_offset_view(parent, offset=4, size=4)  # [5,6,7,8]
+    view *= 10.0
+
+    assert_true(parent.load(3) == 4.0, "imul parent[3] unchanged")
+    assert_true(parent.load(4) == 50.0, "imul parent[4]")
+    assert_true(parent.load(5) == 60.0, "imul parent[5]")
+    assert_true(parent.load(6) == 70.0, "imul parent[6]")
+    assert_true(parent.load(7) == 80.0, "imul parent[7]")
+
+
+fn test_inplace_itruediv_scalar_view() raises:
+    """Test /= scalar on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
+    var view = _make_1d_offset_view(parent, offset=2, size=4)  # [2,3,4,5]
+    view /= 2.0
+
+    assert_true(parent.load(1) == 1.0, "itruediv parent[1] unchanged")
+    assert_true(parent.load(2) == 1.0, "itruediv parent[2]")
+    assert_true(parent.load(3) == 1.5, "itruediv parent[3]")
+    assert_true(parent.load(4) == 2.0, "itruediv parent[4]")
+    assert_true(parent.load(5) == 2.5, "itruediv parent[5]")
+    assert_true(parent.load(6) == 6.0, "itruediv parent[6] unchanged")
+
+
+fn test_inplace_iadd_array_view() raises:
+    """Test += array on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](0, 10)
+    var view = _make_1d_offset_view(parent, offset=3, size=4)  # [3,4,5,6]
+    var addend = nm.arange[nm.f64](10, 14)  # [10,11,12,13]
+    view += addend
+
+    assert_true(parent.load(2) == 2.0, "iadd arr parent[2] unchanged")
+    assert_true(parent.load(3) == 13.0, "iadd arr parent[3]")
+    assert_true(parent.load(4) == 15.0, "iadd arr parent[4]")
+    assert_true(parent.load(5) == 17.0, "iadd arr parent[5]")
+    assert_true(parent.load(6) == 19.0, "iadd arr parent[6]")
+    assert_true(parent.load(7) == 7.0, "iadd arr parent[7] unchanged")
+
+
+fn test_inplace_ipow_view() raises:
+    """Test **= int on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
+    var view = _make_1d_offset_view(parent, offset=2, size=3)  # [2,3,4]
+    view **= 2
+
+    assert_true(parent.load(1) == 1.0, "ipow parent[1] unchanged")
+    assert_true(parent.load(2) == 4.0, "ipow parent[2]")
+    assert_true(parent.load(3) == 9.0, "ipow parent[3]")
+    assert_true(parent.load(4) == 16.0, "ipow parent[4]")
+    assert_true(parent.load(5) == 5.0, "ipow parent[5] unchanged")
+
+
+fn test_inplace_ifloordiv_scalar_view() raises:
+    """Test //= scalar on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
+    var view = _make_1d_offset_view(parent, offset=4, size=3)  # [4,5,6]
+    view //= 2.0
+
+    assert_true(parent.load(3) == 3.0, "ifloordiv parent[3] unchanged")
+    assert_true(parent.load(4) == 2.0, "ifloordiv parent[4]")
+    assert_true(parent.load(5) == 2.0, "ifloordiv parent[5]")
+    assert_true(parent.load(6) == 3.0, "ifloordiv parent[6]")
+    assert_true(parent.load(7) == 7.0, "ifloordiv parent[7] unchanged")
+
+
+fn test_inplace_imod_scalar_view() raises:
+    """Test %= scalar on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
+    var view = _make_1d_offset_view(parent, offset=3, size=3)  # [3,4,5]
+    view %= 3.0
+
+    assert_true(parent.load(2) == 2.0, "imod parent[2] unchanged")
+    assert_true(parent.load(3) == 0.0, "imod parent[3]")
+    assert_true(parent.load(4) == 1.0, "imod parent[4]")
+    assert_true(parent.load(5) == 2.0, "imod parent[5]")
+    assert_true(parent.load(6) == 6.0, "imod parent[6] unchanged")
+
+
+fn test_matrix_view_fill() raises:
+    """Test Matrix.fill on a view with offset."""
+    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
+    for i in range(3):
+        for j in range(4):
+            parent[i, j] = Scalar[nm.f64](i * 4 + j)
+
+    # Create a view of row 1 (offset = 4)
+    var view = parent.get(1)
+    view.fill(99.0)
+
+    # Row 0 should be unchanged
+    assert_true(parent[0, 0] == 0.0, "matrix fill parent[0,0] unchanged")
+    assert_true(parent[0, 3] == 3.0, "matrix fill parent[0,3] unchanged")
+    # Row 1 should be filled
+    assert_true(parent[1, 0] == 99.0, "matrix fill parent[1,0]")
+    assert_true(parent[1, 1] == 99.0, "matrix fill parent[1,1]")
+    assert_true(parent[1, 2] == 99.0, "matrix fill parent[1,2]")
+    assert_true(parent[1, 3] == 99.0, "matrix fill parent[1,3]")
+    # Row 2 should be unchanged
+    assert_true(parent[2, 0] == 8.0, "matrix fill parent[2,0] unchanged")
+
+
+fn test_matrix_view_getset() raises:
+    """Test Matrix __getitem__/__setitem__(x,y) respect offset."""
+    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
+    for i in range(3):
+        for j in range(4):
+            parent[i, j] = Scalar[nm.f64](i * 4 + j)
+
+    # Get a view of row 2 (offset = 8, shape 1x4)
+    var view = parent.get(2)
+    # Reading via [0, j] on the view should return row 2 values
+    assert_true(view[0, 0] == 8.0, "matrix view get [0,0]")
+    assert_true(view[0, 1] == 9.0, "matrix view get [0,1]")
+    assert_true(view[0, 2] == 10.0, "matrix view get [0,2]")
+    assert_true(view[0, 3] == 11.0, "matrix view get [0,3]")
+
+    # Writing via [0, j] on the view should modify the parent
+    view[0, 2] = 999.0
+    assert_true(parent[2, 2] == 999.0, "matrix view set parent[2,2]")
+
+
+fn test_matrix_view_iadd() raises:
+    """Test Matrix += on a row view with offset."""
+    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
+    for i in range(3):
+        for j in range(4):
+            parent[i, j] = Scalar[nm.f64](i * 4 + j)
+
+    # Get a view of row 1 (offset = 4)
+    var view = parent.get(1)
+    view += Scalar[nm.f64](100.0)
+
+    # Row 0 should be unchanged
+    assert_true(parent[0, 0] == 0.0, "matrix iadd parent[0,0] unchanged")
+    # Row 1 should have 100 added
+    assert_true(parent[1, 0] == 104.0, "matrix iadd parent[1,0]")
+    assert_true(parent[1, 1] == 105.0, "matrix iadd parent[1,1]")
+    assert_true(parent[1, 2] == 106.0, "matrix iadd parent[1,2]")
+    assert_true(parent[1, 3] == 107.0, "matrix iadd parent[1,3]")
+    # Row 2 should be unchanged
+    assert_true(parent[2, 0] == 8.0, "matrix iadd parent[2,0] unchanged")
+
+
+fn test_matrix_view_load_store() raises:
+    """Test Matrix load/store with offset."""
+    var parent = Matrix[nm.f64](shape=(2, 4), order="C")
+    for i in range(2):
+        for j in range(4):
+            parent[i, j] = Scalar[nm.f64](i * 4 + j)
+
+    # Get a view of row 1 (offset = 4)
+    var view = parent.get(1)
+    # load(0) on the view should return the first element of row 1
+    assert_true(view.load(0) == 4.0, "matrix load view[0]")
+    assert_true(view.load(1) == 5.0, "matrix load view[1]")
+    assert_true(view.load(3) == 7.0, "matrix load view[3]")
+
+    # store on the view should write to the parent's row 1
+    view.store(1, Scalar[nm.f64](555.0))
+    assert_true(parent[1, 1] == 555.0, "matrix store parent[1,1]")
+
+
+fn test_matrix_view_reshape() raises:
+    """Test Matrix reshape on a view with offset."""
+    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
+    for i in range(3):
+        for j in range(4):
+            parent[i, j] = Scalar[nm.f64](i * 4 + j)
+
+    # Get view of rows 1-2 (offset=4, shape 2x4)
+    var view = parent.get(Slice(1, 3), Slice(0, 4))
+    # Reshape 2x4 -> 4x2
+    var reshaped = view.reshape((4, 2))
+    # Should contain [4,5,6,7,8,9,10,11]
+    assert_true(reshaped[0, 0] == 4.0, "matrix reshape [0,0]")
+    assert_true(reshaped[0, 1] == 5.0, "matrix reshape [0,1]")
+    assert_true(reshaped[1, 0] == 6.0, "matrix reshape [1,0]")
+    assert_true(reshaped[3, 1] == 11.0, "matrix reshape [3,1]")
+
+
+fn test_ndarray_ravel_offset_view() raises:
+    """Test ravel on a C-contiguous view with offset."""
+    var parent = nm.arange[nm.f64](0, 24)
+    var view = _make_2d_offset_view(
+        parent, offset=6, rows=2, cols=3, stride0=3, stride1=1
+    )
+    # view represents parent[6:12] as 2x3:
+    # [[6,7,8],[9,10,11]]
+    var flat = nm.ravel(view)
+    assert_true(flat.size == 6, "ravel size")
+    assert_true(flat.item(0) == 6.0, "ravel [0]")
+    assert_true(flat.item(1) == 7.0, "ravel [1]")
+    assert_true(flat.item(2) == 8.0, "ravel [2]")
+    assert_true(flat.item(3) == 9.0, "ravel [3]")
+    assert_true(flat.item(4) == 10.0, "ravel [4]")
+    assert_true(flat.item(5) == 11.0, "ravel [5]")
+
+
+fn test_where_on_offset_view() raises:
+    """Test where() modifies an offset view's parent buffer."""
+    var parent = nm.full[nm.f64](10, fill_value=0.0)
+    var view = _make_1d_offset_view(parent, offset=3, size=4)  # [0,0,0,0]
+    # mask: [True, False, True, False]
+    var mask = nm.NDArray[DType.bool](Shape(4))
+    mask.itemset(0, Scalar[DType.bool](True))
+    mask.itemset(1, Scalar[DType.bool](False))
+    mask.itemset(2, Scalar[DType.bool](True))
+    mask.itemset(3, Scalar[DType.bool](False))
+    nm.routines.indexing.`where`(view, Scalar[nm.f64](99.0), mask)
+
+    # Parent positions 3 and 5 should be 99, others 0
+    assert_true(parent.load(2) == 0.0, "where parent[2] unchanged")
+    assert_true(parent.load(3) == 99.0, "where parent[3]")
+    assert_true(parent.load(4) == 0.0, "where parent[4] unchanged")
+    assert_true(parent.load(5) == 99.0, "where parent[5]")
+    assert_true(parent.load(6) == 0.0, "where parent[6] unchanged")
+
+
+# ===-----------------------------------------------------------------------===#
 # main
 # ===-----------------------------------------------------------------------===#
 

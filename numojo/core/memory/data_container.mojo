@@ -239,7 +239,7 @@ struct DataContainer[dtype: DType](
         var result = DataContainer[Self.dtype](self.size)
         memcpy(dest=result.ptr, src=self.ptr, count=self.size)
         return result^
-
+        
     @always_inline
     fn __moveinit__(out self, deinit take: Self):
         """

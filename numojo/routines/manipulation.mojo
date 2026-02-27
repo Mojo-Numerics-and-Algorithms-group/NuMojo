@@ -207,9 +207,10 @@ fn ravel[
     var length_of_iterator = a.size // length_of_elements
 
     for i in range(length_of_iterator):
+        var sub = iterator.ith(i)
         memcpy(
             dest=res._buf.ptr + i * length_of_elements,
-            src=iterator.ith(i)._buf.ptr,
+            src=sub._buf.ptr + sub.offset,
             count=length_of_elements,
         )
 

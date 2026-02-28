@@ -30,7 +30,7 @@ comptime END_COLOR: String = "\033[0m"
 
 
 # TODO: remove suggestion field and remove it from existing instances.
-struct NumojoError(Writable):
+struct NumojoError(Stringable, Writable):
     """
     Unified error type for all Numojo operations.
 

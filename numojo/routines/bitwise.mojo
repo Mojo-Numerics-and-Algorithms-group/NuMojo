@@ -42,9 +42,6 @@ fn invert[
     Returns:
         A NDArray equal to the bitwise inversion of array.
     """
-    comptime assert (
-        is_inttype[dtype]() or is_booltype[dtype]()
-    ), "Only Bools and integral types can be inverted."
 
     return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](
         array

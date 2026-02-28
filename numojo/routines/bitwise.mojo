@@ -23,7 +23,9 @@ from numojo.core.dtype.utility import is_inttype, is_floattype, is_booltype
 
 fn invert[
     dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+](array: NDArray[dtype]) raises -> NDArray[dtype] where (
+    dtype.is_integral() or dtype == DType.bool
+):
     """
     Element-wise invert of an array.
 
@@ -40,10 +42,9 @@ fn invert[
     Returns:
         A NDArray equal to the bitwise inversion of array.
     """
-    constrained[
-        is_inttype[dtype]() or is_booltype[dtype](),
-        "Only Bools and integral types can be invertedd.",
-    ]()
+    comptime assert (
+        is_inttype[dtype]() or is_booltype[dtype]()
+    ), "Only Bools and integral types can be inverted."
 
     return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](
         array

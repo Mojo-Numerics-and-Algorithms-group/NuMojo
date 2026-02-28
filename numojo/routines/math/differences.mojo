@@ -83,7 +83,9 @@ fn gradient[
 # naive loop implementation, optimize later
 fn trapz[
     dtype: DType = DType.float64
-](y: NDArray[dtype], x: NDArray[dtype]) raises -> Scalar[dtype]:
+](y: NDArray[dtype], x: NDArray[dtype]) raises -> Scalar[
+    dtype
+] where dtype.is_floating_point():
     """
     Compute the integral of y over x using the trapezoidal rule.
 
@@ -96,19 +98,11 @@ fn trapz[
 
     Constraints:
         `x` and `y` must have the same shape.
-        `fdtype` must be a floating-point type if `idtype` is not a floating-point type.
+        `dtype` must be a floating-point type.
 
     Returns:
         The integral of y over x using the trapezoidal rule.
     """
-    constrained[
-        is_inttype[dtype]() and not is_floattype[dtype](),
-        (
-            "output dtype `Fdtype` must be a floating-point type if input dtype"
-            " `Idtype` is not a floating-point type"
-        ),
-    ]()
-
     if x.shape != y.shape:
         raise Error("x and y must have the same shape")
 

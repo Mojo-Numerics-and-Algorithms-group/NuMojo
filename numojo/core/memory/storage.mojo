@@ -477,10 +477,9 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         Raises:
             Error: If no GPU accelerator is available.
         """
-        constrained[
-            is_accelerator_available[Self.device](),
-            "NuMojo: The requested GPU device is not available.",
-        ]()
+        comptime assert is_accelerator_available[
+            Self.device
+        ](), "NuMojo: No GPU accelerator available."
         # TODO: Use a device-specific or cached DeviceContext instead of
         # the default one, so the correct backend is selected.
         self.buffer = DeviceContext().enqueue_create_buffer[Self.dtype](size)
@@ -691,10 +690,9 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             Only valid for CPU devices.
         """
-        constrained[
-            Self.device.type == "cpu",
-            "Pointer-based constructor is CPU-only",
-        ]()
+        comptime assert (
+            Self.device.type == "cpu"
+        ), "Pointer-based constructor is only valid for CPU devices"
         if size < 0:
             abort(
                 "AcceleratorDataContainer: __init__() size must be non-negative"
@@ -989,7 +987,11 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         """Return True if this container targets an Apple Metal device."""
         return Self.device == Device.MPS
 
-    fn host_ptr(self) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
+    fn host_ptr(
+        self,
+    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
+        Self.device == Device.CPU
+    ):
         """Return the raw host pointer to the CPU allocation.
 
         Constraints:
@@ -998,15 +1000,15 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Returns:
             An `UnsafePointer` to the first element on the host.
         """
-        constrained[
-            Self.device == Device.CPU,
-            "Cannot retrieve a host pointer from a GPU container",
-        ]()
         return self.host_storage.unsafe_value().unsafe_ptr()
 
     fn device_ptr(
         self,
-    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
+    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
+        Self.device == Device.CUDA
+        or Self.device == Device.ROCM
+        or Self.device == Device.MPS
+    ):
         """Return the raw device pointer to the GPU allocation.
 
         Constraints:
@@ -1015,17 +1017,11 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Returns:
             An `UnsafePointer` to the first element on the device.
         """
-        constrained[
-            (
-                Self.device == Device.CUDA
-                or Self.device == Device.ROCM
-                or Self.device == Device.MPS
-            ),
-            "Cannot retrieve a device pointer from a CPU container",
-        ]()
         return self.device_storage.unsafe_value().unsafe_ptr()
 
-    fn host_buffer(self) -> HostStorage[Self.dtype]:
+    fn host_buffer(
+        self,
+    ) -> HostStorage[Self.dtype] where Self.device == Device.CPU:
         """Return a shallow copy of the underlying `HostStorage`.
 
         The returned copy shares the same data pointer and refcount
@@ -1037,13 +1033,15 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Returns:
             A copy of the `HostStorage`.
         """
-        constrained[
-            Self.device == Device.CPU,
-            "Cannot retrieve a HostStorage from a GPU container",
-        ]()
         return self.host_storage.unsafe_value().copy()
 
-    fn device_buffer(self) -> DeviceStorage[Self.dtype, Self.device]:
+    fn device_buffer(
+        self,
+    ) -> DeviceStorage[Self.dtype, Self.device] where (
+        Self.device == Device.CUDA
+        or Self.device == Device.ROCM
+        or Self.device == Device.MPS
+    ):
         """Return a shallow copy of the underlying `DeviceStorage`.
 
         Constraints:
@@ -1052,12 +1050,4 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Returns:
             A copy of the `DeviceStorage`.
         """
-        constrained[
-            (
-                Self.device == Device.CUDA
-                or Self.device == Device.ROCM
-                or Self.device == Device.MPS
-            ),
-            "Cannot retrieve a DeviceBuffer from a CPU container",
-        ]()
         return self.device_storage.unsafe_value().copy()

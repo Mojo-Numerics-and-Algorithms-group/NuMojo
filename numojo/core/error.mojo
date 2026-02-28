@@ -30,7 +30,7 @@ comptime END_COLOR: String = "\033[0m"
 
 
 # TODO: remove suggestion field and remove it from existing instances.
-struct NumojoError(Stringable, Writable):
+struct NumojoError(Writable):
     """
     Unified error type for all Numojo operations.
 
@@ -88,7 +88,7 @@ struct NumojoError(Stringable, Writable):
         )
         if self.location:
             result += String(" [at ") + self.location.value() + String("]")
-        result += END_COLOR.__str__()
+        result += END_COLOR
         return result
 
     fn write_to[W: Writer](self, mut writer: W):

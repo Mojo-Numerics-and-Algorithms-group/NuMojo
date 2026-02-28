@@ -2655,7 +2655,9 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-    fn itemset(mut self, var indices: List[Int], item: Scalar[Self.dtype]) raises:
+    fn itemset(
+        mut self, var indices: List[Int], item: Scalar[Self.dtype]
+    ) raises:
         """Sets the scalar at the given coordinates.
 
         Args:
@@ -3331,7 +3333,9 @@ struct NDArray[dtype: DType = DType.float64](
     fn __abs__(self) -> Self:
         return abs(self)
 
-    fn __invert__(self) raises -> Self where (Self.dtype.is_integral() or Self.dtype == DType.bool):
+    fn __invert__(
+        self,
+    ) raises -> Self where Self.dtype.is_integral() or Self.dtype == DType.bool:
         """Computes element-wise bitwise inversion.
 
         Only works for boolean and integral types.
@@ -3896,7 +3900,9 @@ struct NDArray[dtype: DType = DType.float64](
     # # tobyets, tofile, view
     # ===-------------------------------------------------------------------===#
 
-    fn all(self) raises -> Bool where (Self.dtype == DType.bool or Self.dtype.is_integral()):
+    fn all(
+        self,
+    ) raises -> Bool where Self.dtype == DType.bool or Self.dtype.is_integral():
         """Returns `True` if all elements are truthy.
 
         This method is offset and stride-aware via `contiguous()`.

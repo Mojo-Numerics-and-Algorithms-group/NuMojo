@@ -88,7 +88,7 @@ struct NumojoError(Stringable, Writable):
         )
         if self.location:
             result += String(" [at ") + self.location.value() + String("]")
-        result += END_COLOR.__str__()
+        result += END_COLOR
         return result
 
     fn write_to[W: Writer](self, mut writer: W):

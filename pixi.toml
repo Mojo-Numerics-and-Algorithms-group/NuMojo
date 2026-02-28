@@ -34,13 +34,13 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
 name = "numojo"
 
 [package.host-dependencies]
-modular = "==26.2.0.dev2026021805"
+modular = "==26.2.0.dev2026022717"
 
 [package.build-dependencies]
-modular = "==26.2.0.dev2026021805"
+modular = "==26.2.0.dev2026022717"
 
 [package.run-dependencies]
-modular = "==26.2.0.dev2026021805"
+modular = "==26.2.0.dev2026022717"
 
 [tasks]
 # compile the package and copy it to the tests folder
@@ -70,7 +70,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
-modular = ">=26.2.0.dev2026021805,<27"
+modular = ">=26.2.0.dev2026022717,<27"
 numpy = ">=2.4.2,<3"
 python = ">=3.14.3,<3.15"
 scipy = ">=1.17.0,<2"

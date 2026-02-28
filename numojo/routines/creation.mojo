@@ -223,7 +223,7 @@ fn linspace[
     stop: Scalar[dtype],
     num: Int = 50,
     endpoint: Bool = True,
-) raises -> NDArray[dtype]:
+) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Generate evenly spaced numbers over a specified interval.
 
@@ -256,10 +256,6 @@ fn linspace[
         var large = nm.linspace[nm.f64, parallel=True](0.0, 1000.0, 10000)
         ```
     """
-    constrained[
-        not dtype.is_integral(),
-        "numojo.linspace requires floating-point dtype.",
-    ]()
 
     @parameter
     if parallel:
@@ -385,7 +381,9 @@ fn linspace[
         var arr = nm.linspace[nm.cf64](start, stop, 5)
         ```
     """
-    constrained[not cdtype.is_integral()]()
+    comptime assert (
+        not cdtype.is_integral()
+    ), "numojo.linspace requires floating-point complex dtype."
 
     @parameter
     if parallel:
@@ -533,7 +531,7 @@ fn logspace[
     num: Int,
     endpoint: Bool = True,
     base: Scalar[dtype] = 10.0,
-) raises -> NDArray[dtype]:
+) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Generate logarithmically spaced numbers over a specified interval.
 
@@ -566,7 +564,6 @@ fn logspace[
         print(arr2)  # [1.0, 2.0, 4.0, 8.0, 16.0]
         ```
     """
-    constrained[not dtype.is_integral()]()
 
     @parameter
     if parallel:
@@ -682,7 +679,7 @@ fn logspace[
     num: Int,
     endpoint: Bool = True,
     base: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](10.0, 10.0),
-) raises -> ComplexNDArray[cdtype]:
+) raises -> ComplexNDArray[cdtype] where cdtype.is_floating_point():
     """
     Generate logarithmically spaced complex numbers over a specified interval.
 
@@ -702,7 +699,6 @@ fn logspace[
     Returns:
         A ComplexNDArray of `cdtype` with `num` logarithmically spaced elements.
     """
-    constrained[not cdtype.is_integral()]()
     if parallel:
         return _logspace_parallel[cdtype](
             start,
@@ -863,7 +859,7 @@ fn geomspace[
     stop: Scalar[dtype],
     num: Int,
     endpoint: Bool = True,
-) raises -> NDArray[dtype]:
+) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Generate numbers spaced evenly on a log scale (geometric progression).
 
@@ -891,9 +887,6 @@ fn geomspace[
     Notes:
         This is similar to logspace, but with endpoints specified directly.
     """
-    constrained[
-        not dtype.is_integral(), "Int type will result to precision errors."
-    ]()
     var a: Scalar[dtype] = start
 
     if endpoint:
@@ -922,7 +915,7 @@ fn geomspace[
     stop: ComplexSIMD[cdtype],
     num: Int,
     endpoint: Bool = True,
-) raises -> ComplexNDArray[cdtype]:
+) raises -> ComplexNDArray[cdtype] where cdtype.is_floating_point():
     """
     Generate complex numbers spaced evenly on a log scale (geometric progression).
 
@@ -941,9 +934,6 @@ fn geomspace[
     Notes:
         This is similar to logspace, but with endpoints specified directly.
     """
-    constrained[
-        not cdtype.is_integral(), "Int type will result to precision errors."
-    ]()
     comptime dtype: DType = cdtype.dtype
     var a: ComplexSIMD[cdtype] = start
 

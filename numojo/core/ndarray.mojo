@@ -32,7 +32,7 @@ Iterators of `NDArray`:
 # ===----------------------------------------------------------------------===#
 from algorithm import parallelize, vectorize
 import builtin.bool as builtin_bool
-import builtin.math as builtin_math
+import math as builtin_math
 from collections.optional import Optional
 from math import log10
 from memory import memset_zero, memcpy
@@ -2586,16 +2586,78 @@ struct NDArray[dtype: DType = DType.float64](
             if mask_c._buf.ptr.load(i):
                 self.itemset(i, val_c._buf.ptr.load(i))
 
+    fn itemset(mut self, index: Int, item: Scalar[Self.dtype]) raises:
+        """Sets the scalar at the given coordinate.
+
+        Args:
+            index: The coordinates of the item. It is the index of the
+                i-th item of the whole array.
+            item: The scalar to be set.
+
+        Raises:
+            Error: If the index is out of bound.
+            Error: If the length of index does not match the number of
+                dimensions.
+
+        Examples:
+
+        ```
+        import numojo as nm
+        fn main() raises:
+            var A = nm.zeros[nm.i16](3, 3)
+            print(A)
+            A.itemset(5, 256)
+            print(A)
+        ```
+        ```console
+        [[      0       0       0       ]
+        [      0       0       0       ]
+        [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        [[      0       0       0       ]
+        [      0       0       256     ]
+        [      0       0       0       ]]
+        2-D array  Shape: [3, 3]  DType: int16
+        ```.
+        """
+        var norm_idx = self.normalize(index, self.size)
+        if norm_idx < self.size:
+            if self.is_f_contiguous():
+                # column-major should be converted to row-major
+                # The following code can be taken out as a function that
+                # convert any index to coordinates according to the order
+                var c_stride = NDArrayStrides(shape=self.shape)
+                var c_coordinates = List[Int]()
+                for i in range(c_stride.ndim):
+                    var coordinate = norm_idx // c_stride[i]
+                    norm_idx = norm_idx - c_stride[i] * coordinate
+                    c_coordinates.append(coordinate)
+                self._buf.ptr.store(
+                    self.offset
+                    + IndexMethods.get_1d_index(c_coordinates, self.strides),
+                    item,
+                )
+            else:
+                self._buf.ptr.store(self.offset + norm_idx, item)
+        else:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Index {} is out of bounds for array of size {}. Use an"
+                        " index in [0, {})."
+                    ).format(index, self.size, self.size),
+                    location="NDArray.itemset(index: Int, item: Scalar[dtype])",
+                )
+            )
+
     fn itemset(
-        mut self, index: Variant[Int, List[Int]], item: Scalar[Self.dtype]
+        mut self, var indices: List[Int], item: Scalar[Self.dtype]
     ) raises:
         """Sets the scalar at the given coordinates.
 
         Args:
-            index: The coordinates of the item. Can either be `Int` or
-                `List[Int]`. If `Int` is passed, it is the index of the i-th
-                item of the whole array. If `List[Int]` is passed, it is the
-                coordinate of the item.
+            indices: The coordinates of the item.
             item: The scalar to be set.
 
         Raises:
@@ -2614,8 +2676,6 @@ struct NDArray[dtype: DType = DType.float64](
         fn main() raises:
             var A = nm.zeros[nm.i16](3, 3)
             print(A)
-            A.itemset(5, 256)
-            print(A)
             A.itemset(List(1,1), 1024)
             print(A)
         ```
@@ -2625,92 +2685,45 @@ struct NDArray[dtype: DType = DType.float64](
         [      0       0       0       ]]
         2-D array  Shape: [3, 3]  DType: int16
         [[      0       0       0       ]
-        [      0       0       256     ]
-        [      0       0       0       ]]
-        2-D array  Shape: [3, 3]  DType: int16
-        [[      0       0       0       ]
-        [      0       1024    256     ]
+        [      0       1024    0       ]
         [      0       0       0       ]]
         2-D array  Shape: [3, 3]  DType: int16
         ```.
         """
-
-        # If one index is given
-        if index.isa[Int]():
-            var idx: Int = index[Int]
-            if idx < self.size:
-                if self.is_f_contiguous():
-                    # column-major should be converted to row-major
-                    # The following code can be taken out as a function that
-                    # convert any index to coordinates according to the order
-                    var c_stride = NDArrayStrides(shape=self.shape)
-                    var c_coordinates = List[Int]()
-                    for i in range(c_stride.ndim):
-                        var coordinate = idx // c_stride[i]
-                        idx = idx - c_stride[i] * coordinate
-                        c_coordinates.append(coordinate)
-                    self._buf.ptr.store(
-                        self.offset
-                        + IndexMethods.get_1d_index(
-                            c_coordinates, self.strides
-                        ),
-                        item,
-                    )
-                else:
-                    self._buf.ptr.store(self.offset + idx, item)
-            else:
-                raise Error(
-                    NumojoError(
-                        category="index",
-                        message=String(
-                            "Index {} exceeds the array size ({}). Ensure the"
-                            " index is within the valid range [0, {})."
-                        ).format(idx, self.size, self.size),
-                        location=(
-                            "NDArray.itemset(index: Int, item: Scalar[dtype])"
-                        ),
-                    )
+        if len(indices) != self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Invalid index length: expected {} but got {}. Pass"
+                        " exactly {} indices (one per dimension)."
+                    ).format(self.ndim, indices.__len__(), self.ndim),
+                    location=(
+                        "NDArray.itemset(index: List[Int], item: Scalar[dtype])"
+                    ),
                 )
-
-        else:
-            var indices: List[Int] = index[List[Int]].copy()
-            # If more than one index is given
-            if indices.__len__() != self.ndim:
+            )
+        for i in range(len(indices)):
+            var norm_idx = self.normalize(indices[i], self.shape[i])
+            if norm_idx >= self.shape[i]:
                 raise Error(
                     NumojoError(
                         category="index",
                         message=String(
-                            "Invalid index length: expected {} but got {}. Pass"
-                            " exactly {} indices (one per dimension)."
-                        ).format(self.ndim, indices.__len__(), self.ndim),
+                            "Index out of range at dim {}: got {}; valid"
+                            " range is (-{}..{})."
+                        ).format(i, indices[i], self.shape[i], self.shape[i]),
                         location=(
                             "NDArray.itemset(index: List[Int], item:"
                             " Scalar[dtype])"
                         ),
                     )
                 )
-            for i in range(indices.__len__()):
-                if indices[i] >= self.shape[i]:
-                    raise Error(
-                        NumojoError(
-                            category="index",
-                            message=String(
-                                "Index out of range at dim {}: got {}; valid"
-                                " range is [0, {}). Clamp or validate indices"
-                                " against the dimension size ({})."
-                            ).format(
-                                i, indices[i], self.shape[i], self.shape[i]
-                            ),
-                            location=(
-                                "NDArray.itemset(index: List[Int], item:"
-                                " Scalar[dtype])"
-                            ),
-                        )
-                    )
-            self._buf.ptr.store(
-                self.offset + IndexMethods.get_1d_index(indices, self.strides),
-                item,
-            )
+            indices[i] = norm_idx
+        self._buf.ptr.store(
+            self.offset + IndexMethods.get_1d_index(indices, self.strides),
+            item,
+        )
 
     fn unsafe_store[
         width: Int = 1
@@ -3312,7 +3325,9 @@ struct NDArray[dtype: DType = DType.float64](
     fn __abs__(self) -> Self:
         return abs(self)
 
-    fn __invert__(self) raises -> Self:
+    fn __invert__(
+        self,
+    ) raises -> Self where Self.dtype.is_integral() or Self.dtype == DType.bool:
         """Computes element-wise bitwise inversion.
 
         Only works for boolean and integral types.
@@ -3877,10 +3892,12 @@ struct NDArray[dtype: DType = DType.float64](
     # # tobyets, tofile, view
     # ===-------------------------------------------------------------------===#
 
-    fn all(self) raises -> Bool:
+    fn all(
+        self,
+    ) raises -> Bool where Self.dtype == DType.bool or Self.dtype.is_integral():
         """Returns `True` if all elements are truthy.
 
-        This method is offset- and stride-aware via `contiguous()`.
+        This method is offset and stride-aware via `contiguous()`.
 
         Returns:
             `True` if all elements are true, otherwise `False`.
@@ -3888,14 +3905,6 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If the array elements are not Boolean or Integer.
         """
-        constrained[
-            self.dtype == DType.bool or self.dtype.is_integral(),
-            (
-                "NDArray.all(): invalid dtype. Expected a boolean or integral"
-                " dtype (e.g. bool, i8, i16, i32, i64); floating and other"
-                " non-integral types are not supported."
-            ),
-        ]()
         var a = self.contiguous()
         var result: Bool = True
 
@@ -3910,7 +3919,9 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[a.width](a.size, vectorized_all)
         return result
 
-    fn any(self) raises -> Bool:
+    fn any(
+        self,
+    ) raises -> Bool where Self.dtype == DType.bool or Self.dtype.is_integral():
         """Returns `True` if any element is truthy.
 
         This method is offset- and stride-aware via `contiguous()`.
@@ -3921,12 +3932,6 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If the array elements are not Boolean or Integer.
         """
-        # make this a compile time check
-        if not (Self.dtype == DType.bool or self.dtype.is_integral()):
-            raise Error(
-                "\nError in `numojo.NDArray.any(self)`: "
-                "Array elements must be Boolean or Integer."
-            )
         var a = self.contiguous()
         var result: Bool = False
 

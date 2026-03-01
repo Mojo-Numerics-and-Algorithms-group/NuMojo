@@ -895,6 +895,7 @@ struct NDArray[dtype: DType = DType.float64](
             print(b)
             ```
         """
+        # TODO: Shouldn't we assert len(shape_size) == len(slice_list)?
         var n_slices: Int = len(slice_list)
         var slices: List[InternalSlice] = self._adjust_slice(slice_list)
         if n_slices < self.ndim:
@@ -1303,6 +1304,7 @@ struct NDArray[dtype: DType = DType.float64](
                 count_int += 1
                 indices.append(norm)
                 slice_list.append(Slice(norm, norm + 1, 1))
+                index_type_list.append(IndexTypeInfo(is_integer=True))
 
         var narr: Self
         if count_int == self.ndim:

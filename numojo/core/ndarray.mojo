@@ -895,7 +895,6 @@ struct NDArray[dtype: DType = DType.float64](
             print(b)
             ```
         """
-        # TODO: Shouldn't we assert len(shape_size) == len(slice_list)?
         var n_slices: Int = len(slice_list)
         var slices: List[InternalSlice] = self._adjust_slice(slice_list)
         if n_slices < self.ndim:
@@ -944,28 +943,48 @@ struct NDArray[dtype: DType = DType.float64](
             0,
         )
 
-        # TODO: Think about optimizing this later. It works for now.
+        # Reconstruct the output shape based on `index_type_list`.
+        # - is_slice: keep this dimension (maps to a `narr` dimension)
+        # - is_integer: drop this dimension (maps to a `narr` dimension of size 1)
+        # - is_newaxis: insert a new dimension of size 1 (no `narr` dimension)
+        # - is_ellipsis: keep all unaccounted-for `narr` dimensions
+        # After the loop, any remaining `narr` dimensions are kept as-is.
         var new_shape: List[Int] = List[Int]()
         var new_ndim: Int = 0
-        var slice_count: Int = 0
+        var narr_dim: Int = 0  # tracks position in `narr`'s dimensions
         for i in range(len(index_type_list)):
             if index_type_list[i].is_ellipsis:
-                # handle ellipsis by adding remaining dimensions
-                var remaining_dims: Int = self.ndim - len(index_type_list) + 1
-                for _ in range(remaining_dims):
+                # Count how many dimensions are explicitly consumed
+                var consuming: Int = 0
+                for j in range(len(index_type_list)):
+                    if (
+                        index_type_list[j].is_slice
+                        or index_type_list[j].is_integer
+                    ):
+                        consuming += 1
+                var ellipsis_dims: Int = ndims - consuming
+                for _ in range(ellipsis_dims):
                     new_ndim += 1
-                    new_shape.append(narr.shape[slice_count])
-                    slice_count += 1
+                    new_shape.append(narr.shape[narr_dim])
+                    narr_dim += 1
                 break
             elif index_type_list[i].is_newaxis:
                 new_ndim += 1
                 new_shape.append(1)
             elif index_type_list[i].is_slice:
                 new_ndim += 1
-                new_shape.append(narr.shape[slice_count])
-                slice_count += 1
+                new_shape.append(narr.shape[narr_dim])
+                narr_dim += 1
             elif index_type_list[i].is_integer:
-                new_shape.append(narr.shape[i])
+                # Integer indexing reduces dimensionality:
+                # So we skip this dimension
+                narr_dim += 1
+
+        # Handle remaining `narr` dimensions not covered by `index_type_list`
+        while narr_dim < ndims:
+            new_ndim += 1
+            new_shape.append(narr.shape[narr_dim])
+            narr_dim += 1
 
         var new_strides: List[Int] = self._calculate_strides(new_shape)
         narr.shape = NDArrayShape(shape=new_shape)

@@ -2618,10 +2618,6 @@ struct NDArray[dtype: DType = DType.float64](
         [      0       0       256     ]
         [      0       0       0       ]]
         2-D array  Shape: [3, 3]  DType: int16
-        [[      0       0       0       ]
-        [      0       1024    256     ]
-        [      0       0       0       ]]
-        2-D array  Shape: [3, 3]  DType: int16
         ```.
         """
         var norm_idx = self.normalize(index, self.size)
@@ -2689,11 +2685,7 @@ struct NDArray[dtype: DType = DType.float64](
         [      0       0       0       ]]
         2-D array  Shape: [3, 3]  DType: int16
         [[      0       0       0       ]
-        [      0       0       256     ]
-        [      0       0       0       ]]
-        2-D array  Shape: [3, 3]  DType: int16
-        [[      0       0       0       ]
-        [      0       1024    256     ]
+        [      0       1024    0       ]
         [      0       0       0       ]]
         2-D array  Shape: [3, 3]  DType: int16
         ```.
@@ -3927,7 +3919,9 @@ struct NDArray[dtype: DType = DType.float64](
         vectorize[a.width](a.size, vectorized_all)
         return result
 
-    fn any(self) raises -> Bool:
+    fn any(
+        self,
+    ) raises -> Bool where Self.dtype == DType.bool or Self.dtype.is_integral():
         """Returns `True` if any element is truthy.
 
         This method is offset- and stride-aware via `contiguous()`.
@@ -3938,12 +3932,6 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If the array elements are not Boolean or Integer.
         """
-        # make this a compile time check
-        if not (Self.dtype == DType.bool or self.dtype.is_integral()):
-            raise Error(
-                "\nError in `numojo.NDArray.any(self)`: "
-                "Array elements must be Boolean or Integer."
-            )
         var a = self.contiguous()
         var result: Bool = False
 

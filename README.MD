@@ -26,7 +26,7 @@ NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy
 NuMojo aims to encompass the extensive numerics capabilities found in Python packages such as NumPy, SciPy, and Scikit-learn.
 ***What NuMojo is***
 
-We seek to harness the full potential of Mojo, including vectorization, parallelization, and GPU acceleration (when available). Currently, NuMojo extends most (if not all) standard library math functions to support array inputs.
+We seek to harness the full potential of Mojo, including vectorization, parallelization, and GPU acceleration. Currently, NuMojo extends most (if not all) standard library math functions to support array inputs.
 
 Our vision for NuMojo is to serve as an essential building block for other Mojo packages needing fast math operations, without the additional weight of a machine learning back-propagation system.
 
@@ -77,7 +77,7 @@ from numojo.prelude import *
 
 fn main() raises:
     # Generate two 1000x1000 matrices with random float64 values
-    var A = nm.random.randn(Shape(1000, 1000))
+    var A = nm.random.randn(Shape(1000, 1000)) # Shape is used for all shape related operations in numojo. 
     var B = nm.random.randn(Shape(1000, 1000))
 
     # Generate a 3x2 matrix from string representation
@@ -96,7 +96,7 @@ fn main() raises:
     var A_slice = A[1:3, 4:19]
 
     # Get scalar from array
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)] # Item() is used to define coordinates of an ndarray in numojo. 
     var A_item_2 = A.item(291, 141)
 ```
 
@@ -160,8 +160,9 @@ from numojo.prelude import *
 
 fn main() raises:
     # Create a complex scalar 5 + 5j
+    # cf32 is the complex version of f32 (DType.float32) used to identify complex types in numojo.
     var complexscalar = CScalar[cf32](5) # Equivalently ComplexSIMD[cf32](5, 5)
-    # Also equivalently as simple as  5 + 5*`1j`!
+    # Also can be define as simple as  5 + 5*`1j`!
   
     # Create complex arrays
     var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # filled with (5+5j)
@@ -177,7 +178,7 @@ fn main() raises:
     var C = A * B
 
     # Get scalar from array
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     # Set an element of the array
     A[item(291, 141)] = complexscalar
 ```
@@ -228,8 +229,8 @@ pixi install
 ```
 
 **Branch Selection:**
-- **`main` branch**: Provides stable release. Currently supports NuMojo v0.7.0, compatible with Mojo 25.3.0. For earlier NuMojo versions, use Method 2.
-- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently 25.7.0). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
+- **`main` branch**: Provides stable release. Currently supports NuMojo v0.8.0, compatible with Mojo 25.6.0. For earlier NuMojo versions, use Method 2.
+- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently mojo nightly 26.2.0.dev2026022717). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
 
 The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
 

@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Opeartions module (`numojo.routines.operations`)
+"""Operations module (`numojo.routines.operations`).
 
 This module contains all the vectorized unary, binary, unary_predicate, binary_predicate operations.
 """

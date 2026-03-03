@@ -157,6 +157,14 @@ struct HostExecutor:
         if not array.is_c_contiguous():
             return Self.apply_unary[dtype, kernel](array.contiguous())
 
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array.ndim == 0:
+            var result_array = _0darray(
+                val=kernel[dtype, 1]((array._buf.ptr + array.offset)[])
+            )
+            return result_array^
+
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
@@ -200,15 +208,17 @@ struct HostExecutor:
         if not array2.is_c_contiguous():
             return Self.apply_binary[dtype, kernel](array1, array2.contiguous())
 
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array1.ndim == 0:
+            return Self.apply_binary[dtype, kernel](array1[], array2)
+        if array2.ndim == 0:
+            return Self.apply_binary[dtype, kernel](array1, array2[])
+
         if array1.shape != array2.shape:
             raise Error(
                 "Shape Mismatch error: shapes must match for this function"
             )
-
-        # For 0darray (numojo scalar)
-        # Treat it as a scalar and apply the function
-        if array2.ndim == 0:
-            return Self.apply_binary[dtype, kernel](array1, array2[])
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
@@ -400,15 +410,15 @@ struct HostExecutor:
                 array1, array2.contiguous()
             )
 
-        if array1.shape != array2.shape:
-            raise Error(
-                "Shape Mismatch error: shapes must match for this function"
-            )
-
         # For 0darray (numojo scalar)
         # Treat it as a scalar and apply the function
         if array2.ndim == 0:
             return Self.apply_binary_predicate[dtype, kernel](array1, array2[])
+
+        if array1.shape != array2.shape:
+            raise Error(
+                "Shape Mismatch error: shapes must match for this function"
+            )
 
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
@@ -469,7 +479,7 @@ struct HostExecutor:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        comptime width = simd_width_of[DType.bool]()
+        comptime width = simd_width_of[dtype]()
 
         @parameter
         fn closure[

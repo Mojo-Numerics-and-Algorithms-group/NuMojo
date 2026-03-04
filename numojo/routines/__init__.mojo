@@ -35,6 +35,7 @@ from . import random
 from . import sorting
 from . import searching
 from . import functional
+from . import operations
 
 from .io import loadtxt, savetxt, load, save, set_printoptions
 

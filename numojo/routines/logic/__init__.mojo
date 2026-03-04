@@ -27,10 +27,5 @@ from .contents import (
     isneginf,
     isposinf,
 )
-from .logical_ops import (
-    logical_and,
-    logical_or,
-    logical_not,
-    logical_xor
-)
+from .logical_ops import logical_and, logical_or, logical_not, logical_xor
 from .truth import any, all

@@ -1800,9 +1800,7 @@ struct NDArray[dtype: DType = DType.float64](
             + IndexMethods.get_1d_index(index, self.strides)
         )[]
 
-    fn unsafe_load[
-        width: Int = 1
-    ](self, index: Int) -> SIMD[Self.dtype, width]:
+    fn unsafe_load[width: Int = 1](self, index: Int) -> SIMD[Self.dtype, width]:
         """Unsafely retrieves the i-th item from the underlying buffer as a SIMD
         element of size `width`.
 

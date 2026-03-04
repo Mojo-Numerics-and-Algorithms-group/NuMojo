@@ -160,5 +160,6 @@ def test_truth_all_any():
         "any all-true",
     )
 
+
 def main():
     TestSuite.discover_tests[__functions_in_module()]().run()

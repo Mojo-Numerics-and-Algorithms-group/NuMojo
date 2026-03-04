@@ -44,6 +44,7 @@ from numojo.core.ndarray import NDArray
 # Check operations
 # ===------------------------------------------------------------------------===#
 
+
 fn isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is infinite.

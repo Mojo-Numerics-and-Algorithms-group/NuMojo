@@ -30,7 +30,7 @@ fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     Checks whether all elements of the array evaluate to True.
 
     Args:
-        a: input NDArray (DType.bool)
+        array: Input NDArray (DType.bool).
 
     Returns:
         True if all elements of the array evaluate to True, False if not.
@@ -63,7 +63,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     Checks whether any element of the array evaluate to True.
 
     Args:
-        a: input NDArray (DType.bool)
+        array: Input NDArray (DType.bool).
 
     Returns:
         True if any element of the array evaluate to True, False if not.

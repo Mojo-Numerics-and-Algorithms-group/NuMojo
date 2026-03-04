@@ -1802,7 +1802,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn unsafe_load[
         width: Int = 1
-    ](self, var index: Int) -> SIMD[Self.dtype, width]:
+    ](self, index: Int) -> SIMD[Self.dtype, width]:
         """Unsafely retrieves the i-th item from the underlying buffer as a SIMD
         element of size `width`.
 
@@ -1969,20 +1969,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         var idx: Int = IndexMethods.get_1d_index(indices_list, self.strides)
         return self._buf.ptr.load[width=width](self.offset + idx)
-
-    fn unsafe_load[
-        width: Int = 1
-    ](self, index: Int) raises -> SIMD[Self.dtype, width]:
-        """Loads a SIMD element of size `width` at `index` from the
-        underlying buffer. THIS IS AN UNSAFE OPERATION!
-
-        Args:
-            index: The index of the item.
-
-        Returns:
-            The SIMD element at the index.
-        """
-        return self._buf.ptr.load[width=width](self.offset + index)
 
     # ===-------------------------------------------------------------------===#
     # Setter dunders and other setter methods

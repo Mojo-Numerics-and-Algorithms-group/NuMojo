@@ -401,6 +401,9 @@ fn allclose[
     for all elements. If `equal_nan` is True, NaN values at the same position are considered equal.
 
     Parameters:
+        dtype: Data type of the array.
+
+    Args:
         a: First array to compare.
         b: Second array to compare.
         rtol: Relative tolerance. Default is 1e-5.
@@ -419,7 +422,7 @@ fn allclose[
         from numojo.routines.logic.comparison import allclose
         var arr1 = nm.array[nm.f64]([1.0, 2.0, 3.0], shape=[3])
         var arr2 = nm.array[nm.f64]([1.0, 2.00001, 2.99999], shape=[3])
-        print(allclose[nm.f64](arr1, arr2))  # Output: True
+        print(allclose[nm.f64](arr1, arr2))  # Output: True.
         ```
     """
     if a.shape != b.shape:
@@ -466,6 +469,9 @@ fn isclose[
     If `equal_nan` is True, NaN values at the same position are considered equal.
 
     Parameters:
+        dtype: Data type of the array.
+
+    Args:
         a: First array to compare.
         b: Second array to compare.
         rtol: Relative tolerance. Default is 1e-5.
@@ -534,6 +540,9 @@ fn allclose[
     for all elements. If `equal_nan` is True, NaN values at the same position are considered equal.
 
     Parameters:
+        dtype: Data type of the array.
+
+    Args:
         a: First matrix to compare.
         b: Second matrix to compare.
         rtol: Relative tolerance. Default is 1e-5.
@@ -599,6 +608,9 @@ fn isclose[
     If `equal_nan` is True, NaN values at the same position are considered equal.
 
     Parameters:
+        dtype: Data type of the array.
+
+    Args:
         a: First matrix to compare.
         b: Second matrix to compare.
         rtol: Relative tolerance. Default is 1e-5.
@@ -665,6 +677,9 @@ fn array_equal[
     The arrays are considered equal only if their shapes match and all corresponding elements are equal.
 
     Parameters:
+        dtype: Data type of the array.
+
+    Args:
         array1: First NDArray to compare.
         array2: Second NDArray to compare.
 

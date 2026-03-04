@@ -77,7 +77,6 @@ import numojo.routines.logic.comparison as comparison
 # numojo routines (math / bitwise / searching)
 # ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
-import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
@@ -1970,6 +1969,20 @@ struct NDArray[dtype: DType = DType.float64](
 
         var idx: Int = IndexMethods.get_1d_index(indices_list, self.strides)
         return self._buf.ptr.load[width=width](self.offset + idx)
+
+    fn unsafe_load[
+        width: Int = 1
+    ](self, index: Int) raises -> SIMD[Self.dtype, width]:
+        """Loads a SIMD element of size `width` at `index` from the
+        underlying buffer. THIS IS AN UNSAFE OPERATION!
+
+        Args:
+            index: The index of the item.
+
+        Returns:
+            The SIMD element at the index.
+        """
+        return self._buf.ptr.load[width=width](self.offset + index)
 
     # ===-------------------------------------------------------------------===#
     # Setter dunders and other setter methods

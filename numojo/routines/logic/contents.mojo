@@ -9,10 +9,6 @@
 
 Implements Checking routines: currently not SIMD due to bool bit packing issue
 """
-# ===----------------------------------------------------------------------=== #
-# Array contents
-# ===----------------------------------------------------------------------=== #
-
 
 import math
 from utils.numerics import neg_inf, inf
@@ -24,6 +20,7 @@ from numojo.core.ndarray import NDArray
 # TODO: Add scalar overloads of these functions.
 # TODO: Remove matrix operations in future.
 # TODO: Implement the commented out functions now that mojo supports these functions in SIMD.
+# FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
 
 # fn is_power_of_2[
 #     dtype: DType
@@ -43,7 +40,10 @@ from numojo.core.ndarray import NDArray
 #     return backend().math_func_is[dtype, math.is_odd](array)
 
 
-# FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
+# ===------------------------------------------------------------------------===#
+# Check operations
+# ===------------------------------------------------------------------------===#
+
 fn isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is infinite.
@@ -145,7 +145,10 @@ fn isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isneginf(arr))  # Output: [False, True, False, False]
         ```
     """
-    fn is_neginf[dtype: DType, simd_width: Int](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+
+    fn is_neginf[
+        dtype: DType, simd_width: Int
+    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](neg_inf[dtype]()))
 
     return HostExecutor.apply_unary_predicate[dtype, is_neginf](array)
@@ -174,10 +177,14 @@ fn isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isposinf(arr))  # Output: [False, False, True, False]
         ```
     """
-    fn is_posinf[dtype: DType, simd_width: Int](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+
+    fn is_posinf[
+        dtype: DType, simd_width: Int
+    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](inf[dtype]()))
 
     return HostExecutor.apply_unary_predicate[dtype, is_posinf](array)
+
 
 fn isneginf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
     """

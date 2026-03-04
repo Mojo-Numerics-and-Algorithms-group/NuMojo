@@ -66,7 +66,7 @@ struct HostExecutor:
         dtype, simd_width
     ]:
         """
-        Applies a SIMD-compatible binary function to two scalar SIMD values.
+        Applies a SIMD-compatible binary function to two SIMD values.
 
         Parameters:
             dtype: The element type.
@@ -78,7 +78,7 @@ struct HostExecutor:
             simd2: The second input SIMD value.
 
         Returns:
-            A new scalar SIMD value containing the result of applying the function.
+            A new SIMD value containing the result of applying the function.
         """
         return kernel[dtype, simd_width](simd1, simd2)
 
@@ -91,7 +91,7 @@ struct HostExecutor:
         ],
     ](simd: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         """
-        Applies a SIMD-compatible unary predicate to a scalar SIMD value.
+        Applies a SIMD-compatible unary predicate to a SIMD value.
 
         Parameters:
             dtype: The element type.
@@ -99,10 +99,10 @@ struct HostExecutor:
             kernel: The SIMD-compatible unary predicate function to apply.
 
         Args:
-            simd: The input scalar SIMD value.
+            simd: The input SIMD value.
 
         Returns:
-            A scalar SIMD boolean value containing the predicate result.
+            A SIMD boolean value containing the predicate result.
         """
         return kernel[dtype, simd_width](simd)
 
@@ -117,19 +117,19 @@ struct HostExecutor:
         DType.bool, simd_width
     ]:
         """
-        Applies a SIMD-compatible binary predicate to two scalar SIMD values.
+        Applies a SIMD-compatible binary predicate to two SIMD values.
 
         Parameters:
             dtype: The element type.
-            simd_width: The SIMD width of the input and output (should be 1 for scalar SIMD).
+            simd_width: The SIMD width of the input and output (should be 1 for SIMD).
             kernel: The SIMD-compatible binary predicate function to apply.
 
         Args:
-            simd1: The first input scalar SIMD value.
-            simd2: The second input scalar SIMD value.
+            simd1: The first input SIMD value.
+            simd2: The second input SIMD value.
 
         Returns:
-            A scalar SIMD boolean value containing the predicate result.
+            A SIMD boolean value containing the predicate result.
         """
         return kernel[dtype, simd_width](simd1, simd2)
 

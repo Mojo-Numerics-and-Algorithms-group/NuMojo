@@ -479,7 +479,7 @@ struct HostExecutor:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](
             array1.shape
         )
-        comptime width = simd_width_of[dtype]()
+        comptime width = simd_width_of[DType.bool]()
 
         @parameter
         fn closure[

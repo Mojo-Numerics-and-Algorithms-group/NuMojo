@@ -9,13 +9,89 @@
 
 This module implements the truth value testing functions, such as `all` and `any`, for both `NDArray` and `Matrix`.
 """
-import math
+
 from algorithm import vectorize, parallelize
 from sys import simd_width_of
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
+
+# TODO: Add all and any algorithm to backend.
+
+# ===----------------------------------------------------------------------=== #
+# Truth operations for NDArray
+# ===----------------------------------------------------------------------=== #
+
+
+fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
+    """
+    Checks whether all elements of the array evaluate to True.
+
+    Args:
+        array: Input NDArray (DType.bool).
+
+    Returns:
+        True if all elements of the array evaluate to True, False if not.
+
+    Examples:
+        ```mojo
+        from numojo.prelude import *
+        from numojo.routines.logic.truth import all
+
+        var a = arange[i32](24).reshape(Shape(2, 3, 4))
+        var result = all(a > 5) # outputs False
+        ```
+    """
+    var result = Scalar[DType.bool](True)
+    comptime opt_nelts: Int = simd_width_of[DType.bool]()
+
+    @parameter
+    fn closure[
+        simd_width: Int
+    ](idx: Int) unified {mut result, read array} -> None:
+        var simd_data = array.unsafe_load[width=simd_width](idx)
+        result = (result & simd_data).reduce_and()
+
+    vectorize[opt_nelts](array.size, closure)
+    return result
+
+
+fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
+    """
+    Checks whether any element of the array evaluate to True.
+
+    Args:
+        array: Input NDArray (DType.bool).
+
+    Returns:
+        True if any element of the array evaluate to True, False if not.
+
+    Examples:
+        ```mojo
+        from numojo.prelude import *
+        from numojo.routines.logic.truth import any
+
+        var a = arange[i32](24).reshape(Shape(2, 3, 4))
+        var result = any(a > 5) # outputs True
+        ```
+    """
+    var result = Scalar[DType.bool](False)
+    comptime opt_nelts: Int = simd_width_of[DType.bool]()
+
+    @parameter
+    fn closure[
+        simd_width: Int
+    ](idx: Int) unified {mut result, read array} -> None:
+        var simd_data = array.unsafe_load[width=simd_width](idx)
+        result = (result | simd_data).reduce_or()
+
+    vectorize[opt_nelts](array.size, closure)
+    return result
+
+
+# ===----------------------------------------------------------------------=== #
+# Truth operations for Matrix
+# ===----------------------------------------------------------------------=== #
 
 
 fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
@@ -27,14 +103,15 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     if not A.is_c_contiguous():
         return all(A.contiguous())
+
     var res = Scalar[dtype](1)
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_and[width: Int](i: Int) unified {mut res, read A}:
-        res = res & A._buf.ptr.load[width=width](i).reduce_and()
+    fn closure[width: Int](i: Int) unified {mut res, read A}:
+        res = (res & A._buf.ptr.load[width=width](i)).reduce_and()
 
-    vectorize[width](A.size, cal_and)
+    vectorize[width](A.size, closure)
     return res
 
 
@@ -80,54 +157,6 @@ fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
     else:
         raise Error(String("The axis can either be 1 or 0!"))
-
-
-fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
-    """
-    If all True.
-
-    Args:
-        array: A NDArray.
-    Returns:
-        A boolean scalar
-    """
-    var result = Scalar[DType.bool](True)
-    # comptime opt_nelts: Int = simd_width_of[DType.bool]()
-
-    # @parameter
-    # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
-    #     var simd_data = array.load[width=simd_width](idx)
-    #     result |= simd_data.reduce_and()
-
-    # vectorize[vectorize_sum, opt_nelts](array.size)
-    # return result
-    for i in range(array.size):
-        result &= array.load(i)
-    return result
-
-
-fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
-    """
-    If any True.
-
-    Args:
-        array: A NDArray.
-    Returns:
-        A boolean scalar
-    """
-    var result = Scalar[DType.bool](False)
-    # comptime opt_nelts: Int = simd_width_of[DType.bool]()
-
-    # @parameter
-    # fn vectorize_sum[simd_width: Int](idx: Int) -> None:
-    #     var simd_data = array.load[width=simd_width](idx)
-    #     result &= simd_data.reduce_or()
-
-    # vectorize[vectorize_sum, opt_nelts](array.size)
-    # return result
-    for i in range(array.size):
-        result |= array.load(i)
-    return result
 
 
 fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:

@@ -17,6 +17,8 @@ from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
 
 
+# TODO: Add overloads for complexndarray.
+# TODO: Add NumojoError as argument so that the calling function can modify the error message with more context.
 # NOTE: We currently do all checks within these backend functions,
 # but it'll be ideal to have these check done at higher level callers and keep the backend functions clean.
 # We will revisit this decision in future.

@@ -9,15 +9,17 @@
 
 This module implements element-wise logical operations for NDArray, ComplexNDArray, and Matrix types in the NuMojo library.
 """
-from numojo.core.error import NumojoError
 
+from numojo.routines import HostExecutor
+from numojo.core.error import NumojoError
 
 # TODO: add `where` argument support to logical operations
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
+# TODO: Create backend for these operations.
 
 
 # ===----------------------------------------------------------------------=== #
-# NDArray operations
+# Logical operations for NDArray
 # ===----------------------------------------------------------------------=== #
 fn logical_and[
     dtype: DType
@@ -31,16 +33,16 @@ fn logical_and[
         a: First input array.
         b: Second input array.
 
+    Raises:
+        - NumojoError: If the input arrays do not have the same shape.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         An array containing the result of the logical AND operation.
 
-    Raises:
-        - ShapeError: If the input arrays do not have the same shape.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_and
@@ -61,10 +63,13 @@ fn logical_and[
                 location="numojo.routines.logic.logical_and",
             )
         )
-    var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
-    for i in range(res.size):
-        res.store(i, Scalar[DType.bool](a.load(i) & b.load(i)))
-    return res^
+
+    fn kernel[
+        dtype: DType, width: Int
+    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+        return SIMD[DType.bool, width](a & b)
+
+    return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
 
 
 fn logical_or[
@@ -79,16 +84,16 @@ fn logical_or[
         a: First input array.
         b: Second input array.
 
+    Raises:
+        - NumojoError: If the input arrays do not have the same shape.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         An array containing the result of the logical OR operation.
 
-    Raises:
-        - ShapeError: If the input arrays do not have the same shape.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_or
@@ -109,10 +114,13 @@ fn logical_or[
                 location="numojo.routines.logic.logical_or",
             )
         )
-    var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
-    for i in range(res.size):
-        res.store(i, Scalar[DType.bool](a.load(i) | b.load(i)))
-    return res^
+
+    fn kernel[
+        dtype: DType, width: Int
+    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+        return SIMD[DType.bool, width](a | b)
+
+    return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
 
 
 fn logical_not[
@@ -126,16 +134,16 @@ fn logical_not[
     Args:
         a: Input array.
 
+    Raises:
+        - NumojoError: If the input array is not of a supported data type.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         An array containing the result of the logical NOT operation.
 
-    Raises:
-        - ShapeError: If the input array is not of a supported data type.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_not
@@ -144,10 +152,13 @@ fn logical_not[
         var result = logical_not(a < 5)
         ```
     """
-    var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
-    for i in range(res.size):
-        res.store(i, Scalar[DType.bool](~a.load(i)))
-    return res^
+
+    fn kernel[
+        dtype: DType, width: Int
+    ](a: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+        return SIMD[DType.bool, width](~a)
+
+    return HostExecutor.apply_unary_predicate[dtype, kernel](a)
 
 
 fn logical_xor[
@@ -162,16 +173,16 @@ fn logical_xor[
         a: First input array.
         b: Second input array.
 
+    Raises:
+        - NumojoError: If the input arrays do not have the same shape.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         An array containing the result of the logical XOR operation.
 
-    Raises:
-        - ShapeError: If the input arrays do not have the same shape.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_xor
@@ -192,15 +203,20 @@ fn logical_xor[
                 location="numojo.routines.logic.logical_xor",
             )
         )
-    var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
-    for i in range(res.size):
-        res.store(i, Scalar[DType.bool](a.load(i) ^ b.load(i)))
-    return res^
+
+    fn kernel[
+        dtype: DType, width: Int
+    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+        return SIMD[DType.bool, width](a ^ b)
+
+    return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
 
 
 # ===----------------------------------------------------------------------=== #
-# ComplexNDArray operations
+# Logical operations for ComplexNDArray
 # ===----------------------------------------------------------------------=== #
+
+
 fn logical_and[
     cdtype: ComplexDType
 ](
@@ -209,29 +225,29 @@ fn logical_and[
     cdtype == ComplexDType.bool or cdtype.is_integral()
 ):
     """
-    Element-wise logical AND operation between two arrays.
+    Element-wise logical AND operation between two complex arrays.
 
     Args:
-        a: First input array.
-        b: Second input array.
-
-    Returns:
-        An array containing the result of the logical AND operation.
+        a: First input complex array.
+        b: Second input complex array.
 
     Raises:
-        - ShapeError: If the input arrays do not have the same shape.
+        - NumojoError: If the input arrays do not have the same shape.
 
-    Notes:
-        - Supports only boolean and integral data types.
+    Constraints:
+        - Supports only boolean and integral complex data types.
 
-    Example:
+    Returns:
+        A complex array containing the result of the logical AND operation.
+
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_and
 
-        var a = nm.arange(0, 10)
-        var b = nm.arange(5, 15)
-        var result = logical_and(a > 3, b < 10)
+        var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
+        var b = nm.arange[ci32](CScalar[ci32](5), CScalar[ci32](15))
+        var result = logical_and(a, b)
         ```
     """
     if a.shape != b.shape:
@@ -259,29 +275,29 @@ fn logical_or[
     cdtype == ComplexDType.bool or cdtype.is_integral()
 ):
     """
-    Element-wise logical OR operation between two arrays.
+    Element-wise logical OR operation between two complex arrays.
 
     Args:
-        a: First input array.
-        b: Second input array.
-
-    Returns:
-        An array containing the result of the logical OR operation.
+        a: First input complex array.
+        b: Second input complex array.
 
     Raises:
-        - ShapeError: If the input arrays do not have the same shape.
+        - NumojoError: If the input arrays do not have the same shape.
 
-    Notes:
-        - Supports only boolean and integral data types.
+    Constraints:
+        - Supports only boolean and integral complex data types.
 
-    Example:
+    Returns:
+        A complex array containing the result of the logical OR operation.
+
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_or
 
-        var a = nm.arange(0, 10)
-        var b = nm.arange(5, 15)
-        var result = logical_or(a < 3, b > 10)
+        var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
+        var b = nm.arange[ci32](CScalar[ci32](5), CScalar[ci32](15))
+        var result = logical_or(a, b)
         ```
     """
     if a.shape != b.shape:
@@ -307,27 +323,27 @@ fn logical_not[
     cdtype == ComplexDType.bool or cdtype.is_integral()
 ):
     """
-    Element-wise logical NOT operation on an array.
+    Element-wise logical NOT operation on a complex array.
 
     Args:
-        a: Input array.
-
-    Returns:
-        An array containing the result of the logical NOT operation.
+        a: Input complex array.
 
     Raises:
-        - ShapeError: If the input array is not of a supported data type.
+        - NumojoError: If the input array is not of a supported data type.
 
-    Notes:
-        - Supports only boolean and integral data types.
+    Constraints:
+        - Supports only boolean and integral complex data types.
 
-    Example:
+    Returns:
+        A complex array containing the result of the logical NOT operation.
+
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_not
 
-        var a = nm.arange(0, 10)
-        var result = logical_not(a < 5)
+        var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
+        var result = logical_not(a)
         ```
     """
     var res: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](a.shape)
@@ -344,29 +360,29 @@ fn logical_xor[
     cdtype == ComplexDType.bool or cdtype.is_integral()
 ):
     """
-    Element-wise logical XOR operation between two arrays.
+    Element-wise logical XOR operation between two complex arrays.
 
     Args:
-        a: First input array.
-        b: Second input array.
-
-    Returns:
-        An array containing the result of the logical XOR operation.
+        a: First input complex array.
+        b: Second input complex array.
 
     Raises:
-        - ShapeError: If the input arrays do not have the same shape.
+        - NumojoError: If the input arrays do not have the same shape.
 
-    Notes:
-        - Supports only boolean and integral data types.
+    Constraints:
+        - Supports only boolean and integral complex data types.
 
-    Example:
+    Returns:
+        A complex array containing the result of the logical XOR operation.
+
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_xor
 
-        var a = nm.arange(0, 10)
-        var b = nm.arange(5, 15)
-        var result = logical_xor(a > 3, b < 10)
+        var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
+        var b = nm.arange[ci32](CScalar[ci32](5), CScalar[ci32](15))
+        var result = logical_xor(a, b)
         ```
     """
     if a.shape != b.shape:
@@ -387,8 +403,10 @@ fn logical_xor[
 
 
 # ===----------------------------------------------------------------------=== #
-# Matrix operations
+# Logical operations for Matrix
 # ===----------------------------------------------------------------------=== #
+
+
 fn logical_and[
     dtype: DType
 ](a: Matrix[dtype], b: Matrix[dtype]) raises -> Matrix[DType.bool] where (
@@ -401,16 +419,16 @@ fn logical_and[
         a: First input matrix.
         b: Second input matrix.
 
+    Raises:
+        - NumojoError: If the input matrices do not have the same shape.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         A matrix containing the result of the logical AND operation.
 
-    Raises:
-        - ShapeError: If the input matrices do not have the same shape.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_and
@@ -449,19 +467,20 @@ fn logical_or[
         a: First input matrix.
         b: Second input matrix.
 
+    Raises:
+        - NumojoError: If the input matrices do not have the same shape.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         A matrix containing the result of the logical OR operation.
 
-    Raises:
-        - ShapeError: If the input matrices do not have the same shape.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_or
+
         var a = Matrix.rand[i32]((2, 5))
         var b = Matrix.rand[i32]((2, 5))
         var result = logical_or(a < 3, b > 10)
@@ -486,9 +505,7 @@ fn logical_or[
 
 fn logical_not[
     dtype: DType
-](
-    a: Matrix[dtype],
-) raises -> Matrix[DType.bool] where (
+](a: Matrix[dtype]) raises -> Matrix[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
 ):
     """
@@ -497,19 +514,20 @@ fn logical_not[
     Args:
         a: Input matrix.
 
+    Raises:
+        - NumojoError: If the input matrix is not of a supported data type.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         A matrix containing the result of the logical NOT operation.
 
-    Raises:
-        - ShapeError: If the input matrix is not of a supported data type.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_not
+
         var a = Matrix.rand[i32]((2, 5))
         var result = logical_not(a < 5)
         ```
@@ -532,19 +550,20 @@ fn logical_xor[
         a: First input matrix.
         b: Second input matrix.
 
+    Raises:
+        - NumojoError: If the input matrices do not have the same shape.
+
+    Constraints:
+        - Supports only boolean and integral data types.
+
     Returns:
         A matrix containing the result of the logical XOR operation.
 
-    Raises:
-        - ShapeError: If the input matrices do not have the same shape.
-
-    Notes:
-        - Supports only boolean and integral data types.
-
-    Example:
+    Examples:
         ```mojo
         from numojo.prelude import *
         from numojo.routines.logic.logical_ops import logical_xor
+
         var a = Matrix.rand[i32]((2, 5))
         var b = Matrix.rand[i32]((2, 5))
         var result = logical_xor(a > 3, b < 10)

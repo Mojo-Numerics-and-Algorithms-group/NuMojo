@@ -77,7 +77,6 @@ import numojo.routines.logic.comparison as comparison
 # numojo routines (math / bitwise / searching)
 # ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
-import numojo.routines.math._array_funcs as _af
 from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
@@ -1801,9 +1800,7 @@ struct NDArray[dtype: DType = DType.float64](
             + IndexMethods.get_1d_index(index, self.strides)
         )[]
 
-    fn unsafe_load[
-        width: Int = 1
-    ](self, var index: Int) -> SIMD[Self.dtype, width]:
+    fn unsafe_load[width: Int = 1](self, index: Int) -> SIMD[Self.dtype, width]:
         """Unsafely retrieves the i-th item from the underlying buffer as a SIMD
         element of size `width`.
 

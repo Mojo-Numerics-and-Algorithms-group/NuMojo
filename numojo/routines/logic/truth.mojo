@@ -10,11 +10,9 @@
 This module implements the truth value testing functions, such as `all` and `any`, for both `NDArray` and `Matrix`.
 """
 
-import math
 from algorithm import vectorize, parallelize
 from sys import simd_width_of
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 

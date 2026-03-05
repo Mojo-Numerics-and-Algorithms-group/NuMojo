@@ -13,9 +13,9 @@ Implements Checking routines: currently not SIMD due to bool bit packing issue
 import math
 from utils.numerics import neg_inf, inf
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray
+from numojo.core.matrix import Matrix
 
 # TODO: Add scalar overloads of these functions.
 # TODO: Remove matrix operations in future.
@@ -90,8 +90,8 @@ fn isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.routines.logic.contents import isfinite
 
         fn main() raises:
-            var arr = linspace(0, 10, 5)
-            print(isfinite(arr))  # Output: [True, False, False, False, True]
+            var arr = nm.array[nm.f64]([1.0, Float64.MAX, Float64.MIN], shape=[3])
+            print(isfinite(arr))  # Output: [True, True, True]
         ```
     """
     return HostExecutor.apply_unary_predicate[dtype, math.isfinite](array)
@@ -116,8 +116,8 @@ fn isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.routines.logic.contents import isnan
 
         fn main() raises:
-            var arr = linspace(0, 10, 5)
-            print(isnan(arr))  # Output: [False, False, True, False]
+            var arr = nm.array[nm.f64]([1.0, 0.0, Float64.MAX], shape=[3])
+            print(isnan(arr))  # Output: [False, False, False]
         ```
     """
     return HostExecutor.apply_unary_predicate[dtype, math.isnan](array)
@@ -142,8 +142,8 @@ fn isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.routines.logic.contents import isneginf
 
         fn main() raises:
-            var arr = linspace(0, 10, 5)
-            print(isneginf(arr))  # Output: [False, True, False, False]
+            var arr = nm.array[nm.f64]([1.0, 0.0, -1.0], shape=[3])
+            print(isneginf(arr))  # Output: [False, False, False]
         ```
     """
 
@@ -174,8 +174,8 @@ fn isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.routines.logic.contents import isposinf
 
         fn main() raises:
-            var arr = linspace(0, 10, 5)
-            print(isposinf(arr))  # Output: [False, False, True, False]
+            var arr = nm.array[nm.f64]([1.0, 0.0, -1.0], shape=[3])
+            print(isposinf(arr))  # Output: [False, False, False]
         ```
     """
 

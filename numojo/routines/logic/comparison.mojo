@@ -16,7 +16,6 @@ from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 from numojo.core.error import NumojoError
 
-# TODO: Add backend to these functions.
 # TODO: define the allclose, isclose with correct behaviour for ComplexNDArray.
 # TODO: define array_equiv with correct broadcast semantics.
 
@@ -433,7 +432,7 @@ fn allclose[
                     "Shape Mismatch error shapes must match for this function"
                 ),
                 location=(
-                    "numojo.routines.logic.comparision.allclose(a: NDArray, b:"
+                    "numojo.routines.logic.comparison.allclose(a: NDArray, b:"
                     " NDArray)"
                 ),
             )
@@ -501,8 +500,8 @@ fn isclose[
                     "Shape Mismatch error shapes must match for this function"
                 ),
                 location=(
-                    "numojo.routines.logic.comparision.isclose(a: Scalar, b:"
-                    " Scalar)"
+                    "numojo.routines.logic.comparison.isclose(a: NDArray, b:"
+                    " NDArray)"
                 ),
             )
         )
@@ -572,8 +571,8 @@ fn allclose[
                     "Shape Mismatch error shapes must match for this function"
                 ),
                 location=(
-                    "numojo.routines.logic.comparision.allclose(a: NDArray, b:"
-                    " NDArray)"
+                    "numojo.routines.logic.comparison.allclose(a: Matrix, b:"
+                    " Matrix)"
                 ),
             )
         )
@@ -640,8 +639,8 @@ fn isclose[
                     "Shape Mismatch error shapes must match for this function"
                 ),
                 location=(
-                    "numojo.routines.logic.comparision.isclose(a: Scalar, b:"
-                    " Scalar)"
+                    "numojo.routines.logic.comparison.isclose(a: Matrix, b:"
+                    " Matrix)"
                 ),
             )
         )

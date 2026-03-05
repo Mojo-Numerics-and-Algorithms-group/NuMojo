@@ -16,6 +16,16 @@ from .comparison import (
     less_equal,
     equal,
     not_equal,
+    allclose,
+    isclose,
+    array_equal,
 )
-from .contents import isinf, isfinite, isnan
+from .contents import (
+    isinf,
+    isfinite,
+    isnan,
+    isneginf,
+    isposinf,
+)
+from .logical_ops import logical_and, logical_or, logical_not, logical_xor
 from .truth import any, all

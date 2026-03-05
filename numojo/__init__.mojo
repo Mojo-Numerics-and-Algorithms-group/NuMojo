@@ -40,12 +40,11 @@ FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
 1. Description *
 2. Parameters *
 3. Args *
-4. Constraints *
-5. Returns *
-6. Raises *
-7. SEE ALSO
-8. NOTES
-9. REFERENCES
+4. Raises *
+5. Constraints *
+6. Returns *
+7. Notes
+9. References
 10. Examples *
 (Items marked with * are defined by the Mojo docstring style guide.)
 """

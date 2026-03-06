@@ -10,7 +10,7 @@
 Aggregates arithmetic, trigonometric, hyperbolic, and utility routines for NDArrays and Matrices.
 """
 
-from .arithmetic import add, sub,  mod, mul, div, floor_div, fma, remainder
+from .arithmetic import add, sub, mod, mul, div, floor_div, fma, remainder
 from .differences import gradient, diff
 from .exponents import exp, exp2, expm1, log, ln, log2, log10, log1p
 from .extrema import max, min, mimimum, maximum

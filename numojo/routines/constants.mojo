@@ -23,10 +23,6 @@ struct Constants(AnyType, Copyable, Movable):
         print("Float64:", pi*pi*pi*pi*pi*pi)
         print("Literal:", nm.pi*nm.pi*nm.pi*nm.pi*nm.pi*nm.pi)
     ```
-    ```console
-    Float64: 961.38919357530415
-    Literal: 961.38919357530449
-    ```
     """
 
     comptime c = 299_792_458

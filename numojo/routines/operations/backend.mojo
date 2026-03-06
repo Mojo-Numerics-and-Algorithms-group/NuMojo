@@ -535,12 +535,15 @@ struct HostExecutor:
         vectorize[width](array.size, closure)
         return result_array^
 
+    @staticmethod
     fn apply_ternary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](array1: NDArray[dtype], array2: NDArray[dtype], array3: NDArray[dtype]):
+    ](
+        array1: NDArray[dtype], array2: NDArray[dtype], array3: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
         """
         Applies a SIMD-compatible ternary function to three NDArrays.
 
@@ -584,10 +587,14 @@ struct HostExecutor:
             )
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simd_width_of[dtype]()
+        comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[simdwidth: Int](i: Int):
+        fn closure[
+            simdwidth: Int
+        ](i: Int) unified {
+            mut result_array, read array1, read array2, read array3
+        }:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
             var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
             var simd_data3 = array3._buf.ptr.load[width=simdwidth](i)
@@ -595,15 +602,18 @@ struct HostExecutor:
                 i, kernel(simd_data1, simd_data2, simd_data3)
             )
 
-        vectorize[closure, width](array1.size)
+        vectorize[width](array1.size, closure)
         return result_array^
 
+    @staticmethod
     fn apply_ternary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](array1: NDArray[dtype], array2: NDArray[dtype], scalar: SIMD[dtype, 1]):
+    ](
+        array1: NDArray[dtype], array2: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[dtype]:
         """
         Applies a SIMD-compatible ternary function to two NDArrays and a scalar.
 
@@ -639,17 +649,21 @@ struct HostExecutor:
             )
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
-        alias width = simd_width_of[dtype]()
+        comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[simdwidth: Int](i: Int):
+        fn closure[
+            simdwidth: Int
+        ](i: Int) unified {
+            mut result_array, read array1, read array2, read scalar
+        }:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
             var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
             result_array._buf.ptr.store(
                 i, kernel(simd_data1, simd_data2, scalar)
             )
 
-        vectorize[closure, width](array1.size)
+        vectorize[width](array1.size, closure)
         return result_array^
 
 

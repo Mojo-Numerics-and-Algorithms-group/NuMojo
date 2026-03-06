@@ -256,9 +256,7 @@ fn hypot_fma[
         The element-wise hypotenuse of `array1` and`array2`.
     """
 
-    var array2_squared = fma[dtype](
-        array2, array2, SIMD[dtype, 1](0)
-    )
+    var array2_squared = fma[dtype](array2, array2, SIMD[dtype, 1](0))
     return sqrt[dtype, backend=backend](
         fma[dtype](array1, array1, array2_squared)
     )

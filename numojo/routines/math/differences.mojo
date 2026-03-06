@@ -23,6 +23,10 @@ from numojo.core.dtype.utility import is_inttype, is_floattype
 # 1) add a Variant[NDArray, Scalar, ...] to include all possibilities
 # 2) add edge_order
 
+# ===------------------------------------------------------------------------===#
+# Gradient computation using the trapezoidal rule.
+# ===------------------------------------------------------------------------===#
+
 
 fn gradient[
     dtype: DType = DType.float64
@@ -78,3 +82,37 @@ fn gradient[
         result.store(i, fi)
 
     return result^
+
+
+# ===------------------------------------------------------------------------===#
+# Differences
+# ===------------------------------------------------------------------------===#
+
+
+fn diff[
+    dtype: DType = DType.float64
+](array: NDArray[dtype], n: Int = 1) raises -> NDArray[dtype]:
+    """
+    Compute the n-th order difference of the input array.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A array.
+        n: The order of the difference.
+
+    Returns:
+        The n-th order difference of the input array.
+    """
+
+    var current: NDArray[dtype] = array.deep_copy()
+
+    for _ in range(n):
+        var result: NDArray[dtype] = NDArray[dtype](
+            NDArrayShape(current.size - 1)
+        )
+        for i in range(current.size - 1):
+            result.store(i, current.load(i + 1) - current.load(i))
+        current = result^
+    return current^

@@ -181,40 +181,6 @@ fn sub[
 
 
 # ===------------------------------------------------------------------------===#
-# Differences
-# ===------------------------------------------------------------------------===#
-
-
-fn diff[
-    dtype: DType = DType.float64
-](array: NDArray[dtype], n: Int = 1) raises -> NDArray[dtype]:
-    """
-    Compute the n-th order difference of the input array.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        array: A array.
-        n: The order of the difference.
-
-    Returns:
-        The n-th order difference of the input array.
-    """
-
-    var current: NDArray[dtype] = array.deep_copy()
-
-    for _ in range(n):
-        var result: NDArray[dtype] = NDArray[dtype](
-            NDArrayShape(current.size - 1)
-        )
-        for i in range(current.size - 1):
-            result.store(i, current.load(i + 1) - current.load(i))
-        current = result^
-    return current^
-
-
-# ===------------------------------------------------------------------------===#
 # Modulo
 # ===------------------------------------------------------------------------===#
 

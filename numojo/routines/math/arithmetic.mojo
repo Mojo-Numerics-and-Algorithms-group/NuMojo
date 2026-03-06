@@ -179,6 +179,7 @@ fn sub[
     """
     return HostExecutor.apply_binary[dtype, SIMD.__sub__](scalar, array)
 
+
 # ===------------------------------------------------------------------------===#
 # Differences
 # ===------------------------------------------------------------------------===#
@@ -608,6 +609,7 @@ fn remainder[
         A NDArray equal to array//scalar.
     """
     return HostExecutor.apply_binary[dtype, SIMD.__mod__](array, scalar)
+
 
 fn remainder[
     dtype: DType

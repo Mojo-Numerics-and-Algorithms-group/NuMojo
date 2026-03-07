@@ -7,18 +7,18 @@
 #  ===----------------------------------------------------------------------=== #
 """Extrema routines for NuMojo (numojo.routines.math.extrema).
 
-Contains min/max helpers for NDArrays and Matrices, including axis-aware reductions and matrix-friendly implementations.
+Contains min/max helpers for NDArrays and Matrices, including axis-aware reductions
+and element-wise comparisons.
 """
 
-from algorithm import vectorize, parallelize
-import math.math as stdlib_math
+from algorithm import vectorize
 from math import max as builtin_max
 from math import min as builtin_min
-from collections.optional import Optional
 from sys import simd_width_of
 
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 from numojo.routines.creation import full
 from numojo.routines.sorting import binary_sort
 from numojo.routines.functional import apply_along_axis_reduce
@@ -26,7 +26,7 @@ from numojo.routines.manipulation import ravel
 
 
 # ===-----------------------------------------------------------------------===#
-# Find extrema in elements of a single array.
+# NDArray reductions (min/max over axes)
 # ===-----------------------------------------------------------------------===#
 
 
@@ -34,9 +34,10 @@ fn extrema_1d[
     dtype: DType, //, is_max: Bool
 ](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
-    Finds the max or min value in the buffer.
-    Regardless of the shape of input, it is treated as a 1-d array.
-    It is the backend function for `max` and `min`, with or without `axis`.
+    Find the max or min value in the buffer.
+
+    The input is treated as a 1-D array regardless of shape. This is the
+    backend routine for `max` and `min`.
 
     Parameters:
         dtype: The element type.
@@ -46,7 +47,7 @@ fn extrema_1d[
         a: An array.
 
     Returns:
-        Max value.
+        The extreme value.
     """
 
     if not a.is_c_contiguous():
@@ -87,8 +88,7 @@ fn extrema_1d[
 
 fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
-    Finds the max value of an array.
-    When no axis is given, the array is flattened before sorting.
+    Find the max value of an array.
 
     Parameters:
         dtype: The element type.
@@ -98,6 +98,15 @@ fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
 
     Returns:
         The max value.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.arange[f32](0, 6).reshape(Shape(2, 3))
+        var m = nm.max(a)
+        ```
     """
 
     if a.ndim == 1:
@@ -108,16 +117,14 @@ fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
 
 fn extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
-    Finds the max value in a 1-D array.
+    Find the max value in a 1-D array.
     """
     return extrema_1d[is_max=True](a)
 
 
 fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
-    Finds the max value of an array along the axis.
-    The number of dimension will be reduced by 1.
-    When no axis is given, the array is flattened before sorting.
+    Find the max value of an array along an axis.
 
     Parameters:
         dtype: The element type.
@@ -128,6 +135,15 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
 
     Returns:
         An array with reduced number of dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.arange[f32](0, 6).reshape(Shape(2, 3))
+        var m = nm.max(a, axis=0)
+        ```
     """
 
     var normalized_axis = axis
@@ -145,12 +161,86 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     )
 
 
+fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Find the min value of an array.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: An array.
+
+    Returns:
+        The min value.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.arange[f32](0, 6).reshape(Shape(2, 3))
+        var m = nm.min(a)
+        ```
+    """
+
+    if a.ndim == 1:
+        return extrema_1d[is_max=False](a)
+    else:
+        return extrema_1d[is_max=False](ravel(a))
+
+
+fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Find the min value of an array along an axis.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: An array.
+        axis: The axis along which the min is performed.
+
+    Returns:
+        An array with reduced number of dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.arange[f32](0, 6).reshape(Shape(2, 3))
+        var m = nm.min(a, axis=1)
+        ```
+    """
+
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            String("Error in `min`: Axis {} not in bound [-{}, {})").format(
+                axis, a.ndim, a.ndim
+            )
+        )
+
+    return apply_along_axis_reduce[func1d = extrema_1d[is_max=False]](
+        a=a, axis=normalized_axis
+    )
+
+
+# ===-----------------------------------------------------------------------===#
+# Matrix reductions (min/max over axes)
+# ===-----------------------------------------------------------------------===#
+
+
 @always_inline
 fn matrix_extrema[
     dtype: DType, find_max: Bool
 ](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
     Generic implementation for finding global min/max in a matrix.
+
     Works with any memory layout (row-major or column-major).
     """
     var extreme_val = A[0, 0]
@@ -174,6 +264,7 @@ fn matrix_extrema_axis[
 ](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Generic implementation for finding min/max along an axis in a matrix.
+
     Works with any memory layout (row-major or column-major).
     """
     if axis != 0 and axis != 1:
@@ -219,7 +310,22 @@ fn matrix_extrema_axis[
 
 fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
-    Find max item. It is first flattened before sorting.
+    Find max item.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The max value.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var A = Matrix.rand[f32](shape=(3, 3))
+        var m = nm.max(A)
+        ```
     """
     return matrix_extrema[dtype, True](A)
 
@@ -227,6 +333,22 @@ fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
 fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Find max item along the given axis.
+
+    Args:
+        A: A Matrix.
+        axis: The axis along which the max is performed.
+
+    Returns:
+        A Matrix with reduced dimensions along the axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var A = Matrix.rand[f32](shape=(3, 3))
+        var m = nm.max(A, axis=1)
+        ```
     """
     return matrix_extrema_axis[dtype, True](A, axis)
 
@@ -237,7 +359,8 @@ fn _max[
     Scalar[dtype], Scalar[DType.int]
 ]:
     """
-    Auxiliary function that find the max value in a range of the buffer.
+    Auxiliary function that finds the max value in a range of the buffer.
+
     Both ends are included.
     """
     if (end >= A.size) or (start >= A.size):
@@ -284,62 +407,24 @@ fn _max[
     return (max_value, Scalar[DType.int](max_index))
 
 
-fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
-    """
-    Finds the min value of an array.
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        a: An array.
-
-    Returns:
-        The min value.
-    """
-
-    if a.ndim == 1:
-        return extrema_1d[is_max=False](a)
-    else:
-        return extrema_1d[is_max=False](ravel(a))
-
-
-fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
-    """
-    Finds the min value of an array along the axis.
-    The number of dimension will be reduced by 1.
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        a: An array.
-        axis: The axis along which the max is performed.
-
-    Returns:
-        An array with reduced number of dimensions.
-    """
-
-    var normalized_axis = axis
-    if axis < 0:
-        normalized_axis += a.ndim
-    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
-        raise Error(
-            String("Error in `min`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
-            )
-        )
-
-    return apply_along_axis_reduce[func1d = extrema_1d[is_max=False]](
-        a=a, axis=normalized_axis
-    )
-
-
 fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
     Find min item.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The min value.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var A = Matrix.rand[f32](shape=(3, 3))
+        var m = nm.min(A)
+        ```
     """
     return matrix_extrema[dtype, False](A)
 
@@ -347,6 +432,22 @@ fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
 fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Find min item along the given axis.
+
+    Args:
+        A: A Matrix.
+        axis: The axis along which the min is performed.
+
+    Returns:
+        A Matrix with reduced dimensions along the axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var A = Matrix.rand[f32](shape=(3, 3))
+        var m = nm.min(A, axis=0)
+        ```
     """
     return matrix_extrema_axis[dtype, False](A, axis)
 
@@ -357,7 +458,8 @@ fn _min[
     Scalar[dtype], Scalar[DType.int]
 ]:
     """
-    Auxiliary function that find the min value in a range of the buffer.
+    Auxiliary function that finds the min value in a range of the buffer.
+
     Both ends are included.
     """
     if (end >= A.size) or (start >= A.size):
@@ -405,11 +507,11 @@ fn _min[
 
 
 # ===-----------------------------------------------------------------------===#
-# Element-wise between elements of two arrays.
+# Element-wise pairwise extrema
 # ===-----------------------------------------------------------------------===#
 
 
-fn mimimum[
+fn minimum[
     dtype: DType = DType.float64
 ](s1: SIMD[dtype, 1], s2: SIMD[dtype, 1]) -> SIMD[dtype, 1]:
     """
@@ -420,7 +522,8 @@ fn mimimum[
 
     Args:
         s1: A SIMD Value.
-        s2: A SIMD Value.
+        s2: A SIMD Value
+
     Returns:
         The minimum of the two SIMD Values as a SIMD Value of `dtype`.
     """
@@ -439,6 +542,7 @@ fn maximum[
     Args:
         s1: A SIMD Value.
         s2: A SIMD Value.
+
     Returns:
         The maximum of the two SIMD Values as a SIMD Value of `dtype`.
     """
@@ -449,7 +553,7 @@ fn minimum[
     dtype: DType = DType.float64
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element wise minimum of two arrays.
+    Element-wise minimum of two arrays.
 
     Parameters:
          dtype: The element type.
@@ -457,42 +561,28 @@ fn minimum[
     Args:
         array1: An array.
         array2: An array.
+
     Returns:
-        The element wise minimum of the two arrays as a array of `dtype`.
+        The element-wise minimum of the two arrays as a array of `dtype`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.array[f32]("[1, 3, 2]")
+        var b = nm.array[f32]("[2, 1, 4]")
+        var m = nm.minimum(a, b)
+        ```
     """
-
-    if not array1.is_c_contiguous():
-        return minimum(array1.contiguous(), array2)
-    if not array2.is_c_contiguous():
-        return minimum(array1, array2.contiguous())
-
-    var result: NDArray[dtype] = NDArray[dtype](array1.shape)
-
-    comptime width = simd_width_of[dtype]()
-    if array1.shape != array2.shape:
-        raise Error("array shapes are not the same")
-
-    @parameter
-    fn vectorized_min[
-        simd_width: Int
-    ](idx: Int) unified {mut result, read array1, read array2} -> None:
-        result._buf.ptr.store(
-            idx,
-            builtin_min(
-                array1._buf.ptr.load[width=simd_width](idx),
-                array2._buf.ptr.load[width=simd_width](idx),
-            ),
-        )
-
-    vectorize[width](array1.size, vectorized_min)
-    return result^
+    return HostExecutor.apply_binary[dtype, builtin_min](array1, array2)
 
 
 fn maximum[
     dtype: DType = DType.float64
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element wise maximum of two arrays.
+    Element-wise maximum of two arrays.
 
     Parameters:
          dtype: The element type.
@@ -500,31 +590,18 @@ fn maximum[
     Args:
         array1: A array.
         array2: A array.
+
     Returns:
-        The element wise maximum of the two arrays as a array of `dtype`.
+        The element-wise maximum of the two arrays as a array of `dtype`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.array[f32]("[1, 3, 2]")
+        var b = nm.array[f32]("[2, 1, 4]")
+        var m = nm.maximum(a, b)
+        ```
     """
-
-    if not array1.is_c_contiguous():
-        return maximum(array1.contiguous(), array2)
-    if not array2.is_c_contiguous():
-        return maximum(array1, array2.contiguous())
-
-    var result: NDArray[dtype] = NDArray[dtype](array1.shape)
-    comptime width = simd_width_of[dtype]()
-    if array1.shape != array2.shape:
-        raise Error("array shapes are not the same")
-
-    @parameter
-    fn vectorized_max[
-        simd_width: Int
-    ](idx: Int) unified {mut result, read array1, read array2} -> None:
-        result._buf.ptr.store(
-            idx,
-            builtin_max(
-                array1._buf.ptr.load[width=simd_width](idx),
-                array2._buf.ptr.load[width=simd_width](idx),
-            ),
-        )
-
-    vectorize[width](array1.size, vectorized_max)
-    return result^
+    return HostExecutor.apply_binary[dtype, builtin_max](array1, array2)

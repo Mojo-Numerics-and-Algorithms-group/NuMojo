@@ -574,7 +574,7 @@ fn minimum[
 
     Args:
         s1: A SIMD Value.
-        s2: A SIMD Value
+        s2: A SIMD Value.
 
     Returns:
         The minimum of the two SIMD Values as a SIMD Value of `dtype`.

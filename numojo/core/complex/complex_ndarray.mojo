@@ -2255,7 +2255,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         return Self(result_re^, result_im^)
 
-    fn __pow__(self, p: Self) raises -> Self where Self.dtype.is_floating_point():
+    fn __pow__(
+        self, p: Self
+    ) raises -> Self where Self.dtype.is_floating_point():
         """
         Raise complex array to complex array power element-wise.
 

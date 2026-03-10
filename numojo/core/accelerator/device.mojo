@@ -28,8 +28,6 @@ struct Device(
     Equatable,
     ImplicitlyCopyable,
     Movable,
-    Representable,
-    Stringable,
     Writable,
 ):
     """Represents an execution device for array and matrix operations.
@@ -196,7 +194,19 @@ struct Device(
         Returns:
             Same as `__str__`.
         """
+        # TODO: repr is deprecated in favor of write_repr_to
         return self.__str__()
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+
+        Args:
+            writer: The writer to write to.
+        """
+        writer.write(self.__str__())
 
     fn write_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.

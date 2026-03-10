@@ -33,7 +33,6 @@ struct Item(
     ImplicitlyCopyable,
     Movable,
     RegisterPassable,
-    Representable,
     Sized,
     Stringable,
     Writable,
@@ -457,6 +456,15 @@ struct Item(
             String representation of the Item.
         """
         return "numojo.Item" + self.__str__()
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+        """
+        # TODO: Deprecate `__repr__` and move its body directly into this method.
+        writer.write(self.__repr__())
 
     @always_inline("nodebug")
     fn __str__(self) -> String:

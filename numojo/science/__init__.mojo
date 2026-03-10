@@ -19,5 +19,5 @@ Submodules:
 - `interpolate`: Interpolation utilities
 """
 
-from . import signal
-from . import interpolate
+import .signal
+import .interpolate

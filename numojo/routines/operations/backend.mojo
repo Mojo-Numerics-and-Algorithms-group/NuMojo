@@ -277,9 +277,8 @@ struct HostExecutor:
             simd_w: Int
         ](i: Int) unified {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
-            var simd_data2 = scalar
             result_array._buf.ptr.store(
-                i, kernel[dtype, simd_w](simd_data1, simd_data2)
+                i, kernel[dtype, simd_w](simd_data1, scalar)
             )
 
         vectorize[width](result_array.size, closure)
@@ -325,9 +324,8 @@ struct HostExecutor:
             simd_w: Int
         ](i: Int) unified {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
-            var simd_data2 = scalar
             result_array._buf.ptr.store(
-                i, kernel[dtype, simd_w](simd_data2, simd_data1)
+                i, kernel[dtype, simd_w](scalar, simd_data1)
             )
 
         vectorize[width](result_array.size, closure)
@@ -535,6 +533,137 @@ struct HostExecutor:
             )
 
         vectorize[width](array.size, closure)
+        return result_array^
+
+    @staticmethod
+    fn apply_ternary[
+        dtype: DType,
+        kernel: fn[type: DType, simd_w: Int](
+            SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        array1: NDArray[dtype], array2: NDArray[dtype], array3: NDArray[dtype]
+    ) raises -> NDArray[dtype]:
+        """
+        Applies a SIMD-compatible ternary function to three NDArrays.
+
+        Parameters:
+            dtype: The element type of the NDArrays.
+            kernel: The SIMD-compatible ternary function to apply.
+
+        Args:
+            array1: The first input NDArray.
+            array2: The second input NDArray.
+            array3: The third input NDArray.
+
+        Returns:
+            A new NDArray containing the result of applying the function.
+        """
+        if (
+            not array1.is_c_contiguous()
+            and not array2.is_c_contiguous()
+            and not array3.is_c_contiguous()
+        ):
+            return Self.apply_ternary[dtype, kernel](
+                array1.contiguous(), array2.contiguous(), array3.contiguous()
+            )
+
+        if not array1.is_c_contiguous():
+            return Self.apply_ternary[dtype, kernel](
+                array1.contiguous(), array2, array3
+            )
+        if not array2.is_c_contiguous():
+            return Self.apply_ternary[dtype, kernel](
+                array1, array2.contiguous(), array3
+            )
+        if not array3.is_c_contiguous():
+            return Self.apply_ternary[dtype, kernel](
+                array1, array2, array3.contiguous()
+            )
+
+        if array1.shape != array2.shape and array1.shape != array3.shape:
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
+        comptime width = simd_width_of[dtype]()
+
+        @parameter
+        fn closure[
+            simdwidth: Int
+        ](i: Int) unified {
+            mut result_array, read array1, read array2, read array3
+        }:
+            var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
+            var simd_data3 = array3._buf.ptr.load[width=simdwidth](i)
+            result_array._buf.ptr.store(
+                i, kernel(simd_data1, simd_data2, simd_data3)
+            )
+
+        vectorize[width](array1.size, closure)
+        return result_array^
+
+    @staticmethod
+    fn apply_ternary[
+        dtype: DType,
+        kernel: fn[type: DType, simd_w: Int](
+            SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
+        ) -> SIMD[type, simd_w],
+    ](
+        array1: NDArray[dtype], array2: NDArray[dtype], scalar: SIMD[dtype, 1]
+    ) raises -> NDArray[dtype]:
+        """
+        Applies a SIMD-compatible ternary function to two NDArrays and a scalar.
+
+        Parameters:
+            dtype: The element type of the input NDArrays.
+            kernel: The SIMD-compatible ternary function to apply.
+
+        Args:
+            array1: The first input NDArray.
+            array2: The second input NDArray.
+            scalar: The input scalar value.
+
+        Returns:
+            A new NDArray containing the result of applying the function.
+        """
+        if not array1.is_c_contiguous() and not array2.is_c_contiguous():
+            return Self.apply_ternary[dtype, kernel](
+                array1.contiguous(), array2.contiguous(), scalar
+            )
+
+        if not array1.is_c_contiguous():
+            return Self.apply_ternary[dtype, kernel](
+                array1.contiguous(), array2, scalar
+            )
+        if not array2.is_c_contiguous():
+            return Self.apply_ternary[dtype, kernel](
+                array1, array2.contiguous(), scalar
+            )
+
+        if array1.shape != array2.shape:
+            raise Error(
+                "Shape Mismatch error shapes must match for this function"
+            )
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
+        comptime width = simd_width_of[dtype]()
+
+        @parameter
+        fn closure[
+            simdwidth: Int
+        ](i: Int) unified {
+            mut result_array, read array1, read array2, read scalar
+        }:
+            var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
+            var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
+            result_array._buf.ptr.store(
+                i, kernel(simd_data1, simd_data2, scalar)
+            )
+
+        vectorize[width](array1.size, closure)
         return result_array^
 
 

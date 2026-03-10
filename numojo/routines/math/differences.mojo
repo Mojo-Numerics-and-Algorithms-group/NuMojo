@@ -23,6 +23,10 @@ from numojo.core.dtype.utility import is_inttype, is_floattype
 # 1) add a Variant[NDArray, Scalar, ...] to include all possibilities
 # 2) add edge_order
 
+# ===------------------------------------------------------------------------===#
+# Gradient computation using the trapezoidal rule.
+# ===------------------------------------------------------------------------===#
+
 
 fn gradient[
     dtype: DType = DType.float64
@@ -80,42 +84,35 @@ fn gradient[
     return result^
 
 
-# naive loop implementation, optimize later
-fn trapz[
+# ===------------------------------------------------------------------------===#
+# Differences
+# ===------------------------------------------------------------------------===#
+
+
+fn diff[
     dtype: DType = DType.float64
-](y: NDArray[dtype], x: NDArray[dtype]) raises -> Scalar[
-    dtype
-] where dtype.is_floating_point():
+](array: NDArray[dtype], n: Int = 1) raises -> NDArray[dtype]:
     """
-    Compute the integral of y over x using the trapezoidal rule.
+    Compute the n-th order difference of the input array.
 
     Parameters:
         dtype: The element type.
 
     Args:
-        y: An array.
-        x: An array.
-
-    Constraints:
-        `x` and `y` must have the same shape.
-        `dtype` must be a floating-point type.
+        array: A array.
+        n: The order of the difference.
 
     Returns:
-        The integral of y over x using the trapezoidal rule.
+        The n-th order difference of the input array.
     """
-    if x.shape != y.shape:
-        raise Error("x and y must have the same shape")
 
-    # View safety guard: ensure inputs are C-contiguous before linear access.
-    if not x.is_c_contiguous():
-        return trapz[dtype](y, x.contiguous())
-    if not y.is_c_contiguous():
-        return trapz[dtype](y.contiguous(), x)
+    var current: NDArray[dtype] = array.deep_copy()
 
-    var integral: Scalar[dtype] = 0.0
-    for i in range(x.size - 1):
-        var temp = (
-            (x.load(i + 1) - x.load(i)) * (y.load(i) + y.load(i + 1)) / 2.0
+    for _ in range(n):
+        var result: NDArray[dtype] = NDArray[dtype](
+            NDArrayShape(current.size - 1)
         )
-        integral += temp
-    return integral
+        for i in range(current.size - 1):
+            result.store(i, current.load(i + 1) - current.load(i))
+        current = result^
+    return current^

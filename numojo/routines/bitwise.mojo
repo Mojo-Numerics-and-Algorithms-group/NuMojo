@@ -10,39 +10,45 @@
 This module implements bit-wise operations on NDArrays, such as bitwise AND, OR, XOR, and NOT (invert).
 """
 
-import math
-from algorithm import parallelize
-from algorithm import Static2DTileUnitFunc as Tile2DFunc
-from utils import Variant
-
-import numojo.routines.math._math_funcs as _mf
+from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray
-from numojo.core.layout import NDArrayShape
-from numojo.core.dtype.utility import is_inttype, is_floattype, is_booltype
+
+# ===------------------------------------------------------------------------===#
+# Bitwise operations
+# ===------------------------------------------------------------------------===#
 
 
 fn invert[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+    dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[dtype] where (
     dtype.is_integral() or dtype == DType.bool
 ):
     """
     Element-wise invert of an array.
 
-    Constraints:
-        The array must be either a boolean or integral array.
-
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
+    Constraints:
+        The array must be either a boolean or integral array.
+
     Returns:
         A NDArray equal to the bitwise inversion of array.
-    """
 
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__invert__](
-        array
-    )
+    Examples:
+        ```mojo
+        from numojo.prelude import *
+        import numojo as nm
+        from numojo.routines.bitwise import invert
+
+        var arr1 = nm.array[nm.i8]([1, 2, 3], shape=[3])
+        var result1 = invert(arr1) # result1 is [-2, -3, -4]
+
+        var arr2 = nm.array[nm.boolean]([True, False, True], shape=[3])
+        var result2 = invert(arr2) # result2 is [false, true, false
+        ```
+    """
+    return HostExecutor.apply_unary[dtype, SIMD.__invert__](array)

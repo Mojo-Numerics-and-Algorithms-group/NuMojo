@@ -58,7 +58,6 @@ from .logic import (
 from .math import (
     add,
     sub,
-    diff,
     mod,
     mul,
     div,
@@ -66,7 +65,7 @@ from .math import (
     fma,
     remainder,
     gradient,
-    trapz,
+    diff,
     exp,
     exp2,
     expm1,

@@ -257,7 +257,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     @always_inline("nodebug")
     fn __init__(
         out self,
-        shape: VariadicList[Int],
+        shape: VariadicList[Int, _],
         order: String = "C",
     ) raises:
         """

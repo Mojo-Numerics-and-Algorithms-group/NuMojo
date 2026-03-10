@@ -719,8 +719,8 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Args:
             copy: The source container.
         """
-        self.host_storage = copy.host_storage
-        self.device_storage = copy.device_storage
+        self.host_storage = copy.host_storage.copy()
+        self.device_storage = copy.device_storage.copy()
         self.size = copy.size
 
     @always_inline

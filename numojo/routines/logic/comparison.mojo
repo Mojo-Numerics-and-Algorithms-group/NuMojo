@@ -9,6 +9,7 @@
 
 Implements comparison math routines for NDArrays and Matrices.
 """
+
 import math
 
 from numojo.routines import HostExecutor

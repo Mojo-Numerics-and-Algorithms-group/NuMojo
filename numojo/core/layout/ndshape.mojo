@@ -26,7 +26,6 @@ struct NDArrayShape(
     ImplicitlyCopyable,
     Movable,
     RegisterPassable,
-    Representable,
     Sized,
     Stringable,
     Writable,

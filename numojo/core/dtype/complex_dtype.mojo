@@ -78,8 +78,6 @@ struct ComplexDType(
     Identifiable,
     KeyElement,
     Movable,
-    Representable,
-    Stringable,
     TrivialRegisterPassable,
     Writable,
 ):

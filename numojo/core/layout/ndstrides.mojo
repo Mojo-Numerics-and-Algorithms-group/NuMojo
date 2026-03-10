@@ -24,7 +24,6 @@ struct NDArrayStrides(
     ImplicitlyCopyable,
     Movable,
     RegisterPassable,
-    Representable,
     Sized,
     Stringable,
     Writable,

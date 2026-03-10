@@ -93,7 +93,6 @@ struct NDArray[dtype: DType = DType.float64](
     FloatableRaising,
     IntableRaising,
     Movable,
-    Representable,
     Sized,
     Stringable,
     Writable,

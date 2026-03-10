@@ -33,7 +33,6 @@ struct Item(
     ImplicitlyCopyable,
     Movable,
     RegisterPassable,
-    Representable,
     Sized,
     Stringable,
     Writable,

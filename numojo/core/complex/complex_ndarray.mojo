@@ -92,7 +92,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     FloatableRaising,
     IntableRaising,
     Movable,
-    Representable,
     Sized,
     Stringable,
     Writable,

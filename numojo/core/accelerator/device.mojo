@@ -28,8 +28,6 @@ struct Device(
     Equatable,
     ImplicitlyCopyable,
     Movable,
-    Representable,
-    Stringable,
     Writable,
 ):
     """Represents an execution device for array and matrix operations.

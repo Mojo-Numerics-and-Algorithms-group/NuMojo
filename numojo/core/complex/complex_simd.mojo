@@ -23,7 +23,6 @@ from numojo.core.dtype import ComplexDType
 struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
     ImplicitlyCopyable,
     Movable,
-    Stringable,
     TrivialRegisterPassable,
     Writable,
 ):
@@ -1334,7 +1333,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(self.re, -self.im)
 
 
-struct ImaginaryUnit(Boolable, Stringable, TrivialRegisterPassable, Writable):
+struct ImaginaryUnit(Boolable, TrivialRegisterPassable, Writable):
     """
     Constant representing the imaginary unit complex number 0 + 1j.
 

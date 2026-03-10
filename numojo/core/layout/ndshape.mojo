@@ -27,7 +27,6 @@ struct NDArrayShape(
     Movable,
     RegisterPassable,
     Sized,
-    Stringable,
     Writable,
 ):
     """

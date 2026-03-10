@@ -94,7 +94,6 @@ struct NDArray[dtype: DType = DType.float64](
     IntableRaising,
     Movable,
     Sized,
-    Stringable,
     Writable,
 ):
     """The N-dimensional array (NDArray).

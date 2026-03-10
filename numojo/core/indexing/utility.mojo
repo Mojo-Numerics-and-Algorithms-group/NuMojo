@@ -31,7 +31,7 @@ comptime newaxis: NewAxis = NewAxis()
 
 
 # TODO: add an initializer with int field to specify number of new axes to add!
-struct NewAxis(Stringable):
+struct NewAxis(Writable):
     fn __init__(out self):
         """
         Initializes a NewAxis instance.

@@ -25,7 +25,6 @@ struct NDArrayStrides(
     Movable,
     RegisterPassable,
     Sized,
-    Stringable,
     Writable,
 ):
     """

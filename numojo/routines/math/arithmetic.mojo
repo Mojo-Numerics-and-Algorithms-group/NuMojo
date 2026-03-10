@@ -326,20 +326,20 @@ fn mul[
         The element-wise product of `array1` and`array2`.
     """
     var array_list: List[NDArray[dtype]] = List[NDArray[dtype]]()
-    var scalar_part: Scalar[dtype] = 0
+    var scalar_part: Scalar[dtype] = 1
     for i in range(len(values)):
         if values[i].isa[NDArray[dtype]]():
             array_list.append(values[i].take[NDArray[dtype]]())
         elif values[i].isa[Scalar[dtype]]():
-            scalar_part += values[i].take[Scalar[dtype]]()
+            scalar_part *= values[i].take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
-            " No arrays in arguaments"
+            " No arrays in arguments"
         )
-    var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape)
-    for array in array_list:
-        result_array = mul[dtype](result_array, array)
+    var result_array: NDArray[dtype] = array_list[0].deep_copy()
+    for i in range(1, len(array_list)):
+        result_array = mul[dtype](result_array, array_list[i])
     result_array = mul[dtype](result_array, scalar_part)
 
     return result_array^

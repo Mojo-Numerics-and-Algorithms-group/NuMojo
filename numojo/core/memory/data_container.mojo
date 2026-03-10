@@ -78,7 +78,7 @@ struct Ownership(ImplicitlyCopyable):
 
 
 struct DataContainer[dtype: DType](
-    Copyable & Movable & Sized & Stringable & Writable
+    Copyable & Movable & Sized & Writable
 ):
     """
     Reference-counted container for a contiguous buffer of elements.

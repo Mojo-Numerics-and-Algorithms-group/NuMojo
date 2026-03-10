@@ -37,7 +37,7 @@ from numojo.core.error import NumojoError
 
 
 struct HostStorage[dtype: DType](
-    Copyable & Movable & Sized & Stringable & Writable
+    Copyable & Movable & Sized & Writable
 ):
     """Reference-counted host (CPU) memory container.
 
@@ -590,7 +590,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
 
 
 struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
-    Copyable & Movable & Sized & Stringable & Writable
+    Copyable & Movable & Sized & Writable
 ):
     """Unified, reference-counted storage for Host (CPU) or Device (GPU) data.
 

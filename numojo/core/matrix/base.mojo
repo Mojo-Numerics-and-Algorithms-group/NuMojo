@@ -44,7 +44,7 @@ from numojo.routines.linalg.misc import issymmetric
 
 struct Matrix[
     dtype: DType = DType.float64,
-](Copyable, Movable, Sized, Stringable, Writable):
+](Copyable, Movable, Sized, Writable):
     """
     Core implementation struct for 2D matrix operations.
 

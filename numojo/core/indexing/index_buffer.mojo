@@ -28,7 +28,6 @@ struct IndexBuffer(
     Movable,
     RegisterPassable,
     Sized,
-    Stringable,
     Writable,
 ):
     """

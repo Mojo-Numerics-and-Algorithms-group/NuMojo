@@ -34,7 +34,6 @@ struct Item(
     Movable,
     RegisterPassable,
     Sized,
-    Stringable,
     Writable,
 ):
     """

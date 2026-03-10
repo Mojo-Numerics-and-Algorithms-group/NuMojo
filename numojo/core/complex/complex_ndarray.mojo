@@ -1987,10 +1987,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var count_int = 0
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
-                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+                slice_list.append(slices[i].unsafe_get[Slice]())
             elif slices[i].isa[Int]():
                 count_int += 1
-                var int: Int = slices[i]._get_ptr[Int]()[0]
+                var int: Int = slices[i].unsafe_get[Int]()
                 slice_list.append(Slice(int, int + 1, 1))
 
         if n_slices < self.ndim:

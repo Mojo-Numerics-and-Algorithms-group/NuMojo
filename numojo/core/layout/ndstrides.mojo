@@ -938,15 +938,13 @@ struct _StrideIter[
         return self
 
     fn __has_next__(self) -> Bool:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
     fn __next__(mut self) raises -> Scalar[DType.int]:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             var current_index = self.index
             self.index += 1
             return Scalar[DType.int](self.strides[].__getitem__(current_index))
@@ -956,8 +954,7 @@ struct _StrideIter[
             return Scalar[DType.int](self.strides[].__getitem__(current_index))
 
     fn __len__(self) -> Int:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.length - self.index
         else:
             return self.index + 1

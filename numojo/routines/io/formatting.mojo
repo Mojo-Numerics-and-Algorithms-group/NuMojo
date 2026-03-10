@@ -263,8 +263,7 @@ fn format_floating_scientific[
     # Does not work either.
     # We could use `where dtype.is_floating_point()` in the `format_floating_scientific`
     # signature, however that has viral implications else where.
-    @parameter
-    if dtype.is_floating_point():
+    comptime if dtype.is_floating_point():
         try:
             if x == 0:
                 if sign:
@@ -342,8 +341,7 @@ fn format_floating_precision[
         Error: If precision is negative or if the value cannot be formatted.
     """
 
-    @parameter
-    if is_inttype[dtype]():
+    comptime if is_inttype[dtype]():
         raise Error(
             "Invalid type provided. dtype must be a floating-point type."
         )
@@ -440,8 +438,7 @@ fn format_value[
     var suppress_scientific = print_options.suppress_scientific
     var exponent_threshold = print_options.exponent_threshold
 
-    @parameter
-    if is_floattype[dtype]():
+    comptime if is_floattype[dtype]():
         if isnan(value):
             return nan_string.ascii_rjust(formatted_width)
         if isinf(value):

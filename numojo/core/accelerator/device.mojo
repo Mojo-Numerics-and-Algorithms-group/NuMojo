@@ -305,16 +305,13 @@ struct Device(
             NumojoError if no GPU accelerator is detected.
         """
 
-        @parameter
-        if has_nvidia_gpu_accelerator():
+        comptime if has_nvidia_gpu_accelerator():
             return "cuda"
 
-        @parameter
-        if has_amd_gpu_accelerator():
+        comptime if has_amd_gpu_accelerator():
             return "rocm"
 
-        @parameter
-        if has_apple_gpu_accelerator():
+        comptime if has_apple_gpu_accelerator():
             return "mps"
         else:
             raise NumojoError(
@@ -334,20 +331,16 @@ struct Device(
         var result: String = "\n"
         result += "  • " + String(Device.CPU) + " (Default CPU device)\n"
 
-        @parameter
-        if has_nvidia_gpu_accelerator():
+        comptime if has_nvidia_gpu_accelerator():
             result += "  • " + String(Device.CUDA) + " (NVIDIA CUDA GPU)\n"
 
-        @parameter
-        if has_amd_gpu_accelerator():
+        comptime if has_amd_gpu_accelerator():
             result += "  • " + String(Device.ROCM) + " (AMD ROCm GPU)\n"
 
-        @parameter
-        if has_apple_gpu_accelerator():
+        comptime if has_apple_gpu_accelerator():
             result += "  • " + String(Device.MPS) + " (Apple Metal GPU)\n"
 
-        @parameter
-        if not (
+        comptime if not (
             has_nvidia_gpu_accelerator()
             or has_amd_gpu_accelerator()
             or has_apple_gpu_accelerator()
@@ -446,16 +439,13 @@ fn is_accelerator_available[device: Device]() -> Bool:
         Always returns False for CPU or unknown backends.
     """
 
-    @parameter
-    if device.type != "gpu":
+    comptime if device.type != "gpu":
         return False
 
-    @parameter
-    if device.name == "":
+    comptime if device.name == "":
         return False
 
-    @parameter
-    if device.name == "cuda":
+    comptime if device.name == "cuda":
         return has_nvidia_gpu_accelerator()
     elif device.name == "rocm":
         return has_amd_gpu_accelerator()

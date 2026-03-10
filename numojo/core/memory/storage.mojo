@@ -645,8 +645,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
 
         self.size = size
 
-        @parameter
-        if Self.device.type == "cpu":
+        comptime if Self.device.type == "cpu":
             self.host_storage = HostStorage[Self.dtype](size)
             self.device_storage = None
         elif Self.device.type == "gpu":
@@ -863,8 +862,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             the underlying `HostStorage` representation.
         """
 
-        @parameter
-        if Self.device.type == "cpu":
+        comptime if Self.device.type == "cpu":
             if self.host_storage:
                 return (
                     "AcceleratorDataContainer(cpu, "
@@ -905,8 +903,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         if self.size == 0:
             return AcceleratorDataContainer[Self.dtype, Self.device]()
 
-        @parameter
-        if Self.device.type == "cpu":
+        comptime if Self.device.type == "cpu":
             var result = AcceleratorDataContainer[Self.dtype, Self.device](
                 self.size
             )
@@ -945,8 +942,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         var result = AcceleratorDataContainer[Self.dtype, Self.device]()
         result.size = self.size
 
-        @parameter
-        if Self.device.type == "cpu":
+        comptime if Self.device.type == "cpu":
             var shared = self.host_storage.unsafe_value().share()
             result.host_storage = shared^
             result.device_storage = None

@@ -51,8 +51,7 @@ fn rand[
 
     builtin_random.seed()
 
-    @parameter
-    if not dtype.is_floating_point():
+    comptime if not dtype.is_floating_point():
         raise Error(
             "Invalid type provided. dtype must be a floating-point type."
         )
@@ -132,8 +131,7 @@ fn rand[
         between `min` and `max`.
     """
 
-    @parameter
-    if not dtype.is_floating_point():
+    comptime if not dtype.is_floating_point():
         raise Error(
             "Invalid type provided. dtype must be a floating-point type."
         )
@@ -207,8 +205,7 @@ fn randint[
         An array of random integers from low (inclusive) to high (exclusive).
     """
 
-    @parameter
-    if not dtype.is_integral():
+    comptime if not dtype.is_integral():
         raise Error("Only Integral values can be sampled using this function.")
 
     if high <= low:
@@ -411,8 +408,7 @@ fn exponential[
         an exponential distribution with given scale parameter.
     """
 
-    @parameter
-    if not dtype.is_floating_point():
+    comptime if not dtype.is_floating_point():
         raise Error(
             "Invalid type provided. dtype must be a floating-point type."
         )

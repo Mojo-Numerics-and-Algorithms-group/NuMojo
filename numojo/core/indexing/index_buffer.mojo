@@ -153,7 +153,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type](values[i])
             )
 
-    fn __init__(out self, values: VariadicList[Scalar[Self.element_type]]):
+    fn __init__(out self, values: VariadicList[Scalar[Self.element_type], is_owned=False]):
         """
         Initialize an IndexBuffer with a range of values.
 
@@ -168,7 +168,7 @@ struct IndexBuffer(
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(values[i])
 
-    fn __init__(out self, values: VariadicList[Int]):
+    fn __init__(out self, values: VariadicList[Int, is_owned=False]):
         """
         Initialize an IndexBuffer with a range of values.
 

@@ -142,7 +142,7 @@ struct Item(
             self._buf.init_value(i, Scalar[Self.element_type](args[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, args: VariadicList[Int]):
+    fn __init__(out self, args: VariadicList[Int, is_owned=False]):
         """Construct the Item from a variadic list.
 
         Args:

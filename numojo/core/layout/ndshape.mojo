@@ -158,7 +158,7 @@ struct NDArrayShape(
             self._buf.init_value(i, Scalar[DType.int](shape[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: VariadicList[Int]) raises:
+    fn __init__(out self, shape: VariadicList[Int, is_owned=False]) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions.
 

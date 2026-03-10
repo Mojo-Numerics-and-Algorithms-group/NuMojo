@@ -1145,8 +1145,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         try:
 
-            @parameter
-            if Self.width == 1:
+            comptime if Self.width == 1:
                 writer.write(String("({} + {} j)").format(self.re, self.im))
             else:
                 var s = String("[")
@@ -1247,8 +1246,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         if idx < 0 or idx >= Self.width:
             raise Error("Lane index out of range for SIMD width")
 
-        @parameter
-        if name == "re":
+        comptime if name == "re":
             return self.re[idx]
         elif name == "im":
             return self.im[idx]
@@ -1283,8 +1281,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         if idx < 0 or idx >= Self.width:
             raise Error("Lane index out of range for SIMD width")
 
-        @parameter
-        if name == "re":
+        comptime if name == "re":
             self.re[idx] = val
         elif name == "im":
             self.im[idx] = val

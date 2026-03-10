@@ -4905,8 +4905,7 @@ struct _MatrixIter[
             Bool: True if there are more rows to iterate, False otherwise.
         """
 
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.index < self.shape[0]
         else:
             return self.index >= 0
@@ -4918,8 +4917,7 @@ struct _MatrixIter[
             Matrix: A view representing the next row in the iteration.
         """
 
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             var current_index = self.index
             self.index += 1
             var offset = current_index * self.strides[0]
@@ -4951,8 +4949,7 @@ struct _MatrixIter[
         """
         var remaining_rows: Int
 
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             remaining_rows = self.shape[0] - self.index
         else:
             remaining_rows = self.index + 1

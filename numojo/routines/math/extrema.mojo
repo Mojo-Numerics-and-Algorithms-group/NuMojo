@@ -55,8 +55,7 @@ fn extrema_1d[
     comptime simd_width = builtin_max(simd_width_of[dtype](), 64)
     var value = a._buf.load[width=1](0)
 
-    @parameter
-    if is_max:
+    comptime if is_max:
 
         @parameter
         fn vectorize_max[

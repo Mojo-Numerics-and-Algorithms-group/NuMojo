@@ -4261,8 +4261,7 @@ struct _ComplexNDArrayIter[
         var result = ComplexNDArray[Self.cdtype](self.shape.pop(self.dimension))
         var current_index = self.index
 
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             self.index += 1
         else:
             self.index -= 1
@@ -4292,15 +4291,13 @@ struct _ComplexNDArrayIter[
 
     @always_inline
     fn __has_next__(self) -> Bool:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
     fn __len__(self) -> Int:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.length - self.index
         else:
             return self.index

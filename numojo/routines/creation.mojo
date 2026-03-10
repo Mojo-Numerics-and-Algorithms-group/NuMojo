@@ -257,8 +257,7 @@ fn linspace[
         ```
     """
 
-    @parameter
-    if parallel:
+    comptime if parallel:
         return _linspace_parallel[dtype](start, stop, num, endpoint)
     else:
         return _linspace_serial[dtype](start, stop, num, endpoint)
@@ -385,8 +384,7 @@ fn linspace[
         not cdtype.is_integral()
     ), "numojo.linspace requires floating-point complex dtype."
 
-    @parameter
-    if parallel:
+    comptime if parallel:
         return _linspace_parallel[cdtype](start, stop, num, endpoint)
     else:
         return _linspace_serial[cdtype](start, stop, num, endpoint)
@@ -565,8 +563,7 @@ fn logspace[
         ```
     """
 
-    @parameter
-    if parallel:
+    comptime if parallel:
         return _logspace_parallel[dtype](
             start,
             stop,
@@ -2196,8 +2193,7 @@ fn astype[
     var array_order: String = "C" if a.is_c_contiguous() else "F"
     var result: NDArray[target] = NDArray[target](a.shape, order=array_order)
 
-    @parameter
-    if target == DType.bool:
+    comptime if target == DType.bool:
 
         @parameter
         fn vectorized_astype[
@@ -2211,8 +2207,7 @@ fn astype[
 
     else:
 
-        @parameter
-        if target == DType.bool:
+        comptime if target == DType.bool:
 
             @parameter
             fn vectorized_astypenb_from_b[
@@ -2729,8 +2724,7 @@ fn meshgrid[
     var grids: List[NDArray[dtype]] = List[NDArray[dtype]](capacity=n)
     var final_shape: List[Int] = List[Int](capacity=n)
 
-    @parameter
-    if indexing == "xy":
+    comptime if indexing == "xy":
         final_shape.append(arrays[1].size)
         final_shape.append(arrays[0].size)
         for i in range(2, n):
@@ -2743,8 +2737,7 @@ fn meshgrid[
         var grid: NDArray[dtype] = NDArray[dtype](Shape(final_shape))
         var broadcast_dim: Int = i
 
-        @parameter
-        if indexing == "xy":
+        comptime if indexing == "xy":
             if i == 0:
                 broadcast_dim = 1
             elif i == 1:

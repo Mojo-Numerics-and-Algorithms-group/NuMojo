@@ -5191,8 +5191,7 @@ struct _NDArrayIter[
         var result = NDArray[Self.dtype](self.shape.pop(self.dimension))
         var current_index = self.index
 
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             self.index += 1
         else:
             self.index -= 1
@@ -5227,15 +5226,13 @@ struct _NDArrayIter[
 
     @always_inline
     fn __has_next__(self) -> Bool:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
     fn __len__(self) -> Int:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.length - self.index
         else:
             return self.index
@@ -5421,8 +5418,7 @@ struct _NDAxisIter[
         self.index = 0 if Self.forward else self.length - 1
 
     fn __has_next__(self) -> Bool:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
@@ -5431,8 +5427,7 @@ struct _NDAxisIter[
         return self.copy()
 
     fn __len__(self) -> Int:
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             return self.length - self.index
         else:
             return self.index
@@ -5441,8 +5436,7 @@ struct _NDAxisIter[
         var res = NDArray[Self.dtype](Shape(self.size_of_item))
         var current_index = self.index
 
-        @parameter
-        if Self.forward:
+        comptime if Self.forward:
             self.index += 1
         else:
             self.index -= 1

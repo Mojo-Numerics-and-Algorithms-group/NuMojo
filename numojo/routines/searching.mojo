@@ -190,8 +190,7 @@ fn find_extrema_index[
             var current = A[i, j]
             var linear_idx = Scalar[DType.int](i * A.shape[1] + j)
 
-            @parameter
-            if find_max:
+            comptime if find_max:
                 if current > extreme_val:
                     extreme_val = current
                     extreme_idx = linear_idx

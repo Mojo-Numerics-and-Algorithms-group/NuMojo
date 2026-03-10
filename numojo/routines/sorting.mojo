@@ -387,8 +387,7 @@ fn binary_sort[
         The sorted NDArray of type `dtype`.
     """
 
-    @parameter
-    if dtype != array.dtype:
+    comptime if dtype != array.dtype:
         comptime dtype = array.dtype
 
     var result: NDArray[dtype] = NDArray[dtype](array.shape)

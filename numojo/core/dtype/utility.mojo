@@ -23,8 +23,7 @@ fn is_inttype[dtype: DType]() -> Bool:
         Bool: True if the given dtype is an integer type, False otherwise.
     """
 
-    @parameter
-    if (
+    comptime if (
         dtype == DType.int8
         or dtype == DType.int16
         or dtype == DType.int32
@@ -66,8 +65,7 @@ fn is_floattype[dtype: DType]() -> Bool:
         Bool: True if the given dtype is a floating point type, False otherwise.
     """
 
-    @parameter
-    if (
+    comptime if (
         dtype == DType.float16
         or dtype == DType.float32
         or dtype == DType.float64
@@ -107,8 +105,7 @@ fn is_booltype[dtype: DType]() -> Bool:
         Bool: True if the given dtype is a boolean type, False otherwise.
     """
 
-    @parameter
-    if dtype == DType.bool:
+    comptime if dtype == DType.bool:
         return True
     return False
 

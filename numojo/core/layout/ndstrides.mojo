@@ -726,7 +726,7 @@ struct NDArrayStrides(
         Returns:
             String representation of the strides of the array.
         """
-        return "numojo.Strides" + String(self)
+        return "numojo.Strides" + self.__str__()
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
@@ -758,7 +758,7 @@ struct NDArrayStrides(
         Writes the strides representation to a writer.
         """
         writer.write(
-            "Strides: " + String(self) + "  " + "ndim: " + String(self.ndim)
+            "Strides: " + self.__str__() + "  " + "ndim: " + String(self.ndim)
         )
 
     @always_inline("nodebug")

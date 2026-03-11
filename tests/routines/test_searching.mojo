@@ -1,7 +1,7 @@
 from numojo.prelude import *
-from python import Python, PythonObject
+from std.python import Python, PythonObject
 from utils_for_test import check, check_is_close, check_values_close
-from testing import TestSuite
+from std.testing import TestSuite
 
 
 fn test_argmax() raises:
@@ -226,5 +226,5 @@ fn test_take_along_axis_with_argmax_argmin() raises:
     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

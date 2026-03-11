@@ -131,7 +131,7 @@ struct NDArrayStrides(
             self._buf.init_value(i, Scalar[DType.int](strides[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: VariadicList[Int]) raises:
+    fn __init__(out self, strides: VariadicList[Int, _]) raises:
         """
         Initializes the NDArrayStrides from a variadic list of strides.
 
@@ -259,7 +259,7 @@ struct NDArrayStrides(
     @always_inline("nodebug")
     fn __init__(
         out self,
-        shape: VariadicList[Int],
+        shape: VariadicList[Int, _],
         order: String = "C",
     ) raises:
         """

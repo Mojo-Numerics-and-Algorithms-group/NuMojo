@@ -363,21 +363,21 @@ struct ComplexDType(
     @always_inline("nodebug")
     fn _from_ui8(ui8: UInt8._mlir_type) -> ComplexDType:
         var res = __mlir_op.`pop.dtype.from_ui8`(
-            __mlir_op.`pop.cast_to_builtin`[_type = __mlir_type.ui8](ui8)
+            __mlir_op.`pop.cast_to_builtin`[_type=__mlir_type.ui8](ui8)
         )
         return ComplexDType(mlir_value=res)
 
     @doc_private
     @always_inline("nodebug")
     fn _as_ui8(self) -> UInt8._mlir_type:
-        return __mlir_op.`pop.cast_from_builtin`[_type = UInt8._mlir_type](
+        return __mlir_op.`pop.cast_from_builtin`[_type=UInt8._mlir_type](
             __mlir_op.`pop.dtype.to_ui8`(self.dtype.get_value())
         )
 
     @doc_private
     @always_inline("nodebug")
     fn _match(self, mask: UInt8) -> Bool:
-        var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred ne>`](
+        var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred ne>`](
             __mlir_op.`pop.simd.and`(self._as_ui8(), mask._mlir_value),
             __mlir_attr.`#pop.simd<0> : !pop.scalar<ui8>`,
         )
@@ -417,7 +417,7 @@ struct ComplexDType(
         Returns:
             True if the ComplexDTypes are the same and False otherwise.
         """
-        var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred eq>`](
+        var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred eq>`](
             self._as_ui8(), rhs._as_ui8()
         )
         return Bool(mlir_value=res)
@@ -432,7 +432,7 @@ struct ComplexDType(
         Returns:
             False if the ComplexDTypes are the same and True otherwise.
         """
-        var res = __mlir_op.`pop.cmp`[pred = __mlir_attr.`#pop<cmp_pred ne>`](
+        var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred ne>`](
             self._as_ui8(), rhs._as_ui8()
         )
         return Bool(mlir_value=res)

@@ -181,7 +181,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = copy.ownership
 
         if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+            _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
 
     @always_inline
     fn __moveinit__(out self, deinit take: Self):
@@ -212,10 +212,10 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         if not self.is_refcounted():
             return
 
-        if self._refcount[].fetch_sub[ordering = Consistency.RELEASE](1) != 1:
+        if self._refcount[].fetch_sub[ordering=Consistency.RELEASE](1) != 1:
             return
 
-        fence[ordering = Consistency.ACQUIRE]()
+        fence[ordering=Consistency.ACQUIRE]()
         if self.ptr and self.size > 0:
             self.ptr.free()
         self._refcount.free()
@@ -387,7 +387,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if not self.is_refcounted():
             return 0
-        return self._refcount[].load[ordering = Consistency.MONOTONIC]()
+        return self._refcount[].load[ordering=Consistency.MONOTONIC]()
 
     fn deep_copy(self) -> Self:
         """Create an independent managed copy of this container.
@@ -426,7 +426,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering = Consistency.MONOTONIC](1)
+        _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
 
         var result = HostStorage[Self.dtype](
             ptr=self.ptr,

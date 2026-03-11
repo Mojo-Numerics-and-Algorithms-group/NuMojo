@@ -1,8 +1,8 @@
 import numojo as nm
 from numojo.prelude import *
-from python import Python, PythonObject
+from std.python import Python, PythonObject
 from utils_for_test import check, check_is_close, check_values_close
-from testing import TestSuite
+from std.testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Matmul
@@ -10,7 +10,7 @@ from testing import TestSuite
 # ! MATMUL RESULTS IN A SEGMENTATION FAULT EXCEPT FOR NAIVE ONE, BUT NAIVE OUTPUTS WRONG VALUES
 
 
-def test_matmul_small():
+def test_matmul_small() raises:
     var np = Python.import_module("numpy")
     var arr = nm.ones[i8](Shape(4, 4))
     var np_arr = np.ones(Python.tuple(4, 4), dtype=np.int8)
@@ -19,7 +19,7 @@ def test_matmul_small():
     )
 
 
-def test_matmul():
+def test_matmul() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 100)
     arr.resize(Shape(10, 10))
@@ -31,7 +31,7 @@ def test_matmul():
     # check_is_close(nm.matmul_tiled_unrolled_parallelized(arr,arr),np.matmul(np_arr,np_arr),"TUP matmul is broken")
 
 
-def test_matmul_4dx4d():
+def test_matmul_4dx4d() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(2, 3, 4, 5)
     var B = nm.random.randn(2, 3, 5, 4)
@@ -42,7 +42,7 @@ def test_matmul_4dx4d():
     )
 
 
-def test_matmul_8dx8d():
+def test_matmul_8dx8d() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(2, 3, 4, 5, 6, 5, 4, 3)
     var B = nm.random.randn(2, 3, 4, 5, 6, 5, 3, 2)
@@ -53,7 +53,7 @@ def test_matmul_8dx8d():
     )
 
 
-def test_matmul_1dx2d():
+def test_matmul_1dx2d() raises:
     var np = Python.import_module("numpy")
     var arr1 = nm.random.randn(4)
     var arr2 = nm.random.randn(4, 8)
@@ -64,7 +64,7 @@ def test_matmul_1dx2d():
     )
 
 
-def test_matmul_2dx1d():
+def test_matmul_2dx1d() raises:
     var np = Python.import_module("numpy")
     var arr1 = nm.random.randn(11, 4)
     var arr2 = nm.random.randn(4)
@@ -76,7 +76,7 @@ def test_matmul_2dx1d():
 
 
 # ! The `inv` is broken, it outputs -INF for some values
-def test_inv():
+def test_inv() raises:
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(100, 100)
     var np_arr = arr.to_numpy()
@@ -86,7 +86,7 @@ def test_inv():
 
 
 # ! The `solve` is broken, it outputs -INF, nan, 0 etc for some values
-def test_solve():
+def test_solve() raises:
     var np = Python.import_module("numpy")
     var A = nm.core.random.randn(100, 100)
     var B = nm.core.random.randn(100, 50)
@@ -99,7 +99,7 @@ def test_solve():
     )
 
 
-def norms():
+def norms() raises:
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(20, 20)
     var np_arr = arr.to_numpy()
@@ -108,7 +108,7 @@ def norms():
     )
 
 
-def test_misc():
+def test_misc() raises:
     var np = Python.import_module("numpy")
     var arr = nm.core.random.rand(4, 8)
     var np_arr = arr.to_numpy()
@@ -120,5 +120,5 @@ def test_misc():
         )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

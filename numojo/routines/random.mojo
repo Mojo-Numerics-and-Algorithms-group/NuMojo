@@ -89,7 +89,7 @@ fn rand[
 
 fn rand[
     dtype: DType = DType.float64
-](shape: VariadicList[Int]) raises -> NDArray[dtype]:
+](shape: VariadicList[Int, _]) raises -> NDArray[dtype]:
     """
     Overloads the function `rand(shape: NDArrayShape)`
     Creates an array of the given shape and populate it with random samples from

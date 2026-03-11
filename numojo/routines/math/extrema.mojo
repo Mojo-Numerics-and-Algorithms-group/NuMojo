@@ -223,7 +223,7 @@ fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return apply_along_axis_reduce[func1d = extrema_1d[is_max=False]](
+    return apply_along_axis_reduce[func1d=extrema_1d[is_max=False]](
         a=a, axis=normalized_axis
     )
 

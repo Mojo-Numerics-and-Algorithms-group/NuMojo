@@ -1,14 +1,14 @@
 import numojo as nm
 from numojo.prelude import *
 from python import Python, PythonObject
-from testing.testing import assert_raises, assert_true
+from std.testing.testing import assert_raises, assert_true
 from utils_for_test import (
     check,
     check_is_close,
     check_values_close,
     check_with_dtype,
 )
-from testing import TestSuite
+from std.testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences

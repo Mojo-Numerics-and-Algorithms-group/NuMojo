@@ -1,7 +1,7 @@
 import numojo as nm
 from numojo.prelude import *
 from numojo.prelude import *
-from testing.testing import (
+from std.testing.testing import (
     assert_true,
     assert_almost_equal,
     assert_equal,
@@ -10,7 +10,7 @@ from testing.testing import (
 from python import Python, PythonObject
 import random as builtin_random
 from utils_for_test import check, check_is_close
-from testing import TestSuite
+from std.testing import TestSuite
 
 
 def test_arange():
@@ -81,15 +81,6 @@ def test_ones_from_list():
     )
 
 
-def test_ones_from_vlist():
-    var np = Python.import_module("numpy")
-    check(
-        nm.ones[nm.f64](VariadicList[Int](10, 10, 10, 10)),
-        np.ones(Python.tuple(10, 10, 10, 10), dtype=np.float64),
-        "Ones is broken",
-    )
-
-
 def test_full():
     var np = Python.import_module("numpy")
     check(
@@ -116,14 +107,6 @@ def test_full_from_list():
         "Full is broken",
     )
 
-
-def test_full_from_vlist():
-    var np = Python.import_module("numpy")
-    check(
-        nm.full[nm.f64](VariadicList[Int](10, 10, 10, 10), fill_value=10),
-        np.full(Python.tuple(10, 10, 10, 10), 10, dtype=np.float64),
-        "Full is broken",
-    )
 
 
 def test_identity():

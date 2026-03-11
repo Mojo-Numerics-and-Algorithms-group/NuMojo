@@ -2,8 +2,8 @@ import numojo as nm
 from numojo.prelude import *
 from python import Python, PythonObject
 from utils_for_test import check, check_is_close
-from testing.testing import assert_raises
-from testing import TestSuite
+from std.testing.testing import assert_raises
+from std.testing import TestSuite
 
 
 def test_convolve2d():

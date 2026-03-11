@@ -3,7 +3,7 @@ Tests for view safety: ensure all functions guarded with `contiguous()`
 produce correct results when given non-contiguous (e.g. F-order) arrays,
 and that core getters/setters honour the `offset` field on views.
 
-This covers [Issue 309](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/309) 
+This covers [Issue 309](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/issues/309)
 Phase 1, 3 & 4 — contiguous guards and offset-aware accessors across the codebase.
 """
 
@@ -1355,7 +1355,7 @@ fn test_inplace_iadd_scalar_view() raises:
 
 fn test_inplace_isub_scalar_view() raises:
     """Test -= scalar on a C-contiguous view with offset."""
-    var parent = nm.full[nm.f64](10, fill_value=50.0)
+    var parent = nm.full[nm.f64](Shape(10), fill_value=50.0)
     var view = _make_1d_offset_view(parent, offset=2, size=3)
     view -= 10.0
 
@@ -1569,7 +1569,7 @@ fn test_ndarray_ravel_offset_view() raises:
 
 fn test_where_on_offset_view() raises:
     """Test where() modifies an offset view's parent buffer."""
-    var parent = nm.full[nm.f64](10, fill_value=0.0)
+    var parent = nm.full[nm.f64](Shape(10), fill_value=0.0)
     var view = _make_1d_offset_view(parent, offset=3, size=4)  # [0,0,0,0]
     # mask: [True, False, True, False]
     var mask = nm.NDArray[DType.bool](Shape(4))

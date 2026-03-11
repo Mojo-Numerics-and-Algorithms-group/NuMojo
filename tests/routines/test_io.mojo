@@ -2,7 +2,7 @@ from numojo.routines.io.files import load, save, loadtxt, savetxt
 from numojo import ones, full
 from python import Python
 import os
-from testing import TestSuite
+from std.testing import TestSuite
 
 
 fn test_save_and_load() raises:

@@ -1,7 +1,7 @@
 from numojo.prelude import *
-from python import Python, PythonObject
+from std.python import Python, PythonObject
 from utils_for_test import check, check_is_close, check_values_close
-from testing import TestSuite
+from std.testing import TestSuite
 
 
 fn test_argmax() raises:

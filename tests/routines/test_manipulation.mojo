@@ -1,9 +1,9 @@
 import numojo as nm
 from numojo import *
-from testing.testing import assert_true, assert_almost_equal, assert_equal
+from std.testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
 from python import Python, PythonObject
-from testing import TestSuite
+from std.testing import TestSuite
 
 
 fn test_arr_manipulation() raises:

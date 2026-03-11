@@ -1,8 +1,8 @@
 import numojo as nm
 from numojo.prelude import *
 from python import Python, PythonObject
-from testing.testing import assert_raises, assert_true, assert_equal
-from testing import TestSuite
+from std.testing.testing import assert_raises, assert_true, assert_equal
+from std.testing import TestSuite
 from utils_for_test import check
 from numojo.routines.logic.comparison import allclose, isclose, array_equal
 from numojo.routines.logic.contents import isposinf, isneginf

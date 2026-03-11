@@ -15,7 +15,7 @@ from std.testing import TestSuite
 # ===-----------------------------------------------------------------------===#
 
 
-def test_sum_prod():
+def test_sum_prod() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(2, 3, 4)
     var Anp = A.to_numpy()
@@ -69,7 +69,7 @@ def test_sum_prod():
         )
 
 
-def test_add_array():
+def test_add_array() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 15)
 
@@ -81,7 +81,7 @@ def test_add_array():
     )
 
 
-# def test_dunder_add_array():
+# def test_dunder_add_array() raises:
 #     var np = Python.import_module("numpy")
 
 #     # Test float + float
@@ -132,7 +132,7 @@ def test_add_array():
 #     )
 
 
-# def test_dunder_sub_array():
+# def test_dunder_sub_array() raises:
 #     var np = Python.import_module("numpy")
 
 #     # Test float - float
@@ -353,7 +353,7 @@ def test_add_array():
 #     )
 
 
-def test_add_array_par():
+def test_add_array_par() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 20)
 
@@ -369,7 +369,7 @@ def test_add_array_par():
     )
 
 
-def test_sin():
+def test_sin() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 15)
 
@@ -378,7 +378,7 @@ def test_sin():
     )
 
 
-def test_sin_par():
+def test_sin_par() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 15)
 
@@ -445,5 +445,5 @@ fn test_misc() raises:
     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

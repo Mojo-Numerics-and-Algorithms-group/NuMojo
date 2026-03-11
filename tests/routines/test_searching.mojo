@@ -226,5 +226,5 @@ fn test_take_along_axis_with_argmax_argmin() raises:
     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

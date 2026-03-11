@@ -35,5 +35,5 @@ fn test_savetxt_and_loadtxt() raises:
     os.remove(fname)
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

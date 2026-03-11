@@ -11,7 +11,7 @@ from std.testing import TestSuite
 # ===-----------------------------------------------------------------------===#
 
 
-def test_mean_median_var_std():
+def test_mean_median_var_std() raises:
     var np = Python.import_module("numpy")
     var sp = Python.import_module("scipy")
     var A = nm.random.randn(3, 4, 5)
@@ -83,5 +83,5 @@ def test_mean_median_var_std():
         )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

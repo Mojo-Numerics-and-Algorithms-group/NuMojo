@@ -7,7 +7,7 @@ from std.testing.testing import assert_true, assert_almost_equal
 from std.testing import TestSuite
 
 
-def test_rand():
+def test_rand() raises:
     """Test random array generation with specified shape."""
     var arr = nm.random.rand[nm.f64](3, 5, 2)
     assert_true(arr.shape[0] == 3, "Shape of random array")
@@ -15,7 +15,7 @@ def test_rand():
     assert_true(arr.shape[2] == 2, "Shape of random array")
 
 
-def test_randminmax():
+def test_randminmax() raises:
     """Test random array generation with min and max values."""
     var arr_variadic = nm.random.rand[nm.f64](10, 10, 10, min=1, max=2)
     var arr_list = nm.random.rand[nm.f64]([Int(10), 10, 10], min=3, max=4)
@@ -35,7 +35,7 @@ def test_randminmax():
     )
 
 
-def test_randint():
+def test_randint() raises:
     """Test random int array generation with min and max values."""
     var arr_low_high = nm.random.randint(Shape(30, 30, 30), 0, 10)
     var arr_high = nm.random.randint(Shape(30, 30, 30), 6)
@@ -55,7 +55,7 @@ def test_randint():
     )
 
 
-def test_randn():
+def test_randn() raises:
     """Test random array generation with normal distribution."""
     var arr_variadic_01 = nm.random.randn[nm.f64](20, 20, 20)
     var arr_variadic_31 = nm.random.randn[nm.f64](
@@ -109,7 +109,7 @@ def test_randn():
     )
 
 
-def test_randn_list():
+def test_randn_list() raises:
     """Test random array generation with normal distribution."""
     var arr_list_01 = nm.random.randn[nm.f64](Shape(20, 20, 20))
     var arr_list_31 = nm.random.randn[nm.f64](Shape(20, 20, 20)) + 3
@@ -161,7 +161,7 @@ def test_randn_list():
     )
 
 
-def test_rand_exponential():
+def test_rand_exponential() raises:
     """Test random array generation with exponential distribution."""
     var arr_variadic = nm.random.exponential[nm.f64](
         Shape(20, 20, 20), scale=2.0
@@ -216,5 +216,5 @@ def test_rand_exponential():
         )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

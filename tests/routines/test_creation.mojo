@@ -13,7 +13,7 @@ from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 
 
-def test_arange():
+def test_arange() raises:
     var np = Python.import_module("numpy")
     check(
         nm.arange(0, 100),
@@ -27,7 +27,7 @@ def test_arange():
     )
 
 
-def test_linspace():
+def test_linspace() raises:
     var np = Python.import_module("numpy")
     check(
         nm.linspace[nm.f64](0, 100),
@@ -36,7 +36,7 @@ def test_linspace():
     )
 
 
-def test_logspace():
+def test_logspace() raises:
     var np = Python.import_module("numpy")
     check_is_close(
         nm.logspace[nm.f64](0, 100, 5),
@@ -45,7 +45,7 @@ def test_logspace():
     )
 
 
-def test_geomspace():
+def test_geomspace() raises:
     var np = Python.import_module("numpy")
     check_is_close(
         nm.geomspace[nm.f64](1, 100, 5),
@@ -54,7 +54,7 @@ def test_geomspace():
     )
 
 
-def test_zeros():
+def test_zeros() raises:
     var np = Python.import_module("numpy")
     check(
         nm.zeros[f64](Shape(10, 10, 10, 10)),
@@ -63,7 +63,7 @@ def test_zeros():
     )
 
 
-def test_ones_from_shape():
+def test_ones_from_shape() raises:
     var np = Python.import_module("numpy")
     check(
         nm.ones[nm.f64](Shape(10, 10, 10, 10)),
@@ -72,7 +72,7 @@ def test_ones_from_shape():
     )
 
 
-def test_ones_from_list():
+def test_ones_from_list() raises:
     var np = Python.import_module("numpy")
     check(
         nm.ones[nm.f64]([Int(10), 10, 10, 10]),
@@ -81,7 +81,7 @@ def test_ones_from_list():
     )
 
 
-def test_full():
+def test_full() raises:
     var np = Python.import_module("numpy")
     check(
         nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
@@ -90,7 +90,7 @@ def test_full():
     )
 
 
-def test_full_from_shape():
+def test_full_from_shape() raises:
     var np = Python.import_module("numpy")
     check(
         nm.full[nm.f64](Shape(10, 10, 10, 10), fill_value=10),
@@ -99,7 +99,7 @@ def test_full_from_shape():
     )
 
 
-def test_full_from_list():
+def test_full_from_list() raises:
     var np = Python.import_module("numpy")
     check(
         nm.full[nm.f64]([Int(10), 10, 10, 10], fill_value=10),
@@ -108,7 +108,7 @@ def test_full_from_list():
     )
 
 
-def test_identity():
+def test_identity() raises:
     var np = Python.import_module("numpy")
     check(
         nm.identity[nm.i64](100),
@@ -117,7 +117,7 @@ def test_identity():
     )
 
 
-def test_eye():
+def test_eye() raises:
     var np = Python.import_module("numpy")
     check(
         nm.eye[nm.i64](100, 100),
@@ -126,16 +126,16 @@ def test_eye():
     )
 
 
-# TODO: modify these tests to use assert_equal and check function
-# def test_fromstring():
+# TODO raises: modify these tests to use assert_equal and check function
+# def test_fromstring() raises:
 #     var A = nm.fromstring("[[[1,2],[3,4]],[[5,6],[7,8]]]")
 #     var B = nm.array[DType.int32](String("[0.1, -2.3, 41.5, 19.29145, -199]"))
 #     # print(A)
 #     # print(B)
 
 
-# TODO: modify these tests to use assert_equal and check function
-# def test_fromstring_complicated():
+# TODO raises: modify these tests to use assert_equal and check function
+# def test_fromstring_complicated() raises:
 #     var s = """
 #     [[[[1,2,10],
 #        [3,4,2]],
@@ -150,7 +150,7 @@ def test_eye():
 #     print(A)
 
 
-def test_diag():
+def test_diag() raises:
     var np = Python.import_module("numpy")
     var x_nm = nm.arange[f32](0, 9, step=1)
     x_nm.resize(Shape(3, 3))
@@ -177,7 +177,7 @@ def test_diag():
     check(x_nm_rev_km1, x_np_rev_km1, "Diag reverse is broken (k=-1)")
 
 
-def test_diagflat():
+def test_diagflat() raises:
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.i64](0, 9, 1)
     nm_arr.resize(Shape(3, 3))
@@ -196,7 +196,7 @@ def test_diagflat():
     check(x_nm_km1, x_np_km1, "Diagflat is broken (k=-1)")
 
 
-def test_tri():
+def test_tri() raises:
     var np = Python.import_module("numpy")
 
     var x_nm = nm.tri[nm.f32](3, 4, k=0)
@@ -212,7 +212,7 @@ def test_tri():
     check(x_nm_km1, x_np_km1, "Tri is broken (k=-1)")
 
 
-def test_tril():
+def test_tril() raises:
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.f32](0, 9, 1)
     nm_arr.resize(Shape(3, 3))
@@ -248,7 +248,7 @@ def test_tril():
     check(x_nm_3d_km1, x_np_3d_km1, "Tril is broken for 3D array (k=-1)")
 
 
-def test_triu():
+def test_triu() raises:
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.f32](0, 9, 1)
     nm_arr.resize(Shape(3, 3))
@@ -284,7 +284,7 @@ def test_triu():
     check(x_nm_3d_km1, x_np_3d_km1, "Tril is broken for 3D array (k=-1)")
 
 
-def test_vander():
+def test_vander() raises:
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.f32](1, 5, 1)
     var np_arr = np.arange(1, 5, 1, dtype=np.float32)
@@ -314,7 +314,7 @@ def test_vander():
     check(x_nm_int, x_np_int, "Vander is broken (int32)")
 
 
-def test_arr_manipulation():
+def test_arr_manipulation() raises:
     var np = Python.import_module("numpy")
     var arr6 = nm.array[f32](
         data=[SIMD[f32, 1](1), 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -335,7 +335,7 @@ def test_arr_manipulation():
     )
 
 
-# def test_tensor_conversion():
+# def test_tensor_conversion() raises:
 #     var image = Tensor[DType.float32](TensorShape(256, 256, 3))
 #     builtin_random.rand(image.unsafe_ptr(), image.num_elements())
 #     var image_converted_via_array = nm.array(image).to_tensor()
@@ -344,5 +344,5 @@ def test_arr_manipulation():
 #     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

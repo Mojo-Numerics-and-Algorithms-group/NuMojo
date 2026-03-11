@@ -301,5 +301,5 @@ fn test_take_along_axis_fortran_order() raises:
     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

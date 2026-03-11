@@ -51,5 +51,5 @@ fn test_apply_along_axis() raises:
         )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

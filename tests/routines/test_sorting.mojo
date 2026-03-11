@@ -128,5 +128,5 @@ fn test_sorting() raises:
         )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

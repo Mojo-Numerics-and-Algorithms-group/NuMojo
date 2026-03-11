@@ -64,7 +64,7 @@ def test_cpu_with_nonzero_id_falls_back() raises:
     assert_equal(d.id, 0, "cpu nonzero id fallback id")
 
 
-def test_cpu_with_name_falls_back() raises :
+def test_cpu_with_name_falls_back() raises:
     var d = Device(type="cpu", name="something", id=0)
     assert_equal(d.type, "cpu", "cpu with name fallback type")
     assert_equal(d.name, "", "cpu with name fallback name")

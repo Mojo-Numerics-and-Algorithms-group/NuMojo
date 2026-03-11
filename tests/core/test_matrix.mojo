@@ -168,9 +168,11 @@ def test_logic() raises:
             String("`any` by axis {i} is broken"),
         )
 
+
 # ===-----------------------------------------------------------------------===#
 # Linear algebra
 # ===-----------------------------------------------------------------------===#
+
 
 def test_linalg() raises:
     var np = Python.import_module("numpy")
@@ -229,6 +231,7 @@ def test_linalg() raises:
             "Trace is broken",
         )
 
+
 def test_qr_decomposition() raises:
     var A = Matrix.rand[f64]((20, 20), order=order)
 
@@ -241,9 +244,7 @@ def test_qr_decomposition() raises:
     # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
     var id = Q.transpose() @ Q
     assert_true(
-        np.allclose(
-            id.to_numpy(), np.eye(Q.shape[0]), atol=PythonObject(1e-14)
-        )
+        np.allclose(id.to_numpy(), np.eye(Q.shape[0]), atol=PythonObject(1e-14))
     )
 
     # Check if R is upper triangular
@@ -256,10 +257,9 @@ def test_qr_decomposition() raises:
     # Check if A = QR
     var A_test = Q @ R
     assert_true(
-        np.allclose(
-            A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
-        )
+        np.allclose(A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14))
     )
+
 
 def test_qr_decomposition_asym_reduced() raises:
     var np = Python.import_module("numpy")
@@ -293,10 +293,9 @@ def test_qr_decomposition_asym_reduced() raises:
 
     var A_test = Q @ R
     assert_true(
-        np.allclose(
-            A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
-        )
+        np.allclose(A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14))
     )
+
 
 def test_qr_decomposition_asym_complete() raises:
     var np = Python.import_module("numpy")
@@ -330,10 +329,9 @@ def test_qr_decomposition_asym_complete() raises:
 
     var A_test = Q @ R
     assert_true(
-        np.allclose(
-            A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
-        )
+        np.allclose(A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14))
     )
+
 
 def test_qr_decomposition_asym_complete2() raises:
     var np = Python.import_module("numpy")
@@ -367,10 +365,9 @@ def test_qr_decomposition_asym_complete2() raises:
 
     var A_test = Q @ R
     assert_true(
-        np.allclose(
-            A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14)
-        )
+        np.allclose(A_test.to_numpy(), A.to_numpy(), atol=PythonObject(1e-14))
     )
+
 
 def test_eigen_decomposition() raises:
     var np = Python.import_module("numpy")
@@ -416,9 +413,7 @@ def test_eigen_decomposition() raises:
     # Check that A = Q * Lambda * Q^T (eigendecomposition property)
     var A_reconstructed = Q @ Lambda @ Q.transpose()
     assert_true(
-        np.allclose(
-            A_reconstructed.to_numpy(), Anp, atol=PythonObject(1e-10)
-        ),
+        np.allclose(A_reconstructed.to_numpy(), Anp, atol=PythonObject(1e-10)),
         "A ≠ Q * Lambda * Q^T",
     )
 
@@ -458,9 +453,11 @@ def test_eigen_decomposition() raises:
             "Eigenvector verification failed: A*v ≠ λ*v",
         )
 
+
 # ===-----------------------------------------------------------------------===#
 # Mathematics
 # ===-----------------------------------------------------------------------===#
+
 
 def test_math() raises:
     var np = Python.import_module("numpy")
@@ -479,9 +476,7 @@ def test_math() raises:
         )
 
     assert_true(
-        np.all(
-            np.isclose(nm.prod(A), np.prod(Anp), atol=PythonObject(0.1))
-        ),
+        np.all(np.isclose(nm.prod(A), np.prod(Anp), atol=PythonObject(0.1))),
         "`prod` is broken",
     )
     for i in range(2):
@@ -515,6 +510,7 @@ def test_math() raises:
             String("`cumprod` by axis {i} is broken"),
         )
 
+
 def test_trigonometric() raises:
     var np = Python.import_module("numpy")
     var A = Matrix.rand[f64]((100, 100), order=order)
@@ -529,6 +525,7 @@ def test_trigonometric() raises:
     check_matrices_close(nm.arctan(A), np.arctan(Anp), "arctan is broken")
     check_matrices_close(nm.atan(A), np.arctan(Anp), "atan is broken")
 
+
 def test_hyperbolic() raises:
     var np = Python.import_module("numpy")
     var A = Matrix.fromstring(
@@ -540,18 +537,13 @@ def test_hyperbolic() raises:
     check_matrices_close(nm.sinh(A), np.sinh(Anp), "sinh is broken")
     check_matrices_close(nm.cosh(A), np.cosh(Anp), "cosh is broken")
     check_matrices_close(nm.tanh(A), np.tanh(Anp), "tanh is broken")
-    check_matrices_close(
-        nm.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken"
-    )
+    check_matrices_close(nm.arcsinh(A), np.arcsinh(Anp), "arcsinh is broken")
     check_matrices_close(nm.asinh(A), np.arcsinh(Anp), "asinh is broken")
-    check_matrices_close(
-        nm.arccosh(A), np.arccosh(Anp), "arccosh is broken"
-    )
+    check_matrices_close(nm.arccosh(A), np.arccosh(Anp), "arccosh is broken")
     check_matrices_close(nm.acosh(A), np.arccosh(Anp), "acosh is broken")
-    check_matrices_close(
-        nm.arctanh(B), np.arctanh(Bnp), "arctanh is broken"
-    )
+    check_matrices_close(nm.arctanh(B), np.arctanh(Bnp), "arctanh is broken")
     check_matrices_close(nm.atanh(B), np.arctanh(Bnp), "atanh is broken")
+
 
 def test_sorting() raises:
     var np = Python.import_module("numpy")
@@ -581,6 +573,7 @@ def test_sorting() raises:
             np.argsort(Anp, axis=i),
             String("Argsort by axis {} is broken").format(i),
         )
+
 
 def test_searching() raises:
     var np = Python.import_module("numpy")

@@ -6,14 +6,14 @@ from python import Python, PythonObject
 from testing import TestSuite
 
 
-def test_getitem_scalar():
+def test_getitem_scalar() raises:
     var np = Python.import_module("numpy")
 
     var A = nm.arange(8)
     assert_true(A.load(0) == 0, msg=String("`get` fails"))
 
 
-def test_setitem():
+def test_setitem() raises:
     var np = Python.import_module("numpy")
     var shape = nm.Shape(4, 4)
     print("Shape: ", shape)
@@ -23,7 +23,7 @@ def test_setitem():
 # ===== Single-axis integer indexing =====
 
 
-def test_getitem_single_axis_basic():
+def test_getitem_single_axis_basic() raises:
     """Positive and negative single-axis int indexing on 2D."""
     var np = Python.import_module("numpy")
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
@@ -38,7 +38,7 @@ def test_getitem_single_axis_basic():
     )
 
 
-def test_getitem_single_axis_1d_scalar():
+def test_getitem_single_axis_1d_scalar() raises:
     """1D -> 0-D scalar wrapper."""
     var np = Python.import_module("numpy")
     var a = nm.arange[nm.i16](0, 6, step=1).reshape(Shape(6))
@@ -47,7 +47,7 @@ def test_getitem_single_axis_1d_scalar():
     check(a[2], anp[2], "__getitem__(idx: Int) 1-D to scalar (0-D) broken")
 
 
-def test_negative_int_indexing():
+def test_negative_int_indexing() raises:
     """Negative integer indexing on 1D and 2D arrays."""
     var np = Python.import_module("numpy")
 
@@ -69,7 +69,7 @@ def test_negative_int_indexing():
 # ===== Slice-only indexing =====
 
 
-def test_1d_slicing():
+def test_1d_slicing() raises:
     """1D array slicing with basic, step, and partial ranges."""
     var np = Python.import_module("numpy")
 
@@ -92,7 +92,7 @@ def test_1d_slicing():
     check(nm_s3, np_s3, "1D from start [:5] failed")
 
 
-def test_slicing_3d_all_dims():
+def test_slicing_3d_all_dims() raises:
     """3D C-order slicing across all dimensions."""
     var np = Python.import_module("numpy")
 
@@ -110,7 +110,7 @@ def test_slicing_3d_all_dims():
     check(nm_s2, np_s2, "3D slicing [0:1, 1:3, 2:4] failed")
 
 
-def test_positive_slice_indices():
+def test_positive_slice_indices() raises:
     """Positive indices in slice operations on 3D."""
     var np = Python.import_module("numpy")
 
@@ -128,7 +128,7 @@ def test_positive_slice_indices():
     check(nm_s3, np_s3, "Positive start/end [0:2, 1:3, 2:4] failed")
 
 
-def test_step_slicing_2d():
+def test_step_slicing_2d() raises:
     """Step slicing on 2D arrays."""
     var np = Python.import_module("numpy")
 
@@ -146,7 +146,7 @@ def test_step_slicing_2d():
     check(nm_s2, np_s2, "Step with bounds [0:3:2, 1:4:2] failed")
 
 
-def test_step_slicing_3d():
+def test_step_slicing_3d() raises:
     """3D slicing with steps."""
     var np = Python.import_module("numpy")
 
@@ -167,7 +167,7 @@ def test_step_slicing_3d():
 # ===== Mixed int + slice indexing (PR #326 fix) =====
 
 
-def test_mixed_int_slice_2d():
+def test_mixed_int_slice_2d() raises:
     """Mixed int + slice on 2D array — tests dimension reduction."""
     var np = Python.import_module("numpy")
     var nm_arr = nm.arange[nm.f32](0.0, 12.0, step=1).reshape(Shape(3, 4))
@@ -198,7 +198,7 @@ def test_mixed_int_slice_2d():
     assert_equal(Int(r3.load(1)), 10)
 
 
-def test_mixed_int_slice_3d():
+def test_mixed_int_slice_3d() raises:
     """Mixed int + slice on 3D array — tests dimension reduction."""
     var nm_arr = nm.arange[nm.f32](0.0, 60.0, step=1).reshape(Shape(3, 4, 5))
 
@@ -232,7 +232,7 @@ def test_mixed_int_slice_3d():
     assert_equal(Int(r4.load(0)), 33)
 
 
-def test_mixed_int_slice_3d_values():
+def test_mixed_int_slice_3d_values() raises:
     """Verify actual values in mixed int+slice 3D indexing."""
     var nm_arr = nm.arange[nm.i32](0, 24, step=1).reshape(Shape(2, 3, 4))
 
@@ -254,7 +254,7 @@ def test_mixed_int_slice_3d_values():
     assert_equal(Int(r2.load(4)), 12)
 
 
-def test_mixed_int_slice_preserves_remaining_dims():
+def test_mixed_int_slice_preserves_remaining_dims() raises:
     """When fewer indices are given than ndim, remaining dims preserved."""
     var nm_arr = nm.arange[nm.f32](0.0, 24.0, step=1).reshape(Shape(2, 3, 4))
 
@@ -269,7 +269,7 @@ def test_mixed_int_slice_preserves_remaining_dims():
 # ===== Setitem single-axis tests =====
 
 
-def test_setitem_single_axis_index_oob_error():
+def test_setitem_single_axis_index_oob_error() raises:
     """Ensure out-of-bounds index raises an error."""
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
     var row = nm.full[nm.i32](Shape(4), fill_value=Scalar[nm.i32](7))
@@ -315,5 +315,5 @@ def test_setitem_single_axis_index_oob_error():
 #     check_is_close(nm_s1, np_s1, "Reverse rows [::-1, :] failed")
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

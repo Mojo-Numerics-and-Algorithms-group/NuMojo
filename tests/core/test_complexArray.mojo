@@ -107,5 +107,5 @@ fn test_complex_array_div() raises:
     assert_almost_equal(quot.item(0).im, 0.08, "div failed")
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

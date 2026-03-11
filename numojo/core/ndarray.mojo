@@ -5673,7 +5673,9 @@ struct _NDIter[
     It can be constructed by the `NDArray.nditer()` method.
     """
 
-    var ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
+    var data: DataContainer[Self.dtype]
+    var offset: Int
+    """Offset of the first element in the data buffer."""
     var length: Int
     var ndim: Int
     var shape: NDArrayShape
@@ -5691,9 +5693,8 @@ struct _NDIter[
         self.length = a.size
         self.order = order
         self.axis = axis
-        self.ptr = rebind[UnsafePointer[Scalar[Self.dtype], Self.origin]](
-            a._buf.ptr + a.offset
-        )
+        self.data = a._buf.copy()
+        self.offset = a.offset
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides
@@ -5762,7 +5763,9 @@ struct _NDIter[
                 Scalar[DType.int](remainder)
             )
 
-        return self.ptr[IndexMethods.get_1d_index(indices, self.strides)]
+        return self.data.ptr[
+            self.offset + IndexMethods.get_1d_index(indices, self.strides)
+        ]
 
     fn ith(self, index: Int) raises -> Scalar[Self.dtype]:
         """
@@ -5811,4 +5814,6 @@ struct _NDIter[
                 Scalar[DType.int](remainder)
             )
 
-        return self.ptr[IndexMethods.get_1d_index(indices, self.strides)]
+        return self.data.ptr[
+            self.offset + IndexMethods.get_1d_index(indices, self.strides)
+        ]

@@ -76,5 +76,5 @@ fn test_complex_div() raises:
     assert_almost_equal(quot.im, 0.08, " division failed")
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

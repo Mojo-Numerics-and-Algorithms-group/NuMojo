@@ -4,15 +4,12 @@ from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 
 
-fn test_sorting() raises:
+fn test_sort() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(10)
     var B = nm.random.randn(2, 3)
     var C = nm.random.randn(2, 3, 4)
-    var S = nm.random.randn(3, 3, 3, 3, 3, 3)  # 6d array
-    var Sf = S.reshape(S.shape, order="F")  # 6d array F order
-
-    # Sort
+    var S = nm.random.randn(3, 3, 3, 3, 3, 3)
     check(
         nm.sort(A, axis=0), np.sort(A.to_numpy(), axis=0), "`sort` 1d is broken"
     )
@@ -39,7 +36,15 @@ fn test_sorting() raises:
             String("`sort` 6d by axis {} is broken").format(i),
         )
 
-    # Argsort
+
+fn test_argsort() raises:
+    var np = Python.import_module("numpy")
+    var A = nm.random.randn(10)
+    var B = nm.random.randn(2, 3)
+    var C = nm.random.randn(2, 3, 4)
+    var S = nm.random.randn(3, 3, 3, 3, 3, 3)
+    var Sf = S.reshape(S.shape, order="F")
+
     check(
         nm.argsort(A, axis=0),
         np.argsort(A.to_numpy(), axis=0),
@@ -85,7 +90,10 @@ fn test_sorting() raises:
             String("`argsort` 6d F-order by axis {} is broken").format(i),
         )
 
-    # In-place sort
+
+fn test_inplace_sort() raises:
+    var np = Python.import_module("numpy")
+    var C = nm.random.randn(2, 3, 4)
     for i in range(3):
         C.sort(axis=i)
         Cnp = C.to_numpy()
@@ -98,7 +106,14 @@ fn test_sorting() raises:
             ),
         )
 
-    # Sort stably
+
+fn test_sort_stable() raises:
+    var np = Python.import_module("numpy")
+    var A = nm.random.randn(10)
+    var B = nm.random.randn(2, 3)
+    var C = nm.random.randn(2, 3, 4)
+    var S = nm.random.randn(3, 3, 3, 3, 3, 3)
+
     check(
         nm.sort(A, axis=0, stable=True),
         np.sort(A.to_numpy(), axis=0, stable=PythonObject(True)),
@@ -129,5 +144,4 @@ fn test_sorting() raises:
 
 
 def main() raises:
-    # TestSuite.discover_tests[__functions_in_module()]().run()
-    print("test sorting")
+    TestSuite.discover_tests[__functions_in_module()]().run()

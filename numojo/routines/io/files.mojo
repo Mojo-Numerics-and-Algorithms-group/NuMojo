@@ -14,6 +14,7 @@ from std.python import Python, PythonObject
 from std.memory import UnsafePointer, Span
 
 from numojo.routines.creation import fromstring
+
 # We call into the numpy backend for now, this at least let's people go back and forth smoothly.
 # might consider implementing a funciton to write a .numojo file which can be read by both numpy and numojo.
 

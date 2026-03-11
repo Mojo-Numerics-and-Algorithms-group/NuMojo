@@ -16,9 +16,7 @@ from std.memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
-from numojo.core.indexing import (
-    TraverseMethods
-)
+from numojo.core.indexing import TraverseMethods
 from numojo.routines.creation import zeros
 
 

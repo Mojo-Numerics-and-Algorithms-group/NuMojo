@@ -78,8 +78,6 @@ struct ComplexDType(
     Identifiable,
     KeyElement,
     Movable,
-    Representable,
-    Stringable,
     TrivialRegisterPassable,
     Writable,
 ):
@@ -338,6 +336,18 @@ struct ComplexDType(
             The representation of the ComplexDType.
         """
         return String.write("ComplexDType.", self)
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+
+        Args:
+            writer: The writer to write to.
+        """
+        # TODO: Deprecate `__repr__` and move its body directly into this method.
+        writer.write(self.__repr__())
 
     @always_inline("nodebug")
     fn get_value(self) -> __mlir_type.`!kgen.dtype`:

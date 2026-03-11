@@ -11,11 +11,10 @@ Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDAr
 which is used to calculate the memory offset for each dimension when indexing into the array.
 """
 
-from memory import memcmp, memcpy
-from memory import UnsafePointer
+from std.memory import memcmp, memcpy, UnsafePointer
+
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndshape import NDArrayShape
-
 from numojo.core.error import NumojoError
 
 

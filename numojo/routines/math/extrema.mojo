@@ -11,10 +11,12 @@ Contains min/max helpers for NDArrays and Matrices, including axis-aware reducti
 and element-wise comparisons.
 """
 
-from algorithm import vectorize
-from math import max as builtin_max
-from math import min as builtin_min
-from sys import simd_width_of
+from std.algorithm import vectorize, parallelize
+import std.math.math as stdlib_math
+from std.math import max as builtin_max
+from std.math import min as builtin_min
+from std.collections.optional import Optional
+from std.sys import simd_width_of
 
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray

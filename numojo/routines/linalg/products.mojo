@@ -10,11 +10,11 @@
 This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
 """
 
-import math
-from algorithm import parallelize, vectorize
-from algorithm import Static2DTileUnitFunc as Tile2DFunc
-from sys import simd_width_of
-from memory import memcpy
+import std.math
+from std.algorithm import parallelize, vectorize
+from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
+from std.sys import simd_width_of
+from std.memory import memcpy
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray

@@ -16,14 +16,13 @@ This module provides three storage structs:
 - `AcceleratorDataContainer`: Unified container that selects between
   `HostStorage` and `DeviceStorage` at compile time based on a `Device` parameter.
 """
-from memory import UnsafePointer
-from os.atomic import Atomic, Consistency, fence
-from os import abort
-from collections.optional import Optional
-from sys.info import has_accelerator
-from memory import memcpy
-
-from gpu.host import DeviceBuffer, DeviceContext
+from std.memory import UnsafePointer
+from std.os.atomic import Atomic, Consistency, fence
+from std.os import abort
+from std.collections.optional import Optional
+from std.sys.info import has_accelerator
+from std.memory import memcpy
+from std.gpu.host import DeviceBuffer, DeviceContext
 
 from numojo.core.accelerator import Device
 from numojo.core.accelerator.device import is_accelerator_available

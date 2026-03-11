@@ -21,8 +21,8 @@ SECTIONS OF THIS FILE:
 # ===----------------------------------------------------------------------=== #
 
 
-import math
-from algorithm import vectorize
+import std.math
+from std.algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape

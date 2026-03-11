@@ -10,7 +10,7 @@
 This module defines the `Device` struct, which represents an execution device for array and matrix operations.
 It supports CPU and GPU devices, with GPU backends for NVIDIA CUDA, AMD ROCm, and Apple Metal.
 """
-from sys.info import (
+from std.sys.info import (
     has_nvidia_gpu_accelerator,
     has_amd_gpu_accelerator,
     has_apple_gpu_accelerator,

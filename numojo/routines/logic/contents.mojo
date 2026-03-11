@@ -10,8 +10,8 @@
 Implements Checking routines: currently not SIMD due to bool bit packing issue
 """
 
-import math
-from utils.numerics import neg_inf, inf
+import std.math as math
+from std.utils.numerics import neg_inf, inf
 
 from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray

@@ -13,9 +13,10 @@
 - Iterating over arrays
 """
 
-from memory import memcpy
-from sys import simd_width_of
-from algorithm import vectorize
+from std.memory import memcpy
+from std.sys import simd_width_of
+from std.algorithm import vectorize
+
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayStrides
 from numojo.core.indexing import IndexMethods

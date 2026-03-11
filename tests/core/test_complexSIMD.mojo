@@ -3,6 +3,7 @@ from std.testing import TestSuite
 
 from numojo import *
 
+
 fn test_complex_init() raises:
     """Test initialization of ComplexSIMD."""
     var c1 = ComplexSIMD[cf32](1.0, 2.0)

@@ -15,8 +15,8 @@ This module is similar to `numpy.random`. However, in this module, the shape is
 always appearing as the first argument.
 """
 
-import math as mt
-from random import random as builtin_random
+import std.math as mt
+from std.random import random as builtin_random
 
 from numojo.core.ndarray import NDArray
 

@@ -10,11 +10,11 @@
 Implements addition, subtraction, multiplication, division, floor division, fused multiply-add, and remainder helpers for NDArrays.
 """
 
-from utils import Variant
+from std.utils import Variant
+from std.builtin.simd import FastMathFlag
 
 from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray
-from builtin.simd import FastMathFlag
 
 # ===------------------------------------------------------------------------===#
 # Addition

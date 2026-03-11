@@ -10,11 +10,9 @@
 This module implements searching routines for finding indices of extrema (argmax and argmin) in NDArrays and Matrices.
 """
 
-import math as builtin_math
-import math
-from algorithm import vectorize
-from sys import simd_width_of
-from collections.optional import Optional
+from std.algorithm import vectorize
+from std.sys import simd_width_of
+from std.collections.optional import Optional
 
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape

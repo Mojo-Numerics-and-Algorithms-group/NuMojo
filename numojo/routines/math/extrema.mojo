@@ -406,59 +406,6 @@ fn _max[
     return (max_value, Scalar[DType.int](max_index))
 
 
-fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
-    """
-    Finds the min value of an array.
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        a: An array.
-
-    Returns:
-        The min value.
-    """
-
-    if a.ndim == 1:
-        return extrema_1d[is_max=False](a)
-    else:
-        return extrema_1d[is_max=False](ravel(a))
-
-
-fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
-    """
-    Finds the min value of an array along the axis.
-    The number of dimension will be reduced by 1.
-    When no axis is given, the array is flattened before sorting.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        a: An array.
-        axis: The axis along which the max is performed.
-
-    Returns:
-        An array with reduced number of dimensions.
-    """
-
-    var normalized_axis = axis
-    if axis < 0:
-        normalized_axis += a.ndim
-    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
-        raise Error(
-            String("Error in `min`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
-            )
-        )
-
-    return apply_along_axis_reduce[func1d=extrema_1d[is_max=False]](
-        a=a, axis=normalized_axis
-    )
-
-
 fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
     Find min item.

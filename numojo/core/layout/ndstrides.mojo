@@ -24,9 +24,7 @@ struct NDArrayStrides(
     ImplicitlyCopyable,
     Movable,
     RegisterPassable,
-    Representable,
     Sized,
-    Stringable,
     Writable,
 ):
     """
@@ -728,7 +726,7 @@ struct NDArrayStrides(
         Returns:
             String representation of the strides of the array.
         """
-        return "numojo.Strides" + String(self)
+        return "numojo.Strides" + self.__str__()
 
     @always_inline("nodebug")
     fn __str__(self) -> String:
@@ -746,12 +744,21 @@ struct NDArrayStrides(
         result = result + ")"
         return result
 
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+        """
+        # TODO: Deprecate `__repr__` and move its body directly into this method.
+        writer.write(self.__repr__())
+
     fn write_to[W: Writer](self, mut writer: W):
         """
         Writes the strides representation to a writer.
         """
         writer.write(
-            "Strides: " + String(self) + "  " + "ndim: " + String(self.ndim)
+            "Strides: " + self.__str__() + "  " + "ndim: " + String(self.ndim)
         )
 
     @always_inline("nodebug")

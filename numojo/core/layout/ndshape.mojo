@@ -26,9 +26,7 @@ struct NDArrayShape(
     ImplicitlyCopyable,
     Movable,
     RegisterPassable,
-    Representable,
     Sized,
-    Stringable,
     Writable,
 ):
     """
@@ -712,6 +710,15 @@ struct NDArrayShape(
             String representation of the shape of the array.
         """
         return "numojo.Shape" + self.__str__()
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+        """
+        # TODO: Deprecate `__repr__` and move its body directly into this method.
+        writer.write(self.__repr__())
 
     @always_inline("nodebug")
     fn __str__(self) -> String:

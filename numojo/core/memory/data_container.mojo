@@ -77,9 +77,7 @@ struct Ownership(ImplicitlyCopyable):
         writer.write(self.__str__())
 
 
-struct DataContainer[dtype: DType](
-    Copyable & Movable & Sized & Stringable & Writable
-):
+struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     """
     Reference-counted container for a contiguous buffer of elements.
 

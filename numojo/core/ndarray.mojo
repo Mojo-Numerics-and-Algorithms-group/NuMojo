@@ -93,9 +93,7 @@ struct NDArray[dtype: DType = DType.float64](
     FloatableRaising,
     IntableRaising,
     Movable,
-    Representable,
     Sized,
-    Stringable,
     Writable,
 ):
     """The N-dimensional array (NDArray).
@@ -3606,6 +3604,16 @@ struct NDArray[dtype: DType = DType.float64](
             result = "Cannot convert array to string.\n" + String(e)
 
         return result
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+        """
+        # TODO: Deprecate `__repr__` and move its body and docs directly into
+        # this method.
+        writer.write(self.__repr__())
 
     # ===-------------------------------------------------------------------===#
     # Trait dunders and iterator dunders

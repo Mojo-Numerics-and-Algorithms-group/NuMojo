@@ -92,9 +92,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     FloatableRaising,
     IntableRaising,
     Movable,
-    Representable,
     Sized,
-    Stringable,
     Writable,
 ):
     """
@@ -3055,6 +3053,18 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             except e:
                 writer.write("Cannot convert array to string.\n" + String(e))
+
+    fn write_repr_to[W: Writer](self, mut writer: W):
+        """Write the string representation to a writer.
+
+        Parameters:
+            W: The writer type.
+
+        Args:
+            writer: The writer to write to.
+        """
+        # TODO: Deprecate `__repr__` and move its body directly into this method.
+        writer.write(self.__repr__())
 
     fn __repr__(self) -> String:
         """

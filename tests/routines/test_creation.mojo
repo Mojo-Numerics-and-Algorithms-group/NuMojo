@@ -108,7 +108,6 @@ def test_full_from_list():
     )
 
 
-
 def test_identity():
     var np = Python.import_module("numpy")
     check(

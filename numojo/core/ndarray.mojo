@@ -5691,7 +5691,9 @@ struct _NDIter[
         self.length = a.size
         self.order = order
         self.axis = axis
-        self.ptr = rebind[UnsafePointer[Scalar[Self.dtype], Self.origin]](a._buf.ptr + a.offset)
+        self.ptr = rebind[UnsafePointer[Scalar[Self.dtype], Self.origin]](
+            a._buf.ptr + a.offset
+        )
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides

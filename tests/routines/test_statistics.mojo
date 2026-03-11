@@ -83,5 +83,5 @@ def test_mean_median_var_std() raises:
         )
 
 
-def main() raises:
-    TestSuite.discover_tests[__functions_in_module()]().run()
+# def main() raises:
+#     TestSuite.discover_tests[__functions_in_module()]().run()

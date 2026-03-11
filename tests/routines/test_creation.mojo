@@ -7,8 +7,8 @@ from std.testing.testing import (
     assert_equal,
     assert_raises,
 )
-from python import Python, PythonObject
-import random as builtin_random
+from std.python import Python, PythonObject
+import std.random as builtin_random
 from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 

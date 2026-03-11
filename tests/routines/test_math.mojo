@@ -1,6 +1,6 @@
 import numojo as nm
 from numojo.prelude import *
-from python import Python, PythonObject
+from std.python import Python, PythonObject
 from std.testing.testing import assert_raises, assert_true
 from utils_for_test import (
     check,

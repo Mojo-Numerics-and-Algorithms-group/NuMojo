@@ -1,10 +1,10 @@
 import numojo as nm
 from numojo.prelude import *
 from numojo.core.matrix import Matrix
-from python import Python, PythonObject
-from testing.testing import assert_raises, assert_true
-from sys import is_defined
-from testing import assert_equal, TestSuite
+from std.python import Python, PythonObject
+from std.testing.testing import assert_raises, assert_true
+from std.sys import is_defined
+from std.testing import assert_equal, TestSuite
 
 comptime order: String = String("F") if is_defined[
     "F_CONTIGUOUS"

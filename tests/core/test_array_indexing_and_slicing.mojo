@@ -1,9 +1,9 @@
 import numojo as nm
 from numojo.prelude import *
-from testing.testing import assert_true, assert_almost_equal, assert_equal
+from std.testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
-from python import Python, PythonObject
-from testing import TestSuite
+from std.python import Python, PythonObject
+from std.testing import TestSuite
 
 
 def test_getitem_scalar() raises:

@@ -1,6 +1,6 @@
 from numojo.core.accelerator.device import Device
-from testing.testing import assert_true, assert_equal
-from testing import TestSuite
+from std.testing.testing import assert_true, assert_equal
+from std.testing import TestSuite
 
 
 def test_default_init() raises:

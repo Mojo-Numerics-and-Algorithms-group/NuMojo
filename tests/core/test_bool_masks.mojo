@@ -1,9 +1,9 @@
 import numojo as nm
 from numojo import *
-from testing.testing import assert_true, assert_almost_equal, assert_equal
+from std.testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check
-from python import Python
-from testing import TestSuite
+from std.python import Python
+from std.testing import TestSuite
 
 
 # TODO: there's something wrong with bool comparision even though result looks same.

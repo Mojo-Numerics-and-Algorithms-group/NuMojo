@@ -1,6 +1,6 @@
-from testing import assert_equal, assert_almost_equal
+from std.testing import assert_equal, assert_almost_equal
 from numojo import *
-from testing import TestSuite
+from std.testing import TestSuite
 
 
 fn test_complex_init() raises:

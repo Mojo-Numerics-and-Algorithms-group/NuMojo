@@ -7,7 +7,7 @@
 """
 Test indexing module `numojo.routines.indexing`.
 """
-from python import Python
+from std.python import Python
 from std.testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
 from std.testing import TestSuite

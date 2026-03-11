@@ -2,7 +2,7 @@ import numojo as nm
 from numojo import *
 from std.testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
-from python import Python, PythonObject
+from std.python import Python, PythonObject
 from std.testing import TestSuite
 
 

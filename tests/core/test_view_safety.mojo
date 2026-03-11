@@ -12,9 +12,9 @@ from numojo.prelude import *
 from numojo.core.matrix import Matrix
 from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.routines.math.extrema import minimum
-from python import Python, PythonObject
-from testing.testing import assert_true, assert_equal
-from testing import TestSuite
+from std.python import Python, PythonObject
+from std.testing.testing import assert_true, assert_equal
+from std.testing import TestSuite
 
 
 # ===-----------------------------------------------------------------------===#

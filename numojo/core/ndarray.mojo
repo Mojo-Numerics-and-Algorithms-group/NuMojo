@@ -2454,10 +2454,10 @@ struct NDArray[dtype: DType = DType.float64](
         var count_int = 0
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
-                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+                slice_list.append(slices[i][Slice])
             elif slices[i].isa[Int]():
                 count_int += 1
-                var int: Int = slices[i]._get_ptr[Int]()[0]
+                var int: Int = slices[i][Int]
                 slice_list.append(Slice(int, int + 1, 1))
 
         if n_slices < self.ndim:
@@ -4635,7 +4635,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo.math.min(self, axis=axis)
 
-    fn nditer(self) raises -> _NDIter[origin_of(self), Self.dtype]:
+    fn nditer(self) raises -> _NDIter[origin_of(self._buf.origin), Self.dtype]:
         """Returns an iterator yielding the array elements according to the
         memory layout of the array.
 
@@ -4669,7 +4669,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     fn nditer(
         self, order: String
-    ) raises -> _NDIter[origin_of(self), Self.dtype]:
+    ) raises -> _NDIter[origin_of(self._buf.origin), Self.dtype]:
         """Returns an iterator yielding the array elements according to the
         specified order.
 
@@ -4708,7 +4708,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             axis = 0
 
-        return _NDIter[origin_of(self), Self.dtype](
+        return _NDIter[origin_of(self._buf.origin), Self.dtype](
             a=self, order=order, axis=axis
         )
 
@@ -5673,7 +5673,7 @@ struct _NDIter[
     It can be constructed by the `NDArray.nditer()` method.
     """
 
-    var ptr: LegacyUnsafePointer[Scalar[Self.dtype], origin=Self.origin]
+    var ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
     var length: Int
     var ndim: Int
     var shape: NDArrayShape
@@ -5691,7 +5691,7 @@ struct _NDIter[
         self.length = a.size
         self.order = order
         self.axis = axis
-        self.ptr = a._buf.ptr + a.offset
+        self.ptr = rebind[UnsafePointer[Scalar[Self.dtype], Self.origin]](a._buf.ptr + a.offset)
         self.ndim = a.ndim
         self.shape = a.shape
         self.strides = a.strides

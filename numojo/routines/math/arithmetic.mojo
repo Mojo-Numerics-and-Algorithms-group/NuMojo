@@ -506,7 +506,9 @@ fn fma[
     """
     # TODO: Support passing through the FastMathFlag parameter
     # For now, FastMathFlag.CONTRACT is was default prior to this error.
-    return HostExecutor.apply_ternary[dtype, SIMD.fma[FastMathFlag.CONTRACT]](array1, array2, array3)
+    return HostExecutor.apply_ternary[dtype, SIMD.fma[FastMathFlag.CONTRACT]](
+        array1, array2, array3
+    )
 
 
 fn fma[
@@ -531,7 +533,9 @@ fn fma[
     Returns:
         A a new NDArray that is NDArray with the function func applied.
     """
-    return HostExecutor.apply_ternary[dtype, SIMD.fma[FastMathFlag.CONTRACT]](array1, array2, simd)
+    return HostExecutor.apply_ternary[dtype, SIMD.fma[FastMathFlag.CONTRACT]](
+        array1, array2, simd
+    )
 
 
 # ===------------------------------------------------------------------------===#

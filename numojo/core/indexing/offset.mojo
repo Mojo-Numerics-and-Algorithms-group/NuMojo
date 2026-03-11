@@ -54,7 +54,9 @@ struct IndexMethods:
         return idx
 
     @staticmethod
-    fn get_1d_index(indices: VariadicList[Int, _], strides: NDArrayStrides) -> Int:
+    fn get_1d_index(
+        indices: VariadicList[Int, _], strides: NDArrayStrides
+    ) -> Int:
         """
         Get the flat index from a variadic list of indices and NDArrayStrides.
 

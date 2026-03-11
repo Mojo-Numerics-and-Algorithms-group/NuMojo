@@ -248,7 +248,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         return Self(self.re + Self._broadcast(other), self.im)
 
     # FIXME: currently mojo doesn't allow overloading with both SIMD[Self.dtype, Self.width] and SIMD[..., size=Self.width]. So keep SIMD[..., size=Self.width] only for now. We need this method to create complex numbers with syntax like (1 + 2 * `1j`).
-    fn __add__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __add__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Returns the sum of this ComplexSIMD instance and a SIMD vector added to the real part.
 
@@ -301,7 +301,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         self.re += Self._broadcast(other)
 
-    fn __iadd__(mut self, other: SIMD[..., size = Self.width]):
+    fn __iadd__(mut self, other: SIMD[..., size=Self.width]):
         """
         In-place addition of a SIMD vector to the real part of this ComplexSIMD instance.
 
@@ -340,7 +340,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(Self._broadcast(other) + self.re, self.im)
 
-    fn __radd__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __radd__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Returns the sum of a SIMD vector and this ComplexSIMD instance, adding to the real part.
 
@@ -398,7 +398,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(self.re - Self._broadcast(other), self.im)
 
-    fn __sub__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __sub__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Returns the difference of this ComplexSIMD instance and a SIMD vector subtracted from the real part.
 
@@ -451,7 +451,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         self.re -= Self._broadcast(other)
 
-    fn __isub__(mut self, other: SIMD[..., size = Self.width]):
+    fn __isub__(mut self, other: SIMD[..., size=Self.width]):
         """
         In-place subtraction of a SIMD vector from the real part of this ComplexSIMD instance.
 
@@ -490,7 +490,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(Self._broadcast(other) - self.re, -self.im)
 
-    fn __rsub__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __rsub__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Returns the difference of a SIMD vector and this ComplexSIMD instance, subtracting from the real part.
 
@@ -553,7 +553,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var scalar_simd = Self._broadcast(other)
         return Self(self.re * scalar_simd, self.im * scalar_simd)
 
-    fn __mul__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __mul__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Returns the product of this ComplexSIMD instance and a SIMD vector.
 
@@ -610,7 +610,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         self.re *= scalar_simd
         self.im *= scalar_simd
 
-    fn __imul__(mut self, other: SIMD[..., size = Self.width]):
+    fn __imul__(mut self, other: SIMD[..., size=Self.width]):
         """
         In-place multiplication of this ComplexSIMD instance by a SIMD vector.
 
@@ -654,7 +654,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var scalar_simd = Self._broadcast(other)
         return Self(scalar_simd * self.re, scalar_simd * self.im)
 
-    fn __rmul__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __rmul__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Returns the product of a SIMD vector and this ComplexSIMD instance.
 
@@ -720,7 +720,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var scalar_simd = Self._broadcast(other)
         return Self(self.re / scalar_simd, self.im / scalar_simd)
 
-    fn __truediv__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __truediv__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Performs element-wise division of this ComplexSIMD instance by a SIMD vector.
 
@@ -778,7 +778,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         self.re /= scalar_simd
         self.im /= scalar_simd
 
-    fn __itruediv__(mut self, other: SIMD[..., size = Self.width]):
+    fn __itruediv__(mut self, other: SIMD[..., size=Self.width]):
         """
         Performs in-place element-wise division of this ComplexSIMD instance by a SIMD vector.
 
@@ -828,7 +828,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             (-scalar_simd * self.im) / denom,
         )
 
-    fn __rtruediv__(self, other: SIMD[..., size = Self.width]) -> Self:
+    fn __rtruediv__(self, other: SIMD[..., size=Self.width]) -> Self:
         """
         Performs element-wise division of a SIMD vector by this ComplexSIMD instance.
 

@@ -3440,17 +3440,17 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     fn to_ndarray(
         self, type: String = "re"
-    ) raises -> NDArray[dtype = Self.dtype]:
+    ) raises -> NDArray[dtype=Self.dtype]:
         if type == "re":
-            var result: NDArray[dtype = Self.dtype] = NDArray[
-                dtype = Self.dtype
-            ](self.shape)
+            var result: NDArray[dtype=Self.dtype] = NDArray[dtype=Self.dtype](
+                self.shape
+            )
             memcpy(dest=result._buf.ptr, src=self._re._buf.ptr, count=self.size)
             return result^
         elif type == "im":
-            var result: NDArray[dtype = Self.dtype] = NDArray[
-                dtype = Self.dtype
-            ](self.shape)
+            var result: NDArray[dtype=Self.dtype] = NDArray[dtype=Self.dtype](
+                self.shape
+            )
             memcpy(dest=result._buf.ptr, src=self._im._buf.ptr, count=self.size)
             return result^
         else:
@@ -4218,8 +4218,8 @@ struct _ComplexNDArrayIter[
 
     # FIELDS
     var index: Int
-    var re_ptr: UnsafePointer[Scalar[Self.dtype], origin = Self.origin]
-    var im_ptr: UnsafePointer[Scalar[Self.dtype], origin = Self.origin]
+    var re_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
+    var im_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
     var dimension: Int
     var length: Int
     var shape: NDArrayShape

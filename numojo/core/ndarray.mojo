@@ -5673,7 +5673,7 @@ struct _NDIter[
     It can be constructed by the `NDArray.nditer()` method.
     """
 
-    var ptr: LegacyUnsafePointer[Scalar[Self.dtype], origin = Self.origin]
+    var ptr: LegacyUnsafePointer[Scalar[Self.dtype], origin=Self.origin]
     var length: Int
     var ndim: Int
     var shape: NDArrayShape

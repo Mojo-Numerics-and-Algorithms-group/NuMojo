@@ -385,7 +385,7 @@ def test_sin_par():
     check_is_close(
         nm.sin[
             nm.f64,
-            backend = nm.routines.math._math_funcs.Vectorized,
+            backend=nm.routines.math._math_funcs.Vectorized,
         ](arr),
         np.sin(np.arange(0, 15)),
         "Add array + scalar",

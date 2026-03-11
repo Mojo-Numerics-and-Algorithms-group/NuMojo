@@ -22,22 +22,27 @@ Notes / conventions:
   stable and widely used.
 """
 
-from . import io
-from . import linalg
-from . import logic
-from . import math
-from . import statistics
-from . import bitwise
-from . import creation
-from . import indexing
-from . import manipulation
-from . import random
-from . import sorting
-from . import searching
-from . import functional
-from . import operations
+import .linalg
+import .logic
+import .math
+import .statistics
+import .bitwise
+import .creation
+import .indexing
+import .manipulation
+import .random
+import .sorting
+import .searching
+import .functional
+import .operations
 
-from .io import loadtxt, savetxt, load, save, set_printoptions
+from .io import (
+    loadtxt,
+    savetxt,
+    load,
+    save,
+    set_printoptions,
+)
 
 from .linalg.misc import diagonal
 

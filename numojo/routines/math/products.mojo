@@ -10,9 +10,9 @@
 Implements product and cumulative product reductions for NDArrays and Matrices.
 """
 
-from algorithm.functional import parallelize, vectorize
-from sys import simd_width_of
-from memory import UnsafePointer, memcpy, memset_zero
+from std.algorithm.functional import parallelize, vectorize
+from std.sys import simd_width_of
+from std.memory import UnsafePointer, memcpy, memset_zero
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix

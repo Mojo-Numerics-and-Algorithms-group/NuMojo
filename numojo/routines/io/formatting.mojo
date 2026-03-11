@@ -9,9 +9,9 @@
 
 This module provides functions for formatting arrays and values for printing, including options for precision, scientific notation, and complex number formatting.
 """
-from math import pow
-import math as mt
-from utils.numerics import isnan, isinf
+from std.math import pow
+import std.math as mt
+from std.utils.numerics import isnan, isinf
 
 from numojo.core.dtype.utility import is_inttype, is_floattype
 

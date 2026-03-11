@@ -10,11 +10,11 @@
 Offers rounding, truncation, absolute value, and next-after helpers for NDArrays.
 """
 
-import math as builtin_math
-from algorithm import parallelize
-from algorithm import Static2DTileUnitFunc as Tile2DFunc
-from utils import Variant
-from utils.numerics import nextafter as builtin_nextafter
+import std.math as builtin_math
+from std.algorithm import parallelize
+from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
+from std.utils import Variant
+from std.utils.numerics import nextafter as builtin_nextafter
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray

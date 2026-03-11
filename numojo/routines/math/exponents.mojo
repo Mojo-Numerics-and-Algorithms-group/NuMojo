@@ -7,157 +7,401 @@
 #  ===----------------------------------------------------------------------=== #
 """Exponential routines for NuMojo (numojo.routines.math.exponents).
 
-Provides element-wise exponential and logarithmic transformations for NDArrays.
+Implements element-wise exponential and logarithmic transformations for NDArrays.
 """
 
 import math
-from algorithm import parallelize
-from algorithm import Static2DTileUnitFunc as Tile2DFunc
-from utils import Variant
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
-comptime ln = log
+# ===------------------------------------------------------------------------===#
+# Exponential functions
+# ===------------------------------------------------------------------------===#
 
 
 fn exp[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Calculate element-wise euler's constant(e) to the power of NDArray[i].
+    Compute the element-wise exponential of an array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray with the shape of `NDArray` with values equal to the
-        e to the power of the value in the original NDArray at each position.
+        A NDArray where each element is e**x for the corresponding element x.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var arr = nm.linspace[f64](0.0, 1.0, 10)
+        var result = nm.exp(arr)
+        ```
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.exp](array)
+    return HostExecutor.apply_unary[dtype, math.exp](array)
+
+
+fn exp[
+    dtype: DType
+](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the exponential of a scalar.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        value: A Scalar.
+
+    Returns:
+        A scalar equal to e**value.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var value: Scalar[f32] = 1.0
+        var result = nm.exp(value)
+        ```
+    """
+    return math.exp(value)
 
 
 fn exp2[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Calculate element-wise two to the power of NDArray[i].
+    Compute the element-wise base-2 exponential of an array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray with the shape of `NDArray` with values equal to the
-        2 to the power of the value in the original NDArray at each position.
+        A NDArray where each element is 2**x for the corresponding element x.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var arr = nm.linspace[f64](0.0, 1.0, 10)
+        var result = nm.exp2(arr)
+        ```
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.exp2](array)
+    return HostExecutor.apply_unary[dtype, math.exp2](array)
+
+
+fn exp2[
+    dtype: DType
+](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the base-2 exponential of a scalar.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        value: A Scalar.
+
+    Returns:
+        A scalar equal to 2**value.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var value: Scalar[f32] = 1.0
+        var result = nm.exp2(value)
+        ```
+    """
+    return math.exp2(value)
 
 
 fn expm1[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Calculate element-wise euler's constant(e) to the power of NDArray[i] minus1.
+    Compute the element-wise exp(x) - 1 of an array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray with the shape of `NDArray` with values equal to the negative one plus
-        e to the power of the value in the original NDArray at each position.
+        A NDArray where each element is exp(x) - 1 for the corresponding element x.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var arr = nm.linspace[f64](0.0, 1.0, 10)
+        var result = nm.expm1(arr)
+        ```
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.expm1](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, math.expm1](array)
+
+
+fn expm1[
+    dtype: DType
+](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute exp(value) - 1 for a scalar.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        value: A Scalar.
+
+    Returns:
+        A scalar equal to exp(value) - 1.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var value: Scalar[f32] = 1.0
+        var result = nm.expm1(value)
+        ```
+    """
+    return math.expm1(value)
+
+
+# ===------------------------------------------------------------------------===#
+# Logarithmic functions
+# ===------------------------------------------------------------------------===#
 
 
 fn log[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Element-wise natural logarithm of NDArray.
+    Compute the element-wise natural logarithm of an array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to ln(NDArray).
+        A NDArray where each element is ln(x) for the corresponding element x.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var arr = nm.arange[f64](1.0, 10.0, 1.0)
+        var result = nm.log(arr)
+        ```
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.log](array)
+    return HostExecutor.apply_unary[dtype, math.log](array)
+
+
+fn log[
+    dtype: DType
+](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the natural logarithm of a scalar.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        value: A Scalar.
+
+    Returns:
+        A scalar equal to ln(value).
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var result = nm.log(10.0)
+        ```
+    """
+    return math.log(value)
 
 
 fn log2[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Element-wise logarithm base two of NDArray.
+    Compute the element-wise base-2 logarithm of an array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to log_2(NDArray).
+        A NDArray where each element is log2(x) for the corresponding element x.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var arr = nm.arange[f64](1.0, 10.0, 1.0)
+        var result = nm.log2(arr)
+        ```
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.log2](array)
+    return HostExecutor.apply_unary[dtype, math.log2](array)
+
+
+fn log2[
+    dtype: DType
+](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the base-2 logarithm of a scalar.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        value: A Scalar.
+
+    Returns:
+        A scalar equal to log2(value).
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var result = nm.log2(10.0)
+        ```
+    """
+    return math.log2(value)
 
 
 fn log10[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Element-wise logarithm base ten of NDArray.
+    Compute the element-wise base-10 logarithm of an array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to log_10(NDArray).
+        A NDArray where each element is log10(x) for the corresponding element x.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var arr = nm.arange[f64](1.0, 10.0, 1.0)
+        var result = nm.log10(arr)
+        ```
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.log10](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, math.log10](array)
+
+
+fn log10[
+    dtype: DType
+](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the base-10 logarithm of a scalar.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        value: A Scalar.
+
+    Returns:
+        A scalar equal to log10(value).
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var result = nm.log10(10.0)
+        ```
+    """
+    return math.log10(value)
 
 
 fn log1p[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Element-wise natural logarithm of 1 plus NDArray.
+    Compute the element-wise ln(1 + x) of an array.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to ln(NDArray+1).
+        A NDArray where each element is ln(1 + x) for the corresponding element x.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var arr = nm.linspace[f64](0.0, 1.0, 10)
+        var result = nm.log1p(arr)
+        ```
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.log1p](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, math.log1p](array)
+
+
+fn log1p[
+    dtype: DType
+](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute ln(1 + value) for a scalar.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        value: A Scalar.
+
+    Returns:
+        A scalar equal to ln(1 + value).
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+        var result = nm.log1p(1.0)
+        ```
+    """
+    return math.log1p(value)

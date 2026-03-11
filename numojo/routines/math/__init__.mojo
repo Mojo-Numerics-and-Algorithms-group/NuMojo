@@ -12,8 +12,8 @@ Aggregates arithmetic, trigonometric, hyperbolic, and utility routines for NDArr
 
 from .arithmetic import add, sub, mod, mul, div, floor_div, fma, remainder
 from .differences import gradient, diff
-from .exponents import exp, exp2, expm1, log, ln, log2, log10, log1p
-from .extrema import max, min, mimimum, maximum
+from .exponents import exp, exp2, expm1, log, log2, log10, log1p
+from .extrema import max, min, minimum, maximum
 from .floating import copysign
 from .hyper import (
     arccosh,

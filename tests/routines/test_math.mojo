@@ -1,21 +1,21 @@
 import numojo as nm
 from numojo.prelude import *
-from python import Python, PythonObject
-from testing.testing import assert_raises, assert_true
+from std.python import Python, PythonObject
+from std.testing.testing import assert_raises, assert_true
 from utils_for_test import (
     check,
     check_is_close,
     check_values_close,
     check_with_dtype,
 )
-from testing import TestSuite
+from std.testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Sums, products, differences
 # ===-----------------------------------------------------------------------===#
 
 
-def test_sum_prod():
+def test_sum_prod() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(2, 3, 4)
     var Anp = A.to_numpy()
@@ -69,7 +69,7 @@ def test_sum_prod():
         )
 
 
-def test_add_array():
+def test_add_array() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 15)
 
@@ -81,7 +81,7 @@ def test_add_array():
     )
 
 
-# def test_dunder_add_array():
+# def test_dunder_add_array() raises:
 #     var np = Python.import_module("numpy")
 
 #     # Test float + float
@@ -132,7 +132,7 @@ def test_add_array():
 #     )
 
 
-# def test_dunder_sub_array():
+# def test_dunder_sub_array() raises:
 #     var np = Python.import_module("numpy")
 
 #     # Test float - float
@@ -353,7 +353,7 @@ def test_add_array():
 #     )
 
 
-def test_add_array_par():
+def test_add_array_par() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 20)
 
@@ -369,7 +369,7 @@ def test_add_array_par():
     )
 
 
-def test_sin():
+def test_sin() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 15)
 
@@ -378,14 +378,14 @@ def test_sin():
     )
 
 
-def test_sin_par():
+def test_sin_par() raises:
     var np = Python.import_module("numpy")
     var arr = nm.arange[nm.f64](0, 15)
 
     check_is_close(
         nm.sin[
             nm.f64,
-            backend = nm.routines.math._math_funcs.Vectorized,
+            backend=nm.routines.math._math_funcs.Vectorized,
         ](arr),
         np.sin(np.arange(0, 15)),
         "Add array + scalar",
@@ -445,5 +445,5 @@ fn test_misc() raises:
     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

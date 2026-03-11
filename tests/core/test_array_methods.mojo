@@ -1,12 +1,12 @@
-from python import Python, PythonObject
+from std.python import Python, PythonObject
 
 from numojo.prelude import *
-from testing.testing import assert_true, assert_almost_equal, assert_equal
+from std.testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close, check_values_close
-from testing import TestSuite
+from std.testing import TestSuite
 
 
-def test_constructors():
+def test_constructors() raises:
     # Test NDArray constructor with different input types
     var arr1 = NDArray[f32](Shape(3, 4, 5))
     assert_true(arr1.ndim == 3, "NDArray constructor: ndim")
@@ -49,7 +49,7 @@ def test_constructors():
     )
 
 
-def test_iterator():
+def test_iterator() raises:
     var py = Python.import_module("builtins")
     var np = Python.import_module("numpy")
 
@@ -93,9 +93,11 @@ def test_iterator():
     var a_nditer = a.nditer()
     var anp_nditer = np.nditer(anp)
     for _ in range(a.size):
+        var a_val = a_nditer.__next__()
+        var anp_val = anp_nditer.__next__()
         check_values_close(
-            a_nditer.__next__(),
-            anp_nditer.__next__(),
+            a_val,
+            anp_val,
             "`_NDIter` or `nditer()` of C array by order C breaks",
         )
 
@@ -112,9 +114,11 @@ def test_iterator():
     var a_nditer_f = a.nditer(order="F")
     var anp_nditer_f = np.nditer(anp, order=PythonObject("F"))
     for _ in range(a.size):
+        var a_val = a_nditer_f.__next__()
+        var anp_val = anp_nditer_f.__next__()
         check_values_close(
-            a_nditer_f.__next__(),
-            anp_nditer_f.__next__(),
+            a_val,
+            anp_val,
             "`_NDIter` or `nditer()` of C array by order F breaks",
         )
 
@@ -122,21 +126,25 @@ def test_iterator():
     var f_nditer = f.nditer()
     var fnp_nditer = np.nditer(fnp)
     for _ in range(f.size):
+        var f_val = f_nditer.__next__()
+        var fnp_val = fnp_nditer.__next__()
         check_values_close(
-            f_nditer.__next__(),
-            fnp_nditer.__next__(),
+            f_val,
+            fnp_val,
             "`_NDIter` or `nditer()` of F array by order C breaks",
         )
 
     var f_nditer_f = f.nditer(order="F")
     var fnp_nditer_f = np.nditer(fnp, order=PythonObject("F"))
     for _ in range(f.size):
+        var f_val = f_nditer_f.__next__()
+        var fnp_val = fnp_nditer_f.__next__()
         check_values_close(
-            f_nditer_f.__next__(),
-            fnp_nditer_f.__next__(),
+            f_val,
+            fnp_val,
             "`_NDIter` or `nditer()` of F array by order F breaks",
         )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

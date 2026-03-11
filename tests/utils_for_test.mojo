@@ -1,5 +1,5 @@
-from python import Python, PythonObject
-from testing.testing import assert_true
+from std.python import Python, PythonObject
+from std.testing.testing import assert_true
 import numojo as nm
 
 

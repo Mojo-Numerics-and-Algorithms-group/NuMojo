@@ -1,12 +1,12 @@
 import numojo as nm
 from numojo.prelude import *
-from python import Python, PythonObject
+from std.python import Python, PythonObject
 from utils_for_test import check, check_is_close
-from testing.testing import assert_raises
-from testing import TestSuite
+from std.testing.testing import assert_raises
+from std.testing import TestSuite
 
 
-def test_convolve2d():
+def test_convolve2d() raises:
     var sp = Python.import_module("scipy")
     in1 = nm.random.rand(6, 6)
     in2 = nm.fromstring("[[1, 0], [0, -1]]")
@@ -19,5 +19,5 @@ def test_convolve2d():
     check(res1, res2, "test_convolve2d failed #2\n")
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

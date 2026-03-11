@@ -1,9 +1,9 @@
 import numojo as nm
 from numojo import *
-from testing.testing import assert_true, assert_almost_equal, assert_equal
+from std.testing.testing import assert_true, assert_almost_equal, assert_equal
 from utils_for_test import check, check_is_close
-from python import Python, PythonObject
-from testing import TestSuite
+from std.python import Python, PythonObject
+from std.testing import TestSuite
 
 
 fn test_arr_manipulation() raises:
@@ -27,7 +27,7 @@ fn test_arr_manipulation() raises:
         )
 
 
-def test_ravel_reshape():
+def test_ravel_reshape() raises:
     var np = Python.import_module("numpy")
     var c = nm.fromstring[i8](
         "[[[1,2,3,4][5,6,7,8]][[9,10,11,12][13,14,15,16]]]", order="C"
@@ -90,7 +90,7 @@ def test_ravel_reshape():
     )
 
 
-def test_transpose():
+def test_transpose() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(2)
     var Anp = A.to_numpy()
@@ -122,7 +122,7 @@ def test_transpose():
     )
 
 
-def test_broadcast():
+def test_broadcast() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.rand(Shape(2, 1, 3))
     var Anp = a.to_numpy()
@@ -138,5 +138,5 @@ def test_broadcast():
     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

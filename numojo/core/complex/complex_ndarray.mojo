@@ -257,7 +257,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     @always_inline("nodebug")
     fn __init__(
         out self,
-        shape: VariadicList[Int],
+        shape: VariadicList[Int, _],
         order: String = "C",
     ) raises:
         """
@@ -1987,10 +1987,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var count_int = 0
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
-                slice_list.append(slices[i]._get_ptr[Slice]()[0])
+                slice_list.append(slices[i][Slice])
             elif slices[i].isa[Int]():
                 count_int += 1
-                var int: Int = slices[i]._get_ptr[Int]()[0]
+                var int: Int = slices[i][Int]
                 slice_list.append(Slice(int, int + 1, 1))
 
         if n_slices < self.ndim:
@@ -3440,17 +3440,17 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     fn to_ndarray(
         self, type: String = "re"
-    ) raises -> NDArray[dtype = Self.dtype]:
+    ) raises -> NDArray[dtype=Self.dtype]:
         if type == "re":
-            var result: NDArray[dtype = Self.dtype] = NDArray[
-                dtype = Self.dtype
-            ](self.shape)
+            var result: NDArray[dtype=Self.dtype] = NDArray[dtype=Self.dtype](
+                self.shape
+            )
             memcpy(dest=result._buf.ptr, src=self._re._buf.ptr, count=self.size)
             return result^
         elif type == "im":
-            var result: NDArray[dtype = Self.dtype] = NDArray[
-                dtype = Self.dtype
-            ](self.shape)
+            var result: NDArray[dtype=Self.dtype] = NDArray[dtype=Self.dtype](
+                self.shape
+            )
             memcpy(dest=result._buf.ptr, src=self._im._buf.ptr, count=self.size)
             return result^
         else:
@@ -4218,8 +4218,8 @@ struct _ComplexNDArrayIter[
 
     # FIELDS
     var index: Int
-    var re_ptr: UnsafePointer[Scalar[Self.dtype], origin = Self.origin]
-    var im_ptr: UnsafePointer[Scalar[Self.dtype], origin = Self.origin]
+    var re_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
+    var im_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
     var dimension: Int
     var length: Int
     var shape: NDArrayShape

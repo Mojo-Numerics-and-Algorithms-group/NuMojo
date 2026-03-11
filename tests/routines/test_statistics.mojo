@@ -1,17 +1,17 @@
 import numojo as nm
 from numojo.prelude import *
 from numojo.core.matrix import Matrix
-from python import Python, PythonObject
-from testing.testing import assert_raises, assert_true
+from std.python import Python, PythonObject
+from std.testing.testing import assert_raises, assert_true
 from utils_for_test import check, check_is_close
-from testing import TestSuite
+from std.testing import TestSuite
 
 # ===-----------------------------------------------------------------------===#
 # Statistics
 # ===-----------------------------------------------------------------------===#
 
 
-def test_mean_median_var_std():
+def test_mean_median_var_std() raises:
     var np = Python.import_module("numpy")
     var sp = Python.import_module("scipy")
     var A = nm.random.randn(3, 4, 5)
@@ -83,5 +83,5 @@ def test_mean_median_var_std():
         )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

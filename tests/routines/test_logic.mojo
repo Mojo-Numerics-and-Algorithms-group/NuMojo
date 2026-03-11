@@ -1,14 +1,14 @@
 import numojo as nm
 from numojo.prelude import *
-from python import Python, PythonObject
-from testing.testing import assert_raises, assert_true, assert_equal
-from testing import TestSuite
+from std.python import Python, PythonObject
+from std.testing.testing import assert_raises, assert_true, assert_equal
+from std.testing import TestSuite
 from utils_for_test import check
 from numojo.routines.logic.comparison import allclose, isclose, array_equal
 from numojo.routines.logic.contents import isposinf, isneginf
 
 
-def test_comparison_array_array():
+def test_comparison_array_array() raises:
     var np = Python.import_module("numpy")
 
     var a = nm.array[nm.f64]("[[-1.5, 0.0, 2.0], [3.5, -4.0, 8.0]]")
@@ -37,7 +37,7 @@ def test_comparison_array_array():
     )
 
 
-def test_comparison_array_scalar():
+def test_comparison_array_scalar() raises:
     var np = Python.import_module("numpy")
 
     var a = nm.array[nm.f64]("[[-2.0, -0.0, 1.0], [2.0, 3.0, -5.0]]")
@@ -64,7 +64,7 @@ def test_comparison_array_scalar():
     )
 
 
-def test_allclose_and_isclose_and_array_equal():
+def test_allclose_and_isclose_and_array_equal() raises:
     var np = Python.import_module("numpy")
 
     var a = nm.array[nm.f64]("[1.0, 2.0, 3.0, 4.0]")
@@ -99,7 +99,7 @@ def test_allclose_and_isclose_and_array_equal():
     assert_true(not array_equal(same1, diff), "array_equal false")
 
 
-def test_contents_isinf_isfinite_isnan():
+def test_contents_isinf_isfinite_isnan() raises:
     var np = Python.import_module("numpy")
 
     var nan64 = Python.float("nan").__float__()
@@ -122,7 +122,7 @@ def test_contents_isinf_isfinite_isnan():
     check(isneginf(a), np.isneginf(p_arr), "isneginf")
 
 
-def test_truth_all_any():
+def test_truth_all_any() raises:
     var np = Python.import_module("numpy")
 
     var p1 = np.array(Python.list(True, True, True, False), dtype=np.bool_)
@@ -161,5 +161,5 @@ def test_truth_all_any():
     )
 
 
-def main():
+def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

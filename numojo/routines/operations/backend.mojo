@@ -12,6 +12,7 @@ Defines vectorized backend structures and reusable SIMD math primitives consumed
 
 from algorithm.functional import vectorize
 from sys import simd_width_of
+from builtin.simd import FastMathFlag
 
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray

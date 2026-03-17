@@ -16,7 +16,7 @@ Provides:
     - Determinant.
 """
 
-from algorithm import parallelize
+from std.algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.indexing import Item

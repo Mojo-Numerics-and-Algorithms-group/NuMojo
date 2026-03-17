@@ -12,10 +12,11 @@ Shared integer buffer backend for shape/strides/item.
 This type owns a contiguous heap buffer of Ints and provides
 small helpers for pointer access and SIMD load/store.
 """
-from memory import UnsafePointer, memcpy, memset_zero
-from sys import simd_width_of
-from algorithm.functional import vectorize
-from os import abort
+
+from std.memory import UnsafePointer, memcpy, memset_zero
+from std.sys import simd_width_of
+from std.algorithm.functional import vectorize
+from std.os import abort
 
 from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice

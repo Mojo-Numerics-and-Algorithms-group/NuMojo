@@ -13,15 +13,13 @@ Implements Item type.
 It is used for multi-dimensional indexing, such as `arr[Item(1, 2, 3)]` to access `arr[1, 2, 3]`.
 """
 
-from builtin.int import index as convert_to_int
-from memory import memcpy, memset_zero
-from memory import UnsafePointer
-from numojo.core.indexing.index_buffer import IndexBuffer
-from memory import memcmp
-from os import abort
-from sys import simd_width_of
-from utils import Variant
+from std.builtin.int import index as convert_to_int
+from std.memory import memcpy, memset_zero, UnsafePointer, memcmp
+from std.os import abort
+from std.sys import simd_width_of
+from std.utils import Variant
 
+from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.error import NumojoError
 from numojo.core.traits.indexer_collection_element import (
     IndexerCollectionElement,

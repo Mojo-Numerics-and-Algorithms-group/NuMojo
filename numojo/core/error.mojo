@@ -23,7 +23,8 @@ Currently we have a few common error categories like
 
 We can expand this list in the future as needed.
 """
-from os import abort
+
+from std.os import abort
 
 comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"

@@ -10,7 +10,10 @@
 Implements element-wise exponential and logarithmic transformations for NDArrays.
 """
 
-import math
+import std.math as math
+from std.algorithm import parallelize
+from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
+from std.utils import Variant
 
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor

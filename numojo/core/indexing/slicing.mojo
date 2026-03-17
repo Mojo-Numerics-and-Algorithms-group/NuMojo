@@ -10,7 +10,7 @@
 This module defines internal data structures and utilities for handling slicing operations in NuMojo.
 """
 
-from math import ceil
+from std.math import ceil
 
 
 # ===----------------------------------------------------------------------=== #

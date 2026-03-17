@@ -9,11 +9,10 @@
 
 This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
 """
-from sys import simd_width_of
-from algorithm import parallelize, vectorize
-from memory import UnsafePointer, memcpy, memset_zero
-
-import math as builtin_math
+from std.sys import simd_width_of
+from std.algorithm import parallelize, vectorize
+from std.memory import UnsafePointer, memcpy, memset_zero
+import std.math as builtin_math
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix

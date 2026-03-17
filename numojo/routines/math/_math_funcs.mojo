@@ -10,11 +10,11 @@
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
 
-from testing import assert_raises
-from algorithm.functional import parallelize, vectorize
-from sys.info import num_physical_cores
-from sys import simd_width_of
-from memory import UnsafePointer
+from std.testing import assert_raises
+from std.algorithm.functional import parallelize, vectorize
+from std.sys.info import num_physical_cores
+from std.sys import simd_width_of
+from std.memory import UnsafePointer
 
 from numojo.core.traits.backend import Backend
 from numojo.core.ndarray import NDArray

@@ -11,11 +11,10 @@ A reference-counted container for contiguous data buffers, used for NDArray and 
 
 DataContainer manages memory ownership and reference counting for shared or external data.
 """
-from memory import UnsafePointer
-from os.atomic import Atomic, Consistency, fence
 
-from memory import memcpy
-from os import abort
+from std.memory import UnsafePointer, memcpy
+from std.os.atomic import Atomic, Consistency, fence
+from std.os import abort
 
 from numojo.core.error import NumojoError
 

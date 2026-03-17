@@ -10,7 +10,7 @@
 Implements comparison math routines for NDArrays and Matrices.
 """
 
-import math
+import std.math as math
 
 from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray

@@ -10,9 +10,9 @@
 This module implements functional programming utilities for NDArray operations, such as `apply_along_axis`.
 """
 
-from algorithm.functional import vectorize, parallelize
-from memory import memcpy
-from sys import simd_width_of
+from std.algorithm.functional import vectorize, parallelize
+from std.memory import memcpy
+from std.sys import simd_width_of
 
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
 from numojo.routines.creation import arange

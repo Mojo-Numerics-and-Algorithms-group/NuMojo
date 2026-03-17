@@ -19,12 +19,12 @@ Features:
 Use this module to create, manipulate, and analyze matrices with high performance and safety guarantees.
 """
 
-from algorithm import parallelize, vectorize
-from memory import UnsafePointer, memcpy, memset_zero
-from random import random_float64
-from sys import simd_width_of
-from python import PythonObject, Python
-from math import ceil
+from std.algorithm import parallelize, vectorize
+from std.memory import UnsafePointer, memcpy, memset_zero
+from std.random import random_float64
+from std.sys import simd_width_of
+from std.python import PythonObject, Python
+from std.math import ceil
 
 from numojo.core.layout.flags import Flags
 from numojo.core.ndarray import NDArray

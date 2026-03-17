@@ -30,16 +30,16 @@ Iterators of `NDArray`:
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#
-from algorithm import parallelize, vectorize
-import builtin.bool as builtin_bool
-import math as builtin_math
-from collections.optional import Optional
-from math import log10
-from memory import memset_zero, memcpy
-from python import PythonObject
-from sys import simd_width_of
-from utils import Variant
-from builtin.type_aliases import EllipsisType
+from std.algorithm import parallelize, vectorize
+import std.builtin.bool as builtin_bool
+import std.math as builtin_math
+from std.collections.optional import Optional
+from std.math import log10
+from std.memory import memset_zero, memcpy
+from std.python import PythonObject
+from std.sys import simd_width_of
+from std.utils import Variant
+from std.builtin.type_aliases import EllipsisType
 
 # ===----------------------------------------------------------------------===#
 # numojo core

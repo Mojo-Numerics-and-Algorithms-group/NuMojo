@@ -10,7 +10,7 @@
 Implements trigonometric and inverse trigonometric functions over NDArrays and Matrices.
 """
 
-import math
+import std.math as math
 
 import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray

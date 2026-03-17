@@ -10,15 +10,13 @@
 Provides sum reductions along axes for NDArrays and Matrices, covering both flattened and axis-aware workflows.
 """
 
-from sys import simd_width_of
-from algorithm import parallelize, vectorize
-from memory import UnsafePointer, memset_zero, memcpy
+from std.sys import simd_width_of
+from std.algorithm import parallelize, vectorize
+from std.memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
-from numojo.core.indexing import (
-    TraverseMethods,
-)
+from numojo.core.indexing import TraverseMethods
 from numojo.routines.creation import zeros
 
 

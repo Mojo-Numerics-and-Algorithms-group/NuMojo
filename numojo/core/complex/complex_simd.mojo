@@ -15,7 +15,8 @@ like addition, subtraction, multiplication, and division, as well as other
 complex number operations like conjugation and absolute value.
 """
 
-from math import sqrt, sin, cos
+from std.math import sqrt, sin, cos
+
 from numojo.core.dtype import ComplexDType
 
 

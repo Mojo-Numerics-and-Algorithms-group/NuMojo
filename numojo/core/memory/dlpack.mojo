@@ -40,9 +40,9 @@ Example:
     ```
 """
 
-from memory import UnsafePointer
-from sys.info import size_of
-from python import PythonObject, Python
+from std.memory import UnsafePointer
+from std.sys.info import size_of
+from std.python import PythonObject, Python
 
 from numojo.core.ndarray import NDArray
 from numojo.core.memory.data_container import DataContainer

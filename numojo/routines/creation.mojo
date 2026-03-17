@@ -26,14 +26,14 @@ overload for each function. This makes maintenance easier. Example:
 If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
 """
 
-from algorithm import parallelize, vectorize
-from math import pow
-from collections import Dict
-from collections.optional import Optional
-from memory import UnsafePointer, memset_zero, memset, memcpy
-from algorithm.memory import parallel_memcpy
-from python import PythonObject, Python
-from sys import simd_width_of
+from std.algorithm import parallelize, vectorize
+from std.math import pow
+from std.collections import Dict
+from std.collections.optional import Optional
+from std.memory import UnsafePointer, memset_zero, memset, memcpy
+from std.algorithm.memory import parallel_memcpy
+from std.python import PythonObject, Python
+from std.sys import simd_width_of
 
 
 from numojo.core.layout import Flags

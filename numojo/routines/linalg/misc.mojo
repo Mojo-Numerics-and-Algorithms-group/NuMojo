@@ -10,8 +10,8 @@
 This module provides miscellaneous linear algebra routines, such as extracting diagonals and checking for symmetry.
 """
 
-from sys import simd_width_of
-from algorithm import parallelize, vectorize
+from std.sys import simd_width_of
+from std.algorithm import parallelize, vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix

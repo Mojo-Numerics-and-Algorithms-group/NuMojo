@@ -27,15 +27,15 @@ overloads, IO, trait, and iterator methods, as well as other utility functions.
 # ===----------------------------------------------------------------------===#
 # === Stdlib ===
 # ===----------------------------------------------------------------------===#
-from algorithm import parallelize, vectorize
-import builtin.bool as builtin_bool
-import builtin.math as builtin_math
-from collections.optional import Optional
-from math import log10, sqrt
-from memory import memset_zero, memcpy
-from python import PythonObject
-from sys import simd_width_of
-from utils import Variant
+from std.algorithm import parallelize, vectorize
+import std.builtin.bool as builtin_bool
+import std.math as builtin_math
+from std.collections.optional import Optional
+from std.math import log10, sqrt
+from std.memory import memset_zero, memcpy
+from std.python import PythonObject
+from std.sys import simd_width_of
+from std.utils import Variant
 
 # ===----------------------------------------------------------------------===#
 # === numojo core ===

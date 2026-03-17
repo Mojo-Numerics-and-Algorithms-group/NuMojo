@@ -10,8 +10,8 @@
 Implements mean, median, mode, variance, and standard deviation helpers for NDArrays and Matrices.
 """
 
-from collections.optional import Optional
-import math as mt
+from std.collections.optional import Optional
+import std.math as mt
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix

@@ -14,12 +14,12 @@ SECTIONS OF THE FILE:
 2. Numojo.NDArray to other collections.
 3. Miscellaneous utility functions.
 """
-from algorithm.functional import vectorize, parallelize
-from collections import Dict
-from memory import memcpy
-from memory import UnsafePointer
-from python import Python, PythonObject
-from sys import simd_width_of
+from std.algorithm.functional import vectorize, parallelize
+from std.collections import Dict
+from std.memory import memcpy
+from std.memory import UnsafePointer
+from std.python import Python, PythonObject
+from std.sys import simd_width_of
 
 
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides

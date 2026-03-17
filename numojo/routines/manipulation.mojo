@@ -10,10 +10,10 @@
 This module implements routines that manipulate the shape and layout of arrays, such as reshaping, transposing, broadcasting, and flipping.
 """
 
-from memory import UnsafePointer, memcpy
-from memory import LegacyUnsafePointer
-from sys import simd_width_of
-from algorithm import vectorize
+from std.memory import UnsafePointer, memcpy
+from std.memory import LegacyUnsafePointer
+from std.sys import simd_width_of
+from std.algorithm import vectorize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.complex import ComplexNDArray

@@ -40,8 +40,15 @@ from numojo.core.indexing.utility import (
 # ===----------------------------------------------------------------------=== #
 
 
-fn copyto():
-    pass
+fn copyto[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]):
+    """
+    Copies the array from src to dst.
+
+    Args:
+        dst: The destination array.
+        src: The source array.
+    """
+    memcpy(dst=dst._buf.ptr, src=src._buf.ptr, count=src.size)
 
 
 fn ndim[dtype: DType](array: NDArray[dtype]) -> Int:

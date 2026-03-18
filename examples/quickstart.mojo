@@ -27,7 +27,11 @@ fn main() raises:
     print("X[Item(1, 2)]:", x_item)
 
     print("ComplexNDArray basics:")
-    var Z = nm.arange[cf32](CScalar[cf32](1.0, 2.0), CScalar[cf32](17.0, 18.0), CScalar[cf32](1.0, 1.0))
+    var Z = nm.arange[cf32](
+        CScalar[cf32](1.0, 2.0),
+        CScalar[cf32](17.0, 18.0),
+        CScalar[cf32](1.0, 1.0),
+    )
     print(Z)
     var Z_sum = Z + Z
     print("Z + Z:")

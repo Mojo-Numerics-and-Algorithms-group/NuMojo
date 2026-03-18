@@ -45,10 +45,10 @@ modular = "==26.2.0.dev2026030605"
 [tasks]
 # compile the package and copy it to the tests folder
 p = "clear && pixi run package"
-package = "pixi run mojo package numojo && cp numojo.mojopkg tests/"
+package = "pixi run mojo package numojo && cp numojo.mojopkg tests/ "
 
 # format the package
-format = "pixi run mojo format ./numojo/ && pixi run mojo format ./tests/"
+format = "pixi run mojo format ./numojo/ && pixi run mojo format ./tests/ && pixi run mojo format ./examples/"
 
 # to run individual test files
 run-test = {cmd = "pixi run mojo run -I tests/ $TEST_FILE", env = {TEST_FILE = ""}}

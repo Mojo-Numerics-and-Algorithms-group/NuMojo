@@ -16,7 +16,6 @@ from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
 from std.sys import simd_width_of
 from std.memory import memcpy
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape
 from numojo.core.type_aliases import Shape

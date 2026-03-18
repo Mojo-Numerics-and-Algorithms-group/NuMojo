@@ -12,9 +12,7 @@ Implements gradient and trapezoidal integration helpers for numerical differenti
 
 import std.math
 from std.algorithm import parallelize
-from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.routines.creation import arange
 from numojo.core.ndarray import NDArray
 from numojo.core.dtype.utility import is_inttype, is_floattype

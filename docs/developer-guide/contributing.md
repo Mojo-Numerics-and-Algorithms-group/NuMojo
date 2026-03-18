@@ -10,7 +10,7 @@ Please follow the Mojo standard library style guide for all contributions. Consi
 - Write concise, well-documented code.
 - Adhere to formatting conventions for indentation, spacing, and line breaks.
 
-Additionally refer to `docs/developer-guide/style-guide.md` for docstring and naming conventions.
+Additionally refer to `style-guide.md` for docstring and naming conventions. See `pre-pr-checks.md` for the checks to run before opening a pull request.
 
 ## Pull Requests
 
@@ -22,14 +22,14 @@ When submitting pull requests:
 
 ## Just Do It
 
-If you have an idea or want to work on something, go ahead and do it! You don’t need to ask for permission before starting. In fact, we prefer if you avoid “licking the cookie” by claiming tasks without following through. We would rather recieve 5 different ways of accomplishing something and then choose the best one or combine then than not recieve any feature at all.
+If you have an idea or want to work on something, go ahead and do it! You don’t need to ask for permission before starting. In fact, we prefer if you avoid “licking the cookie” by claiming tasks without following through. We would rather receive 5 different ways of accomplishing something and then choose the best one or combine them than not receive any feature at all.
 
 ## Directory Structure
 
 Organize your additions into the appropriate submodule or file, if one does not exist feel free to make it and we can figure out where it goes during the pull request checks. This helps keep the project structured and maintainable. For example:
 
 - If you’re adding a statistics function, place it in the `stats` submodule.
-  - If a stats module does not yet exist put the code in a directory called stats in a file with a name that describes the sub disipline of statistics the code enables, along with a `__init__.mojo`
+  - If a stats module does not yet exist put the code in a directory called stats in a file with a name that describes the sub discipline of statistics the code enables, along with a `__init__.mojo`
   - For a kernel density estimation function, add it to the `kde.mojo` file within the `stats` directory.
 
 Following this structure ensures that similar functionalities are grouped together, making the codebase easier to navigate.
@@ -50,7 +50,7 @@ Following this structure ensures that similar functionalities are grouped togeth
    ```
 
 4. **Make Your Changes**: Implement your changes in your branch.
-5. **Run Tests**: NuMojo now uses the `pixi` package manager. To ensure that all unit tests pass, the NuMojo module packages correctly, and the .mojo files are properly formatted, run the following command:
+5. **Run Tests**: NuMojo uses the `pixi` package manager. Run the checks in `pre-pr-checks.md` (at minimum `pixi run final`).
    ```sh
    pixi run final
    ```

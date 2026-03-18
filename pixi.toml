@@ -19,11 +19,11 @@ name = "NuMojo"
 platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 readme = "README.MD"
-version = "0.8.0"
+version = "0.9.0"
 
 [package]
 name = "numojo"
-version = "0.8.0"
+version = "0.9.0"
 
 [package.build]
 backend = {name = "pixi-build-mojo", version = "0.*", channels = [

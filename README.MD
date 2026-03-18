@@ -68,6 +68,8 @@ For a detailed roadmap, please refer to the [docs/user-guide/roadmap.md](docs/us
 
 ## Usage
 
+Runnable examples are available in `examples/` (e.g., `examples/quickstart.mojo`).
+
 An example of n-dimensional array (`NDArray` type) goes as follows.
 
 ```mojo

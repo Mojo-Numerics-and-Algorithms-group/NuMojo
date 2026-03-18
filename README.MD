@@ -4,10 +4,10 @@
 
 NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python.
 
-**[Read the Docs»](https://numojo.readthedocs.io)**  |  **[Explore the examples»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
+**[Read the Docs»](https://numojo.readthedocs.io)**  |  **[Explore the examples»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
 
-**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_jp.md)**    |
-**[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_kr.md)**
+**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_jp.md)**    |
+**[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_kr.md)**
 
 **Table of Contents**
 
@@ -62,9 +62,9 @@ Routines and objects:
 - Statistics (`numojo.statistics`)
 - etc...
 
-Please find all the available functions and objects [here](docs/features.md). A living roadmap is maintained in [docs/roadmap.md](docs/roadmap.md).
+Please find all the available functions and objects [here](docs/user-guide/features.md). A living roadmap is maintained in [docs/user-guide/roadmap.md](docs/user-guide/roadmap.md).
 
-For a detailed roadmap, please refer to the [docs/roadmap.md](docs/roadmap.md) file.
+For a detailed roadmap, please refer to the [docs/user-guide/roadmap.md](docs/user-guide/roadmap.md) file.
 
 ## Usage
 
@@ -245,7 +245,7 @@ Add the following to your `pixi.toml` file:
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.8.0"
+numojo = "=0.9.0"
 ```
 
 Then run:
@@ -257,6 +257,7 @@ pixi install
 
 | NuMojo Version | Required Mojo Version |
 | -------------- | --------------------- |
+| v0.9.0         | ==26.2                |
 | v0.8.0         | ==25.7                |
 | v0.7.0         | ==25.3                |
 | v0.6.1         | ==25.2                |

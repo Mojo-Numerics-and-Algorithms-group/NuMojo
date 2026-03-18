@@ -7,19 +7,20 @@
 #  ===----------------------------------------------------------------------=== #
 """Rounding routines for NuMojo (numojo.routines.math.rounding).
 
-Offers rounding, truncation, absolute value, and next-after helpers for NDArrays.
+Implements rounding, truncation, absolute value, and next-after helpers for NDArrays.
 """
 
 import std.math as builtin_math
-from std.algorithm import parallelize
-from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
-from std.utils import Variant
 from std.utils.numerics import nextafter as builtin_nextafter
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
+from numojo.routines import HostExecutor
+
+# ===------------------------------------------------------------------------===#
+# Matrix Rounding
+# ===------------------------------------------------------------------------===#
 
 
 fn round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
@@ -34,136 +35,114 @@ fn round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
     return res^
 
 
-fn tabs[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+# ===------------------------------------------------------------------------===#
+# Absolute Value
+# ===------------------------------------------------------------------------===#
+
+
+fn tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element-wise absolute value of NDArray.
+    Element-wise absolute value of a NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to abs(NDArray).
+        A NDArray equal to abs(array).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__abs__](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, SIMD.__abs__](array)
 
 
-fn tfloor[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+# ===------------------------------------------------------------------------===#
+# Rounding (NDArray)
+# ===------------------------------------------------------------------------===#
+
+
+fn tfloor[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element-wise round down to nearest whole number of NDArray.
+    Element-wise floor of a NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to floor(NDArray).
+        A NDArray equal to floor(array).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__floor__](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, SIMD.__floor__](array)
 
 
-fn tceil[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn tceil[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element-wise round up to nearest whole number of NDArray.
+    Element-wise ceiling of a NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to ceil(NDArray).
+        A NDArray equal to ceil(array).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__ceil__](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, SIMD.__ceil__](array)
 
 
-fn ttrunc[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn ttrunc[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element-wise remove decimal value from float whole number of NDArray.
+    Element-wise truncation of a NDArray.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to trunc(NDArray).
+        A NDArray equal to trunc(array).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__trunc__](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, SIMD.__trunc__](array)
 
 
-fn tround[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn tround[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Element-wise round NDArray to whole number.
+    Element-wise rounding of a NDArray to a whole number.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array: A NDArray.
 
     Returns:
-        A NDArray equal to trunc(NDArray).
+        A NDArray equal to round(array).
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__round__](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, SIMD.__round__](array)
 
 
-fn roundeven[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Performs element-wise banker's rounding on the elements of a NDArray.
+    Element-wise banker's rounding of a NDArray.
 
     Parameters:
-        dtype: The dtype of the input and output array.
-        backend: Sets utility function origin, defaults to `Vectorized`.
+        dtype: The element type.
 
     Args:
-        array: Array to perform rounding on.
+        array: A NDArray.
 
     Returns:
-    The element-wise banker's rounding of NDArray.
-
-    This rounding goes to the nearest integer with ties toward the nearest even integer.
+        The element-wise rounding of `array` to the nearest integer with ties to even.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, SIMD.__round__](
-        array
-    )
+    return HostExecutor.apply_unary[dtype, SIMD.__round__](array)
 
 
 # fn round_half_down[
-#     dtype: DType, backend: _mf.Backend = _mf.Vectorized
+#     dtype: DType
 # ](NDArray: NDArray[dtype]) -> NDArray[dtype]:
 #     """
 #     Rounds ties towards the smaller integer.
@@ -184,7 +163,7 @@ fn roundeven[
 
 
 # fn round_half_up[
-#     dtype: DType, backend: _mf.Backend = _mf.Vectorized
+#     dtype: DType
 # ](NDArray: NDArray[dtype]) -> NDArray[dtype]:
 #     """
 #     Rounds ties towards the larger integer.
@@ -203,25 +182,30 @@ fn roundeven[
 #         dtype, math.round_half_up
 #     ](NDArray)
 
+# ===------------------------------------------------------------------------===#
+# Next After
+# ===------------------------------------------------------------------------===#
+
 
 fn nextafter[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
-    Computes the nextafter of the inputs.
+    Compute the next representable value after one array toward another.
 
     Parameters:
-        dtype: The dtype of the input and output array. Constraints: must be a floating-point type.
-        backend: Sets utility function origin, default to `Vectorized`.
-
+        dtype: The element type.
 
     Args:
-        array1: The first input argument.
-        array2: The second input argument.
+        array1: The first input array.
+        array2: The second input array.
+
+    Constraints:
+        Datatype `dtype` must be a floating-point type.
 
     Returns:
-        The nextafter of the inputs.
+        The element-wise nextafter of `array1` toward `array2`.
     """
-    return backend().math_func_2_array_in_one_array_out[
-        dtype, builtin_nextafter
-    ](array1, array2)
+    return HostExecutor.apply_binary[dtype, builtin_nextafter](array1, array2)

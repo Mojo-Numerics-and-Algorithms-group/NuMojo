@@ -7,179 +7,270 @@
 #  ===----------------------------------------------------------------------=== #
 """Hyperbolic routines for NuMojo (numojo.routines.math.hyper).
 
-Implements hyperbolic and inverse hyperbolic trigonometric functions operating on NDArrays and Matrices.
+Implements hyperbolic and inverse hyperbolic functions for NDArrays and Matrices.
 """
 
 import std.math as math
 
-import numojo.routines.math._math_funcs as _mf
+from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 from numojo.core.matrix.base import _arithmetic_func_matrix_to_matrix
 
-# TODO: add  dtype in backends and pass it here.
+# TODO: add dtype in backends and pass it here.
 
 # ===------------------------------------------------------------------------===#
-# Inverse Hyperbolic Trig
+# Inverse Hyperbolic Trig (NDArray)
+# ===------------------------------------------------------------------------===#
+
+
+fn acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Apply inverse hyperbolic cosine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The element-wise acosh of `array`.
+    """
+    return HostExecutor.apply_unary[dtype, math.acosh](array)
+
+
+fn asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Apply inverse hyperbolic sine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The element-wise asinh of `array`.
+    """
+    return HostExecutor.apply_unary[dtype, math.asinh](array)
+
+
+fn atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Apply inverse hyperbolic tangent.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The element-wise atanh of `array`.
+    """
+    return HostExecutor.apply_unary[dtype, math.atanh](array)
+
+
+# ===------------------------------------------------------------------------===#
+# Inverse Hyperbolic Trig (Matrix)
 # ===------------------------------------------------------------------------===#
 
 
 fn arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
-
-
-fn acosh[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply acosh also known as inverse hyperbolic cosine .
+    Apply inverse hyperbolic cosine element-wise to a Matrix.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array.
+        A: A Matrix.
 
     Returns:
-        The element-wise acosh of `array` in radians.
+        The element-wise inverse hyperbolic cosine (arccosh) of `A`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.acosh](
-        array
-    )
+    return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
 
 
 fn acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply inverse hyperbolic cosine element-wise to a Matrix.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise inverse hyperbolic cosine (acosh) of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
 
 
 fn arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
-
-
-fn asinh[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply asinh also known as inverse hyperbolic sine .
+    Apply inverse hyperbolic sine element-wise to a Matrix.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array.
+        A: A Matrix.
 
     Returns:
-        The element-wise asinh of `array` in radians.
+        The element-wise inverse hyperbolic sine (arcsinh) of `A`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.asinh](
-        array
-    )
+    return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
 
 
 fn asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply inverse hyperbolic sine element-wise to a Matrix.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise inverse hyperbolic sine (asinh) of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
 
 
 fn arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
-
-
-fn atanh[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply atanh also known as inverse hyperbolic tangent .
+    Apply inverse hyperbolic tangent element-wise to a Matrix.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array.
+        A: A Matrix.
 
     Returns:
-        The element-wise atanh of `array` in radians.
+        The element-wise inverse hyperbolic tangent (arctanh) of `A`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.atanh](
-        array
-    )
+    return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
 
 
 fn atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply inverse hyperbolic tangent element-wise to a Matrix.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise inverse hyperbolic tangent (atanh) of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
 
 
 # ===------------------------------------------------------------------------===#
-# Hyperbolic Trig
+# Hyperbolic Trig (NDArray)
 # ===------------------------------------------------------------------------===#
 
 
-fn cosh[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply cosh also known as hyperbolic cosine .
+    Apply hyperbolic cosine.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array assumed to be in radian.
+        array: A NDArray.
 
     Returns:
         The element-wise cosh of `array`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.cosh](array)
+    return HostExecutor.apply_unary[dtype, math.cosh](array)
 
 
-fn cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.cosh](A)
-
-
-fn sinh[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply sin also known as hyperbolic sine .
+    Apply hyperbolic sine.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array assumed to be in radian.
+        array: A NDArray.
 
     Returns:
         The element-wise sinh of `array`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.sinh](array)
+    return HostExecutor.apply_unary[dtype, math.sinh](array)
 
 
-fn sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.sinh](A)
-
-
-fn tanh[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply tan also known as hyperbolic tangent .
+    Apply hyperbolic tangent.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array assumed to be in radian.
+        array: A NDArray.
 
     Returns:
         The element-wise tanh of `array`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.tanh](array)
+    return HostExecutor.apply_unary[dtype, math.tanh](array)
+
+
+# ===------------------------------------------------------------------------===#
+# Hyperbolic Trig (Matrix)
+# ===------------------------------------------------------------------------===#
+
+
+fn cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """Apply hyperbolic cosine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise cosh of `A`.
+    """
+    return _arithmetic_func_matrix_to_matrix[dtype, math.cosh](A)
+
+
+fn sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """Apply hyperbolic sin.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise sinh of `A`.
+    """
+    return _arithmetic_func_matrix_to_matrix[dtype, math.sinh](A)
 
 
 fn tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """Apply hyperbolic tan.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise tanh of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.tanh](A)

@@ -281,12 +281,20 @@ fn format_floating_scientific[
 
             var result: String
             if x < 0:
-                result = "-" + mantissa_without_sign_string[: 2 + precision]
+                result = (
+                    "-" + mantissa_without_sign_string[byte = : 2 + precision]
+                )
             else:
                 if sign:
-                    result = "+" + mantissa_without_sign_string[: 2 + precision]
+                    result = (
+                        "+"
+                        + mantissa_without_sign_string[byte = : 2 + precision]
+                    )
                 else:
-                    result = " " + mantissa_without_sign_string[: 2 + precision]
+                    result = (
+                        " "
+                        + mantissa_without_sign_string[byte = : 2 + precision]
+                    )
 
             if suppress_scientific and abs(power) <= exponent_threshold:
                 return format_floating_precision(

@@ -11,7 +11,6 @@ This module implements routines that manipulate the shape and layout of arrays, 
 """
 
 from std.memory import UnsafePointer, memcpy
-from std.memory import LegacyUnsafePointer
 from std.sys import simd_width_of
 from std.algorithm import vectorize
 

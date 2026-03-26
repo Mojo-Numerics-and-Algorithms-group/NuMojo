@@ -1,5 +1,5 @@
 # ===----------------------------------------------------------------------=== #
-# NuMojo: Floating point routines
+# NuMojo: Floating-point routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
@@ -7,38 +7,36 @@
 #  ===----------------------------------------------------------------------=== #
 """Floating-point routines for NuMojo (numojo.routines.math.floating).
 
-Offers floating-point specific utilities such as `copysign` on NDArrays.
+Implements floating-point specific helpers on NDArrays, such as `copysign`.
 """
 
 import std.math as math
-from std.algorithm import parallelize
-from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
-from std.utils import Variant
 
-import numojo.routines.math._math_funcs as _mf
+from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray
+
+# ===------------------------------------------------------------------------===#
+# Sign Copy
+# ===------------------------------------------------------------------------===#
 
 
 fn copysign[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+    dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Copy the sign of the first NDArray and apply it to the second NDArray.
-
-    Constraints:
-        Both arrays must have the same shapes.
+    Copy the sign of one array onto another.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized`.
 
     Args:
         array1: A NDArray.
         array2: A NDArray.
 
+    Raises:
+        Error if shape of `array1` and `array2` do not match.
+
     Returns:
-        The second NDArray multipied by the sign of the first NDArray.
+        A NDArray with the magnitude of `array2` and the sign of `array1`.
     """
-    return backend().math_func_2_array_in_one_array_out[dtype, math.copysign](
-        array1, array2
-    )
+    return HostExecutor.apply_binary[dtype, math.copysign](array1, array2)

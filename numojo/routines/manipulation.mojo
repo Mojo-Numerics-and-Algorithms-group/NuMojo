@@ -40,8 +40,40 @@ from numojo.core.indexing.utility import (
 # ===----------------------------------------------------------------------=== #
 
 
-fn copyto():
-    pass
+fn copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
+    """
+    Copies the array from src to dst.
+
+    Args:
+        dst: The destination array.
+        src: The source array.
+    """
+    if dst.size != src.size:
+        raise NumojoError(
+            category="value",
+            message=(
+                t"`copy_to`: size mismatch (dst: {dst.size}, src: {src.size})."
+            ),
+            location="copy_to()",
+        )
+
+    if dst.is_c_contiguous() and src.is_c_contiguous():
+        memcpy(
+            dest=dst._buf.ptr + dst.offset,
+            src=src._buf.ptr + src.offset,
+            count=src.size,
+        )
+    else:
+        for i in range(dst.size):
+            var remainder = i
+            var src_offset = src.offset
+            var dst_offset = dst.offset
+            for dim in range(dst.ndim - 1, -1, -1):
+                var coord = remainder % dst.shape[dim]
+                remainder = remainder // dst.shape[dim]
+                src_offset += coord * src.strides[dim]
+                dst_offset += coord * dst.strides[dim]
+            dst._buf.ptr[dst_offset] = src._buf.ptr[src_offset]
 
 
 fn ndim[dtype: DType](array: NDArray[dtype]) -> Int:

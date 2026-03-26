@@ -378,20 +378,6 @@ def test_sin() raises:
     )
 
 
-def test_sin_par() raises:
-    var np = Python.import_module("numpy")
-    var arr = nm.arange[nm.f64](0, 15)
-
-    check_is_close(
-        nm.sin[
-            nm.f64,
-            backend=nm.routines.math._math_funcs.Vectorized,
-        ](arr),
-        np.sin(np.arange(0, 15)),
-        "Add array + scalar",
-    )
-
-
 fn test_extrema() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.randn(10)

@@ -51,7 +51,9 @@ fn copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
     if dst.size != src.size:
         raise NumojoError(
             category="value",
-            message=t"`copy_to`: size mismatch (dst: {dst.size}, src: {src.size})."
+            message=(
+                t"`copy_to`: size mismatch (dst: {dst.size}, src: {src.size})."
+            ),
             location="copy_to()",
         )
 

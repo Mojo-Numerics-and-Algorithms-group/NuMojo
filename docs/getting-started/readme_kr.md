@@ -1,12 +1,12 @@
 # NuMojo
 
-![logo](../assets/numojo_logo_360x360.png)
+![logo](../../assets/numojo_logo_360x360.png)
 
 NuMojo는 Python의 NumPy, SciPy와 유사한 Mojo 🔥 수치 계산 라이브러리입니다.
 
-**[문서 살펴보기»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[변경 로그»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/changelog.md)**  |  **[Discord 참여하기»](https://discord.gg/NcnSH5n26F)**
+**[문서 살펴보기»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[변경 로그»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Discord 참여하기»](https://discord.gg/NcnSH5n26F)**
 
-**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_jp.md)** | **[English»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.md)**
+**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_jp.md)** | **[English»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.md)**
 
 **목차**
 
@@ -62,9 +62,9 @@ NuMojo는 기계 학습 라이브러리가 아니며 기본 라이브러리의 �
 - 통계 (`numojo.statistics`)
 - 기타...
 
-사용 가능한 모든 함수와 객체는 [여기](docs/features.md)에서 확인하세요. 최신 로드맵은 [docs/roadmap.md](docs/roadmap.md)에서 관리됩니다.
+사용 가능한 모든 함수와 객체는 [여기](../user-guide/features.md)에서 확인하세요. 최신 로드맵은 [../user-guide/roadmap.md](../user-guide/roadmap.md)에서 관리됩니다.
 
-자세한 로드맵은 [docs/roadmap.md](docs/roadmap.md) 파일을 참조하세요.
+자세한 로드맵은 [../user-guide/roadmap.md](../user-guide/roadmap.md) 파일을 참조하세요.
 
 ## 사용법
 

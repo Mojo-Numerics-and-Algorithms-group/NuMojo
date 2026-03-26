@@ -1,12 +1,12 @@
 # NuMojo
 
-![logo](../assets/numojo_logo_360x360.png)
+![logo](../../assets/numojo_logo_360x360.png)
 
 NuMojoは、Python の NumPy、SciPy と同様の数値計算機能を Mojo 🔥 で提供するライブラリです。
 
-**[ドキュメントを見る»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[変更履歴»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/changelog.md)**  |  **[Discordに参加»](https://discord.gg/NcnSH5n26F)**
+**[ドキュメントを見る»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[変更履歴»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Discordに参加»](https://discord.gg/NcnSH5n26F)**
 
-**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_zht.md)**  |  **[English»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.md)** |  **[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/readme_kr.md)**
+**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zht.md)**  |  **[English»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.md)** |  **[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_kr.md)**
 
 **目次**
 
@@ -62,9 +62,9 @@ NuMojoは機械学習ライブラリではなく、ベースライブラリの�
 - 統計（`numojo.statistics`）
 - その他...
 
-利用可能なすべての関数とオブジェクトは[こちら](docs/features.md)でご確認ください。最新のロードマップは[docs/roadmap.md](docs/roadmap.md)で管理されています。
+利用可能なすべての関数とオブジェクトは[こちら](../user-guide/features.md)でご確認ください。最新のロードマップは[../user-guide/roadmap.md](../user-guide/roadmap.md)で管理されています。
 
-詳細なロードマップについては、[docs/roadmap.md](docs/roadmap.md)ファイルを参照してください。
+詳細なロードマップについては、[../user-guide/roadmap.md](../user-guide/roadmap.md)ファイルを参照してください。
 
 ## 使用方法
 

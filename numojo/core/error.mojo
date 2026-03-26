@@ -25,6 +25,7 @@ We can expand this list in the future as needed.
 """
 
 from std.os import abort
+from std.format.tstring import TString
 
 comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"
@@ -81,6 +82,20 @@ struct NumojoError(Writable):
         except:
             abort("NumojoError: Invalid error type provided.")
         self.message = message
+        self.location = location
+
+    fn __init__(
+        out self,
+        category: StringLiteral,
+        message: TString,
+        location: StringLiteral,
+    ):
+        err_dict = materialize[Self.ErrorDict]()
+        try:
+            self.category = err_dict[category]
+        except:
+            abort("NumojoError: Invalid error type provided.")
+        self.message = String(message)
         self.location = location
 
     fn __str__(self) -> String:

@@ -309,7 +309,9 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             for i in range(1, A.shape[0]):
 
                 @parameter
-                def cal_vec_row[width: Int](j: Int) unified {mut result, read i}:
+                def cal_vec_row[
+                    width: Int
+                ](j: Int) unified {mut result, read i}:
                     result._store[width](
                         i,
                         j,

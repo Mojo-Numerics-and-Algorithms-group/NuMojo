@@ -1797,7 +1797,9 @@ struct NDArray[dtype: DType = DType.float64](
             + IndexMethods.get_1d_index(index, self.strides)
         )[]
 
-    def unsafe_load[width: Int = 1](self, index: Int) -> SIMD[Self.dtype, width]:
+    def unsafe_load[
+        width: Int = 1
+    ](self, index: Int) -> SIMD[Self.dtype, width]:
         """Unsafely retrieves the i-th item from the underlying buffer as a SIMD
         element of size `width`.
 
@@ -4046,7 +4048,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo.clip(self, a_min, a_max)
 
-    def compress(self, condition: NDArray[DType.bool], axis: Int) raises -> Self:
+    def compress(
+        self, condition: NDArray[DType.bool], axis: Int
+    ) raises -> Self:
         # TODO: @forFudan try using parallelization for this function
         """Returns selected slices of an array along a given axis.
 

@@ -353,7 +353,9 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr.load[width=width](offset)
 
     @always_inline
-    def store[width: Int](mut self, offset: Int, value: SIMD[Self.dtype, width]):
+    def store[
+        width: Int
+    ](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """
         Store a SIMD vector of the specified width at the given offset.
 

@@ -120,7 +120,9 @@ def dot[
 
 
 # Perform 2D tiling on the iteration space defined by end_x and end_y.
-def tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int):
+def tile[
+    tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int
+](end_x: Int, end_y: Int):
     # Note: this assumes that ends are multiples of the tiles.
     for y in range(0, end_y, tile_y):
         for x in range(0, end_x, tile_x):

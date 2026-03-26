@@ -156,7 +156,9 @@ struct Device(
         self.id = id
 
     @staticmethod
-    def _unchecked_init(out device: Device, type: String, name: String, id: Int):
+    def _unchecked_init(
+        out device: Device, type: String, name: String, id: Int
+    ):
         """Create a device without any validation. For internal/comptime use."""
         device = Device()
         device.type = type

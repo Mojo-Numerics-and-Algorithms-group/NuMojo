@@ -1713,7 +1713,9 @@ struct Matrix[
             self.offset + x * self.strides[0] + y * self.strides[1], simd
         )
 
-    def _store_idx[width: Int = 1](self, idx: Int, val: SIMD[Self.dtype, width]):
+    def _store_idx[
+        width: Int = 1
+    ](self, idx: Int, val: SIMD[Self.dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!
@@ -3187,7 +3189,9 @@ struct Matrix[
         """
         return self != broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    def __matmul__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __matmul__(
+        self, other: Matrix[Self.dtype]
+    ) raises -> Matrix[Self.dtype]:
         """
         Matrix multiplication using the @ operator.
 

@@ -292,7 +292,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr.load[width=width](offset)
 
     @always_inline
-    def store[width: Int](mut self, offset: Int, value: SIMD[Self.dtype, width]):
+    def store[
+        width: Int
+    ](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """Store a SIMD vector of `width` elements starting at `offset`.
 
         No bounds checking is performed.

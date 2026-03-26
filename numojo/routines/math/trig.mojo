@@ -7,256 +7,348 @@
 #  ===----------------------------------------------------------------------=== #
 """Trigonometric routines for NuMojo (numojo.routines.math.trig).
 
-Implements trigonometric and inverse trigonometric functions over NDArrays and Matrices.
+Implements trigonometric and inverse trigonometric functions for NDArrays and Matrices.
 """
 
 import std.math as math
 
-import numojo.routines.math._math_funcs as _mf
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 from numojo.core.matrix.base import _arithmetic_func_matrix_to_matrix
-
+from numojo.routines import HostExecutor
 from numojo.routines.math.misc import sqrt
 from numojo.routines.math.arithmetic import fma
 
-# TODO: add  dtype in backends and pass it here.
+# ===------------------------------------------------------------------------===#
+# Inverse Trig (NDArray)
+# ===------------------------------------------------------------------------===#
+
+
+fn acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Apply inverse cosine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The element-wise acos of `array`.
+    """
+    return HostExecutor.apply_unary[dtype, math.acos](array)
+
+
+fn asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Apply inverse sine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The element-wise asin of `array`.
+    """
+    return HostExecutor.apply_unary[dtype, math.asin](array)
+
+
+fn atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Apply inverse tangent.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        The element-wise atan of `array`.
+    """
+    return HostExecutor.apply_unary[dtype, math.atan](array)
+
+
+fn atan2[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Apply inverse tangent with two arrays.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Returns:
+        The element-wise atan2 of `array1` and `array2`.
+
+    References:
+        https://en.wikipedia.org/wiki/Atan2.
+    """
+    return HostExecutor.apply_binary[dtype, math.atan2](array1, array2)
+
 
 # ===------------------------------------------------------------------------===#
-# Inverse Trig
+# Inverse Trig (Matrix)
 # ===------------------------------------------------------------------------===#
 
 
 fn arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
-
-
-fn acos[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply acos also known as inverse cosine .
+    Apply inverse cosine.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array.
+        A: A Matrix.
 
     Returns:
-        The element-wise acos of `array` in radians.
+        The element-wise acos of `A`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.acos](array)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
 
 
 fn acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply inverse cosine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise acos of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
 
 
 fn arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
-
-
-fn asin[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply asin also known as inverse sine .
+    Apply inverse sine.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array.
+        A: A Matrix.
 
     Returns:
-        The element-wise asin of `array` in radians.
+        The element-wise asin of `A`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.asin](array)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
 
 
 fn asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply inverse sine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise asin of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
 
 
 fn arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
-
-
-fn atan[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply atan also known as inverse tangent .
+    Apply inverse tangent.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array.
+        A: A Matrix.
 
     Returns:
-        The element-wise atan of `array` in radians.
+        The element-wise atan of `A`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.atan](array)
+    return _arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
 
 
 fn atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply inverse tangent.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise atan of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
 
 
-fn atan2[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
-    """
-    Apply atan2 also known as inverse tangent.
-    [atan2 wikipedia](https://en.wikipedia.org/wiki/Atan2).
-
-    Constraints:
-        Both arrays must have the same shapes.
-
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
-
-    Args:
-        array1: An Array.
-        array2: An Array.
-
-    Returns:
-        The element-wise atan2 of `array1` and`array2` in radians.
-    """
-    return backend().math_func_2_array_in_one_array_out[dtype, math.atan2](
-        array1, array2
-    )
-
-
 # ===------------------------------------------------------------------------===#
-# Trig
+# Trig (NDArray)
 # ===------------------------------------------------------------------------===#
 
 
-fn cos[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply cos also known as cosine.
+    Apply cosine.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array assumed to be in radian.
+        array: A NDArray.
 
     Returns:
         The element-wise cos of `array`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.cos](array)
+    return HostExecutor.apply_unary[dtype, math.cos](array)
 
 
-fn cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.cos](A)
-
-
-fn sin[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply sin also known as sine .
+    Apply sine.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array assumed to be in radian.
+        array: A NDArray.
 
     Returns:
         The element-wise sin of `array`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.sin](array)
+    return HostExecutor.apply_unary[dtype, math.sin](array)
 
 
-fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    return _arithmetic_func_matrix_to_matrix[dtype, math.sin](A)
-
-
-fn tan[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
-](array: NDArray[dtype]) raises -> NDArray[dtype]:
+fn tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply tan also known as tangent .
+    Apply tangent.
 
     Parameters:
         dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
 
     Args:
-        array: An Array assumed to be in radian.
+        array: A NDArray.
 
     Returns:
         The element-wise tan of `array`.
     """
-    return backend().math_func_1_array_in_one_array_out[dtype, math.tan](array)
+    return HostExecutor.apply_unary[dtype, math.tan](array)
+
+
+# ===------------------------------------------------------------------------===#
+# Trig (Matrix)
+# ===------------------------------------------------------------------------===#
+
+
+fn cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply cosine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise cos of `A`.
+    """
+    return _arithmetic_func_matrix_to_matrix[dtype, math.cos](A)
+
+
+fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply sine.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise sin of `A`.
+    """
+    return _arithmetic_func_matrix_to_matrix[dtype, math.sin](A)
 
 
 fn tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+    """
+    Apply tangent.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: A Matrix.
+
+    Returns:
+        The element-wise tan of `A`.
+    """
     return _arithmetic_func_matrix_to_matrix[dtype, math.tan](A)
 
 
+# ===------------------------------------------------------------------------===#
+# Hypotenuse
+# ===------------------------------------------------------------------------===#
+
+
 fn hypot[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+    dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply hypot also known as hypotenuse which finds the longest section of a right triangle
-    given the other two sides.
+    Apply hypotenuse calculation to two arrays.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
 
     Constraints:
         Both arrays must have the same shapes.
 
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
-
-    Args:
-        array1: An Array.
-        array2: An Array.
-
     Returns:
-        The element-wise hypotenuse of `array1` and`array2`.
+        The element-wise hypotenuse of `array1` and `array2`.
     """
-    return backend().math_func_2_array_in_one_array_out[dtype, math.hypot](
-        array1, array2
-    )
+    return HostExecutor.apply_binary[dtype, math.hypot](array1, array2)
 
 
 fn hypot_fma[
-    dtype: DType, backend: _mf.Backend = _mf.Vectorized
+    dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Apply hypot also known as hypotenuse which finds the longest section of a right triangle
-    given the other two sides.
+    Apply hypotenuse calculation using fused multiply-add.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
 
     Constraints:
         Both arrays must have the same shapes.
 
-    Parameters:
-        dtype: The element type.
-        backend: Sets utility function origin, defaults to `Vectorized.
-
-    Args:
-        array1: An Array.
-        array2: An Array.
-
     Returns:
-        The element-wise hypotenuse of `array1` and`array2`.
+        The element-wise hypotenuse of `array1` and `array2`.
     """
-
     var array2_squared = fma[dtype](array2, array2, SIMD[dtype, 1](0))
-    return sqrt[dtype, backend=backend](
-        fma[dtype](array1, array1, array2_squared)
-    )
+    return sqrt[dtype](fma[dtype](array1, array1, array2_squared))

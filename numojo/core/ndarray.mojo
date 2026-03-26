@@ -77,7 +77,6 @@ import numojo.routines.logic.comparison as comparison
 # numojo routines (math / bitwise / searching)
 # ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
-from numojo.routines.math._math_funcs import Vectorized
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching

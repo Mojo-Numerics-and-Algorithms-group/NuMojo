@@ -133,6 +133,8 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     Example:
     ```mojo
     from numojo import Matrix
+    import numojo.routines.math as mat
+
     var A = Matrix.rand(shape=(100, 100))
     print(mat.sum(A))
     ```
@@ -161,7 +163,9 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     Example:
     ```mojo
     from numojo import Matrix
-    var A = Matrix.rand(shape=(100, 100))
+    import numojo.routines.math as mat
+
+    var mat = Matrix.rand(shape=(100, 100))
     print(mat.sum(A, axis=0))
     print(mat.sum(A, axis=1))
     ```
@@ -311,6 +315,8 @@ fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     Example:
     ```mojo
     from numojo import Matrix
+    import numojo.routines.math as mat
+
     var A = Matrix.rand(shape=(100, 100))
     print(mat.cumsum(A))
     ```
@@ -348,6 +354,8 @@ fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     Example:
     ```mojo
     from numojo import Matrix
+    import numojo.routines.math as mat
+
     var A = Matrix.rand(shape=(100, 100))
     print(mat.cumsum(A, axis=0))
     print(mat.cumsum(A, axis=1))

@@ -1,4 +1,4 @@
-from math import sqrt
+from std.math import sqrt
 import numojo as nm
 from numojo.prelude import *
 from std.python import Python, PythonObject

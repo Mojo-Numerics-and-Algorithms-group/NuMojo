@@ -1,4 +1,4 @@
-# Basic strucure of NDArray
+# Basic structure of NDArray
 
 > Date: 2026-02-23
 > This also applies to `Matrix` type.

@@ -4,7 +4,7 @@
 
 <div align="center">
   <a href="">
-    <img src="../assets/numojo_logo.png" alt="Logo" width="350" height="350">
+    <img src="../../assets/numojo_logo.png" alt="Logo" width="350" height="350">
   </a>
 
   <h1 align="center" style="font-size: 3em; color: white; font-family: 'Avenir'; text-shadow: 1px 1px orange;">NuMojo</h1>
@@ -14,14 +14,14 @@
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
         <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>阅读文档» </strong></a> &nbsp; &nbsp; 
-        <a href="./changelog.md"><strong>更新日志» </strong></a> &nbsp; &nbsp;
+        <a href="../user-guide/changelog.md"><strong>更新日志» </strong></a> &nbsp; &nbsp;
         <a href="https://discord.gg/NcnSH5n26F" ><strong>加入 Discord 讨论频道» </strong></a>
     </div>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
         <a href="./readme_zht.md"><strong>中文·繁» </strong></a> &nbsp;
         <a href="./readme_jp.md"><strong>日本語» </strong></a>
-        <a href="../readme.md"><strong>English» </strong></a> &nbsp;
+        <a href="../../README.MD"><strong>English» </strong></a> &nbsp;
     </div>
   </p>
 </div>
@@ -38,7 +38,7 @@ NuMojo 也可为其他需要高速数值计算、多维数组运算等功能的 
 
 ## 目标及路线图
 
-有关本项目详细的路线图，请参阅 [roadmap.md](./roadmap.md) 文件（英文）。
+有关本项目详细的路线图，请参阅 [roadmap.md](../user-guide/roadmap.md) 文件（英文）。
 
 我们的核心目标，是使用 Mojo 实现一个快速、全面的数值计算库。以下是部分长期目标：
 
@@ -166,7 +166,7 @@ fn main() raises:
     A[item(291, 141)] = complexscalar
 ```
 
-请在 [此文档](./features.md) 中查询所有可用的函数。
+请在 [此文档](../user-guide/features.md) 中查询所有可用的函数。
 
 ## 安装方法
 

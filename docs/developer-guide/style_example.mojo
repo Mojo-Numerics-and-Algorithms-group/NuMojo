@@ -10,7 +10,7 @@ comptime Example = Int
 """Aliases can be explained with docstrings and should if they exist in the global scope."""
 
 
-fn func[param: Copyable](arg1: param) -> param:
+def func[param: Copyable](arg1: param) -> param:
     """
     Description of the function.
 
@@ -29,7 +29,7 @@ fn func[param: Copyable](arg1: param) -> param:
     return arg1
 
 
-fn func1[param: Copyable](arg1: param) raises -> param:
+def func1[param: Copyable](arg1: param) raises -> param:
     """
     Description of the function.
 
@@ -62,7 +62,7 @@ struct AStruct[param: AnyType](AnyType):
     var field: Int64
     """Field Descriptions go below each field."""
 
-    fn func(self) -> None:
+    def func(self) -> None:
         """
         Function docstring like previosly shown.
         """
@@ -74,7 +74,7 @@ trait ATrait:
     Describe the trait.
     """
 
-    fn func(self) -> None:
+    def func(self) -> None:
         """
         Function docstring like previosly shown.
         """

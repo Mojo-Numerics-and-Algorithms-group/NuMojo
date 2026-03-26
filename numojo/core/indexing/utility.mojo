@@ -32,13 +32,13 @@ comptime newaxis: NewAxis = NewAxis()
 
 # TODO: add an initializer with int field to specify number of new axes to add!
 struct NewAxis(Writable):
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initializes a NewAxis instance.
         """
         pass
 
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """
         Returns a string representation of the NewAxis instance.
 
@@ -47,7 +47,7 @@ struct NewAxis(Writable):
         """
         return "numojo.newaxis()"
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Returns a string representation of the NewAxis instance.
 
@@ -56,13 +56,13 @@ struct NewAxis(Writable):
         """
         return "numojo.newaxis()"
 
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """
         Checks equality between two NewAxis instances.
         """
         return True
 
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """
         Checks inequality between two NewAxis instances.
         """
@@ -74,7 +74,7 @@ struct NewAxis(Writable):
 # ===----------------------------------------------------------------------=== #
 
 
-fn bool_to_numeric[
+def bool_to_numeric[
     dtype: DType
 ](array: NDArray[DType.bool]) raises -> NDArray[dtype]:
     """
@@ -103,7 +103,7 @@ fn bool_to_numeric[
 # ===----------------------------------------------------------------------=== #
 # Numojo.NDArray to other collections
 # ===----------------------------------------------------------------------=== #
-fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
+def to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
     """
     Convert a NDArray to a numpy array.
 
@@ -184,7 +184,7 @@ fn to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
 # ===----------------------------------------------------------------------=== #
 
 
-fn _list_of_range(n: Int) -> List[Int]:
+def _list_of_range(n: Int) -> List[Int]:
     """
     Generate a list of integers starting from 0 and of size n.
     """
@@ -195,7 +195,7 @@ fn _list_of_range(n: Int) -> List[Int]:
     return list_of_range^
 
 
-fn _list_of_flipped_range(n: Int) -> List[Int]:
+def _list_of_flipped_range(n: Int) -> List[Int]:
     """
     Generate a list of integers starting from n-1 to 0 and of size n.
     """

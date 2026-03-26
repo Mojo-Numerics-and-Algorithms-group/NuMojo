@@ -4,7 +4,7 @@ from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 
 
-fn test_sort() raises:
+def test_sort() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(10)
     var B = nm.random.randn(2, 3)
@@ -37,7 +37,7 @@ fn test_sort() raises:
         )
 
 
-fn test_argsort() raises:
+def test_argsort() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(10)
     var B = nm.random.randn(2, 3)
@@ -91,7 +91,7 @@ fn test_argsort() raises:
         )
 
 
-fn test_inplace_sort() raises:
+def test_inplace_sort() raises:
     var np = Python.import_module("numpy")
     var C = nm.random.randn(2, 3, 4)
     for i in range(3):
@@ -107,7 +107,7 @@ fn test_inplace_sort() raises:
         )
 
 
-fn test_sort_stable() raises:
+def test_sort_stable() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(10)
     var B = nm.random.randn(2, 3)

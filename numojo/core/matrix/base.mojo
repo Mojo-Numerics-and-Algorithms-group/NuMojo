@@ -160,7 +160,7 @@ struct Matrix[
     # ===-------------------------------------------------------------------===#
 
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         shape: Tuple[Int, Int],
         order: String = "C",
@@ -198,7 +198,7 @@ struct Matrix[
 
     # * Should we take var ref and transfer ownership or take a read ref and copy the data?
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         var data: Self,
     ):
@@ -227,7 +227,7 @@ struct Matrix[
         self = data^
 
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         data: Self,
     ):
@@ -252,7 +252,7 @@ struct Matrix[
                     self._store(i, j, data._load(i, j))
 
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         data: NDArray[Self.dtype],
     ) raises:
@@ -314,7 +314,7 @@ struct Matrix[
     # TODO: Add a own_data flag constructor so that we can use the overload to
     # create deep copy of arrays by providing new datacontainer.
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         var data: DataContainer[Self.dtype],
         is_view: Bool,  # maybe make this a parameter in future.
@@ -354,7 +354,7 @@ struct Matrix[
     # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
     # TODO: Current copyinit creates an instance with same origin. This should be external origin. fix this so that we can use default `.copy()` method and remove `create_copy()` method.
     @always_inline("nodebug")
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         """
         Initialize a new matrix by copying data from ancopy matrix.
 
@@ -380,7 +380,7 @@ struct Matrix[
         )
 
     # NOTE: perhaps remove this?
-    fn deep_copy(self) -> Self:
+    def deep_copy(self) -> Self:
         """
         Returns a deep copy of the matrix.
 
@@ -407,7 +407,7 @@ struct Matrix[
             offset=self.offset,
         )
 
-    fn view(mut self) raises -> Self:
+    def view(mut self) raises -> Self:
         """
         Returns a non-owning view of the current matrix.
 
@@ -432,7 +432,7 @@ struct Matrix[
         )
 
     @always_inline("nodebug")
-    fn __moveinit__(out self, deinit take: Self):
+    def __moveinit__(out self, deinit take: Self):
         """
         Transfer ownership of resources from `other` to `self`.
 
@@ -455,7 +455,7 @@ struct Matrix[
         self.flags = take.flags^
 
     @always_inline("nodebug")
-    fn __del__(deinit self):
+    def __del__(deinit self):
         """
         Destructor for the matrix instance.
 
@@ -470,7 +470,7 @@ struct Matrix[
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing methods
     # ===-------------------------------------------------------------------===#
-    fn validate_and_normalize(self, x: Int, y: Int) raises -> Tuple[Int, Int]:
+    def validate_and_normalize(self, x: Int, y: Int) raises -> Tuple[Int, Int]:
         """
         Validate and normalize the provided row and column indices.
 
@@ -518,7 +518,7 @@ struct Matrix[
         var y_norm = Validator.normalize(y, self.shape[1])
         return (x_norm, y_norm)
 
-    fn __getitem__(self, x: Int, y: Int) raises -> Scalar[Self.dtype]:
+    def __getitem__(self, x: Int, y: Int) raises -> Scalar[Self.dtype]:
         """
         Retrieve the scalar value at the specified row and column indices.
 
@@ -548,7 +548,7 @@ struct Matrix[
         ]
 
     # TODO: temporarily renaming all view returning functions to be `get` or `set` due to a Mojo bug with overloading `__getitem__` and `__setitem__` with different argument types. Created an issue in Mojo GitHub
-    fn get(mut self, var x: Int) raises -> Matrix[Self.dtype]:
+    def get(mut self, var x: Int) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of the specified row in the matrix. This method returns a non-owning `Matrix` that references the data of the specified row in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
@@ -593,7 +593,7 @@ struct Matrix[
         )
 
     # for creating a copy of the row.
-    fn __getitem__(self, var x: Int) raises -> Matrix[Self.dtype]:
+    def __getitem__(self, var x: Int) raises -> Matrix[Self.dtype]:
         """
         Retrieve a copy of the specified row in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified row of the original matrix. The returned matrix is a row vector with a shape of (1, number_of_columns).
 
@@ -639,7 +639,7 @@ struct Matrix[
 
         return result^
 
-    fn get(mut self, x: Slice, y: Slice) raises -> Matrix[Self.dtype]:
+    def get(mut self, x: Slice, y: Slice) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of the specified slice in the matrix.
 
@@ -678,7 +678,7 @@ struct Matrix[
         )
 
     # for creating a copy of the slice.
-    fn __getitem__(self, x: Slice, y: Slice) -> Matrix[Self.dtype]:
+    def __getitem__(self, x: Slice, y: Slice) -> Matrix[Self.dtype]:
         """
         Retrieve a copy of the specified slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified slice of the original matrix. The returned matrix will have the shape determined by the slice ranges.
 
@@ -729,7 +729,7 @@ struct Matrix[
 
         return B^
 
-    fn get(mut self, x: Slice, var y: Int) raises -> Matrix[Self.dtype]:
+    def get(mut self, x: Slice, var y: Int) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of a specific column slice in the matrix. This method returns a non-owning `Matrix` that references the data of the specified column slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
@@ -784,7 +784,7 @@ struct Matrix[
             offset=self.offset + offset,
         )
 
-    fn __getitem__(self, x: Slice, var y: Int) -> Matrix[Self.dtype]:
+    def __getitem__(self, x: Slice, var y: Int) -> Matrix[Self.dtype]:
         """
         Retrieve a copy of a specific column slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
         of the data from the specified and column slice of the original matrix. The returned matrix will have a shape determined by the row slice and a single column.
@@ -828,7 +828,7 @@ struct Matrix[
             row += 1
         return res^
 
-    fn get(mut self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
+    def get(mut self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
         """
         Retrieve a view of a specific row slice in the matrix. This method returns a non-owning `Matrix` that references the data of the specified row slice in the original matrix. The view does not allocate new memory and directly points to the existing data buffer of the matrix.
 
@@ -883,7 +883,7 @@ struct Matrix[
             offset=self.offset + offset,
         )
 
-    fn __getitem__(self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
+    def __getitem__(self, var x: Int, y: Slice) raises -> Matrix[Self.dtype]:
         """
         Retrieve a copy of a specific row slice in the matrix. This method creates and returns a new `Matrix` instance that contains a copy
         of the data from the specified row and column slice of the original matrix. The returned matrix will have a shape of (1, number_of_columns_in_slice).
@@ -936,7 +936,7 @@ struct Matrix[
 
         return B^
 
-    fn __getitem__(self, indices: List[Int]) raises -> Matrix[Self.dtype]:
+    def __getitem__(self, indices: List[Int]) raises -> Matrix[Self.dtype]:
         """
         Retrieve a copy of specific rows in the matrix based on the provided indices. This method creates and returns a new `Matrix` instance that contains a copy of the data from the specified rows of the original matrix. The returned matrix will have a shape of (number_of_indices, number_of_columns).
 
@@ -980,7 +980,7 @@ struct Matrix[
             selected_rows[i] = self[indices[i]]
         return selected_rows^
 
-    fn load[width: Int = 1](self, idx: Int) raises -> SIMD[Self.dtype, width]:
+    def load[width: Int = 1](self, idx: Int) raises -> SIMD[Self.dtype, width]:
         """
         Load a SIMD element from the matrix at the specified linear index.
 
@@ -1019,7 +1019,7 @@ struct Matrix[
         var idx_norm = Validator.normalize(idx, self.size)
         return self._buf.ptr.load[width=width](self.offset + idx_norm)
 
-    fn _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[Self.dtype, width]:
+    def _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[Self.dtype, width]:
         """
         `__getitem__` with width.
         Unsafe: No boundary check!
@@ -1028,14 +1028,14 @@ struct Matrix[
             self.offset + x * self.strides[0] + y * self.strides[1]
         )
 
-    fn _load[width: Int = 1](self, idx: Int) -> SIMD[Self.dtype, width]:
+    def _load[width: Int = 1](self, idx: Int) -> SIMD[Self.dtype, width]:
         """
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
         return self._buf.ptr.load[width=width](self.offset + idx)
 
-    fn __setitem__(mut self, x: Int, y: Int, value: Scalar[Self.dtype]) raises:
+    def __setitem__(mut self, x: Int, y: Int, value: Scalar[Self.dtype]) raises:
         """
         Set the value at the specified row and column indices in the matrix.
 
@@ -1089,7 +1089,7 @@ struct Matrix[
         )
 
     # FIXME: Setting with views is currently only supported through `.set()` method of the Matrix. Once Mojo resolve the symmetric getter setter issue, we can remove `.set()` methods.
-    fn __setitem__(self, var x: Int, value: Matrix[Self.dtype]) raises:
+    def __setitem__(self, var x: Int, value: Matrix[Self.dtype]) raises:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
         the provided `value` matrix. The `value` matrix must be a row vector with
@@ -1180,7 +1180,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
-    fn set(self, var x: Int, value: Matrix[Self.dtype]) raises:
+    def set(self, var x: Int, value: Matrix[Self.dtype]) raises:
         """
         Assign a row in the matrix at the specified index with the given matrix. This method replaces the row at the specified index `x` with the data from
         the provided `value` matrix. The `value` matrix must be a row vector with
@@ -1274,7 +1274,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(x, j, value._load(0, j))
 
-    fn __setitem__(self, x: Slice, y: Int, value: Matrix[Self.dtype]) raises:
+    def __setitem__(self, x: Slice, y: Int, value: Matrix[Self.dtype]) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
         and row slice `x` with the given matrix. This method replaces the values
@@ -1347,7 +1347,7 @@ struct Matrix[
             self._store(i, y_norm, value._load(row, 0))
             row += 1
 
-    fn set(self, x: Slice, y: Int, value: Matrix[Self.dtype]) raises:
+    def set(self, x: Slice, y: Int, value: Matrix[Self.dtype]) raises:
         """
         Assign values to a column in the matrix at the specified column index `y`
         and row slice `x` with the given matrix. This method replaces the values
@@ -1427,7 +1427,7 @@ struct Matrix[
             self._store(i, y_norm, value._load(row, 0))
             row += 1
 
-    fn __setitem__(self, x: Int, y: Slice, value: Matrix[Self.dtype]) raises:
+    def __setitem__(self, x: Int, y: Slice, value: Matrix[Self.dtype]) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
         and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
@@ -1498,7 +1498,7 @@ struct Matrix[
             self._store(x_norm, j, value._load(0, col))
             col += 1
 
-    fn set(self, x: Int, y: Slice, value: Matrix[Self.dtype]) raises:
+    def set(self, x: Int, y: Slice, value: Matrix[Self.dtype]) raises:
         """
         Assign values to a row in the matrix at the specified row index `x`
         and column slice `y` with the given matrix. This method replaces the values in the specified row and column slice with the data from the provided `value` matrix.
@@ -1576,7 +1576,7 @@ struct Matrix[
             self._store(x_norm, j, value._load(0, col))
             col += 1
 
-    fn __setitem__(self, x: Slice, y: Slice, value: Matrix[Self.dtype]) raises:
+    def __setitem__(self, x: Slice, y: Slice, value: Matrix[Self.dtype]) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
 
@@ -1636,7 +1636,7 @@ struct Matrix[
                 col += 1
             row += 1
 
-    fn set(self, x: Slice, y: Slice, value: Matrix[Self.dtype]) raises:
+    def set(self, x: Slice, y: Slice, value: Matrix[Self.dtype]) raises:
         """
         Assign values to a submatrix of the matrix defined by row slice `x` and column slice `y` using the provided `value` matrix. This method replaces the elements in the specified row and column slices with the corresponding elements from `value`.
 
@@ -1702,7 +1702,7 @@ struct Matrix[
                 col += 1
             row += 1
 
-    fn _store[
+    def _store[
         width: Int = 1
     ](self, x: Int, y: Int, simd: SIMD[Self.dtype, width]):
         """
@@ -1713,14 +1713,14 @@ struct Matrix[
             self.offset + x * self.strides[0] + y * self.strides[1], simd
         )
 
-    fn _store_idx[width: Int = 1](self, idx: Int, val: SIMD[Self.dtype, width]):
+    def _store_idx[width: Int = 1](self, idx: Int, val: SIMD[Self.dtype, width]):
         """
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
         self._buf.ptr.store(self.offset + idx, val)
 
-    fn store[
+    def store[
         width: Int = 1
     ](self, idx: Int, val: SIMD[Self.dtype, width]) raises:
         """
@@ -1763,7 +1763,7 @@ struct Matrix[
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
     # ===-------------------------------------------------------------------===#
-    # fn view(self) -> Matrix[Self.dtype]:
+    # def view(self) -> Matrix[Self.dtype]:
     #     """
     #     Return a non-owning view of the matrix. This method creates and returns a `Matrix` that references the data of the original matrix. The view does not allocate new memory and directly points to the existing data buffer. Modifications to the view affect the original matrix.
 
@@ -1783,7 +1783,7 @@ struct Matrix[
     #         data=self._buf.share(),
     #     )
 
-    fn __iter__(ref self) -> Self.IteratorType[True, True]:
+    def __iter__(ref self) -> Self.IteratorType[True, True]:
         """
         Returns an iterator over the rows of the Matrix. Each iteration yields a Matrix representing a single row.
 
@@ -1805,7 +1805,7 @@ struct Matrix[
             strides=self.strides,
         )
 
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         """
         Return the number of rows in the matrix (length of the first dimension).
 
@@ -1822,7 +1822,7 @@ struct Matrix[
         return self.shape[0]
 
     # TODO: The creation of iterators are a bit convoluted rn, clean it up
-    fn __reversed__(
+    def __reversed__(
         ref self,
     ) -> Self.IteratorType[True, False]:
         """
@@ -1838,7 +1838,7 @@ struct Matrix[
             strides=self.strides,
         )
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Return a string representation of the matrix.
 
@@ -1847,7 +1847,7 @@ struct Matrix[
         """
         return String.write(self)
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """
         Write the string representation of the matrix to a writer.
 
@@ -1855,7 +1855,7 @@ struct Matrix[
             writer: The writer to output the matrix string to.
         """
 
-        fn print_row(self: Self, i: Int, sep: String) raises -> String:
+        def print_row(self: Self, i: Int, sep: String) raises -> String:
             var result: String = String("[")
             var number_of_sep: Int = 1
             if self.shape[1] <= 6:
@@ -1922,7 +1922,7 @@ struct Matrix[
     # Arithmetic dunder methods
     # ===-------------------------------------------------------------------===#
 
-    fn __add__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __add__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Add two matrices element-wise.
 
@@ -1960,7 +1960,7 @@ struct Matrix[
                 Self.dtype, SIMD.__add__
             ](self, broadcast_to[Self.dtype](other, self.shape, self.order()))
 
-    fn __add__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __add__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Add a scalar to every element of the matrix.
 
@@ -1979,7 +1979,7 @@ struct Matrix[
         """
         return self + broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __radd__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __radd__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Add a matrix to a scalar (right-hand side).
 
@@ -1998,7 +1998,7 @@ struct Matrix[
         """
         return broadcast_to[Self.dtype](other, self.shape, self.order()) + self
 
-    fn __sub__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __sub__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Subtract two matrices element-wise.
 
@@ -2036,7 +2036,7 @@ struct Matrix[
                 Self.dtype, SIMD.__sub__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __sub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __sub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Subtract a scalar from every element of the matrix.
 
@@ -2055,7 +2055,7 @@ struct Matrix[
         """
         return self - broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __rsub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __rsub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Subtract a matrix from a scalar (right-hand side).
 
@@ -2074,7 +2074,7 @@ struct Matrix[
         """
         return broadcast_to[Self.dtype](other, self.shape, self.order()) - self
 
-    fn __mul__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __mul__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Multiply two matrices element-wise.
 
@@ -2112,7 +2112,7 @@ struct Matrix[
                 Self.dtype, SIMD.__mul__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __mul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __mul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Multiply matrix by scalar.
 
@@ -2131,7 +2131,7 @@ struct Matrix[
         """
         return self * broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __rmul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __rmul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Multiply scalar by matrix (right-hand side).
 
@@ -2150,7 +2150,7 @@ struct Matrix[
         """
         return broadcast_to[Self.dtype](other, self.shape, self.order()) * self
 
-    fn __truediv__(
+    def __truediv__(
         self, other: Matrix[Self.dtype]
     ) raises -> Matrix[Self.dtype]:
         """
@@ -2190,7 +2190,7 @@ struct Matrix[
                 Self.dtype, SIMD.__truediv__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __truediv__(
+    def __truediv__(
         self, other: Scalar[Self.dtype]
     ) raises -> Matrix[Self.dtype]:
         """
@@ -2213,7 +2213,7 @@ struct Matrix[
             other, self.shape, order=self.order()
         )
 
-    fn __pow__(self, rhs: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __pow__(self, rhs: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Raise each element of the matrix to the power of `rhs`.
 
@@ -2238,14 +2238,14 @@ struct Matrix[
         comptime width = simd_width_of[Self.dtype]()
 
         @parameter
-        fn vec_pow[w: Int](i: Int) unified {mut result, read self, read rhs}:
+        def vec_pow[w: Int](i: Int) unified {mut result, read self, read rhs}:
             var vec = self._buf.ptr.load[width=w](i)
             result._buf.ptr.store(i, vec.__pow__(rhs))
 
         vectorize[width](self.size, vec_pow)
         return result^
 
-    fn __iadd__(mut self, other: Matrix[Self.dtype]) raises:
+    def __iadd__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Add another matrix to this matrix in-place.
 
@@ -2285,7 +2285,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_add[w: Int](i: Int) unified {mut self, read other}:
+            def vec_add[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a + b)
@@ -2296,7 +2296,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) + other._load(i, j))
 
-    fn __iadd__(mut self, other: Scalar[Self.dtype]):
+    def __iadd__(mut self, other: Scalar[Self.dtype]):
         """
         Add a scalar to this matrix in-place.
 
@@ -2314,7 +2314,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_add_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_add_scalar[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a + other)
 
@@ -2324,7 +2324,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) + other)
 
-    fn __isub__(mut self, other: Matrix[Self.dtype]) raises:
+    def __isub__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Subtract another matrix from this matrix in-place.
 
@@ -2364,7 +2364,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_sub[w: Int](i: Int) unified {mut self, read other}:
+            def vec_sub[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a - b)
@@ -2375,7 +2375,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) - other._load(i, j))
 
-    fn __isub__(mut self, other: Scalar[Self.dtype]):
+    def __isub__(mut self, other: Scalar[Self.dtype]):
         """
         Subtract a scalar from this matrix in-place.
 
@@ -2393,7 +2393,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_sub_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_sub_scalar[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a - other)
 
@@ -2403,7 +2403,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) - other)
 
-    fn __imul__(mut self, other: Matrix[Self.dtype]) raises:
+    def __imul__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Multiply this matrix by another matrix element-wise in-place.
 
@@ -2443,7 +2443,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_mul[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mul[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a * b)
@@ -2454,7 +2454,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) * other._load(i, j))
 
-    fn __imul__(mut self, other: Scalar[Self.dtype]):
+    def __imul__(mut self, other: Scalar[Self.dtype]):
         """
         Multiply this matrix by a scalar in-place.
 
@@ -2472,7 +2472,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_mul_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mul_scalar[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a * other)
 
@@ -2482,7 +2482,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) * other)
 
-    fn __itruediv__(mut self, other: Matrix[Self.dtype]) raises:
+    def __itruediv__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Divide this matrix by another matrix element-wise in-place.
 
@@ -2522,7 +2522,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_div[w: Int](i: Int) unified {mut self, read other}:
+            def vec_div[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a / b)
@@ -2533,7 +2533,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) / other._load(i, j))
 
-    fn __itruediv__(mut self, other: Scalar[Self.dtype]):
+    def __itruediv__(mut self, other: Scalar[Self.dtype]):
         """
         Divide this matrix by a scalar in-place.
 
@@ -2551,7 +2551,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_div_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_div_scalar[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a / other)
 
@@ -2561,7 +2561,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) / other)
 
-    fn __floordiv__(
+    def __floordiv__(
         self, other: Matrix[Self.dtype]
     ) raises -> Matrix[Self.dtype]:
         """
@@ -2601,7 +2601,7 @@ struct Matrix[
                 Self.dtype, SIMD.__floordiv__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __floordiv__(
+    def __floordiv__(
         self, other: Scalar[Self.dtype]
     ) raises -> Matrix[Self.dtype]:
         """
@@ -2622,7 +2622,7 @@ struct Matrix[
         """
         return self // broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __ifloordiv__(mut self, other: Matrix[Self.dtype]) raises:
+    def __ifloordiv__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Floor divide this matrix by another matrix element-wise in-place.
 
@@ -2664,7 +2664,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_floordiv[w: Int](i: Int) unified {mut self, read other}:
+            def vec_floordiv[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a // b)
@@ -2675,7 +2675,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) // other._load(i, j))
 
-    fn __ifloordiv__(mut self, other: Scalar[Self.dtype]):
+    def __ifloordiv__(mut self, other: Scalar[Self.dtype]):
         """
         Floor divide this matrix by a scalar in-place.
 
@@ -2693,7 +2693,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_floordiv_scalar[
+            def vec_floordiv_scalar[
                 w: Int
             ](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
@@ -2705,7 +2705,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) // other)
 
-    fn __mod__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __mod__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Compute element-wise modulo of two matrices.
 
@@ -2743,7 +2743,7 @@ struct Matrix[
                 Self.dtype, SIMD.__mod__
             ](self, broadcast_to(other, self.shape, self.order()))
 
-    fn __mod__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __mod__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Compute element-wise modulo of matrix with scalar.
 
@@ -2762,7 +2762,7 @@ struct Matrix[
         """
         return self % broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __imod__(mut self, other: Matrix[Self.dtype]) raises:
+    def __imod__(mut self, other: Matrix[Self.dtype]) raises:
         """
         Compute element-wise modulo with another matrix in-place.
 
@@ -2803,7 +2803,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_mod[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mod[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a % b)
@@ -2814,7 +2814,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) % other._load(i, j))
 
-    fn __imod__(mut self, other: Scalar[Self.dtype]):
+    def __imod__(mut self, other: Scalar[Self.dtype]):
         """
         Compute element-wise modulo with a scalar in-place.
 
@@ -2832,7 +2832,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            fn vec_mod_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mod_scalar[w: Int](i: Int) unified {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a % other)
 
@@ -2842,7 +2842,7 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._store(i, j, self._load(i, j) % other)
 
-    fn __lt__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __lt__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than.
 
@@ -2880,7 +2880,7 @@ struct Matrix[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __lt__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __lt__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for less-than.
 
@@ -2899,7 +2899,7 @@ struct Matrix[
         """
         return self < broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __le__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __le__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for less-than-or-equal.
 
@@ -2937,7 +2937,7 @@ struct Matrix[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __le__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __le__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for less-than-or-equal.
 
@@ -2956,7 +2956,7 @@ struct Matrix[
         """
         return self <= broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __gt__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __gt__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than.
 
@@ -2994,7 +2994,7 @@ struct Matrix[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __gt__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __gt__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for greater-than.
 
@@ -3013,7 +3013,7 @@ struct Matrix[
         """
         return self > broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __ge__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __ge__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for greater-than-or-equal.
 
@@ -3051,7 +3051,7 @@ struct Matrix[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ge__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __ge__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for greater-than-or-equal.
 
@@ -3073,7 +3073,7 @@ struct Matrix[
         """
         return self >= broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __eq__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __eq__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for equality.
 
@@ -3111,7 +3111,7 @@ struct Matrix[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __eq__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __eq__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for equality.
 
@@ -3130,7 +3130,7 @@ struct Matrix[
         """
         return self == broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __ne__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __ne__(self, other: Matrix[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare two matrices element-wise for inequality.
 
@@ -3168,7 +3168,7 @@ struct Matrix[
                 self, broadcast_to(other, self.shape, self.order())
             )
 
-    fn __ne__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
+    def __ne__(self, other: Scalar[Self.dtype]) raises -> Matrix[DType.bool]:
         """
         Compare each element of the matrix to a scalar for inequality.
 
@@ -3187,7 +3187,7 @@ struct Matrix[
         """
         return self != broadcast_to[Self.dtype](other, self.shape, self.order())
 
-    fn __matmul__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+    def __matmul__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
         """
         Matrix multiplication using the @ operator.
 
@@ -3215,7 +3215,7 @@ struct Matrix[
     # # ===-------------------------------------------------------------------===#
 
     # FIXME: These return types be Scalar[DType.bool] or Matrix[DType.bool] instead to match numpy. Fix the docstring examples too.
-    fn all(self) -> Scalar[Self.dtype]:
+    def all(self) -> Scalar[Self.dtype]:
         """
         Returns True if all elements of the matrix evaluate to True.
 
@@ -3233,7 +3233,7 @@ struct Matrix[
         """
         return numojo.logic.all(self)
 
-    fn all(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def all(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Returns a matrix indicating whether all elements along the specified axis evaluate to True.
 
@@ -3255,7 +3255,7 @@ struct Matrix[
         """
         return numojo.logic.all[Self.dtype](self, axis=axis)
 
-    fn any(self) -> Scalar[Self.dtype]:
+    def any(self) -> Scalar[Self.dtype]:
         """
         Returns True if any element of the matrix evaluates to True.
 
@@ -3273,7 +3273,7 @@ struct Matrix[
         """
         return numojo.logic.any(self)
 
-    fn any(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def any(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Returns a matrix indicating whether any element along the specified axis evaluates to True.
 
@@ -3285,7 +3285,7 @@ struct Matrix[
         """
         return numojo.logic.any(self, axis=axis)
 
-    fn argmax(self) raises -> Scalar[DType.int]:
+    def argmax(self) raises -> Scalar[DType.int]:
         """
         Returns the index of the maximum element in the flattened matrix.
 
@@ -3301,7 +3301,7 @@ struct Matrix[
         """
         return numojo.math.argmax(self)
 
-    fn argmax(self, axis: Int) raises -> Matrix[DType.int]:
+    def argmax(self, axis: Int) raises -> Matrix[DType.int]:
         """
         Returns the indices of the maximum elements along the specified axis.
 
@@ -3321,7 +3321,7 @@ struct Matrix[
         """
         return numojo.math.argmax(self, axis=axis)
 
-    fn argmin(self) raises -> Scalar[DType.int]:
+    def argmin(self) raises -> Scalar[DType.int]:
         """
         Returns the index of the minimum element in the flattened matrix.
 
@@ -3337,7 +3337,7 @@ struct Matrix[
         """
         return numojo.math.argmin(self)
 
-    fn argmin(self, axis: Int) raises -> Matrix[DType.int]:
+    def argmin(self, axis: Int) raises -> Matrix[DType.int]:
         """
         Returns the indices of the minimum elements along the specified axis.
 
@@ -3357,7 +3357,7 @@ struct Matrix[
         """
         return numojo.math.argmin(self, axis=axis)
 
-    fn argsort(self) raises -> Matrix[DType.int]:
+    def argsort(self) raises -> Matrix[DType.int]:
         """
         Returns the indices that would sort the flattened matrix.
 
@@ -3373,7 +3373,7 @@ struct Matrix[
         """
         return numojo.math.argsort(self)
 
-    fn argsort(self, axis: Int) raises -> Matrix[DType.int]:
+    def argsort(self, axis: Int) raises -> Matrix[DType.int]:
         """
         Returns the indices that would sort the matrix along the specified axis.
 
@@ -3393,7 +3393,7 @@ struct Matrix[
         """
         return numojo.math.argsort(self, axis=axis)
 
-    fn astype[asdtype: DType](self) -> Matrix[asdtype]:
+    def astype[asdtype: DType](self) -> Matrix[asdtype]:
         """
         Returns a copy of the matrix cast to the specified data type.
 
@@ -3419,7 +3419,7 @@ struct Matrix[
             casted_matrix._buf.ptr[i] = src._buf.ptr[i].cast[asdtype]()
         return casted_matrix^
 
-    fn cumprod(self) raises -> Matrix[Self.dtype]:
+    def cumprod(self) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative product of all elements in the matrix, flattened into a single dimension.
 
@@ -3435,7 +3435,7 @@ struct Matrix[
         """
         return numojo.math.cumprod(self)
 
-    fn cumprod(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def cumprod(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative product of elements along a specified axis.
 
@@ -3455,7 +3455,7 @@ struct Matrix[
         """
         return numojo.math.cumprod(self, axis=axis)
 
-    fn cumsum(self) raises -> Matrix[Self.dtype]:
+    def cumsum(self) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative sum of all elements in the matrix, flattened into a single dimension.
 
@@ -3471,7 +3471,7 @@ struct Matrix[
         """
         return numojo.math.cumsum(self)
 
-    fn cumsum(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def cumsum(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the cumulative sum of elements along a specified axis.
 
@@ -3491,7 +3491,7 @@ struct Matrix[
         """
         return numojo.math.cumsum(self, axis=axis)
 
-    fn fill(self, fill_value: Scalar[Self.dtype]):
+    def fill(self, fill_value: Scalar[Self.dtype]):
         """
         Fill the matrix with the specified value. This method sets every element of the matrix to `fill_value`.
 
@@ -3517,7 +3517,7 @@ struct Matrix[
                     self._store(i, j, fill_value)
 
     # * Make it inplace?
-    fn flatten(self) -> Matrix[Self.dtype]:
+    def flatten(self) -> Matrix[Self.dtype]:
         """
         Return a flattened copy of the matrix. This method returns a new matrix containing all elements of the original matrix in a single row (shape (1, size)), preserving the order.
 
@@ -3536,7 +3536,7 @@ struct Matrix[
         memcpy(dest=res._buf.ptr, src=src._buf.ptr, count=res.size)
         return res^
 
-    fn inv(self) raises -> Matrix[Self.dtype]:
+    def inv(self) raises -> Matrix[Self.dtype]:
         """
         Compute the inverse of the matrix.
 
@@ -3555,7 +3555,7 @@ struct Matrix[
         """
         return numojo.linalg.inv(self)
 
-    fn order(self) -> String:
+    def order(self) -> String:
         """
         Return the memory layout order of the matrix.
 
@@ -3575,7 +3575,7 @@ struct Matrix[
         return order
 
     @always_inline
-    fn is_c_contiguous(self) -> Bool:
+    def is_c_contiguous(self) -> Bool:
         """Checks if the matrix is strictly C-contiguous (dense row-major).
 
         For a 2-D matrix this means `strides == (shape[1], 1)`.
@@ -3589,7 +3589,7 @@ struct Matrix[
         return self.strides[1] == 1 and self.strides[0] == self.shape[1]
 
     @always_inline
-    fn is_f_contiguous(self) -> Bool:
+    def is_f_contiguous(self) -> Bool:
         """Checks if the matrix is strictly F-contiguous (dense column-major).
 
         For a 2-D matrix this means `strides == (1, shape[0])`.
@@ -3602,7 +3602,7 @@ struct Matrix[
         return self.strides[0] == 1 and self.strides[1] == self.shape[0]
 
     @always_inline
-    fn is_row_contiguous(self) -> Bool:
+    def is_row_contiguous(self) -> Bool:
         """Checks if elements within each row are contiguous.
 
         This is a relaxation of C-contiguous: only `stride[1] == 1`.
@@ -3614,7 +3614,7 @@ struct Matrix[
         return self.strides[1] == 1
 
     @always_inline
-    fn is_col_contiguous(self) -> Bool:
+    def is_col_contiguous(self) -> Bool:
         """Checks if elements within each column are contiguous.
 
         This is a relaxation of F-contiguous: only `stride[0] == 1`.
@@ -3625,7 +3625,7 @@ struct Matrix[
         """
         return self.strides[0] == 1
 
-    fn contiguous(self) -> Self:
+    def contiguous(self) -> Self:
         """Returns a new C-contiguous matrix owning a copy of the data.
 
         Always creates a new owned matrix, even if the source is already
@@ -3651,7 +3651,7 @@ struct Matrix[
                     )
         return result^
 
-    fn max(self) raises -> Scalar[Self.dtype]:
+    def max(self) raises -> Scalar[Self.dtype]:
         """
         Return the maximum element in the matrix.
 
@@ -3669,7 +3669,7 @@ struct Matrix[
         """
         return numojo.math.extrema.max(self)
 
-    fn max(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def max(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Return the maximum values along the specified axis.
 
@@ -3689,7 +3689,7 @@ struct Matrix[
         """
         return numojo.math.extrema.max(self, axis=axis)
 
-    fn mean[
+    def mean[
         returned_dtype: DType = DType.float64
     ](self) raises -> Scalar[returned_dtype]:
         """
@@ -3707,7 +3707,7 @@ struct Matrix[
         """
         return numojo.statistics.mean[returned_dtype](self)
 
-    fn mean[
+    def mean[
         returned_dtype: DType = DType.float64
     ](self, axis: Int) raises -> Matrix[returned_dtype]:
         """
@@ -3729,7 +3729,7 @@ struct Matrix[
         """
         return numojo.statistics.mean[returned_dtype](self, axis=axis)
 
-    fn min(self) raises -> Scalar[Self.dtype]:
+    def min(self) raises -> Scalar[Self.dtype]:
         """
         Return the minimum element in the matrix.
 
@@ -3747,7 +3747,7 @@ struct Matrix[
         """
         return numojo.math.extrema.min(self)
 
-    fn min(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def min(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Return the minimum values along the specified axis.
 
@@ -3767,7 +3767,7 @@ struct Matrix[
         """
         return numojo.math.extrema.min(self, axis=axis)
 
-    fn prod(self) -> Scalar[Self.dtype]:
+    def prod(self) -> Scalar[Self.dtype]:
         """
         Compute the product of all elements in the matrix.
 
@@ -3783,7 +3783,7 @@ struct Matrix[
         """
         return numojo.math.prod(self)
 
-    fn prod(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def prod(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the product of elements along the specified axis.
 
@@ -3803,7 +3803,7 @@ struct Matrix[
         """
         return numojo.math.prod(self, axis=axis)
 
-    fn reshape(
+    def reshape(
         self, shape: Tuple[Int, Int], order: String = "C"
     ) raises -> Matrix[Self.dtype]:
         """
@@ -3873,7 +3873,7 @@ struct Matrix[
         return res^
 
     # NOTE: not sure if `where` clause works correctly here yet.
-    fn resize(mut self, shape: Tuple[Int, Int]) raises:
+    def resize(mut self, shape: Tuple[Int, Int]) raises:
         """
         Change the shape and size of the matrix in-place.
 
@@ -3934,7 +3934,7 @@ struct Matrix[
             else:
                 self.strides[1] = shape[0]
 
-    fn round(self, decimals: Int) raises -> Matrix[Self.dtype]:
+    def round(self, decimals: Int) raises -> Matrix[Self.dtype]:
         """
         Round each element of the matrix to the specified number of decimals.
 
@@ -3954,7 +3954,7 @@ struct Matrix[
         """
         return numojo.math.rounding.round(self, decimals=decimals)
 
-    fn std[
+    def std[
         returned_dtype: DType = DType.float64
     ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
@@ -3975,7 +3975,7 @@ struct Matrix[
         """
         return numojo.statistics.std[returned_dtype](self, ddof=ddof)
 
-    fn std[
+    def std[
         returned_dtype: DType = DType.float64
     ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
@@ -3998,7 +3998,7 @@ struct Matrix[
         """
         return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
 
-    fn sum(self) -> Scalar[Self.dtype]:
+    def sum(self) -> Scalar[Self.dtype]:
         """
         Compute the sum of all elements in the matrix.
 
@@ -4014,7 +4014,7 @@ struct Matrix[
         """
         return numojo.math.sum(self)
 
-    fn sum(self, axis: Int) raises -> Matrix[Self.dtype]:
+    def sum(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
         Compute the sum of elements along the specified axis.
 
@@ -4034,7 +4034,7 @@ struct Matrix[
         """
         return numojo.math.sum(self, axis=axis)
 
-    fn trace(self) raises -> Scalar[Self.dtype]:
+    def trace(self) raises -> Scalar[Self.dtype]:
         """
         Compute the trace of the matrix (sum of diagonal elements).
 
@@ -4052,7 +4052,7 @@ struct Matrix[
         """
         return numojo.linalg.trace(self)
 
-    fn issymmetric(self) -> Bool:
+    def issymmetric(self) -> Bool:
         """
         Check if the matrix is symmetric (equal to its transpose).
 
@@ -4070,7 +4070,7 @@ struct Matrix[
         """
         return issymmetric(self)
 
-    fn transpose(self) -> Matrix[Self.dtype]:
+    def transpose(self) -> Matrix[Self.dtype]:
         """
         Return the transpose of the matrix.
 
@@ -4087,7 +4087,7 @@ struct Matrix[
         return transpose(self)
 
     # TODO: we should only allow this for owndata. not for views, it'll lead to weird origin behaviours.
-    fn reorder_layout(self) raises -> Matrix[Self.dtype]:
+    def reorder_layout(self) raises -> Matrix[Self.dtype]:
         """
         Reorder the memory layout of the matrix to match its current order ("C" or "F"). This method returns a new matrix with the same data but stored in the requested memory layout. Only allowed for matrices with own_data=True.
 
@@ -4107,7 +4107,7 @@ struct Matrix[
         """
         return reorder_layout(self)
 
-    fn T(self) -> Matrix[Self.dtype]:
+    def T(self) -> Matrix[Self.dtype]:
         """
         Return the transpose of the matrix.
 
@@ -4123,7 +4123,7 @@ struct Matrix[
         """
         return transpose(self)
 
-    fn variance[
+    def variance[
         returned_dtype: DType = DType.float64
     ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
         """
@@ -4144,7 +4144,7 @@ struct Matrix[
         """
         return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
 
-    fn variance[
+    def variance[
         returned_dtype: DType = DType.float64
     ](self, axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
         """
@@ -4173,7 +4173,7 @@ struct Matrix[
     # # To other data types
     # # ===-------------------------------------------------------------------===#
 
-    fn to_ndarray(self) raises -> NDArray[Self.dtype]:
+    def to_ndarray(self) raises -> NDArray[Self.dtype]:
         """Create `NDArray` from `Matrix`.
 
         Returns a new NDArray with the same shape and data as the Matrix.
@@ -4199,7 +4199,7 @@ struct Matrix[
 
         return ndarray^
 
-    fn to_numpy(self) raises -> PythonObject:
+    def to_numpy(self) raises -> PythonObject:
         """
         Convert the Matrix to a NumPy ndarray.
 
@@ -4276,7 +4276,7 @@ struct Matrix[
     # ===-----------------------------------------------------------------------===#
 
     @staticmethod
-    fn full[
+    def full[
         datatype: DType = DType.float64
     ](
         shape: Tuple[Int, Int],
@@ -4305,14 +4305,14 @@ struct Matrix[
         comptime width = simd_width_of[datatype]()
 
         @parameter
-        fn vec_fill[w: Int](i: Int) unified {mut matrix, read fill_value}:
+        def vec_fill[w: Int](i: Int) unified {mut matrix, read fill_value}:
             matrix._buf.ptr.store(i, SIMD[datatype, w](fill_value))
 
         vectorize[width](matrix.size, vec_fill)
         return matrix^
 
     @staticmethod
-    fn zeros[
+    def zeros[
         datatype: DType = DType.float64
     ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
         """
@@ -4337,7 +4337,7 @@ struct Matrix[
         return res^
 
     @staticmethod
-    fn ones[
+    def ones[
         datatype: DType = DType.float64
     ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
         """
@@ -4360,7 +4360,7 @@ struct Matrix[
         return Matrix.full[datatype](shape=shape, fill_value=1, order=order)
 
     @staticmethod
-    fn identity[
+    def identity[
         datatype: DType = DType.float64
     ](len: Int, order: String = "C") -> Matrix[datatype]:
         """
@@ -4388,7 +4388,7 @@ struct Matrix[
         return matrix^
 
     @staticmethod
-    fn rand[
+    def rand[
         datatype: DType = DType.float64
     ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
         """
@@ -4411,7 +4411,7 @@ struct Matrix[
         comptime width = simd_width_of[datatype]()
 
         @parameter
-        fn vec_rand[w: Int](i: Int) unified {mut result}:
+        def vec_rand[w: Int](i: Int) unified {mut result}:
             var rand_vec = SIMD[datatype, w]()
             for j in range(w):
                 rand_vec[j] = random_float64(0, 1).cast[datatype]()
@@ -4421,7 +4421,7 @@ struct Matrix[
         return result^
 
     @staticmethod
-    fn empty[
+    def empty[
         datatype: DType = DType.float64
     ](shape: Tuple[Int, Int], order: String = "C") -> Matrix[datatype]:
         """
@@ -4448,7 +4448,7 @@ struct Matrix[
         return Matrix[datatype](shape, order)
 
     @staticmethod
-    fn arange[
+    def arange[
         datatype: DType = DType.float64
     ](
         start: Scalar[datatype],
@@ -4523,7 +4523,7 @@ struct Matrix[
         return result^
 
     @staticmethod
-    fn linspace[
+    def linspace[
         datatype: DType = DType.float64
     ](
         start: Scalar[datatype],
@@ -4573,7 +4573,7 @@ struct Matrix[
         return result^
 
     @staticmethod
-    fn diag[
+    def diag[
         datatype: DType = DType.float64
     ](diagonal: Matrix[datatype], order: String = "C") raises -> Matrix[
         datatype
@@ -4628,7 +4628,7 @@ struct Matrix[
             return result^
 
     @staticmethod
-    fn zeros_like[
+    def zeros_like[
         datatype: DType = DType.float64
     ](other: Matrix[datatype]) -> Matrix[datatype]:
         """
@@ -4650,7 +4650,7 @@ struct Matrix[
         return Matrix.zeros[datatype](other.shape, other.order())
 
     @staticmethod
-    fn ones_like[
+    def ones_like[
         datatype: DType = DType.float64
     ](other: Matrix[datatype]) -> Matrix[datatype]:
         """
@@ -4672,7 +4672,7 @@ struct Matrix[
         return Matrix.ones[datatype](other.shape, other.order())
 
     @staticmethod
-    fn empty_like[
+    def empty_like[
         datatype: DType = DType.float64
     ](other: Matrix[datatype]) -> Matrix[datatype]:
         """
@@ -4697,7 +4697,7 @@ struct Matrix[
         return Matrix.empty[datatype](other.shape, other.order())
 
     @staticmethod
-    fn fromlist[
+    def fromlist[
         datatype: DType = DType.float64
     ](
         object: List[Scalar[datatype]],
@@ -4749,7 +4749,7 @@ struct Matrix[
         return M^
 
     @staticmethod
-    fn fromstring[
+    def fromstring[
         datatype: DType = DType.float64
     ](
         text: String, shape: Tuple[Int, Int] = (0, 0), order: String = "C"
@@ -4872,7 +4872,7 @@ struct _MatrixIter[
     var strides: Tuple[Int, Int]
     """Strides of the matrix being iterated."""
 
-    fn __init__(
+    def __init__(
         out self,
         index: Int,
         matrix_buf: DataContainer[Self.dtype],
@@ -4893,12 +4893,12 @@ struct _MatrixIter[
         self.strides = strides
 
     @always_inline
-    fn __iter__(ref self) -> Self:
+    def __iter__(ref self) -> Self:
         """Return a copy of the iterator for iteration protocol."""
         return self.copy()
 
     @always_inline
-    fn __has_next__(self) -> Bool:
+    def __has_next__(self) -> Bool:
         """Check if there are more rows to iterate over.
 
         Returns:
@@ -4910,7 +4910,7 @@ struct _MatrixIter[
         else:
             return self.index >= 0
 
-    fn __next__(mut self) raises -> Matrix[Self.dtype]:
+    def __next__(mut self) raises -> Matrix[Self.dtype]:
         """Return a view of the next row.
 
         Returns:
@@ -4941,7 +4941,7 @@ struct _MatrixIter[
             )
 
     @always_inline
-    fn bounds(self) -> Tuple[Int, Optional[Int]]:
+    def bounds(self) -> Tuple[Int, Optional[Int]]:
         """Return the iteration bounds.
 
         Returns:
@@ -4963,7 +4963,7 @@ struct _MatrixIter[
 
 
 # TODO: we can move the checks in these functions to the caller functions to avoid redundant checks.
-fn _arithmetic_func_matrix_matrix_to_matrix[
+def _arithmetic_func_matrix_matrix_to_matrix[
     dtype: DType,
     simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
@@ -5019,7 +5019,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     var res = Matrix[dtype](shape=A.shape, order=A.order())
 
     @parameter
-    fn vec_func[simd_width: Int](i: Int) unified {mut res, read A, read B}:
+    def vec_func[simd_width: Int](i: Int) unified {mut res, read A, read B}:
         res._buf.ptr.store(
             i,
             simd_func(
@@ -5032,7 +5032,7 @@ fn _arithmetic_func_matrix_matrix_to_matrix[
     return res^
 
 
-fn _arithmetic_func_matrix_to_matrix[
+def _arithmetic_func_matrix_to_matrix[
     dtype: DType,
     simd_func: fn[type: DType, simd_width: Int](SIMD[type, simd_width]) -> SIMD[
         type, simd_width
@@ -5059,7 +5059,7 @@ fn _arithmetic_func_matrix_to_matrix[
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
     @parameter
-    fn vec_func[simd_width: Int](i: Int) unified {mut C, read A}:
+    def vec_func[simd_width: Int](i: Int) unified {mut C, read A}:
         C._buf.ptr.store(i, simd_func(A._buf.ptr.load[width=simd_width](i)))
 
     vectorize[simd_width](A.size, vec_func)
@@ -5067,7 +5067,7 @@ fn _arithmetic_func_matrix_to_matrix[
     return C^
 
 
-fn _logic_func_matrix_matrix_to_matrix[
+def _logic_func_matrix_matrix_to_matrix[
     dtype: DType,
     simd_func: fn[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
@@ -5127,7 +5127,7 @@ fn _logic_func_matrix_matrix_to_matrix[
     # Use vectorized comparison for better performance
     # Process elements using input dtype width, then store results as bool
     @parameter
-    fn vec_compare[w: Int](i: Int) unified {mut C, read A, read B}:
+    def vec_compare[w: Int](i: Int) unified {mut C, read A, read B}:
         var a_vec = A._buf.ptr.load[width=w](i)
         var b_vec = B._buf.ptr.load[width=w](i)
         var result = simd_func[dtype, w](a_vec, b_vec)

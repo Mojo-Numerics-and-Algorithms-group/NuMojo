@@ -51,7 +51,7 @@ struct IndexBuffer(
     # Lifecycle Methods
     # ===----------------------------------------------------------------------=== #
     # TODO: add `abort()` for cases where we have ndim < 0 since they are invalid.
-    fn __init__(out self, *, size: Int):
+    def __init__(out self, *, size: Int):
         """
         Initialize an IndexBuffer of given size.
 
@@ -66,7 +66,7 @@ struct IndexBuffer(
             self.ptr = alloc[Scalar[Self.element_type]](size)
             memset_zero(self.ptr, size)
 
-    fn __init__(
+    def __init__(
         out self,
         ptr: UnsafePointer[Scalar[Self.element_type], Self._origin],
         size: Int,
@@ -81,14 +81,14 @@ struct IndexBuffer(
         self.ptr = ptr
         self.ndim = size
 
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initialize an empty IndexBuffer.
         """
         self.ndim = 0
         self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
 
-    fn __init__(out self, *values: Int):
+    def __init__(out self, *values: Int):
         """
         Initialize an IndexBuffer with given Int values.
 
@@ -106,7 +106,7 @@ struct IndexBuffer(
             )
 
     # NOTE: In future this will be equivalent to Int.
-    fn __init__(out self, *values: Scalar[Self.element_type]):
+    def __init__(out self, *values: Scalar[Self.element_type]):
         """
         Initialize an IndexBuffer with given values.
 
@@ -121,7 +121,7 @@ struct IndexBuffer(
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(values[i])
 
-    fn __init__(out self, values: List[Scalar[Self.element_type]]):
+    def __init__(out self, values: List[Scalar[Self.element_type]]):
         """
         Initialize an IndexBuffer with a list of values.
 
@@ -136,7 +136,7 @@ struct IndexBuffer(
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(values[i])
 
-    fn __init__(out self, values: List[Int]):
+    def __init__(out self, values: List[Int]):
         """
         Initialize an IndexBuffer with a list of Int values.
 
@@ -153,7 +153,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type](values[i])
             )
 
-    fn __init__(out self, values: VariadicList[Scalar[Self.element_type], _]):
+    def __init__(out self, values: VariadicList[Scalar[Self.element_type], _]):
         """
         Initialize an IndexBuffer with a range of values.
 
@@ -168,7 +168,7 @@ struct IndexBuffer(
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(values[i])
 
-    fn __init__(out self, values: VariadicList[Int, _]):
+    def __init__(out self, values: VariadicList[Int, _]):
         """
         Initialize an IndexBuffer with a range of values.
 
@@ -185,7 +185,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type](values[i])
             )
 
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         """
         Copy-initialize an IndexBuffer from ancopy IndexBuffer.
 
@@ -199,7 +199,7 @@ struct IndexBuffer(
         self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
         memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
 
-    fn __del__(deinit self):
+    def __del__(deinit self):
         """
         Deinitialize the IndexBuffer and free resources.
         """
@@ -209,7 +209,7 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods
     # ===----------------------------------------------------------------------=== #
-    fn get_ptr(
+    def get_ptr(
         ref self,
     ) -> ref[self.ptr] UnsafePointer[Scalar[Self.element_type], Self._origin]:
         """
@@ -223,7 +223,7 @@ struct IndexBuffer(
         """
         return self.ptr
 
-    fn offset(
+    def offset(
         ref self, offset: Int
     ) -> UnsafePointer[Scalar[Self.element_type], Self._origin]:
         """
@@ -237,7 +237,7 @@ struct IndexBuffer(
         """
         return self.ptr + offset
 
-    fn __getitem__(self, idx: Int) raises -> Int:
+    def __getitem__(self, idx: Int) raises -> Int:
         """
         Get the element at the given index.
 
@@ -258,7 +258,7 @@ struct IndexBuffer(
             )
         return Int(self.ptr[index])
 
-    fn __getitem__(
+    def __getitem__(
         self, idx: Scalar[Self.element_type]
     ) raises -> Scalar[Self.element_type]:
         """
@@ -281,7 +281,7 @@ struct IndexBuffer(
             )
         return self.ptr[index]
 
-    fn __getitem__(self, slice: Slice) raises -> Self:
+    def __getitem__(self, slice: Slice) raises -> Self:
         """
         Get a sub-buffer using a slice.
 
@@ -312,7 +312,7 @@ struct IndexBuffer(
 
         return new_buffer^
 
-    fn __setitem__(mut self, idx: Int, value: Int) raises:
+    def __setitem__(mut self, idx: Int, value: Int) raises:
         """
         Set the element at the given index.
 
@@ -331,7 +331,7 @@ struct IndexBuffer(
             )
         self.ptr[index] = Scalar[Self.element_type](value)
 
-    fn __setitem__(
+    def __setitem__(
         mut self,
         idx: Scalar[Self.element_type],
         value: Scalar[Self.element_type],
@@ -354,7 +354,7 @@ struct IndexBuffer(
             )
         self.ptr[index] = value
 
-    fn __setitem__(mut self, slice: Slice, value: Self) raises:
+    def __setitem__(mut self, slice: Slice, value: Self) raises:
         """
         Set a sub-buffer using a slice.
 
@@ -392,7 +392,7 @@ struct IndexBuffer(
             self.ptr[i] = value.ptr[idx]
             idx += 1
 
-    fn unsafe_load[
+    def unsafe_load[
         width: Int = 1
     ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
@@ -409,7 +409,7 @@ struct IndexBuffer(
         """
         return self.ptr.load[width=width](idx)
 
-    fn unsafe_store[
+    def unsafe_store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]):
         """
@@ -424,7 +424,7 @@ struct IndexBuffer(
         """
         self.ptr.store[width=width](idx, value)
 
-    fn unsafe_load[
+    def unsafe_load[
         width: Int = 1
     ](self, idx: Scalar[Self.element_type]) -> SIMD[Self.element_type, width]:
         """
@@ -441,7 +441,7 @@ struct IndexBuffer(
         """
         return self.ptr.load[width=width](idx)
 
-    fn unsafe_store[
+    def unsafe_store[
         width: Int = 1
     ](
         self,
@@ -464,7 +464,7 @@ struct IndexBuffer(
     # Transformation Methods
     # ===----------------------------------------------------------------------=== #
 
-    fn extend(self, *values: Int) -> Self:
+    def extend(self, *values: Int) -> Self:
         """
         Extend the buffer by appending additional integer values.
 
@@ -482,7 +482,7 @@ struct IndexBuffer(
             new_buf.ptr[self.ndim + j] = Scalar[Self.element_type](values[j])
         return new_buf^
 
-    fn extend(self, values: List[Int]) -> Self:
+    def extend(self, values: List[Int]) -> Self:
         """
         Extend the buffer by appending additional integer values from a List.
 
@@ -500,7 +500,7 @@ struct IndexBuffer(
             new_buf.ptr[self.ndim + j] = Scalar[Self.element_type](values[j])
         return new_buf^
 
-    fn flip(mut self):
+    def flip(mut self):
         """
         Flip the items in-place.
         """
@@ -509,7 +509,7 @@ struct IndexBuffer(
             self.ptr[i] = self.ptr[self.ndim - 1 - i]
             self.ptr[self.ndim - 1 - i] = temp
 
-    fn flipped(self) -> Self:
+    def flipped(self) -> Self:
         """
         Returns a new IndexBuffer by reversing the items.
 
@@ -521,7 +521,7 @@ struct IndexBuffer(
             res.ptr[i] = self.ptr[self.ndim - 1 - i]
         return res^
 
-    fn move_axis_to_end(self, axis: Int) -> Self:
+    def move_axis_to_end(self, axis: Int) -> Self:
         """
         Returns a new IndexBuffer by moving the value at axis to the end.
 
@@ -543,7 +543,7 @@ struct IndexBuffer(
         res.ptr[self.ndim - 1] = self.ptr[ax]
         return res^
 
-    fn pop(self, axis: Int) raises -> Self:
+    def pop(self, axis: Int) raises -> Self:
         """
         Drops the item at the given axis (index).
 
@@ -581,7 +581,7 @@ struct IndexBuffer(
             idx += 1
         return res^
 
-    fn insert(self, axis: Int, value: Int) raises -> Self:
+    def insert(self, axis: Int, value: Int) raises -> Self:
         """
         Inserts a value at the given axis (index).
 
@@ -608,7 +608,7 @@ struct IndexBuffer(
             res.ptr[i + 1] = self.ptr[i]
         return res^
 
-    fn join(self, *others: Self) -> Self:
+    def join(self, *others: Self) -> Self:
         """
         Join multiple IndexBuffers into a single IndexBuffer.
 
@@ -633,7 +633,7 @@ struct IndexBuffer(
             offset += others[i].ndim
         return res^
 
-    fn join(self, others: List[Self]) -> Self:
+    def join(self, others: List[Self]) -> Self:
         """
         Join multiple IndexBuffers into a single IndexBuffer from a List.
 
@@ -658,7 +658,7 @@ struct IndexBuffer(
             offset += others[i].ndim
         return res^
 
-    fn sort(mut self, order: Bool):
+    def sort(mut self, order: Bool):
         """
         Sort the IndexBuffer in-place.
 
@@ -674,7 +674,7 @@ struct IndexBuffer(
                     self.ptr[j] = self.ptr[j + 1]
                     self.ptr[j + 1] = temp
 
-    fn sorted(self, order: Bool) -> Self:
+    def sorted(self, order: Bool) -> Self:
         """
         Returns a new IndexBuffer that is sorted.
 
@@ -693,7 +693,7 @@ struct IndexBuffer(
     # Static Constructors
     # ===----------------------------------------------------------------------=== #
     @staticmethod
-    fn arange(start: Int, end: Int, step: Int = 1) raises -> Self:
+    def arange(start: Int, end: Int, step: Int = 1) raises -> Self:
         """
         Create a IndexBuffer with a range of values.
 
@@ -729,7 +729,7 @@ struct IndexBuffer(
         return result^
 
     @staticmethod
-    fn fill(size: Int, value: Int) -> Self:
+    def fill(size: Int, value: Int) -> Self:
         """
         Create a IndexBuffer filled with the given value.
 
@@ -746,7 +746,7 @@ struct IndexBuffer(
         return res^
 
     @staticmethod
-    fn zeros(size: Int) -> Self:
+    def zeros(size: Int) -> Self:
         """
         Create a IndexBuffer filled with zeros.
 
@@ -761,7 +761,7 @@ struct IndexBuffer(
         return res^
 
     @staticmethod
-    fn ones(size: Int) -> Self:
+    def ones(size: Int) -> Self:
         """
         Create a IndexBuffer filled with ones.
 
@@ -777,7 +777,7 @@ struct IndexBuffer(
         return res^
 
     @staticmethod
-    fn linspace(start: Int, end: Int, num: Int) raises -> Self:
+    def linspace(start: Int, end: Int, num: Int) raises -> Self:
         """
         Create a IndexBuffer with linearly spaced values.
 
@@ -810,7 +810,7 @@ struct IndexBuffer(
         return res^
 
     @staticmethod
-    fn invert_permutation(perm: Self) -> Self:
+    def invert_permutation(perm: Self) -> Self:
         """
         Invert a permutation.
 
@@ -829,7 +829,7 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Properties
     # ===----------------------------------------------------------------------=== #
-    fn rank(self) -> Int:
+    def rank(self) -> Int:
         """
         Get the number of elements in the IndexBuffer.
 
@@ -838,7 +838,7 @@ struct IndexBuffer(
         """
         return self.ndim
 
-    fn is_empty(self) -> Bool:
+    def is_empty(self) -> Bool:
         """
         Check if the IndexBuffer is empty.
 
@@ -847,7 +847,7 @@ struct IndexBuffer(
         """
         return self.ndim == 0
 
-    fn sum(self) -> Scalar[Self.element_type]:
+    def sum(self) -> Scalar[Self.element_type]:
         """
         Compute the sum of all elements in the IndexBuffer.
 
@@ -855,14 +855,14 @@ struct IndexBuffer(
             Sum of all elements in the IndexBuffer.
         """
         var total: Scalar[Self.element_type] = 0
-        # fn closure[width: Int](i: Int) unified {mut total, read self}:
+        # def closure[width: Int](i: Int) unified {mut total, read self}:
         #     total += self.load[width](i).reduce_add()
         # vectorize[Self.simd_width](self.ndim, closure)
         for i in range(self.ndim):
             total += self.ptr[i]
         return total
 
-    fn product(self) -> Scalar[Self.element_type]:
+    def product(self) -> Scalar[Self.element_type]:
         """
         Compute the product of all elements in the IndexBuffer.
 
@@ -870,7 +870,7 @@ struct IndexBuffer(
             Product of all elements in the IndexBuffer.
         """
         var total: Scalar[Self.element_type] = 1
-        # fn closure[width: Int](i: Int) unified {mut total, read self}:
+        # def closure[width: Int](i: Int) unified {mut total, read self}:
         #     total += self.load[width](i).reduce_mul()
         # vectorize[Self.simd_width](self.ndim, closure)
         for i in range(self.ndim):
@@ -880,7 +880,7 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Traits
     # ===----------------------------------------------------------------------=== #
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         """
         Get the number of elements in the IndexBuffer.
 
@@ -889,7 +889,7 @@ struct IndexBuffer(
         """
         return self.ndim
 
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """
         Get the official string representation of the IndexBuffer.
 
@@ -898,7 +898,7 @@ struct IndexBuffer(
         """
         return self.__str__()
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Get the string representation of the IndexBuffer.
 
@@ -913,7 +913,7 @@ struct IndexBuffer(
         res += String("])")
         return res^
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """
         Write the IndexBuffer to a writer.
         """
@@ -924,7 +924,7 @@ struct IndexBuffer(
                 writer.write(", ")
         writer.write("])")
 
-    fn __contains__(self, value: Scalar[Self.element_type]) -> Bool:
+    def __contains__(self, value: Scalar[Self.element_type]) -> Bool:
         """
         Check if the IndexBuffer contains the given value.
 
@@ -940,7 +940,7 @@ struct IndexBuffer(
         return False
 
     # TODO: We can remove this overload once Mojo unified Scalar[DType.int] with Int
-    fn __contains__(self, value: Int) -> Bool:
+    def __contains__(self, value: Int) -> Bool:
         """
         Check if the IndexBuffer contains the given value.
 
@@ -955,7 +955,7 @@ struct IndexBuffer(
                 return True
         return False
 
-    fn __eq__(self, other: IndexBuffer) -> Bool:
+    def __eq__(self, other: IndexBuffer) -> Bool:
         """
         Check if two IndexBuffers are equal.
 
@@ -972,7 +972,7 @@ struct IndexBuffer(
                 return False
         return True
 
-    fn __ne__(self, other: IndexBuffer) -> Bool:
+    def __ne__(self, other: IndexBuffer) -> Bool:
         """
         Check if two IndexBuffers are not equal.
 
@@ -987,7 +987,7 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Utility Methods
     # ===----------------------------------------------------------------------=== #
-    fn init_value(mut self, idx: Int, value: Scalar[Self.element_type]):
+    def init_value(mut self, idx: Int, value: Scalar[Self.element_type]):
         """
         Initialize the element at the given index.
         No bounds checking.
@@ -999,7 +999,7 @@ struct IndexBuffer(
         # self.ptr[idx] = value
         (self.ptr + idx).init_pointee_copy(value)
 
-    fn tolist(self) -> List[Scalar[Self.element_type]]:
+    def tolist(self) -> List[Scalar[Self.element_type]]:
         """
         Convert the buffer to a list.
         """
@@ -1013,7 +1013,7 @@ struct IndexBuffer(
     # ===----------------------------------------------------------------------=== #
     # Iterators
     # ===----------------------------------------------------------------------=== #
-    fn __iter__(
+    def __iter__(
         ref self,
     ) -> _IndexBufferIter[Self.element_type, origin_of(self), True]:
         """
@@ -1026,7 +1026,7 @@ struct IndexBuffer(
             Pointer(to=self), self.ndim
         )
 
-    fn __reversed__(
+    def __reversed__(
         ref self,
     ) -> _IndexBufferIter[Self.element_type, origin_of(self), False]:
         """
@@ -1060,7 +1060,7 @@ struct _IndexBufferIter[
     var item: Pointer[IndexBuffer, Self.origin]
     var length: Int
 
-    fn __init__(
+    def __init__(
         out self,
         item: Pointer[IndexBuffer, Self.origin],
         length: Int,
@@ -1069,16 +1069,16 @@ struct _IndexBufferIter[
         self.length = length
         self.item = item
 
-    fn __iter__(self) -> Self:
+    def __iter__(self) -> Self:
         return self
 
-    fn __has_next__(self) -> Bool:
+    def __has_next__(self) -> Bool:
         comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
-    fn __next__(mut self) raises -> Scalar[Self.dtype]:
+    def __next__(mut self) raises -> Scalar[Self.dtype]:
         comptime if Self.forward:
             var current_index = self.index
             self.index += 1
@@ -1088,7 +1088,7 @@ struct _IndexBufferIter[
             self.index -= 1
             return Scalar[Self.dtype](self.item[].__getitem__(current_index))
 
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         comptime if Self.forward:
             return self.length - self.index
         else:

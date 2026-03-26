@@ -15,7 +15,7 @@ from std.testing import TestSuite
 from numojo.prelude import *
 
 
-fn test_compress() raises:
+def test_compress() raises:
     var np = Python.import_module("numpy")
     var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
     var anp = a.to_numpy()
@@ -68,7 +68,7 @@ fn test_compress() raises:
     )
 
 
-fn test_take_along_axis() raises:
+def test_take_along_axis() raises:
     var np = Python.import_module("numpy")
 
     # Test 1-D array
@@ -220,7 +220,7 @@ fn test_take_along_axis() raises:
     )
 
 
-fn test_take_along_axis_fortran_order() raises:
+def test_take_along_axis_fortran_order() raises:
     var np = Python.import_module("numpy")
 
     # Create 3-D F-order array

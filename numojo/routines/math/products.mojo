@@ -21,7 +21,7 @@ from numojo.core.indexing import TraverseMethods
 from numojo.routines.creation import ones
 
 
-fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
+def prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Returns products of all items in the array.
 
@@ -50,14 +50,14 @@ fn prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var res = Scalar[dtype](1)
 
     @parameter
-    fn cal_vec[width: Int](i: Int) unified {mut res, read A}:
+    def cal_vec[width: Int](i: Int) unified {mut res, read A}:
         res *= A._buf.ptr.load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
 
 
-fn prod[
+def prod[
     dtype: DType
 ](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
@@ -97,7 +97,7 @@ fn prod[
     return result^
 
 
-fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+def prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     Product of all items in the Matrix.
 
@@ -110,14 +110,14 @@ fn prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_vec[width: Int](i: Int) unified {mut res, read A}:
+    def cal_vec[width: Int](i: Int) unified {mut res, read A}:
         res = res * A._buf.ptr.load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
 
 
-fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Product of items in a Matrix along the axis.
 
@@ -142,7 +142,7 @@ fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         for i in range(A.shape[0]):
 
             @parameter
-            fn cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store[width](
                     0, j, B._load[width](0, j) * A._load[width](i, j)
                 )
@@ -155,9 +155,9 @@ fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         var B = Matrix.ones[dtype](shape=(A.shape[0], 1))
 
         @parameter
-        fn cal_rows(i: Int):
+        def cal_rows(i: Int):
             @parameter
-            fn cal_vec[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_vec[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store(
                     i,
                     0,
@@ -173,7 +173,7 @@ fn prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
+def cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns cumprod of all items of an array.
     The array is flattened before cumprod.
@@ -198,7 +198,7 @@ fn cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return cumprod(A.flatten(), axis=-1)
 
 
-fn cumprod[
+def cumprod[
     dtype: DType
 ](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
@@ -240,7 +240,7 @@ fn cumprod[
     return B^
 
 
-fn cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+def cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumprod of flattened matrix.
 
@@ -271,7 +271,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return result^
 
 
-fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumprod of Matrix along the axis.
 
@@ -297,7 +297,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         for j in range(result.shape[1]):
 
             @parameter
-            fn copy_col[
+            def copy_col[
                 width: Int
             ](i: Int) unified {mut result, read A, read j}:
                 result._store[width](i, j, A._load[width](i, j))
@@ -309,7 +309,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             for i in range(1, A.shape[0]):
 
                 @parameter
-                fn cal_vec_row[width: Int](j: Int) unified {mut result, read i}:
+                def cal_vec_row[width: Int](j: Int) unified {mut result, read i}:
                     result._store[width](
                         i,
                         j,
@@ -335,7 +335,7 @@ fn cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             for j in range(1, A.shape[1]):
 
                 @parameter
-                fn cal_vec_column[
+                def cal_vec_column[
                     width: Int
                 ](i: Int) unified {mut result, read j}:
                     result._store[width](

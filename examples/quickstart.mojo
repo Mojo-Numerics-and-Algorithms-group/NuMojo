@@ -2,7 +2,7 @@ import numojo as nm
 from numojo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     var A = nm.random.randn(Shape(3, 3))
     var B = nm.random.randn(Shape(3, 3))
 

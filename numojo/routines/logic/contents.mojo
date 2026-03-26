@@ -22,19 +22,19 @@ from numojo.core.matrix import Matrix
 # TODO: Implement the commented out functions now that mojo supports these functions in SIMD.
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
 
-# fn is_power_of_2[
+# def is_power_of_2[
 #     dtype: DType
 # ](array: NDArray[dtype]) -> NDArray[DType.bool]:
 #     return backend().math_func_is[dtype, math.is_power_of_2](array)
 
 
-# fn is_even[
+# def is_even[
 #     dtype: DType
 # ](array: NDArray[dtype]) -> NDArray[DType.bool]:
 #     return backend().math_func_is[dtype, math.is_even](array)
 
 
-# fn is_odd[
+# def is_odd[
 #     dtype: DType
 # ](array: NDArray[dtype]) -> NDArray[DType.bool]:
 #     return backend().math_func_is[dtype, math.is_odd](array)
@@ -45,7 +45,7 @@ from numojo.core.matrix import Matrix
 # ===------------------------------------------------------------------------===#
 
 
-fn isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+def isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is infinite.
 
@@ -63,7 +63,7 @@ fn isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.prelude import *
         from numojo.routines.logic.contents import isinf
 
-        fn main() raises:
+        def main() raises:
             var arr = linspace(0, 10, 5)  # Example array: [0.0, 2.5, 5.0, 7.5, 10.0]
             print(isinf(arr))  # Output: [False, False, False, False, False]
         ```
@@ -71,7 +71,7 @@ fn isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     return HostExecutor.apply_unary_predicate[dtype, math.isinf](array)
 
 
-fn isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+def isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is finite.
 
@@ -89,7 +89,7 @@ fn isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.prelude import *
         from numojo.routines.logic.contents import isfinite
 
-        fn main() raises:
+        def main() raises:
             var arr = nm.array[nm.f64]([1.0, Float64.MAX, Float64.MIN], shape=[3])
             print(isfinite(arr))  # Output: [True, True, True]
         ```
@@ -97,7 +97,7 @@ fn isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     return HostExecutor.apply_unary_predicate[dtype, math.isfinite](array)
 
 
-fn isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+def isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is NaN.
 
@@ -115,7 +115,7 @@ fn isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.prelude import *
         from numojo.routines.logic.contents import isnan
 
-        fn main() raises:
+        def main() raises:
             var arr = nm.array[nm.f64]([1.0, 0.0, Float64.MAX], shape=[3])
             print(isnan(arr))  # Output: [False, False, False]
         ```
@@ -123,7 +123,7 @@ fn isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     return HostExecutor.apply_unary_predicate[dtype, math.isnan](array)
 
 
-fn isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+def isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is negative infinity.
 
@@ -141,13 +141,13 @@ fn isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.prelude import *
         from numojo.routines.logic.contents import isneginf
 
-        fn main() raises:
+        def main() raises:
             var arr = nm.array[nm.f64]([1.0, 0.0, -1.0], shape=[3])
             print(isneginf(arr))  # Output: [False, False, False]
         ```
     """
 
-    fn is_neginf[
+    def is_neginf[
         dtype: DType, simd_width: Int
     ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](neg_inf[dtype]()))
@@ -155,7 +155,7 @@ fn isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     return HostExecutor.apply_unary_predicate[dtype, is_neginf](array)
 
 
-fn isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
+def isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
     Checks if each element of the input array is positive infinity.
 
@@ -173,13 +173,13 @@ fn isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         from numojo.prelude import *
         from numojo.routines.logic.contents import isposinf
 
-        fn main() raises:
+        def main() raises:
             var arr = nm.array[nm.f64]([1.0, 0.0, -1.0], shape=[3])
             print(isposinf(arr))  # Output: [False, False, False]
         ```
     """
 
-    fn is_posinf[
+    def is_posinf[
         dtype: DType, simd_width: Int
     ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](inf[dtype]()))
@@ -187,7 +187,7 @@ fn isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
     return HostExecutor.apply_unary_predicate[dtype, is_posinf](array)
 
 
-fn isneginf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
+def isneginf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
     """
     Checks if each element of the input Matrix is negative infinity.
 
@@ -206,7 +206,7 @@ fn isneginf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
     return result_array^
 
 
-fn isposinf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
+def isposinf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
     """
     Checks if each elements of the input Matrix is positive infinity.
 

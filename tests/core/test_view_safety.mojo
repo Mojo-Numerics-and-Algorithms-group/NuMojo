@@ -22,14 +22,14 @@ from std.testing import TestSuite
 # ===-----------------------------------------------------------------------===#
 
 
-fn check_array[
+def check_array[
     dtype: DType
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.all(np.equal(array.to_numpy(), np_sol)), st)
 
 
-fn check_array_close[
+def check_array_close[
     dtype: DType
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
@@ -39,14 +39,14 @@ fn check_array_close[
     )
 
 
-fn check_scalar_close[
+def check_scalar_close[
     dtype: DType
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.isclose(value, np_sol, atol=PythonObject(0.001)), st)
 
 
-fn check_matrix_close[
+def check_matrix_close[
     dtype: DType
 ](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
@@ -60,14 +60,14 @@ fn check_matrix_close[
     )
 
 
-fn check_matrix_equal[
+def check_matrix_equal[
     dtype: DType
 ](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.all(np.equal(np.matrix(matrix.to_numpy()), np_sol)), st)
 
 
-fn check_value_close[
+def check_value_close[
     dtype: DType
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
@@ -79,7 +79,7 @@ fn check_value_close[
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_sums_products_view() raises:
+def test_ndarray_sums_products_view() raises:
     """Test sum, prod, cumsum, cumprod on F-order (non C-contiguous) NDArrays.
     """
     var np = Python.import_module("numpy")
@@ -145,7 +145,7 @@ fn test_ndarray_sums_products_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_extrema_view() raises:
+def test_ndarray_extrema_view() raises:
     """Test max, min, minimum, maximum on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -191,7 +191,7 @@ fn test_ndarray_extrema_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_searching_view() raises:
+def test_ndarray_searching_view() raises:
     """Test argmax_1d, argmin_1d on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -217,7 +217,7 @@ fn test_ndarray_searching_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_sorting_view() raises:
+def test_ndarray_sorting_view() raises:
     """Test sort, argsort on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -253,7 +253,7 @@ fn test_ndarray_sorting_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_linalg_view() raises:
+def test_ndarray_linalg_view() raises:
     """Test matmul, dot, trace, diagonal on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -307,7 +307,7 @@ fn test_ndarray_linalg_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_creation_view() raises:
+def test_ndarray_creation_view() raises:
     """Test diag on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -336,7 +336,7 @@ fn test_ndarray_creation_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_indexing_view() raises:
+def test_ndarray_indexing_view() raises:
     """Test compress on NDArrays with F-order condition."""
     var np = Python.import_module("numpy")
 
@@ -357,7 +357,7 @@ fn test_ndarray_indexing_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_pow_view() raises:
+def test_ndarray_pow_view() raises:
     """Test __pow__ on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -387,7 +387,7 @@ fn test_ndarray_pow_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_matrix_sums_products_view() raises:
+def test_matrix_sums_products_view() raises:
     """Test sum, prod, cumsum on F-order Matrices."""
     var np = Python.import_module("numpy")
 
@@ -438,7 +438,7 @@ fn test_matrix_sums_products_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_matrix_logic_view() raises:
+def test_matrix_logic_view() raises:
     """Test all, any on F-order Matrices."""
     var np = Python.import_module("numpy")
 
@@ -468,7 +468,7 @@ fn test_matrix_logic_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_matrix_pow_view() raises:
+def test_matrix_pow_view() raises:
     """Test __pow__ on F-order Matrices."""
     var np = Python.import_module("numpy")
 
@@ -495,7 +495,7 @@ fn test_matrix_pow_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_matrix_conversion_view() raises:
+def test_matrix_conversion_view() raises:
     """Test astype, flatten, to_ndarray on F-order Matrices."""
     var np = Python.import_module("numpy")
 
@@ -543,7 +543,7 @@ fn test_matrix_conversion_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_matrix_rounding_view() raises:
+def test_matrix_rounding_view() raises:
     """Test round on F-order Matrices."""
     var np = Python.import_module("numpy")
 
@@ -568,7 +568,7 @@ fn test_matrix_rounding_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_sort_does_not_mutate_original() raises:
+def test_sort_does_not_mutate_original() raises:
     """Test that sorting a view does not mutate the original array."""
     var np = Python.import_module("numpy")
 
@@ -599,7 +599,7 @@ fn test_sort_does_not_mutate_original() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_solve_view() raises:
+def test_ndarray_solve_view() raises:
     """Test linalg.solve on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -630,7 +630,7 @@ fn test_ndarray_solve_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_trig_view() raises:
+def test_ndarray_trig_view() raises:
     """Test trigonometric functions on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -661,7 +661,7 @@ fn test_ndarray_trig_view() raises:
     )
 
 
-fn test_ndarray_hyper_view() raises:
+def test_ndarray_hyper_view() raises:
     """Test hyperbolic functions on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -685,7 +685,7 @@ fn test_ndarray_hyper_view() raises:
     check_array_close(nm.acosh(C), np.arccosh(Cnp), "`acosh` on F-order broken")
 
 
-fn test_ndarray_exp_log_view() raises:
+def test_ndarray_exp_log_view() raises:
     """Test exp/log functions on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -704,7 +704,7 @@ fn test_ndarray_exp_log_view() raises:
     check_array_close(nm.log1p(A), np.log1p(Anp), "`log1p` on F-order broken")
 
 
-fn test_ndarray_arithmetic_view() raises:
+def test_ndarray_arithmetic_view() raises:
     """Test arithmetic functions on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -734,7 +734,7 @@ fn test_ndarray_arithmetic_view() raises:
     )
 
 
-fn test_ndarray_rounding_view() raises:
+def test_ndarray_rounding_view() raises:
     """Test rounding functions on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -751,7 +751,7 @@ fn test_ndarray_rounding_view() raises:
     check_array_close(nm.tround(A), np.round(Anp), "`tround` on F-order broken")
 
 
-fn test_ndarray_misc_math_view() raises:
+def test_ndarray_misc_math_view() raises:
     """Test misc math functions (clip, sqrt, cbrt, rsqrt) on F-order arrays."""
     var np = Python.import_module("numpy")
 
@@ -777,7 +777,7 @@ fn test_ndarray_misc_math_view() raises:
     )
 
 
-fn test_ndarray_comparison_view() raises:
+def test_ndarray_comparison_view() raises:
     """Test comparison and logic functions on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -806,7 +806,7 @@ fn test_ndarray_comparison_view() raises:
     )
 
 
-fn test_ndarray_copysign_view() raises:
+def test_ndarray_copysign_view() raises:
     """Test copysign and nextafter on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -831,7 +831,7 @@ fn test_ndarray_copysign_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_differences_view() raises:
+def test_ndarray_differences_view() raises:
     """Test gradient and trapz on F-order (non C-contiguous) NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -857,7 +857,7 @@ fn test_ndarray_differences_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_reshape_view() raises:
+def test_ndarray_reshape_view() raises:
     """Test reshape on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -876,7 +876,7 @@ fn test_ndarray_reshape_view() raises:
     check_array_close(flat, flat_np, "`reshape` to 1D on F-order broken")
 
 
-fn test_ndarray_ravel_view() raises:
+def test_ndarray_ravel_view() raises:
     """Test ravel on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -889,7 +889,7 @@ fn test_ndarray_ravel_view() raises:
     check_array_close(raveled, raveled_np, "`ravel` on F-order broken")
 
 
-fn test_ndarray_transpose_view() raises:
+def test_ndarray_transpose_view() raises:
     """Test transpose on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -912,7 +912,7 @@ fn test_ndarray_transpose_view() raises:
     check_array_close(T2, T2np, "`transpose(axes)` on F-order broken")
 
 
-fn test_ndarray_flip_view() raises:
+def test_ndarray_flip_view() raises:
     """Test flip on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -936,7 +936,7 @@ fn test_ndarray_flip_view() raises:
     check_array_close(flipped1, flipped1_np, "`flip(axis=1)` on F-order broken")
 
 
-fn test_ndarray_broadcast_to_view() raises:
+def test_ndarray_broadcast_to_view() raises:
     """Test broadcast_to on F-order NDArrays."""
     var np = Python.import_module("numpy")
 
@@ -955,7 +955,7 @@ fn test_ndarray_broadcast_to_view() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_ndarray_sliced_view_math() raises:
+def test_ndarray_sliced_view_math() raises:
     """Test math on non-contiguous views created via F-order reshape."""
     var np = Python.import_module("numpy")
 
@@ -999,7 +999,7 @@ fn test_ndarray_sliced_view_math() raises:
     )
 
 
-fn test_ndarray_sliced_view_manipulation() raises:
+def test_ndarray_sliced_view_manipulation() raises:
     """Test manipulation functions on 3D F-order arrays."""
     var np = Python.import_module("numpy")
 
@@ -1045,7 +1045,7 @@ fn test_ndarray_sliced_view_manipulation() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn _make_1d_offset_view(
+def _make_1d_offset_view(
     parent: nm.NDArray[nm.f64], offset: Int, size: Int
 ) raises -> nm.NDArray[nm.f64]:
     """Create a 1-D view into `parent` starting at `offset` with `size` elems.
@@ -1059,7 +1059,7 @@ fn _make_1d_offset_view(
     return view^
 
 
-fn _make_2d_offset_view(
+def _make_2d_offset_view(
     parent: nm.NDArray[nm.f64],
     offset: Int,
     rows: Int,
@@ -1077,7 +1077,7 @@ fn _make_2d_offset_view(
     return view^
 
 
-fn test_offset_view_load_store() raises:
+def test_offset_view_load_store() raises:
     """Test load/store/unsafe_load/unsafe_store on 1-D offset views."""
     # parent = [0, 1, 2, ..., 11]
     var parent = nm.arange[nm.f64](0, 12)
@@ -1102,7 +1102,7 @@ fn test_offset_view_load_store() raises:
     assert_true(parent.load(5) == 88.0, "unsafe_store reflected in parent")
 
 
-fn test_offset_view_item_and_itemset() raises:
+def test_offset_view_item_and_itemset() raises:
     """Test item() and itemset() on offset views."""
     var parent = nm.arange[nm.f64](0, 12)
     var view = _make_1d_offset_view(parent, offset=4, size=8)
@@ -1124,7 +1124,7 @@ fn test_offset_view_item_and_itemset() raises:
     assert_true(parent.load(7) == 66.0, "itemset(List) reflected in parent")
 
 
-fn test_offset_view_getitem_setitem_item() raises:
+def test_offset_view_getitem_setitem_item() raises:
     """Test __getitem__(Item) and __setitem__(Item, Scalar) on offset views."""
     var parent = nm.arange[nm.f64](0, 12)
     var view = _make_1d_offset_view(parent, offset=3, size=9)
@@ -1139,7 +1139,7 @@ fn test_offset_view_getitem_setitem_item() raises:
     assert_true(parent.load(4) == 42.0, "__setitem__(Item) in parent")
 
 
-fn test_offset_view_getitem_int() raises:
+def test_offset_view_getitem_int() raises:
     """Test __getitem__(idx: Int) which returns 0-D for 1-D arrays."""
     var parent = nm.arange[nm.f64](0, 12)
     var view = _make_1d_offset_view(parent, offset=2, size=10)
@@ -1152,7 +1152,7 @@ fn test_offset_view_getitem_int() raises:
     assert_true(s4.item() == 6.0, "view[4] → 0-D = parent[6]")
 
 
-fn test_offset_view_2d_getitem_int() raises:
+def test_offset_view_2d_getitem_int() raises:
     """Test __getitem__(idx: Int) on a 2-D offset view (returns a row)."""
     # parent = [0, 1, ..., 23], reshaped to 4x6, then view rows 2-3
     var parent = nm.arange[nm.f64](0, 24)
@@ -1172,7 +1172,7 @@ fn test_offset_view_2d_getitem_int() raises:
     assert_true(row1.item(5) == 23.0, "2D view[1] last elem")
 
 
-fn test_offset_view_setitem_int() raises:
+def test_offset_view_setitem_int() raises:
     """Test __setitem__(idx: Int, val: Self) on a 2-D offset view."""
     var parent = nm.arange[nm.f64](0, 24)
     var view = _make_2d_offset_view(
@@ -1194,7 +1194,7 @@ fn test_offset_view_setitem_int() raises:
     assert_true(parent.load(18) == 18.0, "setitem(int) parent[18] unchanged")
 
 
-fn test_offset_view_load_variadic() raises:
+def test_offset_view_load_variadic() raises:
     """Test load[width](*indices) and store[width](*indices) on 2-D view."""
     var parent = nm.arange[nm.f64](0, 24)
     var view = _make_2d_offset_view(
@@ -1211,7 +1211,7 @@ fn test_offset_view_load_variadic() raises:
     assert_true(parent.load(8) == 55.0, "store(0,2) reflected in parent")
 
 
-fn test_offset_view_mask_getter() raises:
+def test_offset_view_mask_getter() raises:
     """Test __getitem__(mask) on an offset view."""
     var parent = nm.arange[nm.f64](0, 12)
     var view = _make_1d_offset_view(parent, offset=4, size=8)
@@ -1237,7 +1237,7 @@ fn test_offset_view_mask_getter() raises:
     assert_true(result.item(2) == 11.0, "mask getter third")
 
 
-fn test_offset_view_mask_setter() raises:
+def test_offset_view_mask_setter() raises:
     """Test __setitem__(mask, Scalar) on an offset view."""
     var parent = nm.arange[nm.f64](0, 12)
     var view = _make_1d_offset_view(parent, offset=4, size=8)
@@ -1268,7 +1268,7 @@ fn test_offset_view_mask_setter() raises:
     assert_true(view.item(5) == 9.0, "mask setter view[5] unchanged")
 
 
-fn test_offset_view_write_to_0d() raises:
+def test_offset_view_write_to_0d() raises:
     """Test that printing a 1-D offset view shows the correct values."""
     var parent = nm.arange[nm.f64](0, 12)
     var view = _make_1d_offset_view(parent, offset=4, size=4)
@@ -1279,7 +1279,7 @@ fn test_offset_view_write_to_0d() raises:
     assert_true("7.0" in s, "offset view print contains last elem")
 
 
-fn test_offset_view_setitem_item_unsafe() raises:
+def test_offset_view_setitem_item_unsafe() raises:
     """Test _setitem (internal unsafe setter) on offset view."""
     var parent = nm.arange[nm.f64](0, 12)
     var view = _make_1d_offset_view(parent, offset=3, size=9)
@@ -1290,7 +1290,7 @@ fn test_offset_view_setitem_item_unsafe() raises:
     )
 
 
-fn test_offset_view_slice_getitem() raises:
+def test_offset_view_slice_getitem() raises:
     """Test __getitem__(slices) on a 2-D offset view."""
     var parent = nm.arange[nm.f64](0, 24)
     var view = _make_2d_offset_view(
@@ -1309,7 +1309,7 @@ fn test_offset_view_slice_getitem() raises:
     assert_true(sliced.item(3) == 13.0, "slice [1,0]")
 
 
-fn test_offset_view_slice_setitem() raises:
+def test_offset_view_slice_setitem() raises:
     """Test __setitem__(slices, val) on a 2-D offset view."""
     var parent = nm.arange[nm.f64](0, 24)
     var view = _make_2d_offset_view(
@@ -1337,7 +1337,7 @@ fn test_offset_view_slice_setitem() raises:
 # ===-----------------------------------------------------------------------===#
 
 
-fn test_inplace_iadd_scalar_view() raises:
+def test_inplace_iadd_scalar_view() raises:
     """Test += scalar on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 10)
     var view = _make_1d_offset_view(parent, offset=3, size=4)  # [3,4,5,6]
@@ -1353,7 +1353,7 @@ fn test_inplace_iadd_scalar_view() raises:
     assert_true(parent.load(7) == 7.0, "iadd parent[7] unchanged")
 
 
-fn test_inplace_isub_scalar_view() raises:
+def test_inplace_isub_scalar_view() raises:
     """Test -= scalar on a C-contiguous view with offset."""
     var parent = nm.full[nm.f64](Shape(10), fill_value=50.0)
     var view = _make_1d_offset_view(parent, offset=2, size=3)
@@ -1366,7 +1366,7 @@ fn test_inplace_isub_scalar_view() raises:
     assert_true(parent.load(5) == 50.0, "isub parent[5] unchanged")
 
 
-fn test_inplace_imul_scalar_view() raises:
+def test_inplace_imul_scalar_view() raises:
     """Test *= scalar on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](1, 9)  # [1,2,3,4,5,6,7,8]
     var view = _make_1d_offset_view(parent, offset=4, size=4)  # [5,6,7,8]
@@ -1379,7 +1379,7 @@ fn test_inplace_imul_scalar_view() raises:
     assert_true(parent.load(7) == 80.0, "imul parent[7]")
 
 
-fn test_inplace_itruediv_scalar_view() raises:
+def test_inplace_itruediv_scalar_view() raises:
     """Test /= scalar on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
     var view = _make_1d_offset_view(parent, offset=2, size=4)  # [2,3,4,5]
@@ -1393,7 +1393,7 @@ fn test_inplace_itruediv_scalar_view() raises:
     assert_true(parent.load(6) == 6.0, "itruediv parent[6] unchanged")
 
 
-fn test_inplace_iadd_array_view() raises:
+def test_inplace_iadd_array_view() raises:
     """Test += array on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 10)
     var view = _make_1d_offset_view(parent, offset=3, size=4)  # [3,4,5,6]
@@ -1408,7 +1408,7 @@ fn test_inplace_iadd_array_view() raises:
     assert_true(parent.load(7) == 7.0, "iadd arr parent[7] unchanged")
 
 
-fn test_inplace_ipow_view() raises:
+def test_inplace_ipow_view() raises:
     """Test **= int on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
     var view = _make_1d_offset_view(parent, offset=2, size=3)  # [2,3,4]
@@ -1421,7 +1421,7 @@ fn test_inplace_ipow_view() raises:
     assert_true(parent.load(5) == 5.0, "ipow parent[5] unchanged")
 
 
-fn test_inplace_ifloordiv_scalar_view() raises:
+def test_inplace_ifloordiv_scalar_view() raises:
     """Test //= scalar on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
     var view = _make_1d_offset_view(parent, offset=4, size=3)  # [4,5,6]
@@ -1434,7 +1434,7 @@ fn test_inplace_ifloordiv_scalar_view() raises:
     assert_true(parent.load(7) == 7.0, "ifloordiv parent[7] unchanged")
 
 
-fn test_inplace_imod_scalar_view() raises:
+def test_inplace_imod_scalar_view() raises:
     """Test %= scalar on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 8)  # [0,1,2,3,4,5,6,7]
     var view = _make_1d_offset_view(parent, offset=3, size=3)  # [3,4,5]
@@ -1447,7 +1447,7 @@ fn test_inplace_imod_scalar_view() raises:
     assert_true(parent.load(6) == 6.0, "imod parent[6] unchanged")
 
 
-fn test_matrix_view_fill() raises:
+def test_matrix_view_fill() raises:
     """Test Matrix.fill on a view with offset."""
     var parent = Matrix[nm.f64](shape=(3, 4), order="C")
     for i in range(3):
@@ -1470,7 +1470,7 @@ fn test_matrix_view_fill() raises:
     assert_true(parent[2, 0] == 8.0, "matrix fill parent[2,0] unchanged")
 
 
-fn test_matrix_view_getset() raises:
+def test_matrix_view_getset() raises:
     """Test Matrix __getitem__/__setitem__(x,y) respect offset."""
     var parent = Matrix[nm.f64](shape=(3, 4), order="C")
     for i in range(3):
@@ -1490,7 +1490,7 @@ fn test_matrix_view_getset() raises:
     assert_true(parent[2, 2] == 999.0, "matrix view set parent[2,2]")
 
 
-fn test_matrix_view_iadd() raises:
+def test_matrix_view_iadd() raises:
     """Test Matrix += on a row view with offset."""
     var parent = Matrix[nm.f64](shape=(3, 4), order="C")
     for i in range(3):
@@ -1512,7 +1512,7 @@ fn test_matrix_view_iadd() raises:
     assert_true(parent[2, 0] == 8.0, "matrix iadd parent[2,0] unchanged")
 
 
-fn test_matrix_view_load_store() raises:
+def test_matrix_view_load_store() raises:
     """Test Matrix load/store with offset."""
     var parent = Matrix[nm.f64](shape=(2, 4), order="C")
     for i in range(2):
@@ -1531,7 +1531,7 @@ fn test_matrix_view_load_store() raises:
     assert_true(parent[1, 1] == 555.0, "matrix store parent[1,1]")
 
 
-fn test_matrix_view_reshape() raises:
+def test_matrix_view_reshape() raises:
     """Test Matrix reshape on a view with offset."""
     var parent = Matrix[nm.f64](shape=(3, 4), order="C")
     for i in range(3):
@@ -1549,7 +1549,7 @@ fn test_matrix_view_reshape() raises:
     assert_true(reshaped[3, 1] == 11.0, "matrix reshape [3,1]")
 
 
-fn test_ndarray_ravel_offset_view() raises:
+def test_ndarray_ravel_offset_view() raises:
     """Test ravel on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 24)
     var view = _make_2d_offset_view(
@@ -1567,7 +1567,7 @@ fn test_ndarray_ravel_offset_view() raises:
     assert_true(flat.item(5) == 11.0, "ravel [5]")
 
 
-fn test_where_on_offset_view() raises:
+def test_where_on_offset_view() raises:
     """Test where() modifies an offset view's parent buffer."""
     var parent = nm.full[nm.f64](Shape(10), fill_value=0.0)
     var view = _make_1d_offset_view(parent, offset=3, size=4)  # [0,0,0,0]

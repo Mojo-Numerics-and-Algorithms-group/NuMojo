@@ -43,7 +43,7 @@ from numojo.routines.functional import (
 
 
 # Below are overrides for NDArray type
-fn sort[
+def sort[
     dtype: DType
 ](a: NDArray[dtype], stable: Bool = False) raises -> NDArray[dtype]:
     """
@@ -64,7 +64,7 @@ fn sort[
         return quick_sort_1d(a)
 
 
-fn sort[
+def sort[
     dtype: DType
 ](a: NDArray[dtype], axis: Int, stable: Bool = False) raises -> NDArray[dtype]:
     """
@@ -107,7 +107,7 @@ fn sort[
         )
 
 
-fn sort_inplace[
+def sort_inplace[
     dtype: DType
 ](mut a: NDArray[dtype], axis: Int, stable: Bool = False) raises:
     """
@@ -152,7 +152,7 @@ fn sort_inplace[
 # Below are overrides for Matrix type
 
 
-fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+def sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Sort the Matrix. It is first flattened before sorting.
     """
@@ -163,7 +163,7 @@ fn sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return B^
 
 
-fn sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Sort the Matrix along the given axis.
     """
@@ -210,7 +210,7 @@ fn sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
+def argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """
     Returns the indices that would sort an array.
     It is not guaranteed to be unstable.
@@ -238,7 +238,7 @@ fn argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     return indices^
 
 
-fn argsort[
+def argsort[
     dtype: DType
 ](mut a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """
@@ -279,7 +279,7 @@ fn argsort[
     )
 
 
-fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.int]:
+def argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.int]:
     """
     Argsort the Matrix. It is first flattened before sorting.
     """
@@ -296,7 +296,7 @@ fn argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.int]:
     return I^
 
 
-fn argsort[
+def argsort[
     dtype: DType
 ](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.int]:
     """
@@ -353,7 +353,7 @@ fn argsort[
 ###############
 
 
-fn binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+def binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = a.contiguous()
     for end in range(result.size, 1, -1):
         for i in range(1, end):
@@ -364,7 +364,7 @@ fn binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     return result^
 
 
-fn binary_sort[
+def binary_sort[
     dtype: DType = DType.float64
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -409,7 +409,7 @@ fn binary_sort[
 ###############
 
 
-fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
+def bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Bubble sort the NDArray.
     Average complexity: O(n^2) comparisons, O(n^2) swaps.
@@ -453,7 +453,7 @@ fn bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 ##############
 
 
-fn quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+def quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Sort array using quick sort method.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -477,7 +477,7 @@ fn quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     return result^
 
 
-fn quick_sort_stable_1d[
+def quick_sort_stable_1d[
     dtype: DType
 ](a: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -502,7 +502,7 @@ fn quick_sort_stable_1d[
     return result^
 
 
-fn quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
+def quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
     """
     Sort array in-place using quick sort method.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -523,7 +523,7 @@ fn quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
     return
 
 
-fn quick_sort_stable_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
+def quick_sort_stable_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
     """
     Sort array in-place using quick sort method.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -546,7 +546,7 @@ fn quick_sort_stable_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
     return
 
 
-fn argsort_quick_sort_1d[
+def argsort_quick_sort_1d[
     dtype: DType
 ](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """
@@ -570,7 +570,7 @@ fn argsort_quick_sort_1d[
     return indices^
 
 
-fn _partition_in_range(
+def _partition_in_range(
     mut A: NDArray,
     left: Int,
     right: Int,
@@ -615,7 +615,7 @@ fn _partition_in_range(
     return store_index
 
 
-fn _partition_in_range(
+def _partition_in_range(
     mut A: NDArray,
     mut I: NDArray,
     left: Int,
@@ -675,7 +675,7 @@ fn _partition_in_range(
     return store_index
 
 
-fn _quick_sort_partition(
+def _quick_sort_partition(
     mut A: Matrix, mut I: Matrix, left: Int, right: Int, pivot_index: Int
 ) raises -> Int:
     """
@@ -738,7 +738,7 @@ fn _quick_sort_partition(
     return store_index
 
 
-fn _quick_sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
+def _quick_sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
     """
     Sort in-place of the data buffer (quick-sort) within give range.
     It is not guaranteed to be stable.
@@ -756,7 +756,7 @@ fn _quick_sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
         _quick_sort_in_range(A, pivot_new_index + 1, right)
 
 
-fn _quick_sort_in_range(
+def _quick_sort_in_range(
     mut A: NDArray, mut I: NDArray, left: Int, right: Int
 ) raises:
     """
@@ -780,7 +780,7 @@ fn _quick_sort_in_range(
         _quick_sort_in_range(A, I, pivot_new_index + 1, right)
 
 
-fn _quick_sort_inplace(
+def _quick_sort_inplace(
     mut A: Matrix, mut I: Matrix, left: Int, right: Int
 ) raises:
     """
@@ -804,7 +804,7 @@ fn _quick_sort_inplace(
         _quick_sort_inplace(A, I, pivot_new_index + 1, right)
 
 
-fn _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
+def _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     """
     Sort in-place array's buffer using quick sort method.
     It is not guaranteed to be unstable.
@@ -835,7 +835,7 @@ fn _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     )
 
 
-fn _quick_sort_inplace[
+def _quick_sort_inplace[
     dtype: DType
 ](mut A: NDArray[dtype], mut I: NDArray[DType.int]) raises:
     """
@@ -871,7 +871,7 @@ fn _quick_sort_inplace[
     )
 
 
-fn _quick_sort_stable_inplace[
+def _quick_sort_stable_inplace[
     dtype: DType, //
 ](mut a: NDArray[dtype], size: Int) raises:
     """

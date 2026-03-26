@@ -85,7 +85,7 @@ fn `where`[
 # ===----------------------------------------------------------------------=== #
 
 
-fn compress[
+def compress[
     dtype: DType
 ](
     condition: NDArray[DType.bool], a: NDArray[dtype], axis: Int
@@ -202,7 +202,7 @@ fn compress[
     return result^
 
 
-fn compress[
+def compress[
     dtype: DType
 ](condition: NDArray[DType.bool], a: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -244,7 +244,7 @@ fn compress[
         return compress(condition, ravel(a), axis=0)
 
 
-fn take_along_axis[
+def take_along_axis[
     dtype: DType,
     //,
 ](

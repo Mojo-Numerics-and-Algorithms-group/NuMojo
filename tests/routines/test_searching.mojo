@@ -4,7 +4,7 @@ from utils_for_test import check, check_is_close, check_values_close
 from std.testing import TestSuite
 
 
-fn test_argmax() raises:
+def test_argmax() raises:
     var np = Python.import_module("numpy")
 
     # Test 1D array
@@ -94,7 +94,7 @@ fn test_argmax() raises:
         )
 
 
-fn test_argmin() raises:
+def test_argmin() raises:
     var np = Python.import_module("numpy")
 
     # Test 1D array
@@ -184,7 +184,7 @@ fn test_argmin() raises:
         )
 
 
-fn test_take_along_axis_with_argmax_argmin() raises:
+def test_take_along_axis_with_argmax_argmin() raises:
     var np = Python.import_module("numpy")
 
     # Test with argmax to get maximum values

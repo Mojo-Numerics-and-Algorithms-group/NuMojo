@@ -21,7 +21,7 @@ from numojo.core.error import NumojoError
 
 struct TraverseMethods:
     @staticmethod
-    fn traverse_buffer_according_to_shape_and_strides[
+    def traverse_buffer_according_to_shape_and_strides[
         origin: MutOrigin
     ](
         mut ptr: UnsafePointer[Scalar[DType.int], origin=origin],
@@ -63,7 +63,7 @@ struct TraverseMethods:
                 )
 
     @staticmethod
-    fn traverse_iterative[
+    def traverse_iterative[
         dtype: DType
     ](
         orig: NDArray[dtype],
@@ -114,7 +114,7 @@ struct TraverseMethods:
                 index[d] = 0
 
     @staticmethod
-    fn traverse_iterative_setter[
+    def traverse_iterative_setter[
         dtype: DType
     ](
         orig: NDArray[dtype],

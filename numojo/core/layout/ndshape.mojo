@@ -68,7 +68,7 @@ struct NDArrayShape(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initializes an empty NDArrayShape.
         """
@@ -76,7 +76,7 @@ struct NDArrayShape(
         self._buf = IndexBuffer()
 
     @always_inline("nodebug")
-    fn __init__(out self, var buf: IndexBuffer):
+    def __init__(out self, var buf: IndexBuffer):
         """
         Initializes the NDArrayShape from an IndexBuffer.
 
@@ -87,7 +87,7 @@ struct NDArrayShape(
         self._buf = buf^
 
     @always_inline("nodebug")
-    fn __init__(out self, *shape: Int) raises:
+    def __init__(out self, *shape: Int) raises:
         """
         Initializes the NDArrayShape with variable shape dimensions.
 
@@ -115,7 +115,7 @@ struct NDArrayShape(
             self._buf.init_value(i, Scalar[DType.int](shape[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: List[Int]) raises:
+    def __init__(out self, shape: List[Int]) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions.
 
@@ -155,7 +155,7 @@ struct NDArrayShape(
             self._buf.init_value(i, Scalar[DType.int](shape[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: VariadicList[Int, _]) raises:
+    def __init__(out self, shape: VariadicList[Int, _]) raises:
         """
         Initializes the NDArrayShape with a list of shape dimensions.
 
@@ -198,7 +198,7 @@ struct NDArrayShape(
             self._buf.init_value(i, Scalar[DType.int](shape[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: NDArrayShape):
+    def __init__(out self, shape: NDArrayShape):
         """
         Initializes the NDArrayShape from another NDArrayShape.
         A deep copy of the data buffer is conducted.
@@ -211,7 +211,7 @@ struct NDArrayShape(
         memcpy(dest=self._buf.ptr, src=shape._buf.ptr, count=shape.ndim)
 
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         *,
         ndim: Int,
@@ -263,7 +263,7 @@ struct NDArrayShape(
                     self._buf.init_value(i, 1)
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         """
         Initializes the NDArrayShape from ancopy NDArrayShape.
         A deep copy of the data buffer is conducted.
@@ -288,7 +288,7 @@ struct NDArrayShape(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Int:
+    def __getitem__(self, index: Int) raises -> Int:
         """
         Gets shape dimension at specified index.
 
@@ -304,7 +304,7 @@ struct NDArrayShape(
         return Int(self._buf[index])
 
     @always_inline("nodebug")
-    fn __getitem__(
+    def __getitem__(
         self, index: Scalar[Self.element_type]
     ) raises -> Scalar[Self.element_type]:
         """
@@ -319,7 +319,7 @@ struct NDArrayShape(
         return self._buf[index]
 
     @always_inline("nodebug")
-    fn __getitem__(self, slice_index: Slice) raises -> NDArrayShape:
+    def __getitem__(self, slice_index: Slice) raises -> NDArrayShape:
         """
         Return a sliced view of the dimension tuple as a new NDArrayShape.
 
@@ -332,7 +332,7 @@ struct NDArrayShape(
         return Self(self._buf[slice_index])
 
     @always_inline("nodebug")
-    fn __setitem__(
+    def __setitem__(
         mut self,
         index: Scalar[Self.element_type],
         val: Scalar[Self.element_type],
@@ -350,7 +350,7 @@ struct NDArrayShape(
         self._buf[index] = val
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Int) raises:
+    def __setitem__(mut self, index: Int, val: Int) raises:
         """
         Sets shape at specified index.
 
@@ -363,7 +363,7 @@ struct NDArrayShape(
         """
         self._buf[index] = val
 
-    fn load[
+    def load[
         width: Int = 1
     ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
         """
@@ -395,7 +395,7 @@ struct NDArrayShape(
             )
         return self._buf.ptr.load[width=width](idx)
 
-    fn store[
+    def store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]) raises:
         """
@@ -425,7 +425,7 @@ struct NDArrayShape(
             )
         self._buf.ptr.store[width=width](idx, value)
 
-    fn unsafe_load[
+    def unsafe_load[
         width: Int = 1
     ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
@@ -442,7 +442,7 @@ struct NDArrayShape(
         """
         return self._buf.unsafe_load[width=width](idx)
 
-    fn unsafe_store[
+    def unsafe_store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]):
         """
@@ -461,7 +461,7 @@ struct NDArrayShape(
     # Transformation Methods
     # ===----------------------------------------------------------------------=== #
 
-    fn row_major(self) raises -> NDArrayStrides:
+    def row_major(self) raises -> NDArrayStrides:
         """
         Create row-major (C-style) strides from a shape.
 
@@ -473,7 +473,7 @@ struct NDArrayShape(
         """
         return NDArrayStrides(shape=self, order="C")
 
-    fn col_major(self) raises -> NDArrayStrides:
+    def col_major(self) raises -> NDArrayStrides:
         """
         Create column-major (Fortran-style) strides from a shape.
 
@@ -485,7 +485,7 @@ struct NDArrayShape(
         """
         return NDArrayStrides(shape=self, order="F")
 
-    fn reverse(self) -> Self:
+    def reverse(self) -> Self:
         """
         Return a new shape with dimensions reversed.
 
@@ -494,7 +494,7 @@ struct NDArrayShape(
         """
         return Self(self._buf.flipped())
 
-    fn permute(self, axes: List[Int]) raises -> Self:
+    def permute(self, axes: List[Int]) raises -> Self:
         """
         Return a new shape with axes reordered.
 
@@ -558,7 +558,7 @@ struct NDArrayShape(
             )
         return result^
 
-    fn join(self, *shapes: Self) -> Self:
+    def join(self, *shapes: Self) -> Self:
         """
         Join multiple shapes into a single shape.
 
@@ -573,7 +573,7 @@ struct NDArrayShape(
             bufs.append(shapes[i]._buf)
         return Self(self._buf.join(bufs))
 
-    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+    def swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
         """
         Returns a new shape with the given axes swapped.
 
@@ -591,7 +591,7 @@ struct NDArrayShape(
         res[axis2] = val1
         return res
 
-    fn extend(self, *values: Int) -> Self:
+    def extend(self, *values: Int) -> Self:
         """
         Extend the shape by sizes of extended dimensions.
 
@@ -606,13 +606,13 @@ struct NDArrayShape(
             new_vals.append(values[i])
         return Self(self._buf.extend(new_vals))
 
-    fn flip(mut self):
+    def flip(mut self):
         """
         Flip the items in-place.
         """
         self._buf.flip()
 
-    fn flipped(self) -> Self:
+    def flipped(self) -> Self:
         """
         Returns a new shape by flipping the items.
 
@@ -621,7 +621,7 @@ struct NDArrayShape(
         """
         return Self(self._buf.flipped())
 
-    fn move_axis_to_end(self, axis: Int) -> Self:
+    def move_axis_to_end(self, axis: Int) -> Self:
         """
         Returns a new shape by moving the value of axis to the end.
 
@@ -633,7 +633,7 @@ struct NDArrayShape(
         """
         return Self(self._buf.move_axis_to_end(axis))
 
-    fn pop(self, axis: Int) raises -> Self:
+    def pop(self, axis: Int) raises -> Self:
         """
         Drops the item at the given axis (index).
 
@@ -650,7 +650,7 @@ struct NDArrayShape(
     # Properties
     # ===----------------------------------------------------------------------=== #
     @always_inline("nodebug")
-    fn rank(self) -> Int:
+    def rank(self) -> Int:
         """
         Returns the number of dimensions of the shape.
 
@@ -659,7 +659,7 @@ struct NDArrayShape(
         """
         return self.ndim
 
-    fn size(self) -> Int:
+    def size(self) -> Int:
         """
         Returns the total number of elements in the array.
 
@@ -668,7 +668,7 @@ struct NDArrayShape(
         """
         return Int(self._buf.product())
 
-    fn sum(self) -> Scalar[Self.element_type]:
+    def sum(self) -> Scalar[Self.element_type]:
         """
         Compute the sum of all elements in NDArrayShape.
 
@@ -677,7 +677,7 @@ struct NDArrayShape(
         """
         return self._buf.sum()
 
-    fn product(self) -> Scalar[Self.element_type]:
+    def product(self) -> Scalar[Self.element_type]:
         """
         Compute the product of all elements in the IndexBuffer.
 
@@ -690,7 +690,7 @@ struct NDArrayShape(
     # Traits
     # ===----------------------------------------------------------------------=== #
     @always_inline("nodebug")
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         """
         Gets number of elements in the shape.
         It equals the number of dimensions of the array.
@@ -701,7 +701,7 @@ struct NDArrayShape(
         return self.ndim
 
     @always_inline("nodebug")
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """
         Returns a string of the shape of the array.
 
@@ -710,7 +710,7 @@ struct NDArrayShape(
         """
         return "numojo.Shape" + self.__str__()
 
-    fn write_repr_to[W: Writer](self, mut writer: W):
+    def write_repr_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.
 
         Parameters:
@@ -720,7 +720,7 @@ struct NDArrayShape(
         writer.write(self.__repr__())
 
     @always_inline("nodebug")
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Returns a string of the shape of the array.
 
@@ -735,7 +735,7 @@ struct NDArrayShape(
         result += ")"
         return result
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """
         Writes the shape representation to a writer.
         """
@@ -744,7 +744,7 @@ struct NDArrayShape(
         )
 
     @always_inline("nodebug")
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """
         Checks if two shapes have identical dimensions and values.
 
@@ -757,7 +757,7 @@ struct NDArrayShape(
         return self._buf == other._buf
 
     @always_inline("nodebug")
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """
         Checks if two shapes have identical dimensions and values.
 
@@ -770,7 +770,7 @@ struct NDArrayShape(
         return not self.__eq__(other)
 
     @always_inline("nodebug")
-    fn __contains__(self, val: Int) -> Bool:
+    def __contains__(self, val: Int) -> Bool:
         """
         Checks if the given value is present in the shape dimensions.
 
@@ -783,7 +783,7 @@ struct NDArrayShape(
         return val in self._buf
 
     @always_inline("nodebug")
-    fn __contains__(self, val: Scalar[Self.element_type]) -> Bool:
+    def __contains__(self, val: Scalar[Self.element_type]) -> Bool:
         """
         Check if the NDArrayShape contains the given value.
 
@@ -799,7 +799,7 @@ struct NDArrayShape(
     # Utility Methods
     # ===----------------------------------------------------------------------=== #
     @always_inline("nodebug")
-    fn tolist(self) -> List[Int]:
+    def tolist(self) -> List[Int]:
         """
         Convert the shape to a list of integers.
 
@@ -812,7 +812,7 @@ struct NDArrayShape(
         return res^
 
     @always_inline("nodebug")
-    fn normalize_index(self, index: Int) -> Int:
+    def normalize_index(self, index: Int) -> Int:
         """
         Normalizes the given index to be within the valid range [0, ndim).
 
@@ -830,7 +830,7 @@ struct NDArrayShape(
     # ===----------------------------------------------------------------------=== #
     # Iterators
     # ===----------------------------------------------------------------------=== #
-    fn __iter__(ref self) -> _ShapeIter[origin_of(self), True]:
+    def __iter__(ref self) -> _ShapeIter[origin_of(self), True]:
         """
         Iterate over elements of the NDArrayShape, returning copied values.
 
@@ -842,7 +842,7 @@ struct NDArrayShape(
             length=self.ndim,
         )
 
-    fn __reversed__(ref self) -> _ShapeIter[origin_of(self), False]:
+    def __reversed__(ref self) -> _ShapeIter[origin_of(self), False]:
         """
         Iterate over elements of the NDArrayShape in reverse order, returning copied values.
 
@@ -873,7 +873,7 @@ struct _ShapeIter[
     var shape: Pointer[NDArrayShape, Self.origin]
     var length: Int
 
-    fn __init__(
+    def __init__(
         out self,
         shape: Pointer[NDArrayShape, Self.origin],
         length: Int,
@@ -882,16 +882,16 @@ struct _ShapeIter[
         self.length = length
         self.shape = shape
 
-    fn __iter__(self) -> Self:
+    def __iter__(self) -> Self:
         return self
 
-    fn __has_next__(self) -> Bool:
+    def __has_next__(self) -> Bool:
         comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
-    fn __next__(mut self) raises -> Scalar[DType.int]:
+    def __next__(mut self) raises -> Scalar[DType.int]:
         comptime if Self.forward:
             var current_index = self.index
             self.index += 1
@@ -901,7 +901,7 @@ struct _ShapeIter[
             self.index -= 1
             return Scalar[DType.int](self.shape[].__getitem__(current_index))
 
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         comptime if Self.forward:
             return self.length - self.index
         else:

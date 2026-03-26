@@ -378,7 +378,7 @@ def test_sin() raises:
     )
 
 
-fn test_extrema() raises:
+def test_extrema() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.randn(10)
     var anp = a.to_numpy()
@@ -404,7 +404,7 @@ fn test_extrema() raises:
         )
 
 
-fn test_misc() raises:
+def test_misc() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.randn(10)
     var anp = a.to_numpy()

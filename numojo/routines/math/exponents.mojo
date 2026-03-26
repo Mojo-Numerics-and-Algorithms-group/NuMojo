@@ -23,7 +23,7 @@ from numojo.routines import HostExecutor
 # ===------------------------------------------------------------------------===#
 
 
-fn exp[
+def exp[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[
     dtype
@@ -52,7 +52,7 @@ fn exp[
     return HostExecutor.apply_unary[dtype, math.exp](array)
 
 
-fn exp[
+def exp[
     dtype: DType
 ](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
     """
@@ -79,7 +79,7 @@ fn exp[
     return math.exp(value)
 
 
-fn exp2[
+def exp2[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[
     dtype
@@ -108,7 +108,7 @@ fn exp2[
     return HostExecutor.apply_unary[dtype, math.exp2](array)
 
 
-fn exp2[
+def exp2[
     dtype: DType
 ](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
     """
@@ -135,7 +135,7 @@ fn exp2[
     return math.exp2(value)
 
 
-fn expm1[
+def expm1[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[
     dtype
@@ -163,7 +163,7 @@ fn expm1[
     return HostExecutor.apply_unary[dtype, math.expm1](array)
 
 
-fn expm1[
+def expm1[
     dtype: DType
 ](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
     """
@@ -194,7 +194,7 @@ fn expm1[
 # ===------------------------------------------------------------------------===#
 
 
-fn log[
+def log[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[
     dtype
@@ -222,7 +222,7 @@ fn log[
     return HostExecutor.apply_unary[dtype, math.log](array)
 
 
-fn log[
+def log[
     dtype: DType
 ](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
     """
@@ -248,7 +248,7 @@ fn log[
     return math.log(value)
 
 
-fn log2[
+def log2[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[
     dtype
@@ -277,7 +277,7 @@ fn log2[
     return HostExecutor.apply_unary[dtype, math.log2](array)
 
 
-fn log2[
+def log2[
     dtype: DType
 ](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
     """
@@ -302,7 +302,7 @@ fn log2[
     return math.log2(value)
 
 
-fn log10[
+def log10[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[
     dtype
@@ -330,7 +330,7 @@ fn log10[
     return HostExecutor.apply_unary[dtype, math.log10](array)
 
 
-fn log10[
+def log10[
     dtype: DType
 ](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
     """
@@ -356,7 +356,7 @@ fn log10[
     return math.log10(value)
 
 
-fn log1p[
+def log1p[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[
     dtype
@@ -385,7 +385,7 @@ fn log1p[
     return HostExecutor.apply_unary[dtype, math.log1p](array)
 
 
-fn log1p[
+def log1p[
     dtype: DType
 ](value: Scalar[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
     """

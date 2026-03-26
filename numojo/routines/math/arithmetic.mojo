@@ -21,7 +21,7 @@ from numojo.core.ndarray import NDArray
 # ===------------------------------------------------------------------------===#
 
 
-fn add[
+def add[
     dtype: DType,
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -43,7 +43,7 @@ fn add[
     return HostExecutor.apply_binary[dtype, SIMD.__add__](array1, array2)
 
 
-fn add[
+def add[
     dtype: DType,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -62,7 +62,7 @@ fn add[
     return HostExecutor.apply_binary[dtype, SIMD.__add__](array, scalar)
 
 
-fn add[
+def add[
     dtype: DType,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -81,7 +81,7 @@ fn add[
     return HostExecutor.apply_binary[dtype, SIMD.__add__](scalar, array)
 
 
-fn add[
+def add[
     dtype: DType,
 ](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[dtype]:
     """
@@ -124,7 +124,7 @@ fn add[
 # ===------------------------------------------------------------------------===#
 
 
-fn sub[
+def sub[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -143,7 +143,7 @@ fn sub[
     return HostExecutor.apply_binary[dtype, SIMD.__sub__](array1, array2)
 
 
-fn sub[
+def sub[
     dtype: DType,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -162,7 +162,7 @@ fn sub[
     return HostExecutor.apply_binary[dtype, SIMD.__sub__](array, scalar)
 
 
-fn sub[
+def sub[
     dtype: DType,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -186,7 +186,7 @@ fn sub[
 # ===------------------------------------------------------------------------===#
 
 
-fn mod[
+def mod[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -205,7 +205,7 @@ fn mod[
     return HostExecutor.apply_binary[dtype, SIMD.__mod__](array1, array2)
 
 
-fn mod[
+def mod[
     dtype: DType,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -224,7 +224,7 @@ fn mod[
     return HostExecutor.apply_binary[dtype, SIMD.__mod__](array, scalar)
 
 
-fn mod[
+def mod[
     dtype: DType,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -248,7 +248,7 @@ fn mod[
 # ===------------------------------------------------------------------------===#
 
 
-fn mul[
+def mul[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -270,7 +270,7 @@ fn mul[
     return HostExecutor.apply_binary[dtype, SIMD.__mul__](array1, array2)
 
 
-fn mul[
+def mul[
     dtype: DType,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -289,7 +289,7 @@ fn mul[
     return HostExecutor.apply_binary[dtype, SIMD.__mul__](array, scalar)
 
 
-fn mul[
+def mul[
     dtype: DType,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -308,7 +308,7 @@ fn mul[
     return HostExecutor.apply_binary[dtype, SIMD.__mul__](scalar, array)
 
 
-fn mul[
+def mul[
     dtype: DType,
 ](var *values: Variant[NDArray[dtype], Scalar[dtype]]) raises -> NDArray[dtype]:
     """
@@ -351,7 +351,7 @@ fn mul[
 # ===------------------------------------------------------------------------===#
 
 
-fn div[
+def div[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -373,7 +373,7 @@ fn div[
     return HostExecutor.apply_binary[dtype, SIMD.__truediv__](array1, array2)
 
 
-fn div[
+def div[
     dtype: DType,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -392,7 +392,7 @@ fn div[
     return HostExecutor.apply_binary[dtype, SIMD.__truediv__](array, scalar)
 
 
-fn div[
+def div[
     dtype: DType,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -416,7 +416,7 @@ fn div[
 # ===------------------------------------------------------------------------===#
 
 
-fn floor_div[
+def floor_div[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -438,7 +438,7 @@ fn floor_div[
     return HostExecutor.apply_binary[dtype, SIMD.__floordiv__](array1, array2)
 
 
-fn floor_div[
+def floor_div[
     dtype: DType,
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -457,7 +457,7 @@ fn floor_div[
     return HostExecutor.apply_binary[dtype, SIMD.__floordiv__](array, scalar)
 
 
-fn floor_div[
+def floor_div[
     dtype: DType,
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -481,7 +481,7 @@ fn floor_div[
 # ===------------------------------------------------------------------------===#
 
 
-fn fma[
+def fma[
     dtype: DType
 ](
     array1: NDArray[dtype], array2: NDArray[dtype], array3: NDArray[dtype]
@@ -511,7 +511,7 @@ fn fma[
     )
 
 
-fn fma[
+def fma[
     dtype: DType
 ](
     array1: NDArray[dtype], array2: NDArray[dtype], simd: SIMD[dtype, 1]
@@ -543,7 +543,7 @@ fn fma[
 # ===------------------------------------------------------------------------===#
 
 
-fn remainder[
+def remainder[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -565,7 +565,7 @@ fn remainder[
     return HostExecutor.apply_binary[dtype, SIMD.__mod__](array1, array2)
 
 
-fn remainder[
+def remainder[
     dtype: DType
 ](array: NDArray[dtype], scalar: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -584,7 +584,7 @@ fn remainder[
     return HostExecutor.apply_binary[dtype, SIMD.__mod__](array, scalar)
 
 
-fn remainder[
+def remainder[
     dtype: DType
 ](scalar: Scalar[dtype], array: NDArray[dtype]) raises -> NDArray[dtype]:
     """

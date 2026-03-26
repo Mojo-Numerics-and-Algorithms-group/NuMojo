@@ -56,7 +56,7 @@ struct NumojoError(Writable):
     var message: String
     var location: Optional[String]
 
-    fn __init__(
+    def __init__(
         out self,
         category: StringLiteral,
         message: StringLiteral,
@@ -70,7 +70,7 @@ struct NumojoError(Writable):
         self.message = message
         self.location = location
 
-    fn __init__(
+    def __init__(
         out self,
         category: StringLiteral,
         message: String,
@@ -84,7 +84,7 @@ struct NumojoError(Writable):
         self.message = message
         self.location = location
 
-    fn __init__(
+    def __init__(
         out self,
         category: StringLiteral,
         message: TString,
@@ -98,7 +98,7 @@ struct NumojoError(Writable):
         self.message = String(message)
         self.location = location
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         var result = (
             RED_COLOR + String(self.category) + String(": ") + self.message
         )
@@ -107,7 +107,7 @@ struct NumojoError(Writable):
         result += END_COLOR
         return result
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """Write error information to a writer."""
         writer.write(
             RED_COLOR + String(self.category) + String(": ") + self.message
@@ -118,6 +118,6 @@ struct NumojoError(Writable):
 
 
 # Use this for fatal errors that should abort the program.
-fn terminate(message: String):
+def terminate(message: String):
     """Abort the program with the given error message."""
     abort(RED_COLOR + message + END_COLOR)

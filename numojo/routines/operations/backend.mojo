@@ -31,11 +31,11 @@ struct HostExecutor:
     unary and binary functions to NDArrays, Scalars.
     """
 
-    fn __init__(out self):
+    def __init__(out self):
         pass
 
     @staticmethod
-    fn apply_unary[
+    def apply_unary[
         dtype: DType,
         simd_width: Int,
         kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
@@ -59,7 +59,7 @@ struct HostExecutor:
         return kernel[dtype, simd_width](scalar)
 
     @staticmethod
-    fn apply_binary[
+    def apply_binary[
         dtype: DType,
         simd_width: Int,
         kernel: fn[type: DType, simd_w: Int](
@@ -86,7 +86,7 @@ struct HostExecutor:
         return kernel[dtype, simd_width](simd1, simd2)
 
     @staticmethod
-    fn apply_unary_predicate[
+    def apply_unary_predicate[
         dtype: DType,
         simd_width: Int,
         kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
@@ -110,7 +110,7 @@ struct HostExecutor:
         return kernel[dtype, simd_width](simd)
 
     @staticmethod
-    fn apply_binary_predicate[
+    def apply_binary_predicate[
         dtype: DType,
         simd_width: Int,
         kernel: fn[type: DType, simd_w: Int](
@@ -137,7 +137,7 @@ struct HostExecutor:
         return kernel[dtype, simd_width](simd1, simd2)
 
     @staticmethod
-    fn apply_unary[
+    def apply_unary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -172,7 +172,7 @@ struct HostExecutor:
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
+        def closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(i, kernel[dtype, simd_w](simd_data))
 
@@ -181,7 +181,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_binary[
+    def apply_binary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -227,7 +227,7 @@ struct HostExecutor:
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[
+        def closure[
             simd_w: Int
         ](i: Int) unified {mut result_array, read array1, read array2}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
@@ -240,7 +240,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_binary[
+    def apply_binary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -274,7 +274,7 @@ struct HostExecutor:
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[
+        def closure[
             simd_w: Int
         ](i: Int) unified {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
@@ -286,7 +286,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_binary[
+    def apply_binary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -321,7 +321,7 @@ struct HostExecutor:
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[
+        def closure[
             simd_w: Int
         ](i: Int) unified {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
@@ -333,7 +333,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_binary[
+    def apply_binary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
@@ -361,7 +361,7 @@ struct HostExecutor:
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[
+        def closure[
             simd_w: Int
         ](i: Int) unified {mut result_array, read array, read intval}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
@@ -374,7 +374,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_binary_predicate[
+    def apply_binary_predicate[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -427,7 +427,7 @@ struct HostExecutor:
         comptime width = simd_width_of[DType.bool]()
 
         @parameter
-        fn closure[
+        def closure[
             simd_w: Int
         ](i: Int) unified {mut result_array, read array1, read array2}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
@@ -443,7 +443,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_binary_predicate[
+    def apply_binary_predicate[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -483,7 +483,7 @@ struct HostExecutor:
         comptime width = simd_width_of[DType.bool]()
 
         @parameter
-        fn closure[
+        def closure[
             simd_w: Int
         ](i: Int) unified {mut result_array, read array1, read scalar}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
@@ -498,7 +498,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_unary_predicate[
+    def apply_unary_predicate[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -525,7 +525,7 @@ struct HostExecutor:
         comptime width = simd_width_of[DType.bool]()
 
         @parameter
-        fn closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
+        def closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
             bool_simd_store[simd_w](
                 result_array._buf.ptr,
@@ -537,7 +537,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_ternary[
+    def apply_ternary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
@@ -591,7 +591,7 @@ struct HostExecutor:
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[
+        def closure[
             simdwidth: Int
         ](i: Int) unified {
             mut result_array, read array1, read array2, read array3
@@ -607,7 +607,7 @@ struct HostExecutor:
         return result_array^
 
     @staticmethod
-    fn apply_ternary[
+    def apply_ternary[
         dtype: DType,
         kernel: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
@@ -653,7 +653,7 @@ struct HostExecutor:
         comptime width = simd_width_of[dtype]()
 
         @parameter
-        fn closure[
+        def closure[
             simdwidth: Int
         ](i: Int) unified {
             mut result_array, read array1, read array2, read scalar
@@ -669,7 +669,7 @@ struct HostExecutor:
 
 
 # This provides a way to bypass bitpacking issues with Bool
-fn bool_simd_store[
+def bool_simd_store[
     ptr_origin: MutOrigin,
     //,
     simd_width: Int,

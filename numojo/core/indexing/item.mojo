@@ -73,7 +73,7 @@ struct Item(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initializes an empty Item.
         """
@@ -81,7 +81,7 @@ struct Item(
         self._buf = IndexBuffer()
 
     @always_inline("nodebug")
-    fn __init__(out self, buf: IndexBuffer):
+    def __init__(out self, buf: IndexBuffer):
         """
         Initializes the Item from an IndexBuffer.
 
@@ -92,7 +92,7 @@ struct Item(
         self._buf = buf
 
     @always_inline("nodebug")
-    fn __init__[T: Indexer](out self, *args: T):
+    def __init__[T: Indexer](out self, *args: T):
         """Construct the Item with variable arguments.
 
         Parameters:
@@ -109,7 +109,7 @@ struct Item(
             )
 
     @always_inline("nodebug")
-    fn __init__[T: IndexerCollectionElement](out self, args: List[T]):
+    def __init__[T: IndexerCollectionElement](out self, args: List[T]):
         """Construct the Item from a list.
 
         Parameters:
@@ -126,7 +126,7 @@ struct Item(
             )
 
     @always_inline("nodebug")
-    fn __init__(out self, args: List[Int]):
+    def __init__(out self, args: List[Int]):
         """Construct the Item from a list.
 
         Args:
@@ -138,7 +138,7 @@ struct Item(
             self._buf.init_value(i, Scalar[Self.element_type](args[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, args: VariadicList[Int, _]):
+    def __init__(out self, args: VariadicList[Int, _]):
         """Construct the Item from a variadic list.
 
         Args:
@@ -150,7 +150,7 @@ struct Item(
             self._buf.init_value(i, Scalar[Self.element_type](args[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, *, ndim: Int):
+    def __init__(out self, *, ndim: Int):
         """Construct the Item with given length and initialize to zero.
 
         Args:
@@ -161,7 +161,7 @@ struct Item(
         memset_zero(self._buf.ptr, ndim)
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         """Copy construct the Item.
 
         Args:
@@ -176,7 +176,7 @@ struct Item(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __getitem__(self, idx: Int) raises -> Int:
+    def __getitem__(self, idx: Int) raises -> Int:
         """Gets the value at the specified index.
 
         Args:
@@ -191,7 +191,7 @@ struct Item(
         return Int(self._buf[idx])
 
     @always_inline("nodebug")
-    fn __getitem__(self, slice_index: Slice) raises -> Self:
+    def __getitem__(self, slice_index: Slice) raises -> Self:
         """
         Return a sliced view of the item as a new Item.
 
@@ -204,7 +204,7 @@ struct Item(
         return Self(self._buf[slice_index])
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, idx: Int, val: Int) raises:
+    def __setitem__(mut self, idx: Int, val: Int) raises:
         """Set the value at the specified index.
 
         Args:
@@ -216,7 +216,7 @@ struct Item(
         """
         self._buf[idx] = val
 
-    fn load[
+    def load[
         width: Int = 1
     ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
         """
@@ -247,7 +247,7 @@ struct Item(
             )
         return self._buf.unsafe_load[width=width](idx)
 
-    fn store[
+    def store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]) raises:
         """
@@ -277,7 +277,7 @@ struct Item(
             )
         self._buf.unsafe_store[width=width](idx, value)
 
-    fn unsafe_load[
+    def unsafe_load[
         width: Int = 1
     ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
@@ -294,7 +294,7 @@ struct Item(
         """
         return self._buf.unsafe_load[width=width](idx)
 
-    fn unsafe_store[
+    def unsafe_store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]):
         """
@@ -313,7 +313,7 @@ struct Item(
     # Transformation Methods
     # ===----------------------------------------------------------------------=== #
 
-    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+    def swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
         """
         Returns a new item with the given axes swapped.
 
@@ -331,7 +331,7 @@ struct Item(
         res[axis2] = val1
         return res
 
-    fn join(self, *others: Self) -> Self:
+    def join(self, *others: Self) -> Self:
         """
         Join multiple items into a single item.
 
@@ -346,7 +346,7 @@ struct Item(
             bufs.append(others[i]._buf)
         return Self(self._buf.join(bufs))
 
-    fn extend(self, *values: Int) -> Self:
+    def extend(self, *values: Int) -> Self:
         """
         Extend the shape by sizes of extended dimensions.
 
@@ -361,13 +361,13 @@ struct Item(
             new_vals.append(values[i])
         return Self(self._buf.extend(new_vals))
 
-    fn flip(mut self):
+    def flip(mut self):
         """
         Flip the items in-place.
         """
         self._buf.flip()
 
-    fn flipped(self) -> Self:
+    def flipped(self) -> Self:
         """
         Returns a new item by flipping the items.
 
@@ -376,7 +376,7 @@ struct Item(
         """
         return Self(self._buf.flipped())
 
-    fn move_axis_to_end(self, axis: Int) -> Self:
+    def move_axis_to_end(self, axis: Int) -> Self:
         """
         Returns a new item by moving the value of axis to the end.
 
@@ -388,7 +388,7 @@ struct Item(
         """
         return Self(self._buf.move_axis_to_end(axis))
 
-    fn pop(self, axis: Int) raises -> Self:
+    def pop(self, axis: Int) raises -> Self:
         """
         Drops information of certain axis.
 
@@ -404,7 +404,7 @@ struct Item(
     # Properties
     # ===----------------------------------------------------------------------=== #
     @always_inline("nodebug")
-    fn rank(self) -> Int:
+    def rank(self) -> Int:
         """
         Returns the number of dimensions of the Item.
 
@@ -413,7 +413,7 @@ struct Item(
         """
         return self.ndim
 
-    fn sum(self) -> Scalar[Self.element_type]:
+    def sum(self) -> Scalar[Self.element_type]:
         """
         Compute the sum of all elements in Item.
 
@@ -422,7 +422,7 @@ struct Item(
         """
         return self._buf.sum()
 
-    fn product(self) -> Scalar[Self.element_type]:
+    def product(self) -> Scalar[Self.element_type]:
         """
         Compute the product of all elements in the Item.
 
@@ -436,7 +436,7 @@ struct Item(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         """Get the length of the Item.
 
         Returns:
@@ -445,7 +445,7 @@ struct Item(
         return self.ndim
 
     @always_inline("nodebug")
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """
         Returns a string representation of the Item.
 
@@ -454,7 +454,7 @@ struct Item(
         """
         return "numojo.Item" + self.__str__()
 
-    fn write_repr_to[W: Writer](self, mut writer: W):
+    def write_repr_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.
 
         Parameters:
@@ -464,7 +464,7 @@ struct Item(
         writer.write(self.__repr__())
 
     @always_inline("nodebug")
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Returns a string representation of the Item.
 
@@ -479,14 +479,14 @@ struct Item(
         result += ")"
         return result
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """
         Writes the Item representation to a writer.
         """
         writer.write("Coordinates: " + self.__str__() + "  ")
 
     @always_inline("nodebug")
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """
         Checks if two items have identical dimensions and values.
 
@@ -499,7 +499,7 @@ struct Item(
         return self._buf == other._buf
 
     @always_inline("nodebug")
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """
         Checks if two items have different dimensions or values.
 
@@ -511,7 +511,7 @@ struct Item(
         """
         return not self.__eq__(other)
 
-    fn __contains__(self, val: Scalar[Self.element_type]) -> Bool:
+    def __contains__(self, val: Scalar[Self.element_type]) -> Bool:
         """
         Check if the Item contains the given value.
 
@@ -524,7 +524,7 @@ struct Item(
         return val in self._buf
 
     @always_inline("nodebug")
-    fn __contains__(self, val: Int) -> Bool:
+    def __contains__(self, val: Int) -> Bool:
         """
         Checks if the given value is present in the item.
 
@@ -541,7 +541,7 @@ struct Item(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn tolist(self) -> List[Int]:
+    def tolist(self) -> List[Int]:
         """
         Convert the Item to a list of integers.
 
@@ -554,7 +554,7 @@ struct Item(
         return res^
 
     @always_inline("nodebug")
-    fn normalize_index(self, index: Int) -> Int:
+    def normalize_index(self, index: Int) -> Int:
         """
         Normalizes the given index to be within the valid range [0, ndim).
 
@@ -572,7 +572,7 @@ struct Item(
     # ===----------------------------------------------------------------------=== #
     # Iterators
     # ===----------------------------------------------------------------------=== #
-    fn __iter__(ref self) -> _ItemIter[origin_of(self), True]:
+    def __iter__(ref self) -> _ItemIter[origin_of(self), True]:
         """Iterate over elements of the Item.
 
         Returns:
@@ -583,7 +583,7 @@ struct Item(
             length=self.ndim,
         )
 
-    fn __reversed__(ref self) -> _ItemIter[origin_of(self), False]:
+    def __reversed__(ref self) -> _ItemIter[origin_of(self), False]:
         """Iterate over elements of the Item in reverse.
 
         Returns:
@@ -610,7 +610,7 @@ struct _ItemIter[
     var item: Pointer[Item, Self.origin]
     var length: Int
 
-    fn __init__(
+    def __init__(
         out self,
         item: Pointer[Item, Self.origin],
         length: Int,
@@ -619,16 +619,16 @@ struct _ItemIter[
         self.length = length
         self.item = item
 
-    fn __iter__(self) -> Self:
+    def __iter__(self) -> Self:
         return self
 
-    fn __has_next__(self) -> Bool:
+    def __has_next__(self) -> Bool:
         comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
-    fn __next__(mut self) raises -> Scalar[DType.int]:
+    def __next__(mut self) raises -> Scalar[DType.int]:
         comptime if Self.forward:
             var current_index = self.index
             self.index += 1
@@ -638,7 +638,7 @@ struct _ItemIter[
             self.index -= 1
             return Scalar[DType.int](self.item[].__getitem__(current_index))
 
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         comptime if Self.forward:
             return self.length - self.index
         else:

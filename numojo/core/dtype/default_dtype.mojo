@@ -53,7 +53,7 @@ comptime boolean = DType.bool
 # ===----------------------------------------------------------------------=== #
 
 
-fn _concise_dtype_str(dtype: DType) -> String:
+def _concise_dtype_str(dtype: DType) -> String:
     """Returns a concise string representation of the data type."""
     if dtype == i8:
         return "i8"

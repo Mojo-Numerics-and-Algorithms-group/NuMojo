@@ -12,7 +12,7 @@ This module provides utility functions for checking properties of data types (DT
 
 
 @parameter
-fn is_inttype[dtype: DType]() -> Bool:
+def is_inttype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is an integer type at compile time.
 
@@ -33,7 +33,7 @@ fn is_inttype[dtype: DType]() -> Bool:
     return False
 
 
-fn is_inttype(dtype: DType) -> Bool:
+def is_inttype(dtype: DType) -> Bool:
     """
     Check if the given dtype is an integer type at run time.
 
@@ -54,7 +54,7 @@ fn is_inttype(dtype: DType) -> Bool:
 
 
 @parameter
-fn is_floattype[dtype: DType]() -> Bool:
+def is_floattype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is a floating point type at compile time.
 
@@ -74,7 +74,7 @@ fn is_floattype[dtype: DType]() -> Bool:
     return False
 
 
-fn is_floattype(dtype: DType) -> Bool:
+def is_floattype(dtype: DType) -> Bool:
     """
     Check if the given dtype is a floating point type at run time.
 
@@ -94,7 +94,7 @@ fn is_floattype(dtype: DType) -> Bool:
 
 
 @parameter
-fn is_booltype[dtype: DType]() -> Bool:
+def is_booltype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is a boolean type at compile time.
 
@@ -110,7 +110,7 @@ fn is_booltype[dtype: DType]() -> Bool:
     return False
 
 
-fn is_booltype(dtype: DType) -> Bool:
+def is_booltype(dtype: DType) -> Bool:
     """
     Check if the given dtype is a boolean type at run time.
 

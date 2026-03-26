@@ -25,7 +25,7 @@ from numojo.core.ndarray import NDArray
 # ===----------------------------------------------------------------------=== #
 
 
-fn rand[
+def rand[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
@@ -67,7 +67,7 @@ fn rand[
     return result^
 
 
-fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
+def rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
     Overloads the function `rand(shape: NDArrayShape)`.
     Creates an array of the given shape and populate it with random samples from
@@ -76,7 +76,7 @@ fn rand[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     return rand[dtype](NDArrayShape(shape))
 
 
-fn rand[
+def rand[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
     """
@@ -87,7 +87,7 @@ fn rand[
     return rand[dtype](NDArrayShape(shape))
 
 
-fn rand[
+def rand[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int, _]) raises -> NDArray[dtype]:
     """
@@ -98,7 +98,7 @@ fn rand[
     return rand[dtype](NDArrayShape(shape))
 
 
-fn rand[
+def rand[
     dtype: DType = DType.float64
 ](
     shape: NDArrayShape, min: Scalar[dtype], max: Scalar[dtype]
@@ -148,7 +148,7 @@ fn rand[
     return result^
 
 
-fn rand[
+def rand[
     dtype: DType = DType.float64
 ](*shape: Int, min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -160,7 +160,7 @@ fn rand[
     return rand[dtype](NDArrayShape(shape), min=min, max=max)
 
 
-fn rand[
+def rand[
     dtype: DType = DType.float64
 ](shape: List[Int], min: Scalar[dtype], max: Scalar[dtype]) raises -> NDArray[
     dtype
@@ -179,7 +179,7 @@ fn rand[
 # ===----------------------------------------------------------------------=== #
 
 
-fn randint[
+def randint[
     dtype: DType = DType.int64
 ](shape: NDArrayShape, low: Int, high: Int) raises -> NDArray[
     dtype
@@ -220,7 +220,7 @@ fn randint[
     return result^
 
 
-fn randint[
+def randint[
     dtype: DType = DType.int64
 ](*shape: Int, low: Int, high: Int) raises -> NDArray[
     dtype
@@ -235,7 +235,7 @@ fn randint[
     return randint[dtype](NDArrayShape(shape), low=low, high=high)
 
 
-fn randint[
+def randint[
     dtype: DType = DType.int64
 ](shape: NDArrayShape, high: Int) raises -> NDArray[
     dtype
@@ -270,7 +270,7 @@ fn randint[
     return result^
 
 
-fn randint[
+def randint[
     dtype: DType = DType.int64
 ](*shape: Int, high: Int) raises -> NDArray[dtype] where dtype.is_integral():
     """
@@ -286,7 +286,7 @@ fn randint[
 # ===----------------------------------------------------------------------=== #
 
 
-fn randn[
+def randn[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
@@ -316,7 +316,7 @@ fn randn[
     return result^
 
 
-fn randn[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
+def randn[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     """
     Overloads the function `randn(shape: NDArrayShape)`.
     Creates an array of the given shape and populate it with random samples from
@@ -325,7 +325,7 @@ fn randn[dtype: DType = DType.float64](*shape: Int) raises -> NDArray[dtype]:
     return randn[dtype](NDArrayShape(shape))
 
 
-fn randn[
+def randn[
     dtype: DType = DType.float64
 ](
     shape: NDArrayShape, mean: Scalar[dtype], variance: Scalar[dtype]
@@ -350,7 +350,7 @@ fn randn[
     return randn[dtype](shape) * mt.sqrt(variance) + mean
 
 
-fn randn[
+def randn[
     dtype: DType = DType.float64
 ](*shape: Int, mean: Scalar[dtype], variance: Scalar[dtype]) raises -> NDArray[
     dtype
@@ -363,7 +363,7 @@ fn randn[
     return randn[dtype](NDArrayShape(shape), mean=mean, variance=variance)
 
 
-fn randn[
+def randn[
     dtype: DType = DType.float64
 ](
     shape: List[Int], mean: Scalar[dtype], variance: Scalar[dtype]
@@ -381,7 +381,7 @@ fn randn[
 # ===----------------------------------------------------------------------=== #
 
 
-fn exponential[
+def exponential[
     dtype: DType = DType.float64
 ](shape: NDArrayShape, scale: Scalar[dtype] = 1.0) raises -> NDArray[
     dtype
@@ -423,7 +423,7 @@ fn exponential[
     return result^
 
 
-fn exponential[
+def exponential[
     dtype: DType = DType.float64
 ](*shape: Int, scale: Scalar[dtype] = 1.0) raises -> NDArray[
     dtype
@@ -437,7 +437,7 @@ fn exponential[
     return exponential[dtype](NDArrayShape(shape), scale=scale)
 
 
-fn exponential[
+def exponential[
     dtype: DType = DType.float64
 ](shape: List[Int], scale: Scalar[dtype] = 1.0) raises -> NDArray[
     dtype
@@ -457,7 +457,7 @@ fn exponential[
 
 
 @parameter
-fn _int_rand_func[
+def _int_rand_func[
     dtype: DType
 ](
     mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]
@@ -482,7 +482,7 @@ fn _int_rand_func[
 
 
 @parameter
-fn _float_rand_func[
+def _float_rand_func[
     dtype: DType
 ](mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):
     """

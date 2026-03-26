@@ -36,31 +36,31 @@ struct Ownership(ImplicitlyCopyable):
     comptime External = Ownership(False._mlir_value)
     """Container views externally managed data."""
 
-    fn __init__(out self, value: __mlir_type.i1):
+    def __init__(out self, value: __mlir_type.i1):
         """
         Initialize Ownership with the given status.
         """
         self.value = value
 
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """
         Return True if both Ownership instances have the same status.
         """
         return ~(self != other)
 
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """
         Return True if Ownership instances have different statuses.
         """
         return self ^ other
 
-    fn __xor__(self, other: Self) -> Bool:
+    def __xor__(self, other: Self) -> Bool:
         """
         Return True if Ownership statuses differ.
         """
         return __mlir_op.`pop.xor`(self.value, other.value)
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Return "Managed" or "External" based on ownership status.
         """
@@ -69,7 +69,7 @@ struct Ownership(ImplicitlyCopyable):
         else:
             return "External"
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """
         Write the ownership status as a string to the writer.
         """
@@ -113,7 +113,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     # Constructors and Destructor
     # ===----------------------------------------------------------------------===#
     @always_inline
-    fn __init__(out self):
+    def __init__(out self):
         """
         Create an empty, managed DataContainer.
         """
@@ -124,7 +124,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.size = 0
 
     @always_inline
-    fn __init__(out self, size: Int):
+    def __init__(out self, size: Int):
         """
         Create a managed DataContainer with a buffer of `size` elements.
 
@@ -145,7 +145,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             self.ptr = alloc[Scalar[Self.dtype]](size)
 
     @always_inline
-    fn __init__(
+    def __init__(
         out self,
         ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
         size: Int,
@@ -180,7 +180,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             self.ownership = Ownership.External
 
     @always_inline
-    fn __init__(
+    def __init__(
         out self,
         *,
         ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
@@ -206,7 +206,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = ownership
 
     @always_inline
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         """
         Copy constructor.
 
@@ -223,7 +223,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         if self.is_refcounted():
             _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
 
-    fn deep_copy(self) -> Self:
+    def deep_copy(self) -> Self:
         """
         Create a deep copy of the DataContainer.
 
@@ -238,7 +238,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return result^
 
     @always_inline
-    fn __moveinit__(out self, deinit take: Self):
+    def __moveinit__(out self, deinit take: Self):
         """
         Move constructor.
 
@@ -253,7 +253,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.size = take.size
 
     @always_inline
-    fn __del__(deinit self):
+    def __del__(deinit self):
         """
         Destructor.
 
@@ -277,7 +277,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     # Data Access Methods
     # ===----------------------------------------------------------------------===#
     @always_inline
-    fn get_ptr(
+    def get_ptr(
         ref self,
     ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """
@@ -289,7 +289,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr
 
     @always_inline
-    fn offset(
+    def offset(
         self, offset: Int
     ) -> UnsafePointer[Scalar[Self.dtype], Self.origin]:
         """
@@ -304,7 +304,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr + offset
 
     @always_inline
-    fn __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
+    def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
         """
         Return the element at the specified index.
 
@@ -320,7 +320,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr[idx]
 
     @always_inline
-    fn __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
+    def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
         """
         Set the element at the specified index to the given value.
 
@@ -334,7 +334,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ptr[idx] = val
 
     @always_inline
-    fn load[width: Int](self, offset: Int) -> SIMD[Self.dtype, width]:
+    def load[width: Int](self, offset: Int) -> SIMD[Self.dtype, width]:
         """
         Load a SIMD vector of the specified width from the given offset.
 
@@ -353,7 +353,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr.load[width=width](offset)
 
     @always_inline
-    fn store[width: Int](mut self, offset: Int, value: SIMD[Self.dtype, width]):
+    def store[width: Int](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """
         Store a SIMD vector of the specified width at the given offset.
 
@@ -373,7 +373,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     # Trait Implementations
     # ===----------------------------------------------------------------------===#
     @always_inline
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         """
         Return the size of the container.
 
@@ -383,7 +383,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.size
 
     @always_inline
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         if self.ownership == Ownership.External:
             return "DataContainer(external, size=" + String(self.size) + ")"
         return (
@@ -395,7 +395,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         )
 
     @always_inline
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         if self.ownership == Ownership.External:
             writer.write("DataContainer(external, size=")
             writer.write(String(self.size))
@@ -411,7 +411,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     # Reference Counting and Sharing
     # ===----------------------------------------------------------------------===#
     @always_inline
-    fn is_refcounted(ref self) -> Bool:
+    def is_refcounted(ref self) -> Bool:
         """
         Check if this container has refcounting enabled.
 
@@ -423,7 +423,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         )
 
     @always_inline
-    fn ref_count(ref self) -> UInt64:
+    def ref_count(ref self) -> UInt64:
         """
         Get the current reference count.
 
@@ -434,7 +434,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             return 0
         return self._refcount[].load[ordering=Consistency.MONOTONIC]()
 
-    fn share(mut self) raises -> DataContainer[Self.dtype]:
+    def share(mut self) raises -> DataContainer[Self.dtype]:
         """
         Create a shared view into this container.
         Increments the existing refcount for managed containers.

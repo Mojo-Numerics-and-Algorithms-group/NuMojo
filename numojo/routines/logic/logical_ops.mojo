@@ -21,7 +21,7 @@ from numojo.core.error import NumojoError
 # ===----------------------------------------------------------------------=== #
 # Logical operations for NDArray
 # ===----------------------------------------------------------------------=== #
-fn logical_and[
+def logical_and[
     dtype: DType
 ](a: NDArray[dtype], b: NDArray[dtype]) raises -> NDArray[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
@@ -64,7 +64,7 @@ fn logical_and[
             )
         )
 
-    fn kernel[
+    def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
         return SIMD[DType.bool, width](a & b)
@@ -72,7 +72,7 @@ fn logical_and[
     return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
 
 
-fn logical_or[
+def logical_or[
     dtype: DType
 ](a: NDArray[dtype], b: NDArray[dtype]) raises -> NDArray[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
@@ -115,7 +115,7 @@ fn logical_or[
             )
         )
 
-    fn kernel[
+    def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
         return SIMD[DType.bool, width](a | b)
@@ -123,7 +123,7 @@ fn logical_or[
     return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
 
 
-fn logical_not[
+def logical_not[
     dtype: DType
 ](a: NDArray[dtype]) raises -> NDArray[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
@@ -153,7 +153,7 @@ fn logical_not[
         ```
     """
 
-    fn kernel[
+    def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
         return SIMD[DType.bool, width](~a)
@@ -161,7 +161,7 @@ fn logical_not[
     return HostExecutor.apply_unary_predicate[dtype, kernel](a)
 
 
-fn logical_xor[
+def logical_xor[
     dtype: DType
 ](a: NDArray[dtype], b: NDArray[dtype]) raises -> NDArray[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
@@ -204,7 +204,7 @@ fn logical_xor[
             )
         )
 
-    fn kernel[
+    def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
         return SIMD[DType.bool, width](a ^ b)
@@ -217,7 +217,7 @@ fn logical_xor[
 # ===----------------------------------------------------------------------=== #
 
 
-fn logical_and[
+def logical_and[
     cdtype: ComplexDType
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
@@ -267,7 +267,7 @@ fn logical_and[
     return res^
 
 
-fn logical_or[
+def logical_or[
     cdtype: ComplexDType
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
@@ -317,7 +317,7 @@ fn logical_or[
     return res^
 
 
-fn logical_not[
+def logical_not[
     cdtype: ComplexDType
 ](a: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype] where (
     cdtype == ComplexDType.bool or cdtype.is_integral()
@@ -352,7 +352,7 @@ fn logical_not[
     return res^
 
 
-fn logical_xor[
+def logical_xor[
     cdtype: ComplexDType
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
@@ -407,7 +407,7 @@ fn logical_xor[
 # ===----------------------------------------------------------------------=== #
 
 
-fn logical_and[
+def logical_and[
     dtype: DType
 ](a: Matrix[dtype], b: Matrix[dtype]) raises -> Matrix[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
@@ -455,7 +455,7 @@ fn logical_and[
     return res^
 
 
-fn logical_or[
+def logical_or[
     dtype: DType
 ](a: Matrix[dtype], b: Matrix[dtype]) raises -> Matrix[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
@@ -503,7 +503,7 @@ fn logical_or[
     return res^
 
 
-fn logical_not[
+def logical_not[
     dtype: DType
 ](a: Matrix[dtype]) raises -> Matrix[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()
@@ -538,7 +538,7 @@ fn logical_not[
     return res^
 
 
-fn logical_xor[
+def logical_xor[
     dtype: DType
 ](a: Matrix[dtype], b: Matrix[dtype]) raises -> Matrix[DType.bool] where (
     dtype == DType.bool or dtype.is_integral()

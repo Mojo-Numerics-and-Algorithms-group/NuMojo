@@ -4,6 +4,49 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## (v0.9.0)
+
+### ⭐️ New
+- Introduced the `HostExecutor` backend with vectorized `apply_unary`, `apply_binary`, and predicate variants for SIMD/NDArray operations, so routine kernels have a consistent, optimized execution path without ad‑hoc backend selection. [PR #329]
+- Added a `Device` abstraction (like torch.device) to explicitly choose an execution target (CPU/GPU), laying the API foundation for accelerator-aware arrays and kernels. [PR #317]
+- Added accelerator-aware storage types: `AcceleratorDataContainer`, `HostStorage`, and `DeviceStorage`, which split host vs. device memory management and enable a unified container API for upcoming device-agnostic `NDArray`. [PR #320]
+- Added DLPack support with a benchmark for DLPack round-trips, enabling zero‑copy interop with NumPy/other frameworks and tracking performance regressions. [PR #305] [PR #306]
+- Added `NDArray.offset` for view-aware indexing with aligned buffers, so views can share the same base allocation safely without shifting pointers. [PR #308]
+
+### 🦋 Changed
+- Rolled out `HostExecutor` across routines:
+  - Logic ops now use `HostExecutor`, added logic tests, reorganized imports, standardized docstrings, and removed `_array_funcs.mojo`. [PR #330]
+  - Arithmetic routines use `HostExecutor` and add `apply_ternary` for FMA paths. [PR #331]
+  - Exponents/extrema updated with `HostExecutor` overloads and floating-point constraints where required. [PR #332]
+- View safety migration:
+  - `contiguous()` now always returns an owned C-contiguous copy; added strict/relaxed contiguity checks (`is_c_contiguous`, `is_f_contiguous`, `is_row_contiguous`, `is_col_contiguous`). [PR #313] [PR #314]
+  - Added `contiguous()` guards across core and routines; replaced incorrect `deep_copy()` usage where contiguity is required. [PR #315] [PR #316]
+  - Added offset/contiguous guards for get/set and stride-aware in-place load/store for views. [PR #319] [PR #324]
+- Simplified `DataContainer` semantics: `.copy()` creates views, `.deep_copy()` allocates; standardized file headers. [PR #312]
+- `DeviceStorage` now requires explicit copies. [PR #335]
+- Cleaned `NDArray` APIs and reorganized core modules for upcoming accelerator work. [PR #310] [PR #301]
+- Updated Mojo compatibility and syntax migrations (`alias` → `comptime`, `@parameter if` → `comptime if`, explicit Int/Scalar conversions). [PR #298] [PR #334] [PR #307] [PR #297]
+- Updated pixi backend Mojo version and complex dtype/SIMD adjustments. [PR #323]
+
+### 🛠️ Fixed
+- Fixed `NDArray.__getitem__()` shape reconstruction for mixed slices/integers/ellipsis. [PR #326]
+- Fixed `DataContainer.share()` memory leak and corrected accelerator copy routines/imports. [PR #322]
+- Fixed `Device` CPU behavior (export `cpu`, default constructor, string parsing) with added tests. [PR #318]
+- Fixed VariadicList `is_owned`, SIMD.fma apply_ternary mismatch, and import issues. [PR #339]
+- Replaced deprecated `Stringable/Representable` with `Writable`; fixed NDArrayStrides recursion and Device repr. [PR #338]
+- Fixed import syntax regression (`from . import` → `import .module`). [PR #337]
+- Fixed `log10`/`where` floating-point constraint failure. [PR #304]
+- Updated Mojo compatibility for Jan 24, 2026 nightly. [PR #302]
+- Overloaded `NDArray.itemset` for updated Mojo behavior. [PR #325]
+
+### 📚 Documentatory and testing
+- Expanded NDArray indexing/slicing tests. [PR #327]
+- Added view-safety tests. [PR #324]
+- Added logic routine tests. [PR #330]
+- Added DLPack benchmark. [PR #306]
+- Added shell-based test discovery. [PR #311]
+- Fixed stdlib imports and split sorting tests to reduce runtime. [PR #341]
+
 ## (v0.8.0)
 
 ### ⭐️ New

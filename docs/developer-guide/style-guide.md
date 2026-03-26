@@ -29,8 +29,9 @@ Description of the function.
 Next add the parameters, arguments, and returns if there are any separated from the summary by a new line. For functions and parameters start with either `Parameters:` or `Args:` followed by a new line-separated list of the parameters or arguments with the name of the parameter/arg followed by a `:` and a description the description should be a sentence starting with a capital letter and ending with a period. For returns separated from previous lines by a new line and start with `Returns:` then go to a new line and write a brief description of the return value, again as a sentence starting with a capitol letter and ending with a period. If the function does not return the `Returns:` section should be omitted. 
 
 There is no need to add the type name to the arguments or parameters as the compiler handles that.
+
 ```mojo
-fn func[param:Copyable](arg1:param)->param:
+def func[param:Copyable](arg1:param)->param:
     """
 
     Description of the function.

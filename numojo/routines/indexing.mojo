@@ -26,7 +26,7 @@ from numojo.core.indexing import IndexMethods
 # ===----------------------------------------------------------------------=== #
 
 
-fn `where`[
+def `where`[
     dtype: DType
 ](
     mut x: NDArray[dtype], scalar: SIMD[dtype, 1], mask: NDArray[DType.bool]
@@ -51,7 +51,7 @@ fn `where`[
 
 
 # TODO: do it with vectorization
-fn `where`[
+def `where`[
     dtype: DType
 ](mut x: NDArray[dtype], y: NDArray[dtype], mask: NDArray[DType.bool]) raises:
     """

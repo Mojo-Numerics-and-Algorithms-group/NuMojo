@@ -358,7 +358,7 @@ struct ComplexDType(
         """
         return self.dtype.get_value()
 
-    @doc_private
+    @doc_hidden
     @staticmethod
     @always_inline("nodebug")
     def _from_ui8(ui8: UInt8._mlir_type) -> ComplexDType:
@@ -367,14 +367,14 @@ struct ComplexDType(
         )
         return ComplexDType(mlir_value=res)
 
-    @doc_private
+    @doc_hidden
     @always_inline("nodebug")
     def _as_ui8(self) -> UInt8._mlir_type:
         return __mlir_op.`pop.cast_from_builtin`[_type=UInt8._mlir_type](
             __mlir_op.`pop.dtype.to_ui8`(self.dtype.get_value())
         )
 
-    @doc_private
+    @doc_hidden
     @always_inline("nodebug")
     def _match(self, mask: UInt8) -> Bool:
         var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred ne>`](

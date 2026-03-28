@@ -24,7 +24,7 @@ from numojo.core.matrix.base import _arithmetic_func_matrix_to_matrix
 # ===------------------------------------------------------------------------===#
 
 
-fn acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse hyperbolic cosine.
 
@@ -40,7 +40,7 @@ fn acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.acosh](array)
 
 
-fn asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse hyperbolic sine.
 
@@ -56,7 +56,7 @@ fn asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.asinh](array)
 
 
-fn atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse hyperbolic tangent.
 
@@ -77,7 +77,7 @@ fn atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse hyperbolic cosine element-wise to a Matrix.
 
@@ -93,7 +93,7 @@ fn arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
 
 
-fn acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse hyperbolic cosine element-wise to a Matrix.
 
@@ -109,7 +109,7 @@ fn acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
 
 
-fn arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse hyperbolic sine element-wise to a Matrix.
 
@@ -125,7 +125,7 @@ fn arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
 
 
-fn asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse hyperbolic sine element-wise to a Matrix.
 
@@ -141,7 +141,7 @@ fn asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
 
 
-fn arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse hyperbolic tangent element-wise to a Matrix.
 
@@ -157,7 +157,7 @@ fn arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
 
 
-fn atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse hyperbolic tangent element-wise to a Matrix.
 
@@ -178,7 +178,7 @@ fn atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hyperbolic cosine.
 
@@ -194,7 +194,7 @@ fn cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.cosh](array)
 
 
-fn sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hyperbolic sine.
 
@@ -210,7 +210,7 @@ fn sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.sinh](array)
 
 
-fn tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hyperbolic tangent.
 
@@ -231,7 +231,7 @@ fn tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """Apply hyperbolic cosine.
 
     Parameters:
@@ -246,7 +246,7 @@ fn cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.cosh](A)
 
 
-fn sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """Apply hyperbolic sin.
 
     Parameters:
@@ -261,7 +261,7 @@ fn sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.sinh](A)
 
 
-fn tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """Apply hyperbolic tan.
 
     Parameters:

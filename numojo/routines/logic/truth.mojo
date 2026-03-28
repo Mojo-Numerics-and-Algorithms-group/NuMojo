@@ -23,7 +23,7 @@ from numojo.core.matrix import Matrix
 # ===----------------------------------------------------------------------=== #
 
 
-fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
+def all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     """
     Checks whether all elements of the array evaluate to True.
 
@@ -46,7 +46,7 @@ fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     comptime opt_nelts: Int = simd_width_of[DType.bool]()
 
     @parameter
-    fn closure[
+    def closure[
         simd_width: Int
     ](idx: Int) unified {mut result, read array} -> None:
         var simd_data = array.unsafe_load[width=simd_width](idx)
@@ -56,7 +56,7 @@ fn all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     return result
 
 
-fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
+def any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     """
     Checks whether any element of the array evaluate to True.
 
@@ -79,7 +79,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     comptime opt_nelts: Int = simd_width_of[DType.bool]()
 
     @parameter
-    fn closure[
+    def closure[
         simd_width: Int
     ](idx: Int) unified {mut result, read array} -> None:
         var simd_data = array.unsafe_load[width=simd_width](idx)
@@ -94,7 +94,7 @@ fn any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+def all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     Test whether all array elements evaluate to True.
 
@@ -108,14 +108,14 @@ fn all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn closure[width: Int](i: Int) unified {mut res, read A}:
+    def closure[width: Int](i: Int) unified {mut res, read A}:
         res = (res & A._buf.ptr.load[width=width](i)).reduce_and()
 
     vectorize[width](A.size, closure)
     return res
 
 
-fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Test whether all array elements evaluate to True along axis.
     """
@@ -128,7 +128,7 @@ fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         for i in range(A.shape[0]):
 
             @parameter
-            fn cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store[width](
                     0, j, B._load[width](0, j) & A._load[width](i, j)
                 )
@@ -141,9 +141,9 @@ fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         var B = Matrix.ones[dtype](shape=(A.shape[0], 1))
 
         @parameter
-        fn cal_rows(i: Int):
+        def cal_rows(i: Int):
             @parameter
-            fn cal_sum[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store(
                     i,
                     0,
@@ -159,7 +159,7 @@ fn all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+def any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     Test whether any array elements evaluate to True.
 
@@ -172,14 +172,14 @@ fn any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_and[width: Int](i: Int) unified {mut res, read A}:
+    def cal_and[width: Int](i: Int) unified {mut res, read A}:
         res = res | A._buf.ptr.load[width=width](i).reduce_or()
 
     vectorize[width](A.size, cal_and)
     return res
 
 
-fn any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Test whether any array elements evaluate to True along axis.
     """
@@ -192,7 +192,7 @@ fn any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         for i in range(A.shape[0]):
 
             @parameter
-            fn cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store[width](
                     0, j, B._load[width](0, j) | A._load[width](i, j)
                 )
@@ -205,9 +205,9 @@ fn any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         var B = Matrix.zeros[dtype](shape=(A.shape[0], 1))
 
         @parameter
-        fn cal_rows(i: Int):
+        def cal_rows(i: Int):
             @parameter
-            fn cal_sum[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_sum[width: Int](j: Int) unified {mut B, read A, read i}:
                 B._store(
                     i,
                     0,

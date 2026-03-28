@@ -74,13 +74,13 @@ struct Device(
     # Constructors
     # ===------------------------------------------------------------------=== #
 
-    fn __init__(out self):
+    def __init__(out self):
         """Initialize a default CPU device."""
         self.type = "cpu"
         self.name = ""
         self.id = 0
 
-    fn __init__(out self, text: String) raises:
+    def __init__(out self, text: String) raises:
         """Initialize a device by parsing a torch-style device string.
 
         Supported formats: "cpu", "cuda", "cuda:0", "rocm", "rocm:1",
@@ -97,7 +97,7 @@ struct Device(
         self.name = parsed.name
         self.id = parsed.id
 
-    fn __init__(out self, type: String, name: String, id: Int):
+    def __init__(out self, type: String, name: String, id: Int):
         """Initialize a device with explicit type, name, and index.
 
         Validates the arguments and falls back to CPU if the requested
@@ -156,7 +156,9 @@ struct Device(
         self.id = id
 
     @staticmethod
-    fn _unchecked_init(out device: Device, type: String, name: String, id: Int):
+    def _unchecked_init(
+        out device: Device, type: String, name: String, id: Int
+    ):
         """Create a device without any validation. For internal/comptime use."""
         device = Device()
         device.type = type
@@ -164,7 +166,7 @@ struct Device(
         device.id = id
 
     @staticmethod
-    fn _cpu_fallback() -> Device:
+    def _cpu_fallback() -> Device:
         """Return a default CPU device."""
         return Device()
 
@@ -172,7 +174,7 @@ struct Device(
     # Trait implementations
     # ===------------------------------------------------------------------=== #
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """Return a human-readable string representation.
 
         Returns:
@@ -188,7 +190,7 @@ struct Device(
             + ")"
         )
 
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """Return the canonical string representation.
 
         Returns:
@@ -197,7 +199,7 @@ struct Device(
         # TODO: repr is deprecated in favor of write_repr_to
         return self.__str__()
 
-    fn write_repr_to[W: Writer](self, mut writer: W):
+    def write_repr_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.
 
         Parameters:
@@ -208,7 +210,7 @@ struct Device(
         """
         writer.write(self.__str__())
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.
 
         Parameters:
@@ -219,7 +221,7 @@ struct Device(
         """
         writer.write(self.__str__())
 
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """Check equality with another device.
 
         Args:
@@ -234,7 +236,7 @@ struct Device(
             and self.id == other.id
         )
 
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """Check inequality with another device.
 
         Args:
@@ -249,7 +251,7 @@ struct Device(
     # Instance methods
     # ===------------------------------------------------------------------=== #
 
-    fn is_cpu(self) -> Bool:
+    def is_cpu(self) -> Bool:
         """Check if this is a CPU device.
 
         Returns:
@@ -257,7 +259,7 @@ struct Device(
         """
         return self.type == "cpu"
 
-    fn is_gpu(self) -> Bool:
+    def is_gpu(self) -> Bool:
         """Check if this is a GPU device.
 
         Returns:
@@ -265,7 +267,7 @@ struct Device(
         """
         return self.type == "gpu"
 
-    fn is_available(self) -> Bool:
+    def is_available(self) -> Bool:
         """Check if this device is available on the current system.
 
         Returns:
@@ -287,7 +289,7 @@ struct Device(
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    fn default_device() -> Device:
+    def default_device() -> Device:
         """Return the best available device: GPU if present, otherwise CPU.
 
         Returns:
@@ -303,7 +305,7 @@ struct Device(
 
     @staticmethod
     @parameter
-    fn available_gpu() raises -> String:
+    def available_gpu() raises -> String:
         """Return the name of the best available GPU backend.
 
         Checks in order: CUDA → ROCm → MPS.
@@ -332,7 +334,7 @@ struct Device(
 
     @staticmethod
     @parameter
-    fn available_devices() -> String:
+    def available_devices() -> String:
         """List all available devices on the current system.
 
         Returns:
@@ -361,7 +363,7 @@ struct Device(
 
     @staticmethod
     @parameter
-    fn parse_device_string(text: String) raises -> Device:
+    def parse_device_string(text: String) raises -> Device:
         """Parse a torch-style device string into a `Device`.
 
         Supported formats:
@@ -438,7 +440,7 @@ struct Device(
 
 
 @parameter
-fn is_accelerator_available[device: Device]() -> Bool:
+def is_accelerator_available[device: Device]() -> Bool:
     """Check at compile time whether the given device's GPU accelerator exists.
 
     Parameters:

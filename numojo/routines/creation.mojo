@@ -48,7 +48,7 @@ from numojo.core.memory import DataContainer
 # Numerical ranges
 # ===------------------------------------------------------------------------===#
 # FIXME: a lot of the creation routines uses ._buf.ptr directly. This should be changed to ._buf[idx] once we use the new DataContainer with correct origins.
-fn arange[
+def arange[
     dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
@@ -90,7 +90,7 @@ fn arange[
     return result^
 
 
-fn arange[
+def arange[
     dtype: DType = DType.float64
 ](stop: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -124,7 +124,7 @@ fn arange[
     return result^
 
 
-fn arange[
+def arange[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     start: ComplexSIMD[cdtype],
@@ -176,7 +176,7 @@ fn arange[
     return result^
 
 
-fn arange[
+def arange[
     cdtype: ComplexDType = ComplexDType.float64,
 ](stop: ComplexSIMD[cdtype]) raises -> ComplexNDArray[cdtype]:
     """
@@ -215,7 +215,7 @@ fn arange[
 # ===------------------------------------------------------------------------===#
 # Linear Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
-fn linspace[
+def linspace[
     dtype: DType = DType.float64,
     parallel: Bool = False,
 ](
@@ -263,7 +263,7 @@ fn linspace[
         return _linspace_serial[dtype](start, stop, num, endpoint)
 
 
-fn _linspace_serial[
+def _linspace_serial[
     dtype: DType = DType.float64
 ](
     start: SIMD[dtype, 1],
@@ -301,7 +301,7 @@ fn _linspace_serial[
     return result^
 
 
-fn _linspace_parallel[
+def _linspace_parallel[
     dtype: DType = DType.float64
 ](
     start: SIMD[dtype, 1], stop: SIMD[dtype, 1], num: Int, endpoint: Bool = True
@@ -329,7 +329,7 @@ fn _linspace_parallel[
         var step: SIMD[dtype, 1] = (stop - start) / denominator
 
         @parameter
-        fn parallelized_linspace(idx: Int) -> None:
+        def parallelized_linspace(idx: Int) -> None:
             result._buf.ptr[idx] = start + step * Scalar[dtype](idx)
 
         parallelize[parallelized_linspace](num)
@@ -338,7 +338,7 @@ fn _linspace_parallel[
         var step: SIMD[dtype, 1] = (stop - start) / Scalar[dtype](num)
 
         @parameter
-        fn parallelized_linspace1(idx: Int) -> None:
+        def parallelized_linspace1(idx: Int) -> None:
             result._buf.ptr[idx] = start + step * Scalar[dtype](idx)
 
         parallelize[parallelized_linspace1](num)
@@ -346,7 +346,7 @@ fn _linspace_parallel[
     return result^
 
 
-fn linspace[
+def linspace[
     cdtype: ComplexDType = ComplexDType.float64,
     parallel: Bool = False,
 ](
@@ -390,7 +390,7 @@ fn linspace[
         return _linspace_serial[cdtype](start, stop, num, endpoint)
 
 
-fn _linspace_serial[
+def _linspace_serial[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     start: ComplexSIMD[cdtype],
@@ -447,7 +447,7 @@ fn _linspace_serial[
     return result^
 
 
-fn _linspace_parallel[
+def _linspace_parallel[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     start: ComplexSIMD[cdtype],
@@ -481,7 +481,7 @@ fn _linspace_parallel[
 
         # need better error handling here later
         @parameter
-        fn parallelized_linspace(idx: Int) -> None:
+        def parallelized_linspace(idx: Int) -> None:
             try:
                 result.store[width=1](
                     idx,
@@ -500,7 +500,7 @@ fn _linspace_parallel[
         var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num)
 
         @parameter
-        fn parallelized_linspace1(idx: Int) -> None:
+        def parallelized_linspace1(idx: Int) -> None:
             try:
                 result.store[width=1](
                     idx,
@@ -520,7 +520,7 @@ fn _linspace_parallel[
 # ===------------------------------------------------------------------------===#
 # Logarithmic Spacing NDArray Generation
 # ===------------------------------------------------------------------------===#
-fn logspace[
+def logspace[
     dtype: DType = DType.float64,
     parallel: Bool = False,
 ](
@@ -581,7 +581,7 @@ fn logspace[
         )
 
 
-fn _logspace_serial[
+def _logspace_serial[
     dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
@@ -619,7 +619,7 @@ fn _logspace_serial[
     return result^
 
 
-fn _logspace_parallel[
+def _logspace_parallel[
     dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
@@ -650,7 +650,7 @@ fn _logspace_parallel[
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num - 1)
 
         @parameter
-        fn parallelized_logspace(idx: Int) -> None:
+        def parallelized_logspace(idx: Int) -> None:
             result._buf.ptr[idx] = base ** (start + step * Scalar[dtype](idx))
 
         parallelize[parallelized_logspace](num)
@@ -659,7 +659,7 @@ fn _logspace_parallel[
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num)
 
         @parameter
-        fn parallelized_logspace1(idx: Int) -> None:
+        def parallelized_logspace1(idx: Int) -> None:
             result._buf.ptr[idx] = base ** (start + step * Scalar[dtype](idx))
 
         parallelize[parallelized_logspace1](num)
@@ -667,7 +667,7 @@ fn _logspace_parallel[
     return result^
 
 
-fn logspace[
+def logspace[
     cdtype: ComplexDType = ComplexDType.float64,
     parallel: Bool = False,
 ](
@@ -714,7 +714,7 @@ fn logspace[
         )
 
 
-fn _logspace_serial[
+def _logspace_serial[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     start: ComplexSIMD[cdtype],
@@ -773,7 +773,7 @@ fn _logspace_serial[
     return result^
 
 
-fn _logspace_parallel[
+def _logspace_parallel[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     start: ComplexSIMD[cdtype],
@@ -812,7 +812,7 @@ fn _logspace_parallel[
         )
 
         @parameter
-        fn parallelized_logspace(idx: Int) -> None:
+        def parallelized_logspace(idx: Int) -> None:
             try:
                 result.store[1](
                     idx,
@@ -831,7 +831,7 @@ fn _logspace_parallel[
         var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num)
 
         @parameter
-        fn parallelized_logspace1(idx: Int) -> None:
+        def parallelized_logspace1(idx: Int) -> None:
             try:
                 result.store[1](
                     idx,
@@ -849,7 +849,7 @@ fn _logspace_parallel[
 
 
 # ! Outputs wrong values for Integer type, works fine for float type.
-fn geomspace[
+def geomspace[
     dtype: DType = DType.float64
 ](
     start: Scalar[dtype],
@@ -905,7 +905,7 @@ fn geomspace[
         return result^
 
 
-fn geomspace[
+def geomspace[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     start: ComplexSIMD[cdtype],
@@ -966,7 +966,7 @@ fn geomspace[
 # ===------------------------------------------------------------------------===#
 # Commonly used NDArray Generation routines
 # ===------------------------------------------------------------------------===#
-fn empty[
+def empty[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
@@ -984,7 +984,7 @@ fn empty[
     return NDArray[dtype](shape=shape)
 
 
-fn empty[
+def empty[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
     """
@@ -1004,7 +1004,7 @@ fn empty[
     return empty[dtype](shape=NDArrayShape(shape))
 
 
-fn empty[
+def empty[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int, _]) raises -> NDArray[dtype]:
     """
@@ -1024,7 +1024,7 @@ fn empty[
     return empty[dtype](shape=NDArrayShape(shape))
 
 
-fn empty_like[
+def empty_like[
     dtype: DType = DType.float64
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -1042,7 +1042,7 @@ fn empty_like[
     return NDArray[dtype](shape=array.shape)
 
 
-fn empty[
+def empty[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: NDArrayShape) raises -> ComplexNDArray[cdtype]:
     """
@@ -1060,7 +1060,7 @@ fn empty[
     return ComplexNDArray[cdtype](shape=shape)
 
 
-fn empty[
+def empty[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: List[Int]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1080,7 +1080,7 @@ fn empty[
     return empty[cdtype](shape=NDArrayShape(shape))
 
 
-fn empty[
+def empty[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: VariadicList[Int, _]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1100,7 +1100,7 @@ fn empty[
     return empty[cdtype](shape=NDArrayShape(shape))
 
 
-fn empty_like[
+def empty_like[
     cdtype: ComplexDType = ComplexDType.float64,
 ](array: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1118,7 +1118,7 @@ fn empty_like[
     return ComplexNDArray[cdtype](shape=array.shape)
 
 
-fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
+def eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
     """
     Return a 2-D NDArray with ones on the diagonal and zeros elsewhere.
 
@@ -1149,7 +1149,7 @@ fn eye[dtype: DType = DType.float64](N: Int, M: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn eye[
+def eye[
     cdtype: ComplexDType = ComplexDType.float64,
 ](N: Int, M: Int) raises -> ComplexNDArray[cdtype]:
     """
@@ -1172,7 +1172,7 @@ fn eye[
     return result^
 
 
-fn identity[dtype: DType = DType.float64](N: Int) raises -> NDArray[dtype]:
+def identity[dtype: DType = DType.float64](N: Int) raises -> NDArray[dtype]:
     """
     Generate an identity matrix of size N x N.
 
@@ -1202,7 +1202,7 @@ fn identity[dtype: DType = DType.float64](N: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn identity[
+def identity[
     cdtype: ComplexDType = ComplexDType.float64,
 ](N: Int) raises -> ComplexNDArray[cdtype]:
     """
@@ -1224,7 +1224,7 @@ fn identity[
     return result^
 
 
-fn ones[
+def ones[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
@@ -1251,7 +1251,7 @@ fn ones[
     return full[dtype](shape=shape, fill_value=1)
 
 
-fn ones[
+def ones[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
     """
@@ -1269,7 +1269,7 @@ fn ones[
     return ones[dtype](shape=NDArrayShape(shape))
 
 
-fn ones[
+def ones[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int, _]) raises -> NDArray[dtype]:
     """
@@ -1287,7 +1287,7 @@ fn ones[
     return ones[dtype](shape=NDArrayShape(shape))
 
 
-fn ones_like[
+def ones_like[
     dtype: DType = DType.float64
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -1305,7 +1305,7 @@ fn ones_like[
     return ones[dtype](shape=array.shape)
 
 
-fn ones[
+def ones[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: NDArrayShape) raises -> ComplexNDArray[cdtype]:
     """
@@ -1323,7 +1323,7 @@ fn ones[
     return full[cdtype](shape=shape, fill_value=ComplexSIMD[cdtype](1, 1))
 
 
-fn ones[
+def ones[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: List[Int]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1341,7 +1341,7 @@ fn ones[
     return ones[cdtype](shape=NDArrayShape(shape))
 
 
-fn ones[
+def ones[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: VariadicList[Int, _]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1359,7 +1359,7 @@ fn ones[
     return ones[cdtype](shape=NDArrayShape(shape))
 
 
-fn ones_like[
+def ones_like[
     cdtype: ComplexDType = ComplexDType.float64,
 ](array: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1377,7 +1377,7 @@ fn ones_like[
     return full[cdtype](shape=array.shape, fill_value=ComplexSIMD[cdtype](1, 1))
 
 
-fn zeros[
+def zeros[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
     """
@@ -1404,7 +1404,7 @@ fn zeros[
     return full[dtype](shape=shape, fill_value=0)
 
 
-fn zeros[
+def zeros[
     dtype: DType = DType.float64
 ](shape: List[Int]) raises -> NDArray[dtype]:
     """
@@ -1422,7 +1422,7 @@ fn zeros[
     return zeros[dtype](shape=NDArrayShape(shape))
 
 
-fn zeros[
+def zeros[
     dtype: DType = DType.float64
 ](shape: VariadicList[Int, _]) raises -> NDArray[dtype]:
     """
@@ -1440,7 +1440,7 @@ fn zeros[
     return zeros[dtype](shape=NDArrayShape(shape))
 
 
-fn zeros_like[
+def zeros_like[
     dtype: DType = DType.float64
 ](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -1458,7 +1458,7 @@ fn zeros_like[
     return full[dtype](shape=array.shape, fill_value=0)
 
 
-fn zeros[
+def zeros[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: NDArrayShape) raises -> ComplexNDArray[cdtype]:
     """
@@ -1476,7 +1476,7 @@ fn zeros[
     return full[cdtype](shape=shape, fill_value=ComplexSIMD[cdtype](0, 0))
 
 
-fn zeros[
+def zeros[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: List[Int]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1494,7 +1494,7 @@ fn zeros[
     return zeros[cdtype](shape=NDArrayShape(shape))
 
 
-fn zeros[
+def zeros[
     cdtype: ComplexDType = ComplexDType.float64,
 ](shape: VariadicList[Int, _]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1512,7 +1512,7 @@ fn zeros[
     return zeros[cdtype](shape=NDArrayShape(shape))
 
 
-fn zeros_like[
+def zeros_like[
     cdtype: ComplexDType = ComplexDType.float64,
 ](array: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype]:
     """
@@ -1530,7 +1530,7 @@ fn zeros_like[
     return full[cdtype](shape=array.shape, fill_value=ComplexSIMD[cdtype](0, 0))
 
 
-fn full[
+def full[
     dtype: DType = DType.float64
 ](
     shape: NDArrayShape, fill_value: Scalar[dtype], order: String = "C"
@@ -1565,7 +1565,7 @@ fn full[
     return A^
 
 
-fn full[
+def full[
     dtype: DType = DType.float64
 ](
     shape: List[Int], fill_value: Scalar[dtype], order: String = "C"
@@ -1589,7 +1589,7 @@ fn full[
     )
 
 
-fn full[
+def full[
     dtype: DType = DType.float64
 ](
     shape: VariadicList[Int, _], fill_value: Scalar[dtype], order: String = "C"
@@ -1613,7 +1613,7 @@ fn full[
     )
 
 
-fn full_like[
+def full_like[
     dtype: DType = DType.float64
 ](
     array: NDArray[dtype], fill_value: Scalar[dtype], order: String = "C"
@@ -1635,7 +1635,7 @@ fn full_like[
     return full[dtype](shape=array.shape, fill_value=fill_value, order=order)
 
 
-fn full[
+def full[
     cdtype: ComplexDType = ComplexDType.float64
 ](
     shape: NDArrayShape,
@@ -1671,7 +1671,7 @@ fn full[
     return A^
 
 
-fn full[
+def full[
     cdtype: ComplexDType = ComplexDType.float64
 ](
     shape: List[Int],
@@ -1697,7 +1697,7 @@ fn full[
     )
 
 
-fn full[
+def full[
     cdtype: ComplexDType = ComplexDType.float64
 ](
     shape: VariadicList[Int, _],
@@ -1723,7 +1723,7 @@ fn full[
     )
 
 
-fn full_like[
+def full_like[
     cdtype: ComplexDType = ComplexDType.float64
 ](
     array: ComplexNDArray[cdtype],
@@ -1750,7 +1750,7 @@ fn full_like[
 # ===------------------------------------------------------------------------===#
 # Building matrices
 # ===------------------------------------------------------------------------===#
-fn diag[
+def diag[
     dtype: DType = DType.float64
 ](v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
@@ -1818,7 +1818,7 @@ fn diag[
         raise Error("Arrays bigger than 2D are not supported")
 
 
-fn diag[
+def diag[
     cdtype: ComplexDType = ComplexDType.float64,
 ](v: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
@@ -1841,7 +1841,7 @@ fn diag[
     )
 
 
-fn diagflat[
+def diagflat[
     dtype: DType = DType.float64
 ](v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
@@ -1885,7 +1885,7 @@ fn diagflat[
     return result^
 
 
-fn diagflat[
+def diagflat[
     cdtype: ComplexDType = ComplexDType.float64,
 ](v: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
@@ -1907,7 +1907,7 @@ fn diagflat[
     )
 
 
-fn tri[
+def tri[
     dtype: DType = DType.float64
 ](N: Int, M: Int, k: Int = 0) raises -> NDArray[dtype]:
     """
@@ -1951,7 +1951,7 @@ fn tri[
     return result^
 
 
-fn tri[
+def tri[
     cdtype: ComplexDType = ComplexDType.float64,
 ](N: Int, M: Int, k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
@@ -1976,7 +1976,7 @@ fn tri[
     )
 
 
-fn tril[
+def tril[
     dtype: DType = DType.float64
 ](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
@@ -2019,7 +2019,7 @@ fn tril[
     return result^
 
 
-fn tril[
+def tril[
     cdtype: ComplexDType = ComplexDType.float64,
 ](m: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
@@ -2041,7 +2041,7 @@ fn tril[
     )
 
 
-fn triu[
+def triu[
     dtype: DType = DType.float64
 ](m: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
     """
@@ -2082,7 +2082,7 @@ fn triu[
     return result^
 
 
-fn triu[
+def triu[
     cdtype: ComplexDType = ComplexDType.float64,
 ](m: ComplexNDArray[cdtype], k: Int = 0) raises -> ComplexNDArray[cdtype]:
     """
@@ -2104,7 +2104,7 @@ fn triu[
     )
 
 
-fn vander[
+def vander[
     dtype: DType = DType.float64
 ](
     x: NDArray[dtype], N: Optional[Int] = None, increasing: Bool = False
@@ -2140,7 +2140,7 @@ fn vander[
     return result^
 
 
-fn vander[
+def vander[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     x: ComplexNDArray[cdtype],
@@ -2173,7 +2173,7 @@ fn vander[
 
 
 # TODO: Check whether inplace cast is needed.
-fn astype[
+def astype[
     dtype: DType, //, target: DType
 ](a: NDArray[dtype]) raises -> NDArray[target]:
     """
@@ -2196,7 +2196,7 @@ fn astype[
     comptime if target == DType.bool:
 
         @parameter
-        fn vectorized_astype[
+        def vectorized_astype[
             simd_width: Int
         ](idx: Int) unified {mut result, read a} -> None:
             (result.unsafe_ptr() + idx).strided_store[width=simd_width](
@@ -2209,7 +2209,7 @@ fn astype[
         comptime if target == DType.bool:
 
             @parameter
-            fn vectorized_astypenb_from_b[
+            def vectorized_astypenb_from_b[
                 simd_width: Int
             ](idx: Int) unified {mut result, read a} -> None:
                 result._buf.ptr.store(
@@ -2224,7 +2224,7 @@ fn astype[
         else:
 
             @parameter
-            fn vectorized_astypenb[
+            def vectorized_astypenb[
                 simd_width: Int
             ](idx: Int) unified {mut result, read a} -> None:
                 result._buf.ptr.store(
@@ -2236,7 +2236,7 @@ fn astype[
     return result^
 
 
-fn astype[
+def astype[
     cdtype: ComplexDType,
     //,
     target: ComplexDType,
@@ -2267,7 +2267,7 @@ fn astype[
 # ===------------------------------------------------------------------------===#
 
 
-fn fromstring[
+def fromstring[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
     """
@@ -2283,7 +2283,7 @@ fn fromstring[
     ```
     import numojo as nm
 
-    fn main() raises:
+    def main() raises:
         var A = nm.fromstring[DType.int8]("[[[1,2],[3,4]],[[5,6],[7,8]]]")
         var B = nm.fromstring[DType.float16]("[[1,2,3,4],[5,6,7,8]]")
         var C = nm.fromstring[DType.float32]("[0.1, -2.3, 41.5, 19.29145, -199]")
@@ -2361,7 +2361,7 @@ fn fromstring[
     return result^
 
 
-# fn from_tensor[
+# def from_tensor[
 #     dtype: DType = DType.float64
 # ](data: Tensor[dtype]) raises -> NDArray[dtype]:
 #     """
@@ -2389,7 +2389,7 @@ fn fromstring[
 #     return a
 
 
-# fn from_tensorC[
+# def from_tensorC[
 #     dtype: DType = DType.float64
 # ](real: Tensor[dtype], imag: Tensor[dtype]) raises -> ComplexNDArray[cdtype]:
 #     """
@@ -2431,7 +2431,7 @@ fn fromstring[
 # ===------------------------------------------------------------------------===#
 
 
-fn array[
+def array[
     dtype: DType = DType.float64
 ](text: String, order: String = "C",) raises -> NDArray[dtype]:
     """
@@ -2440,7 +2440,7 @@ fn array[
     return fromstring[dtype](text, order)
 
 
-fn array[
+def array[
     dtype: DType = DType.float64
 ](
     data: List[Scalar[dtype]], shape: List[Int], order: String = "C"
@@ -2472,7 +2472,7 @@ fn array[
     return result^
 
 
-fn array[
+def array[
     cdtype: ComplexDType = ComplexDType.float64,
 ](
     data: List[ComplexScalar[cdtype]],
@@ -2520,7 +2520,7 @@ fn array[
     return A^
 
 
-fn array[
+def array[
     dtype: DType = DType.float64
 ](data: PythonObject, order: String = "C") raises -> NDArray[dtype]:
     """
@@ -2593,7 +2593,7 @@ fn array[
     return A^
 
 
-fn array[
+def array[
     cdtype: ComplexDType = ComplexDType.float64
 ](
     real: PythonObject, imag: PythonObject, order: String = "C"
@@ -2683,7 +2683,7 @@ fn array[
     return A^
 
 
-fn meshgrid[
+def meshgrid[
     dtype: DType = DType.float64, indexing: String = "xy"
 ](*arrays: NDArray[dtype]) raises -> List[NDArray[dtype]]:
     """
@@ -2753,7 +2753,7 @@ fn meshgrid[
 
         # for outer in range(outer_size):
         @parameter
-        fn closure(outer: Int) -> None:
+        def closure(outer: Int) -> None:
             for k in range(dim_size):
                 for inner in range(inner_size):
                     var idx = (
@@ -2771,7 +2771,7 @@ fn meshgrid[
 # Internal functions
 # ===----------------------------------------------------------------------=== #
 # for creating a 0darray (only for internal use)
-fn _0darray[
+def _0darray[
     dtype: DType
 ](val: Scalar[dtype],) raises -> NDArray[dtype]:
     """
@@ -2798,7 +2798,7 @@ fn _0darray[
     return b^
 
 
-fn _0darray[
+def _0darray[
     cdtype: ComplexDType
 ](val: ComplexSIMD[cdtype],) raises -> ComplexNDArray[cdtype]:
     """

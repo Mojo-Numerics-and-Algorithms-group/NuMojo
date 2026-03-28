@@ -23,7 +23,7 @@ from numojo.routines import HostExecutor
 # ===------------------------------------------------------------------------===#
 
 
-fn round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
+def round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
     # FIXME
     # The built-in `round` function is not working now.
     # It will be fixed in future.
@@ -40,7 +40,7 @@ fn round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise absolute value of a NDArray.
 
@@ -61,7 +61,7 @@ fn tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn tfloor[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def tfloor[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise floor of a NDArray.
 
@@ -77,7 +77,7 @@ fn tfloor[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, SIMD.__floor__](array)
 
 
-fn tceil[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def tceil[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise ceiling of a NDArray.
 
@@ -93,7 +93,7 @@ fn tceil[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, SIMD.__ceil__](array)
 
 
-fn ttrunc[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def ttrunc[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise truncation of a NDArray.
 
@@ -109,7 +109,7 @@ fn ttrunc[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, SIMD.__trunc__](array)
 
 
-fn tround[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def tround[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise rounding of a NDArray to a whole number.
 
@@ -125,7 +125,7 @@ fn tround[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, SIMD.__round__](array)
 
 
-fn roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise banker's rounding of a NDArray.
 
@@ -141,7 +141,7 @@ fn roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, SIMD.__round__](array)
 
 
-# fn round_half_down[
+# def round_half_down[
 #     dtype: DType
 # ](NDArray: NDArray[dtype]) -> NDArray[dtype]:
 #     """
@@ -162,7 +162,7 @@ fn roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 #     ](NDArray)
 
 
-# fn round_half_up[
+# def round_half_up[
 #     dtype: DType
 # ](NDArray: NDArray[dtype]) -> NDArray[dtype]:
 #     """
@@ -187,7 +187,7 @@ fn roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn nextafter[
+def nextafter[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
     dtype

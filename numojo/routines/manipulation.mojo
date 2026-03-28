@@ -39,7 +39,7 @@ from numojo.core.indexing.utility import (
 # ===----------------------------------------------------------------------=== #
 
 
-fn copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
+def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
     """
     Copies the array from src to dst.
 
@@ -75,7 +75,7 @@ fn copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
             dst._buf.ptr[dst_offset] = src._buf.ptr[src_offset]
 
 
-fn ndim[dtype: DType](array: NDArray[dtype]) -> Int:
+def ndim[dtype: DType](array: NDArray[dtype]) -> Int:
     """
     Returns the number of dimensions of the NDArray.
 
@@ -88,7 +88,7 @@ fn ndim[dtype: DType](array: NDArray[dtype]) -> Int:
     return array.ndim
 
 
-fn ndim[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> Int:
+def ndim[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> Int:
     """
     Returns the number of dimensions of the NDArray.
 
@@ -101,7 +101,7 @@ fn ndim[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> Int:
     return array.ndim
 
 
-fn shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
+def shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
     """
     Returns the shape of the NDArray.
 
@@ -114,7 +114,7 @@ fn shape[dtype: DType](array: NDArray[dtype]) -> NDArrayShape:
     return array.shape
 
 
-fn shape[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> NDArrayShape:
+def shape[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> NDArrayShape:
     """
     Returns the shape of the NDArray.
 
@@ -126,7 +126,7 @@ fn shape[cdtype: ComplexDType](array: ComplexNDArray[cdtype]) -> NDArrayShape:
     return array.shape
 
 
-fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
+def size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
     """
     Returns the size of the NDArray.
 
@@ -140,7 +140,7 @@ fn size[dtype: DType](array: NDArray[dtype], axis: Int) raises -> Int:
     return array.shape[axis]
 
 
-fn size[
+def size[
     cdtype: ComplexDType
 ](array: ComplexNDArray[cdtype], axis: Int) raises -> Int:
     """
@@ -161,7 +161,7 @@ fn size[
 # ===----------------------------------------------------------------------=== #
 
 
-fn reshape[
+def reshape[
     dtype: DType
 ](
     A: NDArray[dtype], shape: NDArrayShape, order: String = "C"
@@ -205,7 +205,7 @@ fn reshape[
     return B^
 
 
-fn ravel[
+def ravel[
     dtype: DType
 ](a: NDArray[dtype], order: String = "C") raises -> NDArray[dtype]:
     """
@@ -255,7 +255,7 @@ fn ravel[
 
 # TODO: Remove this one if the following function is working well:
 # `numojo.core.utility.TraverseMethods.traverse_buffer_according_to_shape_and_strides`
-fn _set_values_according_to_shape_and_strides(
+def _set_values_according_to_shape_and_strides(
     mut I: NDArray[DType.int],
     mut index: Int,
     current_dim: Int,
@@ -285,7 +285,7 @@ fn _set_values_according_to_shape_and_strides(
             )
 
 
-fn transpose[
+def transpose[
     dtype: DType
 ](A: NDArray[dtype], axes: List[Int]) raises -> NDArray[dtype]:
     """
@@ -351,7 +351,7 @@ fn transpose[
 
 
 # TODO: Make this operation in place to match numpy.
-fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
+def transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     (overload) Transpose the array when `axes` is not given.
     If `axes` is not given, it is equal to flipping the axes.
@@ -380,7 +380,7 @@ fn transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Transpose of matrix.
     """
@@ -399,7 +399,7 @@ fn transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return B^
 
 
-fn reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+def reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Create a new Matrix with the opposite layout from A:
     if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
@@ -442,7 +442,7 @@ fn reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
 # ===----------------------------------------------------------------------=== #
 
 
-fn broadcast_to[
+def broadcast_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
     if a.shape.ndim > shape.ndim:
@@ -503,7 +503,7 @@ fn broadcast_to[
     return b^
 
 
-fn broadcast_to[
+def broadcast_to[
     dtype: DType
 ](
     A: Matrix[dtype],
@@ -570,7 +570,7 @@ fn broadcast_to[
     return B^
 
 
-fn broadcast_to[
+def broadcast_to[
     dtype: DType
 ](A: Scalar[dtype], shape: Tuple[Int, Int], order: String) raises -> Matrix[
     dtype
@@ -583,7 +583,7 @@ fn broadcast_to[
     return B^
 
 
-fn _broadcast_back_to[
+def _broadcast_back_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape, axis: Int) raises -> NDArray[dtype]:
     """
@@ -629,7 +629,7 @@ fn _broadcast_back_to[
 # ===----------------------------------------------------------------------=== #
 
 
-fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns flipped array and keep the shape.
 
@@ -651,7 +651,7 @@ fn flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return A^
 
 
-fn flip[
+def flip[
     dtype: DType
 ](array: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """

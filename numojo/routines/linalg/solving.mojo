@@ -29,7 +29,7 @@ from numojo.routines.linalg.decompositions import (
 )
 
 
-fn forward_substitution[
+def forward_substitution[
     dtype: DType
 ](L: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """Perform forward substitution to solve `Lx = y`.
@@ -63,7 +63,7 @@ fn forward_substitution[
     return x^
 
 
-fn back_substitution[
+def back_substitution[
     dtype: DType
 ](U: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
     """Perform forward substitution to solve `Ux = y`.
@@ -95,7 +95,7 @@ fn back_substitution[
     return x^
 
 
-fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
+def inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Find the inverse of a non-singular, row-major matrix.
 
@@ -122,7 +122,7 @@ fn inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     return solve(A, I)
 
 
-fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+def inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Inverse of matrix.
     """
@@ -142,7 +142,7 @@ fn inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return B^
 
 
-fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """Find the inverse of a non-singular, row-major matrix.
 
     Use LU decomposition algorithm.
@@ -179,7 +179,7 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var X = zeros[dtype](Shape(m, m))
 
     @parameter
-    fn calculate_X(col: Int) -> None:
+    def calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y._buf.ptr.load(i * m + col)
@@ -211,7 +211,7 @@ fn inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return X^
 
 
-fn lstsq[
+def lstsq[
     dtype: DType
 ](X: Matrix[dtype], y: Matrix[dtype]) raises -> Matrix[dtype]:
     """Caclulate the OLS estimates.
@@ -246,7 +246,7 @@ fn lstsq[
     return b^
 
 
-fn solve[
+def solve[
     dtype: DType
 ](A: NDArray[dtype], Y: NDArray[dtype]) raises -> NDArray[dtype]:
     """Solve the linear system `AX = Y` for `X`.
@@ -278,7 +278,7 @@ fn solve[
 
     ```mojo
     import numojo as nm
-    fn main() raises:
+    def main() raises:
         var A = nm.fromstring("[[1, 0, 1], [0, 2, 1], [1, 1, 1]]")
         var B = nm.fromstring("[[1, 0, 0], [0, 1, 0], [0, 0, 1]]")
         var X = nm.linalg.solve(A, B)
@@ -322,7 +322,7 @@ fn solve[
     ####################################################################
 
     @parameter
-    fn calculate_X(col: Int) -> None:
+    def calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y._buf.ptr.load(i * n + col)
@@ -382,7 +382,7 @@ fn solve[
 
 
 # TODO: remove unnecessary copies going on here later.
-fn solve[
+def solve[
     dtype: DType
 ](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
     """
@@ -415,7 +415,7 @@ fn solve[
     var PY = P @ Y
 
     @parameter
-    fn calculate_X(col: Int) -> None:
+    def calculate_X(col: Int) -> None:
         # Solve `LZ = PY` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = PY._load(i, col)
@@ -446,7 +446,7 @@ fn solve[
     return X^
 
 
-fn solve_lu[
+def solve_lu[
     dtype: DType
 ](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
     """
@@ -465,7 +465,7 @@ fn solve_lu[
     var X = Matrix.full[dtype]((m, n))
 
     @parameter
-    fn calculate_X(col: Int) -> None:
+    def calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y._load(i, col)

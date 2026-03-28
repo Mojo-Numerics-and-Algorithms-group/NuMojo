@@ -192,7 +192,7 @@ struct ComplexDType(
     # ===-------------------------------------------------------------------===#
 
     @always_inline("builtin")
-    fn __init__(out self, *, mlir_value: Self._mlir_type):
+    def __init__(out self, *, mlir_value: Self._mlir_type):
         """Construct a ComplexDType from MLIR ComplexDType.
 
         Args:
@@ -201,7 +201,7 @@ struct ComplexDType(
         self.dtype = DType(mlir_value=mlir_value)
 
     @staticmethod
-    fn _from_str(str: StringSlice) -> ComplexDType:
+    def _from_str(str: StringSlice) -> ComplexDType:
         """Construct a ComplexDType from a string.
 
         Args:
@@ -261,7 +261,7 @@ struct ComplexDType(
             return ComplexDType.invalid
 
     @no_inline
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """Gets the name of the ComplexDType.
 
         Returns:
@@ -271,7 +271,7 @@ struct ComplexDType(
         return String.write(self)
 
     @no_inline
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """
         Formats this ComplexDType to the provided Writer.
 
@@ -329,7 +329,7 @@ struct ComplexDType(
         return writer.write("<<unknown>>")
 
     @always_inline("nodebug")
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """Gets the representation of the ComplexDType e.g. `"ComplexDType.float32"`.
 
         Returns:
@@ -337,7 +337,7 @@ struct ComplexDType(
         """
         return String.write("ComplexDType.", self)
 
-    fn write_repr_to[W: Writer](self, mut writer: W):
+    def write_repr_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.
 
         Parameters:
@@ -350,7 +350,7 @@ struct ComplexDType(
         writer.write(self.__repr__())
 
     @always_inline("nodebug")
-    fn get_value(self) -> __mlir_type.`!kgen.dtype`:
+    def get_value(self) -> __mlir_type.`!kgen.dtype`:
         """Gets the associated internal kgen.ComplexDType value.
 
         Returns:
@@ -361,7 +361,7 @@ struct ComplexDType(
     @doc_private
     @staticmethod
     @always_inline("nodebug")
-    fn _from_ui8(ui8: UInt8._mlir_type) -> ComplexDType:
+    def _from_ui8(ui8: UInt8._mlir_type) -> ComplexDType:
         var res = __mlir_op.`pop.dtype.from_ui8`(
             __mlir_op.`pop.cast_to_builtin`[_type=__mlir_type.ui8](ui8)
         )
@@ -369,14 +369,14 @@ struct ComplexDType(
 
     @doc_private
     @always_inline("nodebug")
-    fn _as_ui8(self) -> UInt8._mlir_type:
+    def _as_ui8(self) -> UInt8._mlir_type:
         return __mlir_op.`pop.cast_from_builtin`[_type=UInt8._mlir_type](
             __mlir_op.`pop.dtype.to_ui8`(self.dtype.get_value())
         )
 
     @doc_private
     @always_inline("nodebug")
-    fn _match(self, mask: UInt8) -> Bool:
+    def _match(self, mask: UInt8) -> Bool:
         var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred ne>`](
             __mlir_op.`pop.simd.and`(self._as_ui8(), mask._mlir_value),
             __mlir_attr.`#pop.simd<0> : !pop.scalar<ui8>`,
@@ -384,7 +384,7 @@ struct ComplexDType(
         return Bool(mlir_value=res)
 
     @always_inline("nodebug")
-    fn __is__(self, rhs: ComplexDType) -> Bool:
+    def __is__(self, rhs: ComplexDType) -> Bool:
         """Compares one ComplexDType to another for equality.
 
         Args:
@@ -396,7 +396,7 @@ struct ComplexDType(
         return self == rhs
 
     @always_inline("nodebug")
-    fn __isnot__(self, rhs: ComplexDType) -> Bool:
+    def __isnot__(self, rhs: ComplexDType) -> Bool:
         """Compares one ComplexDType to another for equality.
 
         Args:
@@ -408,7 +408,7 @@ struct ComplexDType(
         return ~(self == rhs)
 
     @always_inline("nodebug")
-    fn __eq__(self, rhs: ComplexDType) -> Bool:
+    def __eq__(self, rhs: ComplexDType) -> Bool:
         """Compares one ComplexDType to another for equality.
 
         Args:
@@ -423,7 +423,7 @@ struct ComplexDType(
         return Bool(mlir_value=res)
 
     @always_inline("nodebug")
-    fn __ne__(self, rhs: ComplexDType) -> Bool:
+    def __ne__(self, rhs: ComplexDType) -> Bool:
         """Compares one ComplexDType to another for inequality.
 
         Args:
@@ -437,7 +437,7 @@ struct ComplexDType(
         )
         return Bool(mlir_value=res)
 
-    fn __hash__[H: Hasher](self, mut hasher: H):
+    def __hash__[H: Hasher](self, mut hasher: H):
         """Updates hasher with this `ComplexDType` value.
 
         Parameters:
@@ -449,7 +449,7 @@ struct ComplexDType(
         hasher._update_with_simd(UInt8(mlir_value=self._as_ui8()))
 
     @always_inline("nodebug")
-    fn is_unsigned(self) -> Bool:
+    def is_unsigned(self) -> Bool:
         """Returns True if the type parameter is unsigned and False otherwise.
 
         Returns:
@@ -458,7 +458,7 @@ struct ComplexDType(
         return self._is_non_index_integral() and not self._match(_mIsSigned)
 
     @always_inline("nodebug")
-    fn is_signed(self) -> Bool:
+    def is_signed(self) -> Bool:
         """Returns True if the type parameter is signed and False otherwise.
 
         Returns:
@@ -469,7 +469,7 @@ struct ComplexDType(
         return self.is_integral() and self._match(_mIsSigned)
 
     @always_inline("nodebug")
-    fn _is_non_index_integral(self) -> Bool:
+    def _is_non_index_integral(self) -> Bool:
         """Returns True if the type parameter is a non-index integer value and False otherwise.
 
         Returns:
@@ -478,7 +478,7 @@ struct ComplexDType(
         return self._match(_mIsInteger)
 
     @always_inline("nodebug")
-    fn is_integral(self) -> Bool:
+    def is_integral(self) -> Bool:
         """Returns True if the type parameter is an integer and False otherwise.
 
         Returns:
@@ -490,7 +490,7 @@ struct ComplexDType(
         )
 
     @always_inline("nodebug")
-    fn is_floating_point(self) -> Bool:
+    def is_floating_point(self) -> Bool:
         """Returns True if the type parameter is a floating-point and False
         otherwise.
 
@@ -500,7 +500,7 @@ struct ComplexDType(
         return self._match(_mIsFloat)
 
     @always_inline("nodebug")
-    fn is_float8(self) -> Bool:
+    def is_float8(self) -> Bool:
         """Returns True if the ComplexDType is a 8bit-precision floating point type,
         e.g. float8_e5m2, float8_e5m2fnuz, float8_e4m3fn and float8_e4m3fnuz.
 
@@ -517,7 +517,7 @@ struct ComplexDType(
         )
 
     @always_inline("nodebug")
-    fn is_half_float(self) -> Bool:
+    def is_half_float(self) -> Bool:
         """Returns True if the ComplexDType is a half-precision floating point type,
         e.g. either fp16 or bf16.
 
@@ -528,7 +528,7 @@ struct ComplexDType(
         return self in (ComplexDType.bfloat16, ComplexDType.float16)
 
     @always_inline("nodebug")
-    fn is_numeric(self) -> Bool:
+    def is_numeric(self) -> Bool:
         """Returns True if the type parameter is numeric (i.e. you can perform
         arithmetic operations on).
 
@@ -539,7 +539,7 @@ struct ComplexDType(
         return self.is_integral() or self.is_floating_point()
 
     @always_inline
-    fn size_of(self) -> Int:
+    def size_of(self) -> Int:
         """Returns the size in bytes of the current DType.
 
         Returns:
@@ -597,7 +597,7 @@ struct ComplexDType(
         return size_of[DType.invalid]()
 
     @always_inline
-    fn bitwidth(self) -> Int:
+    def bitwidth(self) -> Int:
         """Returns the size in bits of the current ComplexDType.
 
         Returns:
@@ -607,7 +607,7 @@ struct ComplexDType(
             2 * 8 * self.size_of()
         )  # 2 * because complex number has real and imaginary parts
 
-    fn component_bitwidth(self) -> Int:
+    def component_bitwidth(self) -> Int:
         """Returns the size in bits of the component type of the current ComplexDType.
 
         Returns:
@@ -619,7 +619,7 @@ struct ComplexDType(
     # __mlir_type
     # ===-------------------------------------------------------------------===#
     @always_inline("nodebug")
-    fn __mlir_type(self) -> __mlir_type.`!kgen.deferred`:
+    def __mlir_type(self) -> __mlir_type.`!kgen.deferred`:
         """Returns the MLIR type of the current DType as an MLIR type.
 
         Returns:
@@ -680,11 +680,11 @@ struct ComplexDType(
 
         abort("invalid dtype")
 
-    fn component_dtype(self) -> DType:
+    def component_dtype(self) -> DType:
         return self.dtype
 
 
-fn _concise_dtype_str(cdtype: ComplexDType) -> String:
+def _concise_dtype_str(cdtype: ComplexDType) -> String:
     """Returns a concise string representation of the complex data type."""
     if cdtype == ci8:
         return "ci8"

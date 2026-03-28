@@ -18,7 +18,7 @@ struct Constants(AnyType, Copyable, Movable):
     Use comptime for compile time evaluation of indefinite precision.
     ```mojo
     import numojo as nm
-    fn main():
+    def main():
         var pi: Float64 = nm.pi
         print("Float64:", pi*pi*pi*pi*pi*pi)
         print("Literal:", nm.pi*nm.pi*nm.pi*nm.pi*nm.pi*nm.pi)
@@ -30,13 +30,13 @@ struct Constants(AnyType, Copyable, Movable):
     comptime e = 2.71828182845904523536028747135266249775724609375
     comptime hbar = 1.0545718176461563912626e-34
 
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initializes the constants.
         """
         pass
 
-    fn __del__(deinit self):
+    def __del__(deinit self):
         """
         Deletes the constants.
         """

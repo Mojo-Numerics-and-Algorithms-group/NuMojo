@@ -24,7 +24,7 @@ from numojo.routines.math.arithmetic import fma
 # ===------------------------------------------------------------------------===#
 
 
-fn acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse cosine.
 
@@ -40,7 +40,7 @@ fn acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.acos](array)
 
 
-fn asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse sine.
 
@@ -56,7 +56,7 @@ fn asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.asin](array)
 
 
-fn atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse tangent.
 
@@ -72,7 +72,7 @@ fn atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.atan](array)
 
 
-fn atan2[
+def atan2[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -102,7 +102,7 @@ fn atan2[
 # ===------------------------------------------------------------------------===#
 
 
-fn arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse cosine.
 
@@ -118,7 +118,7 @@ fn arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
 
 
-fn acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse cosine.
 
@@ -134,7 +134,7 @@ fn acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.acos](A)
 
 
-fn arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse sine.
 
@@ -150,7 +150,7 @@ fn arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
 
 
-fn asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse sine.
 
@@ -166,7 +166,7 @@ fn asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.asin](A)
 
 
-fn arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse tangent.
 
@@ -182,7 +182,7 @@ fn arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.atan](A)
 
 
-fn atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply inverse tangent.
 
@@ -203,7 +203,7 @@ fn atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply cosine.
 
@@ -219,7 +219,7 @@ fn cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.cos](array)
 
 
-fn sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply sine.
 
@@ -235,7 +235,7 @@ fn sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, math.sin](array)
 
 
-fn tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply tangent.
 
@@ -256,7 +256,7 @@ fn tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply cosine.
 
@@ -272,7 +272,7 @@ fn cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.cos](A)
 
 
-fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply sine.
 
@@ -288,7 +288,7 @@ fn sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     return _arithmetic_func_matrix_to_matrix[dtype, math.sin](A)
 
 
-fn tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
+def tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply tangent.
 
@@ -309,7 +309,7 @@ fn tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn hypot[
+def hypot[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -331,7 +331,7 @@ fn hypot[
     return HostExecutor.apply_binary[dtype, math.hypot](array1, array2)
 
 
-fn hypot_fma[
+def hypot_fma[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """

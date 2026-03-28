@@ -22,7 +22,7 @@ Example:
     from numojo.core.memory.dlpack import from_dlpack
     from python import Python
 
-    fn main() raises:
+    def main() raises:
         # Create a NuMojo array
         var arr = nm.linspace[f32](0, 5, 6)
 
@@ -80,7 +80,7 @@ struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     comptime CURRENT_MINOR: UInt32 = 8
     comptime LATEST = DLPackVersion(Self.CURRENT_MAJOR, Self.CURRENT_MINOR)
 
-    fn __init__(out self, major: UInt32, minor: UInt32):
+    def __init__(out self, major: UInt32, minor: UInt32):
         self.major = major
         self.minor = minor
 
@@ -120,7 +120,7 @@ struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     var device_id: Int32
     """Device ID (for multiple devices of same type)."""
 
-    fn __init__(out self, device_type: Int32 = Self.CPU, device_id: Int32 = 0):
+    def __init__(out self, device_type: Int32 = Self.CPU, device_id: Int32 = 0):
         self.device_type = device_type
         self.device_id = device_id
 
@@ -159,13 +159,13 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     var lanes: UInt16
     """Number of lanes (1 for scalar, >1 for vector types)."""
 
-    fn __init__(out self, code: UInt8, bits: UInt8, lanes: UInt16 = 1):
+    def __init__(out self, code: UInt8, bits: UInt8, lanes: UInt16 = 1):
         self.code = code
         self.bits = bits
         self.lanes = lanes
 
     @staticmethod
-    fn from_dtype[dtype: DType]() -> Self:
+    def from_dtype[dtype: DType]() -> Self:
         """Converts a Mojo DType to a DLDataType descriptor.
 
         This static method maps Mojo's native data types to the DLPack type
@@ -194,7 +194,7 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
 
         return Self(code, bits, 1)
 
-    fn to_dtype(self) raises -> DType:
+    def to_dtype(self) raises -> DType:
         """Converts a DLDataType descriptor to a Mojo DType.
 
         This method maps DLPack type descriptors back to Mojo's native data types,
@@ -292,7 +292,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
     var byte_offset: UInt64
     """Byte offset from data pointer to first element."""
 
-    fn __init__(
+    def __init__(
         out self,
         data: UnsafePointer[NoneType, MutAnyOrigin],
         device: DLDevice,
@@ -345,7 +345,7 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
     var deleter: DLManagedTensorDeleter
     """Cleanup function called when consumer is done."""
 
-    fn __init__(
+    def __init__(
         out self,
         dl_tensor: DLTensor,
         manager_ctx: UnsafePointer[NoneType, MutAnyOrigin],
@@ -384,7 +384,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
     var ndim: Int
     var data_container: DataContainer[Self.dtype]
 
-    fn __init__(
+    def __init__(
         out self,
         shape: UnsafePointer[Int64, MutAnyOrigin],
         strides: UnsafePointer[Int64, MutAnyOrigin],
@@ -396,13 +396,13 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         self.ndim = ndim
         self.data_container = data_container^
 
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         self.shape = copy.shape
         self.strides = copy.strides
         self.ndim = copy.ndim
         self.data_container = copy.data_container.copy()
 
-    fn __del__(deinit self):
+    def __del__(deinit self):
         if self.shape:
             self.shape.free()
         if self.strides:
@@ -416,7 +416,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
 # ===-------------------------------------------------------------------===#
 
 
-fn _dlpack_deleter_impl[
+def _dlpack_deleter_impl[
     dtype: DType
 ](managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]) -> None:
     """Type-specific deleter callback for DLManagedTensor."""
@@ -437,7 +437,7 @@ fn _dlpack_deleter_impl[
 # ===-------------------------------------------------------------------===#
 
 
-fn to_dlpack[
+def to_dlpack[
     dtype: DType
 ](arr: NDArray[dtype]) raises -> UnsafePointer[DLManagedTensor, MutAnyOrigin]:
     """Exports a NuMojo NDArray to a DLPack managed tensor for zero-copy sharing.
@@ -511,7 +511,7 @@ fn to_dlpack[
     return managed
 
 
-fn _extract_dlpack_pointer(
+def _extract_dlpack_pointer(
     capsule: PythonObject,
 ) raises -> UnsafePointer[DLManagedTensor, MutAnyOrigin]:
     """Extracts the DLManagedTensor pointer from a PyCapsule.
@@ -554,7 +554,7 @@ fn _extract_dlpack_pointer(
     return p.bitcast[DLManagedTensor]()
 
 
-fn _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
+def _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
     ctypes = Python.import_module("ctypes")
 
     return ctypes.cast(
@@ -568,7 +568,7 @@ fn _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
 # ===-------------------------------------------------------------------===#
 
 
-fn from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
+def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
     """Imports a tensor from any DLPack-compatible library into a NuMojo NDArray
     using zero-copy.
     This function accepts a Python object that implements the DLPack protocol
@@ -659,7 +659,7 @@ fn from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
     return result^
 
 
-fn from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
+def from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
     """Imports a NumPy array into a NuMojo NDArray via zero-copy.
 
     This is a fast path specifically optimized for NumPy that uses the

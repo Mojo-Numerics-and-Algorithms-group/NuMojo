@@ -29,7 +29,7 @@ from numojo.routines.functional import (
 
 
 # not sure what's the side effect of using a returned dtype and casting to it. There could be some precision loss?
-fn mean_1d[
+def mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
     """
@@ -51,7 +51,7 @@ fn mean_1d[
     return sum(a).cast[returned_dtype]() / Scalar[returned_dtype](a.size)
 
 
-fn mean[
+def mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
     """
@@ -70,7 +70,7 @@ fn mean[
     return mean_1d[returned_dtype](a)
 
 
-fn mean[
+def mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
     """
@@ -103,7 +103,7 @@ fn mean[
     ](a=a, axis=normalized_axis)
 
 
-fn mean[
+def mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: Matrix[dtype]) -> Scalar[returned_dtype]:
     """
@@ -123,7 +123,7 @@ fn mean[
     return sum(a).cast[returned_dtype]() / Scalar[returned_dtype](a.size)
 
 
-fn mean[
+def mean[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: Matrix[dtype], axis: Int) raises -> Matrix[returned_dtype]:
     """
@@ -153,7 +153,7 @@ fn mean[
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn median_1d[
+def median_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
     """
@@ -181,7 +181,7 @@ fn median_1d[
         ).cast[returned_dtype]() / 2
 
 
-fn median[
+def median[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
     """
@@ -201,7 +201,7 @@ fn median[
     return median_1d[returned_dtype](a)
 
 
-fn median[
+def median[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
     """
@@ -232,7 +232,7 @@ fn median[
     ](a=a, axis=normalized_axis)
 
 
-fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+def mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Returns mode of all items of an array.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -267,7 +267,7 @@ fn mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     return mode_value
 
 
-fn mode[dtype: DType](array: NDArray[dtype]) raises -> Scalar[dtype]:
+def mode[dtype: DType](array: NDArray[dtype]) raises -> Scalar[dtype]:
     """Mode of all items of an array.
 
     Parameters:
@@ -283,7 +283,7 @@ fn mode[dtype: DType](array: NDArray[dtype]) raises -> Scalar[dtype]:
     return mode_1d(ravel(array))
 
 
-fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+def mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Returns mode of the array elements along the given axis.
 
@@ -313,7 +313,7 @@ fn mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     )
 
 
-fn std[
+def std[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -338,7 +338,7 @@ fn std[
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
-fn std[
+def std[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
     returned_dtype
@@ -380,7 +380,7 @@ fn std[
     return variance[returned_dtype](A, axis=normalized_axis, ddof=ddof) ** 0.5
 
 
-fn std[
+def std[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -405,7 +405,7 @@ fn std[
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
-fn std[
+def std[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """
@@ -424,7 +424,7 @@ fn std[
     return variance[returned_dtype](A, axis, ddof=ddof) ** 0.5
 
 
-fn variance[
+def variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -452,7 +452,7 @@ fn variance[
     ) / Scalar[returned_dtype](A.size - ddof)
 
 
-fn variance[
+def variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
     returned_dtype
@@ -512,7 +512,7 @@ fn variance[
     ) / Scalar[returned_dtype](A.shape[normalized_axis] - ddof)
 
 
-fn variance[
+def variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -540,7 +540,7 @@ fn variance[
     ) / Scalar[returned_dtype](A.size - ddof)
 
 
-fn variance[
+def variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """

@@ -16,7 +16,7 @@ from numojo.core.layout import NDArrayShape, NDArrayStrides
 
 struct Validator:
     @staticmethod
-    fn normalize(index: Int, dim: Int) -> Int:
+    def normalize(index: Int, dim: Int) -> Int:
         """
         Normalize a possibly negative index.
 
@@ -30,7 +30,7 @@ struct Validator:
         return index if index >= 0 else index + dim
 
     @staticmethod
-    fn check_bounds(index: Int, dim: Int, axis: Int = 0) raises:
+    def check_bounds(index: Int, dim: Int, axis: Int = 0) raises:
         """
         Check if an index is within bounds for a dimension.
 
@@ -57,7 +57,7 @@ struct Validator:
             )
 
     @staticmethod
-    fn validate_reshape(current_size: Int, new_shape: NDArrayShape) raises:
+    def validate_reshape(current_size: Int, new_shape: NDArrayShape) raises:
         """
         Validate if a reshape operation is valid.
 
@@ -81,7 +81,7 @@ struct Validator:
             )
 
     @staticmethod
-    fn validate_and_normalize_axes(
+    def validate_and_normalize_axes(
         rank: Int, axes: List[Int]
     ) raises -> List[Int]:
         """

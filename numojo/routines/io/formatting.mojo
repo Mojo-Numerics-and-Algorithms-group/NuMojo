@@ -86,7 +86,7 @@ struct PrintOptions(Copyable, ImplicitlyCopyable, Movable):
     var exponent_threshold: Int
     var suppress_scientific: Bool
 
-    fn __init__(
+    def __init__(
         out self,
         precision: Int = DEFAULT_PRECISION,
         suppress_small: Bool = DEFAULT_SUPPRESS_SMALL,
@@ -120,7 +120,7 @@ struct PrintOptions(Copyable, ImplicitlyCopyable, Movable):
         self.exponent_threshold = exponent_threshold
         self.suppress_scientific = suppress_scientific
 
-    fn set_options(
+    def set_options(
         mut self,
         precision: Int = DEFAULT_PRECISION,
         suppress_small: Bool = DEFAULT_SUPPRESS_SMALL,
@@ -154,7 +154,7 @@ struct PrintOptions(Copyable, ImplicitlyCopyable, Movable):
         self.exponent_threshold = exponent_threshold
         self.suppress_scientific = suppress_scientific
 
-    fn __enter__(mut self) -> Self:
+    def __enter__(mut self) -> Self:
         var default_print_options = PrintOptions()
         default_print_options.set_options(
             precision=self.precision,
@@ -175,7 +175,7 @@ struct PrintOptions(Copyable, ImplicitlyCopyable, Movable):
         )
         return default_print_options
 
-    fn __exit__(mut self):
+    def __exit__(mut self):
         var default_print_options = PrintOptions()
         default_print_options.set_options(
             precision=DEFAULT_PRECISION,
@@ -196,7 +196,7 @@ struct PrintOptions(Copyable, ImplicitlyCopyable, Movable):
         )
 
 
-fn set_printoptions(
+def set_printoptions(
     precision: Int = DEFAULT_PRECISION,
     suppress_small: Bool = DEFAULT_SUPPRESS_SMALL,
     separator: String = DEFAULT_SEPARATOR,
@@ -214,7 +214,7 @@ fn set_printoptions(
 
 
 # FIXME: fix the problem where precision > number of digits in the mantissa results in a not so exact value.
-fn format_floating_scientific[
+def format_floating_scientific[
     dtype: DType = DType.float64
 ](
     x: Scalar[dtype],
@@ -324,7 +324,7 @@ fn format_floating_scientific[
         raise Error("dtype must be a floating-point type.")
 
 
-fn format_floating_precision[
+def format_floating_precision[
     dtype: DType
 ](
     value: Scalar[dtype],
@@ -390,7 +390,7 @@ fn format_floating_precision[
     return result
 
 
-fn format_floating_precision[
+def format_floating_precision[
     cdtype: ComplexDType
 ](
     value: ComplexSIMD[cdtype],
@@ -424,7 +424,7 @@ fn format_floating_precision[
         raise Error("Failed to format complex floating-point value.")
 
 
-fn format_value[
+def format_value[
     dtype: DType
 ](value: Scalar[dtype], print_options: PrintOptions) raises -> String:
     """
@@ -474,7 +474,7 @@ fn format_value[
         return formatted.ascii_rjust(formatted_width)
 
 
-fn format_value[
+def format_value[
     cdtype: ComplexDType
 ](value: ComplexSIMD[cdtype], print_options: PrintOptions,) raises -> String:
     """
@@ -576,7 +576,7 @@ fn format_value[
     )
 
 
-fn _trim_paranthesis_strings_cnumbers(
+def _trim_paranthesis_strings_cnumbers(
     complex_format: String,
     re_str: String,
     imag_mag_str: String,

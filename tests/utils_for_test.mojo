@@ -3,14 +3,14 @@ from std.testing.testing import assert_true
 import numojo as nm
 
 
-fn check[
+def check[
     dtype: DType, //
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.all(np.equal(array.to_numpy(), np_sol)), st)
 
 
-fn check_with_dtype[
+def check_with_dtype[
     dtype: DType
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
@@ -18,7 +18,7 @@ fn check_with_dtype[
     assert_true(np.all(np.equal(array.to_numpy(), np_sol)), st)
 
 
-fn check_is_close[
+def check_is_close[
     dtype: DType
 ](array: nm.NDArray[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
@@ -27,7 +27,7 @@ fn check_is_close[
     )
 
 
-fn check_values_close[
+def check_values_close[
     dtype: DType
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")

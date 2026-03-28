@@ -5,7 +5,7 @@ from std.testing import TestSuite
 # TODO: Added getter and setter tests
 
 
-fn test_complex_array_init() raises:
+def test_complex_array_init() raises:
     """Test initialization of ComplexArray."""
     var c1 = ComplexNDArray[cf32](Shape(2, 2))
     c1.itemset(0, ComplexSIMD[cf32](1.0, 2.0))
@@ -16,7 +16,7 @@ fn test_complex_array_init() raises:
     assert_almost_equal(c1.item(0).im, 2.0, "init failed")
 
 
-fn test_complex_array_add() raises:
+def test_complex_array_add() raises:
     """Test addition of ComplexArray numbers."""
     var c1 = ComplexNDArray[cf32](Shape(2, 2))
     var c2 = ComplexNDArray[cf32](Shape(2, 2))
@@ -41,7 +41,7 @@ fn test_complex_array_add() raises:
     assert_almost_equal(sum.item(3).im, 16.0, "add failed")
 
 
-fn test_complex_array_sub() raises:
+def test_complex_array_sub() raises:
     """Test subtraction of ComplexArray numbers."""
     var c1 = ComplexNDArray[cf32](Shape(2, 2))
     var c2 = ComplexNDArray[cf32](Shape(2, 2))
@@ -67,7 +67,7 @@ fn test_complex_array_sub() raises:
     assert_almost_equal(diff.item(3).im, -2.0, "sub failed")
 
 
-fn test_complex_array_mul() raises:
+def test_complex_array_mul() raises:
     """Test multiplication of ComplexArray numbers."""
     var c1 = ComplexNDArray[cf32](Shape(2, 2))
     var c2 = ComplexNDArray[cf32](Shape(2, 2))
@@ -87,7 +87,7 @@ fn test_complex_array_mul() raises:
     assert_almost_equal(prod.item(0).im, 4.0, "mul failed")
 
 
-fn test_complex_array_div() raises:
+def test_complex_array_div() raises:
     """Test division of ComplexArray numbers."""
     var c1 = ComplexNDArray[cf32](Shape(2, 2))
     var c2 = ComplexNDArray[cf32](Shape(2, 2))

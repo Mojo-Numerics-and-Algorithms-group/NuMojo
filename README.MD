@@ -77,7 +77,7 @@ import numojo as nm
 from numojo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # Generate two 1000x1000 matrices with random float64 values
     var A = nm.random.randn(Shape(1000, 1000)) # Shape is used for all shape related operations in numojo. 
     var B = nm.random.randn(Shape(1000, 1000))
@@ -109,7 +109,7 @@ from numojo import Matrix
 from numojo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # Generate two 1000x1000 matrices with random float64 values
     var A = Matrix.rand(shape=(1000, 1000))
     var B = Matrix.rand(shape=(1000, 1000))
@@ -160,7 +160,7 @@ import numojo as nm
 from numojo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # Create a complex scalar 5 + 5j
     # cf32 is the complex version of f32 (DType.float32) used to identify complex types in numojo.
     var complexscalar = CScalar[cf32](5) # Equivalently ComplexSIMD[cf32](5, 5)

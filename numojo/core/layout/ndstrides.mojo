@@ -55,7 +55,7 @@ struct NDArrayStrides(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initializes an empty NDArrayStrides.
         """
@@ -63,7 +63,7 @@ struct NDArrayStrides(
         self._buf = IndexBuffer()
 
     @always_inline("nodebug")
-    fn __init__(out self, buf: IndexBuffer):
+    def __init__(out self, buf: IndexBuffer):
         """
         Initializes the NDArrayStrides from an IndexBuffer.
 
@@ -74,7 +74,7 @@ struct NDArrayStrides(
         self._buf = buf
 
     @always_inline("nodebug")
-    fn __init__(out self, *strides: Int) raises:
+    def __init__(out self, *strides: Int) raises:
         """
         Initializes the NDArrayStrides from strides.
 
@@ -102,7 +102,7 @@ struct NDArrayStrides(
             self._buf.init_value(i, Scalar[DType.int](strides[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: List[Int]) raises:
+    def __init__(out self, strides: List[Int]) raises:
         """
         Initializes the NDArrayStrides from a list of strides.
 
@@ -130,7 +130,7 @@ struct NDArrayStrides(
             self._buf.init_value(i, Scalar[DType.int](strides[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: VariadicList[Int, _]) raises:
+    def __init__(out self, strides: VariadicList[Int, _]) raises:
         """
         Initializes the NDArrayStrides from a variadic list of strides.
 
@@ -162,7 +162,7 @@ struct NDArrayStrides(
             self._buf.init_value(i, Scalar[DType.int](strides[i]))
 
     @always_inline("nodebug")
-    fn __init__(out self, strides: NDArrayStrides):
+    def __init__(out self, strides: NDArrayStrides):
         """
         Initializes the NDArrayStrides from another strides.
         A deep-copy of the elements is conducted.
@@ -179,7 +179,7 @@ struct NDArrayStrides(
         )
 
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         shape: NDArrayShape,
         order: String = "C",
@@ -224,7 +224,7 @@ struct NDArrayStrides(
             )
 
     @always_inline("nodebug")
-    fn __init__(out self, *shape: Int, order: String) raises:
+    def __init__(out self, *shape: Int, order: String) raises:
         """
         Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
@@ -240,7 +240,7 @@ struct NDArrayStrides(
         self = Self(shape=NDArrayShape(shape), order=order)
 
     @always_inline("nodebug")
-    fn __init__(out self, shape: List[Int], order: String = "C") raises:
+    def __init__(out self, shape: List[Int], order: String = "C") raises:
         """
         Overloads the function `__init__(shape: NDArrayStrides, order: String)`.
         Initializes the NDArrayStrides from a given shapes and an order.
@@ -256,7 +256,7 @@ struct NDArrayStrides(
         self = Self(shape=NDArrayShape(shape), order=order)
 
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         shape: VariadicList[Int, _],
         order: String = "C",
@@ -276,7 +276,7 @@ struct NDArrayStrides(
         self = Self(shape=NDArrayShape(shape), order=order)
 
     @always_inline("nodebug")
-    fn __init__(
+    def __init__(
         out self,
         *,
         ndim: Int,
@@ -322,7 +322,7 @@ struct NDArrayStrides(
                     self._buf.init_value(i, 0)
 
     @always_inline("nodebug")
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         """
         Initializes the NDArrayStrides from ancopy strides.
         A deep-copy of the elements is conducted.
@@ -347,7 +347,7 @@ struct NDArrayStrides(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __getitem__(self, index: Int) raises -> Int:
+    def __getitem__(self, index: Int) raises -> Int:
         """
         Gets stride at specified index.
 
@@ -360,7 +360,7 @@ struct NDArrayStrides(
         return Int(self._buf[index])
 
     @always_inline("nodebug")
-    fn __getitem__(
+    def __getitem__(
         self, index: Scalar[Self.element_type]
     ) raises -> Scalar[Self.element_type]:
         """
@@ -375,7 +375,7 @@ struct NDArrayStrides(
         return self._buf[index]
 
     @always_inline("nodebug")
-    fn __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
+    def __getitem__(self, slice_index: Slice) raises -> NDArrayStrides:
         """
         Return a sliced view of the strides as a new NDArrayStrides.
 
@@ -388,7 +388,7 @@ struct NDArrayStrides(
         return Self(self._buf[slice_index])
 
     @always_inline("nodebug")
-    fn __setitem__(
+    def __setitem__(
         mut self,
         index: Scalar[Self.element_type],
         val: Scalar[Self.element_type],
@@ -406,7 +406,7 @@ struct NDArrayStrides(
         self._buf[Int(index)] = Int(val)
 
     @always_inline("nodebug")
-    fn __setitem__(mut self, index: Int, val: Int) raises:
+    def __setitem__(mut self, index: Int, val: Int) raises:
         """
         Sets stride at specified index.
 
@@ -419,7 +419,7 @@ struct NDArrayStrides(
         """
         self._buf[index] = val
 
-    fn load[
+    def load[
         width: Int = 1
     ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
         """
@@ -451,7 +451,7 @@ struct NDArrayStrides(
             )
         return self._buf.unsafe_load[width=width](idx)
 
-    fn store[
+    def store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]) raises:
         """
@@ -481,7 +481,7 @@ struct NDArrayStrides(
             )
         self._buf.unsafe_store[width=width](idx, value)
 
-    fn unsafe_load[
+    def unsafe_load[
         width: Int = 1
     ](self, idx: Int) -> SIMD[Self.element_type, width]:
         """
@@ -498,7 +498,7 @@ struct NDArrayStrides(
         """
         return self._buf.unsafe_load[width=width](idx)
 
-    fn unsafe_store[
+    def unsafe_store[
         width: Int = 1
     ](self, idx: Int, value: SIMD[Self.element_type, width]):
         """
@@ -517,7 +517,7 @@ struct NDArrayStrides(
     # Transformation Methods
     # ===----------------------------------------------------------------------=== #
 
-    fn permute(self, axes: List[Int]) raises -> Self:
+    def permute(self, axes: List[Int]) raises -> Self:
         """
         Return new strides with axes reordered.
 
@@ -581,7 +581,7 @@ struct NDArrayStrides(
             )
         return result^
 
-    fn swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+    def swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
         """
         Returns a new strides with the given axes swapped.
 
@@ -599,7 +599,7 @@ struct NDArrayStrides(
         res[axis2] = val1
         return res
 
-    fn join(self, *strides: Self) -> Self:
+    def join(self, *strides: Self) -> Self:
         """
         Join multiple strides into a single strides.
 
@@ -614,7 +614,7 @@ struct NDArrayStrides(
             bufs.append(strides[i]._buf)
         return Self(self._buf.join(bufs))
 
-    fn extend(self, *values: Int) -> Self:
+    def extend(self, *values: Int) -> Self:
         """
         Extend the shape by sizes of extended dimensions.
 
@@ -629,13 +629,13 @@ struct NDArrayStrides(
             new_vals.append(values[i])
         return Self(self._buf.extend(new_vals))
 
-    fn flip(mut self):
+    def flip(mut self):
         """
         Flip the items in-place.
         """
         self._buf.flip()
 
-    fn flipped(self) -> Self:
+    def flipped(self) -> Self:
         """
         Returns a new strides by flipping the items.
 
@@ -644,7 +644,7 @@ struct NDArrayStrides(
         """
         return Self(self._buf.flipped())
 
-    fn move_axis_to_end(self, axis: Int) -> Self:
+    def move_axis_to_end(self, axis: Int) -> Self:
         """
         Returns a new strides by moving the value of axis to the end.
 
@@ -656,7 +656,7 @@ struct NDArrayStrides(
         """
         return Self(self._buf.move_axis_to_end(axis))
 
-    fn pop(self, axis: Int) raises -> Self:
+    def pop(self, axis: Int) raises -> Self:
         """
         Drops information of certain axis.
 
@@ -672,7 +672,7 @@ struct NDArrayStrides(
     # Properties
     # ===----------------------------------------------------------------------=== #
 
-    fn is_contiguous(self, shape: NDArrayShape) raises -> Bool:
+    def is_contiguous(self, shape: NDArrayShape) raises -> Bool:
         """
         Check if strides represent a contiguous layout for the shape.
 
@@ -707,7 +707,7 @@ struct NDArrayStrides(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         """
         Gets number of elements in the strides.
         It equals to the number of dimensions of the array.
@@ -718,7 +718,7 @@ struct NDArrayStrides(
         return self.ndim
 
     @always_inline("nodebug")
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """
         Returns a string of the strides of the array.
 
@@ -728,7 +728,7 @@ struct NDArrayStrides(
         return "numojo.Strides" + self.__str__()
 
     @always_inline("nodebug")
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Returns a string of the strides of the array.
 
@@ -743,7 +743,7 @@ struct NDArrayStrides(
         result = result + ")"
         return result
 
-    fn write_repr_to[W: Writer](self, mut writer: W):
+    def write_repr_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.
 
         Parameters:
@@ -752,7 +752,7 @@ struct NDArrayStrides(
         # TODO: Deprecate `__repr__` and move its body directly into this method.
         writer.write(self.__repr__())
 
-    fn write_to[W: Writer](self, mut writer: W):
+    def write_to[W: Writer](self, mut writer: W):
         """
         Writes the strides representation to a writer.
         """
@@ -761,7 +761,7 @@ struct NDArrayStrides(
         )
 
     @always_inline("nodebug")
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """
         Checks if two strides have identical dimensions and values.
 
@@ -774,7 +774,7 @@ struct NDArrayStrides(
         return self._buf == other._buf
 
     @always_inline("nodebug")
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """
         Checks if two strides have identical dimensions and values.
 
@@ -787,7 +787,7 @@ struct NDArrayStrides(
         return not self.__eq__(other)
 
     @always_inline("nodebug")
-    fn __contains__(self, val: Int) -> Bool:
+    def __contains__(self, val: Int) -> Bool:
         """
         Checks if the given value is present in the strides.
 
@@ -800,7 +800,7 @@ struct NDArrayStrides(
         return val in self._buf
 
     @always_inline("nodebug")
-    fn __contains__(self, val: Scalar[Self.element_type]) -> Bool:
+    def __contains__(self, val: Scalar[Self.element_type]) -> Bool:
         """
         Check if the NDArrayStrides contains the given value.
 
@@ -817,7 +817,7 @@ struct NDArrayStrides(
     # ===----------------------------------------------------------------------=== #
 
     @staticmethod
-    fn row_major(shape: NDArrayShape) raises -> NDArrayStrides:
+    def row_major(shape: NDArrayShape) raises -> NDArrayStrides:
         """
         Create row-major (C-style) strides from a shape.
 
@@ -830,7 +830,7 @@ struct NDArrayStrides(
         return NDArrayStrides(shape=shape, order="C")
 
     @staticmethod
-    fn col_major(shape: NDArrayShape) raises -> NDArrayStrides:
+    def col_major(shape: NDArrayShape) raises -> NDArrayStrides:
         """
         Create column-major (Fortran-style) strides from a shape.
 
@@ -843,7 +843,7 @@ struct NDArrayStrides(
         return NDArrayStrides(shape=shape, order="F")
 
     @staticmethod
-    fn default(shape: NDArrayShape) raises -> NDArrayStrides:
+    def default(shape: NDArrayShape) raises -> NDArrayStrides:
         """
         Create default (row-major) strides from a shape.
 
@@ -860,7 +860,7 @@ struct NDArrayStrides(
     # ===----------------------------------------------------------------------=== #
 
     @always_inline("nodebug")
-    fn tolist(self) -> List[Int]:
+    def tolist(self) -> List[Int]:
         """
         Convert the strides to a list of integers.
 
@@ -873,7 +873,7 @@ struct NDArrayStrides(
         return res^
 
     @always_inline("nodebug")
-    fn normalize_index(self, index: Int) -> Int:
+    def normalize_index(self, index: Int) -> Int:
         """
         Normalizes the given index to be within the valid range [0, ndim).
 
@@ -891,7 +891,7 @@ struct NDArrayStrides(
     # ===----------------------------------------------------------------------=== #
     # Iterators
     # ===----------------------------------------------------------------------=== #
-    fn __iter__(ref self) -> _StrideIter[origin_of(self), True]:
+    def __iter__(ref self) -> _StrideIter[origin_of(self), True]:
         """
         Iterate over elements of the NDArrayStrides, returning copied values.
 
@@ -903,7 +903,7 @@ struct NDArrayStrides(
             length=self.ndim,
         )
 
-    fn __reversed__(ref self) -> _StrideIter[origin_of(self), False]:
+    def __reversed__(ref self) -> _StrideIter[origin_of(self), False]:
         """
         Iterate over elements of the NDArrayStrides, returning copied values.
 
@@ -931,7 +931,7 @@ struct _StrideIter[
     var strides: Pointer[NDArrayStrides, Self.origin]
     var length: Int
 
-    fn __init__(
+    def __init__(
         out self,
         strides: Pointer[NDArrayStrides, Self.origin],
         length: Int,
@@ -940,16 +940,16 @@ struct _StrideIter[
         self.length = length
         self.strides = strides
 
-    fn __iter__(self) -> Self:
+    def __iter__(self) -> Self:
         return self
 
-    fn __has_next__(self) -> Bool:
+    def __has_next__(self) -> Bool:
         comptime if Self.forward:
             return self.index < self.length
         else:
             return self.index >= 0
 
-    fn __next__(mut self) raises -> Scalar[DType.int]:
+    def __next__(mut self) raises -> Scalar[DType.int]:
         comptime if Self.forward:
             var current_index = self.index
             self.index += 1
@@ -959,7 +959,7 @@ struct _StrideIter[
             self.index -= 1
             return Scalar[DType.int](self.strides[].__getitem__(current_index))
 
-    fn __len__(self) -> Int:
+    def __len__(self) -> Int:
         comptime if Self.forward:
             return self.length - self.index
         else:

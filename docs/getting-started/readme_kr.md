@@ -75,7 +75,7 @@ import numojo as nm
 from numojo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # 랜덤한 float64 값으로 두 개의 1000x1000 행렬 생성
     var A = nm.random.randn(Shape(1000, 1000))
     var B = nm.random.randn(Shape(1000, 1000))
@@ -107,7 +107,7 @@ from numojo import Matrix
 from numojo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # 랜덤한 float64 값으로 두 개의 1000x1000 행렬 생성
     var A = Matrix.rand(shape=(1000, 1000))
     var B = Matrix.rand(shape=(1000, 1000))
@@ -158,7 +158,7 @@ import numojo as nm
 from numojo.prelude import *
 
 
-fn main() raises:
+def main() raises:
     # 복소수 스칼라 5 + 5j 생성
     var complexscalar = ComplexSIMD[f32](re=5, im=5)
     # 복소수 배열 생성

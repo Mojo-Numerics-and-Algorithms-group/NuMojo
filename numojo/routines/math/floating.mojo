@@ -20,7 +20,7 @@ from numojo.core.ndarray import NDArray
 # ===------------------------------------------------------------------------===#
 
 
-fn copysign[
+def copysign[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """

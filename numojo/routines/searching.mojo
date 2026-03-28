@@ -25,7 +25,7 @@ from numojo.routines.math.extrema import _max, _min
 from numojo.routines.functional import apply_along_axis_reduce_to_int
 
 
-fn argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
+def argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     """Returns the index of the maximum value in the buffer.
     Regardless of the shape of input, it is treated as a 1-d array.
 
@@ -55,7 +55,7 @@ fn argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     return Scalar[DType.int](result)
 
 
-fn argmin_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
+def argmin_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     """Returns the index of the minimum value in the buffer.
     Regardless of the shape of input, it is treated as a 1-d array.
 
@@ -85,7 +85,7 @@ fn argmin_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     return Scalar[DType.int](result)
 
 
-fn argmax[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
+def argmax[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     """Returns the indices of the maximum values of the array along an axis.
     When no axis is specified, the array is flattened.
 
@@ -110,7 +110,7 @@ fn argmax[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
         return argmax_1d(ravel(a))
 
 
-fn argmax[
+def argmax[
     dtype: DType, //
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """Returns the indices of the maximum values of the array along an axis.
@@ -137,7 +137,7 @@ fn argmax[
     from numojo.prelude import *
     from python import Python
 
-    fn main() raises:
+    def main() raises:
         var np = Python.import_module("numpy")
         # Test with argmax to get maximum values
         var a = nm.random.randint(5, 4, low=0, high=10)
@@ -175,7 +175,7 @@ fn argmax[
 
 
 @always_inline
-fn find_extrema_index[
+def find_extrema_index[
     dtype: DType, find_max: Bool
 ](A: Matrix[dtype]) raises -> Scalar[DType.int]:
     """Find index of min/max value, either in whole matrix or along an axis."""
@@ -201,7 +201,7 @@ fn find_extrema_index[
 
 
 @always_inline
-fn find_extrema_index[
+def find_extrema_index[
     dtype: DType, find_max: Bool
 ](A: Matrix[dtype], axis: Optional[Int]) raises -> Matrix[DType.int]:
     """Find index of min/max value, either in whole matrix or along an axis."""
@@ -253,19 +253,19 @@ fn find_extrema_index[
     return B^
 
 
-fn argmax[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.int]:
+def argmax[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.int]:
     """Find index of max value in a flattened matrix."""
     return find_extrema_index[dtype, True](A)
 
 
-fn argmax[
+def argmax[
     dtype: DType
 ](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.int]:
     """Find indices of max values along the given axis."""
     return find_extrema_index[dtype, True](A, axis)
 
 
-fn argmin[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
+def argmin[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     """Returns the indices of the minimum values of the array along an axis.
     When no axis is specified, the array is flattened.
 
@@ -290,7 +290,7 @@ fn argmin[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
         return argmin_1d(ravel(a))
 
 
-fn argmin[
+def argmin[
     dtype: DType, //
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """Returns the indices of the minimum values of the array along an axis.
@@ -327,14 +327,14 @@ fn argmin[
     )
 
 
-fn argmin[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.int]:
+def argmin[dtype: DType](A: Matrix[dtype]) raises -> Scalar[DType.int]:
     """
     Index of the min. It is first flattened before sorting.
     """
     return find_extrema_index[dtype, False](A)
 
 
-fn argmin[
+def argmin[
     dtype: DType
 ](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.int]:
     """

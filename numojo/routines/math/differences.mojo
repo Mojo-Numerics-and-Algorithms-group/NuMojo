@@ -26,7 +26,7 @@ from numojo.core.dtype.utility import is_inttype, is_floattype
 # ===------------------------------------------------------------------------===#
 
 
-fn gradient[
+def gradient[
     dtype: DType = DType.float64
 ](x: NDArray[dtype], spacing: Scalar[dtype]) raises -> NDArray[dtype]:
     """
@@ -87,7 +87,7 @@ fn gradient[
 # ===------------------------------------------------------------------------===#
 
 
-fn diff[
+def diff[
     dtype: DType = DType.float64
 ](array: NDArray[dtype], n: Int = 1) raises -> NDArray[dtype]:
     """

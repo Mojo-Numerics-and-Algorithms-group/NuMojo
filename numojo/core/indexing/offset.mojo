@@ -20,7 +20,7 @@ from numojo.core.indexing.item import Item
 # TODO: Define a IndexContainerLike trait and use that to replace many of these get_1d_index overloads.
 struct IndexMethods:
     @staticmethod
-    fn get_1d_index(indices: List[Int], strides: NDArrayStrides) -> Int:
+    def get_1d_index(indices: List[Int], strides: NDArrayStrides) -> Int:
         """
         Get the flat index from a list of indices and NDArrayStrides.
 
@@ -37,7 +37,7 @@ struct IndexMethods:
         return idx
 
     @staticmethod
-    fn get_1d_index(indices: Item, strides: NDArrayStrides) -> Int:
+    def get_1d_index(indices: Item, strides: NDArrayStrides) -> Int:
         """
         Get the flat index from an Item and NDArrayStrides.
 
@@ -54,7 +54,7 @@ struct IndexMethods:
         return idx
 
     @staticmethod
-    fn get_1d_index(
+    def get_1d_index(
         indices: VariadicList[Int, _], strides: NDArrayStrides
     ) -> Int:
         """
@@ -73,7 +73,7 @@ struct IndexMethods:
         return idx
 
     @staticmethod
-    fn get_1d_index(indices: List[Int], strides: List[Int]) -> Int:
+    def get_1d_index(indices: List[Int], strides: List[Int]) -> Int:
         """
         Get the flat index from a list of indices and a list of strides.
 
@@ -90,7 +90,7 @@ struct IndexMethods:
         return idx
 
     @staticmethod
-    fn get_1d_index(
+    def get_1d_index(
         indices: VariadicList[Int, _], strides: VariadicList[Int, _]
     ) -> Int:
         """
@@ -109,7 +109,7 @@ struct IndexMethods:
         return idx
 
     @staticmethod
-    fn get_1d_index(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
+    def get_1d_index(indices: Tuple[Int, Int], strides: Tuple[Int, Int]) -> Int:
         """
         Get the flat index for a 2D matrix from tuples of indices and strides.
 
@@ -123,7 +123,7 @@ struct IndexMethods:
         return indices[0] * strides[0] + indices[1] * strides[1]
 
     @staticmethod
-    fn transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
+    def transfer_offset(offset: Int, strides: NDArrayStrides) raises -> Int:
         """
         Transfers the offset by flipping the strides information.
         Used to transfer between C-contiguous and F-continuous memory layouts.

@@ -18,7 +18,7 @@ from numojo.routines.linalg.decompositions import (
 )
 
 
-fn det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
+def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Find the determinant of A using LUP decomposition.
     """
@@ -56,7 +56,7 @@ fn det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
         return -det_L * det_U
 
 
-fn det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
+def det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
     Find the determinant of A using LUP decomposition.
     """
@@ -86,7 +86,7 @@ fn det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
 
 
 # TODO: implement for arbitrary axis
-fn trace[
+def trace[
     dtype: DType
 ](
     array: NDArray[dtype], offset: Int = 0, axis1: Int = 0, axis2: Int = 1
@@ -130,7 +130,7 @@ fn trace[
     return result^
 
 
-fn trace[
+def trace[
     dtype: DType
 ](A: Matrix[dtype], offset: Int = 0) raises -> Scalar[dtype]:
     """

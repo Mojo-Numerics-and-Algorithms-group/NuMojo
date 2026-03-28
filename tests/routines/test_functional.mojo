@@ -23,7 +23,7 @@ from numojo.routines.functional import (
 )
 
 
-fn test_apply_along_axis() raises:
+def test_apply_along_axis() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.randn(Shape(4, 8, 16))
     var anp = a.to_numpy()

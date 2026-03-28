@@ -20,7 +20,7 @@ from numojo.core.indexing import TraverseMethods
 from numojo.routines.creation import zeros
 
 
-fn sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
+def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Returns sum of all items in the array.
 
@@ -48,14 +48,14 @@ fn sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var result: Scalar[dtype] = Scalar[dtype](0)
 
     @parameter
-    fn cal_vec[width: Int](i: Int) unified {mut result, read A}:
+    def cal_vec[width: Int](i: Int) unified {mut result, read A}:
         result += A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
     return result
 
 
-fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+def sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Returns sums of array elements over a given axis.
 
@@ -123,7 +123,7 @@ fn sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     return result^
 
 
-fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
+def sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     """
     Sum up all items in the Matrix.
 
@@ -145,14 +145,14 @@ fn sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    fn cal_vec[width: Int](i: Int) unified {mut res, read A}:
+    def cal_vec[width: Int](i: Int) unified {mut res, read A}:
         res = res + A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
     return res
 
 
-fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Sum up the items in a Matrix along the axis.
 
@@ -179,9 +179,9 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         if A.is_f_contiguous():
 
             @parameter
-            fn calc_columns(j: Int):
+            def calc_columns(j: Int):
                 @parameter
-                fn col_sum[width: Int](i: Int) unified {mut B, read j, read A}:
+                def col_sum[width: Int](i: Int) unified {mut B, read j, read A}:
                     B._store(
                         0,
                         j,
@@ -195,7 +195,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             for i in range(A.shape[0]):
 
                 @parameter
-                fn cal_vec_sum[
+                def cal_vec_sum[
                     width: Int
                 ](j: Int) unified {mut B, read i, read A}:
                     B._store[width](
@@ -212,9 +212,9 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         if A.is_c_contiguous():
 
             @parameter
-            fn cal_rows(i: Int):
+            def cal_rows(i: Int):
                 @parameter
-                fn cal_vec[width: Int](j: Int) unified {mut B, read i, read A}:
+                def cal_vec[width: Int](j: Int) unified {mut B, read i, read A}:
                     B._store(
                         i,
                         0,
@@ -235,7 +235,7 @@ fn sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         raise Error(String("The axis can either be 1 or 0!"))
 
 
-fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
+def cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns cumsum of all items of an array.
     The array is flattened before cumsum.
@@ -261,7 +261,7 @@ fn cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
 
 
 # Why do we do in inplace operation here?
-fn cumsum[
+def cumsum[
     dtype: DType
 ](A: NDArray[dtype], var axis: Int) raises -> NDArray[dtype]:
     """
@@ -305,7 +305,7 @@ fn cumsum[
     return B^
 
 
-fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
+def cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Cumsum of flattened matrix.
 
@@ -343,7 +343,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return result^
 
 
-fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Cumsum of Matrix along the axis.
 
@@ -372,7 +372,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             for i in range(1, A.shape[0]):
 
                 @parameter
-                fn cal_vec_sum_column[
+                def cal_vec_sum_column[
                     width: Int
                 ](j: Int) unified {mut result, read i}:
                     result._store[width](
@@ -400,7 +400,7 @@ fn cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             for j in range(1, A.shape[1]):
 
                 @parameter
-                fn cal_vec_sum_row[
+                def cal_vec_sum_row[
                     width: Int
                 ](i: Int) unified {mut result, read j}:
                     result._store[width](

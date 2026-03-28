@@ -11,13 +11,13 @@ trait Backend(ImplicitlyDestructible):
     A trait that defines backends for calculations in the rest of the library.
     """
 
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initialize the backend.
         """
         ...
 
-    fn math_func_fma[
+    def math_func_fma[
         dtype: DType,
     ](
         self,
@@ -47,7 +47,7 @@ trait Backend(ImplicitlyDestructible):
         """
         ...
 
-    fn math_func_fma[
+    def math_func_fma[
         dtype: DType,
     ](
         self,
@@ -74,7 +74,7 @@ trait Backend(ImplicitlyDestructible):
         """
         ...
 
-    fn math_func_1_array_in_one_array_out[
+    def math_func_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
@@ -95,7 +95,7 @@ trait Backend(ImplicitlyDestructible):
         """
         ...
 
-    fn math_func_2_array_in_one_array_out[
+    def math_func_2_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -127,7 +127,7 @@ trait Backend(ImplicitlyDestructible):
 
         ...
 
-    fn math_func_1_array_1_scalar_in_one_array_out[
+    def math_func_1_array_1_scalar_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -159,7 +159,7 @@ trait Backend(ImplicitlyDestructible):
 
         ...
 
-    fn math_func_1_scalar_1_array_in_one_array_out[
+    def math_func_1_scalar_1_array_in_one_array_out[
         dtype: DType,
         func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -187,7 +187,7 @@ trait Backend(ImplicitlyDestructible):
 
         ...
 
-    fn math_func_compare_2_arrays[
+    def math_func_compare_2_arrays[
         dtype: DType,
         func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -218,7 +218,7 @@ trait Backend(ImplicitlyDestructible):
         """
         ...
 
-    fn math_func_compare_array_and_scalar[
+    def math_func_compare_array_and_scalar[
         dtype: DType,
         func: fn[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
@@ -249,7 +249,7 @@ trait Backend(ImplicitlyDestructible):
         """
         ...
 
-    fn math_func_is[
+    def math_func_is[
         dtype: DType,
         func: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
@@ -257,7 +257,7 @@ trait Backend(ImplicitlyDestructible):
     ](self, array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ...
 
-    # fn math_func_simd_int[
+    # def math_func_simd_int[
     #     dtype: DType,
     #     func: fn[type: DType, simd_w: Int] (SIMD[type, simd_w], Int) -> SIMD[
     #         type, simd_w

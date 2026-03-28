@@ -4,7 +4,7 @@ from std.testing import TestSuite
 from numojo import *
 
 
-fn test_complex_init() raises:
+def test_complex_init() raises:
     """Test initialization of ComplexSIMD."""
     var c1 = ComplexSIMD[cf32](1.0, 2.0)
     assert_equal(c1.re, 1.0, "init failed")
@@ -19,7 +19,7 @@ fn test_complex_init() raises:
     assert_equal(c3.im[0], 1.0, "init failed")
 
 
-fn test_complex_add() raises:
+def test_complex_add() raises:
     """Test addition of ComplexSIMD numbers."""
     var c1 = ComplexSIMD[cf32](1.0, 2.0)
     var c2 = ComplexSIMD[cf32](3.0, 4.0)
@@ -34,7 +34,7 @@ fn test_complex_add() raises:
     assert_equal(c3.im, 6.0, "addition failed")
 
 
-fn test_complex_sub() raises:
+def test_complex_sub() raises:
     """Test subtraction of ComplexSIMD numbers."""
     var c1 = ComplexSIMD[cf32](3.0, 4.0)
     var c2 = ComplexSIMD[cf32](1.0, 2.0)
@@ -49,7 +49,7 @@ fn test_complex_sub() raises:
     assert_equal(c3.im, 2.0, "subtraction failed")
 
 
-fn test_complex_mul() raises:
+def test_complex_mul() raises:
     """Test multiplication of ComplexSIMD numbers."""
     var c1 = ComplexSIMD[cf32](1.0, 2.0)
     var c2 = ComplexSIMD[cf32](3.0, 4.0)
@@ -65,7 +65,7 @@ fn test_complex_mul() raises:
     assert_equal(c3.im, 10.0, "multiplication failed")
 
 
-fn test_complex_div() raises:
+def test_complex_div() raises:
     """Test division of ComplexSIMD numbers."""
     var c1 = ComplexSIMD[cf32](1.0, 2.0)
     var c2 = ComplexSIMD[cf32](3.0, 4.0)

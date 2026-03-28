@@ -13,16 +13,16 @@ trait Buffered(ImplicitlyCopyable, Movable):
     The `RefData` type will record the origin of the data to ensure safety.
     """
 
-    fn __init__(out self):
+    def __init__(out self):
         ...
 
     @staticmethod
-    fn is_own_data() -> Bool:
+    def is_own_data() -> Bool:
         ...
 
     @staticmethod
-    fn is_ref_data() -> Bool:
+    def is_ref_data() -> Bool:
         ...
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         ...

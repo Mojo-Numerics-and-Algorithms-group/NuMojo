@@ -45,7 +45,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
     # Life cycle dunder methods
     # === ---------------------------------------------------------------- === #
 
-    fn __init__(
+    def __init__(
         out self,
         c_contiguous: Bool,
         f_contiguous: Bool,
@@ -69,7 +69,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
         self.WRITEABLE = writeable and owndata
         self.FORC = f_contiguous or c_contiguous
 
-    fn __init__(
+    def __init__(
         out self,
         shape: NDArrayShape,
         strides: NDArrayStrides,
@@ -126,7 +126,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
-    fn __init__(
+    def __init__(
         out self,
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
@@ -154,7 +154,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
-    fn __copyinit__(out self, copy: Self):
+    def __copyinit__(out self, copy: Self):
         """
         Initializes the Flags object by copying the information from
         ancopy Flags object.
@@ -173,7 +173,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
     # Get and set dunder methods
     # === ---------------------------------------------------------------- === #
 
-    fn __getitem__(self, key: String) raises -> Bool:
+    def __getitem__(self, key: String) raises -> Bool:
         """
         Get the value of the fields with the given key.
         The Flags object can be accessed dictionary-like.

@@ -21,7 +21,7 @@ from numojo.routines.creation import zeros, eye, full
 
 
 @always_inline
-fn _compute_householder[
+def _compute_householder[
     dtype: DType
 ](mut H: Matrix[dtype], mut R: Matrix[dtype], work_index: Int) raises -> None:
     comptime simd_width = simd_width_of[dtype]()
@@ -29,7 +29,7 @@ fn _compute_householder[
     var rRows = R.shape[0]
 
     @parameter
-    fn load_store_vec[
+    def load_store_vec[
         n_elements: Int
     ](i: Int) unified {mut H, mut R, read work_index}:
         var r_value = R._load[n_elements](i + work_index, work_index)
@@ -41,7 +41,7 @@ fn _compute_householder[
     var norm = Scalar[dtype](0)
 
     @parameter
-    fn calculate_norm[
+    def calculate_norm[
         width: Int
     ](i: Int) unified {mut norm, read H, read work_index}:
         norm += (H._load[width=width](i, work_index) ** 2).reduce_add()
@@ -62,7 +62,7 @@ fn _compute_householder[
     R._store(work_index, work_index, -1 / scaling_factor)
 
     @parameter
-    fn scaling_factor_vec[
+    def scaling_factor_vec[
         simd_width: Int
     ](i: Int) unified {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
@@ -77,7 +77,7 @@ fn _compute_householder[
     scaling_factor = builtin_math.sqrt(1.0 / increment)
 
     @parameter
-    fn scaling_factor_increment_vec[
+    def scaling_factor_increment_vec[
         simd_width: Int
     ](i: Int) unified {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
@@ -88,7 +88,7 @@ fn _compute_householder[
 
 
 @always_inline
-fn _apply_householder[
+def _apply_householder[
     dtype: DType
 ](
     mut H: Matrix[dtype],
@@ -104,7 +104,7 @@ fn _apply_householder[
         var dot: SIMD[dtype, 1] = 0.0
 
         @parameter
-        fn calculate_norm[
+        def calculate_norm[
             width: Int
         ](i: Int) unified {mut dot, read H, read A, read work_index, read j}:
             dot += (
@@ -114,7 +114,7 @@ fn _apply_householder[
         vectorize[simdwidth](aRows, calculate_norm)
 
         @parameter
-        fn closure[
+        def closure[
             width: Int
         ](i: Int) unified {mut A, read H, read work_index, read j, read dot}:
             val = A._load[width](i, j) - H._load[width](i, work_index) * dot
@@ -123,7 +123,7 @@ fn _apply_householder[
         vectorize[simdwidth](aRows, closure)
 
 
-fn lu_decomposition[
+def lu_decomposition[
     dtype: DType
 ](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
     """Perform LU (lower-upper) decomposition for array.
@@ -143,7 +143,7 @@ fn lu_decomposition[
     Example:
     ```
     import numojo as nm
-    fn main() raises:
+    def main() raises:
         var arr = nm.NDArray[nm.f64]("[[1,2,3], [4,5,6], [7,8,9]]")
         var U: nm.NDArray
         var L: nm.NDArray
@@ -201,7 +201,7 @@ fn lu_decomposition[
 
     # Fill in L and U
     # @parameter
-    # fn calculate(i: Int):
+    # def calculate(i: Int):
     for i in range(0, n):
         for j in range(i, n):
             # Fill in L
@@ -232,7 +232,7 @@ fn lu_decomposition[
     return L^, U^
 
 
-fn lu_decomposition[
+def lu_decomposition[
     dtype: DType
 ](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype]]:
     """
@@ -275,7 +275,7 @@ fn lu_decomposition[
     return L^, U^
 
 
-fn partial_pivoting[
+def partial_pivoting[
     dtype: DType
 ](var A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype], Int]:
     """
@@ -324,7 +324,7 @@ fn partial_pivoting[
     return Tuple(A^, P^, s)
 
 
-fn partial_pivoting[
+def partial_pivoting[
     dtype: DType
 ](A: Matrix[dtype]) raises -> Tuple[Matrix[dtype], Matrix[dtype], Int]:
     """
@@ -358,7 +358,7 @@ fn partial_pivoting[
     return Tuple(result^, P^, s)
 
 
-fn qr[
+def qr[
     dtype: DType
 ](A: Matrix[dtype], mode: String = "reduced") raises -> Tuple[
     Matrix[dtype], Matrix[dtype]
@@ -446,7 +446,7 @@ fn qr[
 # ===----------------------------------------------------------------------=== #
 
 
-fn eig[
+def eig[
     dtype: DType
 ](
     A: Matrix[dtype],

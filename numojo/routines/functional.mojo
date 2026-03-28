@@ -32,7 +32,7 @@ from numojo.core.ndarray import NDArray
 # dimension of the input array is reduced.
 
 
-# fn apply_along_axis[
+# def apply_along_axis[
 #     dtype: DType,
 #     func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
 #         dtype_func
@@ -67,7 +67,7 @@ from numojo.core.ndarray import NDArray
 #         res = NDArray[dtype](a.shape.pop(axis=axis))
 
 #         @parameter
-#         fn parallelized_func(i: Int):
+#         def parallelized_func(i: Int):
 #             try:
 #                 (res._buf.ptr + i).init_pointee_copy(
 #                     func1d[dtype](iterator.ith(i))
@@ -80,7 +80,7 @@ from numojo.core.ndarray import NDArray
 #     return res^
 
 
-fn apply_along_axis_reduce_to_int[
+def apply_along_axis_reduce_to_int[
     dtype: DType,
     func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
         DType.int
@@ -116,7 +116,7 @@ fn apply_along_axis_reduce_to_int[
         res = NDArray[DType.int](a.shape.pop(axis=axis))
 
         @parameter
-        fn parallelized_func(i: Int):
+        def parallelized_func(i: Int):
             try:
                 (res._buf.ptr + i).init_pointee_copy(
                     func1d[dtype](iterator.ith(i))
@@ -129,7 +129,7 @@ fn apply_along_axis_reduce_to_int[
     return res^
 
 
-fn apply_along_axis_reduce[
+def apply_along_axis_reduce[
     dtype: DType,
     func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
         dtype_func
@@ -174,7 +174,7 @@ fn apply_along_axis_reduce[
         #     res._buf.store(i, func_result)
 
         @parameter
-        fn parallelized_func(i: Int):
+        def parallelized_func(i: Int):
             try:
                 res._buf.store(i, func1d[dtype](iterator.ith(i)))
             except e:
@@ -191,7 +191,7 @@ fn apply_along_axis_reduce[
     return res^
 
 
-fn apply_along_axis_reduce_with_dtype[
+def apply_along_axis_reduce_with_dtype[
     dtype: DType,
     returned_dtype: DType,
     func1d: fn[dtype_func: DType, returned_dtype_func: DType](
@@ -229,7 +229,7 @@ fn apply_along_axis_reduce_with_dtype[
         res = NDArray[returned_dtype](a.shape.pop(axis=axis))
 
         @parameter
-        fn parallelized_func(i: Int):
+        def parallelized_func(i: Int):
             try:
                 (res._buf.ptr + i).init_pointee_copy(
                     func1d[dtype, returned_dtype](iterator.ith(i))
@@ -246,7 +246,7 @@ fn apply_along_axis_reduce_with_dtype[
 # dimension of the input array is not reduced.
 
 
-fn apply_along_axis_preserve[
+def apply_along_axis_preserve[
     dtype: DType,
     func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
         dtype_func
@@ -276,7 +276,7 @@ fn apply_along_axis_preserve[
     if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
-        fn parallelized_func_c(i: Int):
+        def parallelized_func_c(i: Int):
             try:
                 var elements: NDArray[dtype] = func1d[dtype](iterator.ith(i))
                 memcpy(
@@ -292,7 +292,7 @@ fn apply_along_axis_preserve[
     else:
         # The memory layout is not contiguous
         @parameter
-        fn parallelized_func(i: Int):
+        def parallelized_func(i: Int):
             try:
                 # The indices of the input array in each iteration
                 var indices: NDArray[DType.int]
@@ -324,7 +324,7 @@ fn apply_along_axis_preserve[
 # For example, `sort_inplace()`.
 
 
-fn apply_along_axis_inplace[
+def apply_along_axis_inplace[
     dtype: DType,
     func1d: fn[dtype_func: DType](mut NDArray[dtype_func]) raises -> None,
 ](mut a: NDArray[dtype], axis: Int) raises -> None:
@@ -347,7 +347,7 @@ fn apply_along_axis_inplace[
     if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
-        fn parallelized_func_c(i: Int):
+        def parallelized_func_c(i: Int):
             try:
                 var elements: NDArray[dtype] = iterator.ith(i)
                 func1d[dtype](elements)
@@ -364,7 +364,7 @@ fn apply_along_axis_inplace[
     else:
         # The memory layout is not contiguous
         @parameter
-        fn parallelized_func(i: Int):
+        def parallelized_func(i: Int):
             try:
                 # The indices of the input array in each iteration
                 var indices: NDArray[DType.int]
@@ -389,7 +389,7 @@ fn apply_along_axis_inplace[
     return None
 
 
-fn apply_along_axis_indices[
+def apply_along_axis_indices[
     dtype: DType,
     func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
         DType.int
@@ -421,7 +421,7 @@ fn apply_along_axis_indices[
     if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
         @parameter
-        fn parallelized_func_c(i: Int):
+        def parallelized_func_c(i: Int):
             try:
                 var elements: NDArray[DType.int] = func1d[dtype](
                     iterator.ith(i)
@@ -439,7 +439,7 @@ fn apply_along_axis_indices[
     else:
         # The memory layout is not contiguous
         @parameter
-        fn parallelized_func(i: Int):
+        def parallelized_func(i: Int):
             try:
                 # The indices of the input array in each iteration
                 var indices: NDArray[DType.int]

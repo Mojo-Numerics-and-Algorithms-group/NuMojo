@@ -18,7 +18,7 @@ from numojo.core.ndarray import NDArray
 # ===------------------------------------------------------------------------===#
 
 
-fn invert[
+def invert[
     dtype: DType
 ](array: NDArray[dtype]) raises -> NDArray[dtype] where (
     dtype.is_integral() or dtype == DType.bool

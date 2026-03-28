@@ -20,7 +20,7 @@ from numojo.routines import HostExecutor
 
 
 # TODO: Implement same routines for Matrix.
-fn cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise cube root of a NDArray.
 
@@ -41,7 +41,7 @@ fn cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn clip[
+def clip[
     dtype: DType, //
 ](
     a: NDArray[dtype], a_min: Scalar[dtype], a_max: Scalar[dtype]
@@ -78,7 +78,7 @@ fn clip[
 # ===------------------------------------------------------------------------===#
 
 
-fn _mt_rsqrt[
+def _mt_rsqrt[
     dtype: DType, simd_width: Int
 ](value: SIMD[dtype, simd_width]) -> SIMD[dtype, simd_width]:
     """
@@ -97,7 +97,7 @@ fn _mt_rsqrt[
     return stdlib_math.sqrt(SIMD.__truediv__(SIMD[dtype, simd_width](1), value))
 
 
-fn rsqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def rsqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise reciprocal square root of NDArray.
 
@@ -113,7 +113,7 @@ fn rsqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, _mt_rsqrt](array)
 
 
-fn sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise square root of a NDArray.
 
@@ -134,7 +134,7 @@ fn sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 
 
-fn scalb[
+def scalb[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """

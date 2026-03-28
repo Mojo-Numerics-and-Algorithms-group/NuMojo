@@ -22,7 +22,7 @@ struct IndexTypeInfo(ImplicitlyCopyable):
     var is_ellipsis: Bool
     var is_newaxis: Bool
 
-    fn __init__(
+    def __init__(
         out self,
         is_integer: Bool = False,
         is_slice: Bool = False,
@@ -34,7 +34,7 @@ struct IndexTypeInfo(ImplicitlyCopyable):
         self.is_ellipsis = is_ellipsis
         self.is_newaxis = is_newaxis
 
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         return (
             "IndexTypeInfo(is_integer={}, is_slice={}, is_ellipsis={},"
             " is_newaxis={})".format(
@@ -45,7 +45,7 @@ struct IndexTypeInfo(ImplicitlyCopyable):
             )
         )
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         return (
             "IndexTypeInfo(is_integer={}, is_slice={}, is_ellipsis={},"
             " is_newaxis={})".format(
@@ -56,7 +56,7 @@ struct IndexTypeInfo(ImplicitlyCopyable):
             )
         )
 
-    fn size(self) -> Int:
+    def size(self) -> Int:
         """
         Returns the number of active index types in this IndexTypeInfo.
         """
@@ -80,38 +80,38 @@ struct InternalSlice(ImplicitlyCopyable):
     var end: Int
     var step: Int
 
-    fn __init__(out self, start: Int, end: Int, step: Int):
+    def __init__(out self, start: Int, end: Int, step: Int):
         self.start = start
         self.end = end
         self.step = step
 
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         return "InternalSlice(start={}, end={}, step={})".format(
             self.start, self.end, self.step
         )
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         return "InternalSlice(start={}, end={}, step={})".format(
             self.start, self.end, self.step
         )
 
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         return (
             self.start == other.start
             and self.end == other.end
             and self.step == other.step
         )
 
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         return not self.__eq__(other)
 
-    fn to_tuple(self) -> Tuple[Int, Int, Int]:
+    def to_tuple(self) -> Tuple[Int, Int, Int]:
         return (self.start, self.end, self.step)
 
-    fn to_slice(self) -> Slice:
+    def to_slice(self) -> Slice:
         return Slice(self.start, self.end, self.step)
 
-    fn normalize(self, dim: Int) -> InternalSlice:
+    def normalize(self, dim: Int) -> InternalSlice:
         var start_norm = self.start
         var end_norm = self.end
 
@@ -122,7 +122,7 @@ struct InternalSlice(ImplicitlyCopyable):
 
         return InternalSlice(start_norm, end_norm, self.step)
 
-    fn check_bounds(self, dim: Int) raises:
+    def check_bounds(self, dim: Int) raises:
         if self.start < 0 or self.start >= dim:
             raise Error(
                 NumojoError(
@@ -155,7 +155,7 @@ struct InternalSlice(ImplicitlyCopyable):
             )
 
     @staticmethod
-    fn get_slice_info(s: Slice, dim: Int) -> Tuple[Int, Int, Int, Int]:
+    def get_slice_info(s: Slice, dim: Int) -> Tuple[Int, Int, Int, Int]:
         """
         Get complete slice information for a given dimension.
 
@@ -193,7 +193,7 @@ struct InternalSlice(ImplicitlyCopyable):
 
         return (start, end, step, length)
 
-    fn get_slice_info(self, dim: Int) -> Tuple[Int, Int, Int, Int]:
+    def get_slice_info(self, dim: Int) -> Tuple[Int, Int, Int, Int]:
         """
         Get complete slice information for a given dimension.
 

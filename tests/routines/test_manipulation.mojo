@@ -6,7 +6,7 @@ from std.python import Python, PythonObject
 from std.testing import TestSuite
 
 
-fn test_arr_manipulation() raises:
+def test_arr_manipulation() raises:
     var np = Python.import_module("numpy")
 
     # Test arange

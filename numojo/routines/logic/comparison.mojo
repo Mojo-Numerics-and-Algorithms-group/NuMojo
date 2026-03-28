@@ -25,7 +25,7 @@ from numojo.core.error import NumojoError
 # ===------------------------------------------------------------------------===#
 
 
-fn greater[
+def greater[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
@@ -55,7 +55,7 @@ fn greater[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.gt](array1, array2)
 
 
-fn greater[
+def greater[
     dtype: DType
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
@@ -84,7 +84,7 @@ fn greater[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.gt](array1, scalar)
 
 
-fn greater_equal[
+def greater_equal[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
@@ -114,7 +114,7 @@ fn greater_equal[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.ge](array1, array2)
 
 
-fn greater_equal[
+def greater_equal[
     dtype: DType
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
@@ -143,7 +143,7 @@ fn greater_equal[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.ge](array1, scalar)
 
 
-fn less[
+def less[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
@@ -173,7 +173,7 @@ fn less[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.lt](array1, array2)
 
 
-fn less[
+def less[
     dtype: DType
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
@@ -202,7 +202,7 @@ fn less[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.lt](array1, scalar)
 
 
-fn less_equal[
+def less_equal[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
@@ -232,7 +232,7 @@ fn less_equal[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.le](array1, array2)
 
 
-fn less_equal[
+def less_equal[
     dtype: DType
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
@@ -261,7 +261,7 @@ fn less_equal[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.le](array1, scalar)
 
 
-fn equal[
+def equal[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
@@ -291,7 +291,7 @@ fn equal[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.eq](array1, array2)
 
 
-fn equal[
+def equal[
     dtype: DType
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
@@ -320,7 +320,7 @@ fn equal[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.eq](array1, scalar)
 
 
-fn not_equal[
+def not_equal[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[DType.bool]:
     """
@@ -350,7 +350,7 @@ fn not_equal[
     return HostExecutor.apply_binary_predicate[dtype, SIMD.ne](array1, array2)
 
 
-fn not_equal[
+def not_equal[
     dtype: DType
 ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[DType.bool]:
     """
@@ -384,7 +384,7 @@ fn not_equal[
 # ===------------------------------------------------------------------------===#
 
 
-fn allclose[
+def allclose[
     dtype: DType
 ](
     a: NDArray[dtype],
@@ -452,7 +452,7 @@ fn allclose[
     return True
 
 
-fn isclose[
+def isclose[
     dtype: DType
 ](
     a: NDArray[dtype],
@@ -523,7 +523,7 @@ fn isclose[
     return res^
 
 
-fn allclose[
+def allclose[
     dtype: DType
 ](
     a: Matrix[dtype],
@@ -591,7 +591,7 @@ fn allclose[
     return True
 
 
-fn isclose[
+def isclose[
     dtype: DType
 ](
     a: Matrix[dtype],
@@ -667,7 +667,7 @@ fn isclose[
 # ===------------------------------------------------------------------------===#
 
 
-fn array_equal[
+def array_equal[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> Bool:
     """

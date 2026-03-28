@@ -17,7 +17,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 
 
-fn diagonal[
+def diagonal[
     dtype: DType
 ](a: NDArray[dtype], offset: Int = 0) raises -> NDArray[dtype]:
     """
@@ -76,7 +76,7 @@ fn diagonal[
     return result^
 
 
-fn issymmetric[
+def issymmetric[
     dtype: DType
 ](
     A: Matrix[dtype],

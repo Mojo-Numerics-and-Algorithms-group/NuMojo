@@ -32,7 +32,7 @@ from numojo.routines.manipulation import ravel
 # ===-----------------------------------------------------------------------===#
 
 
-fn extrema_1d[
+def extrema_1d[
     dtype: DType, //, is_max: Bool
 ](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
@@ -61,7 +61,7 @@ fn extrema_1d[
     comptime if is_max:
 
         @parameter
-        fn vectorize_max[
+        def vectorize_max[
             simd_width: Int
         ](offset: Int) unified {mut value, read a}:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
@@ -75,7 +75,7 @@ fn extrema_1d[
     else:
 
         @parameter
-        fn vectorize_min[
+        def vectorize_min[
             simd_width: Int
         ](offset: Int) unified {mut value, read a} -> None:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
@@ -87,7 +87,7 @@ fn extrema_1d[
         return value
 
 
-fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+def max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Find the max value of an array.
 
@@ -116,14 +116,14 @@ fn max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
         return extrema_1d[is_max=True](ravel(a))
 
 
-fn extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+def extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Find the max value in a 1-D array.
     """
     return extrema_1d[is_max=True](a)
 
 
-fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+def max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Find the max value of an array along an axis.
 
@@ -162,7 +162,7 @@ fn max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     )
 
 
-fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+def min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     """
     Find the min value of an array.
 
@@ -191,7 +191,7 @@ fn min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
         return extrema_1d[is_max=False](ravel(a))
 
 
-fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+def min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Find the min value of an array along an axis.
 
@@ -236,7 +236,7 @@ fn min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
 
 
 @always_inline
-fn matrix_extrema[
+def matrix_extrema[
     dtype: DType, find_max: Bool
 ](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
@@ -260,7 +260,7 @@ fn matrix_extrema[
 
 
 @always_inline
-fn matrix_extrema_axis[
+def matrix_extrema_axis[
     dtype: DType, find_max: Bool
 ](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
@@ -309,7 +309,7 @@ fn matrix_extrema_axis[
     return B^
 
 
-fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
+def max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
     Find max item.
 
@@ -331,7 +331,7 @@ fn max[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     return matrix_extrema[dtype, True](A)
 
 
-fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Find max item along the given axis.
 
@@ -354,7 +354,7 @@ fn max[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     return matrix_extrema_axis[dtype, True](A, axis)
 
 
-fn _max[
+def _max[
     dtype: DType
 ](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
     Scalar[dtype], Scalar[DType.int]
@@ -408,7 +408,7 @@ fn _max[
     return (max_value, Scalar[DType.int](max_index))
 
 
-fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
+def min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     """
     Find min item.
 
@@ -430,7 +430,7 @@ fn min[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     return matrix_extrema[dtype, False](A)
 
 
-fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Find min item along the given axis.
 
@@ -453,7 +453,7 @@ fn min[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     return matrix_extrema_axis[dtype, False](A, axis)
 
 
-fn _min[
+def _min[
     dtype: DType
 ](A: Matrix[dtype], start: Int, end: Int) raises -> Tuple[
     Scalar[dtype], Scalar[DType.int]
@@ -512,7 +512,7 @@ fn _min[
 # ===-----------------------------------------------------------------------===#
 
 
-fn minimum[
+def minimum[
     dtype: DType = DType.float64
 ](s1: SIMD[dtype, 1], s2: SIMD[dtype, 1]) -> SIMD[dtype, 1]:
     """
@@ -531,7 +531,7 @@ fn minimum[
     return builtin_min(s1, s2)
 
 
-fn maximum[
+def maximum[
     dtype: DType = DType.float64
 ](s1: SIMD[dtype, 1], s2: SIMD[dtype, 1]) -> SIMD[dtype, 1]:
     """
@@ -550,7 +550,7 @@ fn maximum[
     return builtin_max(s1, s2)
 
 
-fn minimum[
+def minimum[
     dtype: DType = DType.float64
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -579,7 +579,7 @@ fn minimum[
     return HostExecutor.apply_binary[dtype, builtin_min](array1, array2)
 
 
-fn maximum[
+def maximum[
     dtype: DType = DType.float64
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """

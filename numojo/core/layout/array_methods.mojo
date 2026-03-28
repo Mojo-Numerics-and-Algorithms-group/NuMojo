@@ -36,7 +36,7 @@ struct NewAxis(Hashable, ImplicitlyCopyable, Movable, Writable):
 
     var num: Int
 
-    fn __init__(out self):
+    def __init__(out self):
         """
         Initializes a `NewAxis` instance with a default of one new axis.
 
@@ -44,7 +44,7 @@ struct NewAxis(Hashable, ImplicitlyCopyable, Movable, Writable):
         """
         self.num = 0
 
-    fn __init__(out self, num: Int):
+    def __init__(out self, num: Int):
         """
         Initializes a `NewAxis` instance with a specified number of new axes.
 
@@ -53,7 +53,7 @@ struct NewAxis(Hashable, ImplicitlyCopyable, Movable, Writable):
         """
         self.num = num
 
-    fn __repr__(self) -> String:
+    def __repr__(self) -> String:
         """
         Returns a string representation of the `NewAxis` instance.
 
@@ -62,7 +62,7 @@ struct NewAxis(Hashable, ImplicitlyCopyable, Movable, Writable):
         """
         return "numojo.newaxis()"
 
-    fn __str__(self) -> String:
+    def __str__(self) -> String:
         """
         Returns a string representation of the `NewAxis` instance.
 
@@ -71,7 +71,7 @@ struct NewAxis(Hashable, ImplicitlyCopyable, Movable, Writable):
         """
         return "numojo.newaxis()"
 
-    fn __eq__(self, other: Self) -> Bool:
+    def __eq__(self, other: Self) -> Bool:
         """
         Checks equality between two `NewAxis` instances.
 
@@ -80,7 +80,7 @@ struct NewAxis(Hashable, ImplicitlyCopyable, Movable, Writable):
         """
         return True
 
-    fn __ne__(self, other: Self) -> Bool:
+    def __ne__(self, other: Self) -> Bool:
         """
         Checks inequality between two `NewAxis` instances.
 

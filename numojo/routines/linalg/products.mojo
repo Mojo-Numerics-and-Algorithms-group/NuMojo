@@ -24,7 +24,7 @@ from numojo.routines.creation import zeros
 from numojo.routines.math.sums import sum
 
 
-fn cross[
+def cross[
     dtype: DType = DType.float64
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -69,7 +69,7 @@ fn cross[
 
 
 # TODO: implement other cases for dot function
-fn dot[
+def dot[
     dtype: DType = DType.float64
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -99,7 +99,7 @@ fn dot[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
 
         @parameter
-        fn vectorized_dot[
+        def vectorized_dot[
             simd_width: Int
         ](idx: Int) unified {mut result, read array1, read array2} -> None:
             result._buf.ptr.store(
@@ -120,7 +120,9 @@ fn dot[
 
 
 # Perform 2D tiling on the iteration space defined by end_x and end_y.
-fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int):
+def tile[
+    tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int
+](end_x: Int, end_y: Int):
     # Note: this assumes that ends are multiples of the tiles.
     for y in range(0, end_y, tile_y):
         for x in range(0, end_x, tile_x):
@@ -128,7 +130,7 @@ fn tile[tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int](end_x: Int, end_y: Int):
 
 
 # https://docs.modular.com/mojo/notebooks/Matmul
-fn matmul_tiled_unrolled_parallelized[
+def matmul_tiled_unrolled_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -146,13 +148,13 @@ fn matmul_tiled_unrolled_parallelized[
     var t2 = B.shape[1]
 
     @parameter
-    fn calculate_A_rows(m: Int):
+    def calculate_A_rows(m: Int):
         @parameter
-        fn calc_tile[tile_x: Int, tile_y: Int](x: Int, y: Int):
+        def calc_tile[tile_x: Int, tile_y: Int](x: Int, y: Int):
             for k in range(y, y + tile_y):
 
                 @parameter
-                fn dot[
+                def dot[
                     simd_width: Int
                 ](n: Int) unified {
                     mut result,
@@ -183,7 +185,7 @@ fn matmul_tiled_unrolled_parallelized[
     return result^
 
 
-fn matmul_1darray[
+def matmul_1darray[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -207,7 +209,7 @@ fn matmul_1darray[
     return result^
 
 
-fn matmul_2darray[
+def matmul_2darray[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -279,11 +281,11 @@ fn matmul_2darray[
     var t2 = B.shape[1]
 
     @parameter
-    fn calculate_A_rows(m: Int):
+    def calculate_A_rows(m: Int):
         for k in range(t1):
 
             @parameter
-            fn dot[
+            def dot[
                 simd_width: Int
             ](n: Int) unified {
                 mut result, read A, read B, read t2, read t1, read k, read m
@@ -302,7 +304,7 @@ fn matmul_2darray[
     return result^
 
 
-fn matmul[
+def matmul[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
@@ -396,7 +398,7 @@ fn matmul[
     return result^
 
 
-fn matmul[
+def matmul[
     dtype: DType
 ](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
     """
@@ -429,11 +431,11 @@ fn matmul[
         )
 
         @parameter
-        fn calculate_resultresult(m: Int):
+        def calculate_resultresult(m: Int):
             for k in range(A.shape[1]):
 
                 @parameter
-                fn dot[
+                def dot[
                     simd_width: Int
                 ](n: Int) unified {
                     mut result, read A, read B, read m, read k
@@ -454,11 +456,11 @@ fn matmul[
         )
 
         @parameter
-        fn calculate_FF(n: Int):
+        def calculate_FF(n: Int):
             for k in range(A.shape[1]):
 
                 @parameter
-                fn dot_F[
+                def dot_F[
                     simd_width: Int
                 ](m: Int) unified {
                     mut result, read A, read B, read n, read k
@@ -479,12 +481,12 @@ fn matmul[
         )
 
         @parameter
-        fn calculate_resultF(m: Int):
+        def calculate_resultF(m: Int):
             for n in range(B.shape[1]):
                 var sum: Scalar[dtype] = 0.0
 
                 @parameter
-                fn dot_product[
+                def dot_product[
                     simd_width: Int
                 ](k: Int) unified {
                     mut sum, read A, read B, read m, read n
@@ -504,7 +506,7 @@ fn matmul[
     return result^
 
 
-fn matmul_naive[
+def matmul_naive[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """

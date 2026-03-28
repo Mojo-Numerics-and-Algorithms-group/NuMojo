@@ -15,14 +15,14 @@ comptime order: String = String("F") if is_defined[
 # ===-----------------------------------------------------------------------===#
 
 
-fn check_matrices_equal[
+def check_matrices_equal[
     dtype: DType
 ](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.all(np.equal(np.matrix(matrix.to_numpy()), np_sol)), st)
 
 
-fn check_matrices_close[
+def check_matrices_close[
     dtype: DType
 ](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
@@ -36,7 +36,7 @@ fn check_matrices_close[
     )
 
 
-fn check_values_close[
+def check_values_close[
     dtype: DType
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")

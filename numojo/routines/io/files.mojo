@@ -19,7 +19,7 @@ from numojo.routines.creation import fromstring
 # might consider implementing a funciton to write a .numojo file which can be read by both numpy and numojo.
 
 
-fn load[
+def load[
     dtype: DType = f64
 ](
     file: String,
@@ -55,7 +55,7 @@ fn load[
 
 
 # @parameter
-# fn _get_dtype_string[dtype: DType]() -> String:
+# def _get_dtype_string[dtype: DType]() -> String:
 #     """
 #     Get the numpy-compatible dtype string for the given DType.
 
@@ -98,7 +98,7 @@ fn load[
 #         return "'<f8'"
 
 
-# fn _write_uint16_le(mut file: FileHandle, value: UInt16) raises:
+# def _write_uint16_le(mut file: FileHandle, value: UInt16) raises:
 #     """Write a 16-bit unsigned integer in little-endian format."""
 #     var bytes_ptr = UnsafePointer[UInt8].alloc(2)
 #     bytes_ptr[0] = UInt8(value & 0xFF)
@@ -108,7 +108,7 @@ fn load[
 #     bytes_ptr.free()
 
 
-# fn savenpy[
+# def savenpy[
 #     dtype: DType = f64
 # ](fname: String, array: NDArray[dtype], allow_pickle: Bool = True) raises:
 #     """
@@ -205,7 +205,7 @@ fn load[
 #         file.close()
 
 
-fn save[
+def save[
     dtype: DType = f64
 ](fname: String, array: NDArray[dtype], allow_pickle: Bool = True,) raises:
     """
@@ -225,7 +225,7 @@ fn save[
     )
 
 
-fn loadtxt[
+def loadtxt[
     dtype: DType = f64
 ](
     fname: String,
@@ -259,7 +259,7 @@ fn loadtxt[
     return array^
 
 
-fn savetxt[
+def savetxt[
     dtype: DType = f64
 ](
     fname: String,

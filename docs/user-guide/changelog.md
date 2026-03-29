@@ -12,6 +12,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Added accelerator-aware storage types: `AcceleratorDataContainer`, `HostStorage`, and `DeviceStorage`, which split host vs. device memory management and enable a unified container API for upcoming device-agnostic `NDArray`. [PR #320]
 - Added DLPack support with a benchmark for DLPack round-trips, enabling zero‑copy interop with NumPy/other frameworks and tracking performance regressions. [PR #305] [PR #306]
 - Added `NDArray.offset` for view-aware indexing with aligned buffers, so views can share the same base allocation safely without shifting pointers. [PR #308]
+- Implement the missing `copyto` function.
 
 ### 🦋 Changed
 - Rolled out `HostExecutor` across routines:
@@ -27,6 +28,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Cleaned `NDArray` APIs and reorganized core modules for upcoming accelerator work. [PR #310] [PR #301]
 - Updated Mojo compatibility and syntax migrations (`alias` → `comptime`, `@parameter if` → `comptime if`, explicit Int/Scalar conversions). [PR #298] [PR #334] [PR #307] [PR #297]
 - Updated pixi backend Mojo version and complex dtype/SIMD adjustments. [PR #323]
+- [core] Deprecate `fn` keyword in favor of `def` (Mojo v0.26.2). (#347)
 
 ### 🛠️ Fixed
 - Fixed `NDArray.__getitem__()` shape reconstruction for mixed slices/integers/ellipsis. [PR #326]
@@ -38,6 +40,8 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Fixed `log10`/`where` floating-point constraint failure. [PR #304]
 - Updated Mojo compatibility for Jan 24, 2026 nightly. [PR #302]
 - Overloaded `NDArray.itemset` for updated Mojo behavior. [PR #325]
+- Remove LegacyUnsafePointer import (LegacyUnsafePointer is now completely removed).
+- Remove `Science` module and the tests related to it. Science module will be moved to SciJo in the upcoming release.
 
 ### 📚 Documentatory and testing
 - Expanded NDArray indexing/slicing tests. [PR #327]
@@ -46,6 +50,10 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Added DLPack benchmark. [PR #306]
 - Added shell-based test discovery. [PR #311]
 - Fixed stdlib imports and split sorting tests to reduce runtime. [PR #341]
+- [Mojo][fix] Deprecate `doc_private` in favor of `doc_hidden` (#345). `doc_private` is being removed in stdlib. This PR solves warnings being produced by this.
+- [tests][imports] Fix stdlib imports & sorting tests (#341).
+    - Fix all the stdlib imports warning by adding `std.`.
+    - The tests in `test_sorting.mojo` caused GitHub actions to crash by running for too long, therefore it was commented out in #339. Splitting the test functions reduced the test time and fixes this problem.
 
 ## (v0.8.0)
 

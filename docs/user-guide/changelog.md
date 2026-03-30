@@ -7,6 +7,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 ## (v0.9.0)
 
 ### ⭐️ New
+
 - Introduced the `HostExecutor` backend with vectorized `apply_unary`, `apply_binary`, and predicate variants for SIMD/NDArray operations, so routine kernels have a consistent, optimized execution path without ad‑hoc backend selection. [PR #329]
 - Added a `Device` abstraction (like torch.device) to explicitly choose an execution target (CPU/GPU), laying the API foundation for accelerator-aware arrays and kernels. [PR #317]
 - Added accelerator-aware storage types: `AcceleratorDataContainer`, `HostStorage`, and `DeviceStorage`, which split host vs. device memory management and enable a unified container API for upcoming device-agnostic `NDArray`. [PR #320]
@@ -15,6 +16,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Implement the missing `copyto` function.
 
 ### 🦋 Changed
+
 - Rolled out `HostExecutor` across routines:
   - Logic ops now use `HostExecutor`, added logic tests, reorganized imports, standardized docstrings, and removed `_array_funcs.mojo`. [PR #330]
   - Arithmetic routines use `HostExecutor` and add `apply_ternary` for FMA paths. [PR #331]
@@ -28,9 +30,10 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Cleaned `NDArray` APIs and reorganized core modules for upcoming accelerator work. [PR #310] [PR #301]
 - Updated Mojo compatibility and syntax migrations (`alias` → `comptime`, `@parameter if` → `comptime if`, explicit Int/Scalar conversions). [PR #298] [PR #334] [PR #307] [PR #297]
 - Updated pixi backend Mojo version and complex dtype/SIMD adjustments. [PR #323]
-- [core] Deprecate `fn` keyword in favor of `def` (Mojo v0.26.2). (#347)
+- Deprecate `fn` keyword in favor of `def` (Mojo v0.26.2). (#347)
 
 ### 🛠️ Fixed
+
 - Fixed `NDArray.__getitem__()` shape reconstruction for mixed slices/integers/ellipsis. [PR #326]
 - Fixed `DataContainer.share()` memory leak and corrected accelerator copy routines/imports. [PR #322]
 - Fixed `Device` CPU behavior (export `cpu`, default constructor, string parsing) with added tests. [PR #318]
@@ -44,22 +47,26 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Remove `Science` module and the tests related to it. Science module will be moved to SciJo in the upcoming release.
 
 ### 📚 Documentatory and testing
+
 - Expanded NDArray indexing/slicing tests. [PR #327]
 - Added view-safety tests. [PR #324]
 - Added logic routine tests. [PR #330]
 - Added DLPack benchmark. [PR #306]
 - Added shell-based test discovery. [PR #311]
 - Fixed stdlib imports and split sorting tests to reduce runtime. [PR #341]
-- [Mojo][fix] Deprecate `doc_private` in favor of `doc_hidden` (#345). `doc_private` is being removed in stdlib. This PR solves warnings being produced by this.
-- [tests][imports] Fix stdlib imports & sorting tests (#341).
-    - Fix all the stdlib imports warning by adding `std.`.
-    - The tests in `test_sorting.mojo` caused GitHub actions to crash by running for too long, therefore it was commented out in #339. Splitting the test functions reduced the test time and fixes this problem.
+- Deprecate `doc_private` in favor of `doc_hidden` (#345). `doc_private` is being removed in stdlib. This PR solves warnings being produced by this.
+- Fix stdlib imports & sorting tests (#341).
+  - Fix all the stdlib imports warning by adding `std.`.
+  - The tests in `test_sorting.mojo` caused GitHub actions to crash by running for too long, therefore it was commented out in #339. Splitting the test functions reduced the test time and fixes this problem.
 
 ## (v0.8.0)
 
 ### ⭐️ New
+
 - Introduced a Python-like imaginary literal via the new `ImaginaryUnit` type and the `1j` alias, enabling natural complex-number expressions across scalars, SIMD vectors, and arrays.
+
   #### Example: Python-like complex literals
+
   ```mojo
   from numojo import `1j`
   # Scalar complex numbers
@@ -77,12 +84,15 @@ This is a list of RELEASED changes for the NuMojo Package.
   var c7 = `1j` ** 3                       # (0 - 1j) (ComplexScalar[cf64])
   var c8 = (1 + `1j`) / `1j`               # (1 - 1j) (ComplexScalar[cf64])
   ```
+
   - Refined the behavior of ComplexSIMD accessors and mutators (`__getitem__, __setitem__, item, itemset`) to improve clarity and flexibility.
   - Updated ComplexSIMD access patterns to clearly support:
     - Lane-wise access
     - Component-wise access (re / im)
     - Bulk access of real and imaginary components
+
     ##### Example: Updated ComplexSIMD access patterns
+
     ```mojo
     var complex_simd = ComplexSIMD[cf32, 4](1.0, 2.0)  # All lanes set to 1+2i
     
@@ -98,8 +108,9 @@ This is a list of RELEASED changes for the NuMojo Package.
     var all_reals = complex_simd.re  # Get all real parts as SIMD vector
     var all_imags = complex_simd.im  # Get all imaginary parts as SIMD vector
     ```
+
 - Added multiple convenience APIs for complex workflows:
-  - Convenience constructors such as `zero()`, `one()`, `I()`, and `from_polar()` for creating `ComplexSIMD` instances. 
+  - Convenience constructors such as `zero()`, `one()`, `I()`, and `from_polar()` for creating `ComplexSIMD` instances.
   - New ComplexSIMD helpers (`component_bitwidth, elem_pow, all_close)
   - Broadcasting support for scalar complex values.
 - `Matrix` views are finally here! 🥁 [PR #280](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/280), [PR #281](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/281), [PR #282](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/282), [PR #283](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/283), [PR #284](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/284)
@@ -119,7 +130,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Introduced explicit copy semantics for large data structures in alignment with Mojo 0.25.6 copy rules. [PR #270](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/270)
   - Implemented the Copyable trait for large container types such as NDArray and Matrix, enabling explicit duplication via `.copy()` which returns an array with same origin. To get an instance with without an origin referencing previous memory, use `.deep_copy()`.
 - Reintroduced parameter-based type distinctions between real and complex values across NuMojo APIs. [PR #269](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/269)
-  - Added ComplexDType variants for all supported real DType values by prefixing with c (e.g., `i8 → ci8, i32 → ci32, u32 → cu32, f64 → cf64`). 
+  - Added ComplexDType variants for all supported real DType values by prefixing with c (e.g., `i8 → ci8, i32 → ci32, u32 → cu32, f64 → cf64`).
 - Added parallel function overloads that accept `ComplexDType`, ensuring strict separation between real and complex workflows.
 - Enabled scalar and SIMD creation utilities for complex values, including `CScalar` and `ComplexSIMD`. [PR #269](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/269)
 - Introduced the pixi-build-mojo backend for NuMojo, enabling installation directly from the NuMojo GitHub repository without relying on Modular Community, Prefix.dev, or Conda channels. Check out the PR for more details on how to use it. [PR #268](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/268)
@@ -137,6 +148,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Added an experimental native array serialization method, savenpy, enabling file output without relying on the NumPy backend. [PR #256](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/256)
 
 ### 🦋 Changed
+
 - Enhanced ComplexSIMD arithmetic support with additional operator overloads.
 - Replaced UnsafePointer usages with LegacyUnsafePointer to temporarily retain existing pointer semantics. Fixed and standardized import names related to UnsafePointer. We will slowly implement support for new UnsafePointer in all structs in upcoming PRs. [PR #285](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/285)
 - Migrated all test files to the TestSuite.discover_tests pattern with explicit main() entry points. [PR #280](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/280), [PR #281](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/281), [PR #282](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/282), [PR #283](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/283), [PR #284](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/284)
@@ -156,16 +168,21 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Reworked slicing internals to improve performance and reduce memory usage. [PR #266](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/266)
 - Improved edge case handling to ensure consistent behavior across all slicing operations. [PR #266](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/266)
 - Updated __getitem__ implementations to support the following overloads: [PR #266](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/266)
+
   ```mojo
   __getitem__(slice_list: List[Slice])
   __getitem__(*slices: Slice)
   __getitem__(*slices: Variant[Slice, Int])
   ```
+
   #### Supported slicing behavior
-    - Forward slicing: arr[1:5], arr[:3], arr[2:] (with bounds clamping)
-    - Reverse slicing: full negative stride support (e.g., arr[::-1], arr[5:1:-1])
-    - Out-of-bounds slicing: automatically clamped to valid ranges
+
+  - Forward slicing: arr[1:5], arr[:3], arr[2:] (with bounds clamping)
+  - Reverse slicing: full negative stride support (e.g., arr[::-1], arr[5:1:-1])
+  - Out-of-bounds slicing: automatically clamped to valid ranges
+
   #### Known limitation: mixed Int and Slice usage
+
   ```mojo
     import numojo as nm
     nm_arr = nm.arange[nm.f32](0.0, 24.0, step=1).reshape(nm.Shape(2, 3, 4))
@@ -174,8 +191,10 @@ This is a list of RELEASED changes for the NuMojo Package.
     nm_slice1 = nm_arr[0, Slice(0,3), Slice(0,4)]   # ✅ works (Ints + Slice need explicit Slice)
     nm_slice1 = nm_arr[0:1, 0:3, 0:4]               # ✅ works as expected
   ```
+
 - Updated NDArray and ComplexNDArray printing logic to respect per-instance print_options. [PR #264](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/264)
 - Printing configuration is currently stored as an internal field due to the lack of global variable support in Mojo; this will be migrated to a global configuration once supported. [PR #264](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/264)
+
   ```mojo
   # Example: Customizing print options
   var arr = nm.zeros[nm.f32](nm.Shape(3, 4))
@@ -183,6 +202,7 @@ This is a list of RELEASED changes for the NuMojo Package.
   arr.print_options.set_options(precision = 2)
   print(arr) # prints with precision 2 for floating values
   ```
+
 - Improved __getitem__(idx: Int) -> Self and __setitem__(idx: Int, val: Self) implementations for both NDArray and ComplexNDArray. [PR #263](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/263)
 - Added comprehensive edge-case validation to getter and setter methods, providing clearer and more consistent error reporting. [PR #263](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/263)
 - Optimized C-contiguous and F-contiguous index calculation paths for improved performance. [PR #263](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/263)
@@ -193,6 +213,7 @@ This is a list of RELEASED changes for the NuMojo Package.
   - suggestion (optional): Guidance on how to resolve the issue
 
   #### Example: Index validation in NDArray.store
+
   ```mojo
   fn store[
       width: Int = 1
@@ -234,12 +255,15 @@ This is a list of RELEASED changes for the NuMojo Package.
                   )
               )
   ```
+
 - Updated NDArray.store to perform explicit index validation and raise structured errors with detailed diagnostics, including category, message, location, and resolution suggestions. [PR #256](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/256)
 
 ### ❌ Removed
+
 - Removed usage of deprecated `isize` and `intp` types. [PR #274](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/274)
 
 ### 🛠️ Fixed
+
 - Restored compatibility with existing pointer-based code paths to allow interim releases before migrating to the new UnsafePointer model. [PR #285](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/285)
 - Resolved multiple correctness issues related to slicing, indexing, and cumulative operations. [PR #280](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/280), [PR #281](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/281), [PR #282](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/282), [PR #283](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/283), [PR #284](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/284)
 - Implemented correct and consistent error types for Item, Shape, and Strides. [PR #274](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/274)
@@ -249,6 +273,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 - Improved slicing-related error messages for clarity and explicitness. [PR #266](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/266)
 - Invalid indexing operations now produce actionable diagnostics rather than generic failures. [PR #258](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/258)
 Example: Structured runtime error output
+
   ```console
   Unhandled exception caught during execution: NuMojo Error
           Category  : IndexError
@@ -256,9 +281,11 @@ Example: Structured runtime error output
           Location  : NDArray.store[width: Int](*indices: Int, val: SIMD[dtype, width])
           Suggestion: Ensure that index is within the valid range [0, 3)
   ```
+
 - Improved error traceability and developer feedback for invalid indexing operations by replacing ad-hoc errors with the new structured error system. [PR #256](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/256)
 
 ### 📚 Documentatory and testing
+
 - Significantly expanded and clarified documentation across the complex-number ecosystem, including ComplexDType, ComplexSIMD, ComplexNDArray, and ImaginaryUnit. Added practical usage examples to reduce ambiguity and improve discoverability.
 - Improve docstrings of all internal methods of `MatrixBase`. [PR #287](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/287)
 - Updated test infrastructure documentation to reflect the new TestSuite workflow. [PR #280](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/280), [PR #281](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/281), [PR #282](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/282), [PR #283](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/283), [PR #284](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/284)
@@ -266,6 +293,7 @@ Example: Structured runtime error output
 - Updated documentation to reflect the expanded ComplexNDArray API and new SIMD-based internal operations. [PR #275](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/275)
 - Documented the new copy behavior and clarified which types require explicit .copy() calls versus those that are implicitly copyable. [PR #270](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/270)
 - Documented the real vs. complex type distinction with concrete examples for scalars, SIMD values, and arrays. [PR #269](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/269)
+
   ```mojo
   # Example: Real vs. complex scalars
   import numojo as nm
@@ -297,6 +325,7 @@ Example: Structured runtime error output
   )  # ComplexNDArray
   print(complex_array)
   ```
+
 - Updated README files with the new Pixi-based installation workflow. [PR #268](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/268)
 - Added a Korean version of the README. [PR #268](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/268)
 - Updated the project roadmap. [PR #268](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/pull/268)

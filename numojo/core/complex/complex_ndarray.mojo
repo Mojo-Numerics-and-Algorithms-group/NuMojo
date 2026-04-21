@@ -448,6 +448,24 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.flags = take.flags
         self.print_options = take.print_options
 
+    def view(mut self) raises -> Self:
+        """
+        Create a non-owning view of the current ComplexNDArray.
+        Returns:
+            A new ComplexNDArray instance that shares the data buffers with
+            `self` and does not allocate new memory.
+        Example:
+            ```mojo
+            import numojo as nm
+            var arr = nm.ComplexNDArray[nm.cf32](nm.Shape(3, 4))
+            var v = arr.view()  # Create a view into arr
+            ```
+        """
+        return ComplexNDArray[Self.cdtype](
+            re=self._re.view(),
+            im=self._im.view(),
+        )
+        
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
     # Getter dunders and other getter methods
@@ -3406,7 +3424,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                         "Index {} is out of bounds for array of size {}. Use an"
                         " index in [0, {})."
                     ).format(index, self.size, self.size),
-                    location="ComplexNDArray.itemset(index: Int, item: ComplexSIMD)",
+                    location=(
+                        "ComplexNDArray.itemset(index: Int, item: ComplexSIMD)"
+                    ),
                 )
             )
 

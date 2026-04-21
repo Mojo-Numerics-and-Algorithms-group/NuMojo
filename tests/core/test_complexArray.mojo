@@ -29,6 +29,13 @@ def test_complex_array_itemset() raises:
     assert_almost_equal(c1.item(2, 2).re, 5.0, "itemset List failed")
     assert_almost_equal(c1.item(2, 2).im, 6.0, "itemset List failed")
 
+def test_complex_array_view() raises:
+    """Test view() method."""
+    var c1 = ComplexNDArray[cf32](Shape(2, 2))
+    c1.itemset(0, ComplexSIMD[cf32](1.0, 2.0))
+    var v = c1.view()
+    assert_almost_equal(v.item(0).re, 1.0, "view failed")
+    assert_almost_equal(v.item(0).im, 2.0, "view failed")
 
 def test_complex_array_view() raises:
     """Test view() method."""

@@ -3343,95 +3343,151 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             dimension=0,
         )
 
-    def itemset(
-        mut self,
-        index: Variant[Int, List[Int]],
-        item: ComplexSIMD[Self.cdtype],
-    ) raises:
-        """Set the scalar at the coordinates.
+    def itemset(mut self, index: Int, item: ComplexSIMD[Self.cdtype]) raises:
+        """Sets the scalar at the given coordinate.
 
         Args:
-            index: The coordinates of the item.
-                Can either be `Int` or `List[Int]`.
-                If `Int` is passed, it is the index of i-th item of the whole array.
-                If `List[Int]` is passed, it is the coordinate of the item.
-            item: The scalar to be set.
+            index: The linear index of the i-th item of the whole array.
+            item: The complex scalar to be set.
+
+        Raises:
+            Error: If the index is out of bounds.
+            Error: If the length of index does not match the number of
+                dimensions.
+
+        Examples:
+
+        ```
+        import numojo as nm
+        def main() raises:
+            var A = nm.zeros[nm.cf16](nm.Shape(3, 3))
+            print(A)
+            A.itemset(5, nm.ComplexSIMD[nm.f16](1.0, 2.0))
+            print(A)
+        ```
+        ```console
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (1.0, 2.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        ```.
         """
-
-        # If one index is given
-        if index.isa[Int]():
-            var idx: Int = index[Int]
-            if idx < self.size:
-                if self.flags[
-                    "F_CONTIGUOUS"
-                ]:  # column-major should be converted to row-major
-                    # The following code can be taken out as a function that
-                    # convert any index to coordinates according to the order
-                    var c_stride = NDArrayStrides(shape=self.shape)
-                    var c_coordinates = List[Int]()
-                    for i in range(c_stride.ndim):
-                        var coordinate = idx // c_stride[i]
-                        idx = idx - c_stride[i] * coordinate
-                        c_coordinates.append(coordinate)
-                    self._re._buf.ptr.store(
-                        IndexMethods.get_1d_index(c_coordinates, self.strides),
-                        item.re,
-                    )
-                    self._im._buf.ptr.store(
-                        IndexMethods.get_1d_index(c_coordinates, self.strides),
-                        item.im,
-                    )
-                else:
-                    self._re._buf.ptr.store(idx, item.re)
-                    self._im._buf.ptr.store(idx, item.im)
+        var norm_idx = self.normalize(index, self.size)
+        if norm_idx < self.size:
+            if self.flags.F_CONTIGUOUS:
+                var c_stride = NDArrayStrides(shape=self.shape)
+                var c_coordinates = List[Int]()
+                for i in range(c_stride.ndim):
+                    var coordinate = norm_idx // c_stride[i]
+                    norm_idx = norm_idx - c_stride[i] * coordinate
+                    c_coordinates.append(coordinate)
+                self._re._buf.ptr.store(
+                    self._re.offset
+                    + IndexMethods.get_1d_index(c_coordinates, self.strides),
+                    item.re,
+                )
+                self._im._buf.ptr.store(
+                    self._im.offset
+                    + IndexMethods.get_1d_index(c_coordinates, self.strides),
+                    item.im,
+                )
             else:
-                raise Error(
-                    NumojoError(
-                        category="index",
-                        message=String(
-                            "Linear index {} out of range for size {}. Valid"
-                            " linear indices: 0..{}."
-                        ).format(idx, self.size, self.size - 1),
-                        location="ComplexNDArray.itemset(Int)",
-                    )
+                self._re._buf.ptr.store(self._re.offset + norm_idx, item.re)
+                self._im._buf.ptr.store(self._im.offset + norm_idx, item.im)
+        else:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Index {} is out of bounds for array of size {}. Use an"
+                        " index in [0, {})."
+                    ).format(index, self.size, self.size),
+                    location="ComplexNDArray.itemset(index: Int, item: ComplexSIMD)",
                 )
+            )
 
-        elif index.isa[List[Int]]():
-            var indices: List[Int] = index[List[Int]].copy()
-            if indices.__len__() != self.ndim:
+    def itemset(
+        mut self, var indices: List[Int], item: ComplexSIMD[Self.cdtype]
+    ) raises:
+        """Sets the scalar at the given coordinates.
+
+        Args:
+            indices: The coordinates of the item.
+            item: The complex scalar to be set.
+
+        Raises:
+            Error: If the index is out of bounds.
+            Error: If the length of index does not match the number of
+                dimensions.
+
+        Notes:
+            This is similar to `numpy.ndarray.itemset`. The difference is that
+            we take `List[Int]`, but NumPy takes a tuple.
+
+        Examples:
+
+        ```
+        import numojo as nm
+        def main() raises:
+            var A = nm.zeros[nm.cf16](nm.Shape(3, 3))
+            print(A)
+            A.itemset(nm.List(1, 1), nm.ComplexSIMD[nm.f16](1.0, 2.0))
+            print(A)
+        ```
+        ```console
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (1.0, 2.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        ```.
+        """
+        if len(indices) != self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Invalid index length: expected {} but got {}. Pass"
+                        " exactly {} indices (one per dimension)."
+                    ).format(self.ndim, indices.__len__(), self.ndim),
+                    location=(
+                        "ComplexNDArray.itemset(indices: List[Int], item:"
+                        " ComplexSIMD)"
+                    ),
+                )
+            )
+        for i in range(len(indices)):
+            var norm_idx = self.normalize(indices[i], self.shape[i])
+            if norm_idx >= self.shape[i]:
                 raise Error(
                     NumojoError(
                         category="index",
                         message=String(
-                            "Expected {} indices (ndim) but received {}."
-                            " Provide one index per dimension; shape {} has {}"
-                            " dimensions."
-                        ).format(
-                            self.ndim, indices.__len__(), self.shape, self.ndim
+                            "Index out of range at dim {}: got {}; valid"
+                            " range is (-{}..{})."
+                        ).format(i, indices[i], self.shape[i], self.shape[i]),
+                        location=(
+                            "ComplexNDArray.itemset(indices: List[Int],"
+                            " item: ComplexSIMD)"
                         ),
-                        location="ComplexNDArray.itemset(List[Int])",
                     )
                 )
-            for i in range(indices.__len__()):
-                if indices[i] >= self.shape[i]:
-                    raise Error(
-                        NumojoError(
-                            category="index",
-                            message=String(
-                                "Index {} out of range for dim {} (size {})."
-                                " Valid range: [0, {})."
-                            ).format(
-                                indices[i], i, self.shape[i], self.shape[i]
-                            ),
-                            location="ComplexNDArray.itemset(List[Int])",
-                        )
-                    )
-            self._re._buf.ptr.store(
-                IndexMethods.get_1d_index(indices, self.strides), item.re
-            )
-            self._im._buf.ptr.store(
-                IndexMethods.get_1d_index(indices, self.strides), item.im
-            )
+            indices[i] = norm_idx
+        self._re._buf.ptr.store(
+            self._re.offset + IndexMethods.get_1d_index(indices, self.strides),
+            item.re,
+        )
+        self._im._buf.ptr.store(
+            self._im.offset + IndexMethods.get_1d_index(indices, self.strides),
+            item.im,
+        )
 
     def conj(self) raises -> Self:
         """

@@ -288,11 +288,14 @@ def test_getitem_index_array_negative_indices() raises:
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
     var anp = np.arange(12, dtype=np.int32).reshape(3, 4)
     var idx = nm.array[int]("[2, -1, 0, -2]")
-    check(a[idx], anp[[2, -1, 0, -2]], "index-array getter with negatives failed")
+    check(
+        a[idx], anp[[2, -1, 0, -2]], "index-array getter with negatives failed"
+    )
 
 
 def test_setitem_index_array_per_index_rows() raises:
-    """Integer-array setitem assigns row-by-row when val has leading index dim."""
+    """Integer-array setitem assigns row-by-row when val has leading index dim.
+    """
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
     var idx = nm.array[int]("[2, 0]")
     var repl = nm.array[nm.i32]("[[100, 101, 102, 103], [200, 201, 202, 203]]")
@@ -325,7 +328,8 @@ def test_setitem_index_array_broadcast_single_row() raises:
 
 
 def test_mask_setitem_compact_values() raises:
-    """Boolean-mask assignment supports compact 1-D values of true-count size."""
+    """Boolean-mask assignment supports compact 1-D values of true-count size.
+    """
     var a = nm.arange[nm.i32](0, 6, step=1).reshape(Shape(2, 3))
     var mask = nm.array[boolean]("[[1,0,1],[0,1,0]]")
     var vals = nm.array[nm.i32]("[50, 60, 70]")

@@ -8,9 +8,9 @@ authors = [
   "durnwalder <>",
 ]
 channels = [
-  "https://conda.modular.com/max-nightly/",
-  "conda-forge",
   "https://conda.modular.com/max",
+  "conda-forge",
+  "https://conda.modular.com/max-nightly/",
   "https://repo.prefix.dev/modular-community",
 ]
 description = "NuMojo is a library for numerical computing written in Mojo 🔥"
@@ -69,7 +69,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
-modular = "26.2.*"
 numpy = ">=2.4.2,<3"
 python = ">=3.14.3,<3.15"
 scipy = ">=1.17.0,<2"
+mojo = ">=0.26.2.0,<0.27"

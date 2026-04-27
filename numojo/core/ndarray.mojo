@@ -1383,37 +1383,45 @@ struct NDArray[dtype: DType = DType.float64](
         ```.
         """
 
-        # Get the shape of resulted array
-        # var shape = indices.shape.join(self.shape._pop(0))
         var shape = indices.shape.join(self.shape.pop(0))
-
         var result: NDArray[Self.dtype] = NDArray[Self.dtype](shape)
         var size_per_item: Int = self.size // self.shape[0]
+        var indices_c = indices.contiguous()
 
-        # Fill in the values
-        for i in range(indices.size):
-            if indices.item(i) >= Scalar[DType.int](self.shape[0]):
+        # Fill in the values (advanced indexing on axis 0).
+        for i in range(indices_c.size):
+            var raw_idx = Int(indices_c._buf.ptr[i])
+            if raw_idx < -self.shape[0] or raw_idx >= self.shape[0]:
                 raise Error(
                     NumojoError(
                         category="index",
                         message=String(
                             "Index out of range at position {}: got {}; valid"
-                            " range for the first dimension is [0, {})."
-                            " Validate indices against the first dimension size"
-                            " ({})."
-                        ).format(
-                            i, indices.item(i), self.shape[0], self.shape[0]
-                        ),
+                            " range for axis 0 is [{}, {})."
+                        ).format(i, raw_idx, -self.shape[0], self.shape[0]),
                         location="NDArray.__getitem__(indices: NDArray[dtype])",
                     )
                 )
-            memcpy(
-                dest=result._buf.ptr + i * size_per_item,
-                src=self._buf.ptr
-                + self.offset
-                + Int(indices.item(i)) * size_per_item,
-                count=size_per_item,
-            )
+
+            var normalized_idx = raw_idx
+            if normalized_idx < 0:
+                normalized_idx += self.shape[0]
+
+            if self.is_c_contiguous():
+                memcpy(
+                    dest=result._buf.ptr + i * size_per_item,
+                    src=self._buf.ptr
+                    + self.offset
+                    + normalized_idx * size_per_item,
+                    count=size_per_item,
+                )
+            else:
+                var selected = self[normalized_idx].contiguous()
+                memcpy(
+                    dest=result._buf.ptr + i * size_per_item,
+                    src=selected._buf.ptr + selected.offset,
+                    count=size_per_item,
+                )
 
         return result^
 
@@ -2461,8 +2469,30 @@ struct NDArray[dtype: DType = DType.float64](
                 slice_list.append(slices[i][Slice])
             elif slices[i].isa[Int]():
                 count_int += 1
-                var int: Int = slices[i][Int]
-                slice_list.append(Slice(int, int + 1, 1))
+                var idx: Int = slices[i][Int]
+                if idx >= self.shape[i] or idx < -self.shape[i]:
+                    raise Error(
+                        NumojoError(
+                            category="index",
+                            message=String(
+                                "Integer index {} out of bounds for axis {}"
+                                " (size {}). Valid range is [{}, {})."
+                            ).format(
+                                idx,
+                                i,
+                                self.shape[i],
+                                -self.shape[i],
+                                self.shape[i],
+                            ),
+                            location=(
+                                "NDArray.__setitem__(*slices: Variant[Slice,"
+                                " Int], val: NDArray)"
+                            ),
+                        )
+                    )
+                if idx < 0:
+                    idx += self.shape[i]
+                slice_list.append(Slice(idx, idx + 1, 1))
 
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
@@ -2511,53 +2541,115 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        if index.size > self.shape[0]:
+        var index_c = index.contiguous()
+
+        if self.ndim == 1:
+            if val.size == 1:
+                var scalar_val = val.item(0)
+                for i in range(index_c.size):
+                    var idx = Int(index_c._buf.ptr[i])
+                    idx = self.normalize(idx, self.shape[0])
+                    if idx < 0 or idx >= self.shape[0]:
+                        raise Error(
+                            NumojoError(
+                                category="index",
+                                message=String(
+                                    "Index out of range at position {}: got {};"
+                                    " valid range is [{}, {})."
+                                ).format(i, idx, -self.shape[0], self.shape[0]),
+                                location=(
+                                    "NDArray.__setitem__(index: NDArray, val:"
+                                    " NDArray)"
+                                ),
+                            )
+                        )
+                    self.itemset(idx, scalar_val)
+                return
+
+            if val.ndim != 1 or val.size != index_c.size:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "For 1-D indexed assignment, value must have size"
+                            " 1 or exactly {} elements; got shape {}."
+                        ).format(index_c.size, val.shape),
+                        location="NDArray.__setitem__(index: NDArray, val: NDArray)",
+                    )
+                )
+
+            var val_c = val.contiguous()
+            for i in range(index_c.size):
+                var idx = Int(index_c._buf.ptr[i])
+                idx = self.normalize(idx, self.shape[0])
+                if idx < 0 or idx >= self.shape[0]:
+                    raise Error(
+                        NumojoError(
+                            category="index",
+                            message=String(
+                                "Index out of range at position {}: got {};"
+                                " valid range is [{}, {})."
+                            ).format(i, idx, -self.shape[0], self.shape[0]),
+                            location=(
+                                "NDArray.__setitem__(index: NDArray, val:"
+                                " NDArray)"
+                            ),
+                        )
+                    )
+                self.itemset(idx, val_c._buf.ptr[i])
+            return
+
+        var tail_shape = self.shape.pop(0)
+        var per_slice_size = self.size // self.shape[0]
+        var val_is_single_slice = val.shape == tail_shape
+        var val_is_per_index = (
+            val.ndim == self.ndim
+            and val.shape[0] == index_c.size
+            and val.shape.pop(0) == tail_shape
+        )
+
+        if not val_is_single_slice and not val_is_per_index:
             raise Error(
                 NumojoError(
-                    category="index",
+                    category="shape",
                     message=String(
-                        "Index array has {} elements; first dimension size is"
-                        " {}. Truncate or reshape the index array to fit within"
-                        " the first dimension ({})."
-                    ).format(index.size, self.shape[0], self.shape[0]),
-                    location=(
-                        "NDArray.__setitem__(index: NDArray, val: NDArray)"
-                    ),
+                        "Invalid value shape {} for indexed assignment. Expected"
+                        " either {} (single slice broadcast) or [{}, ...] with"
+                        " tail shape {}."
+                    ).format(val.shape, tail_shape, index_c.size, tail_shape),
+                    location="NDArray.__setitem__(index: NDArray, val: NDArray)",
                 )
             )
 
-        # var output_shape_list: List[Int] = List[Int]()
-        # output_shape_list.append(index.size)
-        # for i in range(1, self.ndim):
-        #     output_shape_list.append(self.shape[i])
+        var val_c_for_slices = val.contiguous()
 
-        # var output_shape: NDArrayShape = NDArrayShape(output_shape_list)
-        # print("output_shape\n", output_shape.__str__())
-
-        for i in range(index.size):
-            if (
-                index.item(i) >= Scalar[DType.int](self.shape[0])
-                or index.item(i) < 0
-            ):
+        for i in range(index_c.size):
+            var idx = Int(index_c._buf.ptr[i])
+            if idx < -self.shape[0] or idx >= self.shape[0]:
                 raise Error(
                     NumojoError(
                         category="index",
                         message=String(
                             "Index out of range at position {}: got {}; valid"
-                            " range is [0, {}). Validate indices against the"
-                            " first dimension size ({})."
-                        ).format(
-                            i, index.item(i), self.shape[0], self.shape[0]
-                        ),
-                        location=(
-                            "NDArray.__setitem__(index: NDArray, val: NDArray)"
-                        ),
+                            " range is [{}, {})."
+                        ).format(i, idx, -self.shape[0], self.shape[0]),
+                        location="NDArray.__setitem__(index: NDArray, val: NDArray)",
                     )
                 )
+            if idx < 0:
+                idx += self.shape[0]
 
-        # var new_arr: NDArray[dtype] = NDArray[dtype](output_shape)
-        for i in range(index.size):
-            self.__setitem__(idx=Int(index.item(i)), val=val)
+            if val_is_single_slice:
+                self.__setitem__(idx=idx, val=val)
+            else:
+                var src_offset = val_c_for_slices.offset + i * per_slice_size
+                var slice = NDArray[Self.dtype](tail_shape)
+                memcpy(
+                    dest=slice._buf.ptr + slice.offset,
+                    src=val_c_for_slices._buf.ptr + src_offset,
+                    count=per_slice_size,
+                )
+                self.__setitem__(idx=idx, val=slice)
 
         # for i in range(len(index)):
         # self.store(Int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
@@ -2602,9 +2694,46 @@ struct NDArray[dtype: DType = DType.float64](
 
         var mask_c = mask.contiguous()
         var val_c = val.contiguous()
+        var true_count = 0
         for i in range(mask_c.size):
-            if mask_c._buf.ptr.load(i):
-                self.itemset(i, val_c._buf.ptr.load(i))
+            if mask_c._buf.ptr.load[width=1](i):
+                true_count += 1
+
+        if val_c.shape == self.shape:
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    self.itemset(i, val_c._buf.ptr.load[width=1](i))
+            return
+
+        if val_c.size == 1:
+            var scalar_val = val_c._buf.ptr.load[width=1](val_c.offset)
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    self.itemset(i, scalar_val)
+            return
+
+        if val_c.ndim == 1 and val_c.size == true_count:
+            var j = 0
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    self.itemset(i, val_c._buf.ptr.load[width=1](j))
+                    j += 1
+            return
+
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "Invalid value shape {} for boolean mask assignment with"
+                    " {} selected elements. Expected value shape {} (elementwise),"
+                    " a scalar/size-1 array, or 1-D shape [{}]."
+                ).format(val.shape, true_count, self.shape, true_count),
+                location=(
+                    "NDArray.__setitem__(mask: NDArray[DType.bool], val:"
+                    " NDArray)"
+                ),
+            )
+        )
 
     def itemset(mut self, index: Int, item: Scalar[Self.dtype]) raises:
         """Sets the scalar at the given coordinate.

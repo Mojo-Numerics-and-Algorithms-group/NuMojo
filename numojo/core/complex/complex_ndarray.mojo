@@ -3274,8 +3274,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Array of the same data with a new shape.
         """
         var result: Self = ComplexNDArray[Self.cdtype](
-            re=numojo.reshape(self._re.copy(), shape=shape, order=order),
-            im=numojo.reshape(self._im.copy(), shape=shape, order=order),
+            re=numojo.reshape(self._re, shape=shape, order=order),
+            im=numojo.reshape(self._im, shape=shape, order=order),
         )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags

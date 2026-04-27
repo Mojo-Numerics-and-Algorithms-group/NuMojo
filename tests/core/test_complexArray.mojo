@@ -43,9 +43,9 @@ def test_complex_array_itemset_negative_index() raises:
     """Test itemset with negative indices."""
     var c1 = ComplexNDArray[cf32](Shape(3, 3))
     c1.itemset(-1, ComplexSIMD[cf32](7.0, 8.0))
-    c1.itemset([-1, -1], ComplexSIMD[cf32](9.0, 10.0))
     assert_almost_equal(c1.item(2, 2).re, 7.0, "negative index failed")
     assert_almost_equal(c1.item(2, 2).im, 8.0, "negative index failed")
+    c1.itemset([-1, -1], ComplexSIMD[cf32](9.0, 10.0))
     assert_almost_equal(c1.item(2, 2).re, 9.0, "negative index List failed")
     assert_almost_equal(c1.item(2, 2).im, 10.0, "negative index List failed")
 

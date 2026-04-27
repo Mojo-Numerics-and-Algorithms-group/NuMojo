@@ -4030,13 +4030,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        var width: Int = self.shape[1]
-        var result = Self(Shape(width))
-        for i in range(width):
-            var idx = i + id * width
-            result._re._buf.ptr.store(i, self._re._buf.ptr.load(idx))
-            result._im._buf.ptr.store(i, self._im._buf.ptr.load(idx))
-        return result^
+        return Self(self._re.row(id), self._im.row(id))
 
     def col(self, id: Int) raises -> Self:
         """
@@ -4070,14 +4064,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        var width: Int = self.shape[1]
-        var height: Int = self.shape[0]
-        var result = Self(Shape(height))
-        for i in range(height):
-            var idx = id + i * width
-            result._re._buf.ptr.store(i, self._re._buf.ptr.load(idx))
-            result._im._buf.ptr.store(i, self._im._buf.ptr.load(idx))
-        return result^
+        return Self(self._re.col(id), self._im.col(id))
 
     def clip(
         self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]
@@ -4223,8 +4210,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        var diag_re = self[Self.dtype]._re.diagonal(offset)
-        var diag_im = self[Self.dtype]._im.diagonal(offset)
+        var diag_re = self._re.diagonal(offset)
+        var diag_im = self._im.diagonal(offset)
         return Self(diag_re^, diag_im^)
 
     def trace(self) raises -> ComplexSIMD[Self.cdtype]:
@@ -4265,6 +4252,58 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         for i in range(self.size):
             result.append(self._flat_load(i))
         return result^
+
+    def astype[target: ComplexDType](self) raises -> ComplexNDArray[target]:
+        """Casts this complex array to another complex dtype."""
+        return creation.astype[target](self)
+
+    def compress(
+        self, condition: NDArray[DType.bool], axis: Int
+    ) raises -> Self:
+        return Self(
+            self._re.compress(condition, axis),
+            self._im.compress(condition, axis),
+        )
+
+    def compress(self, condition: NDArray[DType.bool]) raises -> Self:
+        return Self(self._re.compress(condition), self._im.compress(condition))
+
+    def contiguous(self) raises -> Self:
+        return Self(self._re.contiguous(), self._im.contiguous())
+
+    def is_c_contiguous(self) -> Bool:
+        return self._re.is_c_contiguous()
+
+    def is_f_contiguous(self) -> Bool:
+        return self._re.is_f_contiguous()
+
+    def is_row_contiguous(self) -> Bool:
+        return self._re.is_row_contiguous()
+
+    def is_col_contiguous(self) -> Bool:
+        return self._re.is_col_contiguous()
+
+    def unsafe_load[
+        width: Int = 1
+    ](self, index: Int) -> ComplexSIMD[Self.cdtype, width]:
+        return ComplexSIMD[Self.cdtype, width](
+            self._re.unsafe_load[width=width](index),
+            self._im.unsafe_load[width=width](index),
+        )
+
+    def unsafe_store[
+        width: Int = 1
+    ](mut self, index: Int, val: ComplexSIMD[Self.cdtype, width]):
+        self._re.unsafe_store[width=width](index, val.re)
+        self._im.unsafe_store[width=width](index, val.im)
+
+    def to_numpy(self) raises -> PythonObject:
+        var np = Python.import_module("numpy")
+        var builtins = Python.import_module("builtins")
+        var re_np = self._re.to_numpy()
+        var im_np = self._im.to_numpy()
+        var imag_unit = builtins.complex(0, 1)
+        return re_np + im_np * imag_unit
 
     def argsort(self) raises -> NDArray[DType.int]:
         return self.argsort(axis=-1)

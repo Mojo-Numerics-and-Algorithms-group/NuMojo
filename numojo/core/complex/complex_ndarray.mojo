@@ -70,6 +70,7 @@ from numojo.routines.io.formatting import (
     PrintOptions,
 )
 import numojo.routines.logic.comparison as comparison
+import numojo.routines.logic.logical_ops as logical_ops
 
 # ===----------------------------------------------------------------------===#
 # === numojo routines (math / bitwise / searching) ===
@@ -2430,9 +2431,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Itemwise equivalence.
         """
-        return comparison.equal[Self.dtype](
-            self._re, other._re
-        ) and comparison.equal[Self.dtype](self._im, other._im)
+        return logical_ops.logical_and(
+            comparison.equal[Self.dtype](self._re, other._re),
+            comparison.equal[Self.dtype](self._im, other._im),
+        )
 
     @always_inline("nodebug")
     def __eq__(
@@ -2441,18 +2443,20 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Itemwise equivalence between scalar and ComplexNDArray.
         """
-        return comparison.equal[Self.dtype](
-            self._re, other.re
-        ) and comparison.equal[Self.dtype](self._im, other.im)
+        return logical_ops.logical_and(
+            comparison.equal[Self.dtype](self._re, other.re),
+            comparison.equal[Self.dtype](self._im, other.im),
+        )
 
     @always_inline("nodebug")
     def __ne__(self, other: Self) raises -> NDArray[DType.bool]:
         """
         Itemwise non-equivalence.
         """
-        return comparison.not_equal[Self.dtype](
-            self._re, other._re
-        ) or comparison.not_equal[Self.dtype](self._im, other._im)
+        return logical_ops.logical_or(
+            comparison.not_equal[Self.dtype](self._re, other._re),
+            comparison.not_equal[Self.dtype](self._im, other._im),
+        )
 
     @always_inline("nodebug")
     def __ne__(
@@ -2461,9 +2465,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Itemwise non-equivalence between scalar and ComplexNDArray.
         """
-        return comparison.not_equal[Self.dtype](
-            self._re, other.re
-        ) or comparison.not_equal[Self.dtype](self._im, other.im)
+        return logical_ops.logical_or(
+            comparison.not_equal[Self.dtype](self._re, other.re),
+            comparison.not_equal[Self.dtype](self._im, other.im),
+        )
 
     @always_inline("nodebug")
     def __lt__(self, other: Self) raises -> NDArray[DType.bool]:
@@ -2473,7 +2478,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_lt = comparison.less[Self.dtype](self._re, other._re)
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_lt = comparison.less[Self.dtype](self._im, other._im)
-        var result = re_lt^ or (re_eq^ and im_lt^)
+        var result = logical_ops.logical_or(
+            re_lt^, logical_ops.logical_and(re_eq^, im_lt^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2483,7 +2490,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_lt = comparison.less[Self.dtype](self._re, other.re)
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_lt = comparison.less[Self.dtype](self._im, other.im)
-        var result = re_lt^ or (re_eq^ and im_lt^)
+        var result = logical_ops.logical_or(
+            re_lt^, logical_ops.logical_and(re_eq^, im_lt^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2491,7 +2500,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_lt = comparison.less[Self.dtype](self._re, other)
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_lt = comparison.less[Self.dtype](self._im, 0)
-        var result = re_lt^ or (re_eq^ and im_lt^)
+        var result = logical_ops.logical_or(
+            re_lt^, logical_ops.logical_and(re_eq^, im_lt^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2499,7 +2510,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_lt = comparison.less[Self.dtype](self._re, other._re)
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_le = comparison.less_equal[Self.dtype](self._im, other._im)
-        var result = re_lt^ or (re_eq^ and im_le^)
+        var result = logical_ops.logical_or(
+            re_lt^, logical_ops.logical_and(re_eq^, im_le^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2509,7 +2522,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_lt = comparison.less[Self.dtype](self._re, other.re)
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_le = comparison.less_equal[Self.dtype](self._im, other.im)
-        var result = re_lt^ or (re_eq^ and im_le^)
+        var result = logical_ops.logical_or(
+            re_lt^, logical_ops.logical_and(re_eq^, im_le^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2517,7 +2532,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_lt = comparison.less[Self.dtype](self._re, other)
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_le = comparison.less_equal[Self.dtype](self._im, 0)
-        var result = re_lt^ or (re_eq^ and im_le^)
+        var result = logical_ops.logical_or(
+            re_lt^, logical_ops.logical_and(re_eq^, im_le^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2525,7 +2542,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_gt = comparison.greater[Self.dtype](self._re, other._re)
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_gt = comparison.greater[Self.dtype](self._im, other._im)
-        var result = re_gt^ or (re_eq^ and im_gt^)
+        var result = logical_ops.logical_or(
+            re_gt^, logical_ops.logical_and(re_eq^, im_gt^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2535,7 +2554,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_gt = comparison.greater[Self.dtype](self._re, other.re)
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_gt = comparison.greater[Self.dtype](self._im, other.im)
-        var result = re_gt^ or (re_eq^ and im_gt^)
+        var result = logical_ops.logical_or(
+            re_gt^, logical_ops.logical_and(re_eq^, im_gt^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2543,7 +2564,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_gt = comparison.greater[Self.dtype](self._re, other)
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_gt = comparison.greater[Self.dtype](self._im, 0)
-        var result = re_gt^ or (re_eq^ and im_gt^)
+        var result = logical_ops.logical_or(
+            re_gt^, logical_ops.logical_and(re_eq^, im_gt^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2551,7 +2574,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_gt = comparison.greater[Self.dtype](self._re, other._re)
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_ge = comparison.greater_equal[Self.dtype](self._im, other._im)
-        var result = re_gt^ or (re_eq^ and im_ge^)
+        var result = logical_ops.logical_or(
+            re_gt^, logical_ops.logical_and(re_eq^, im_ge^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2561,7 +2586,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_gt = comparison.greater[Self.dtype](self._re, other.re)
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_ge = comparison.greater_equal[Self.dtype](self._im, other.im)
-        var result = re_gt^ or (re_eq^ and im_ge^)
+        var result = logical_ops.logical_or(
+            re_gt^, logical_ops.logical_and(re_eq^, im_ge^)
+        )
         return result^
 
     @always_inline("nodebug")
@@ -2569,7 +2596,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_gt = comparison.greater[Self.dtype](self._re, other)
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_ge = comparison.greater_equal[Self.dtype](self._im, 0)
-        var result = re_gt^ or (re_eq^ and im_ge^)
+        var result = logical_ops.logical_or(
+            re_gt^, logical_ops.logical_and(re_eq^, im_ge^)
+        )
         return result^
 
     # ===------------------------------------------------------------------=== #

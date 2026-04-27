@@ -2452,7 +2452,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         return comparison.not_equal[Self.dtype](
             self._re, other._re
-        ) and comparison.not_equal[Self.dtype](self._im, other._im)
+        ) or comparison.not_equal[Self.dtype](self._im, other._im)
 
     @always_inline("nodebug")
     def __ne__(
@@ -2463,244 +2463,114 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         return comparison.not_equal[Self.dtype](
             self._re, other.re
-        ) and comparison.not_equal[Self.dtype](self._im, other.im)
+        ) or comparison.not_equal[Self.dtype](self._im, other.im)
 
     @always_inline("nodebug")
     def __lt__(self, other: Self) raises -> NDArray[DType.bool]:
         """
-        Itemwise less than comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| < |other|.
-        This provides a natural ordering for complex numbers.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| < |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A < B  # Compare by magnitude
-        ```
-
-        Notes:
-            Complex number ordering is not naturally defined. This implementation
-            compares by magnitude (absolute value) to provide a consistent ordering.
+        NumPy-style lexicographic ordering: compare real part first, then imaginary part.
         """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.less[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_lt = comparison.less[Self.dtype](self._im, other._im)
+        var result = re_lt^ or (re_eq^ and im_lt^)
+        return result^
 
     @always_inline("nodebug")
     def __lt__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| < |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.less[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_lt = comparison.less[Self.dtype](self._im, other.im)
+        var result = re_lt^ or (re_eq^ and im_lt^)
+        return result^
 
     @always_inline("nodebug")
     def __lt__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| < |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.less[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_lt = comparison.less[Self.dtype](self._im, 0)
+        var result = re_lt^ or (re_eq^ and im_lt^)
+        return result^
 
     @always_inline("nodebug")
     def __le__(self, other: Self) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than or equal comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| <= |other|.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| <= |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A <= B  # Compare by magnitude
-        ```
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_le = comparison.less_equal[Self.dtype](self._im, other._im)
+        var result = re_lt^ or (re_eq^ and im_le^)
+        return result^
 
     @always_inline("nodebug")
     def __le__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than or equal comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| <= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_le = comparison.less_equal[Self.dtype](self._im, other.im)
+        var result = re_lt^ or (re_eq^ and im_le^)
+        return result^
 
     @always_inline("nodebug")
     def __le__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than or equal comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| <= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_le = comparison.less_equal[Self.dtype](self._im, 0)
+        var result = re_lt^ or (re_eq^ and im_le^)
+        return result^
 
     @always_inline("nodebug")
     def __gt__(self, other: Self) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| > |other|.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| > |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A > B  # Compare by magnitude
-        ```
-
-        Notes:
-            Complex number ordering is not naturally defined. This implementation
-            compares by magnitude (absolute value) to provide a consistent ordering.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.greater[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_gt = comparison.greater[Self.dtype](self._im, other._im)
+        var result = re_gt^ or (re_eq^ and im_gt^)
+        return result^
 
     @always_inline("nodebug")
     def __gt__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| > |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.greater[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_gt = comparison.greater[Self.dtype](self._im, other.im)
+        var result = re_gt^ or (re_eq^ and im_gt^)
+        return result^
 
     @always_inline("nodebug")
     def __gt__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| > |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.greater[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_gt = comparison.greater[Self.dtype](self._im, 0)
+        var result = re_gt^ or (re_eq^ and im_gt^)
+        return result^
 
     @always_inline("nodebug")
     def __ge__(self, other: Self) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than or equal comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| >= |other|.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| >= |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A >= B  # Compare by magnitude
-        ```
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_ge = comparison.greater_equal[Self.dtype](self._im, other._im)
+        var result = re_gt^ or (re_eq^ and im_ge^)
+        return result^
 
     @always_inline("nodebug")
     def __ge__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than or equal comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| >= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_ge = comparison.greater_equal[Self.dtype](self._im, other.im)
+        var result = re_gt^ or (re_eq^ and im_ge^)
+        return result^
 
     @always_inline("nodebug")
     def __ge__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than or equal comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| >= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_ge = comparison.greater_equal[Self.dtype](self._im, 0)
+        var result = re_gt^ or (re_eq^ and im_ge^)
+        return result^
 
     # ===------------------------------------------------------------------=== #
     # ARITHMETIC OPERATIONS

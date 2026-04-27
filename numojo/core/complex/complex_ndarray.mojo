@@ -3281,39 +3281,39 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         result._im.flags = self._im.flags
         return result^
 
-    #     def __iter__(
-    #         mut self,
-    #     ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
-    #         """
-    #         Iterates over elements of the ComplexNDArray and return sub-arrays as view.
-    #
-    #         Returns:
-    #             An iterator of ComplexNDArray elements.
-    #         """
-    #
-    #         return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
-    #             Pointer(to=self),
-    #             dimension=0,
-    #         )
-    #
-    #     def __reversed__(
-    #         mut self,
-    #     ) raises -> _ComplexNDArrayIter[
-    #         origin_of(self), Self.cdtype, forward=False
-    #     ]:
-    #         """
-    #         Iterates backwards over elements of the ComplexNDArray, returning
-    #         copied value.
-    #
-    #         Returns:
-    #             A reversed iterator of NDArray elements.
-    #         """
-    #
-    #         return _ComplexNDArrayIter[origin_of(self), Self.cdtype, forward=False](
-    #             Pointer(to=self),
-    #             dimension=0,
-    #         )
-    #
+    # def __iter__(
+    #     mut self,
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     """
+    #     Iterates over elements of the ComplexNDArray and return sub-arrays as view.
+
+    #     Returns:
+    #         An iterator of ComplexNDArray elements.
+    #     """
+
+    #     return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
+    #         Pointer(to=self),
+    #         dimension=0,
+    #     )
+
+    # def __reversed__(
+    #     mut self,
+    # ) raises -> _ComplexNDArrayIter[
+    #     origin_of(self), Self.cdtype, forward=False
+    # ]:
+    #     """
+    #     Iterates backwards over elements of the ComplexNDArray, returning
+    #     copied value.
+
+    #     Returns:
+    #         A reversed iterator of NDArray elements.
+    #     """
+
+    #     return _ComplexNDArrayIter[origin_of(self), Self.cdtype, forward=False](
+    #         Pointer(to=self),
+    #         dimension=0,
+    #     )
+
     def itemset(mut self, index: Int, item: ComplexSIMD[Self.cdtype]) raises:
         """Sets the scalar at the given coordinate.
 
@@ -4297,6 +4297,16 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self._re.unsafe_store[width=width](index, val.re)
         self._im.unsafe_store[width=width](index, val.im)
 
+    # def unsafe_ptr(
+    #     ref self, part: String = "re"
+    # ) raises -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
+    #     if part == "re":
+    #         return self._re.unsafe_ptr()
+    #     elif part == "im":
+    #         return self._im.unsafe_ptr()
+    #     else:
+    #         raise Error("part must be either 're' or 'im' in unsafe_ptr")
+
     def to_numpy(self) raises -> PythonObject:
         var np = Python.import_module("numpy")
         var builtins = Python.import_module("builtins")
@@ -4304,6 +4314,35 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var im_np = self._im.to_numpy()
         var imag_unit = builtins.complex(0, 1)
         return re_np + im_np * imag_unit
+
+    # def iter_over_dimension(
+    #     read self, dimension: Int = 0
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     var normalized_dim = dimension
+    #     if normalized_dim < 0:
+    #         normalized_dim += self.ndim
+    #     if (normalized_dim >= self.ndim) or (normalized_dim < 0):
+    #         raise Error(
+    #             String(
+    #                 "\nError in `ComplexNDArray.iter_over_dimension()`: "
+    #                 "Axis ({}) is not in valid range [{}, {})."
+    #             ).format(dimension, -self.ndim, self.ndim)
+    #         )
+    #     return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
+    #         a=Pointer(to=self), dimension=normalized_dim
+    #     )
+
+    # def iter_along_axis(
+    #     read self, axis: Int = 0
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     return self.iter_over_dimension(axis)
+
+    # def nditer(
+    #     read self,
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     if self.ndim == 0:
+    #         raise Error("nditer is undefined for 0D ComplexNDArray.")
+    #     return self.iter_over_dimension(0)
 
     def argsort(self) raises -> NDArray[DType.int]:
         return self.argsort(axis=-1)
@@ -4412,6 +4451,102 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     ),
                 )
         return result^
+
+    # def std[
+    #     returned_dtype: DType = DType.float64
+    # ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+    #     var v = self.variance[returned_dtype](ddof=ddof)
+    #     return sqrt(Scalar[returned_dtype](v))
+
+    # def std[
+    #     returned_dtype: DType = DType.float64
+    # ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+    #     return misc.sqrt[returned_dtype](
+    #         self.variance[returned_dtype](axis, ddof)
+    #     )
+
+    # def variance[
+    #     returned_dtype: DType = DType.float64
+    # ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+    #     if self.size == 0:
+    #         raise Error("variance is undefined for an empty ComplexNDArray.")
+    #     if ddof < 0:
+    #         raise Error("ddof must be non-negative in ComplexNDArray.variance.")
+    #     var denom = self.size - ddof
+    #     if denom <= 0:
+    #         raise Error(
+    #             String(
+    #                 "ddof={} is too large for size {}. Need size - ddof > 0."
+    #             ).format(ddof, self.size)
+    #         )
+
+    #     var sum_re = Scalar[returned_dtype](0)
+    #     var sum_im = Scalar[returned_dtype](0)
+    #     for i in range(self.size):
+    #         var z = self._flat_load(i)
+    #         sum_re += Scalar[returned_dtype](z.re)
+    #         sum_im += Scalar[returned_dtype](z.im)
+
+    #     var n = Scalar[returned_dtype](self.size)
+    #     var mean_re = sum_re / n
+    #     var mean_im = sum_im / n
+
+    #     var acc = Scalar[returned_dtype](0)
+    #     for i in range(self.size):
+    #         var z = self._flat_load(i)
+    #         var dr = Scalar[returned_dtype](z.re) - mean_re
+    #         var di = Scalar[returned_dtype](z.im) - mean_im
+    #         acc += dr * dr + di * di
+
+    #     return acc / Scalar[returned_dtype](denom)
+
+    # def variance[
+    #     returned_dtype: DType = DType.float64
+    # ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+    #     if ddof < 0:
+    #         raise Error("ddof must be non-negative in ComplexNDArray.variance.")
+
+    #     var normalized_axis = self._normalize_axis(axis)
+    #     var axes = self._permute_axis_to_last(normalized_axis)
+    #     var transposed = self.T(axes)
+    #     var axis_len = self.shape[normalized_axis]
+    #     var denom = axis_len - ddof
+    #     if denom <= 0:
+    #         raise Error(
+    #             String(
+    #                 "ddof={} is too large for axis length {}. Need n - ddof"
+    #                 " > 0."
+    #             ).format(ddof, axis_len)
+    #         )
+
+    #     var outer = self.size // axis_len
+    #     var out_shape = self.shape.pop(normalized_axis)
+    #     var result = NDArray[returned_dtype](out_shape)
+
+    #     for o in range(outer):
+    #         var base = o * axis_len
+    #         var sum_re = Scalar[returned_dtype](0)
+    #         var sum_im = Scalar[returned_dtype](0)
+
+    #         for k in range(axis_len):
+    #             var z = transposed._flat_load(base + k)
+    #             sum_re += Scalar[returned_dtype](z.re)
+    #             sum_im += Scalar[returned_dtype](z.im)
+
+    #         var n = Scalar[returned_dtype](axis_len)
+    #         var mean_re = sum_re / n
+    #         var mean_im = sum_im / n
+
+    #         var acc = Scalar[returned_dtype](0)
+    #         for k in range(axis_len):
+    #             var z = transposed._flat_load(base + k)
+    #             var dr = Scalar[returned_dtype](z.re) - mean_re
+    #             var di = Scalar[returned_dtype](z.im) - mean_im
+    #             acc += dr * dr + di * di
+
+    #         result._buf.ptr[o] = acc / Scalar[returned_dtype](denom)
+
+    #     return result^
 
     def num_elements(self) -> Int:
         """

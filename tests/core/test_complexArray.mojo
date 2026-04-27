@@ -16,12 +16,12 @@ def test_complex_array_init() raises:
     assert_almost_equal(c1.item(0).im, 2.0, "init failed")
 
 
-def test_complex_array_itemset_list() raises:
+def test_complex_array_itemset() raises:
     """Test itemset with List[Int] coordinates."""
     var c1 = ComplexNDArray[cf32](Shape(3, 3))
-    c1.itemset(List(0, 0), ComplexSIMD[cf32](1.0, 2.0))
-    c1.itemset(List(1, 1), ComplexSIMD[cf32](3.0, 4.0))
-    c1.itemset(List(2, 2), ComplexSIMD[cf32](5.0, 6.0))
+    c1.itemset([0, 0], ComplexSIMD[cf32](1.0, 2.0))
+    c1.itemset([1, 1], ComplexSIMD[cf32](3.0, 4.0))
+    c1.itemset([2, 2], ComplexSIMD[cf32](5.0, 6.0))
     assert_almost_equal(c1.item(0, 0).re, 1.0, "itemset List failed")
     assert_almost_equal(c1.item(0, 0).im, 2.0, "itemset List failed")
     assert_almost_equal(c1.item(1, 1).re, 3.0, "itemset List failed")
@@ -43,7 +43,7 @@ def test_complex_array_itemset_negative_index() raises:
     """Test itemset with negative indices."""
     var c1 = ComplexNDArray[cf32](Shape(3, 3))
     c1.itemset(-1, ComplexSIMD[cf32](7.0, 8.0))
-    c1.itemset(List(-1, -1), ComplexSIMD[cf32](9.0, 10.0))
+    c1.itemset([-1, -1], ComplexSIMD[cf32](9.0, 10.0))
     assert_almost_equal(c1.item(2, 2).re, 7.0, "negative index failed")
     assert_almost_equal(c1.item(2, 2).im, 8.0, "negative index failed")
     assert_almost_equal(c1.item(2, 2).re, 9.0, "negative index List failed")

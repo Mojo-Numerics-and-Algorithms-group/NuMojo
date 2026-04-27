@@ -3647,6 +3647,27 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         return ComplexSIMD[Self.cdtype](prod_re, prod_im)
 
+    def prod(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+        for o in range(outer):
+            var acc_re = Scalar[Self.dtype](1)
+            var acc_im = Scalar[Self.dtype](0)
+            var base = o * axis_len
+            for k in range(axis_len):
+                var a = transposed._flat_load(base + k)
+                var new_re = acc_re * a.re - acc_im * a.im
+                var new_im = acc_re * a.im + acc_im * a.re
+                acc_re = new_re
+                acc_im = new_im
+            result._flat_store(o, ComplexSIMD[Self.cdtype](acc_re, acc_im))
+        return result^
+
     def mean(self) raises -> ComplexSIMD[Self.cdtype]:
         """
         Mean (average) of all complex array elements.
@@ -3911,6 +3932,29 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             )
             result._flat_store(i, cum)
         return result^
+
+    def cumprod(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var inv_axes = self._inverse_permutation(axes)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var transposed_result = Self(transposed.shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var acc_re = Scalar[Self.dtype](1)
+            var acc_im = Scalar[Self.dtype](0)
+            for k in range(axis_len):
+                var a = transposed._flat_load(base + k)
+                var new_re = acc_re * a.re - acc_im * a.im
+                var new_im = acc_re * a.im + acc_im * a.re
+                acc_re = new_re
+                acc_im = new_im
+                transposed_result._flat_store(
+                    base + k, ComplexSIMD[Self.cdtype](acc_re, acc_im)
+                )
+        return transposed_result.T(inv_axes)
 
     # ===-------------------------------------------------------------------===#
     # Array Manipulation Methods

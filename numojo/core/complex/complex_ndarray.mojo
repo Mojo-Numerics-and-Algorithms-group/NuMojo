@@ -854,12 +854,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return result^
         else:
             # F layout
-            self[Self.dtype]._re._copy_first_axis_slice(
-                self._re, norm, result._re
-            )
-            self[Self.dtype]._im._copy_first_axis_slice(
-                self._im, norm, result._im
-            )
+            self._re._copy_first_axis_slice(self._re, norm, result._re)
+            self._im._copy_first_axis_slice(self._im, norm, result._im)
             return result^
 
     def __getitem__(self, var *slices: Slice) raises -> Self:
@@ -1853,8 +1849,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return
 
         # F order
-        self[Self.dtype]._re._write_first_axis_slice(self._re, norm, val._re)
-        self[Self.dtype]._im._write_first_axis_slice(self._im, norm, val._im)
+        self._re._write_first_axis_slice(self._re, norm, val._re)
+        self._im._write_first_axis_slice(self._im, norm, val._im)
 
     def __setitem__(
         mut self, var index: Item, val: ComplexSIMD[Self.cdtype]
@@ -1916,9 +1912,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self._im._buf.ptr.store(idx, val.im)
 
     def __setitem__(
-        mut self,
-        mask: ComplexNDArray[Self.cdtype],
-        value: ComplexSIMD[Self.cdtype],
+        mut self, mask: NDArray[DType.bool], value: ComplexSIMD[Self.cdtype]
     ) raises:
         """
         Set the value of the array at the indices where the mask is true.
@@ -1937,11 +1931,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        for i in range(mask.size):
-            if mask._re._buf.ptr.load[width=1](i):
-                self._re._buf.ptr.store(i, value.re)
-            if mask._im._buf.ptr.load[width=1](i):
-                self._im._buf.ptr.store(i, value.im)
+        var mask_c = mask.contiguous()
+        for i in range(mask_c.size):
+            if mask_c._buf.ptr.load[width=1](i):
+                self.itemset(i, value)
 
     def __setitem__(
         mut self, var *slices: Slice, val: ComplexNDArray[Self.cdtype]
@@ -2069,7 +2062,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     ## compiler doesn't accept this.
     def __setitem__(
-        self, var *slices: Variant[Slice, Int], val: ComplexNDArray[Self.cdtype]
+        mut self,
+        var *slices: Variant[Slice, Int],
+        val: ComplexNDArray[Self.cdtype],
     ) raises:
         """
         Get items by a series of either slices or integers.
@@ -2109,7 +2104,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         # self.__setitem__(slices=slice_list, val=val)
         self[slice_list^] = val
 
-    def __setitem__(self, index: NDArray[DType.int], val: Self) raises:
+    def __setitem__(mut self, index: NDArray[DType.int], val: Self) raises:
         """
         Returns the items of the ComplexNDArray from an array of indices.
 
@@ -2126,9 +2121,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     # TODO: implement itemset().
     def __setitem__(
-        mut self,
-        mask: ComplexNDArray[Self.cdtype],
-        val: ComplexNDArray[Self.cdtype],
+        mut self, mask: NDArray[DType.bool], val: ComplexNDArray[Self.cdtype]
     ) raises:
         """
         Set the value of the ComplexNDArray at the indices where the mask is true.
@@ -2141,11 +2134,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             )
             raise Error(message)
 
-        for i in range(mask.size):
-            if mask._re._buf.ptr.load(i):
-                self._re._buf.ptr.store(i, val._re._buf.ptr.load(i))
-            if mask._im._buf.ptr.load(i):
-                self._im._buf.ptr.store(i, val._im._buf.ptr.load(i))
+        var mask_c = mask.contiguous()
+        for i in range(mask_c.size):
+            if mask_c._buf.ptr.load[width=1](i):
+                self.itemset(i, val.item(i))
 
     def __pos__(self) raises -> Self:
         """

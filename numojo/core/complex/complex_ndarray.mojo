@@ -3560,8 +3560,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         for i in range(self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
+            var z = self._flat_load(i)
+            var re_val = z.re
+            var im_val = z.im
             if (re_val == 0.0) and (im_val == 0.0):
                 return False
         return True
@@ -3585,8 +3586,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         for i in range(self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
+            var z = self._flat_load(i)
+            var re_val = z.re
+            var im_val = z.im
             if (re_val != 0.0) or (im_val != 0.0):
                 return True
         return False
@@ -3608,9 +3610,11 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var sum_re = Scalar[Self.dtype](0)
         var sum_im = Scalar[Self.dtype](0)
 
+        # TODO: could vectorize this!
         for i in range(self.size):
-            sum_re += self._re._buf.ptr.load(i)
-            sum_im += self._im._buf.ptr.load(i)
+            var z = self._flat_load(i)
+            sum_re += z.re
+            sum_im += z.im
 
         return ComplexSIMD[Self.cdtype](sum_re, sum_im)
 
@@ -3632,10 +3636,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var prod_im = Scalar[Self.dtype](0)
 
         for i in range(self.size):
-            var a_re = self._re._buf.ptr.load(i)
-            var a_im = self._im._buf.ptr.load(i)
-            var new_re = prod_re * a_re - prod_im * a_im
-            var new_im = prod_re * a_im + prod_im * a_re
+            var a = self._flat_load(i)
+            var new_re = prod_re * a.re - prod_im * a.im
+            var new_im = prod_re * a.im + prod_im * a.re
             prod_re = new_re
             prod_im = new_im
 
@@ -3679,22 +3682,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find max of empty array")
 
-        var max_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
-        var max_idx = 0
-
+        var best = self._flat_load(0)
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq > max_mag_sq:
-                max_mag_sq = mag_sq
-                max_idx = i
-
-        return ComplexSIMD[Self.cdtype](
-            self._re._buf.ptr.load(max_idx), self._im._buf.ptr.load(max_idx)
-        )
+            var z = self._flat_load(i)
+            if self._lex_greater(z, best):
+                best = z
+        return best
 
     def min(self) raises -> ComplexSIMD[Self.cdtype]:
         """
@@ -3716,22 +3709,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find min of empty array")
 
-        var min_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
-        var min_idx = 0
-
+        var best = self._flat_load(0)
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq < min_mag_sq:
-                min_mag_sq = mag_sq
-                min_idx = i
-
-        return ComplexSIMD[Self.cdtype](
-            self._re._buf.ptr.load(min_idx), self._im._buf.ptr.load(min_idx)
-        )
+            var z = self._flat_load(i)
+            if self._lex_less(z, best):
+                best = z
+        return best
 
     def argmax(self) raises -> Int:
         """
@@ -3753,17 +3736,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find argmax of empty array")
 
-        var max_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
         var max_idx = 0
 
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq > max_mag_sq:
-                max_mag_sq = mag_sq
+            if self._lex_greater(self._flat_load(i), self._flat_load(max_idx)):
                 max_idx = i
 
         return max_idx
@@ -3788,17 +3764,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find argmin of empty array")
 
-        var min_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
         var min_idx = 0
 
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq < min_mag_sq:
-                min_mag_sq = mag_sq
+            if self._lex_less(self._flat_load(i), self._flat_load(min_idx)):
                 min_idx = i
 
         return min_idx
@@ -3820,17 +3789,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Notes:
             For array [a, b, c, d], returns [a, a+b, a+b+c, a+b+c+d].
         """
-        var result = Self(self.shape)
-        var cum_re = Scalar[Self.dtype](0)
-        var cum_im = Scalar[Self.dtype](0)
-
-        for i in range(self.size):
-            cum_re += self._re._buf.ptr.load(i)
-            cum_im += self._im._buf.ptr.load(i)
-            result._re._buf.ptr.store(i, cum_re)
-            result._im._buf.ptr.store(i, cum_im)
-
-        return result^
+        return Self(self._re.cumsum(), self._im.cumsum())
 
     def cumprod(self) raises -> Self:
         """
@@ -3850,19 +3809,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             For array [a, b, c, d], returns [a, a*b, a*b*c, a*b*c*d].
         """
         var result = Self(self.shape)
-        var cum_re = Scalar[Self.dtype](1)
-        var cum_im = Scalar[Self.dtype](0)
-
+        var cum = ComplexSIMD[Self.cdtype](1, 0)
         for i in range(self.size):
-            var a_re = self._re._buf.ptr.load(i)
-            var a_im = self._im._buf.ptr.load(i)
-            var new_re = cum_re * a_re - cum_im * a_im
-            var new_im = cum_re * a_im + cum_im * a_re
-            cum_re = new_re
-            cum_im = new_im
-            result._re._buf.ptr.store(i, cum_re)
-            result._im._buf.ptr.store(i, cum_im)
-
+            var a = self._flat_load(i)
+            cum = ComplexSIMD[Self.cdtype](
+                cum.re * a.re - cum.im * a.im, cum.re * a.im + cum.im * a.re
+            )
+            result._flat_store(i, cum)
         return result^
 
     # ===-------------------------------------------------------------------===#
@@ -4172,11 +4125,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var result = List[ComplexSIMD[Self.cdtype]](capacity=self.size)
         for i in range(self.size):
-            result.append(
-                ComplexSIMD[Self.cdtype](
-                    self._re._buf.ptr.load(i), self._im._buf.ptr.load(i)
-                )
-            )
+            result.append(self._flat_load(i))
         return result^
 
     def num_elements(self) -> Int:

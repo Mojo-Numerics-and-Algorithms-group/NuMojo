@@ -3618,6 +3618,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         return ComplexSIMD[Self.cdtype](sum_re, sum_im)
 
+    def sum(self, axis: Int) raises -> Self:
+        return Self(self._re.sum(axis), self._im.sum(axis))
+
     def prod(self) raises -> ComplexSIMD[Self.cdtype]:
         """
         Product of all complex array elements.
@@ -3662,6 +3665,16 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var n = Scalar[Self.dtype](self.size)
         return ComplexSIMD[Self.cdtype](total.re / n, total.im / n)
 
+    def mean(self, axis: Int) raises -> Self:
+        var s = self.sum(axis)
+        var normalized_axis = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis < 0) or (normalized_axis >= self.ndim):
+            raise Error("Axis out of range in ComplexNDArray.mean(axis)")
+        var n = Scalar[Self.dtype](self.shape[normalized_axis])
+        return Self(s._re / n, s._im / n)
+
     def max(self) raises -> ComplexSIMD[Self.cdtype]:
         """
         Find the complex element with maximum magnitude.
@@ -3689,6 +3702,24 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 best = z
         return best
 
+    def max(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_greater(z, best):
+                    best = z
+            result._flat_store(o, best)
+        return result^
+
     def min(self) raises -> ComplexSIMD[Self.cdtype]:
         """
         Find the complex element with minimum magnitude.
@@ -3715,6 +3746,24 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             if self._lex_less(z, best):
                 best = z
         return best
+
+    def min(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_less(z, best):
+                    best = z
+            result._flat_store(o, best)
+        return result^
 
     def argmax(self) raises -> Int:
         """
@@ -3744,6 +3793,27 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         return max_idx
 
+    def argmax(self, axis: Int) raises -> NDArray[DType.int]:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = NDArray[DType.int](out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best_rel = 0
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_greater(z, best):
+                    best = z
+                    best_rel = k
+            result._buf.ptr[o] = Scalar[DType.int](best_rel)
+            # result.itemset(o, Scalar[DType.int](best_rel))
+        return result^
+
     def argmin(self) raises -> Int:
         """
         Return the index of the element with minimum magnitude.
@@ -3772,6 +3842,27 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         return min_idx
 
+    def argmin(self, axis: Int) raises -> NDArray[DType.int]:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = NDArray[DType.int](out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best_rel = 0
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_less(z, best):
+                    best = z
+                    best_rel = k
+            result._buf.ptr[o] = Scalar[DType.int](best_rel)
+            # result.itemset(o, Scalar[DType.int](best_rel))
+        return result^
+
     def cumsum(self) raises -> Self:
         """
         Cumulative sum of complex array elements.
@@ -3790,6 +3881,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             For array [a, b, c, d], returns [a, a+b, a+b+c, a+b+c+d].
         """
         return Self(self._re.cumsum(), self._im.cumsum())
+
+    def cumsum(self, axis: Int) raises -> Self:
+        return Self(self._re.cumsum(axis), self._im.cumsum(axis))
 
     def cumprod(self) raises -> Self:
         """

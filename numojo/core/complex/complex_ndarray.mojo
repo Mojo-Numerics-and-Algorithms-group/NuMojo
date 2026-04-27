@@ -32,8 +32,8 @@ import std.builtin.bool as builtin_bool
 import std.math as builtin_math
 from std.collections.optional import Optional
 from std.math import log10, sqrt
-from std.memory import memset_zero, memcpy
-from std.python import PythonObject
+from std.memory import memset_zero, memcpy, UnsafePointer
+from std.python import Python, PythonObject
 from std.sys import simd_width_of
 from std.utils import Variant
 
@@ -253,6 +253,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
+    # TODO: Remove VariadicList versions.
     @always_inline("nodebug")
     def __init__(
         out self,
@@ -269,7 +270,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = nm.ComplexNDArray[cf32](VariadicList(2,3,4))
+            var A = nm.ComplexNDArray[cf32](2,3,4)
             ```
 
         Notes:

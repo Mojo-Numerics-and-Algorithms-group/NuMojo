@@ -449,13 +449,28 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.flags = take.flags
         self.print_options = take.print_options
 
+    @always_inline("nodebug")
+    def __del__(deinit self):
+        """Destroys array buffers."""
+        _ = self._re^
+        _ = self._im^
+
+    def deep_copy(self) raises -> Self:
+        """
+        Create a deep copy of this ComplexNDArray.
+        """
+        return Self(
+            re=self._re.deep_copy(),
+            im=self._im.deep_copy(),
+        )
+
     def view(mut self) raises -> Self:
         """
         Create a non-owning view of the current ComplexNDArray.
 
         Returns:
             A new ComplexNDArray instance that shares the data buffers with
-            `self` and does not allocate new memory
+            `self` and does not allocate new memory.
 
         Examples:
             ```mojo
@@ -468,6 +483,79 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             re=self._re.view(),
             im=self._im.view(),
         )
+
+    @always_inline("nodebug")
+    def _flat_offset(self, flat_index: Int) -> Int:
+        """
+        Return backing-buffer offset for logical C-order flat index.
+        """
+        var remainder = flat_index
+        var offset = self._re.offset
+        for dim in range(self.ndim - 1, -1, -1):
+            var dim_size = Int(self.shape.unsafe_load(dim))
+            var coord = remainder % dim_size
+            remainder = remainder // dim_size
+            offset += coord * Int(self.strides.unsafe_load(dim))
+        return offset
+
+    @always_inline("nodebug")
+    def _flat_load(self, flat_index: Int) -> ComplexSIMD[Self.cdtype]:
+        """Stride-safe logical flat load."""
+        var off = self._flat_offset(flat_index)
+        return ComplexSIMD[Self.cdtype](
+            self._re._buf.ptr[off], self._im._buf.ptr[off]
+        )
+
+    @always_inline("nodebug")
+    def _flat_store(mut self, flat_index: Int, value: ComplexSIMD[Self.cdtype]):
+        """Stride-safe logical flat store."""
+        var off = self._flat_offset(flat_index)
+        self._re._buf.ptr[off] = value.re
+        self._im._buf.ptr[off] = value.im
+
+    @always_inline("nodebug")
+    def _lex_less(
+        self, a: ComplexSIMD[Self.cdtype], b: ComplexSIMD[Self.cdtype]
+    ) -> Bool:
+        return (a.re < b.re) or ((a.re == b.re) and (a.im < b.im))
+
+    @always_inline("nodebug")
+    def _lex_greater(
+        self, a: ComplexSIMD[Self.cdtype], b: ComplexSIMD[Self.cdtype]
+    ) -> Bool:
+        return (a.re > b.re) or ((a.re == b.re) and (a.im > b.im))
+
+    @always_inline("nodebug")
+    def _normalize_axis(self, axis: Int) raises -> Int:
+        var normalized_axis = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis < 0) or (normalized_axis >= self.ndim):
+            raise Error(
+                String("Axis {} is out of bounds for ndim {}.").format(
+                    axis, self.ndim
+                )
+            )
+        return normalized_axis
+
+    def _permute_axis_to_last(self, axis: Int) raises -> List[Int]:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = List[Int](capacity=self.ndim)
+        for i in range(self.ndim):
+            if i != normalized_axis:
+                axes.append(i)
+        axes.append(normalized_axis)
+        return axes^
+
+    def _inverse_permutation(self, axes: List[Int]) raises -> List[Int]:
+        if len(axes) != self.ndim:
+            raise Error("Invalid permutation length.")
+        var inv = List[Int](capacity=self.ndim)
+        for _ in range(self.ndim):
+            inv.append(0)
+        for i in range(self.ndim):
+            inv[axes[i]] = i
+        return inv^
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing

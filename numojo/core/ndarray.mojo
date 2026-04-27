@@ -2574,7 +2574,9 @@ struct NDArray[dtype: DType = DType.float64](
                             "For 1-D indexed assignment, value must have size"
                             " 1 or exactly {} elements; got shape {}."
                         ).format(index_c.size, val.shape),
-                        location="NDArray.__setitem__(index: NDArray, val: NDArray)",
+                        location=(
+                            "NDArray.__setitem__(index: NDArray, val: NDArray)"
+                        ),
                     )
                 )
 
@@ -2613,11 +2615,13 @@ struct NDArray[dtype: DType = DType.float64](
                 NumojoError(
                     category="shape",
                     message=String(
-                        "Invalid value shape {} for indexed assignment. Expected"
-                        " either {} (single slice broadcast) or [{}, ...] with"
-                        " tail shape {}."
+                        "Invalid value shape {} for indexed assignment."
+                        " Expected either {} (single slice broadcast) or [{},"
+                        " ...] with tail shape {}."
                     ).format(val.shape, tail_shape, index_c.size, tail_shape),
-                    location="NDArray.__setitem__(index: NDArray, val: NDArray)",
+                    location=(
+                        "NDArray.__setitem__(index: NDArray, val: NDArray)"
+                    ),
                 )
             )
 
@@ -2633,7 +2637,9 @@ struct NDArray[dtype: DType = DType.float64](
                             "Index out of range at position {}: got {}; valid"
                             " range is [{}, {})."
                         ).format(i, idx, -self.shape[0], self.shape[0]),
-                        location="NDArray.__setitem__(index: NDArray, val: NDArray)",
+                        location=(
+                            "NDArray.__setitem__(index: NDArray, val: NDArray)"
+                        ),
                     )
                 )
             if idx < 0:
@@ -2724,8 +2730,8 @@ struct NDArray[dtype: DType = DType.float64](
             NumojoError(
                 category="shape",
                 message=String(
-                    "Invalid value shape {} for boolean mask assignment with"
-                    " {} selected elements. Expected value shape {} (elementwise),"
+                    "Invalid value shape {} for boolean mask assignment with {}"
+                    " selected elements. Expected value shape {} (elementwise),"
                     " a scalar/size-1 array, or 1-D shape [{}]."
                 ).format(val.shape, true_count, self.shape, true_count),
                 location=(

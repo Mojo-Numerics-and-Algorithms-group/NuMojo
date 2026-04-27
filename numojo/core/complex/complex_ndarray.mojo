@@ -4266,6 +4266,114 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             result.append(self._flat_load(i))
         return result^
 
+    def argsort(self) raises -> NDArray[DType.int]:
+        return self.argsort(axis=-1)
+
+    def argsort(self, axis: Int) raises -> NDArray[DType.int]:
+        if self.ndim == 0:
+            var out = NDArray[DType.int](Shape())
+            out._buf.ptr[] = 0
+            return out^
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var inv_axes = self._inverse_permutation(axes)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var idx_t = NDArray[DType.int](transposed.shape)
+
+        for o in range(outer):
+            var base = o * axis_len
+            var idxs = List[Int](capacity=axis_len)
+            for k in range(axis_len):
+                idxs.append(k)
+            for i in range(1, axis_len):
+                var key = idxs[i]
+                var j = i - 1
+                while j >= 0 and self._lex_greater(
+                    transposed._flat_load(base + idxs[j]),
+                    transposed._flat_load(base + key),
+                ):
+                    idxs[j + 1] = idxs[j]
+                    j -= 1
+                idxs[j + 1] = key
+            for k in range(axis_len):
+                # idx_t._buf.ptr[base + k] = idxs[k]
+                idx_t.itemset(base + k, Scalar[DType.int](idxs[k]))
+
+        return idx_t.T(inv_axes)
+
+    def sort(mut self, axis: Int = -1, stable: Bool = False) raises:
+        _ = stable
+        if self.ndim == 0:
+            return
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var inv_axes = self._inverse_permutation(axes)
+        var transposed = self.T(axes)
+        var idx_t = self.argsort(normalized_axis).T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var sorted_t = Self(transposed.shape)
+
+        for o in range(outer):
+            var base = o * axis_len
+            for k in range(axis_len):
+                var src_rel = Int(idx_t.load(base + k))
+                sorted_t._flat_store(
+                    base + k, transposed._flat_load(base + src_rel)
+                )
+
+        var sorted = sorted_t.T(inv_axes)
+        self = sorted^
+
+    def median(self) raises -> ComplexSIMD[Self.cdtype]:
+        if self.size == 0:
+            raise Error("Cannot compute median of empty ComplexNDArray.")
+        var a = self.flatten("C")
+        a.sort(axis=0)
+        if self.size % 2 == 1:
+            return a._flat_load(self.size // 2)
+        var left = a._flat_load(self.size // 2 - 1)
+        var right = a._flat_load(self.size // 2)
+        return ComplexSIMD[Self.cdtype](
+            (left.re + right.re) / 2, (left.im + right.im) / 2
+        )
+
+    def median(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+
+        for o in range(outer):
+            var base = o * axis_len
+            var vals = List[ComplexSIMD[Self.cdtype]](capacity=axis_len)
+            for k in range(axis_len):
+                vals.append(transposed._flat_load(base + k))
+            for i in range(1, axis_len):
+                var key = vals[i]
+                var j = i - 1
+                while j >= 0 and self._lex_greater(vals[j], key):
+                    vals[j + 1] = vals[j]
+                    j -= 1
+                vals[j + 1] = key
+            if axis_len % 2 == 1:
+                result._flat_store(o, vals[axis_len // 2])
+            else:
+                var left = vals[axis_len // 2 - 1]
+                var right = vals[axis_len // 2]
+                result._flat_store(
+                    o,
+                    ComplexSIMD[Self.cdtype](
+                        (left.re + right.re) / 2, (left.im + right.im) / 2
+                    ),
+                )
+        return result^
+
     def num_elements(self) -> Int:
         """
         Return the total number of elements in the array.

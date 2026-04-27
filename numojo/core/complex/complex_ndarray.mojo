@@ -3281,39 +3281,39 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         result._im.flags = self._im.flags
         return result^
 
-    def __iter__(
-        mut self,
-    ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
-        """
-        Iterates over elements of the ComplexNDArray and return sub-arrays as view.
-
-        Returns:
-            An iterator of ComplexNDArray elements.
-        """
-
-        return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
-            Pointer(to=self),
-            dimension=0,
-        )
-
-    def __reversed__(
-        mut self,
-    ) raises -> _ComplexNDArrayIter[
-        origin_of(self), Self.cdtype, forward=False
-    ]:
-        """
-        Iterates backwards over elements of the ComplexNDArray, returning
-        copied value.
-
-        Returns:
-            A reversed iterator of NDArray elements.
-        """
-
-        return _ComplexNDArrayIter[origin_of(self), Self.cdtype, forward=False](
-            Pointer(to=self),
-            dimension=0,
-        )
-
+    #     def __iter__(
+    #         mut self,
+    #     ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #         """
+    #         Iterates over elements of the ComplexNDArray and return sub-arrays as view.
+    #
+    #         Returns:
+    #             An iterator of ComplexNDArray elements.
+    #         """
+    #
+    #         return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
+    #             Pointer(to=self),
+    #             dimension=0,
+    #         )
+    #
+    #     def __reversed__(
+    #         mut self,
+    #     ) raises -> _ComplexNDArrayIter[
+    #         origin_of(self), Self.cdtype, forward=False
+    #     ]:
+    #         """
+    #         Iterates backwards over elements of the ComplexNDArray, returning
+    #         copied value.
+    #
+    #         Returns:
+    #             A reversed iterator of NDArray elements.
+    #         """
+    #
+    #         return _ComplexNDArrayIter[origin_of(self), Self.cdtype, forward=False](
+    #             Pointer(to=self),
+    #             dimension=0,
+    #         )
+    #
     def itemset(mut self, index: Int, item: ComplexSIMD[Self.cdtype]) raises:
         """Sets the scalar at the given coordinate.
 
@@ -4458,190 +4458,190 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = NDArrayStrides(shape, order=order)
 
 
-struct _ComplexNDArrayIter[
-    is_mutable: Bool,
-    //,
-    origin: Origin[mut=is_mutable],
-    cdtype: ComplexDType,
-    forward: Bool = True,
-](Copyable, Movable):
-    # TODO:
-    # Return a view instead of copy where possible
-    # (when Bufferable is supported).
-    """
-    An iterator yielding `ndim-1` array slices over the given dimension.
-    It is the default iterator of the `ComplexNDArray.__iter__() method and for loops.
-    It can also be constructed using the `ComplexNDArray.iter_over_dimension()` method.
-    It trys to create a view where possible.
-
-    Parameters:
-        is_mutable: Whether the iterator allows mutation of the underlying data.
-        origin: The lifetime of the underlying NDArray data.
-        cdtype: The complex data type of the item.
-        forward: The iteration direction. `False` is backwards.
-    """
-    comptime dtype: DType = Self.cdtype.dtype
-    """The equivalent DType of the ComplexDType."""
-
-    # FIELDS
-    var index: Int
-    var _re_buf: DataContainer[Self.dtype]
-    var _im_buf: DataContainer[Self.dtype]
-    var offset: Int
-    """Offset of the first element in the data buffer."""
-    var dimension: Int
-    var length: Int
-    var shape: NDArrayShape
-    var strides: NDArrayStrides
-    """Strides of array or view. It is not necessarily compatible with shape."""
-    var ndim: Int
-    var size_of_item: Int
-
-    def __init__(
-        out self,
-        a: Pointer[ComplexNDArray[Self.cdtype], Self.origin],
-        dimension: Int,
-    ) raises:
-        """
-        Initialize the iterator.
-
-        Args:
-            a: The array
-            dimension: Dimension to iterate over.
-        """
-
-        if dimension < 0 or dimension >= a[].ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Axis {} out of valid range [0, {}). Valid axes: 0..{}."
-                        " Use {} for last axis of shape {}."
-                    ).format(
-                        dimension,
-                        a[].ndim,
-                        a[].ndim - 1,
-                        a[].ndim - 1,
-                        a[].shape,
-                    ),
-                    location="_ComplexNDArrayIter.__init__",
-                )
-            )
-
-        self._re_buf = a[]._re._buf.copy()
-        self._im_buf = a[]._im._buf.copy()
-        self.offset = a[]._re.offset
-        self.dimension = dimension
-        self.shape = a[].shape
-        self.strides = a[].strides
-        self.ndim = a[].ndim
-        self.length = a[].shape[dimension]
-        self.size_of_item = a[].size // a[].shape[dimension]
-        # Status of the iterator
-        self.index = 0 if Self.forward else a[].shape[dimension] - 1
-
-    def __iter__(self) -> Self:
-        return self.copy()
-
-    def __next__(mut self) raises -> ComplexNDArray[Self.cdtype]:
-        var result = ComplexNDArray[Self.cdtype](self.shape.pop(self.dimension))
-        var current_index = self.index
-
-        comptime if Self.forward:
-            self.index += 1
-        else:
-            self.index -= 1
-
-        for offset in range(self.size_of_item):
-            var remainder = offset
-            var item: Item = Item(ndim=self.ndim)
-
-            for i in range(self.ndim - 1, -1, -1):
-                if i != self.dimension:
-                    (item._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder % self.shape[i])
-                    )
-                    remainder = remainder // self.shape[i]
-                else:
-                    (item._buf.ptr + self.dimension).init_pointee_copy(
-                        Scalar[DType.int](current_index)
-                    )
-
-            var idx = self.offset + IndexMethods.get_1d_index(
-                item, self.strides
-            )
-            result._re._buf.ptr[offset] = self._re_buf[idx]
-            result._im._buf.ptr[offset] = self._im_buf[idx]
-        return result^
-
-    @always_inline
-    def __has_next__(self) -> Bool:
-        comptime if Self.forward:
-            return self.index < self.length
-        else:
-            return self.index >= 0
-
-    def __len__(self) -> Int:
-        comptime if Self.forward:
-            return self.length - self.index
-        else:
-            return self.index
-
-    def ith(self, index: Int) raises -> ComplexNDArray[Self.cdtype]:
-        """
-        Gets the i-th array of the iterator.
-
-        Args:
-            index: The index of the item. It must be non-negative.
-
-        Returns:
-            The i-th `ndim-1`-D array of the iterator.
-        """
-
-        if (index >= self.length) or (index < 0):
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Iterator index {} out of range [0, {}). Use ith(i)"
-                        " with 0 <= i < {} or iterate via for-loop."
-                    ).format(index, self.length, self.length),
-                    location="_ComplexNDArrayIter.ith",
-                )
-            )
-
-        if self.ndim > 1:
-            var result = ComplexNDArray[Self.cdtype](
-                self.shape.pop(self.dimension)
-            )
-
-            for offset in range(self.size_of_item):
-                var remainder = offset
-                var item: Item = Item(ndim=self.ndim)
-
-                for i in range(self.ndim - 1, -1, -1):
-                    if i != self.dimension:
-                        (item._buf.ptr + i).init_pointee_copy(
-                            Scalar[DType.int](remainder % self.shape[i])
-                        )
-                        remainder = remainder // self.shape[i]
-                    else:
-                        (item._buf.ptr + self.dimension).init_pointee_copy(
-                            Scalar[DType.int](index)
-                        )
-
-                var idx = self.offset + IndexMethods.get_1d_index(
-                    item, self.strides
-                )
-                result._re._buf.ptr[offset] = self._re_buf[idx]
-                result._im._buf.ptr[offset] = self._im_buf[idx]
-            return result^
-
-        else:  # 0-D array
-            var result = numojo.creation._0darray[Self.cdtype](
-                ComplexSIMD[Self.cdtype](
-                    self._re_buf.ptr[self.offset + index],
-                    self._im_buf.ptr[self.offset + index],
-                )
-            )
-            return result^
+# struct _ComplexNDArrayIter[
+#     is_mutable: Bool,
+#     //,
+#     origin: Origin[mut=is_mutable],
+#     cdtype: ComplexDType,
+#     forward: Bool = True,
+# ](Copyable, Movable):
+#     # TODO:
+#     # Return a view instead of copy where possible
+#     # (when Bufferable is supported).
+#     """
+#     An iterator yielding `ndim-1` array slices over the given dimension.
+#     It is the default iterator of the `ComplexNDArray.__iter__() method and for loops.
+#     It can also be constructed using the `ComplexNDArray.iter_over_dimension()` method.
+#     It trys to create a view where possible.
+#
+#     Parameters:
+#         is_mutable: Whether the iterator allows mutation of the underlying data.
+#         origin: The lifetime of the underlying NDArray data.
+#         cdtype: The complex data type of the item.
+#         forward: The iteration direction. `False` is backwards.
+#     """
+#     comptime dtype: DType = Self.cdtype.dtype
+#     """The equivalent DType of the ComplexDType."""
+#
+#     # FIELDS
+#     var index: Int
+#     var _re_buf: DataContainer[Self.dtype]
+#     var _im_buf: DataContainer[Self.dtype]
+#     var offset: Int
+#     """Offset of the first element in the data buffer."""
+#     var dimension: Int
+#     var length: Int
+#     var shape: NDArrayShape
+#     var strides: NDArrayStrides
+#     """Strides of array or view. It is not necessarily compatible with shape."""
+#     var ndim: Int
+#     var size_of_item: Int
+#
+#     def __init__(
+#         out self,
+#         a: Pointer[ComplexNDArray[Self.cdtype], Self.origin],
+#         dimension: Int,
+#     ) raises:
+#         """
+#         Initialize the iterator.
+#
+#         Args:
+#             a: The array
+#             dimension: Dimension to iterate over.
+#         """
+#
+#         if dimension < 0 or dimension >= a[].ndim:
+#             raise Error(
+#                 NumojoError(
+#                     category="index",
+#                     message=String(
+#                         "Axis {} out of valid range [0, {}). Valid axes: 0..{}."
+#                         " Use {} for last axis of shape {}."
+#                     ).format(
+#                         dimension,
+#                         a[].ndim,
+#                         a[].ndim - 1,
+#                         a[].ndim - 1,
+#                         a[].shape,
+#                     ),
+#                     location="_ComplexNDArrayIter.__init__",
+#                 )
+#             )
+#
+#         self._re_buf = a[]._re._buf.copy()
+#         self._im_buf = a[]._im._buf.copy()
+#         self.offset = a[]._re.offset
+#         self.dimension = dimension
+#         self.shape = a[].shape
+#         self.strides = a[].strides
+#         self.ndim = a[].ndim
+#         self.length = a[].shape[dimension]
+#         self.size_of_item = a[].size // a[].shape[dimension]
+#         # Status of the iterator
+#         self.index = 0 if Self.forward else a[].shape[dimension] - 1
+#
+#     def __iter__(self) -> Self:
+#         return self.copy()
+#
+#     def __next__(mut self) raises -> ComplexNDArray[Self.cdtype]:
+#         var result = ComplexNDArray[Self.cdtype](self.shape.pop(self.dimension))
+#         var current_index = self.index
+#
+#         comptime if Self.forward:
+#             self.index += 1
+#         else:
+#             self.index -= 1
+#
+#         for offset in range(self.size_of_item):
+#             var remainder = offset
+#             var item: Item = Item(ndim=self.ndim)
+#
+#             for i in range(self.ndim - 1, -1, -1):
+#                 if i != self.dimension:
+#                     (item._buf.ptr + i).init_pointee_copy(
+#                         Scalar[DType.int](remainder % self.shape[i])
+#                     )
+#                     remainder = remainder // self.shape[i]
+#                 else:
+#                     (item._buf.ptr + self.dimension).init_pointee_copy(
+#                         Scalar[DType.int](current_index)
+#                     )
+#
+#             var idx = self.offset + IndexMethods.get_1d_index(
+#                 item, self.strides
+#             )
+#             result._re._buf.ptr[offset] = self._re_buf[idx]
+#             result._im._buf.ptr[offset] = self._im_buf[idx]
+#         return result^
+#
+#     @always_inline
+#     def __has_next__(self) -> Bool:
+#         comptime if Self.forward:
+#             return self.index < self.length
+#         else:
+#             return self.index >= 0
+#
+#     def __len__(self) -> Int:
+#         comptime if Self.forward:
+#             return self.length - self.index
+#         else:
+#             return self.index
+#
+#     def ith(self, index: Int) raises -> ComplexNDArray[Self.cdtype]:
+#         """
+#         Gets the i-th array of the iterator.
+#
+#         Args:
+#             index: The index of the item. It must be non-negative.
+#
+#         Returns:
+#             The i-th `ndim-1`-D array of the iterator.
+#         """
+#
+#         if (index >= self.length) or (index < 0):
+#             raise Error(
+#                 NumojoError(
+#                     category="index",
+#                     message=String(
+#                         "Iterator index {} out of range [0, {}). Use ith(i)"
+#                         " with 0 <= i < {} or iterate via for-loop."
+#                     ).format(index, self.length, self.length),
+#                     location="_ComplexNDArrayIter.ith",
+#                 )
+#             )
+#
+#         if self.ndim > 1:
+#             var result = ComplexNDArray[Self.cdtype](
+#                 self.shape.pop(self.dimension)
+#             )
+#
+#             for offset in range(self.size_of_item):
+#                 var remainder = offset
+#                 var item: Item = Item(ndim=self.ndim)
+#
+#                 for i in range(self.ndim - 1, -1, -1):
+#                     if i != self.dimension:
+#                         (item._buf.ptr + i).init_pointee_copy(
+#                             Scalar[DType.int](remainder % self.shape[i])
+#                         )
+#                         remainder = remainder // self.shape[i]
+#                     else:
+#                         (item._buf.ptr + self.dimension).init_pointee_copy(
+#                             Scalar[DType.int](index)
+#                         )
+#
+#                 var idx = self.offset + IndexMethods.get_1d_index(
+#                     item, self.strides
+#                 )
+#                 result._re._buf.ptr[offset] = self._re_buf[idx]
+#                 result._im._buf.ptr[offset] = self._im_buf[idx]
+#             return result^
+#
+#         else:  # 0-D array
+#             var result = numojo.creation._0darray[Self.cdtype](
+#                 ComplexSIMD[Self.cdtype](
+#                     self._re_buf.ptr[self.offset + index],
+#                     self._im_buf.ptr[self.offset + index],
+#                 )
+#             )
+#             return result^

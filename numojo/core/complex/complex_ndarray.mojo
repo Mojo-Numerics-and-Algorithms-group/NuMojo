@@ -451,21 +451,23 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     def view(mut self) raises -> Self:
         """
         Create a non-owning view of the current ComplexNDArray.
+
         Returns:
             A new ComplexNDArray instance that shares the data buffers with
-            `self` and does not allocate new memory.
-        Example:
+            `self` and does not allocate new memory
+
+        Examples:
             ```mojo
             import numojo as nm
             var arr = nm.ComplexNDArray[nm.cf32](nm.Shape(3, 4))
-            var v = arr.view()  # Create a view into arr
+            var v = arr.view()  # Create a view into arr.
             ```
         """
         return ComplexNDArray[Self.cdtype](
             re=self._re.view(),
             im=self._im.view(),
         )
-        
+
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
     # Getter dunders and other getter methods
@@ -3339,7 +3341,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
 
         return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
-            self,
+            Pointer(to=self),
             dimension=0,
         )
 
@@ -3357,7 +3359,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
 
         return _ComplexNDArrayIter[origin_of(self), Self.cdtype, forward=False](
-            self,
+            Pointer(to=self),
             dimension=0,
         )
 
@@ -4272,7 +4274,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
 
 struct _ComplexNDArrayIter[
-    origin: MutOrigin,
+    is_mutable: Bool,
+    //,
+    origin: Origin[mut=is_mutable],
     cdtype: ComplexDType,
     forward: Bool = True,
 ](Copyable, Movable):
@@ -4286,6 +4290,7 @@ struct _ComplexNDArrayIter[
     It trys to create a view where possible.
 
     Parameters:
+        is_mutable: Whether the iterator allows mutation of the underlying data.
         origin: The lifetime of the underlying NDArray data.
         cdtype: The complex data type of the item.
         forward: The iteration direction. `False` is backwards.
@@ -4295,8 +4300,10 @@ struct _ComplexNDArrayIter[
 
     # FIELDS
     var index: Int
-    var re_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
-    var im_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
+    var _re_buf: DataContainer[Self.dtype]
+    var _im_buf: DataContainer[Self.dtype]
+    var offset: Int
+    """Offset of the first element in the data buffer."""
     var dimension: Int
     var length: Int
     var shape: NDArrayShape
@@ -4306,7 +4313,9 @@ struct _ComplexNDArrayIter[
     var size_of_item: Int
 
     def __init__(
-        out self, read a: ComplexNDArray[Self.cdtype], read dimension: Int
+        out self,
+        a: Pointer[ComplexNDArray[Self.cdtype], Self.origin],
+        dimension: Int,
     ) raises:
         """
         Initialize the iterator.
@@ -4316,7 +4325,7 @@ struct _ComplexNDArrayIter[
             dimension: Dimension to iterate over.
         """
 
-        if dimension < 0 or dimension >= a.ndim:
+        if dimension < 0 or dimension >= a[].ndim:
             raise Error(
                 NumojoError(
                     category="index",
@@ -4324,22 +4333,27 @@ struct _ComplexNDArrayIter[
                         "Axis {} out of valid range [0, {}). Valid axes: 0..{}."
                         " Use {} for last axis of shape {}."
                     ).format(
-                        dimension, a.ndim, a.ndim - 1, a.ndim - 1, a.shape
+                        dimension,
+                        a[].ndim,
+                        a[].ndim - 1,
+                        a[].ndim - 1,
+                        a[].shape,
                     ),
                     location="_ComplexNDArrayIter.__init__",
                 )
             )
 
-        self.re_ptr = a._re.unsafe_ptr().unsafe_origin_cast[Self.origin]()
-        self.im_ptr = a._im.unsafe_ptr().unsafe_origin_cast[Self.origin]()
+        self._re_buf = a[]._re._buf.copy()
+        self._im_buf = a[]._im._buf.copy()
+        self.offset = a[]._re.offset
         self.dimension = dimension
-        self.shape = a.shape
-        self.strides = a.strides
-        self.ndim = a.ndim
-        self.length = a.shape[dimension]
-        self.size_of_item = a.size // a.shape[dimension]
+        self.shape = a[].shape
+        self.strides = a[].strides
+        self.ndim = a[].ndim
+        self.length = a[].shape[dimension]
+        self.size_of_item = a[].size // a[].shape[dimension]
         # Status of the iterator
-        self.index = 0 if Self.forward else a.shape[dimension] - 1
+        self.index = 0 if Self.forward else a[].shape[dimension] - 1
 
     def __iter__(self) -> Self:
         return self.copy()
@@ -4368,12 +4382,11 @@ struct _ComplexNDArrayIter[
                         Scalar[DType.int](current_index)
                     )
 
-            (result._re._buf.ptr + offset).init_pointee_copy(
-                self.re_ptr[IndexMethods.get_1d_index(item, self.strides)]
+            var idx = self.offset + IndexMethods.get_1d_index(
+                item, self.strides
             )
-            (result._im._buf.ptr + offset).init_pointee_copy(
-                self.im_ptr[IndexMethods.get_1d_index(item, self.strides)]
-            )
+            result._re._buf.ptr[offset] = self._re_buf[idx]
+            result._im._buf.ptr[offset] = self._im_buf[idx]
         return result^
 
     @always_inline
@@ -4432,16 +4445,18 @@ struct _ComplexNDArrayIter[
                             Scalar[DType.int](index)
                         )
 
-                (result._re._buf.ptr + offset).init_pointee_copy(
-                    self.re_ptr[IndexMethods.get_1d_index(item, self.strides)]
+                var idx = self.offset + IndexMethods.get_1d_index(
+                    item, self.strides
                 )
-                (result._im._buf.ptr + offset).init_pointee_copy(
-                    self.im_ptr[IndexMethods.get_1d_index(item, self.strides)]
-                )
+                result._re._buf.ptr[offset] = self._re_buf[idx]
+                result._im._buf.ptr[offset] = self._im_buf[idx]
             return result^
 
         else:  # 0-D array
             var result = numojo.creation._0darray[Self.cdtype](
-                ComplexSIMD[Self.cdtype](self.re_ptr[index], self.im_ptr[index])
+                ComplexSIMD[Self.cdtype](
+                    self._re_buf.ptr[self.offset + index],
+                    self._im_buf.ptr[self.offset + index],
+                )
             )
             return result^

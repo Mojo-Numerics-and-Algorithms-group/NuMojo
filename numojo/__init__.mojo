@@ -270,6 +270,11 @@ from numojo.routines.manipulation import (
     transpose,
     broadcast_to,
     flip,
+    concatenate,
+    column_stack,
+    row_stack,
+    hstack,
+    vstack,
 )
 
 from numojo.routines import random

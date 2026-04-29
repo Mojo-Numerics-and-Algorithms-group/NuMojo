@@ -691,3 +691,363 @@ def flip[
             A._buf.ptr[I._buf.ptr[i + A.shape[axis] - 1 - j]] = temp
 
     return A^
+
+
+# ===----------------------------------------------------------------------=== #
+# Joining arrays
+# ===----------------------------------------------------------------------=== #
+
+
+def _concatenate_list[
+    dtype: DType
+](arrays: List[NDArray[dtype]], axis: Int = 0) raises -> NDArray[dtype]:
+    """Internal: Join a list of arrays along an existing axis."""
+    if len(arrays) == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Need at least one array to concatenate.",
+                location="concatenate()",
+            )
+        )
+
+    if len(arrays) == 1:
+        return arrays[0].contiguous()
+
+    ref first = arrays[0]
+    var ndims = first.ndim
+
+    var ax = axis
+    if ax < 0:
+        ax += ndims
+    if ax < 0 or ax >= ndims:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "axis {} is out of bounds for array of dimension {}."
+                ).format(axis, ndims),
+                location="concatenate()",
+            )
+        )
+
+    # Validate shapes and compute the total size along the concat axis.
+    var total_along_axis: Int = first.shape[ax]
+    for i in range(1, len(arrays)):
+        ref arr = arrays[i]
+        if arr.ndim != ndims:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "All arrays must have the same number of dimensions."
+                        " Array 0 has {} dims, array {} has {} dims."
+                    ).format(ndims, i, arr.ndim),
+                    location="concatenate()",
+                )
+            )
+        for d in range(ndims):
+            if d != ax and arr.shape[d] != first.shape[d]:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "All array dimensions except for the"
+                            " concatenation axis must match. Dimension {}"
+                            " of array {} has size {} but expected {}."
+                        ).format(d, i, arr.shape[d], first.shape[d]),
+                        location="concatenate()",
+                    )
+                )
+        total_along_axis += arr.shape[ax]
+
+    # Build the output shape.
+    var out_shape_list = List[Int]()
+    for d in range(ndims):
+        if d == ax:
+            out_shape_list.append(total_along_axis)
+        else:
+            out_shape_list.append(first.shape[d])
+    var out_shape = NDArrayShape(out_shape_list)
+    var result = NDArray[dtype](out_shape)
+
+    # Copy data array by array.
+    # We iterate over the output in C-order and figure out which source
+    # array each element comes from.
+    #
+    # Strategy: walk the output linearly, convert flat index to
+    # multi-dimensional index, map the concat-axis coordinate back to the
+    # source array, read from the (contiguous) source.
+
+    # Pre-compute the boundary offsets along the concat axis for each array.
+    var boundaries = List[Int]()
+    var running: Int = 0
+    for i in range(len(arrays)):
+        boundaries.append(running)
+        running += arrays[i].shape[ax]
+
+    # For each element in the result, determine the source array and index.
+    for flat_idx in range(result.size):
+        # Convert flat_idx to nd-index (C-order).
+        var remainder = flat_idx
+        var nd_index = List[Int]()
+        for _ in range(ndims):
+            nd_index.append(0)
+        for d in range(ndims):
+            nd_index[d] = remainder // result.strides[d]
+            remainder = remainder % result.strides[d]
+
+        # Determine which source array this element comes from.
+        var coord_along_axis = nd_index[ax]
+        var src_idx: Int = len(arrays) - 1
+        for i in range(len(arrays) - 1, -1, -1):
+            if coord_along_axis >= boundaries[i]:
+                src_idx = i
+                break
+
+        # Adjust the coordinate along the concat axis to be local.
+        nd_index[ax] = coord_along_axis - boundaries[src_idx]
+
+        result._buf.ptr[flat_idx] = arrays[src_idx]._getitem(nd_index)
+
+    return result^
+
+
+def concatenate[
+    dtype: DType
+](*arrays: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
+    """Join a sequence of arrays along an existing axis.
+
+    Parameters:
+        dtype: The data type of the arrays.
+
+    Args:
+        arrays: The arrays to concatenate. All arrays must have the same
+            shape except in the dimension corresponding to `axis`.
+        axis: The axis along which the arrays will be joined. Default is 0.
+
+    Returns:
+        The concatenated array.
+
+    Raises:
+        Error: If the list of arrays is empty.
+        Error: If the arrays do not have the same number of dimensions.
+        Error: If the array shapes are incompatible along non-concatenation axes.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](0, 6, 1)
+        var a2d = nm.reshape(a, nm.Shape(2, 3))
+        var b = nm.arange[nm.f64](6, 12, 1)
+        var b2d = nm.reshape(b, nm.Shape(2, 3))
+        var c = nm.concatenate(a2d, b2d, axis=0)  # Shape (4, 3)
+        var d = nm.concatenate(a2d, b2d, axis=1)  # Shape (2, 6)
+        ```
+    """
+    var arr_list = List[NDArray[dtype]]()
+    for i in range(len(arrays)):
+        arr_list.append(arrays[i].copy())
+    return _concatenate_list(arr_list, axis)
+
+
+def column_stack[
+    dtype: DType
+](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Stack 1-D arrays as columns into a 2-D array, or concatenate
+    2-D+ arrays along the second axis (like `numpy.column_stack`).
+
+    Parameters:
+        dtype: The data type of the arrays.
+
+    Args:
+        arrays: The arrays to stack. 1-D arrays are treated as column
+            vectors. All arrays must have the same number of rows
+            (first dimension).
+
+    Returns:
+        The 2-D (or higher) array formed by stacking the inputs as columns.
+
+    Raises:
+        Error: If the list of arrays is empty.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](0, 3, 1)   # Shape (3,)
+        var b = nm.arange[nm.f64](3, 6, 1)   # Shape (3,)
+        var c = nm.column_stack(a, b)         # Shape (3, 2)
+        ```
+    """
+    if len(arrays) == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Need at least one array to column_stack.",
+                location="column_stack()",
+            )
+        )
+
+    # Transform 1-D arrays into 2-D column vectors.
+    var transformed = List[NDArray[dtype]]()
+    for i in range(len(arrays)):
+        if arrays[i].ndim == 1:
+            # Reshape (N,) -> (N, 1)
+            transformed.append(
+                reshape(
+                    arrays[i].copy(),
+                    NDArrayShape(arrays[i].shape[0], 1),
+                )
+            )
+        else:
+            transformed.append(arrays[i].copy())
+
+    return _concatenate_list(transformed, axis=1)
+
+
+def row_stack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Stack arrays vertically (row-wise), equivalent to
+    `numpy.row_stack` / `numpy.vstack`.
+
+    Parameters:
+        dtype: The data type of the arrays.
+
+    Args:
+        arrays: The arrays to stack. 1-D arrays of shape `(N,)` are
+            reshaped to `(1, N)` before concatenation.
+
+    Returns:
+        The array formed by stacking the inputs vertically.
+
+    Raises:
+        Error: If the list of arrays is empty.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](0, 3, 1)  # Shape (3,)
+        var b = nm.arange[nm.f64](3, 6, 1)  # Shape (3,)
+        var c = nm.row_stack(a, b)           # Shape (2, 3)
+        ```
+    """
+    if len(arrays) == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Need at least one array to row_stack.",
+                location="row_stack()",
+            )
+        )
+
+    var transformed = List[NDArray[dtype]]()
+    for i in range(len(arrays)):
+        if arrays[i].ndim == 1:
+            # Reshape (N,) -> (1, N)
+            transformed.append(
+                reshape(
+                    arrays[i].copy(),
+                    NDArrayShape(1, arrays[i].shape[0]),
+                )
+            )
+        else:
+            transformed.append(arrays[i].copy())
+
+    return _concatenate_list(transformed, axis=0)
+
+
+def hstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Stack arrays in sequence horizontally (column-wise),
+    equivalent to `numpy.hstack`.
+
+    For 1-D arrays, this concatenates along axis 0.
+    For 2-D+ arrays, this concatenates along axis 1.
+
+    Parameters:
+        dtype: The data type of the arrays.
+
+    Args:
+        arrays: The arrays to stack.
+
+    Returns:
+        The array formed by stacking the inputs horizontally.
+
+    Raises:
+        Error: If the list of arrays is empty.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](0, 3, 1)  # Shape (3,)
+        var b = nm.arange[nm.f64](3, 6, 1)  # Shape (3,)
+        var c = nm.hstack(a, b)              # Shape (6,)
+        ```
+    """
+    if len(arrays) == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Need at least one array to hstack.",
+                location="hstack()",
+            )
+        )
+
+    var arr_list = List[NDArray[dtype]]()
+    for i in range(len(arrays)):
+        arr_list.append(arrays[i].copy())
+
+    # For 1-D arrays, concatenate along axis 0.
+    if arr_list[0].ndim == 1:
+        return _concatenate_list(arr_list, axis=0)
+
+    return _concatenate_list(arr_list, axis=1)
+
+
+def vstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Stack arrays in sequence vertically (row-wise),
+    equivalent to `numpy.vstack`.
+
+    For 1-D arrays of shape `(N,)`, they are reshaped to `(1, N)` first.
+    Then concatenated along axis 0.
+
+    Parameters:
+        dtype: The data type of the arrays.
+
+    Args:
+        arrays: The arrays to stack.
+
+    Returns:
+        The array formed by stacking the inputs vertically.
+
+    Raises:
+        Error: If the list of arrays is empty.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](0, 3, 1)  # Shape (3,)
+        var b = nm.arange[nm.f64](3, 6, 1)  # Shape (3,)
+        var c = nm.vstack(a, b)              # Shape (2, 3)
+        ```
+    """
+    if len(arrays) == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Need at least one array to vstack.",
+                location="vstack()",
+            )
+        )
+
+    var transformed = List[NDArray[dtype]]()
+    for i in range(len(arrays)):
+        if arrays[i].ndim == 1:
+            transformed.append(
+                reshape(
+                    arrays[i].copy(),
+                    NDArrayShape(1, arrays[i].shape[0]),
+                )
+            )
+        else:
+            transformed.append(arrays[i].copy())
+
+    return _concatenate_list(transformed, axis=0)

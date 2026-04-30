@@ -8,9 +8,9 @@ authors = [
   "durnwalder <>",
 ]
 channels = [
-  "https://conda.modular.com/max-nightly/",
-  "conda-forge",
   "https://conda.modular.com/max",
+  "conda-forge",
+  "https://conda.modular.com/max-nightly/",
   "https://repo.prefix.dev/modular-community",
 ]
 description = "NuMojo is a library for numerical computing written in Mojo 🔥"
@@ -34,13 +34,13 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
 name = "numojo"
 
 [package.host-dependencies]
-modular = "0.26.2.*"
+mojo = "26.2.*"
 
 [package.build-dependencies]
-modular = "0.26.2.*"
+mojo = "26.2.*"
 
 [package.run-dependencies]
-modular = "0.26.2.*"
+mojo = "26.2.*"
 
 [tasks]
 # compile the package and copy it to the tests folder
@@ -69,7 +69,7 @@ doc_pages = "mojo doc numojo/ -o docs.json"
 release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
-modular = "26.2.*"
 numpy = ">=2.4.2,<3"
-python = ">=3.14.3,<3.15"
+python = ">=3.13,<3.14"
 scipy = ">=1.17.0,<2"
+mojo = ">=0.26.2.0,<0.27"

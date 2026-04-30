@@ -32,8 +32,8 @@ import std.builtin.bool as builtin_bool
 import std.math as builtin_math
 from std.collections.optional import Optional
 from std.math import log10, sqrt
-from std.memory import memset_zero, memcpy
-from std.python import PythonObject
+from std.memory import memset_zero, memcpy, UnsafePointer
+from std.python import Python, PythonObject
 from std.sys import simd_width_of
 from std.utils import Variant
 
@@ -253,6 +253,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             precision=2, edge_items=2, line_width=100, formatted_width=6
         )
 
+    # TODO: Remove VariadicList versions.
     @always_inline("nodebug")
     def __init__(
         out self,
@@ -269,7 +270,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Example:
             ```mojo
             from numojo.prelude import *
-            var A = nm.ComplexNDArray[cf32](VariadicList(2,3,4))
+            var A = nm.ComplexNDArray[cf32](2,3,4)
             ```
 
         Notes:
@@ -447,6 +448,114 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = take.strides
         self.flags = take.flags
         self.print_options = take.print_options
+
+    @always_inline("nodebug")
+    def __del__(deinit self):
+        """Destroys array buffers."""
+        _ = self._re^
+        _ = self._im^
+
+    def deep_copy(self) raises -> Self:
+        """
+        Create a deep copy of this ComplexNDArray.
+        """
+        return Self(
+            re=self._re.deep_copy(),
+            im=self._im.deep_copy(),
+        )
+
+    def view(mut self) raises -> Self:
+        """
+        Create a non-owning view of the current ComplexNDArray.
+
+        Returns:
+            A new ComplexNDArray instance that shares the data buffers with
+            `self` and does not allocate new memory.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+            var arr = nm.ComplexNDArray[nm.cf32](nm.Shape(3, 4))
+            var v = arr.view()  # Create a view into arr.
+            ```
+        """
+        return ComplexNDArray[Self.cdtype](
+            re=self._re.view(),
+            im=self._im.view(),
+        )
+
+    @always_inline("nodebug")
+    def _flat_offset(self, flat_index: Int) -> Int:
+        """
+        Return backing-buffer offset for logical C-order flat index.
+        """
+        var remainder = flat_index
+        var offset = self._re.offset
+        for dim in range(self.ndim - 1, -1, -1):
+            var dim_size = Int(self.shape.unsafe_load(dim))
+            var coord = remainder % dim_size
+            remainder = remainder // dim_size
+            offset += coord * Int(self.strides.unsafe_load(dim))
+        return offset
+
+    @always_inline("nodebug")
+    def _flat_load(self, flat_index: Int) -> ComplexSIMD[Self.cdtype]:
+        """Stride-safe logical flat load."""
+        var off = self._flat_offset(flat_index)
+        return ComplexSIMD[Self.cdtype](
+            self._re._buf.ptr[off], self._im._buf.ptr[off]
+        )
+
+    @always_inline("nodebug")
+    def _flat_store(mut self, flat_index: Int, value: ComplexSIMD[Self.cdtype]):
+        """Stride-safe logical flat store."""
+        var off = self._flat_offset(flat_index)
+        self._re._buf.ptr[off] = value.re
+        self._im._buf.ptr[off] = value.im
+
+    @always_inline("nodebug")
+    def _lex_less(
+        self, a: ComplexSIMD[Self.cdtype], b: ComplexSIMD[Self.cdtype]
+    ) -> Bool:
+        return (a.re < b.re) or ((a.re == b.re) and (a.im < b.im))
+
+    @always_inline("nodebug")
+    def _lex_greater(
+        self, a: ComplexSIMD[Self.cdtype], b: ComplexSIMD[Self.cdtype]
+    ) -> Bool:
+        return (a.re > b.re) or ((a.re == b.re) and (a.im > b.im))
+
+    @always_inline("nodebug")
+    def _normalize_axis(self, axis: Int) raises -> Int:
+        var normalized_axis = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis < 0) or (normalized_axis >= self.ndim):
+            raise Error(
+                String("Axis {} is out of bounds for ndim {}.").format(
+                    axis, self.ndim
+                )
+            )
+        return normalized_axis
+
+    def _permute_axis_to_last(self, axis: Int) raises -> List[Int]:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = List[Int](capacity=self.ndim)
+        for i in range(self.ndim):
+            if i != normalized_axis:
+                axes.append(i)
+        axes.append(normalized_axis)
+        return axes^
+
+    def _inverse_permutation(self, axes: List[Int]) raises -> List[Int]:
+        if len(axes) != self.ndim:
+            raise Error("Invalid permutation length.")
+        var inv = List[Int](capacity=self.ndim)
+        for _ in range(self.ndim):
+            inv.append(0)
+        for i in range(self.ndim):
+            inv[axes[i]] = i
+        return inv^
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
@@ -745,12 +854,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return result^
         else:
             # F layout
-            self[Self.dtype]._re._copy_first_axis_slice(
-                self._re, norm, result._re
-            )
-            self[Self.dtype]._im._copy_first_axis_slice(
-                self._im, norm, result._im
-            )
+            self._re._copy_first_axis_slice(self._re, norm, result._re)
+            self._im._copy_first_axis_slice(self._im, norm, result._im)
             return result^
 
     def __getitem__(self, var *slices: Slice) raises -> Self:
@@ -1744,8 +1849,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return
 
         # F order
-        self[Self.dtype]._re._write_first_axis_slice(self._re, norm, val._re)
-        self[Self.dtype]._im._write_first_axis_slice(self._im, norm, val._im)
+        self._re._write_first_axis_slice(self._re, norm, val._re)
+        self._im._write_first_axis_slice(self._im, norm, val._im)
 
     def __setitem__(
         mut self, var index: Item, val: ComplexSIMD[Self.cdtype]
@@ -1807,9 +1912,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self._im._buf.ptr.store(idx, val.im)
 
     def __setitem__(
-        mut self,
-        mask: ComplexNDArray[Self.cdtype],
-        value: ComplexSIMD[Self.cdtype],
+        mut self, mask: NDArray[DType.bool], value: ComplexSIMD[Self.cdtype]
     ) raises:
         """
         Set the value of the array at the indices where the mask is true.
@@ -1828,11 +1931,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        for i in range(mask.size):
-            if mask._re._buf.ptr.load[width=1](i):
-                self._re._buf.ptr.store(i, value.re)
-            if mask._im._buf.ptr.load[width=1](i):
-                self._im._buf.ptr.store(i, value.im)
+        var mask_c = mask.contiguous()
+        for i in range(mask_c.size):
+            if mask_c._buf.ptr.load[width=1](i):
+                self.itemset(i, value)
 
     def __setitem__(
         mut self, var *slices: Slice, val: ComplexNDArray[Self.cdtype]
@@ -1960,7 +2062,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     ## compiler doesn't accept this.
     def __setitem__(
-        self, var *slices: Variant[Slice, Int], val: ComplexNDArray[Self.cdtype]
+        mut self,
+        var *slices: Variant[Slice, Int],
+        val: ComplexNDArray[Self.cdtype],
     ) raises:
         """
         Get items by a series of either slices or integers.
@@ -2000,7 +2104,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         # self.__setitem__(slices=slice_list, val=val)
         self[slice_list^] = val
 
-    def __setitem__(self, index: NDArray[DType.int], val: Self) raises:
+    def __setitem__(mut self, index: NDArray[DType.int], val: Self) raises:
         """
         Returns the items of the ComplexNDArray from an array of indices.
 
@@ -2017,9 +2121,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     # TODO: implement itemset().
     def __setitem__(
-        mut self,
-        mask: ComplexNDArray[Self.cdtype],
-        val: ComplexNDArray[Self.cdtype],
+        mut self, mask: NDArray[DType.bool], val: ComplexNDArray[Self.cdtype]
     ) raises:
         """
         Set the value of the ComplexNDArray at the indices where the mask is true.
@@ -2032,11 +2134,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             )
             raise Error(message)
 
-        for i in range(mask.size):
-            if mask._re._buf.ptr.load(i):
-                self._re._buf.ptr.store(i, val._re._buf.ptr.load(i))
-            if mask._im._buf.ptr.load(i):
-                self._im._buf.ptr.store(i, val._im._buf.ptr.load(i))
+        var mask_c = mask.contiguous()
+        for i in range(mask_c.size):
+            if mask_c._buf.ptr.load[width=1](i):
+                self.itemset(i, val.item(i))
 
     def __pos__(self) raises -> Self:
         """
@@ -2351,7 +2452,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         return comparison.not_equal[Self.dtype](
             self._re, other._re
-        ) and comparison.not_equal[Self.dtype](self._im, other._im)
+        ) or comparison.not_equal[Self.dtype](self._im, other._im)
 
     @always_inline("nodebug")
     def __ne__(
@@ -2362,244 +2463,114 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         return comparison.not_equal[Self.dtype](
             self._re, other.re
-        ) and comparison.not_equal[Self.dtype](self._im, other.im)
+        ) or comparison.not_equal[Self.dtype](self._im, other.im)
 
     @always_inline("nodebug")
     def __lt__(self, other: Self) raises -> NDArray[DType.bool]:
         """
-        Itemwise less than comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| < |other|.
-        This provides a natural ordering for complex numbers.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| < |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A < B  # Compare by magnitude
-        ```
-
-        Notes:
-            Complex number ordering is not naturally defined. This implementation
-            compares by magnitude (absolute value) to provide a consistent ordering.
+        NumPy-style lexicographic ordering: compare real part first, then imaginary part.
         """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.less[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_lt = comparison.less[Self.dtype](self._im, other._im)
+        var result = re_lt^ or (re_eq^ and im_lt^)
+        return result^
 
     @always_inline("nodebug")
     def __lt__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| < |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.less[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_lt = comparison.less[Self.dtype](self._im, other.im)
+        var result = re_lt^ or (re_eq^ and im_lt^)
+        return result^
 
     @always_inline("nodebug")
     def __lt__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| < |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.less[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_lt = comparison.less[Self.dtype](self._im, 0)
+        var result = re_lt^ or (re_eq^ and im_lt^)
+        return result^
 
     @always_inline("nodebug")
     def __le__(self, other: Self) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than or equal comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| <= |other|.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| <= |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A <= B  # Compare by magnitude
-        ```
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_le = comparison.less_equal[Self.dtype](self._im, other._im)
+        var result = re_lt^ or (re_eq^ and im_le^)
+        return result^
 
     @always_inline("nodebug")
     def __le__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than or equal comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| <= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_le = comparison.less_equal[Self.dtype](self._im, other.im)
+        var result = re_lt^ or (re_eq^ and im_le^)
+        return result^
 
     @always_inline("nodebug")
     def __le__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise less than or equal comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| <= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.less_equal[Self.dtype](self_mag, other_mag)
+        var re_lt = comparison.less[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_le = comparison.less_equal[Self.dtype](self._im, 0)
+        var result = re_lt^ or (re_eq^ and im_le^)
+        return result^
 
     @always_inline("nodebug")
     def __gt__(self, other: Self) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| > |other|.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| > |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A > B  # Compare by magnitude
-        ```
-
-        Notes:
-            Complex number ordering is not naturally defined. This implementation
-            compares by magnitude (absolute value) to provide a consistent ordering.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.greater[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_gt = comparison.greater[Self.dtype](self._im, other._im)
+        var result = re_gt^ or (re_eq^ and im_gt^)
+        return result^
 
     @always_inline("nodebug")
     def __gt__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| > |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.greater[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_gt = comparison.greater[Self.dtype](self._im, other.im)
+        var result = re_gt^ or (re_eq^ and im_gt^)
+        return result^
 
     @always_inline("nodebug")
     def __gt__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| > |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.greater[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_gt = comparison.greater[Self.dtype](self._im, 0)
+        var result = re_gt^ or (re_eq^ and im_gt^)
+        return result^
 
     @always_inline("nodebug")
     def __ge__(self, other: Self) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than or equal comparison by magnitude.
-
-        For complex numbers, compares the magnitudes: |self| >= |other|.
-
-        Args:
-            other: The other ComplexNDArray to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| >= |other|.
-
-        Examples:
-        ```mojo
-        import numojo as nm
-        var A = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var B = nm.ComplexNDArray[nm.cf64](nm.Shape(2, 2))
-        var result = A >= B  # Compare by magnitude
-        ```
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other._re * other._re + other._im * other._im
-        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other._re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other._re)
+        var im_ge = comparison.greater_equal[Self.dtype](self._im, other._im)
+        var result = re_gt^ or (re_eq^ and im_ge^)
+        return result^
 
     @always_inline("nodebug")
     def __ge__(
         self, other: ComplexSIMD[Self.cdtype]
     ) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than or equal comparison with scalar by magnitude.
-
-        Args:
-            other: The ComplexSIMD scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| >= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other.re * other.re + other.im * other.im
-        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other.re)
+        var re_eq = comparison.equal[Self.dtype](self._re, other.re)
+        var im_ge = comparison.greater_equal[Self.dtype](self._im, other.im)
+        var result = re_gt^ or (re_eq^ and im_ge^)
+        return result^
 
     @always_inline("nodebug")
     def __ge__(self, other: Scalar[Self.dtype]) raises -> NDArray[DType.bool]:
-        """
-        Itemwise greater than or equal comparison with real scalar by magnitude.
-
-        Args:
-            other: The real scalar to compare with.
-
-        Returns:
-            An array of boolean values indicating where |self| >= |other|.
-        """
-        var self_mag = self._re * self._re + self._im * self._im
-        var other_mag = other * other
-        return comparison.greater_equal[Self.dtype](self_mag, other_mag)
+        var re_gt = comparison.greater[Self.dtype](self._re, other)
+        var re_eq = comparison.equal[Self.dtype](self._re, other)
+        var im_ge = comparison.greater_equal[Self.dtype](self._im, 0)
+        var result = re_gt^ or (re_eq^ and im_ge^)
+        return result^
 
     # ===------------------------------------------------------------------=== #
     # ARITHMETIC OPERATIONS
@@ -3303,135 +3274,193 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Array of the same data with a new shape.
         """
         var result: Self = ComplexNDArray[Self.cdtype](
-            re=numojo.reshape(self._re.copy(), shape=shape, order=order),
-            im=numojo.reshape(self._im.copy(), shape=shape, order=order),
+            re=numojo.reshape(self._re, shape=shape, order=order),
+            im=numojo.reshape(self._im, shape=shape, order=order),
         )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags
         return result^
 
-    def __iter__(
-        mut self,
-    ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
-        """
-        Iterates over elements of the ComplexNDArray and return sub-arrays as view.
+    # def __iter__(
+    #     mut self,
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     """
+    #     Iterates over elements of the ComplexNDArray and return sub-arrays as view.
 
-        Returns:
-            An iterator of ComplexNDArray elements.
-        """
+    #     Returns:
+    #         An iterator of ComplexNDArray elements.
+    #     """
 
-        return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
-            self,
-            dimension=0,
-        )
+    #     return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
+    #         Pointer(to=self),
+    #         dimension=0,
+    #     )
 
-    def __reversed__(
-        mut self,
-    ) raises -> _ComplexNDArrayIter[
-        origin_of(self), Self.cdtype, forward=False
-    ]:
-        """
-        Iterates backwards over elements of the ComplexNDArray, returning
-        copied value.
+    # def __reversed__(
+    #     mut self,
+    # ) raises -> _ComplexNDArrayIter[
+    #     origin_of(self), Self.cdtype, forward=False
+    # ]:
+    #     """
+    #     Iterates backwards over elements of the ComplexNDArray, returning
+    #     copied value.
 
-        Returns:
-            A reversed iterator of NDArray elements.
-        """
+    #     Returns:
+    #         A reversed iterator of NDArray elements.
+    #     """
 
-        return _ComplexNDArrayIter[origin_of(self), Self.cdtype, forward=False](
-            self,
-            dimension=0,
-        )
+    #     return _ComplexNDArrayIter[origin_of(self), Self.cdtype, forward=False](
+    #         Pointer(to=self),
+    #         dimension=0,
+    #     )
 
-    def itemset(
-        mut self,
-        index: Variant[Int, List[Int]],
-        item: ComplexSIMD[Self.cdtype],
-    ) raises:
-        """Set the scalar at the coordinates.
+    def itemset(mut self, index: Int, item: ComplexSIMD[Self.cdtype]) raises:
+        """Sets the scalar at the given coordinate.
 
         Args:
-            index: The coordinates of the item.
-                Can either be `Int` or `List[Int]`.
-                If `Int` is passed, it is the index of i-th item of the whole array.
-                If `List[Int]` is passed, it is the coordinate of the item.
-            item: The scalar to be set.
+            index: The linear index of the i-th item of the whole array.
+            item: The complex scalar to be set.
+
+        Raises:
+            Error: If the index is out of bounds.
+            Error: If the length of index does not match the number of
+                dimensions.
+
+        Examples:
+
+        ```
+        import numojo as nm
+        def main() raises:
+            var A = nm.zeros[nm.cf16](nm.Shape(3, 3))
+            print(A)
+            A.itemset(5, nm.ComplexSIMD[nm.f16](1.0, 2.0))
+            print(A)
+        ```
+        ```console
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (1.0, 2.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        ```.
         """
-
-        # If one index is given
-        if index.isa[Int]():
-            var idx: Int = index[Int]
-            if idx < self.size:
-                if self.flags[
-                    "F_CONTIGUOUS"
-                ]:  # column-major should be converted to row-major
-                    # The following code can be taken out as a function that
-                    # convert any index to coordinates according to the order
-                    var c_stride = NDArrayStrides(shape=self.shape)
-                    var c_coordinates = List[Int]()
-                    for i in range(c_stride.ndim):
-                        var coordinate = idx // c_stride[i]
-                        idx = idx - c_stride[i] * coordinate
-                        c_coordinates.append(coordinate)
-                    self._re._buf.ptr.store(
-                        IndexMethods.get_1d_index(c_coordinates, self.strides),
-                        item.re,
-                    )
-                    self._im._buf.ptr.store(
-                        IndexMethods.get_1d_index(c_coordinates, self.strides),
-                        item.im,
-                    )
-                else:
-                    self._re._buf.ptr.store(idx, item.re)
-                    self._im._buf.ptr.store(idx, item.im)
+        var norm_idx = self.normalize(index, self.size)
+        if norm_idx < self.size:
+            if self.flags.F_CONTIGUOUS:
+                var c_stride = NDArrayStrides(shape=self.shape)
+                var c_coordinates = List[Int]()
+                for i in range(c_stride.ndim):
+                    var coordinate = norm_idx // c_stride[i]
+                    norm_idx = norm_idx - c_stride[i] * coordinate
+                    c_coordinates.append(coordinate)
+                self._re._buf.ptr.store(
+                    self._re.offset
+                    + IndexMethods.get_1d_index(c_coordinates, self.strides),
+                    item.re,
+                )
+                self._im._buf.ptr.store(
+                    self._im.offset
+                    + IndexMethods.get_1d_index(c_coordinates, self.strides),
+                    item.im,
+                )
             else:
-                raise Error(
-                    NumojoError(
-                        category="index",
-                        message=String(
-                            "Linear index {} out of range for size {}. Valid"
-                            " linear indices: 0..{}."
-                        ).format(idx, self.size, self.size - 1),
-                        location="ComplexNDArray.itemset(Int)",
-                    )
+                self._re._buf.ptr.store(self._re.offset + norm_idx, item.re)
+                self._im._buf.ptr.store(self._im.offset + norm_idx, item.im)
+        else:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Index {} is out of bounds for array of size {}. Use an"
+                        " index in [0, {})."
+                    ).format(index, self.size, self.size),
+                    location=(
+                        "ComplexNDArray.itemset(index: Int, item: ComplexSIMD)"
+                    ),
                 )
+            )
 
-        elif index.isa[List[Int]]():
-            var indices: List[Int] = index[List[Int]].copy()
-            if indices.__len__() != self.ndim:
+    def itemset(
+        mut self, var indices: List[Int], item: ComplexSIMD[Self.cdtype]
+    ) raises:
+        """Sets the scalar at the given coordinates.
+
+        Args:
+            indices: The coordinates of the item.
+            item: The complex scalar to be set.
+
+        Raises:
+            Error: If the index is out of bounds.
+            Error: If the length of index does not match the number of
+                dimensions.
+
+        Notes:
+            This is similar to `numpy.ndarray.itemset`. The difference is that
+            we take `List[Int]`, but NumPy takes a tuple.
+
+        Examples:
+
+        ```
+        import numojo as nm
+        def main() raises:
+            var A = nm.zeros[nm.cf16](nm.Shape(3, 3))
+            print(A)
+            A.itemset(nm.List(1, 1), nm.ComplexSIMD[nm.f16](1.0, 2.0))
+            print(A)
+        ```
+        ```console
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        [[      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (1.0, 2.0)    (0.0, 0.0)    ]
+        [      (0.0, 0.0)    (0.0, 0.0)    (0.0, 0.0)    ]]
+        2-D array  Shape: [3, 3]  DType: complex16
+        ```.
+        """
+        if len(indices) != self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Invalid index length: expected {} but got {}. Pass"
+                        " exactly {} indices (one per dimension)."
+                    ).format(self.ndim, indices.__len__(), self.ndim),
+                    location=(
+                        "ComplexNDArray.itemset(indices: List[Int], item:"
+                        " ComplexSIMD)"
+                    ),
+                )
+            )
+        for i in range(len(indices)):
+            var norm_idx = self.normalize(indices[i], self.shape[i])
+            if norm_idx >= self.shape[i]:
                 raise Error(
                     NumojoError(
                         category="index",
                         message=String(
-                            "Expected {} indices (ndim) but received {}."
-                            " Provide one index per dimension; shape {} has {}"
-                            " dimensions."
-                        ).format(
-                            self.ndim, indices.__len__(), self.shape, self.ndim
+                            "Index out of range at dim {}: got {}; valid"
+                            " range is (-{}..{})."
+                        ).format(i, indices[i], self.shape[i], self.shape[i]),
+                        location=(
+                            "ComplexNDArray.itemset(indices: List[Int],"
+                            " item: ComplexSIMD)"
                         ),
-                        location="ComplexNDArray.itemset(List[Int])",
                     )
                 )
-            for i in range(indices.__len__()):
-                if indices[i] >= self.shape[i]:
-                    raise Error(
-                        NumojoError(
-                            category="index",
-                            message=String(
-                                "Index {} out of range for dim {} (size {})."
-                                " Valid range: [0, {})."
-                            ).format(
-                                indices[i], i, self.shape[i], self.shape[i]
-                            ),
-                            location="ComplexNDArray.itemset(List[Int])",
-                        )
-                    )
-            self._re._buf.ptr.store(
-                IndexMethods.get_1d_index(indices, self.strides), item.re
-            )
-            self._im._buf.ptr.store(
-                IndexMethods.get_1d_index(indices, self.strides), item.im
-            )
+            indices[i] = norm_idx
+        self._re._buf.ptr.store(
+            self._re.offset + IndexMethods.get_1d_index(indices, self.strides),
+            item.re,
+        )
+        self._im._buf.ptr.store(
+            self._im.offset + IndexMethods.get_1d_index(indices, self.strides),
+            item.im,
+        )
 
     def conj(self) raises -> Self:
         """
@@ -3531,8 +3560,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         for i in range(self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
+            var z = self._flat_load(i)
+            var re_val = z.re
+            var im_val = z.im
             if (re_val == 0.0) and (im_val == 0.0):
                 return False
         return True
@@ -3556,8 +3586,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         for i in range(self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
+            var z = self._flat_load(i)
+            var re_val = z.re
+            var im_val = z.im
             if (re_val != 0.0) or (im_val != 0.0):
                 return True
         return False
@@ -3579,11 +3610,16 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var sum_re = Scalar[Self.dtype](0)
         var sum_im = Scalar[Self.dtype](0)
 
+        # TODO: could vectorize this!
         for i in range(self.size):
-            sum_re += self._re._buf.ptr.load(i)
-            sum_im += self._im._buf.ptr.load(i)
+            var z = self._flat_load(i)
+            sum_re += z.re
+            sum_im += z.im
 
         return ComplexSIMD[Self.cdtype](sum_re, sum_im)
+
+    def sum(self, axis: Int) raises -> Self:
+        return Self(self._re.sum(axis), self._im.sum(axis))
 
     def prod(self) raises -> ComplexSIMD[Self.cdtype]:
         """
@@ -3603,14 +3639,34 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var prod_im = Scalar[Self.dtype](0)
 
         for i in range(self.size):
-            var a_re = self._re._buf.ptr.load(i)
-            var a_im = self._im._buf.ptr.load(i)
-            var new_re = prod_re * a_re - prod_im * a_im
-            var new_im = prod_re * a_im + prod_im * a_re
+            var a = self._flat_load(i)
+            var new_re = prod_re * a.re - prod_im * a.im
+            var new_im = prod_re * a.im + prod_im * a.re
             prod_re = new_re
             prod_im = new_im
 
         return ComplexSIMD[Self.cdtype](prod_re, prod_im)
+
+    def prod(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+        for o in range(outer):
+            var acc_re = Scalar[Self.dtype](1)
+            var acc_im = Scalar[Self.dtype](0)
+            var base = o * axis_len
+            for k in range(axis_len):
+                var a = transposed._flat_load(base + k)
+                var new_re = acc_re * a.re - acc_im * a.im
+                var new_im = acc_re * a.im + acc_im * a.re
+                acc_re = new_re
+                acc_im = new_im
+            result._flat_store(o, ComplexSIMD[Self.cdtype](acc_re, acc_im))
+        return result^
 
     def mean(self) raises -> ComplexSIMD[Self.cdtype]:
         """
@@ -3629,6 +3685,16 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var total = self.sum()
         var n = Scalar[Self.dtype](self.size)
         return ComplexSIMD[Self.cdtype](total.re / n, total.im / n)
+
+    def mean(self, axis: Int) raises -> Self:
+        var s = self.sum(axis)
+        var normalized_axis = axis
+        if normalized_axis < 0:
+            normalized_axis += self.ndim
+        if (normalized_axis < 0) or (normalized_axis >= self.ndim):
+            raise Error("Axis out of range in ComplexNDArray.mean(axis)")
+        var n = Scalar[Self.dtype](self.shape[normalized_axis])
+        return Self(s._re / n, s._im / n)
 
     def max(self) raises -> ComplexSIMD[Self.cdtype]:
         """
@@ -3650,22 +3716,30 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find max of empty array")
 
-        var max_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
-        var max_idx = 0
-
+        var best = self._flat_load(0)
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq > max_mag_sq:
-                max_mag_sq = mag_sq
-                max_idx = i
+            var z = self._flat_load(i)
+            if self._lex_greater(z, best):
+                best = z
+        return best
 
-        return ComplexSIMD[Self.cdtype](
-            self._re._buf.ptr.load(max_idx), self._im._buf.ptr.load(max_idx)
-        )
+    def max(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_greater(z, best):
+                    best = z
+            result._flat_store(o, best)
+        return result^
 
     def min(self) raises -> ComplexSIMD[Self.cdtype]:
         """
@@ -3687,22 +3761,30 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find min of empty array")
 
-        var min_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
-        var min_idx = 0
-
+        var best = self._flat_load(0)
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq < min_mag_sq:
-                min_mag_sq = mag_sq
-                min_idx = i
+            var z = self._flat_load(i)
+            if self._lex_less(z, best):
+                best = z
+        return best
 
-        return ComplexSIMD[Self.cdtype](
-            self._re._buf.ptr.load(min_idx), self._im._buf.ptr.load(min_idx)
-        )
+    def min(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_less(z, best):
+                    best = z
+            result._flat_store(o, best)
+        return result^
 
     def argmax(self) raises -> Int:
         """
@@ -3724,20 +3806,34 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find argmax of empty array")
 
-        var max_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
         var max_idx = 0
 
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq > max_mag_sq:
-                max_mag_sq = mag_sq
+            if self._lex_greater(self._flat_load(i), self._flat_load(max_idx)):
                 max_idx = i
 
         return max_idx
+
+    def argmax(self, axis: Int) raises -> NDArray[DType.int]:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = NDArray[DType.int](out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best_rel = 0
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_greater(z, best):
+                    best = z
+                    best_rel = k
+            result._buf.ptr[o] = Scalar[DType.int](best_rel)
+            # result.itemset(o, Scalar[DType.int](best_rel))
+        return result^
 
     def argmin(self) raises -> Int:
         """
@@ -3759,20 +3855,34 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.size == 0:
             raise Error("Cannot find argmin of empty array")
 
-        var min_mag_sq = self._re._buf.ptr.load(0) * self._re._buf.ptr.load(
-            0
-        ) + self._im._buf.ptr.load(0) * self._im._buf.ptr.load(0)
         var min_idx = 0
 
         for i in range(1, self.size):
-            var re_val = self._re._buf.ptr.load(i)
-            var im_val = self._im._buf.ptr.load(i)
-            var mag_sq = re_val * re_val + im_val * im_val
-            if mag_sq < min_mag_sq:
-                min_mag_sq = mag_sq
+            if self._lex_less(self._flat_load(i), self._flat_load(min_idx)):
                 min_idx = i
 
         return min_idx
+
+    def argmin(self, axis: Int) raises -> NDArray[DType.int]:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = NDArray[DType.int](out_shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var best_rel = 0
+            var best = transposed._flat_load(base)
+            for k in range(1, axis_len):
+                var z = transposed._flat_load(base + k)
+                if self._lex_less(z, best):
+                    best = z
+                    best_rel = k
+            result._buf.ptr[o] = Scalar[DType.int](best_rel)
+            # result.itemset(o, Scalar[DType.int](best_rel))
+        return result^
 
     def cumsum(self) raises -> Self:
         """
@@ -3791,17 +3901,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Notes:
             For array [a, b, c, d], returns [a, a+b, a+b+c, a+b+c+d].
         """
-        var result = Self(self.shape)
-        var cum_re = Scalar[Self.dtype](0)
-        var cum_im = Scalar[Self.dtype](0)
+        return Self(self._re.cumsum(), self._im.cumsum())
 
-        for i in range(self.size):
-            cum_re += self._re._buf.ptr.load(i)
-            cum_im += self._im._buf.ptr.load(i)
-            result._re._buf.ptr.store(i, cum_re)
-            result._im._buf.ptr.store(i, cum_im)
-
-        return result^
+    def cumsum(self, axis: Int) raises -> Self:
+        return Self(self._re.cumsum(axis), self._im.cumsum(axis))
 
     def cumprod(self) raises -> Self:
         """
@@ -3821,20 +3924,37 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             For array [a, b, c, d], returns [a, a*b, a*b*c, a*b*c*d].
         """
         var result = Self(self.shape)
-        var cum_re = Scalar[Self.dtype](1)
-        var cum_im = Scalar[Self.dtype](0)
-
+        var cum = ComplexSIMD[Self.cdtype](1, 0)
         for i in range(self.size):
-            var a_re = self._re._buf.ptr.load(i)
-            var a_im = self._im._buf.ptr.load(i)
-            var new_re = cum_re * a_re - cum_im * a_im
-            var new_im = cum_re * a_im + cum_im * a_re
-            cum_re = new_re
-            cum_im = new_im
-            result._re._buf.ptr.store(i, cum_re)
-            result._im._buf.ptr.store(i, cum_im)
-
+            var a = self._flat_load(i)
+            cum = ComplexSIMD[Self.cdtype](
+                cum.re * a.re - cum.im * a.im, cum.re * a.im + cum.im * a.re
+            )
+            result._flat_store(i, cum)
         return result^
+
+    def cumprod(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var inv_axes = self._inverse_permutation(axes)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var transposed_result = Self(transposed.shape)
+        for o in range(outer):
+            var base = o * axis_len
+            var acc_re = Scalar[Self.dtype](1)
+            var acc_im = Scalar[Self.dtype](0)
+            for k in range(axis_len):
+                var a = transposed._flat_load(base + k)
+                var new_re = acc_re * a.re - acc_im * a.im
+                var new_im = acc_re * a.im + acc_im * a.re
+                acc_re = new_re
+                acc_im = new_im
+                transposed_result._flat_store(
+                    base + k, ComplexSIMD[Self.cdtype](acc_re, acc_im)
+                )
+        return transposed_result.T(inv_axes)
 
     # ===-------------------------------------------------------------------===#
     # Array Manipulation Methods
@@ -3910,13 +4030,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        var width: Int = self.shape[1]
-        var result = Self(Shape(width))
-        for i in range(width):
-            var idx = i + id * width
-            result._re._buf.ptr.store(i, self._re._buf.ptr.load(idx))
-            result._im._buf.ptr.store(i, self._im._buf.ptr.load(idx))
-        return result^
+        return Self(self._re.row(id), self._im.row(id))
 
     def col(self, id: Int) raises -> Self:
         """
@@ -3950,14 +4064,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        var width: Int = self.shape[1]
-        var height: Int = self.shape[0]
-        var result = Self(Shape(height))
-        for i in range(height):
-            var idx = id + i * width
-            result._re._buf.ptr.store(i, self._re._buf.ptr.load(idx))
-            result._im._buf.ptr.store(i, self._im._buf.ptr.load(idx))
-        return result^
+        return Self(self._re.col(id), self._im.col(id))
 
     def clip(
         self, a_min: Scalar[Self.dtype], a_max: Scalar[Self.dtype]
@@ -4103,8 +4210,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        var diag_re = self[Self.dtype]._re.diagonal(offset)
-        var diag_im = self[Self.dtype]._im.diagonal(offset)
+        var diag_re = self._re.diagonal(offset)
+        var diag_im = self._im.diagonal(offset)
         return Self(diag_re^, diag_im^)
 
     def trace(self) raises -> ComplexSIMD[Self.cdtype]:
@@ -4143,12 +4250,303 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         var result = List[ComplexSIMD[Self.cdtype]](capacity=self.size)
         for i in range(self.size):
-            result.append(
-                ComplexSIMD[Self.cdtype](
-                    self._re._buf.ptr.load(i), self._im._buf.ptr.load(i)
-                )
-            )
+            result.append(self._flat_load(i))
         return result^
+
+    def astype[target: ComplexDType](self) raises -> ComplexNDArray[target]:
+        """Casts this complex array to another complex dtype."""
+        return creation.astype[target](self)
+
+    def compress(
+        self, condition: NDArray[DType.bool], axis: Int
+    ) raises -> Self:
+        return Self(
+            self._re.compress(condition, axis),
+            self._im.compress(condition, axis),
+        )
+
+    def compress(self, condition: NDArray[DType.bool]) raises -> Self:
+        return Self(self._re.compress(condition), self._im.compress(condition))
+
+    def contiguous(self) raises -> Self:
+        return Self(self._re.contiguous(), self._im.contiguous())
+
+    def is_c_contiguous(self) -> Bool:
+        return self._re.is_c_contiguous()
+
+    def is_f_contiguous(self) -> Bool:
+        return self._re.is_f_contiguous()
+
+    def is_row_contiguous(self) -> Bool:
+        return self._re.is_row_contiguous()
+
+    def is_col_contiguous(self) -> Bool:
+        return self._re.is_col_contiguous()
+
+    def unsafe_load[
+        width: Int = 1
+    ](self, index: Int) -> ComplexSIMD[Self.cdtype, width]:
+        return ComplexSIMD[Self.cdtype, width](
+            self._re.unsafe_load[width=width](index),
+            self._im.unsafe_load[width=width](index),
+        )
+
+    def unsafe_store[
+        width: Int = 1
+    ](mut self, index: Int, val: ComplexSIMD[Self.cdtype, width]):
+        self._re.unsafe_store[width=width](index, val.re)
+        self._im.unsafe_store[width=width](index, val.im)
+
+    # def unsafe_ptr(
+    #     ref self, part: String = "re"
+    # ) raises -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
+    #     if part == "re":
+    #         return self._re.unsafe_ptr()
+    #     elif part == "im":
+    #         return self._im.unsafe_ptr()
+    #     else:
+    #         raise Error("part must be either 're' or 'im' in unsafe_ptr")
+
+    def to_numpy(self) raises -> PythonObject:
+        var np = Python.import_module("numpy")
+        var builtins = Python.import_module("builtins")
+        var re_np = self._re.to_numpy()
+        var im_np = self._im.to_numpy()
+        var imag_unit = builtins.complex(0, 1)
+        return re_np + im_np * imag_unit
+
+    # def iter_over_dimension(
+    #     read self, dimension: Int = 0
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     var normalized_dim = dimension
+    #     if normalized_dim < 0:
+    #         normalized_dim += self.ndim
+    #     if (normalized_dim >= self.ndim) or (normalized_dim < 0):
+    #         raise Error(
+    #             String(
+    #                 "\nError in `ComplexNDArray.iter_over_dimension()`: "
+    #                 "Axis ({}) is not in valid range [{}, {})."
+    #             ).format(dimension, -self.ndim, self.ndim)
+    #         )
+    #     return _ComplexNDArrayIter[origin_of(self), Self.cdtype](
+    #         a=Pointer(to=self), dimension=normalized_dim
+    #     )
+
+    # def iter_along_axis(
+    #     read self, axis: Int = 0
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     return self.iter_over_dimension(axis)
+
+    # def nditer(
+    #     read self,
+    # ) raises -> _ComplexNDArrayIter[origin_of(self), Self.cdtype]:
+    #     if self.ndim == 0:
+    #         raise Error("nditer is undefined for 0D ComplexNDArray.")
+    #     return self.iter_over_dimension(0)
+
+    def argsort(self) raises -> NDArray[DType.int]:
+        return self.argsort(axis=-1)
+
+    def argsort(self, axis: Int) raises -> NDArray[DType.int]:
+        if self.ndim == 0:
+            var out = NDArray[DType.int](Shape())
+            out._buf.ptr[] = 0
+            return out^
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var inv_axes = self._inverse_permutation(axes)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var idx_t = NDArray[DType.int](transposed.shape)
+
+        for o in range(outer):
+            var base = o * axis_len
+            var idxs = List[Int](capacity=axis_len)
+            for k in range(axis_len):
+                idxs.append(k)
+            for i in range(1, axis_len):
+                var key = idxs[i]
+                var j = i - 1
+                while j >= 0 and self._lex_greater(
+                    transposed._flat_load(base + idxs[j]),
+                    transposed._flat_load(base + key),
+                ):
+                    idxs[j + 1] = idxs[j]
+                    j -= 1
+                idxs[j + 1] = key
+            for k in range(axis_len):
+                # idx_t._buf.ptr[base + k] = idxs[k]
+                idx_t.itemset(base + k, Scalar[DType.int](idxs[k]))
+
+        return idx_t.T(inv_axes)
+
+    def sort(mut self, axis: Int = -1, stable: Bool = False) raises:
+        _ = stable
+        if self.ndim == 0:
+            return
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var inv_axes = self._inverse_permutation(axes)
+        var transposed = self.T(axes)
+        var idx_t = self.argsort(normalized_axis).T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var sorted_t = Self(transposed.shape)
+
+        for o in range(outer):
+            var base = o * axis_len
+            for k in range(axis_len):
+                var src_rel = Int(idx_t.load(base + k))
+                sorted_t._flat_store(
+                    base + k, transposed._flat_load(base + src_rel)
+                )
+
+        var sorted = sorted_t.T(inv_axes)
+        self = sorted^
+
+    def median(self) raises -> ComplexSIMD[Self.cdtype]:
+        if self.size == 0:
+            raise Error("Cannot compute median of empty ComplexNDArray.")
+        var a = self.flatten("C")
+        a.sort(axis=0)
+        if self.size % 2 == 1:
+            return a._flat_load(self.size // 2)
+        var left = a._flat_load(self.size // 2 - 1)
+        var right = a._flat_load(self.size // 2)
+        return ComplexSIMD[Self.cdtype](
+            (left.re + right.re) / 2, (left.im + right.im) / 2
+        )
+
+    def median(self, axis: Int) raises -> Self:
+        var normalized_axis = self._normalize_axis(axis)
+        var axes = self._permute_axis_to_last(normalized_axis)
+        var transposed = self.T(axes)
+        var axis_len = self.shape[normalized_axis]
+        var outer = self.size // axis_len
+        var out_shape = self.shape.pop(normalized_axis)
+        var result = Self(out_shape)
+
+        for o in range(outer):
+            var base = o * axis_len
+            var vals = List[ComplexSIMD[Self.cdtype]](capacity=axis_len)
+            for k in range(axis_len):
+                vals.append(transposed._flat_load(base + k))
+            for i in range(1, axis_len):
+                var key = vals[i]
+                var j = i - 1
+                while j >= 0 and self._lex_greater(vals[j], key):
+                    vals[j + 1] = vals[j]
+                    j -= 1
+                vals[j + 1] = key
+            if axis_len % 2 == 1:
+                result._flat_store(o, vals[axis_len // 2])
+            else:
+                var left = vals[axis_len // 2 - 1]
+                var right = vals[axis_len // 2]
+                result._flat_store(
+                    o,
+                    ComplexSIMD[Self.cdtype](
+                        (left.re + right.re) / 2, (left.im + right.im) / 2
+                    ),
+                )
+        return result^
+
+    # def std[
+    #     returned_dtype: DType = DType.float64
+    # ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+    #     var v = self.variance[returned_dtype](ddof=ddof)
+    #     return sqrt(Scalar[returned_dtype](v))
+
+    # def std[
+    #     returned_dtype: DType = DType.float64
+    # ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+    #     return misc.sqrt[returned_dtype](
+    #         self.variance[returned_dtype](axis, ddof)
+    #     )
+
+    # def variance[
+    #     returned_dtype: DType = DType.float64
+    # ](self, ddof: Int = 0) raises -> Scalar[returned_dtype]:
+    #     if self.size == 0:
+    #         raise Error("variance is undefined for an empty ComplexNDArray.")
+    #     if ddof < 0:
+    #         raise Error("ddof must be non-negative in ComplexNDArray.variance.")
+    #     var denom = self.size - ddof
+    #     if denom <= 0:
+    #         raise Error(
+    #             String(
+    #                 "ddof={} is too large for size {}. Need size - ddof > 0."
+    #             ).format(ddof, self.size)
+    #         )
+
+    #     var sum_re = Scalar[returned_dtype](0)
+    #     var sum_im = Scalar[returned_dtype](0)
+    #     for i in range(self.size):
+    #         var z = self._flat_load(i)
+    #         sum_re += Scalar[returned_dtype](z.re)
+    #         sum_im += Scalar[returned_dtype](z.im)
+
+    #     var n = Scalar[returned_dtype](self.size)
+    #     var mean_re = sum_re / n
+    #     var mean_im = sum_im / n
+
+    #     var acc = Scalar[returned_dtype](0)
+    #     for i in range(self.size):
+    #         var z = self._flat_load(i)
+    #         var dr = Scalar[returned_dtype](z.re) - mean_re
+    #         var di = Scalar[returned_dtype](z.im) - mean_im
+    #         acc += dr * dr + di * di
+
+    #     return acc / Scalar[returned_dtype](denom)
+
+    # def variance[
+    #     returned_dtype: DType = DType.float64
+    # ](self, axis: Int, ddof: Int = 0) raises -> NDArray[returned_dtype]:
+    #     if ddof < 0:
+    #         raise Error("ddof must be non-negative in ComplexNDArray.variance.")
+
+    #     var normalized_axis = self._normalize_axis(axis)
+    #     var axes = self._permute_axis_to_last(normalized_axis)
+    #     var transposed = self.T(axes)
+    #     var axis_len = self.shape[normalized_axis]
+    #     var denom = axis_len - ddof
+    #     if denom <= 0:
+    #         raise Error(
+    #             String(
+    #                 "ddof={} is too large for axis length {}. Need n - ddof"
+    #                 " > 0."
+    #             ).format(ddof, axis_len)
+    #         )
+
+    #     var outer = self.size // axis_len
+    #     var out_shape = self.shape.pop(normalized_axis)
+    #     var result = NDArray[returned_dtype](out_shape)
+
+    #     for o in range(outer):
+    #         var base = o * axis_len
+    #         var sum_re = Scalar[returned_dtype](0)
+    #         var sum_im = Scalar[returned_dtype](0)
+
+    #         for k in range(axis_len):
+    #             var z = transposed._flat_load(base + k)
+    #             sum_re += Scalar[returned_dtype](z.re)
+    #             sum_im += Scalar[returned_dtype](z.im)
+
+    #         var n = Scalar[returned_dtype](axis_len)
+    #         var mean_re = sum_re / n
+    #         var mean_im = sum_im / n
+
+    #         var acc = Scalar[returned_dtype](0)
+    #         for k in range(axis_len):
+    #             var z = transposed._flat_load(base + k)
+    #             var dr = Scalar[returned_dtype](z.re) - mean_re
+    #             var di = Scalar[returned_dtype](z.im) - mean_im
+    #             acc += dr * dr + di * di
+
+    #         result._buf.ptr[o] = acc / Scalar[returned_dtype](denom)
+
+    #     return result^
 
     def num_elements(self) -> Int:
         """
@@ -4195,177 +4593,190 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.strides = NDArrayStrides(shape, order=order)
 
 
-struct _ComplexNDArrayIter[
-    origin: MutOrigin,
-    cdtype: ComplexDType,
-    forward: Bool = True,
-](Copyable, Movable):
-    # TODO:
-    # Return a view instead of copy where possible
-    # (when Bufferable is supported).
-    """
-    An iterator yielding `ndim-1` array slices over the given dimension.
-    It is the default iterator of the `ComplexNDArray.__iter__() method and for loops.
-    It can also be constructed using the `ComplexNDArray.iter_over_dimension()` method.
-    It trys to create a view where possible.
-
-    Parameters:
-        origin: The lifetime of the underlying NDArray data.
-        cdtype: The complex data type of the item.
-        forward: The iteration direction. `False` is backwards.
-    """
-    comptime dtype: DType = Self.cdtype.dtype
-    """The equivalent DType of the ComplexDType."""
-
-    # FIELDS
-    var index: Int
-    var re_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
-    var im_ptr: UnsafePointer[Scalar[Self.dtype], origin=Self.origin]
-    var dimension: Int
-    var length: Int
-    var shape: NDArrayShape
-    var strides: NDArrayStrides
-    """Strides of array or view. It is not necessarily compatible with shape."""
-    var ndim: Int
-    var size_of_item: Int
-
-    def __init__(
-        out self, read a: ComplexNDArray[Self.cdtype], read dimension: Int
-    ) raises:
-        """
-        Initialize the iterator.
-
-        Args:
-            a: The array
-            dimension: Dimension to iterate over.
-        """
-
-        if dimension < 0 or dimension >= a.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Axis {} out of valid range [0, {}). Valid axes: 0..{}."
-                        " Use {} for last axis of shape {}."
-                    ).format(
-                        dimension, a.ndim, a.ndim - 1, a.ndim - 1, a.shape
-                    ),
-                    location="_ComplexNDArrayIter.__init__",
-                )
-            )
-
-        self.re_ptr = a._re.unsafe_ptr().unsafe_origin_cast[Self.origin]()
-        self.im_ptr = a._im.unsafe_ptr().unsafe_origin_cast[Self.origin]()
-        self.dimension = dimension
-        self.shape = a.shape
-        self.strides = a.strides
-        self.ndim = a.ndim
-        self.length = a.shape[dimension]
-        self.size_of_item = a.size // a.shape[dimension]
-        # Status of the iterator
-        self.index = 0 if Self.forward else a.shape[dimension] - 1
-
-    def __iter__(self) -> Self:
-        return self.copy()
-
-    def __next__(mut self) raises -> ComplexNDArray[Self.cdtype]:
-        var result = ComplexNDArray[Self.cdtype](self.shape.pop(self.dimension))
-        var current_index = self.index
-
-        comptime if Self.forward:
-            self.index += 1
-        else:
-            self.index -= 1
-
-        for offset in range(self.size_of_item):
-            var remainder = offset
-            var item: Item = Item(ndim=self.ndim)
-
-            for i in range(self.ndim - 1, -1, -1):
-                if i != self.dimension:
-                    (item._buf.ptr + i).init_pointee_copy(
-                        Scalar[DType.int](remainder % self.shape[i])
-                    )
-                    remainder = remainder // self.shape[i]
-                else:
-                    (item._buf.ptr + self.dimension).init_pointee_copy(
-                        Scalar[DType.int](current_index)
-                    )
-
-            (result._re._buf.ptr + offset).init_pointee_copy(
-                self.re_ptr[IndexMethods.get_1d_index(item, self.strides)]
-            )
-            (result._im._buf.ptr + offset).init_pointee_copy(
-                self.im_ptr[IndexMethods.get_1d_index(item, self.strides)]
-            )
-        return result^
-
-    @always_inline
-    def __has_next__(self) -> Bool:
-        comptime if Self.forward:
-            return self.index < self.length
-        else:
-            return self.index >= 0
-
-    def __len__(self) -> Int:
-        comptime if Self.forward:
-            return self.length - self.index
-        else:
-            return self.index
-
-    def ith(self, index: Int) raises -> ComplexNDArray[Self.cdtype]:
-        """
-        Gets the i-th array of the iterator.
-
-        Args:
-            index: The index of the item. It must be non-negative.
-
-        Returns:
-            The i-th `ndim-1`-D array of the iterator.
-        """
-
-        if (index >= self.length) or (index < 0):
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Iterator index {} out of range [0, {}). Use ith(i)"
-                        " with 0 <= i < {} or iterate via for-loop."
-                    ).format(index, self.length, self.length),
-                    location="_ComplexNDArrayIter.ith",
-                )
-            )
-
-        if self.ndim > 1:
-            var result = ComplexNDArray[Self.cdtype](
-                self.shape.pop(self.dimension)
-            )
-
-            for offset in range(self.size_of_item):
-                var remainder = offset
-                var item: Item = Item(ndim=self.ndim)
-
-                for i in range(self.ndim - 1, -1, -1):
-                    if i != self.dimension:
-                        (item._buf.ptr + i).init_pointee_copy(
-                            Scalar[DType.int](remainder % self.shape[i])
-                        )
-                        remainder = remainder // self.shape[i]
-                    else:
-                        (item._buf.ptr + self.dimension).init_pointee_copy(
-                            Scalar[DType.int](index)
-                        )
-
-                (result._re._buf.ptr + offset).init_pointee_copy(
-                    self.re_ptr[IndexMethods.get_1d_index(item, self.strides)]
-                )
-                (result._im._buf.ptr + offset).init_pointee_copy(
-                    self.im_ptr[IndexMethods.get_1d_index(item, self.strides)]
-                )
-            return result^
-
-        else:  # 0-D array
-            var result = numojo.creation._0darray[Self.cdtype](
-                ComplexSIMD[Self.cdtype](self.re_ptr[index], self.im_ptr[index])
-            )
-            return result^
+# struct _ComplexNDArrayIter[
+#     is_mutable: Bool,
+#     //,
+#     origin: Origin[mut=is_mutable],
+#     cdtype: ComplexDType,
+#     forward: Bool = True,
+# ](Copyable, Movable):
+#     # TODO:
+#     # Return a view instead of copy where possible
+#     # (when Bufferable is supported).
+#     """
+#     An iterator yielding `ndim-1` array slices over the given dimension.
+#     It is the default iterator of the `ComplexNDArray.__iter__() method and for loops.
+#     It can also be constructed using the `ComplexNDArray.iter_over_dimension()` method.
+#     It trys to create a view where possible.
+#
+#     Parameters:
+#         is_mutable: Whether the iterator allows mutation of the underlying data.
+#         origin: The lifetime of the underlying NDArray data.
+#         cdtype: The complex data type of the item.
+#         forward: The iteration direction. `False` is backwards.
+#     """
+#     comptime dtype: DType = Self.cdtype.dtype
+#     """The equivalent DType of the ComplexDType."""
+#
+#     # FIELDS
+#     var index: Int
+#     var _re_buf: DataContainer[Self.dtype]
+#     var _im_buf: DataContainer[Self.dtype]
+#     var offset: Int
+#     """Offset of the first element in the data buffer."""
+#     var dimension: Int
+#     var length: Int
+#     var shape: NDArrayShape
+#     var strides: NDArrayStrides
+#     """Strides of array or view. It is not necessarily compatible with shape."""
+#     var ndim: Int
+#     var size_of_item: Int
+#
+#     def __init__(
+#         out self,
+#         a: Pointer[ComplexNDArray[Self.cdtype], Self.origin],
+#         dimension: Int,
+#     ) raises:
+#         """
+#         Initialize the iterator.
+#
+#         Args:
+#             a: The array
+#             dimension: Dimension to iterate over.
+#         """
+#
+#         if dimension < 0 or dimension >= a[].ndim:
+#             raise Error(
+#                 NumojoError(
+#                     category="index",
+#                     message=String(
+#                         "Axis {} out of valid range [0, {}). Valid axes: 0..{}."
+#                         " Use {} for last axis of shape {}."
+#                     ).format(
+#                         dimension,
+#                         a[].ndim,
+#                         a[].ndim - 1,
+#                         a[].ndim - 1,
+#                         a[].shape,
+#                     ),
+#                     location="_ComplexNDArrayIter.__init__",
+#                 )
+#             )
+#
+#         self._re_buf = a[]._re._buf.copy()
+#         self._im_buf = a[]._im._buf.copy()
+#         self.offset = a[]._re.offset
+#         self.dimension = dimension
+#         self.shape = a[].shape
+#         self.strides = a[].strides
+#         self.ndim = a[].ndim
+#         self.length = a[].shape[dimension]
+#         self.size_of_item = a[].size // a[].shape[dimension]
+#         # Status of the iterator
+#         self.index = 0 if Self.forward else a[].shape[dimension] - 1
+#
+#     def __iter__(self) -> Self:
+#         return self.copy()
+#
+#     def __next__(mut self) raises -> ComplexNDArray[Self.cdtype]:
+#         var result = ComplexNDArray[Self.cdtype](self.shape.pop(self.dimension))
+#         var current_index = self.index
+#
+#         comptime if Self.forward:
+#             self.index += 1
+#         else:
+#             self.index -= 1
+#
+#         for offset in range(self.size_of_item):
+#             var remainder = offset
+#             var item: Item = Item(ndim=self.ndim)
+#
+#             for i in range(self.ndim - 1, -1, -1):
+#                 if i != self.dimension:
+#                     (item._buf.ptr + i).init_pointee_copy(
+#                         Scalar[DType.int](remainder % self.shape[i])
+#                     )
+#                     remainder = remainder // self.shape[i]
+#                 else:
+#                     (item._buf.ptr + self.dimension).init_pointee_copy(
+#                         Scalar[DType.int](current_index)
+#                     )
+#
+#             var idx = self.offset + IndexMethods.get_1d_index(
+#                 item, self.strides
+#             )
+#             result._re._buf.ptr[offset] = self._re_buf[idx]
+#             result._im._buf.ptr[offset] = self._im_buf[idx]
+#         return result^
+#
+#     @always_inline
+#     def __has_next__(self) -> Bool:
+#         comptime if Self.forward:
+#             return self.index < self.length
+#         else:
+#             return self.index >= 0
+#
+#     def __len__(self) -> Int:
+#         comptime if Self.forward:
+#             return self.length - self.index
+#         else:
+#             return self.index
+#
+#     def ith(self, index: Int) raises -> ComplexNDArray[Self.cdtype]:
+#         """
+#         Gets the i-th array of the iterator.
+#
+#         Args:
+#             index: The index of the item. It must be non-negative.
+#
+#         Returns:
+#             The i-th `ndim-1`-D array of the iterator.
+#         """
+#
+#         if (index >= self.length) or (index < 0):
+#             raise Error(
+#                 NumojoError(
+#                     category="index",
+#                     message=String(
+#                         "Iterator index {} out of range [0, {}). Use ith(i)"
+#                         " with 0 <= i < {} or iterate via for-loop."
+#                     ).format(index, self.length, self.length),
+#                     location="_ComplexNDArrayIter.ith",
+#                 )
+#             )
+#
+#         if self.ndim > 1:
+#             var result = ComplexNDArray[Self.cdtype](
+#                 self.shape.pop(self.dimension)
+#             )
+#
+#             for offset in range(self.size_of_item):
+#                 var remainder = offset
+#                 var item: Item = Item(ndim=self.ndim)
+#
+#                 for i in range(self.ndim - 1, -1, -1):
+#                     if i != self.dimension:
+#                         (item._buf.ptr + i).init_pointee_copy(
+#                             Scalar[DType.int](remainder % self.shape[i])
+#                         )
+#                         remainder = remainder // self.shape[i]
+#                     else:
+#                         (item._buf.ptr + self.dimension).init_pointee_copy(
+#                             Scalar[DType.int](index)
+#                         )
+#
+#                 var idx = self.offset + IndexMethods.get_1d_index(
+#                     item, self.strides
+#                 )
+#                 result._re._buf.ptr[offset] = self._re_buf[idx]
+#                 result._im._buf.ptr[offset] = self._im_buf[idx]
+#             return result^
+#
+#         else:  # 0-D array
+#             var result = numojo.creation._0darray[Self.cdtype](
+#                 ComplexSIMD[Self.cdtype](
+#                     self._re_buf.ptr[self.offset + index],
+#                     self._im_buf.ptr[self.offset + index],
+#                 )
+#             )
+#             return result^

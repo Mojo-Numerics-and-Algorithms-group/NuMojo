@@ -85,6 +85,9 @@ comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 """IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
 """
 
+# TODO: MutAnyOrigin in unsafe_ptr() will lead to double free errors! gotta fix this!
+# TODO: Make internal fields (shape, strides, print_opts) private and add getters/setters as needed.
+
 
 struct NDArray[dtype: DType = DType.float64](
     Absable,

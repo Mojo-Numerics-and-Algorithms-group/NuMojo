@@ -38,16 +38,6 @@ def test_complex_array_view() raises:
     assert_almost_equal(v.item(0).re, 1.0, "view failed")
     assert_almost_equal(v.item(0).im, 2.0, "view failed")
 
-
-def test_complex_array_view() raises:
-    """Test view() method."""
-    var c1 = ComplexNDArray[cf32](Shape(2, 2))
-    c1.itemset(0, ComplexSIMD[cf32](1.0, 2.0))
-    var v = c1.view()
-    assert_almost_equal(v.item(0).re, 1.0, "view failed")
-    assert_almost_equal(v.item(0).im, 2.0, "view failed")
-
-
 def test_complex_array_itemset_negative_index() raises:
     """Test itemset with negative indices."""
     var c1 = ComplexNDArray[cf32](Shape(3, 3))

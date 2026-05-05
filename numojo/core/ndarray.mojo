@@ -2501,7 +2501,6 @@ struct NDArray[dtype: DType = DType.float64](
 
         self.__setitem__(slices=slice_list, val=val)
 
-    # TODO: fix this setter, add bound checks. Not sure about it's use case.
     def __setitem__(
         mut self, index: NDArray[DType.int], val: NDArray[Self.dtype]
     ) raises:
@@ -2547,22 +2546,29 @@ struct NDArray[dtype: DType = DType.float64](
             if val.size == 1:
                 var scalar_val = val.item(0)
                 for i in range(index_c.size):
-                    var idx = Int(index_c._buf.ptr[i])
-                    idx = self.normalize(idx, self.shape[0])
-                    if idx < 0 or idx >= self.shape[0]:
+                    var raw_idx = Int(index_c._buf.ptr[i])
+                    if raw_idx < -self.shape[0] or raw_idx >= self.shape[0]:
                         raise Error(
                             NumojoError(
                                 category="index",
                                 message=String(
-                                    "Index out of range at position {}: got {};"
-                                    " valid range is [{}, {})."
-                                ).format(i, idx, -self.shape[0], self.shape[0]),
+                                    "Index out of range at position {}: got"
+                                    " {}; valid range is [{}, {})."
+                                ).format(
+                                    i,
+                                    raw_idx,
+                                    -self.shape[0],
+                                    self.shape[0],
+                                ),
                                 location=(
                                     "NDArray.__setitem__(index: NDArray, val:"
                                     " NDArray)"
                                 ),
                             )
                         )
+                    var idx = raw_idx
+                    if idx < 0:
+                        idx += self.shape[0]
                     self.itemset(idx, scalar_val)
                 return
 
@@ -2582,22 +2588,24 @@ struct NDArray[dtype: DType = DType.float64](
 
             var val_c = val.contiguous()
             for i in range(index_c.size):
-                var idx = Int(index_c._buf.ptr[i])
-                idx = self.normalize(idx, self.shape[0])
-                if idx < 0 or idx >= self.shape[0]:
+                var raw_idx = Int(index_c._buf.ptr[i])
+                if raw_idx < -self.shape[0] or raw_idx >= self.shape[0]:
                     raise Error(
                         NumojoError(
                             category="index",
                             message=String(
                                 "Index out of range at position {}: got {};"
                                 " valid range is [{}, {})."
-                            ).format(i, idx, -self.shape[0], self.shape[0]),
+                            ).format(i, raw_idx, -self.shape[0], self.shape[0]),
                             location=(
                                 "NDArray.__setitem__(index: NDArray, val:"
                                 " NDArray)"
                             ),
                         )
                     )
+                var idx = raw_idx
+                if idx < 0:
+                    idx += self.shape[0]
                 self.itemset(idx, val_c._buf.ptr[i])
             return
 
@@ -2625,7 +2633,11 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        var val_c_for_slices = val.contiguous()
+        # Only materialize a contiguous copy of `val` when we need to slice
+        # per-index rows out of it.
+        var val_c_for_slices = (
+            val.contiguous() if val_is_per_index else val.copy()
+        )
 
         for i in range(index_c.size):
             var idx = Int(index_c._buf.ptr[i])
@@ -2656,9 +2668,6 @@ struct NDArray[dtype: DType = DType.float64](
                     count=per_slice_size,
                 )
                 self.__setitem__(idx=idx, val=slice)
-
-        # for i in range(len(index)):
-        # self.store(Int(index.load(i)), rebind[Scalar[dtype]](val.load(i)))
 
     def __setitem__(
         mut self, mask: NDArray[DType.bool], val: NDArray[Self.dtype]
@@ -2700,11 +2709,9 @@ struct NDArray[dtype: DType = DType.float64](
 
         var mask_c = mask.contiguous()
         var val_c = val.contiguous()
-        var true_count = 0
-        for i in range(mask_c.size):
-            if mask_c._buf.ptr.load[width=1](i):
-                true_count += 1
 
+        # Elementwise (val matches self) and scalar broadcast paths do not
+        # need to count selected elements; only the compact 1-D path does.
         if val_c.shape == self.shape:
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
@@ -2717,6 +2724,11 @@ struct NDArray[dtype: DType = DType.float64](
                 if mask_c._buf.ptr.load[width=1](i):
                     self.itemset(i, scalar_val)
             return
+
+        var true_count = 0
+        for i in range(mask_c.size):
+            if mask_c._buf.ptr.load[width=1](i):
+                true_count += 1
 
         if val_c.ndim == 1 and val_c.size == true_count:
             var j = 0

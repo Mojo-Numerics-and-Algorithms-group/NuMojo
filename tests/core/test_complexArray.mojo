@@ -176,24 +176,28 @@ def test_complex_array_setitem_bool_mask_scalar() raises:
     assert_almost_equal(c.item(5).im, -9.0, "mask scalar write failed")
 
 
-# TODO: Re-enable once ComplexNDArray comparison dunders avoid NDArray truth-value ambiguity.
-# def test_complex_array_lexicographic_comparisons() raises:
-#     var a = ComplexNDArray[cf32](Shape(3))
-#     a.itemset(0, ComplexSIMD[cf32](1.0, 2.0))
-#     a.itemset(1, ComplexSIMD[cf32](2.0, -1.0))
-#     a.itemset(2, ComplexSIMD[cf32](2.0, 3.0))
-#
-#     var b = ComplexNDArray[cf32](Shape(3))
-#     b.itemset(0, ComplexSIMD[cf32](1.0, 3.0))
-#     b.itemset(1, ComplexSIMD[cf32](2.0, -1.0))
-#     b.itemset(2, ComplexSIMD[cf32](1.0, 9.0))
-#
-#     var lt = a < b
-#     var gt = a > b
-#
-#     assert_equal(Int(lt.load(0)), 1, "lexicographic < failed at 0")
-#     assert_equal(Int(lt.load(1)), 0, "lexicographic < failed at 1")
-#     assert_equal(Int(gt.load(2)), 1, "lexicographic > failed at 2")
+def test_complex_array_lexicographic_comparisons() raises:
+    var a = ComplexNDArray[cf32](Shape(3))
+    a.itemset(0, ComplexSIMD[cf32](1.0, 2.0))
+    a.itemset(1, ComplexSIMD[cf32](2.0, -1.0))
+    a.itemset(2, ComplexSIMD[cf32](2.0, 3.0))
+
+    var b = ComplexNDArray[cf32](Shape(3))
+    b.itemset(0, ComplexSIMD[cf32](1.0, 3.0))
+    b.itemset(1, ComplexSIMD[cf32](2.0, -1.0))
+    b.itemset(2, ComplexSIMD[cf32](1.0, 9.0))
+
+    var lt = a < b
+    var gt = a > b
+    var ne = a != b
+    var eq = a == b
+
+    assert_equal(Int(lt.load(0)), 1, "lexicographic < failed at 0")
+    assert_equal(Int(lt.load(1)), 0, "lexicographic < failed at 1")
+    assert_equal(Int(gt.load(2)), 1, "lexicographic > failed at 2")
+    assert_equal(Int(ne.load(0)), 1, "!= failed at 0")
+    assert_equal(Int(ne.load(1)), 0, "!= failed at 1")
+    assert_equal(Int(eq.load(1)), 1, "== failed at 1")
 
 
 def test_complex_array_axis_reductions() raises:

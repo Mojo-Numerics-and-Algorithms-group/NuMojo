@@ -171,6 +171,11 @@ from .manipulation import (
     transpose,
     broadcast_to,
     flip,
+    concatenate,
+    column_stack,
+    row_stack,
+    hstack,
+    vstack,
 )
 
 from .sorting import sort, argsort

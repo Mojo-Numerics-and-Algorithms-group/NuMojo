@@ -282,6 +282,69 @@ def test_setitem_single_axis_index_oob_error() raises:
     assert_true(raised, "__setitem__(idx: Int, val) did not raise on OOB index")
 
 
+def test_getitem_index_array_negative_indices() raises:
+    """Integer-array getitem supports negative indices on axis 0."""
+    var np = Python.import_module("numpy")
+    var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
+    var anp = np.arange(12, dtype=np.int32).reshape(3, 4)
+    var idx = nm.array[int]("[2, -1, 0, -2]")
+    check(
+        a[idx], anp[[2, -1, 0, -2]], "index-array getter with negatives failed"
+    )
+
+
+def test_setitem_index_array_per_index_rows() raises:
+    """Integer-array setitem assigns row-by-row when val has leading index dim.
+    """
+    var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
+    var idx = nm.array[int]("[2, 0]")
+    var repl = nm.array[nm.i32]("[[100, 101, 102, 103], [200, 201, 202, 203]]")
+    a[idx] = repl
+
+    # row 2 replaced by repl[0], row 0 replaced by repl[1]
+    assert_equal(Int(a[2].load(0)), 100)
+    assert_equal(Int(a[2].load(3)), 103)
+    assert_equal(Int(a[0].load(0)), 200)
+    assert_equal(Int(a[0].load(3)), 203)
+    # untouched row
+    assert_equal(Int(a[1].load(0)), 4)
+    assert_equal(Int(a[1].load(3)), 7)
+
+
+def test_setitem_index_array_broadcast_single_row() raises:
+    """Integer-array setitem broadcasts one row to every selected row."""
+    var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
+    var idx = nm.array[int]("[1, 2]")
+    var row = nm.array[nm.i32]("[9, 9, 9, 9]")
+    a[idx] = row
+
+    assert_equal(Int(a[1].load(0)), 9)
+    assert_equal(Int(a[1].load(3)), 9)
+    assert_equal(Int(a[2].load(0)), 9)
+    assert_equal(Int(a[2].load(3)), 9)
+    # untouched row
+    assert_equal(Int(a[0].load(0)), 0)
+    assert_equal(Int(a[0].load(3)), 3)
+
+
+def test_mask_setitem_compact_values() raises:
+    """Boolean-mask assignment supports compact 1-D values of true-count size.
+    """
+    var a = nm.arange[nm.i32](0, 6, step=1).reshape(Shape(2, 3))
+    var mask = nm.array[boolean]("[[1,0,1],[0,1,0]]")
+    var vals = nm.array[nm.i32]("[50, 60, 70]")
+    a[mask] = vals
+
+    # True positions in row-major order: (0,0), (0,2), (1,1)
+    assert_equal(Int(a.item(0, 0)), 50)
+    assert_equal(Int(a.item(0, 2)), 60)
+    assert_equal(Int(a.item(1, 1)), 70)
+    # False positions unchanged
+    assert_equal(Int(a.item(0, 1)), 1)
+    assert_equal(Int(a.item(1, 0)), 3)
+    assert_equal(Int(a.item(1, 2)), 5)
+
+
 # ===== F-order integer indexing =====
 # TODO: Fix "F" order issue in NDArray
 # def test_getitem_single_axis_f_order():

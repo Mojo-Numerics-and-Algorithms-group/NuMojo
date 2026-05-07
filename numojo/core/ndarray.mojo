@@ -2390,15 +2390,10 @@ struct NDArray[dtype: DType = DType.float64](
                     )
                 )
 
-        # noffset: buffer position of the first element of the destination slice.
-        # Computed unconditionally from self.offset plus each dimension's slice
-        # start scaled by the corresponding stride. This is correct for C-order,
-        # F-order, and arbitrary strided layouts alike.
         var noffset: Int = self.offset
         for i in range(slice_list.__len__()):
             noffset += slice_list[i].start * self.strides[i]
 
-        # nstrides: strides used to walk through val_c (the source).
         # val_c is always C-contiguous (produced by val.contiguous()), so
         # C-order strides are always correct here regardless of self's layout.
         for i in range(ndims):

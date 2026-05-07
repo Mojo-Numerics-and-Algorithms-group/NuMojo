@@ -2643,7 +2643,13 @@ struct NDArray[dtype: DType = DType.float64](
                             message=String(
                                 "Integer index {} out of bounds for axis {}"
                                 " (size {}). Valid range: [-{}, {})."
-                            ).format(idx, i, self.shape[i], self.shape[i], self.shape[i]),
+                            ).format(
+                                idx,
+                                i,
+                                self.shape[i],
+                                self.shape[i],
+                                self.shape[i],
+                            ),
                             location=(
                                 "NDArray.__setitem__(*slices: Variant[Slice,"
                                 " Int], scalar: Scalar)"

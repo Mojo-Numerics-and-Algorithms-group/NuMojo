@@ -34,7 +34,8 @@ def test_setitem_list_slice_scalar_1d() raises:
 
 
 def test_setitem_list_slice_scalar_2d_submatrix() raises:
-    """List[Slice] scalar: fills a 2x2 sub-matrix, surrounding values unchanged."""
+    """List[Slice] scalar: fills a 2x2 sub-matrix, surrounding values unchanged.
+    """
     var a = nm.arange[nm.i32](0, 16, step=1).reshape(Shape(4, 4))
     var sl = List[Slice]()
     sl.append(Slice(1, 3))
@@ -152,7 +153,9 @@ def test_setitem_variadic_slice_scalar_2d() raises:
             assert_equal(
                 Int(a.item(i, j)),
                 Int(b.item(i, j)),
-                String("*Slice and List[Slice] scalar paths diverge at ({},{})").format(i, j),
+                String(
+                    "*Slice and List[Slice] scalar paths diverge at ({},{})"
+                ).format(i, j),
             )
 
 
@@ -301,7 +304,9 @@ def test_setitem_mixed_agrees_with_list_slice_scalar() raises:
             assert_equal(
                 Int(a.item(i, j)),
                 Int(b.item(i, j)),
-                String("Mixed and List[Slice] scalar paths diverge at ({},{})").format(i, j),
+                String(
+                    "Mixed and List[Slice] scalar paths diverge at ({},{})"
+                ).format(i, j),
             )
 
 

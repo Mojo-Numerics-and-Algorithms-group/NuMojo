@@ -2584,7 +2584,7 @@ struct NDArray[dtype: DType = DType.float64](
         self._setitem_slice_scalar(slice_list, scalar)
 
     def __setitem__(
-        mut self, *slices: Variant[Slice, Int], val: Scalar[Self.dtype]
+        mut self, *slices: Variant[Slice, Int], scalar: Scalar[Self.dtype]
     ) raises:
         """Sets elements selected by mixed integer/slice indices to a scalar.
 
@@ -3865,20 +3865,25 @@ struct NDArray[dtype: DType = DType.float64](
             )
         else:
             try:
+                var order: String
+                if self.is_c_contiguous():
+                    order = "C"
+                elif self.is_f_contiguous():
+                    order = "F"
+                else:
+                    order = "non-contiguous"
                 writer.write(
                     self._array_to_string(0, 0)
                     + "\n"
                     + String(self.ndim)
-                    + "D-array  Shape"
-                    + String(self.shape)
-                    + "  Strides"
-                    + String(self.strides)
+                    + "D-array  Shape: "
+                    + self.shape.__str__()
+                    + "  Strides: "
+                    + self.strides.__str__()
                     + "  DType: "
                     + _concise_dtype_str(self.dtype)
-                    + "  C-cont: "
-                    + String(self.is_c_contiguous())
-                    + "  F-cont: "
-                    + String(self.is_f_contiguous())
+                    + "  order: "
+                    + order
                     + "  own data: "
                     + String(self.flags.OWNDATA)
                 )

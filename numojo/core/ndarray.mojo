@@ -2390,23 +2390,22 @@ struct NDArray[dtype: DType = DType.float64](
                     )
                 )
 
-        var noffset: Int = 0
-        if self.is_c_contiguous():
-            noffset = self.offset
-            for i in range(ndims):
-                var temp_stride: Int = 1
-                for j in range(i + 1, ndims):  # temp
-                    temp_stride *= nshape[j]
-                nstrides.append(temp_stride)
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start * self.strides[i]
-        elif self.is_f_contiguous():
-            noffset = self.offset
-            nstrides.append(1)
-            for i in range(0, ndims - 1):
-                nstrides.append(nstrides[i] * nshape[i])
-            for i in range(slice_list.__len__()):
-                noffset += slice_list[i].start * self.strides[i]
+        # noffset: buffer position of the first element of the destination slice.
+        # Computed unconditionally from self.offset plus each dimension's slice
+        # start scaled by the corresponding stride. This is correct for C-order,
+        # F-order, and arbitrary strided layouts alike.
+        var noffset: Int = self.offset
+        for i in range(slice_list.__len__()):
+            noffset += slice_list[i].start * self.strides[i]
+
+        # nstrides: strides used to walk through val_c (the source).
+        # val_c is always C-contiguous (produced by val.contiguous()), so
+        # C-order strides are always correct here regardless of self's layout.
+        for i in range(ndims):
+            var temp_stride: Int = 1
+            for j in range(i + 1, ndims):
+                temp_stride *= nshape[j]
+            nstrides.append(temp_stride)
 
         var index = List[Int]()
         for _ in range(ndims):

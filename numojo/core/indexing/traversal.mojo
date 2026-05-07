@@ -98,11 +98,11 @@ struct TraverseMethods:
             for i in range(len(index)):
                 orig_idx += index[i] * coefficients[i]
 
-            var narr_idx = 0
+            var narr_idx = narr.offset
             for i in range(len(index)):
                 narr_idx += index[i] * strides[i]
 
-            if narr_idx >= total_elements:
+            if narr_idx - narr.offset >= total_elements:
                 raise Error("Invalid index: index out of bound")
 
             narr._buf.ptr.store(narr_idx, orig._buf.ptr.load[width=1](orig_idx))
@@ -135,26 +135,26 @@ struct TraverseMethods:
             orig: The original array (source).
             narr: The array to store the result (destination).
             ndim: The number of dimensions of the array.
-            coefficients: The coefficients to traverse the sliced part of the original array.
-            strides: The strides to traverse the new NDArray `narr`.
-            offset: The offset to the first element of the original NDArray.
-            index: The list of indices.
+            coefficients: The coefficients to traverse the sliced part of the
+                destination array (narr), scaled by narr's strides and step.
+            strides: The strides to walk through orig (the source value array).
+                Since orig is always made contiguous before this call, these
+                are C-order strides of orig's shape.
+            offset: The buffer offset of the first destination element in narr.
+            index: The list of indices (mutated in place as a counter).
         """
-        var total_elements = narr.size
+        var total_elements = orig.size
 
         for _ in range(total_elements):
-            var orig_idx = offset
+            var orig_idx = orig.offset
             for i in range(len(index)):
-                orig_idx += index[i] * coefficients[i]
+                orig_idx += index[i] * strides[i]
 
-            var narr_idx = 0
+            var narr_idx = offset
             for i in range(len(index)):
-                narr_idx += index[i] * strides[i]
+                narr_idx += index[i] * coefficients[i]
 
-            if narr_idx >= total_elements:
-                raise Error("Invalid index: index out of bound")
-
-            narr._buf.ptr.store(orig_idx, orig._buf.ptr.load[width=1](narr_idx))
+            narr._buf.ptr.store(narr_idx, orig._buf.ptr.load[width=1](orig_idx))
 
             for d in range(ndim.__len__() - 1, -1, -1):
                 index[d] += 1

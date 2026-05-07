@@ -735,6 +735,10 @@ struct NDArray[dtype: DType = DType.float64](
         """Retrieves a slice or sub-array from the current array using variadic
         slice arguments.
 
+        Delegates to `__getitem__(*slices: IndexTypes)` after wrapping each
+        `Slice` into the `IndexTypes` variant. This ensures a single canonical
+        parsing and dispatch path.
+
         Args:
             slices: A variadic list of `Slice` objects, one for each dimension
                 to be sliced.
@@ -751,52 +755,24 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             IndexError: If any slice is out of bounds for its corresponding
                 dimension.
-            ValueError: If the number of slices does not match the array's
-                dimensions.
+            ValueError: If the number of slices is greater than `ndim`.
 
         Notes:
-            - This method creates a new array; views are not currently
-              supported.
-            - Negative indices and step sizes are supported as per standard
-              slicing semantics.
+            - Negative indices and step sizes are supported.
+            - Missing trailing dimensions are implicitly treated as full slices.
 
         Examples:
             ```mojo
             import numojo as nm
-            var a = nm.arange[nm.f32](10).reshape(
-                nm.Shape(2, 5)
-            )
+            var a = nm.arange[nm.f32](10).reshape(nm.Shape(2, 5))
             var b = a[:, 2:4]
             print(b)  # 2x2 sliced array
             ```
         """
-        var n_slices: Int = slices.__len__()
-        if n_slices > self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Too many slices provided: expected at most {} but got"
-                        " {}. Provide at most {} slices for an array with {}"
-                        " dimensions."
-                    ).format(self.ndim, n_slices, self.ndim, self.ndim),
-                    location="NDArray.__getitem__(slices: Slice)",
-                )
-            )
-        var slice_list: List[Slice] = List[Slice](capacity=self.ndim)
-        var index_type_list: List[IndexTypeInfo] = List[IndexTypeInfo](
-            capacity=self.ndim
-        )
-        for i in range(len(slices)):
-            slice_list.append(slices[i])
-            index_type_list.append(IndexTypeInfo(is_slice=True))
-
-        if n_slices < self.ndim:
-            for i in range(n_slices, self.ndim):
-                slice_list.append(Slice(0, self.shape[i], 1))
-
-        var narr: Self = self.__getitem__(slice_list^, index_type_list^)
-        return narr^
+        var index_list = List[IndexTypes](capacity=slices.__len__())
+        for i in range(slices.__len__()):
+            index_list.append(IndexTypes(slices[i]))
+        return self._getitem_from_index_list(index_list)
 
     def _calculate_strides(self, shape: List[Int]) -> List[Int]:
         """Calculates strides for a given shape based on the array's memory
@@ -848,51 +824,37 @@ struct NDArray[dtype: DType = DType.float64](
 
         return strides^
 
-    def __getitem__(
+    def _getitem_with_index_info(
         self,
         var slice_list: List[Slice],
         var index_type_list: List[IndexTypeInfo],
     ) raises -> Self:
-        """Retrieves a sub-array from the current array using a list of slice
-        objects, enabling advanced slicing operations across multiple
-        dimensions.
+        """Internal backend for all slice-based getitem operations.
+
+        Accepts a pre-processed flat list of `Slice` objects (one per actual
+        array dimension, with integer indices represented as unit-length slices)
+        and a parallel `IndexTypeInfo` list that records the original index kind
+        (slice, integer, newaxis, ellipsis). Computes the output shape, copies
+        the selected elements into a new contiguous array, then reconstructs the
+        final shape by applying dimension-reduction (integers), insertion
+        (newaxis), and expansion (ellipsis) rules.
+
+        This method is the single authoritative implementation. All public
+        overloads (`__getitem__(*Slice)`, `__getitem__(*IndexTypes)`) parse
+        their arguments into these two lists and call here.
 
         Args:
-            slice_list: A list of `Slice` objects, where each `Slice` defines
-                the start, stop, and step for the corresponding dimension.
-            index_type_list: A list of `IndexTypeInfo` objects indicating the
-                type of each index (slice, integer, newaxis, ellipsis).
-
-        Constraints:
-            - The length of `slice_list` must not exceed the number of
-              dimensions in the array.
-            - Each `Slice` in `slice_list` must be valid for its respective
-              dimension.
+            slice_list: One `Slice` per array dimension after ellipsis
+                expansion. Integer indices are encoded as `Slice(n, n+1, 1)`.
+            index_type_list: Parallel metadata list marking each entry as
+                slice, integer, newaxis, or ellipsis.
 
         Returns:
-            A new array instance representing the sliced view of the original
-            array.
+            A new owning NDArray with the selected data and the correct output
+            shape.
 
         Raises:
             Error: If `slice_list` is empty or contains invalid slices.
-
-        Notes:
-            - This method supports advanced slicing similar to NumPy's
-              multi-dimensional slicing.
-            - The returned array shares data with the original array if
-              possible.
-
-        Example:
-            ```mojo
-            import numojo as nm
-            var a = nm.arange(10).reshape(
-                nm.Shape(2, 5)
-            )
-            var b = a[
-                Slice(0, 2, 1), Slice(2, 4, 1)
-            ]  # Equivalent to arr[:, 2:4].
-            print(b)
-            ```
         """
         var n_slices: Int = len(slice_list)
         var slices: List[InternalSlice] = self._adjust_slice(slice_list)
@@ -1081,6 +1043,120 @@ struct NDArray[dtype: DType = DType.float64](
 
         return narr^
 
+    def _getitem_from_index_list(
+        self, index_list: List[IndexTypes]
+    ) raises -> Self:
+        """Shared parser for all slice-based getitem overloads.
+
+        Accepts a `List[IndexTypes]` (the canonical variadic index
+        representation), validates and normalises each entry, then calls
+        `_getitem_with_index_info` with the resulting `(slice_list,
+        index_type_list)` pair.
+
+        This is the single point where `Slice`, `Int`, `NewAxis`, and
+        `EllipsisType` entries are interpreted, so `__getitem__(*Slice)` and
+        `__getitem__(*IndexTypes)` both parse through here.
+
+        Args:
+            index_list: Ordered index entries for each explicitly specified
+                position. May be shorter than `self.ndim`; trailing dimensions
+                are implicitly treated as full-range slices.
+
+        Returns:
+            A new NDArray with the selected data and correctly reduced/expanded
+            shape.
+
+        Raises:
+            Error: If more entries are given than the array has dimensions
+                (after excluding `NewAxis` entries).
+            Error: If an integer index is out of bounds for its dimension.
+        """
+        var n = len(index_list)
+
+        # Count how many entries consume an actual array dimension
+        # (NewAxis does not consume one).
+        var n_consuming: Int = 0
+        for i in range(n):
+            if not index_list[i].isa[NewAxis]():
+                n_consuming += 1
+
+        if n_consuming > self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Too many indices: {} consume array dimensions but"
+                        " array only has {}."
+                    ).format(n_consuming, self.ndim),
+                    location="NDArray._getitem_from_index_list",
+                )
+            )
+
+        var slice_list = List[Slice](capacity=self.ndim)
+        var index_type_list = List[IndexTypeInfo](capacity=n + self.ndim)
+        var count_int: Int = 0
+        var all_int_coords = List[Int]()
+
+        # Track which real dimension each consuming entry maps to.
+        var array_dim: Int = 0
+
+        for i in range(n):
+            if index_list[i].isa[EllipsisType]():
+                index_type_list.append(IndexTypeInfo(is_ellipsis=True))
+                # Expand ellipsis: fill all remaining un-consumed dims.
+                var remaining_consuming: Int = 0
+                for j in range(i + 1, n):
+                    if not index_list[j].isa[NewAxis]():
+                        remaining_consuming += 1
+                var ellipsis_dims = self.ndim - array_dim - remaining_consuming
+                for k in range(ellipsis_dims):
+                    slice_list.append(Slice(0, self.shape[array_dim + k], 1))
+                    index_type_list.append(IndexTypeInfo(is_slice=True))
+                array_dim += ellipsis_dims
+                # Continue to process remaining entries after the ellipsis.
+
+            elif index_list[i].isa[NewAxis]():
+                index_type_list.append(IndexTypeInfo(is_newaxis=True))
+                # NewAxis does not consume an array dimension.
+
+            elif index_list[i].isa[Slice]():
+                slice_list.append(index_list[i][Slice])
+                index_type_list.append(IndexTypeInfo(is_slice=True))
+                array_dim += 1
+
+            elif index_list[i].isa[Int]():
+                var norm = index_list[i][Int]
+                var dim_size = self.shape[array_dim]
+                if norm >= dim_size or norm < -dim_size:
+                    raise Error(
+                        NumojoError(
+                            category="index",
+                            message=String(
+                                "Integer index {} out of bounds for axis {}"
+                                " (size {}). Valid range: [-{}, {})."
+                            ).format(norm, array_dim, dim_size, dim_size, dim_size),
+                            location="NDArray._getitem_from_index_list",
+                        )
+                    )
+                if norm < 0:
+                    norm += dim_size
+                count_int += 1
+                all_int_coords.append(norm)
+                slice_list.append(Slice(norm, norm + 1, 1))
+                index_type_list.append(IndexTypeInfo(is_integer=True))
+                array_dim += 1
+
+        # Fast path: all explicit indices are integers covering every dim → 0-D.
+        if count_int == self.ndim:
+            return creation._0darray[Self.dtype](self._getitem(all_int_coords))
+
+        # Pad trailing dimensions with full-range slices.
+        while array_dim < self.ndim:
+            slice_list.append(Slice(0, self.shape[array_dim], 1))
+            array_dim += 1
+
+        return self._getitem_with_index_info(slice_list^, index_type_list^)
+
     def __getitem__(self, *slices: IndexTypes) raises -> Self:
         """Gets items of an NDArray with a series of either slices or integers.
 
@@ -1262,79 +1338,10 @@ struct NDArray[dtype: DType = DType.float64](
         -105
         ```.
         """
-        var n_slices: Int = len(slices)
-        if n_slices == 0:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=(
-                        "Empty slice list provided to NDArray.__getitem__."
-                        " Provide a List with at least one slice to index the"
-                        " array."
-                    ),
-                    location="NDArray.__getitem__(slice_list: List[Slice])",
-                )
-            )
-        var slice_list: List[Slice] = List[Slice]()
-        var index_type_list: List[IndexTypeInfo] = List[IndexTypeInfo](
-            capacity=self.ndim
-        )
-        var count_int: Int = 0  # Count the number of Int in the argument
-        var indices: List[Int] = List[Int]()
-
+        var index_list = List[IndexTypes](capacity=len(slices))
         for i in range(len(slices)):
-            if slices[i].isa[EllipsisType]():
-                index_type_list.append(IndexTypeInfo(is_ellipsis=True))
-                for j in range(self.ndim - n_slices + 1):
-                    slice_list.append(Slice(0, self.shape[i + j], 1))
-                break
-            if slices[i].isa[NewAxis]():
-                index_type_list.append(IndexTypeInfo(is_newaxis=True))
-            if slices[i].isa[Slice]():
-                slice_list.append(slices[i][Slice])
-                index_type_list.append(IndexTypeInfo(is_slice=True))
-            elif slices[i].isa[Int]():
-                var norm: Int = slices[i][Int]
-                if norm >= self.shape[i] or norm < -self.shape[i]:
-                    raise Error(
-                        NumojoError(
-                            category="index",
-                            message=String(
-                                "Integer index {} out of bounds for axis {}"
-                                " (size {}). Valid indices: 0 <= i < {} or"
-                                " negative -{} <= i < 0 (negative indices wrap"
-                                " from the end)."
-                            ).format(
-                                slices[i][Int],
-                                i,
-                                self.shape[i],
-                                self.shape[i],
-                                self.shape[i],
-                            ),
-                            location=(
-                                "NDArray.__getitem__(*slices: Variant[Slice,"
-                                " Int])"
-                            ),
-                        )
-                    )
-                if norm < 0:
-                    norm += self.shape[i]
-                count_int += 1
-                indices.append(norm)
-                slice_list.append(Slice(norm, norm + 1, 1))
-                index_type_list.append(IndexTypeInfo(is_integer=True))
-
-        var narr: Self
-        if count_int == self.ndim:
-            narr = creation._0darray[Self.dtype](self._getitem(indices))
-            return narr^
-
-        if n_slices < self.ndim and not index_type_list[-1].is_ellipsis:
-            for i in range(n_slices, self.ndim):
-                slice_list.append(Slice(0, self.shape[i], 1))
-
-        narr = self.__getitem__(slice_list^, index_type_list^)
-        return narr^
+            index_list.append(slices[i])
+        return self._getitem_from_index_list(index_list)
 
     def __getitem__(self, indices: NDArray[DType.int]) raises -> Self:
         """Gets items from the 0-th dimension of an array by an array of

@@ -1134,7 +1134,9 @@ struct NDArray[dtype: DType = DType.float64](
                             message=String(
                                 "Integer index {} out of bounds for axis {}"
                                 " (size {}). Valid range: [-{}, {})."
-                            ).format(norm, array_dim, dim_size, dim_size, dim_size),
+                            ).format(
+                                norm, array_dim, dim_size, dim_size, dim_size
+                            ),
                             location="NDArray._getitem_from_index_list",
                         )
                     )

@@ -6,6 +6,7 @@ from numojo.prelude import *
 
 # ===== Step 7: F-order setitem noffset =====
 
+
 def test_setitem_forder_top_left_region() raises:
     """F-order setitem: zero out [0:2, 1:3] — touches cols 1 and 2."""
     # Before: row0=[0,3,6,9], row1=[1,4,7,10], row2=[2,5,8,11]
@@ -85,7 +86,8 @@ def test_setitem_forder_full_col() raises:
 
 
 def test_setitem_forder_non_trivial_source() raises:
-    """F-order setitem: source is non-uniform — verifies values not just written once."""
+    """F-order setitem: source is non-uniform — verifies values not just written once.
+    """
     # Write [[10,11],[12,13]] into [0:2, 0:2] of F-order 3x4
     # Before: (0,0)=0,(0,1)=3,(1,0)=1,(1,1)=4
     # After:  (0,0)=10,(0,1)=11,(1,0)=12,(1,1)=13
@@ -130,15 +132,16 @@ def test_setitem_forder_does_not_corrupt_untouched() raises:
 
 
 def test_getitem_slice_corder_values() raises:
-    """traverse_iterative getter: C-order slice returns correct element values."""
+    """traverse_iterative getter: C-order slice returns correct element values.
+    """
     # arange(24).reshape(4,6): row i, col j → value = i*6+j
     var a = nm.arange[nm.i32](0, 24).reshape(Shape(4, 6))
     var b = a[Slice(1, 3), Slice(2, 5)]
     # b[i,j] = a[1+i, 2+j] = (1+i)*6 + (2+j)
     assert_equal(b.shape[0], 2)
     assert_equal(b.shape[1], 3)
-    assert_equal(Int(b.item(0, 0)), 8)   # a[1,2]
-    assert_equal(Int(b.item(0, 1)), 9)   # a[1,3]
+    assert_equal(Int(b.item(0, 0)), 8)  # a[1,2]
+    assert_equal(Int(b.item(0, 1)), 9)  # a[1,3]
     assert_equal(Int(b.item(0, 2)), 10)  # a[1,4]
     assert_equal(Int(b.item(1, 0)), 14)  # a[2,2]
     assert_equal(Int(b.item(1, 1)), 15)  # a[2,3]
@@ -146,7 +149,8 @@ def test_getitem_slice_corder_values() raises:
 
 
 def test_getitem_slice_forder_values() raises:
-    """traverse_iterative getter: F-order slice returns correct element values."""
+    """traverse_iterative getter: F-order slice returns correct element values.
+    """
     # arange(12).reshape(3,4,order="F"):
     #   row0=[0,3,6,9], row1=[1,4,7,10], row2=[2,5,8,11]
     # b = a[0:2, 1:3] → row0=[3,6], row1=[4,7]
@@ -170,9 +174,9 @@ def test_getitem_slice_3d_corder() raises:
     assert_equal(b.shape[0], 2)
     assert_equal(b.shape[1], 2)
     assert_equal(b.shape[2], 2)
-    assert_equal(Int(b.item(0, 0, 0)), 5)   # a[0,1,1]
-    assert_equal(Int(b.item(0, 0, 1)), 6)   # a[0,1,2]
-    assert_equal(Int(b.item(0, 1, 0)), 9)   # a[0,2,1]
+    assert_equal(Int(b.item(0, 0, 0)), 5)  # a[0,1,1]
+    assert_equal(Int(b.item(0, 0, 1)), 6)  # a[0,1,2]
+    assert_equal(Int(b.item(0, 1, 0)), 9)  # a[0,2,1]
     assert_equal(Int(b.item(1, 0, 0)), 17)  # a[1,1,1]
     assert_equal(Int(b.item(1, 1, 1)), 22)  # a[1,2,2]
 
@@ -181,7 +185,8 @@ def test_getitem_slice_3d_corder() raises:
 
 
 def test_setitem_corder_non_trivial_source() raises:
-    """traverse_iterative_setter: non-uniform source values written correctly."""
+    """traverse_iterative_setter: non-uniform source values written correctly.
+    """
     # arange(16).reshape(4,4): write arange(10,14).reshape(2,2) into [1:3,1:3]
     # repl = [[10,11],[12,13]]
     # Expected: (1,1)=10, (1,2)=11, (2,1)=12, (2,2)=13

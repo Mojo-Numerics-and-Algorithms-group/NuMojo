@@ -1,11 +1,11 @@
 from std.math import sqrt
-import numojo as nm
-from numojo.prelude import *
 from std.python import Python, PythonObject
 from utils_for_test import check, check_is_close
 from std.testing.testing import assert_true, assert_almost_equal
 from std.testing import TestSuite
 
+import numojo as nm
+from numojo.prelude import *
 
 def test_rand() raises:
     """Test random array generation with specified shape."""

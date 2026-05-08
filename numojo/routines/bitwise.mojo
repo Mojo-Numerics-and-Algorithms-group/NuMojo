@@ -51,4 +51,8 @@ def invert[
         var result2 = invert(arr2) # result2 is [false, true, false
         ```
     """
-    return HostExecutor.apply_unary[dtype, SIMD.__invert__](array)
+    def kernel[type: DType, simd_w: Int](scalar: SIMD[type, simd_w]) -> SIMD[
+        DType.bool, simd_w
+    ]
+        return ~scalar
+    return HostExecutor.apply_unary[dtype, kernel](array)

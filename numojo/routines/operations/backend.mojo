@@ -38,7 +38,7 @@ struct HostExecutor:
     def apply_unary[
         dtype: DType,
         simd_width: Int,
-        kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
+        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](scalar: SIMD[dtype, simd_width]) -> SIMD[dtype, simd_width]:
@@ -62,7 +62,7 @@ struct HostExecutor:
     def apply_binary[
         dtype: DType,
         simd_width: Int,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](simd1: SIMD[dtype, simd_width], simd2: SIMD[dtype, simd_width]) -> SIMD[
@@ -89,7 +89,7 @@ struct HostExecutor:
     def apply_unary_predicate[
         dtype: DType,
         simd_width: Int,
-        kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
+        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](simd: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
@@ -113,7 +113,7 @@ struct HostExecutor:
     def apply_binary_predicate[
         dtype: DType,
         simd_width: Int,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](simd1: SIMD[dtype, simd_width], simd2: SIMD[dtype, simd_width]) -> SIMD[
@@ -139,7 +139,7 @@ struct HostExecutor:
     @staticmethod
     def apply_unary[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
+        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             type, simd_w
         ],
     ](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -183,7 +183,7 @@ struct HostExecutor:
     @staticmethod
     def apply_binary[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -242,7 +242,7 @@ struct HostExecutor:
     @staticmethod
     def apply_binary[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[dtype]:
@@ -288,7 +288,7 @@ struct HostExecutor:
     @staticmethod
     def apply_binary[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](scalar: SIMD[dtype, 1], array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -335,7 +335,7 @@ struct HostExecutor:
     @staticmethod
     def apply_binary[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
+        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
             type, simd_w
         ],
     ](array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
@@ -376,7 +376,7 @@ struct HostExecutor:
     @staticmethod
     def apply_binary_predicate[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
@@ -445,7 +445,7 @@ struct HostExecutor:
     @staticmethod
     def apply_binary_predicate[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[DType.bool, simd_w],
     ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
@@ -500,7 +500,7 @@ struct HostExecutor:
     @staticmethod
     def apply_unary_predicate[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
+        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
             DType.bool, simd_w
         ],
     ](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -539,7 +539,7 @@ struct HostExecutor:
     @staticmethod
     def apply_ternary[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](
@@ -609,7 +609,7 @@ struct HostExecutor:
     @staticmethod
     def apply_ternary[
         dtype: DType,
-        kernel: fn[type: DType, simd_w: Int](
+        kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
     ](

@@ -201,7 +201,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type](values[i])
             )
 
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Copy-initialize an IndexBuffer from ancopy IndexBuffer.
 

@@ -396,7 +396,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         self.ndim = ndim
         self.data_container = data_container^
 
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         self.shape = copy.shape
         self.strides = copy.strides
         self.ndim = copy.ndim
@@ -407,7 +407,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
             self.shape.free()
         if self.strides:
             self.strides.free()
-        # TODO: note sure if we should free it explicitly, gotta check this.
+        # TODO: note sure if we should free it explicitly, gotta check this with tests.
         _ = self.data_container^
 
 

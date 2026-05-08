@@ -424,7 +424,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     #     )
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Copy copy into self.
         """
@@ -438,7 +438,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.print_options = copy.print_options
 
     @always_inline("nodebug")
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """
         Move other into self.
         """
@@ -645,7 +645,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var A = nm.ones[nm.cf32](numojo.Shape(2,3,4))
+
+            var A = nm.ones[nm.cf32](nm.Shape(2,3,4))
             print(A._getitem([1,2,3]))
             ```
 
@@ -876,7 +877,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = numojo.arange(10).reshape(nm.Shape(2, 5))
+
+            var a = nm.arange(10).reshape(nm.Shape(2, 5))
             var b = a[:, 2:4]
             print(b) # Output: 2x2 sliced array corresponding to columns 2 and 3 of each row.
             ```

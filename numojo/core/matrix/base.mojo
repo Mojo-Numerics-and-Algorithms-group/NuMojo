@@ -361,7 +361,7 @@ struct Matrix[
 
     # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Initialize a new matrix by copying data from ancopy matrix.
 
@@ -411,7 +411,7 @@ struct Matrix[
         )
 
     @always_inline("nodebug")
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """
         Transfer ownership of resources from `other` to `self`.
 

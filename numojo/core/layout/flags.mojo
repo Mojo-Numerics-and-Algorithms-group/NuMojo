@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Flags (numojo.core.layout.flags)
-
+-----------------------------------
 Implements Flags type to represent the memory layout information of NuMojo arrays.
 """
 
@@ -154,7 +154,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Initializes the Flags object by copying the information from
         ancopy Flags object.

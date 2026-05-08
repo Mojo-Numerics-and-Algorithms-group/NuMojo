@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """NDArrayStrides (numojo.core.layout.ndstrides)
-
+------------------------------------------------
 Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDArray,
 which is used to calculate the memory offset for each dimension when indexing into the array.
 """
@@ -322,7 +322,7 @@ struct NDArrayStrides(
                     self._buf.init_value(i, 0)
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Initializes the NDArrayStrides from ancopy strides.
         A deep-copy of the elements is conducted.

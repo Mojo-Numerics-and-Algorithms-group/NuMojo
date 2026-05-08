@@ -6,14 +6,13 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """DataContainer (numojo.core.memory.data_container)
-
+-----------------------------------
 A reference-counted container for contiguous data buffers, used for NDArray and Matrix.
-
 DataContainer manages memory ownership and reference counting for shared or external data.
 """
 
 from std.memory import UnsafePointer, memcpy
-from std.os.atomic import Atomic, Consistency, fence
+from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 
 from numojo.core.error import NumojoError
@@ -221,7 +220,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = copy.ownership
 
         if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
     def deep_copy(self) -> Self:
         """
@@ -265,10 +264,10 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         if not self.is_refcounted():
             return
 
-        if self._refcount[].fetch_sub[ordering=Consistency.RELEASE](1) != 1:
+        if self._refcount[].fetch_sub[ordering=Ordering.RELEASE](1) != 1:
             return
 
-        fence[ordering=Consistency.ACQUIRE]()
+        fence[ordering=Ordering.ACQUIRE]()
         if self.ptr and self.size > 0:
             self.ptr.free()
         self._refcount.free()
@@ -434,7 +433,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if not self.is_refcounted():
             return 0
-        return self._refcount[].load[ordering=Consistency.MONOTONIC]()
+        return self._refcount[].load[ordering=Ordering.RELAXED]()
 
     def share(mut self) raises -> DataContainer[Self.dtype]:
         """
@@ -456,7 +455,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+        _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
         var result = DataContainer[Self.dtype](
             ptr=self.ptr,

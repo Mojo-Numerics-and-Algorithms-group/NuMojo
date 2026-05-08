@@ -6,6 +6,7 @@ authors = [
   "mmenendezg <>",
   "sandstromviktor <>",
   "durnwalder <>",
+  "sauterp <>",
 ]
 channels = [
   "https://conda.modular.com/max",

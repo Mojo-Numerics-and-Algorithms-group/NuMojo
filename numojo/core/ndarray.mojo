@@ -841,7 +841,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If `slice_list` is empty or contains invalid slices.
         """
         var n_slices: Int = len(slice_list)
-        var slices: List[InternalSlice] = self._adjust_slice(slice_list)
+        var slices: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slice_list)
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slices.append(InternalSlice(0, self.shape[i], 1))
@@ -977,7 +977,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         # adjust slice values for user provided slices
-        var slices: List[InternalSlice] = self._adjust_slice(slice_list)
+        var slices: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slice_list)
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slices.append(InternalSlice(0, self.shape[i], 1))
@@ -2459,7 +2459,7 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var count: Int = 0
         var spec: List[Int] = List[Int]()
-        var slice_list: List[InternalSlice] = self._adjust_slice(slices)
+        var slice_list: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slices)
         for i in range(n_slices):
             if (
                 slice_list[i].start >= self.shape[i]
@@ -2663,7 +2663,7 @@ struct NDArray[dtype: DType = DType.float64](
             val: The scalar value to write to every selected position.
         """
         var n_slices: Int = len(slices)
-        var slice_list: List[InternalSlice] = self._adjust_slice(slices)
+        var slice_list: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slices)
 
         for i in range(n_slices, self.ndim):
             slice_list.append(InternalSlice(0, self.shape[i], 1))
@@ -4354,82 +4354,6 @@ struct NDArray[dtype: DType = DType.float64](
             Pointer(to=self),
             dimension=0,
         )
-
-    def _adjust_slice(
-        self, slice_list: List[Slice]
-    ) raises -> List[InternalSlice]:
-        """Adjusts slice values to handle all possible slicing scenarios
-        including:
-
-        - Negative indices (Python-style wrapping).
-        - Out-of-bounds clamping.
-        - Negative steps (reverse slicing).
-        - Empty slices.
-        - Default start/end values based on step direction.
-        """
-        var n_slices: Int = len(slice_list)
-        var slices = List[InternalSlice](capacity=self.ndim)
-        for i in range(n_slices):
-            var dim_size = self.shape[i]
-            var step = slice_list[i].step.or_else(1)
-
-            if step == 0:
-                raise Error(
-                    NumojoError(
-                        category="value",
-                        message=String(
-                            "Slice step cannot be zero (dimension {}). Use"
-                            " positive or negative non-zero step."
-                        ).format(i),
-                        location="NDArray._adjust_slice",
-                    )
-                )
-
-            # defaults
-            var start: Int
-            var end: Int
-            if step > 0:
-                start = 0
-                end = dim_size
-            else:
-                start = dim_size - 1
-                end = -1
-
-            # start
-            var raw_start = slice_list[i].start.or_else(start)
-            if raw_start < 0:
-                raw_start += dim_size
-            if step > 0:
-                start = 0 if raw_start < 0 else (
-                    dim_size if raw_start > dim_size else raw_start
-                )
-            else:
-                start = -1 if raw_start < -1 else (
-                    dim_size - 1 if raw_start >= dim_size else raw_start
-                )
-
-            # end
-            var raw_end = slice_list[i].end.or_else(end)
-            if raw_end < 0:
-                raw_end += dim_size
-            if step > 0:
-                end = 0 if raw_end < 0 else (
-                    dim_size if raw_end > dim_size else raw_end
-                )
-            else:
-                end = -1 if raw_end < -1 else (
-                    dim_size if raw_end > dim_size else raw_end
-                )
-
-            slices.append(
-                InternalSlice(
-                    start=start,
-                    end=end,
-                    step=step,
-                )
-            )
-
-        return slices^
 
     def _array_to_string(
         self,

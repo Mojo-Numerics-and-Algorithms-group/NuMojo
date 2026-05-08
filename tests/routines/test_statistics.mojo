@@ -73,12 +73,12 @@ def test_mean_median_var_std() raises:
         )
 
     assert_true(
-        np.all(np.isclose(nm.std(A), np.std(Anp), atol=PythonObject(0.001))),
+        np.all(np.isclose(nm.stddev(A), np.std(Anp), atol=PythonObject(0.001))),
         "`std` is broken",
     )
     for axis in range(3):
         check_is_close(
-            nm.std(A, axis),
+            nm.stddev(A, axis),
             np.std(Anp, axis),
             String("`std` is broken for axis {}").format(axis),
         )

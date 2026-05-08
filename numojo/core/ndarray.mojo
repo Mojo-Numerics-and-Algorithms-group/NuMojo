@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """NDArray (numojo.core.ndarray)
-
+--------------------------------
 This module implements the core `NDArray` type, which is the fundamental data structure for multi-dimensional arrays in NuMojo.
 It provides efficient storage, indexing, slicing, and basic operations on N-dimensional arrays. The `NDArray` is designed to be flexible and performant, supporting various memory layouts and data types.
 
@@ -339,30 +339,6 @@ struct NDArray[dtype: DType = DType.float64](
             writeable=True,
         )
         self.print_options = copy.print_options
-
-    def deep_copy(self) raises -> Self:
-        """
-        Create a deep copy of the NDArray.
-
-        Returns:
-            A new NDArray instance with its own data buffer, identical to `self`.
-            Changes to the copy do not affect the original array.
-
-        Example:
-            ```mojo
-            import numojo as nm
-            var arr = nm.ones[nm.f32](nm.Shape(2, 3))
-            var arr_copy = arr.deep_copy()
-            ```
-        """
-        var new_buf = self._buf.deep_copy()
-        return Self(
-            data=new_buf^,
-            is_view=False,
-            shape=self.shape,
-            strides=self.strides,
-            offset=self.offset,
-        )
 
     def view(mut self) raises -> Self:
         """
@@ -3518,7 +3494,7 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
 
             @parameter
-            def vec_op[w: Int](i: Int) unified {mut self, read other}:
+            def vec_op[w: Int](i: Int) {mut self, read other}:
                 self._buf.ptr.store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -3575,7 +3551,7 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
 
             @parameter
-            def vec_op[w: Int](i: Int) unified {mut self, read other_c}:
+            def vec_op[w: Int](i: Int) {mut self, read other_c}:
                 self._buf.ptr.store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -3705,7 +3681,7 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         def vectorized_pow[
             simd_width: Int
-        ](index: Int) unified {mut result, read src, read p_c}:
+        ](index: Int) {mut result, read src, read p_c}:
             result._buf.ptr.store(
                 index,
                 src._buf.ptr.load[width=simd_width](index)
@@ -3720,7 +3696,7 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
 
             @parameter
-            def vec_pow[w: Int](i: Int) unified {mut self, read p}:
+            def vec_pow[w: Int](i: Int) {mut self, read p}:
                 self._buf.ptr.store(
                     self.offset + i,
                     builtin_math.pow(
@@ -3746,7 +3722,7 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         def array_scalar_vectorize[
             simd_width: Int
-        ](index: Int) unified {mut src, read p} -> None:
+        ](index: Int) {mut src, read p} -> None:
             src._buf.ptr.store(
                 index,
                 builtin_math.pow(src._buf.ptr.load[width=simd_width](index), p),
@@ -4267,7 +4243,7 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         def vectorized_all[
             simd_width: Int
-        ](idx: Int) unified {mut result, read a} -> None:
+        ](idx: Int) {mut result, read a} -> None:
             result = result and builtin_bool.all(
                 (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
             )
@@ -4294,7 +4270,7 @@ struct NDArray[dtype: DType = DType.float64](
         @parameter
         def vectorized_any[
             simd_width: Int
-        ](idx: Int) unified {mut result, read a} -> None:
+        ](idx: Int) {mut result, read a} -> None:
             result = result or builtin_bool.any(
                 (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
             )

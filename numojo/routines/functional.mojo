@@ -17,6 +17,7 @@ from std.sys import simd_width_of
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
 from numojo.routines.creation import arange
 from numojo.core.ndarray import NDArray
+from numojo.routines.creation import _0darray
 
 # ===----------------------------------------------------------------------=== #
 # `apply_along_axis`
@@ -34,7 +35,7 @@ from numojo.core.ndarray import NDArray
 
 # def apply_along_axis[
 #     dtype: DType,
-#     func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
+#     func1d: def[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
 #         dtype_func
 #     ],
 # ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
@@ -60,7 +61,7 @@ from numojo.core.ndarray import NDArray
 #     var res: NDArray[dtype]
 
 #     if a.ndim == 1:
-#         res = numojo.creation._0darray[dtype](0)
+#         res = _0darray[dtype](0)
 #         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
 #     else:
@@ -82,9 +83,9 @@ from numojo.core.ndarray import NDArray
 
 def apply_along_axis_reduce_to_int[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
-        DType.int
-    ],
+    func1d: def[dtype_func: DType](
+        NDArray[dtype_func]
+    ) capturing raises -> Scalar[DType.int],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
@@ -109,7 +110,7 @@ def apply_along_axis_reduce_to_int[
     var res: NDArray[DType.int]
 
     if a.ndim == 1:
-        res = numojo.creation._0darray[DType.int](0)
+        res = _0darray[DType.int](0)
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
@@ -131,9 +132,9 @@ def apply_along_axis_reduce_to_int[
 
 def apply_along_axis_reduce[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
-        dtype_func
-    ],
+    func1d: def[dtype_func: DType](
+        NDArray[dtype_func]
+    ) capturing raises -> Scalar[dtype_func],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
@@ -160,7 +161,7 @@ def apply_along_axis_reduce[
     var res: NDArray[dtype]
 
     if a.ndim == 1:
-        res = numojo.creation._0darray[dtype](0)
+        res = _0darray[dtype](0)
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
@@ -194,9 +195,9 @@ def apply_along_axis_reduce[
 def apply_along_axis_reduce_with_dtype[
     dtype: DType,
     returned_dtype: DType,
-    func1d: fn[dtype_func: DType, returned_dtype_func: DType](
+    func1d: def[dtype_func: DType, returned_dtype_func: DType](
         NDArray[dtype_func]
-    ) raises -> Scalar[returned_dtype_func],
+    ) capturing raises -> Scalar[returned_dtype_func],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
@@ -222,7 +223,7 @@ def apply_along_axis_reduce_with_dtype[
     var res: NDArray[returned_dtype]
 
     if a.ndim == 1:
-        res = numojo.creation._0darray[returned_dtype](0)
+        res = _0darray[returned_dtype](0)
         (res._buf.ptr).init_pointee_copy(func1d[dtype, returned_dtype](a))
 
     else:
@@ -248,9 +249,9 @@ def apply_along_axis_reduce_with_dtype[
 
 def apply_along_axis_preserve[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
-        dtype_func
-    ],
+    func1d: def[dtype_func: DType](
+        NDArray[dtype_func]
+    ) capturing raises -> NDArray[dtype_func],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
@@ -326,7 +327,9 @@ def apply_along_axis_preserve[
 
 def apply_along_axis_inplace[
     dtype: DType,
-    func1d: fn[dtype_func: DType](mut NDArray[dtype_func]) raises -> None,
+    func1d: def[dtype_func: DType](
+        mut NDArray[dtype_func]
+    ) capturing raises -> None,
 ](mut a: NDArray[dtype], axis: Int) raises -> None:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
@@ -391,9 +394,9 @@ def apply_along_axis_inplace[
 
 def apply_along_axis_indices[
     dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
-        DType.int
-    ],
+    func1d: def[dtype_func: DType](
+        NDArray[dtype_func]
+    ) capturing raises -> NDArray[DType.int],
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """
     Applies a function to a NDArray by axis without reducing that dimension.

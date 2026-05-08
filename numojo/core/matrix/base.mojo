@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Matrix (numojo.core.matrix)
-
+------------------------------
 This file implements the core 2D matrix type for the NuMojo numerical computing library. It provides efficient, flexible, and memory-safe matrix operations for scientific and engineering applications.
 
 Features:
@@ -33,6 +33,7 @@ from numojo.core.memory.data_container import DataContainer
 from numojo.core.traits.buffered import Buffered
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
+import numojo.routines.statistics as stat
 
 
 # TODO: Currently the copyinit creates a ref counted view instead of a deep copy.
@@ -352,7 +353,6 @@ struct Matrix[
         self.offset = offset
 
     # TODO: prevent copying from views to views or views to owning matrices right now.`where` clause isn't working here either for now, So we use constrained. Move to 'where` clause when it's stable.
-    # TODO: Current copyinit creates an instance with same origin. This should be external origin. fix this so that we can use default `.copy()` method and remove `create_copy()` method.
     @always_inline("nodebug")
     def __copyinit__(out self, copy: Self):
         """
@@ -377,34 +377,6 @@ struct Matrix[
         self.offset = copy.offset
         self.flags = Flags(
             copy.shape, copy.strides, owndata=True, writeable=True
-        )
-
-    # NOTE: perhaps remove this?
-    def deep_copy(self) -> Self:
-        """
-        Returns a deep copy of the matrix.
-
-        The new matrix has its own independent data buffer, shape, and strides.
-
-        Returns:
-            Matrix: A deep copy of the current matrix.
-
-        Example:
-            ```mojo
-            import numojo as nm
-            var mat1 = nm.Matrix[nm.f32](shape=(2, 3))
-            var mat2 = mat1.deep_copy()
-            ```
-        """
-        # This is corect only for owned matrices.
-        # For views, we gotta create copy by iterating over all elements.
-        var new_buf = self._buf.deep_copy()
-        return Self(
-            data=new_buf^,
-            is_view=False,
-            shape=self.shape,
-            strides=self.strides,
-            offset=self.offset,
         )
 
     def view(mut self) raises -> Self:
@@ -1945,21 +1917,29 @@ struct Matrix[
             print(A + B)
             ```
         """
+
+        def add_kernel[
+            type: DType, simd_width: Int
+        ](
+            scalar1: SIMD[type, simd_width], scalar2: SIMD[type, simd_width]
+        ) capturing -> SIMD[type, simd_width]:
+            return scalar1 + scalar2
+
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__add__
+                Self.dtype, add_kernel
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__add__
+                Self.dtype, add_kernel
             ](broadcast_to[Self.dtype](self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__add__
+                Self.dtype, add_kernel
             ](self, broadcast_to[Self.dtype](other, self.shape, self.order()))
 
     def __add__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -2021,21 +2001,28 @@ struct Matrix[
             print(A - B)
             ```
         """
+        def sub_kernel[
+            type: DType, simd_width: Int
+        ](
+            scalar1: SIMD[type, simd_width], scalar2: SIMD[type, simd_width]
+        ) capturing -> SIMD[type, simd_width]:
+            return scalar1 - scalar2
+
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__sub__
+                Self.dtype, sub_kernel
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__sub__
+                Self.dtype, sub_kernel
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__sub__
+                Self.dtype, sub_kernel
             ](self, broadcast_to(other, self.shape, self.order()))
 
     def __sub__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -2097,21 +2084,28 @@ struct Matrix[
             print(A * B)
             ```
         """
+        def mul_kernel[
+            type: DType, simd_width: Int
+        ](
+            scalar1: SIMD[type, simd_width], scalar2: SIMD[type, simd_width]
+        ) capturing -> SIMD[type, simd_width]:
+            return scalar1 * scalar2
+
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__mul__
+                Self.dtype, mul_kernel
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__mul__
+                Self.dtype, mul_kernel
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__mul__
+                Self.dtype, mul_kernel
             ](self, broadcast_to(other, self.shape, self.order()))
 
     def __mul__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -2175,21 +2169,28 @@ struct Matrix[
             print(A / B)
             ```
         """
+        def truediv_kernel[
+            type: DType, simd_width: Int
+        ](
+            scalar1: SIMD[type, simd_width], scalar2: SIMD[type, simd_width]
+        ) capturing -> SIMD[type, simd_width]:
+            return scalar1 / scalar2
+
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__truediv__
+                Self.dtype, truediv_kernel
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__truediv__
+                Self.dtype, truediv_kernel
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__truediv__
+                Self.dtype, truediv_kernel
             ](self, broadcast_to(other, self.shape, self.order()))
 
     def __truediv__(
@@ -2240,7 +2241,7 @@ struct Matrix[
         comptime width = simd_width_of[Self.dtype]()
 
         @parameter
-        def vec_pow[w: Int](i: Int) unified {mut result, read self, read rhs}:
+        def vec_pow[w: Int](i: Int):
             var vec = self._buf.ptr.load[width=w](i)
             result._buf.ptr.store(i, vec.__pow__(rhs))
 
@@ -2287,7 +2288,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_add[w: Int](i: Int) unified {mut self, read other}:
+            def vec_add[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a + b)
@@ -2316,7 +2317,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_add_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_add_scalar[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a + other)
 
@@ -2366,7 +2367,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_sub[w: Int](i: Int) unified {mut self, read other}:
+            def vec_sub[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a - b)
@@ -2395,7 +2396,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_sub_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_sub_scalar[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a - other)
 
@@ -2445,7 +2446,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_mul[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mul[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a * b)
@@ -2474,7 +2475,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_mul_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mul_scalar[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a * other)
 
@@ -2524,7 +2525,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_div[w: Int](i: Int) unified {mut self, read other}:
+            def vec_div[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a / b)
@@ -2553,7 +2554,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_div_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_div_scalar[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a / other)
 
@@ -2586,21 +2587,28 @@ struct Matrix[
             print(A // B)  # Element-wise floor division
             ```
         """
+        def floordiv_kernel[
+            type: DType, simd_width: Int
+        ](
+            scalar1: SIMD[type, simd_width], scalar2: SIMD[type, simd_width]
+        ) capturing -> SIMD[type, simd_width]:
+            return scalar1 // scalar2
+
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__floordiv__
+                Self.dtype, floordiv_kernel
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__floordiv__
+                Self.dtype, floordiv_kernel
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__floordiv__
+                Self.dtype, floordiv_kernel
             ](self, broadcast_to(other, self.shape, self.order()))
 
     def __floordiv__(
@@ -2666,7 +2674,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_floordiv[w: Int](i: Int) unified {mut self, read other}:
+            def vec_floordiv[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a // b)
@@ -2695,9 +2703,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_floordiv_scalar[
-                w: Int
-            ](i: Int) unified {mut self, read other}:
+            def vec_floordiv_scalar[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a // other)
 
@@ -2728,21 +2734,28 @@ struct Matrix[
             print(A % B)  # Element-wise modulo
             ```
         """
+        def mod_kernel[
+            type: DType, simd_width: Int
+        ](
+            scalar1: SIMD[type, simd_width], scalar2: SIMD[type, simd_width]
+        ) capturing -> SIMD[type, simd_width]:
+            return scalar1 % scalar2
+
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__mod__
+                Self.dtype, mod_kernel
             ](self, other)
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__mod__
+                Self.dtype, mod_kernel
             ](broadcast_to(self, other.shape, self.order()), other)
         else:
             return _arithmetic_func_matrix_matrix_to_matrix[
-                Self.dtype, SIMD.__mod__
+                Self.dtype, mod_kernel
             ](self, broadcast_to(other, self.shape, self.order()))
 
     def __mod__(self, other: Scalar[Self.dtype]) raises -> Matrix[Self.dtype]:
@@ -2805,7 +2818,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_mod[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mod[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a % b)
@@ -2834,7 +2847,7 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             @parameter
-            def vec_mod_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mod_scalar[w: Int](i: Int):
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a % other)
 
@@ -3709,7 +3722,7 @@ struct Matrix[
             print(A.mean())
             ```
         """
-        return numojo.statistics.mean[returned_dtype](self)
+        return stat.mean[returned_dtype](self)
 
     def mean[
         returned_dtype: DType = DType.float64
@@ -3731,7 +3744,7 @@ struct Matrix[
             print(A.mean(axis=1))
             ```
         """
-        return numojo.statistics.mean[returned_dtype](self, axis=axis)
+        return stat.mean[returned_dtype](self, axis=axis)
 
     def min(self) raises -> Scalar[Self.dtype]:
         """
@@ -3977,7 +3990,7 @@ struct Matrix[
             print(A.std())
             ```
         """
-        return numojo.statistics.std[returned_dtype](self, ddof=ddof)
+        return stat.std[returned_dtype](self, ddof=ddof)
 
     def std[
         returned_dtype: DType = DType.float64
@@ -4000,7 +4013,7 @@ struct Matrix[
             print(A.std(axis=1))
             ```
         """
-        return numojo.statistics.std[returned_dtype](self, axis=axis, ddof=ddof)
+        return stat.std[returned_dtype](self, axis=axis, ddof=ddof)
 
     def sum(self) -> Scalar[Self.dtype]:
         """
@@ -4146,7 +4159,7 @@ struct Matrix[
             print(A.variance())
             ```
         """
-        return numojo.statistics.variance[returned_dtype](self, ddof=ddof)
+        return stat.variance[returned_dtype](self, ddof=ddof)
 
     def variance[
         returned_dtype: DType = DType.float64
@@ -4169,9 +4182,7 @@ struct Matrix[
             print(A.variance(axis=1))
             ```
         """
-        return numojo.statistics.variance[returned_dtype](
-            self, axis=axis, ddof=ddof
-        )
+        return stat.variance[returned_dtype](self, axis=axis, ddof=ddof)
 
     # # ===-------------------------------------------------------------------===#
     # # To other data types
@@ -4309,7 +4320,7 @@ struct Matrix[
         comptime width = simd_width_of[datatype]()
 
         @parameter
-        def vec_fill[w: Int](i: Int) unified {mut matrix, read fill_value}:
+        def vec_fill[w: Int](i: Int) {mut matrix, read fill_value}:
             matrix._buf.ptr.store(i, SIMD[datatype, w](fill_value))
 
         vectorize[width](matrix.size, vec_fill)
@@ -4415,7 +4426,7 @@ struct Matrix[
         comptime width = simd_width_of[datatype]()
 
         @parameter
-        def vec_rand[w: Int](i: Int) unified {mut result}:
+        def vec_rand[w: Int](i: Int) {mut result}:
             var rand_vec = SIMD[datatype, w]()
             for j in range(w):
                 rand_vec[j] = random_float64(0, 1).cast[datatype]()
@@ -4969,9 +4980,9 @@ struct _MatrixIter[
 # TODO: we can move the checks in these functions to the caller functions to avoid redundant checks.
 def _arithmetic_func_matrix_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int](
+    simd_func: def[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
-    ) -> SIMD[type, simd_width],
+    ) capturing -> SIMD[type, simd_width],
 ](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
     """
     Perform element-wise arithmetic operation between two matrices using a SIMD function.
@@ -5022,8 +5033,7 @@ def _arithmetic_func_matrix_matrix_to_matrix[
 
     var res = Matrix[dtype](shape=A.shape, order=A.order())
 
-    @parameter
-    def vec_func[simd_width: Int](i: Int) unified {mut res, read A, read B}:
+    def vec_func[simd_width: Int](i: Int) {mut res, read A, read B}:
         res._buf.ptr.store(
             i,
             simd_func(
@@ -5038,9 +5048,9 @@ def _arithmetic_func_matrix_matrix_to_matrix[
 
 def _arithmetic_func_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int](SIMD[type, simd_width]) -> SIMD[
-        type, simd_width
-    ],
+    simd_func: def[type: DType, simd_width: Int](
+        SIMD[type, simd_width]
+    ) capturing -> SIMD[type, simd_width],
 ](A: Matrix[dtype]) -> Matrix[dtype]:
     """
     Apply a unary SIMD function element-wise to a matrix.
@@ -5062,8 +5072,7 @@ def _arithmetic_func_matrix_to_matrix[
 
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
-    @parameter
-    def vec_func[simd_width: Int](i: Int) unified {mut C, read A}:
+    def vec_func[simd_width: Int](i: Int) {mut C, read A}:
         C._buf.ptr.store(i, simd_func(A._buf.ptr.load[width=simd_width](i)))
 
     vectorize[simd_width](A.size, vec_func)
@@ -5073,9 +5082,9 @@ def _arithmetic_func_matrix_to_matrix[
 
 def _logic_func_matrix_matrix_to_matrix[
     dtype: DType,
-    simd_func: fn[type: DType, simd_width: Int](
+    simd_func: def[type: DType, simd_width: Int](
         SIMD[type, simd_width], SIMD[type, simd_width]
-    ) -> SIMD[DType.bool, simd_width],
+    ) capturing -> SIMD[DType.bool, simd_width],
 ](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[DType.bool]:
     """
     Perform element-wise logical comparison between two matrices using a SIMD function.
@@ -5130,8 +5139,7 @@ def _logic_func_matrix_matrix_to_matrix[
 
     # Use vectorized comparison for better performance
     # Process elements using input dtype width, then store results as bool
-    @parameter
-    def vec_compare[w: Int](i: Int) unified {mut C, read A, read B}:
+    def vec_compare[w: Int](i: Int) {mut C, read A, read B}:
         var a_vec = A._buf.ptr.load[width=w](i)
         var b_vec = B._buf.ptr.load[width=w](i)
         var result = simd_func[dtype, w](a_vec, b_vec)

@@ -311,9 +311,9 @@ struct DLTensor(ImplicitlyCopyable, Movable):
         self.byte_offset = byte_offset
 
 
-comptime DLManagedTensorDeleter = fn(
+comptime DLManagedTensorDeleter = def(
     UnsafePointer[DLManagedTensor, MutAnyOrigin]
-) -> None
+) capturing -> None
 
 
 # TODO: This is the old API, current API requires using DLManagedTensorVersioned which has a version field for future compatibility.
@@ -418,7 +418,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
 
 def _dlpack_deleter_impl[
     dtype: DType
-](managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]) -> None:
+](managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]) capturing -> None:
     """Type-specific deleter callback for DLManagedTensor."""
     if not managed_tensor_ptr:
         return

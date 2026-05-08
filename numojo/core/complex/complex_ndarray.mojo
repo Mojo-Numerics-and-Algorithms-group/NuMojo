@@ -456,15 +456,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         _ = self._re^
         _ = self._im^
 
-    def deep_copy(self) raises -> Self:
-        """
-        Create a deep copy of this ComplexNDArray.
-        """
-        return Self(
-            re=self._re.deep_copy(),
-            im=self._im.deep_copy(),
-        )
-
     def view(mut self) raises -> Self:
         """
         Create a non-owning view of the current ComplexNDArray.

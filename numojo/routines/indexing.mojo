@@ -17,6 +17,7 @@ from std.memory import memcpy
 from std.sys import simd_width_of
 from std.algorithm import vectorize
 
+from numojo import broadcast_to
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayStrides
 from numojo.core.indexing import IndexMethods
@@ -322,7 +323,7 @@ def take_along_axis[
         arr_shape_new[normalized_axis] = indices.shape[normalized_axis]
 
         try:
-            broadcasted_indices = numojo.broadcast_to(indices, arr_shape_new)
+            broadcasted_indices = broadcast_to(indices, arr_shape_new)
         except e:
             raise Error(
                 String(

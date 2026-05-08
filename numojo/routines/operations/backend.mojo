@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Math operations backend (numojo.routines.operations.backend).
-
+----------------------------------------------------------------
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
 
@@ -38,9 +38,9 @@ struct HostExecutor:
     def apply_unary[
         dtype: DType,
         simd_width: Int,
-        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
-            type, simd_w
-        ],
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w]
+        ) capturing -> SIMD[type, simd_w],
     ](scalar: SIMD[dtype, simd_width]) -> SIMD[dtype, simd_width]:
         """
         Applies a SIMD-compatible unary function to a SIMD value.
@@ -64,7 +64,7 @@ struct HostExecutor:
         simd_width: Int,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](simd1: SIMD[dtype, simd_width], simd2: SIMD[dtype, simd_width]) -> SIMD[
         dtype, simd_width
     ]:
@@ -89,9 +89,9 @@ struct HostExecutor:
     def apply_unary_predicate[
         dtype: DType,
         simd_width: Int,
-        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
-            DType.bool, simd_w
-        ],
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w]
+        ) capturing -> SIMD[DType.bool, simd_w],
     ](simd: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         """
         Applies a SIMD-compatible unary predicate to a SIMD value.
@@ -115,7 +115,7 @@ struct HostExecutor:
         simd_width: Int,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[DType.bool, simd_w],
+        ) capturing -> SIMD[DType.bool, simd_w],
     ](simd1: SIMD[dtype, simd_width], simd2: SIMD[dtype, simd_width]) -> SIMD[
         DType.bool, simd_width
     ]:
@@ -139,9 +139,9 @@ struct HostExecutor:
     @staticmethod
     def apply_unary[
         dtype: DType,
-        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
-            type, simd_w
-        ],
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w]
+        ) capturing -> SIMD[type, simd_w],
     ](array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Applies a SIMD-compatible unary function to an NDArray.
@@ -171,8 +171,7 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
-        def closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
+        def closure[simd_w: Int](i: Int) {mut result_array, read array}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(i, kernel[dtype, simd_w](simd_data))
 
@@ -185,7 +184,7 @@ struct HostExecutor:
         dtype: DType,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Applies a SIMD-compatible binary function to two NDArrays.
@@ -226,10 +225,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array1, read array2}:
+        ](i: Int) {mut result_array, read array1, read array2}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
             var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(
@@ -244,7 +242,7 @@ struct HostExecutor:
         dtype: DType,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[dtype]:
         """
         Applies a SIMD-compatible binary function to an NDArray and a scalar.
@@ -273,10 +271,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array, read scalar}:
+        ](i: Int) {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(
                 i, kernel[dtype, simd_w](simd_data1, scalar)
@@ -290,7 +287,7 @@ struct HostExecutor:
         dtype: DType,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](scalar: SIMD[dtype, 1], array: NDArray[dtype]) raises -> NDArray[dtype]:
         """
         Applies a SIMD-compatible binary function to a scalar and an NDArray.
@@ -320,10 +317,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array, read scalar}:
+        ](i: Int) {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(
                 i, kernel[dtype, simd_w](scalar, simd_data1)
@@ -335,9 +331,9 @@ struct HostExecutor:
     @staticmethod
     def apply_binary[
         dtype: DType,
-        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w], Int) -> SIMD[
-            type, simd_w
-        ],
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w], Int
+        ) capturing -> SIMD[type, simd_w],
     ](array: NDArray[dtype], intval: Int) raises -> NDArray[dtype]:
         """
         Applies a SIMD-compatible binary function to an NDArray and an Int scalar.
@@ -360,10 +356,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array, read intval}:
+        ](i: Int) {mut result_array, read array, read intval}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
 
             result_array._buf.ptr.store(
@@ -378,7 +373,7 @@ struct HostExecutor:
         dtype: DType,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[DType.bool, simd_w],
+        ) capturing -> SIMD[DType.bool, simd_w],
     ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
         DType.bool
     ]:
@@ -426,10 +421,9 @@ struct HostExecutor:
         )
         comptime width = simd_width_of[DType.bool]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array1, read array2}:
+        ](i: Int) {mut result_array, read array1, read array2}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
             var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
 
@@ -447,7 +441,7 @@ struct HostExecutor:
         dtype: DType,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[DType.bool, simd_w],
+        ) capturing -> SIMD[DType.bool, simd_w],
     ](array1: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
         DType.bool
     ]:
@@ -482,10 +476,9 @@ struct HostExecutor:
         )
         comptime width = simd_width_of[DType.bool]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array1, read scalar}:
+        ](i: Int) {mut result_array, read array1, read scalar}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
             var simd_data2 = SIMD[dtype, simd_w](scalar)
             bool_simd_store[simd_w](
@@ -500,9 +493,9 @@ struct HostExecutor:
     @staticmethod
     def apply_unary_predicate[
         dtype: DType,
-        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) -> SIMD[
-            DType.bool, simd_w
-        ],
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w]
+        ) capturing -> SIMD[DType.bool, simd_w],
     ](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         """
         Applies a SIMD-compatible unary predicate to an NDArray, returning a boolean NDArray.
@@ -524,8 +517,7 @@ struct HostExecutor:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[DType.bool]()
 
-        @parameter
-        def closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
+        def closure[simd_w: Int](i: Int) {mut result_array, read array}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
             bool_simd_store[simd_w](
                 result_array._buf.ptr,
@@ -541,7 +533,7 @@ struct HostExecutor:
         dtype: DType,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](
         array1: NDArray[dtype], array2: NDArray[dtype], array3: NDArray[dtype]
     ) raises -> NDArray[dtype]:
@@ -590,12 +582,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simdwidth: Int
-        ](i: Int) unified {
-            mut result_array, read array1, read array2, read array3
-        }:
+        ](i: Int) {mut result_array, read array1, read array2, read array3}:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
             var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
             var simd_data3 = array3._buf.ptr.load[width=simdwidth](i)
@@ -611,7 +600,7 @@ struct HostExecutor:
         dtype: DType,
         kernel: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](
         array1: NDArray[dtype], array2: NDArray[dtype], scalar: SIMD[dtype, 1]
     ) raises -> NDArray[dtype]:
@@ -652,12 +641,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simdwidth: Int
-        ](i: Int) unified {
-            mut result_array, read array1, read array2, read scalar
-        }:
+        ](i: Int) {mut result_array, read array1, read array2, read scalar}:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
             var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
             result_array._buf.ptr.store(

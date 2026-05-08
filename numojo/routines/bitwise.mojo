@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Bit-wise operations module (`numojo.routines.bitwise`)
-
+---------------------------------------------------------
 This module implements bit-wise operations on NDArrays, such as bitwise AND, OR, XOR, and NOT (invert).
 """
 
@@ -51,8 +51,10 @@ def invert[
         var result2 = invert(arr2) # result2 is [false, true, false
         ```
     """
-    def kernel[type: DType, simd_w: Int](scalar: SIMD[type, simd_w]) -> SIMD[
-        DType.bool, simd_w
-    ]
+
+    def kernel[
+        type: DType, simd_w: Int
+    ](scalar: SIMD[type, simd_w]) capturing -> SIMD[type, simd_w]:
         return ~scalar
+
     return HostExecutor.apply_unary[dtype, kernel](array)

@@ -82,9 +82,8 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     DataContainer can either own its memory (managed) or provide a view into external data (external).
     Managed containers use reference counting for shared ownership. External containers do not manage or free memory.
 
-    Copying a managed DataContainer with `.copy()` increments the reference count that still points to the same data.
-    Copying an external container creates another non-owning view.
-    Use `deep_copy()` to create an owned instance.
+    Copying a DataContainer with `.copy()` creates an independent owned copy with its own allocation.
+    Use `.share()` to create a shared view that increments the reference count.
 
     Fields:
         ptr: Pointer to the data array.
@@ -116,7 +115,9 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         Create an empty, managed DataContainer.
         """
-        self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
+        self.ptr = UnsafePointer[
+            Scalar[Self.dtype], Self.origin
+        ].unsafe_dangling()
         self._refcount = alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
@@ -139,7 +140,9 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = Ownership.Managed
 
         if size == 0:
-            self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.dtype], Self.origin
+            ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.dtype]](size)
 
@@ -164,8 +167,6 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if size < 0:
             abort("DataContainer: __init__() size must be non-negative")
-        if not ptr:
-            abort("DataContainer: __init__() ptr must be non-null")
         self.size = size
         if copy:
             self._refcount = alloc[Atomic[DType.uint64]](1)
@@ -174,7 +175,9 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
-            self._refcount = UnsafePointer[Atomic[DType.uint64], Self.origin]()
+            self._refcount = UnsafePointer[
+                Atomic[DType.uint64], Self.origin
+            ].unsafe_dangling()
             self.ptr = ptr
             self.ownership = Ownership.External
 
@@ -207,34 +210,22 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def __copyinit__(out self, copy: Self):
         """
-        Copy constructor.
-
-        Increments the reference count for managed containers.
+        Deep copy constructor. Allocates new storage and copies all data.
 
         Args:
             copy: DataContainer to copy from.
         """
         self.size = copy.size
-        self.ptr = copy.ptr
-        self._refcount = copy._refcount
-        self.ownership = copy.ownership
-
-        if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
-
-    def deep_copy(self) -> Self:
-        """
-        Create a deep copy of the DataContainer.
-
-        Returns:
-            A new DataContainer with its own copy of the data.
-        """
-        if self.size == 0:
-            return DataContainer[Self.dtype]()
-
-        var result = DataContainer[Self.dtype](self.size)
-        memcpy(dest=result.ptr, src=self.ptr, count=self.size)
-        return result^
+        self.ownership = Ownership.Managed
+        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount[] = Atomic[DType.uint64](1)
+        if copy.size == 0:
+            self.ptr = UnsafePointer[
+                Scalar[Self.dtype], Self.origin
+            ].unsafe_dangling()
+        else:
+            self.ptr = alloc[Scalar[Self.dtype]](copy.size)
+            memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
     def __moveinit__(out self, deinit take: Self):
@@ -268,7 +259,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             return
 
         fence[ordering=Ordering.ACQUIRE]()
-        if self.ptr and self.size > 0:
+        if self.size > 0:
             self.ptr.free()
         self._refcount.free()
 
@@ -419,9 +410,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Returns:
             True if refcounting is enabled, False otherwise.
         """
-        return (
-            self._refcount != UnsafePointer[Atomic[DType.uint64], Self.origin]()
-        )
+        return self.ownership == Ownership.Managed
 
     @always_inline
     def ref_count(ref self) -> UInt64:

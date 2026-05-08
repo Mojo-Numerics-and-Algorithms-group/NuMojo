@@ -338,7 +338,7 @@ def mul[
             "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
             " No arrays in arguments"
         )
-    var result_array: NDArray[dtype] = array_list[0].deep_copy()
+    var result_array: NDArray[dtype] = array_list[0].copy()
     for i in range(1, len(array_list)):
         result_array = mul[dtype](result_array, array_list[i])
     result_array = mul[dtype](result_array, scalar_part)

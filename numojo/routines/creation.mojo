@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Creation routines (numojo.routines.creation)
-
+-----------------------------------------------
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions
 2) Separate `array(object)` and `NDArray.__init__(shape)`.
@@ -1996,7 +1996,7 @@ def tril[
     var final_offset: Int = 1
     var result: NDArray[
         dtype
-    ] = m.deep_copy()  # * We should move this to be inplace operation perhaps.
+    ] = m.copy()  # * We should move this to be inplace operation perhaps.
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
@@ -2059,7 +2059,7 @@ def triu[
     """
     var initial_offset: Int = 1
     var final_offset: Int = 1
-    var result: NDArray[dtype] = m.deep_copy()
+    var result: NDArray[dtype] = m.copy()
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
@@ -2195,7 +2195,6 @@ def astype[
 
     comptime if target == DType.bool:
 
-        @parameter
         def vectorized_astype[
             simd_width: Int
         ](idx: Int) {mut result, read a} -> None:
@@ -2208,10 +2207,9 @@ def astype[
     else:
         comptime if target == DType.bool:
 
-            @parameter
             def vectorized_astypenb_from_b[
                 simd_width: Int
-            ](idx: Int) unified {mut result, read a} -> None:
+            ](idx: Int) {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx,
                     (a._buf.ptr + idx)
@@ -2223,10 +2221,9 @@ def astype[
 
         else:
 
-            @parameter
             def vectorized_astypenb[
                 simd_width: Int
-            ](idx: Int) unified {mut result, read a} -> None:
+            ](idx: Int) {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )

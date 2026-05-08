@@ -25,7 +25,9 @@ from numojo.routines.math.extrema import _max, _min
 from numojo.routines.functional import apply_along_axis_reduce_to_int
 
 
-def argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
+def argmax_1d[
+    dtype: DType
+](a: NDArray[dtype]) capturing raises -> Scalar[DType.int]:
     """Returns the index of the maximum value in the buffer.
     Regardless of the shape of input, it is treated as a 1-d array.
 
@@ -55,7 +57,9 @@ def argmax_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     return Scalar[DType.int](result)
 
 
-def argmin_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[DType.int]:
+def argmin_1d[
+    dtype: DType
+](a: NDArray[dtype]) capturing raises -> Scalar[DType.int]:
     """Returns the index of the minimum value in the buffer.
     Regardless of the shape of input, it is treated as a 1-d array.
 

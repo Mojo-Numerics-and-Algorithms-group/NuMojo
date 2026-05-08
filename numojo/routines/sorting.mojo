@@ -453,7 +453,9 @@ def bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 ##############
 
 
-def quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+def quick_sort_1d[
+    dtype: DType
+](a: NDArray[dtype]) capturing raises -> NDArray[dtype]:
     """
     Sort array using quick sort method.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -479,7 +481,7 @@ def quick_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
 
 def quick_sort_stable_1d[
     dtype: DType
-](a: NDArray[dtype]) raises -> NDArray[dtype]:
+](a: NDArray[dtype]) capturing raises -> NDArray[dtype]:
     """
     Sort array using quick sort method.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -502,7 +504,7 @@ def quick_sort_stable_1d[
     return result^
 
 
-def quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
+def quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) capturing raises:
     """
     Sort array in-place using quick sort method.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -523,7 +525,9 @@ def quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
     return
 
 
-def quick_sort_stable_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
+def quick_sort_stable_inplace_1d[
+    dtype: DType
+](mut a: NDArray[dtype]) capturing raises:
     """
     Sort array in-place using quick sort method.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -548,7 +552,7 @@ def quick_sort_stable_inplace_1d[dtype: DType](mut a: NDArray[dtype]) raises:
 
 def argsort_quick_sort_1d[
     dtype: DType
-](a: NDArray[dtype]) raises -> NDArray[DType.int]:
+](a: NDArray[dtype]) capturing raises -> NDArray[DType.int]:
     """
     Returns the indices that would sort the buffer of an array.
     Regardless of the shape of input, it is treated as a 1-d array.

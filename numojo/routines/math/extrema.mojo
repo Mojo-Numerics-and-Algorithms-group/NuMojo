@@ -34,7 +34,7 @@ from numojo.routines.manipulation import ravel
 
 def extrema_1d[
     dtype: DType, //, is_max: Bool
-](a: NDArray[dtype]) raises -> Scalar[dtype]:
+](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """
     Find the max or min value in the buffer.
 
@@ -60,10 +60,9 @@ def extrema_1d[
 
     comptime if is_max:
 
-        @parameter
         def vectorize_max[
             simd_width: Int
-        ](offset: Int) {mut value, read a}:
+        ](offset: Int) {mut value, a}:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
             if temp >= value:
                 value = temp
@@ -74,10 +73,9 @@ def extrema_1d[
 
     else:
 
-        @parameter
         def vectorize_min[
             simd_width: Int
-        ](offset: Int) {mut value, read a} -> None:
+        ](offset: Int) {mut value, a} -> None:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
             if temp < value:
                 value = temp
@@ -116,7 +114,7 @@ def max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
         return extrema_1d[is_max=True](ravel(a))
 
 
-def extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+def extrema_1d_max[dtype: DType](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """
     Find the max value in a 1-D array.
     """
@@ -576,7 +574,6 @@ def minimum[
         var m = nm.minimum(a, b)
         ```
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
@@ -611,7 +608,6 @@ def maximum[
         var m = nm.maximum(a, b)
         ```
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int

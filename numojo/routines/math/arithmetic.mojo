@@ -5,8 +5,8 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Arithmetic routines for NuMojo (numojo.routines.math.arithmetic).
-
+"""Arithmetic routines for NuMojo (numojo.routines.math.arithmetic)
+-------------------------------------------------------------------
 Implements addition, subtraction, multiplication, division, floor division, fused multiply-add, and remainder helpers for NDArrays.
 """
 
@@ -40,7 +40,12 @@ def add[
     Returns:
         The element-wise sum of `array1` and`array2`.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__add__](array1, array2)
+    @parameter
+    def add_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 + simd2
+    return HostExecutor.apply_binary[dtype, add_kernel](array1, array2)
 
 
 def add[
@@ -59,7 +64,12 @@ def add[
     Returns:
         The element-wise sum of array and scalar.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__add__](array, scalar)
+    @parameter
+    def add_kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w], scalar_simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd + scalar_simd
+    return HostExecutor.apply_binary[dtype, add_kernel](array, scalar)
 
 
 def add[
@@ -78,7 +88,12 @@ def add[
     Returns:
         The element-wise sum of scalar and array.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__add__](scalar, array)
+    @parameter
+    def add_kernel[
+        dtype: DType, simd_w: Int
+    ](scalar_simd: SIMD[dtype, simd_w], simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return scalar_simd + simd
+    return HostExecutor.apply_binary[dtype, add_kernel](scalar, array)
 
 
 def add[
@@ -103,9 +118,9 @@ def add[
     var scalar_part: Scalar[dtype] = 0
     for i in range(len(values)):
         if values[i].isa[NDArray[dtype]]():
-            array_list.append(values[i].take[NDArray[dtype]]())
+            # TODO: Figure out how to remove this unnecessary copy here (even though we take values as owned.            array_list.append(values[i].copy().take[NDArray[dtype]]())
         elif values[i].isa[Scalar[dtype]]():
-            scalar_part += values[i].take[Scalar[dtype]]()
+            scalar_part += values[i].copy().take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"

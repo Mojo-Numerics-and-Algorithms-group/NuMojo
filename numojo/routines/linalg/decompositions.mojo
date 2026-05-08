@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Decompositions (numojo.routines.linalg.decompositions)
-
+---------------------------------------------------------
 This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
 """
 from std.sys import simd_width_of

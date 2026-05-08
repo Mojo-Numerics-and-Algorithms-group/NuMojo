@@ -17,7 +17,7 @@ This module provides three storage structs:
   `HostStorage` and `DeviceStorage` at compile time based on a `Device` parameter.
 """
 from std.memory import UnsafePointer
-from std.atomic import Atomic, Consistency, fence
+from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 from std.collections.optional import Optional
 from std.sys.info import has_accelerator
@@ -184,7 +184,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = copy.ownership
 
         if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
     @always_inline
     def __moveinit__(out self, deinit take: Self):
@@ -215,10 +215,10 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         if not self.is_refcounted():
             return
 
-        if self._refcount[].fetch_sub[ordering=Consistency.RELEASE](1) != 1:
+        if self._refcount[].fetch_sub[ordering=Ordering.RELEASE](1) != 1:
             return
 
-        fence[ordering=Consistency.ACQUIRE]()
+        fence[ordering=Ordering.ACQUIRE]()
         if self.size > 0:
             self.ptr.free()
         self._refcount.free()
@@ -390,7 +390,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if not self.is_refcounted():
             return 0
-        return self._refcount[].load[ordering=Consistency.MONOTONIC]()
+        return self._refcount[].load[ordering=Ordering.RELAXED]()
 
     def share(mut self) raises -> HostStorage[Self.dtype]:
         """Create a new handle that shares this container's data and refcount.
@@ -413,7 +413,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+        _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
         var result = HostStorage[Self.dtype](
             ptr=self.ptr,

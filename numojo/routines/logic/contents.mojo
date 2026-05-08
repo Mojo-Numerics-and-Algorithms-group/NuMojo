@@ -6,8 +6,8 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Contents routines (numojo.routines.logic.contents)
-
-Implements Checking routines: currently not SIMD due to bool bit packing issue
+-----------------------------------------------------
+Implements Checking routines: currently not SIMD due to bool bit packing issue.
 """
 
 import std.math as math
@@ -68,7 +68,12 @@ def isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isinf(arr))  # Output: [False, False, False, False, False]
         ```
     """
-    return HostExecutor.apply_unary_predicate[dtype, math.isinf](array)
+    @parameter
+    def is_inf_kernel[
+        dtype: DType, simd_width: Int
+    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+        return math.isinf(x)
+    return HostExecutor.apply_unary_predicate[dtype, is_inf_kernel](array)
 
 
 def isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -94,7 +99,12 @@ def isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isfinite(arr))  # Output: [True, True, True]
         ```
     """
-    return HostExecutor.apply_unary_predicate[dtype, math.isfinite](array)
+    @parameter
+    def is_finite_kernel[
+        dtype: DType, simd_width: Int
+    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+        return math.isfinite(x)
+    return HostExecutor.apply_unary_predicate[dtype, is_finite_kernel](array)
 
 
 def isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -120,7 +130,12 @@ def isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isnan(arr))  # Output: [False, False, False]
         ```
     """
-    return HostExecutor.apply_unary_predicate[dtype, math.isnan](array)
+    @parameter
+    def is_nan_kernel[
+        dtype: DType, simd_width: Int
+    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+        return math.isnan(x)
+    return HostExecutor.apply_unary_predicate[dtype, is_nan_kernel](array)
 
 
 def isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -146,12 +161,11 @@ def isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isneginf(arr))  # Output: [False, False, False]
         ```
     """
-
+    @parameter
     def is_neginf[
         dtype: DType, simd_width: Int
     ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](neg_inf[dtype]()))
-
     return HostExecutor.apply_unary_predicate[dtype, is_neginf](array)
 
 
@@ -178,7 +192,7 @@ def isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isposinf(arr))  # Output: [False, False, False]
         ```
     """
-
+    @parameter
     def is_posinf[
         dtype: DType, simd_width: Int
     ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:

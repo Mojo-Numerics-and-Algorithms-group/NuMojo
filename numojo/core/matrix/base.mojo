@@ -34,6 +34,13 @@ from numojo.core.traits.buffered import Buffered
 from numojo.routines.manipulation import broadcast_to, reorder_layout
 from numojo.routines.linalg.misc import issymmetric
 import numojo.routines.statistics as stat
+import numojo.routines.linalg as linalg
+import numojo.routines.logic as logic
+import numojo.routines.math as math_routines
+import numojo.routines.math.extrema as extrema
+import numojo.routines.math.rounding as rounding
+import numojo.routines.searching as searching
+import numojo.routines.sorting as sorting
 
 
 # TODO: Currently the copyinit creates a ref counted view instead of a deep copy.
@@ -3225,7 +3232,7 @@ struct Matrix[
             print(A @ B)
             ```
         """
-        return numojo.linalg.matmul(self, other)
+        return linalg.matmul(self, other)
 
     # # ===-------------------------------------------------------------------===#
     # # Core methods
@@ -3248,7 +3255,7 @@ struct Matrix[
             print(B.all())  # Outputs: False
             ```
         """
-        return numojo.logic.all(self)
+        return logic.all(self)
 
     def all(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -3270,7 +3277,7 @@ struct Matrix[
             print(A.all(axis=1))  # Outputs: [[1], [0]]
             ```
         """
-        return numojo.logic.all[Self.dtype](self, axis=axis)
+        return logic.all[Self.dtype](self, axis=axis)
 
     def any(self) -> Scalar[Self.dtype]:
         """
@@ -3288,7 +3295,7 @@ struct Matrix[
             print(B.any())  # Outputs: True
             ```
         """
-        return numojo.logic.any(self)
+        return logic.any(self)
 
     def any(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -3300,7 +3307,7 @@ struct Matrix[
         Returns:
             Matrix[dtype]: Matrix of boolean values for each slice along the axis.
         """
-        return numojo.logic.any(self, axis=axis)
+        return logic.any(self, axis=axis)
 
     def argmax(self) raises -> Scalar[DType.int]:
         """
@@ -3316,7 +3323,7 @@ struct Matrix[
             print(A.argmax())  # Outputs: 3
             ```
         """
-        return numojo.math.argmax(self)
+        return searching.argmax(self)
 
     def argmax(self, axis: Int) raises -> Matrix[DType.int]:
         """
@@ -3336,7 +3343,7 @@ struct Matrix[
             print(A.argmax(axis=1))  # Outputs: [[1], [2]]
             ```
         """
-        return numojo.math.argmax(self, axis=axis)
+        return searching.argmax(self, axis=axis)
 
     def argmin(self) raises -> Scalar[DType.int]:
         """
@@ -3352,7 +3359,7 @@ struct Matrix[
             print(A.argmin())  # Outputs: 1
             ```
         """
-        return numojo.math.argmin(self)
+        return searching.argmin(self)
 
     def argmin(self, axis: Int) raises -> Matrix[DType.int]:
         """
@@ -3372,7 +3379,7 @@ struct Matrix[
             print(A.argmin(axis=1))  # Outputs: [[1], [2]]
             ```
         """
-        return numojo.math.argmin(self, axis=axis)
+        return searching.argmin(self, axis=axis)
 
     def argsort(self) raises -> Matrix[DType.int]:
         """
@@ -3388,7 +3395,7 @@ struct Matrix[
             print(A.argsort())  # Outputs: [[1, 3, 0, 2]]
             ```
         """
-        return numojo.math.argsort(self)
+        return sorting.argsort(self)
 
     def argsort(self, axis: Int) raises -> Matrix[DType.int]:
         """
@@ -3408,7 +3415,7 @@ struct Matrix[
             print(A.argsort(axis=1))  # Outputs: [[1, 3, 0], [2, 0, 1]]
             ```
         """
-        return numojo.math.argsort(self, axis=axis)
+        return sorting.argsort(self, axis=axis)
 
     def astype[asdtype: DType](self) -> Matrix[asdtype]:
         """
@@ -3450,7 +3457,7 @@ struct Matrix[
             print(A.cumprod())
             ```
         """
-        return numojo.math.cumprod(self)
+        return math_routines.cumprod(self)
 
     def cumprod(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -3470,7 +3477,7 @@ struct Matrix[
             print(A.cumprod(axis=1))
             ```
         """
-        return numojo.math.cumprod(self, axis=axis)
+        return math_routines.cumprod(self, axis=axis)
 
     def cumsum(self) raises -> Matrix[Self.dtype]:
         """
@@ -3486,7 +3493,7 @@ struct Matrix[
             print(A.cumsum())
             ```
         """
-        return numojo.math.cumsum(self)
+        return math_routines.cumsum(self)
 
     def cumsum(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -3506,7 +3513,7 @@ struct Matrix[
             print(A.cumsum(axis=1))
             ```
         """
-        return numojo.math.cumsum(self, axis=axis)
+        return math_routines.cumsum(self, axis=axis)
 
     def fill(self, fill_value: Scalar[Self.dtype]):
         """
@@ -3570,7 +3577,7 @@ struct Matrix[
             print(A.inv())
             ```
         """
-        return numojo.linalg.inv(self)
+        return linalg.inv(self)
 
     def order(self) -> String:
         """
@@ -3684,7 +3691,7 @@ struct Matrix[
             print(A.max())
             ```
         """
-        return numojo.math.extrema.max(self)
+        return extrema.max(self)
 
     def max(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -3704,7 +3711,7 @@ struct Matrix[
             print(A.max(axis=1))  # Max of each row
             ```
         """
-        return numojo.math.extrema.max(self, axis=axis)
+        return extrema.max(self, axis=axis)
 
     def mean[
         returned_dtype: DType = DType.float64
@@ -3762,7 +3769,7 @@ struct Matrix[
             print(A.min())
             ```
         """
-        return numojo.math.extrema.min(self)
+        return extrema.min(self)
 
     def min(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -3782,7 +3789,7 @@ struct Matrix[
             print(A.min(axis=1))  # Min of each row
             ```
         """
-        return numojo.math.extrema.min(self, axis=axis)
+        return extrema.min(self, axis=axis)
 
     def prod(self) -> Scalar[Self.dtype]:
         """
@@ -3798,7 +3805,7 @@ struct Matrix[
             print(A.prod())
             ```
         """
-        return numojo.math.prod(self)
+        return math_routines.prod(self)
 
     def prod(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -3818,7 +3825,7 @@ struct Matrix[
             print(A.prod(axis=1))
             ```
         """
-        return numojo.math.prod(self, axis=axis)
+        return math_routines.prod(self, axis=axis)
 
     def reshape(
         self, shape: Tuple[Int, Int], order: String = "C"
@@ -3969,7 +3976,7 @@ struct Matrix[
             print(B)  # Outputs a Matrix[Float64] with values [[1.12], [2.68], [3.14]]
             ```
         """
-        return numojo.math.rounding.round(self, decimals=decimals)
+        return rounding.round(self, decimals=decimals)
 
     def std[
         returned_dtype: DType = DType.float64
@@ -4029,7 +4036,7 @@ struct Matrix[
             print(A.sum())
             ```
         """
-        return numojo.math.sum(self)
+        return math_routines.sum(self)
 
     def sum(self, axis: Int) raises -> Matrix[Self.dtype]:
         """
@@ -4049,7 +4056,7 @@ struct Matrix[
             print(A.sum(axis=1))
             ```
         """
-        return numojo.math.sum(self, axis=axis)
+        return math_routines.sum(self, axis=axis)
 
     def trace(self) raises -> Scalar[Self.dtype]:
         """
@@ -4067,7 +4074,7 @@ struct Matrix[
             print(A.trace())  # Outputs: 15.0
             ```
         """
-        return numojo.linalg.trace(self)
+        return linalg.trace(self)
 
     def issymmetric(self) -> Bool:
         """

@@ -82,6 +82,7 @@ import numojo.routines.math.trig as trig
 import numojo.routines.math.exponents as exponents
 import numojo.routines.math.misc as misc
 import numojo.routines.searching as searching
+from numojo.routines.manipulation import reshape
 
 
 # ===----------------------------------------------------------------------=== #
@@ -3294,8 +3295,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Array of the same data with a new shape.
         """
         var result: Self = ComplexNDArray[Self.cdtype](
-            re=numojo.reshape(self._re, shape=shape, order=order),
-            im=numojo.reshape(self._im, shape=shape, order=order),
+            re=reshape(self._re, shape=shape, order=order),
+            im=reshape(self._im, shape=shape, order=order),
         )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags

@@ -169,7 +169,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = ownership
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Shallow-copy constructor.
 
         Copies the pointer and refcount, then atomically increments the
@@ -187,7 +187,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Move constructor.
 
         Transfers all fields without touching the reference count.
@@ -484,7 +484,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         self.buffer = buffer
         self.size = size
 
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Shallow-copy constructor.
 
         Copies the `DeviceBuffer` handle.  The GPU runtime determines
@@ -496,7 +496,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         self.buffer = copy.buffer
         self.size = copy.size
 
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Move constructor.
 
         Transfers the buffer handle without copying.
@@ -690,7 +690,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.device_storage = None
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Shallow-copy constructor.
 
         Shares the underlying storage.  For CPU containers this increments
@@ -705,7 +705,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.size = copy.size
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Move constructor.
 
         Transfers all fields without touching reference counts.

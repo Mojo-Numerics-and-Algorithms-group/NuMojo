@@ -210,18 +210,18 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-modular = ">=25.7.0,<26"
+modular = "0.26.2.*"
 
 [package.build-dependencies]
-modular = ">=25.7.0,<26"
+modular = "0.26.2.*"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-modular = ">=25.7.0,<26"
+modular = "0.26.2.*"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
-modular = ">=25.7.0,<26"
+modular = "26.2.*"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 

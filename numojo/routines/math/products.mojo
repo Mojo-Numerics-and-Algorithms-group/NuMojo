@@ -50,7 +50,7 @@ def prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var res = Scalar[dtype](1)
 
     @parameter
-    def cal_vec[width: Int](i: Int) unified {mut res, read A}:
+    def cal_vec[width: Int](i: Int) {mut res, read A}:
         res *= A._buf.ptr.load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
@@ -110,7 +110,7 @@ def prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     @parameter
-    def cal_vec[width: Int](i: Int) unified {mut res, read A}:
+    def cal_vec[width: Int](i: Int) {mut res, read A}:
         res = res * A._buf.ptr.load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
@@ -142,7 +142,7 @@ def prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         for i in range(A.shape[0]):
 
             @parameter
-            def cal_vec_sum[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_vec_sum[width: Int](j: Int) {mut B, read A, read i}:
                 B._store[width](
                     0, j, B._load[width](0, j) * A._load[width](i, j)
                 )
@@ -157,7 +157,7 @@ def prod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         @parameter
         def cal_rows(i: Int):
             @parameter
-            def cal_vec[width: Int](j: Int) unified {mut B, read A, read i}:
+            def cal_vec[width: Int](j: Int) {mut B, read A, read i}:
                 B._store(
                     i,
                     0,
@@ -299,7 +299,7 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             @parameter
             def copy_col[
                 width: Int
-            ](i: Int) unified {mut result, read A, read j}:
+            ](i: Int) {mut result, read A, read j}:
                 result._store[width](i, j, A._load[width](i, j))
 
             vectorize[width](A.shape[0], copy_col)
@@ -311,7 +311,7 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
                 @parameter
                 def cal_vec_row[
                     width: Int
-                ](j: Int) unified {mut result, read i}:
+                ](j: Int) {mut result, read i}:
                     result._store[width](
                         i,
                         j,
@@ -339,7 +339,7 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
                 @parameter
                 def cal_vec_column[
                     width: Int
-                ](i: Int) unified {mut result, read j}:
+                ](i: Int) {mut result, read j}:
                     result._store[width](
                         i,
                         j,

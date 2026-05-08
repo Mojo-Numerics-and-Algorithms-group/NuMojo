@@ -37,7 +37,13 @@ def acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise acos of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.acos](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.acos(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -53,7 +59,13 @@ def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise asin of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.asin](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.asin(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -69,7 +81,13 @@ def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise atan of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.atan](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.atan(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def atan2[
@@ -94,7 +112,13 @@ def atan2[
     References:
         https://en.wikipedia.org/wiki/Atan2.
     """
-    return HostExecutor.apply_binary[dtype, math.atan2](array1, array2)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.atan2(simd1, simd2)
+    return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
 
 
 # ===------------------------------------------------------------------------===#
@@ -216,7 +240,13 @@ def cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise cos of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.cos](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.cos(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -232,7 +262,13 @@ def sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise sin of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.sin](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.sin(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -248,7 +284,13 @@ def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise tan of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.tan](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.tan(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -328,7 +370,13 @@ def hypot[
     Returns:
         The element-wise hypotenuse of `array1` and `array2`.
     """
-    return HostExecutor.apply_binary[dtype, math.hypot](array1, array2)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.hypot(simd1, simd2)
+    return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
 
 
 def hypot_fma[

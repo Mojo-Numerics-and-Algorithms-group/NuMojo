@@ -84,7 +84,8 @@ import numojo.routines.linalg as linalg
 import numojo.routines.sorting as sorting
 import numojo.routines.manipulation as manipulation
 import numojo.routines.statistics as statistics
-from numojo.routines.indexing import clip, compress
+from numojo.routines.indexing import compress
+from numojo.routines.math.misc import clip
 from numojo.routines.manipulation import reshape
 import numojo.routines.math as numojo_math
 
@@ -325,7 +326,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.print_options = PrintOptions()
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Copies `copy` into `self`.
 
         Performs a deep copy. The new array owns its data.
@@ -370,7 +371,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     @always_inline("nodebug")
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Moves `take` into `self`.
 
         Args:
@@ -2155,7 +2156,7 @@ struct NDArray[dtype: DType = DType.float64](
             ```mojo
             import numojo as nm
             from numojo.prelude import *
-            var A = nm.random.rand[numojo.i16](2, 2, 2)
+            var A = nm.random.rand[nm.i16](2, 2, 2)
             A[Item(0, 1, 1)] = 10
             ```
         """
@@ -2557,6 +2558,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+            
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
             a.__setitem__(Slice(1,3), Slice(1,3), scalar=99)
             ```

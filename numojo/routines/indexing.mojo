@@ -6,11 +6,11 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Indexing routines (numojo.routines.indexing)
-
+-----------------------------------------------
 - Generating index arrays
 - Indexing-like operations
 - Inserting data into arrays
-- Iterating over arrays
+- Iterating over arrays.
 """
 
 from std.memory import memcpy

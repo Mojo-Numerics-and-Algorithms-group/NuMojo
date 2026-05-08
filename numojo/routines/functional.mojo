@@ -35,7 +35,7 @@ from numojo.routines.creation import _0darray
 
 # def apply_along_axis[
 #     dtype: DType,
-#     func1d: def[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
+#     func1d: def[dtype_func: DType](NDArray[dtype_func]) raises thin -> Scalar[
 #         dtype_func
 #     ],
 # ](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:

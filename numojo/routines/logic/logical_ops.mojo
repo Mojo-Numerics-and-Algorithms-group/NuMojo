@@ -352,7 +352,7 @@ def logical_not[
     """
     var res: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](a.shape)
     for i in range(res.size):
-        res.store(i, ~a.load(i))
+        res.store(i, a.load(i).__invert__())
     return res^
 
 

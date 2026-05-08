@@ -37,7 +37,13 @@ def acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise acosh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.acosh](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.acosh(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -53,7 +59,13 @@ def asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise asinh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.asinh](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.asinh(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -69,7 +81,13 @@ def atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise atanh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.atanh](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.atanh(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -191,7 +209,13 @@ def cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise cosh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.cosh](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.cosh(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -207,7 +231,13 @@ def sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise sinh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.sinh](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.sinh(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -223,7 +253,13 @@ def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise tanh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.tanh](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.tanh(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 # ===------------------------------------------------------------------------===#

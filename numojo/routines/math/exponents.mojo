@@ -49,7 +49,13 @@ def exp[
         var result = nm.exp(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.exp](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.exp(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def exp[
@@ -105,7 +111,13 @@ def exp2[
         var result = nm.exp2(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.exp2](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.exp2(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def exp2[
@@ -160,7 +172,13 @@ def expm1[
         var result = nm.expm1(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.expm1](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.expm1(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def expm1[
@@ -219,7 +237,13 @@ def log[
         var result = nm.log(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.log(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def log[
@@ -274,7 +298,13 @@ def log2[
         var result = nm.log2(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log2](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.log2(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def log2[
@@ -327,7 +357,13 @@ def log10[
         var result = nm.log10(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log10](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.log10(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def log10[
@@ -382,7 +418,13 @@ def log1p[
         var result = nm.log1p(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log1p](array)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.log1p(simd)
+    return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
 def log1p[

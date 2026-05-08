@@ -39,4 +39,10 @@ def copysign[
     Returns:
         A NDArray with the magnitude of `array2` and the sign of `array1`.
     """
-    return HostExecutor.apply_binary[dtype, math.copysign](array1, array2)
+    return 
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return math.copysign(simd1, simd2)
+    return HostExecutor.apply_binary[dtype, _kernel](array1, array2)

@@ -5,11 +5,8 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""
-=====================================
-Accelerator (numojo.core.accelerator)
-=====================================
-
+"""Accelerator (numojo.core.accelerator)
+----------------------------------------
 Accelerator (GPU) support namespace for NuMojo.
 """
 

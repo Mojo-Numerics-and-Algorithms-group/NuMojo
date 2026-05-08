@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """ComplexSIMD (numojo.core.complex.complex_simd)
-
+----------------------------------------------
 Implement the ComplexSIMD type and its operations.
 
 This module provides a ComplexSIMD type that represents complex numbers using SIMD

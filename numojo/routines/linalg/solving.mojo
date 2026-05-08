@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Linear Algebra Solver (numojo.routines.linalg.solving)
-
+------------------------------------------------------
 Provides:
     - Solver of `Ax = y` using LU decomposition algorithm.
     - Inverse of an invertible matrix.

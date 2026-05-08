@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Sorting routines (numojo.routines.sorting)
-
+------------------------------------------
 This module implements sorting routines for NDArrays and Matrices, including `sort` and `argsort` functions.
 
 SECTIONS OF THIS FILE:

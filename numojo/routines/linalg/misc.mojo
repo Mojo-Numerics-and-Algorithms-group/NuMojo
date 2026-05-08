@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Miscellaneous Linear Algebra Routines (numojo.routines.linalg.misc)
-
+-------------------------------------------------------------------
 This module provides miscellaneous linear algebra routines, such as extracting diagonals and checking for symmetry.
 """
 

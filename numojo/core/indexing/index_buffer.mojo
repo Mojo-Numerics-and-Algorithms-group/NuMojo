@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """IndexBuffer (numojo.core.indexing.index_buffer)
-
+-----------------------------------------------
 Shared integer buffer backend for shape/strides/item.
 
 This type owns a contiguous heap buffer of Ints and provides

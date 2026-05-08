@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """"Searching routines (numojo.routines.searching)
-
+----------------------------------------------
 This module implements searching routines for finding indices of extrema (argmax and argmin) in NDArrays and Matrices.
 """
 

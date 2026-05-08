@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Routines module (numojo.routines)
-
+---------------------------------
 This modules groups NumPy-like functionality by topic (math, linalg, statistics,
 creation, manipulation, etc.).
 

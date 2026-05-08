@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Functional programming (numojo.routines.functional)
-
+---------------------------------------------------
 This module implements functional programming utilities for NDArray operations, such as `apply_along_axis`.
 """
 

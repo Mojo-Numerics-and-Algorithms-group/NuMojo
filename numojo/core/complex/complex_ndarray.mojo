@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """"ComplexNDArray (numojo.core.complex.complex_ndarray)
-
+----------------------------------------------------
 Complex NDArray support for NuMojo.
 
 This module provides the `ComplexNDArray` type, which represents N-dimensional arrays
@@ -883,7 +883,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             print(b) # Output: 2x2 sliced array corresponding to columns 2 and 3 of each row.
             ```
         """
-        var n_slices: Int = slices.__len__()
+        var n_slices: Int = len(slices)
         if n_slices > self.ndim:
             raise Error(
                 NumojoError(
@@ -2064,7 +2064,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Get items by a series of either slices or integers.
         """
-        var n_slices: Int = slices.__len__()
+        var n_slices: Int = len(slices)
         if n_slices > self.ndim:
             raise Error(
                 NumojoError(
@@ -3158,7 +3158,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 out += padding + "]"
 
             # Greedy line wrapping
-            if len(out) > options.line_width:
+            if out.byte_length() > options.line_width:
                 var wrapped: String = String("")
                 var line_len: Int = 0
                 for c in out.codepoint_slices():

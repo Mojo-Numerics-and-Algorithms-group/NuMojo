@@ -4210,7 +4210,7 @@ struct NDArray[dtype: DType = DType.float64](
                         out += separator
                 out += padding + "]"
 
-            if len(out) > options.line_width:
+            if out.byte_length() > options.line_width:
                 var wrapped: String = String("")
                 var line_len: Int = 0
                 for c in out.codepoint_slices():

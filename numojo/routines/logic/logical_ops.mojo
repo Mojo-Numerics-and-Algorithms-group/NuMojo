@@ -226,7 +226,7 @@ def logical_and[
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
 ) raises -> ComplexNDArray[cdtype] where (
-    cdtype == ComplexDType.bool or cdtype.is_integral()
+    cdtype.dtype == DType.bool or cdtype.dtype.is_integral()
 ):
     """
     Element-wise logical AND operation between two complex arrays.
@@ -276,7 +276,7 @@ def logical_or[
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
 ) raises -> ComplexNDArray[cdtype] where (
-    cdtype == ComplexDType.bool or cdtype.is_integral()
+    cdtype.dtype == DType.bool or cdtype.dtype.is_integral()
 ):
     """
     Element-wise logical OR operation between two complex arrays.
@@ -361,7 +361,7 @@ def logical_xor[
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
 ) raises -> ComplexNDArray[cdtype] where (
-    cdtype == ComplexDType.bool or cdtype.is_integral()
+    cdtype.dtype == DType.bool or cdtype.dtype.is_integral()
 ):
     """
     Element-wise logical XOR operation between two complex arrays.

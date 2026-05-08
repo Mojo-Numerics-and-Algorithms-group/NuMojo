@@ -3649,7 +3649,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.mul[Self.dtype](self, other)
 
-    def __rmul__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
+    def __rmul__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar * array`.
         """

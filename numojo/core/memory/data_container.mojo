@@ -208,7 +208,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = ownership
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Deep copy constructor. Allocates new storage and copies all data.
 
@@ -228,7 +228,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """
         Move constructor.
 

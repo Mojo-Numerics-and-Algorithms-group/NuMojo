@@ -47,8 +47,7 @@ def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
     var result: Scalar[dtype] = Scalar[dtype](0)
 
-    @parameter
-    def cal_vec[width: Int](i: Int) {mut result, read A}:
+    def cal_vec[width: Int](i: Int) {mut result, A}:
         result += A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
@@ -144,8 +143,7 @@ def sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     var res = Scalar[dtype](0)
     comptime width: Int = simd_width_of[dtype]()
 
-    @parameter
-    def cal_vec[width: Int](i: Int) {mut res, read A}:
+    def cal_vec[width: Int](i: Int) {mut res, A}:
         res = res + A._buf.ptr.load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
@@ -165,7 +163,7 @@ def sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     from numojo import Matrix
     import numojo.routines.math as mat
 
-    var mat = Matrix.rand(shape=(100, 100))
+    var A = Matrix.rand(shape=(100, 100))
     print(mat.sum(A, axis=0))
     print(mat.sum(A, axis=1))
     ```
@@ -180,8 +178,7 @@ def sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
             @parameter
             def calc_columns(j: Int):
-                @parameter
-                def col_sum[width: Int](i: Int) {mut B, read j, read A}:
+                def col_sum[width: Int](i: Int) {mut B, j, A}:
                     B._store(
                         0,
                         j,
@@ -193,11 +190,9 @@ def sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             parallelize[calc_columns](A.shape[1], A.shape[1])
         else:
             for i in range(A.shape[0]):
-
-                @parameter
                 def cal_vec_sum[
                     width: Int
-                ](j: Int) {mut B, read i, read A}:
+                ](j: Int) {mut B, i, A}:
                     B._store[width](
                         0, j, B._load[width](0, j) + A._load[width](i, j)
                     )
@@ -213,8 +208,7 @@ def sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
             @parameter
             def cal_rows(i: Int):
-                @parameter
-                def cal_vec[width: Int](j: Int) {mut B, read i, read A}:
+                def cal_vec[width: Int](j: Int) {mut B, i, A}:
                     B._store(
                         i,
                         0,
@@ -370,11 +364,9 @@ def cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     if axis == 0:
         if result.is_c_contiguous():
             for i in range(1, A.shape[0]):
-
-                @parameter
                 def cal_vec_sum_column[
                     width: Int
-                ](j: Int) {mut result, read i}:
+                ](j: Int) {mut result, i}:
                     result._store[width](
                         i,
                         j,
@@ -398,11 +390,9 @@ def cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             return result^
         else:
             for j in range(1, A.shape[1]):
-
-                @parameter
                 def cal_vec_sum_row[
                     width: Int
-                ](i: Int) {mut result, read j}:
+                ](i: Int) {mut result, j}:
                     result._store[width](
                         i,
                         j,

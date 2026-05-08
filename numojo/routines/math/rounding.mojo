@@ -53,7 +53,6 @@ def tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to abs(array).
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
@@ -80,7 +79,6 @@ def tfloor[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to floor(array).
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
@@ -102,7 +100,6 @@ def tceil[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to ceil(array).
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
@@ -124,7 +121,6 @@ def ttrunc[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to trunc(array).
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
@@ -146,7 +142,6 @@ def tround[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to round(array).
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
@@ -168,7 +163,6 @@ def roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise rounding of `array` to the nearest integer with ties to even.
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
@@ -244,7 +238,6 @@ def nextafter[
     Returns:
         The element-wise nextafter of `array1` toward `array2`.
     """
-    return 
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int

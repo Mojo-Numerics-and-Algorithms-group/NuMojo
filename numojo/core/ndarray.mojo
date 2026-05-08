@@ -1539,8 +1539,8 @@ struct NDArray[dtype: DType = DType.float64](
             return result^
 
         # CASE 2:
-        # if array shape is not equal to mask shape,
-        # return items from the 0-th dimension of the array where mask is True
+        # 1-D mask whose length matches self.shape[0]:
+        # return axis-0 slices where mask is True → shape (true_count, *self.shape[1:])
         elif mask.ndim == 1 and mask.shape[0] == self.shape[0]:
             var self_c = self.contiguous()
             var len_of_result = 0
@@ -1569,19 +1569,112 @@ struct NDArray[dtype: DType = DType.float64](
                     offset += 1
 
             return result^
+
+        # CASE 3:
+        # k-D mask (1 < k < self.ndim) whose shape matches self.shape[:k]:
+        # each True position selects one sub-array of shape self.shape[k:]
+        # → result shape is (true_count, *self.shape[k:])
+        elif mask.ndim > 1 and mask.ndim < self.ndim:
+            # Verify mask shape matches leading dims of self.
+            var shape_match = True
+            for i in range(mask.ndim):
+                if mask.shape[i] != self.shape[i]:
+                    shape_match = False
+                    break
+            if not shape_match:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "Boolean mask shape {} does not match the leading"
+                            " dimensions of array shape {}. Mask shape must"
+                            " equal self.shape[:{}}."
+                        ).format(mask.shape, self.shape, mask.ndim),
+                        location=(
+                            "NDArray.__getitem__(mask: NDArray[DType.bool])"
+                        ),
+                    )
+                )
+
+            var k = mask.ndim
+            var mask_c = mask.contiguous()
+
+            # Count True entries in the mask.
+            var true_count = 0
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    true_count += 1
+
+            if true_count == 0:
+                raise Error(
+                    NumojoError(
+                        category="index",
+                        message=(
+                            "Boolean mask has no True entries. Empty array"
+                            " results are not supported yet."
+                        ),
+                        location=(
+                            "NDArray.__getitem__(mask: NDArray[DType.bool])"
+                        ),
+                    )
+                )
+
+            # Build result shape: (true_count, *self.shape[k:])
+            var result_shape_list = List[Int](capacity=1 + self.ndim - k)
+            result_shape_list.append(true_count)
+            for i in range(k, self.ndim):
+                result_shape_list.append(self.shape[i])
+            var result = NDArray[Self.dtype](NDArrayShape(result_shape_list))
+
+            # size of one sub-array = product(self.shape[k:])
+            var size_per_item = 1
+            for i in range(k, self.ndim):
+                size_per_item *= self.shape[i]
+
+            var self_c = self.contiguous()
+            var out_offset = 0
+
+            # Precompute C-order strides for the first k dims of self_c.
+            # stride[d] = product(self.shape[d+1:self.ndim])
+            # = product(self.shape[d+1:k]) * size_per_item
+            var src_strides = List[Int](capacity=k)
+            for d in range(k):
+                var s = size_per_item
+                for dd in range(d + 1, k):
+                    s *= self.shape[dd]
+                src_strides.append(s)
+
+            # Walk the mask linearly; decode flat index → k-D coords.
+            for flat in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](flat):
+                    var src_offset = 0
+                    var remaining = flat
+                    for d in range(k - 1, -1, -1):
+                        src_offset += (remaining % self.shape[d]) * src_strides[
+                            d
+                        ]
+                        remaining //= self.shape[d]
+
+                    memcpy(
+                        dest=result._buf.ptr + out_offset * size_per_item,
+                        src=self_c._buf.ptr + src_offset,
+                        count=size_per_item,
+                    )
+                    out_offset += 1
+
+            return result^
+
         else:
             raise Error(
                 NumojoError(
                     category="shape",
                     message=String(
                         "Boolean mask shape {} is not compatible with array"
-                        " shape {}. Currently supported: (1) exact shape match"
-                        " for element-wise masking, (2) 1-D mask with length"
-                        " matching first dimension. Broadcasting is not"
-                        " supported currently. Ensure mask shape matches array"
-                        " shape for element-wise masking, or use 1-D mask with"
-                        " length {} for first-dimension indexing."
-                    ).format(mask.shape, self.shape, self.shape[0]),
+                        " shape {}. Supported: (1) exact shape match for"
+                        " element-wise masking, (2) 1-D mask matching first"
+                        " dimension, (3) k-D mask matching first k dimensions"
+                        " (1 < k < ndim)."
+                    ).format(mask.shape, self.shape),
                     location="NDArray.__getitem__(mask: NDArray[DType.bool])",
                 )
             )
@@ -1973,27 +2066,39 @@ struct NDArray[dtype: DType = DType.float64](
 
     # ===-------------------------------------------------------------------===#
     # Setter dunders and other setter methods
-
-    # Basic Setter Methods
-    # def _setitem(self, *indices: Int, val: Scalar[dtype])                      # Direct unsafe setter
-    # def __setitem__(mut self, idx: Int, val: Self) raises                      # Set by single index
-    # def __setitem__(mut self, index: Item, val: Scalar[dtype]) raises          # Set by coordinate list
-    # def __setitem__(mut self, mask: NDArray[DType.bool], value: Scalar[dtype]) # Set by boolean mask
-
-    # Slice-based Setters
-    # def __setitem__(mut self, *slices: Slice, val: Self) raises                # Set by variable slices
-    # def __setitem__(mut self, slices: List[Slice], val: Self) raises           # Set by list of slices
-    # def __setitem__(mut self, *slices: Variant[Slice, Int], val: Self) raises  # Set by mix of slices/ints
-
-    # Index-based Setters
-    # def __setitem__(self, indices: NDArray[DType.int], val: NDArray) raises  # Set by index array
-    # def __setitem__(mut self, mask: NDArray[DType.bool], val: NDArray[dtype])  # Set by boolean mask array
-
-    # Helper Methods
-    # def itemset(mut self, index: Variant[Int, List[Int]], item: Scalar[dtype]) # Set single item
-    # def store(self, var index: Int, val: Scalar[dtype]) raises               # Store with bounds checking
-    # def store[width: Int](mut self, index: Int, val: SIMD[dtype, width])       # Store SIMD value
-    # def store[width: Int = 1](mut self, *indices: Int, val: SIMD[dtype, width])# Store SIMD at coordinates
+    #
+    # NOTE: Mojo cannot resolve __setitem__ overloads where the RHS type
+    # (Scalar vs NDArray) differs but the index type is the same variadic.
+    # Those setters are exposed as `set()` instead, with `val` as a
+    # keyword-only argument (after `*`), so callers use `arr.set(..., val=v)`.
+    #
+    # Unsafe/internal setter
+    # def _setitem(self, *indices: Int, val: Scalar[dtype])
+    #
+    # __setitem__ overloads (a[...] = val syntax works for all of these)
+    # def __setitem__(mut self, idx: Int, val: Self)
+    # def __setitem__(mut self, index: Item, val: Scalar[dtype])
+    # def __setitem__(mut self, *slices: Slice, val: Self)
+    # def __setitem__(mut self, slices: List[Slice], val: Self)
+    # def __setitem__(mut self, *slices: Variant[Slice, Int], val: Self)
+    # def __setitem__(mut self, indices: NDArray[DType.int], val: NDArray)
+    #
+    # set() overloads (use arr.set(..., val=v) — Mojo cannot resolve these
+    # as __setitem__ due to ambiguity with the NDArray overloads above)
+    # def set(mut self, mask: NDArray[DType.bool], *, val: Scalar[dtype])
+    # def set(mut self, mask: NDArray[DType.bool], *, val: NDArray[dtype])
+    # def set(mut self, *slices: Slice, val: Scalar[dtype])
+    # def set(mut self, *slices: Variant[Slice, Int], val: Scalar[dtype])
+    #
+    # Internal scalar-fill backend (called by the set() slice overloads)
+    # def _setitem_slice_scalar(mut self, slices: List[Slice], val: Scalar)
+    #
+    # Item helpers
+    # def itemset(mut self, index: Int, item: Scalar[dtype])
+    # def itemset(mut self, indices: List[Int], item: Scalar[dtype])
+    # def store(mut self, index: Int, val: Scalar[dtype])
+    # def store[width](mut self, index: Int, val: SIMD[dtype, width])
+    # def store[width=1](mut self, *indices: Int, val: SIMD[dtype, width])
     # ===-------------------------------------------------------------------===#
 
     def _setitem(self, *indices: Int, val: Scalar[Self.dtype]):
@@ -2194,49 +2299,105 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = IndexMethods.get_1d_index(index, self.strides)
         self._buf.ptr.store(self.offset + idx, val)
 
-    # only works if array is called as array.__setitem__(), mojo compiler doesn't parse it implicitly
-    def __setitem__(
-        mut self, mask: NDArray[DType.bool], value: Scalar[Self.dtype]
+    def set(
+        mut self, mask: NDArray[DType.bool], *, val: Scalar[Self.dtype]
     ) raises:
-        """Sets the value of the array at the indices where the mask is `True`.
+        """Sets elements where `mask` is `True` to a scalar value.
+
+        Supports three mask shapes:
+        - Exact shape match: writes to every True element.
+        - 1-D mask of length `shape[0]`: fills each selected axis-0 slice.
+        - k-D mask matching `shape[:k]`: fills each selected k-dimensional block.
 
         Args:
-            mask: The boolean mask array.
-            value: The value to set.
+            mask: Boolean mask array.
+            val: The scalar value to write at every True position.
 
-        Raises:
-            Error: If the mask and the array do not have the same shape.
+        Notes:
+            Use `arr.set(mask, val=scalar)` rather than `arr[mask] = scalar`
+            — Mojo cannot distinguish the scalar from the NDArray overload at
+            the `__setitem__` level.
 
         Examples:
-
-        ```console
-        >>> import numojo
-        >>> var A = numojo.random.rand[numojo.i16](2, 2, 2)
-        >>> var mask = A > 0.5
-        >>> A[mask] = 10
-        ```.
+            ```mojo
+            var A = nm.arange[nm.f32](6)
+            var mask = A > nm.f32(2.0)
+            A.set(mask, val=nm.f32(0.0))
+            ```
         """
-        if (
-            mask.shape != self.shape
-        ):  # this behavious could be removed potentially
-            raise Error(
-                NumojoError(
-                    category="shape",
-                    message=String(
-                        "Mask shape {} does not match array shape {}. Provide a"
-                        " boolean mask with exactly the same shape ({})."
-                    ).format(mask.shape, self.shape, self.shape),
-                    location=(
-                        "NDArray.__setitem__(mask: NDArray[DType.bool], val:"
-                        " Scalar[dtype])"
-                    ),
-                )
-            )
-
+        var value = val
         var mask_c = mask.contiguous()
-        for i in range(mask_c.size):
-            if mask_c._buf.ptr.load[width=1](i):
-                self.itemset(i, value)
+
+        # CASE 1: exact shape match — write scalar at every True position.
+        if mask.shape == self.shape:
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    self.itemset(i, value)
+            return
+
+        # CASE 2: 1-D mask matching first dimension — write scalar to every
+        # element of each selected axis-0 slice.
+        if mask.ndim == 1 and mask.shape[0] == self.shape[0]:
+            var size_per_item = self.size // self.shape[0]
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    for j in range(size_per_item):
+                        self.itemset(i * size_per_item + j, value)
+            return
+
+        # CASE 3: k-D mask (1 < k < self.ndim) matching self.shape[:k].
+        if mask.ndim > 1 and mask.ndim < self.ndim:
+            var shape_match = True
+            for i in range(mask.ndim):
+                if mask.shape[i] != self.shape[i]:
+                    shape_match = False
+                    break
+            if not shape_match:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "Boolean mask shape {} does not match the leading"
+                            " dimensions of array shape {}."
+                        ).format(mask.shape, self.shape),
+                        location="NDArray.set(mask, value: Scalar)",
+                    )
+                )
+            var k = mask.ndim
+            var size_per_item = 1
+            for i in range(k, self.ndim):
+                size_per_item *= self.shape[i]
+
+            var src_strides = List[Int](capacity=k)
+            for d in range(k):
+                var s = size_per_item
+                for dd in range(d + 1, k):
+                    s *= self.shape[dd]
+                src_strides.append(s)
+
+            for flat in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](flat):
+                    var base = 0
+                    var remaining = flat
+                    for d in range(k - 1, -1, -1):
+                        base += (remaining % self.shape[d]) * src_strides[d]
+                        remaining //= self.shape[d]
+                    for j in range(size_per_item):
+                        self.itemset(base + j, value)
+            return
+
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "Boolean mask shape {} is not compatible with array shape"
+                    " {}. Supported: (1) exact shape match, (2) 1-D mask"
+                    " matching first dimension, (3) k-D mask matching first k"
+                    " dimensions (1 < k < ndim)."
+                ).format(mask.shape, self.shape),
+                location="NDArray.set(mask, value: Scalar)",
+            )
+        )
 
     def __setitem__(mut self, *slices: Slice, val: Self) raises:
         """Sets the elements of the array at the slices with the given array.
@@ -2493,9 +2654,8 @@ struct NDArray[dtype: DType = DType.float64](
     ) raises:
         """Internal backend: fill every element in a slice region with a scalar.
 
-        Called by the user-facing `__setitem__(*Slice, scalar=)` and
-        `__setitem__(*Variant[Slice,Int], scalar=)` overloads after they
-        normalise their arguments into a `List[Slice]`.
+        Called by `set(*Slice, val=)` and `set(*Variant[Slice,Int], val=)`
+        after they normalise their arguments into a `List[Slice]`.
 
         Args:
             slices: One `Slice` per array dimension (trailing dims already
@@ -2540,62 +2700,54 @@ struct NDArray[dtype: DType = DType.float64](
                     break
                 coords[d] = 0
 
-    def __setitem__(
-        mut self, *slices: Slice, scalar: Scalar[Self.dtype]
-    ) raises:
+    def set(mut self, *slices: Slice, val: Scalar[Self.dtype]) raises:
         """Sets all elements in the slice region to a scalar value.
 
-        Delegates to `_setitem_slice_scalar` after packing slices into a list.
-
-        Note: the trailing keyword is named `scalar` (not `val`) to avoid
-        ambiguity with the `*slices: Slice, val: Self` overload during Mojo
-        overload resolution.
-
         Args:
-            slices: Variadic slices, one per dimension (trailing dims default
-                to the full range).
-            scalar: The scalar value to broadcast into every selected position.
+            slices: Variadic slices, one per dimension. Trailing dimensions
+                default to the full range.
+            val: The scalar value to broadcast into every selected position.
+
+        Notes:
+            Use `arr.set(s1, s2, val=scalar)` rather than `arr[s1, s2] = scalar`
+            — Mojo cannot distinguish the scalar from the NDArray overload at
+            the `__setitem__` level.
 
         Examples:
             ```mojo
-            import numojo as nm
-
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
-            a.__setitem__(Slice(1,3), Slice(1,3), scalar=99)
+            a.set(Slice(1, 3), Slice(1, 3), val=99)
             ```
         """
         var slice_list = List[Slice](capacity=slices.__len__())
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        self._setitem_slice_scalar(slice_list, scalar)
+        self._setitem_slice_scalar(slice_list, val)
 
-    def __setitem__(
-        mut self, *slices: Variant[Slice, Int], scalar: Scalar[Self.dtype]
+    def set(
+        mut self, *slices: Variant[Slice, Int], val: Scalar[Self.dtype]
     ) raises:
         """Sets elements selected by mixed integer/slice indices to a scalar.
 
-        Handles two cases:
-        - All entries are integers (full coordinate) → direct single-element
-          write via `_setitem`, no allocation.
-        - Mixed or slice-only → normalise integers to unit-length slices and
-          delegate to `__setitem__(List[Slice], Scalar)` for the region fill.
-
-        Note: the trailing keyword is named `scalar` (not `val`) to avoid
-        ambiguity with the `*slices: Variant[Slice, Int], val: Self` overload
-        during Mojo overload resolution.
+        Integer entries select a single position in the corresponding dimension;
+        slice entries select a range. All-integer arguments write one element
+        directly. Mixed or slice-only arguments fill every selected position.
 
         Args:
             slices: Variadic mix of `Slice` and `Int` index entries.
-            scalar: The scalar value to write.
+            val: The scalar value to write.
+
+        Notes:
+            Use `arr.set(..., val=scalar)` rather than `arr[...] = scalar`
+            — Mojo cannot distinguish the scalar from the NDArray overload at
+            the `__setitem__` level.
 
         Examples:
             ```mojo
-            import numojo as nm
-
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
-            a.__setitem__(1, 2, scalar=99)           # single element
-            a.__setitem__(1, Slice(2,4), scalar=0)   # one row, partial column
-            a.__setitem__(Slice(1,3), Slice(2,4), scalar=7)  # sub-matrix
+            a.set(1, 2, val=99)                     # single element
+            a.set(1, Slice(2, 4), val=0)            # row 1, cols 2-3
+            a.set(Slice(1, 3), Slice(2, 4), val=7)  # sub-matrix
             ```
         """
         var n = slices.__len__()
@@ -2608,8 +2760,7 @@ struct NDArray[dtype: DType = DType.float64](
                         " dimensions."
                     ).format(n, self.ndim),
                     location=(
-                        "NDArray.__setitem__(*slices: Variant[Slice, Int],"
-                        " scalar: Scalar)"
+                        "NDArray.set(*slices: Variant[Slice, Int], val: Scalar)"
                     ),
                 )
             )
@@ -2618,9 +2769,6 @@ struct NDArray[dtype: DType = DType.float64](
         var count_int: Int = 0
         var coords = List[Int]()
 
-        # Track which array dimension each entry maps to (Int and Slice both
-        # consume one dimension; the loop index equals the array dim here
-        # because Variant[Slice,Int] carries no NewAxis).
         for i in range(n):
             if slices[i].isa[Int]():
                 var idx = slices[i][Int]
@@ -2639,8 +2787,8 @@ struct NDArray[dtype: DType = DType.float64](
                                 self.shape[i],
                             ),
                             location=(
-                                "NDArray.__setitem__(*slices: Variant[Slice,"
-                                " Int], scalar: Scalar)"
+                                "NDArray.set(*slices: Variant[Slice, Int], val:"
+                                " Scalar)"
                             ),
                         )
                     )
@@ -2652,16 +2800,14 @@ struct NDArray[dtype: DType = DType.float64](
             else:
                 slice_list.append(slices[i][Slice])
 
-        # Fast path: every dimension was given an integer → single element.
         if count_int == self.ndim:
-            self.itemset(coords.copy(), scalar)
+            self.itemset(coords.copy(), val)
             return
 
-        # Pad trailing dimensions.
         for i in range(n, self.ndim):
             slice_list.append(Slice(0, self.shape[i], 1))
 
-        self._setitem_slice_scalar(slice_list, scalar)
+        self._setitem_slice_scalar(slice_list, val)
 
     def __setitem__(
         mut self, index: NDArray[DType.int], val: NDArray[Self.dtype]
@@ -2831,87 +2977,218 @@ struct NDArray[dtype: DType = DType.float64](
                 )
                 self.__setitem__(idx=idx, val=slice)
 
-    def __setitem__(
-        mut self, mask: NDArray[DType.bool], val: NDArray[Self.dtype]
+    def set(
+        mut self, mask: NDArray[DType.bool], *, val: NDArray[Self.dtype]
     ) raises:
-        """Sets the value of the array at the indices where the mask is `True`.
+        """Sets elements where `mask` is `True` from an NDArray value.
+
+        Supported `val` shapes (same three mask cases as the scalar overload):
+        - Exact-shape mask: elementwise, size-1 broadcast, or compact 1-D.
+        - 1-D mask of length `shape[0]`: single sub-array or per-index array.
+        - k-D mask matching `shape[:k]`: single sub-array or per-index array.
 
         Args:
-            mask: The boolean mask array.
-            val: The value to set.
+            mask: Boolean mask array.
+            val: The NDArray value(s) to write.
 
-        Raises:
-            Error: If the mask and the array do not have the same shape.
+        Notes:
+            Use `arr.set(mask, val=values)` rather than `arr[mask] = values`
+            — Mojo cannot distinguish the scalar from the NDArray overload at
+            the `__setitem__` level.
 
         Examples:
-
-        ```console
-        >>> import numojo
-        >>> var A = numojo.random.rand[numojo.i16](2, 2, 2)
-        >>> var mask = A > 0.5
-        >>> A[mask] = 10
-        ```.
+            ```mojo
+            var A = nm.arange[nm.f32](6).reshape(nm.Shape(2, 3))
+            var mask = A > nm.f32(2.0)
+            var vals = nm.array[nm.f32]("[10.0, 20.0, 30.0]")
+            A.set(mask, val=vals)
+            ```
         """
-        if (
-            mask.shape != self.shape
-        ):  # this behavious could be removed potentially
+        var mask_c = mask.contiguous()
+        var val_c = val.contiguous()
+
+        # CASE 1: exact shape match — elementwise assignment or scalar broadcast.
+        if mask.shape == self.shape:
+            if val_c.shape == self.shape:
+                for i in range(mask_c.size):
+                    if mask_c._buf.ptr.load[width=1](i):
+                        self.itemset(i, val_c._buf.ptr.load[width=1](i))
+                return
+
+            if val_c.size == 1:
+                var scalar_val = val_c._buf.ptr.load[width=1](val_c.offset)
+                for i in range(mask_c.size):
+                    if mask_c._buf.ptr.load[width=1](i):
+                        self.itemset(i, scalar_val)
+                return
+
+            var true_count = 0
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    true_count += 1
+
+            if val_c.ndim == 1 and val_c.size == true_count:
+                var j = 0
+                for i in range(mask_c.size):
+                    if mask_c._buf.ptr.load[width=1](i):
+                        self.itemset(i, val_c._buf.ptr.load[width=1](j))
+                        j += 1
+                return
+
             raise Error(
                 NumojoError(
                     category="shape",
                     message=String(
-                        "Shape of mask does not match the shape of array. The"
-                        " mask shape is {}. The array shape is {}."
-                    ).format(mask.shape, self.shape),
-                    location=(
-                        "NDArray.__setitem__(mask: NDArray[DType.bool], val:"
-                        " NDArray)"
-                    ),
+                        "Invalid value shape {} for boolean mask assignment"
+                        " with {} selected elements. Expected value shape {}"
+                        " (elementwise), a scalar/size-1 array, or 1-D shape"
+                        " [{}]."
+                    ).format(val.shape, true_count, self.shape, true_count),
+                    location="NDArray.set(mask, val: NDArray)",
                 )
             )
 
-        var mask_c = mask.contiguous()
-        var val_c = val.contiguous()
-
-        # Elementwise (val matches self) and scalar broadcast paths do not
-        # need to count selected elements; only the compact 1-D path does.
-        if val_c.shape == self.shape:
+        # CASE 2: 1-D mask matching first dimension.
+        if mask.ndim == 1 and mask.shape[0] == self.shape[0]:
+            var size_per_item = self.size // self.shape[0]
+            var true_count = 0
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
-                    self.itemset(i, val_c._buf.ptr.load[width=1](i))
+                    true_count += 1
+
+            # val must be either a single sub-array (shape self.shape[1:])
+            # or (true_count, *self.shape[1:]).
+            var tail_shape = self.shape.pop(0)
+            var val_is_single = val_c.shape == tail_shape
+            var val_is_per_index = (
+                val_c.ndim == self.ndim
+                and val_c.shape[0] == true_count
+                and val_c.shape.pop(0) == tail_shape
+            )
+
+            if not val_is_single and not val_is_per_index:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "Invalid value shape {} for 1-D mask assignment."
+                            " Expected {} (single sub-array) or [{}, ...{}]."
+                        ).format(val.shape, tail_shape, true_count, tail_shape),
+                        location="NDArray.set(mask, val: NDArray)",
+                    )
+                )
+
+            var out_row = 0
+            for i in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](i):
+                    var src_ptr = val_c._buf.ptr + (
+                        out_row * size_per_item if val_is_per_index else 0
+                    )
+                    memcpy(
+                        dest=self._buf.ptr + self.offset + i * size_per_item,
+                        src=src_ptr,
+                        count=size_per_item,
+                    )
+                    out_row += 1
             return
 
-        if val_c.size == 1:
-            var scalar_val = val_c._buf.ptr.load[width=1](val_c.offset)
+        # CASE 3: k-D mask (1 < k < self.ndim) matching self.shape[:k].
+        if mask.ndim > 1 and mask.ndim < self.ndim:
+            var shape_match = True
+            for i in range(mask.ndim):
+                if mask.shape[i] != self.shape[i]:
+                    shape_match = False
+                    break
+            if not shape_match:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "Boolean mask shape {} does not match the leading"
+                            " dimensions of array shape {}."
+                        ).format(mask.shape, self.shape),
+                        location="NDArray.set(mask, val: NDArray)",
+                    )
+                )
+
+            var k = mask.ndim
+            var size_per_item = 1
+            for i in range(k, self.ndim):
+                size_per_item *= self.shape[i]
+
+            var true_count = 0
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
-                    self.itemset(i, scalar_val)
-            return
+                    true_count += 1
 
-        var true_count = 0
-        for i in range(mask_c.size):
-            if mask_c._buf.ptr.load[width=1](i):
-                true_count += 1
+            var tail_shape = NDArrayShape(self.shape[k:])
+            var val_is_single = val_c.shape == tail_shape
+            var val_is_per_index = (
+                val_c.ndim == self.ndim - k + 1
+                and val_c.shape[0] == true_count
+                and NDArrayShape(val_c.shape[1:]) == tail_shape
+            )
 
-        if val_c.ndim == 1 and val_c.size == true_count:
-            var j = 0
-            for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
-                    self.itemset(i, val_c._buf.ptr.load[width=1](j))
-                    j += 1
+            if not val_is_single and not val_is_per_index and val_c.size != 1:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "Invalid value shape {} for k-D mask assignment"
+                            " ({} selected sub-arrays of shape {})."
+                        ).format(val.shape, true_count, tail_shape),
+                        location="NDArray.set(mask, val: NDArray)",
+                    )
+                )
+
+            var src_strides = List[Int](capacity=k)
+            for d in range(k):
+                var s = size_per_item
+                for dd in range(d + 1, k):
+                    s *= self.shape[dd]
+                src_strides.append(s)
+
+            # Work on a contiguous copy, then write back unconditionally.
+            # This handles both C- and F-order destinations correctly.
+            var self_c = self.contiguous()
+            var out_row = 0
+            for flat in range(mask_c.size):
+                if mask_c._buf.ptr.load[width=1](flat):
+                    var dst_offset = 0
+                    var remaining = flat
+                    for d in range(k - 1, -1, -1):
+                        dst_offset += (remaining % self.shape[d]) * src_strides[
+                            d
+                        ]
+                        remaining //= self.shape[d]
+
+                    var src_ptr = val_c._buf.ptr + (
+                        out_row * size_per_item if val_is_per_index else 0
+                    )
+                    memcpy(
+                        dest=self_c._buf.ptr + dst_offset,
+                        src=src_ptr,
+                        count=size_per_item,
+                    )
+                    out_row += 1
+
+            memcpy(
+                dest=self._buf.ptr + self.offset,
+                src=self_c._buf.ptr,
+                count=self.size,
+            )
             return
 
         raise Error(
             NumojoError(
                 category="shape",
                 message=String(
-                    "Invalid value shape {} for boolean mask assignment with {}"
-                    " selected elements. Expected value shape {} (elementwise),"
-                    " a scalar/size-1 array, or 1-D shape [{}]."
-                ).format(val.shape, true_count, self.shape, true_count),
-                location=(
-                    "NDArray.__setitem__(mask: NDArray[DType.bool], val:"
-                    " NDArray)"
-                ),
+                    "Boolean mask shape {} is not compatible with array shape"
+                    " {}. Supported: (1) exact shape match, (2) 1-D mask"
+                    " matching first dimension, (3) k-D mask matching first k"
+                    " dimensions (1 < k < ndim)."
+                ).format(mask.shape, self.shape),
+                location="NDArray.set(mask, val: NDArray)",
             )
         )
 

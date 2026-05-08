@@ -6,14 +6,14 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """File I/O (numojo.routines.io.files)
-
+--------------------------------------
 This module provides functions for reading and writing arrays to and from files.
 """
 from std.collections.optional import Optional
 from std.python import Python, PythonObject
 from std.memory import UnsafePointer, Span
 
-from numojo.routines.creation import fromstring
+from numojo.routines.creation import fromstring, array
 
 # We call into the numpy backend for now, this at least let's people go back and forth smoothly.
 # might consider implementing a funciton to write a .numojo file which can be read by both numpy and numojo.
@@ -50,8 +50,8 @@ def load[
         encoding=PythonObject(encoding),
         max_header_size=PythonObject(max_header_size),
     )
-    var array = numojo.array[dtype](data=data)
-    return array^
+    var arr = array[dtype](data=data)
+    return arr^
 
 
 # @parameter
@@ -255,8 +255,8 @@ def loadtxt[
         skiprows=PythonObject(skiprows),
         ndmin=PythonObject(ndmin),
     )
-    var array = numojo.array[dtype](data=data)
-    return array^
+    var arr = array[dtype](data=data)
+    return arr^
 
 
 def savetxt[

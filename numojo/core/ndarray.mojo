@@ -2559,7 +2559,7 @@ struct NDArray[dtype: DType = DType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            
+
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
             a.__setitem__(Slice(1,3), Slice(1,3), scalar=99)
             ```
@@ -3560,6 +3560,7 @@ struct NDArray[dtype: DType = DType.float64](
         var other_c = other.contiguous()
 
         if self.is_c_contiguous():
+
             def vec_op[w: Int](i: Int) {mut self, read other_c}:
                 self._buf.ptr.store(
                     self.offset + i,
@@ -3587,18 +3588,26 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __iadd__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array += scalar`. View-safe: modifies buffer in-place."""
-        def add_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def add_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a + b
+
         self._inplace_scalar_op[add_kernel](other)
 
     def __iadd__(mut self, other: Self) raises:
         """Enables `array += array`. View-safe: modifies buffer in-place."""
-        def add_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def add_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a + b
+
         self._inplace_array_op[add_kernel](other)
 
     def __sub__(self, other: Scalar[Self.dtype]) raises -> Self:
@@ -3621,18 +3630,26 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __isub__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array -= scalar`. View-safe: modifies buffer in-place."""
-        def sub_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def sub_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a - b
+
         self._inplace_scalar_op[sub_kernel](other)
 
     def __isub__(mut self, other: Self) raises:
         """Enables `array -= array`. View-safe: modifies buffer in-place."""
-        def sub_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def sub_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a - b
+
         self._inplace_array_op[sub_kernel](other)
 
     def __matmul__(self, other: Self) raises -> Self:
@@ -3658,18 +3675,26 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __imul__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array *= scalar`. View-safe: modifies buffer in-place."""
-        def mul_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def mul_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a * b
+
         self._inplace_scalar_op[mul_kernel](other)
 
     def __imul__(mut self, other: Self) raises:
         """Enables `array *= array`. View-safe: modifies buffer in-place."""
-        def mul_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def mul_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a * b
+
         self._inplace_array_op[mul_kernel](other)
 
     def __abs__(self) -> Self:
@@ -3775,18 +3800,26 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __itruediv__(mut self, s: SIMD[Self.dtype, 1]) raises:
         """Enables `array /= scalar`. View-safe: modifies buffer in-place."""
-        def div_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a / b
+
         self._inplace_scalar_op[div_kernel](s)
 
     def __itruediv__(mut self, other: Self) raises:
         """Enables `array /= array`. View-safe: modifies buffer in-place."""
-        def div_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a / b
+
         self._inplace_array_op[div_kernel](other)
 
     def __rtruediv__(self, s: SIMD[Self.dtype, 1]) raises -> Self:
@@ -3809,18 +3842,26 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __ifloordiv__(mut self, s: SIMD[Self.dtype, 1]) raises:
         """Enables `array //= scalar`. View-safe: modifies buffer in-place."""
-        def floor_div_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def floor_div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a.__floordiv__(b)
+
         self._inplace_scalar_op[floor_div_kernel](s)
 
     def __ifloordiv__(mut self, other: Self) raises:
         """Enables `array //= array`. View-safe: modifies buffer in-place."""
-        def floor_div_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def floor_div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a.__floordiv__(b)
+
         self._inplace_array_op[floor_div_kernel](other)
 
     def __rfloordiv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
@@ -3843,18 +3884,26 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __imod__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array %= scalar`. View-safe: modifies buffer in-place."""
-        def mod_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def mod_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a % b
+
         self._inplace_scalar_op[mod_kernel](other)
 
     def __imod__(mut self, other: NDArray[Self.dtype]) raises:
         """Enables `array %= array`. View-safe: modifies buffer in-place."""
-        def mod_kernel[type: DType, simd_w: Int](
-            a: SIMD[type, simd_w], b: SIMD[type, simd_w]
-        ) capturing -> SIMD[type, simd_w]:
+
+        def mod_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
             return a % b
+
         self._inplace_array_op[mod_kernel](other)
 
     def __rmod__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
@@ -5651,9 +5700,9 @@ struct _NDArrayIter[
             return result^
 
         else:  # 0-D array
-            var result: NDArray[Self.dtype] = creation._0darray[
-                Self.dtype
-            ](self._buf.ptr[self.offset + index])
+            var result: NDArray[Self.dtype] = creation._0darray[Self.dtype](
+                self._buf.ptr[self.offset + index]
+            )
             return result^
 
 

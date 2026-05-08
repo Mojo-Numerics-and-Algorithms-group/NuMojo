@@ -2008,6 +2008,7 @@ struct Matrix[
             print(A - B)
             ```
         """
+
         def sub_kernel[
             type: DType, simd_width: Int
         ](
@@ -2091,6 +2092,7 @@ struct Matrix[
             print(A * B)
             ```
         """
+
         def mul_kernel[
             type: DType, simd_width: Int
         ](
@@ -2176,6 +2178,7 @@ struct Matrix[
             print(A / B)
             ```
         """
+
         def truediv_kernel[
             type: DType, simd_width: Int
         ](
@@ -2585,6 +2588,7 @@ struct Matrix[
             print(A // B)  # Element-wise floor division
             ```
         """
+
         def floordiv_kernel[
             type: DType, simd_width: Int
         ](
@@ -2730,6 +2734,7 @@ struct Matrix[
             print(A % B)  # Element-wise modulo
             ```
         """
+
         def mod_kernel[
             type: DType, simd_width: Int
         ](
@@ -2872,6 +2877,7 @@ struct Matrix[
             print(A < B)
             ```
         """
+
         def lt_kernel[
             type: DType, simd_width: Int
         ](
@@ -2883,8 +2889,8 @@ struct Matrix[
             self.shape[1] == other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[Self.dtype, lt_kernel](
-                    self, other
-                )
+                self, other
+            )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
@@ -2936,6 +2942,7 @@ struct Matrix[
             print(A <= B)
             ```
         """
+
         def le_kernel[
             type: DType, simd_width: Int
         ](
@@ -2947,8 +2954,8 @@ struct Matrix[
             self.shape[1] == other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[Self.dtype, le_kernel](
-                    self, other
-                )
+                self, other
+            )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
@@ -3000,6 +3007,7 @@ struct Matrix[
             print(A > B)
             ```
         """
+
         def gt_kernel[
             type: DType, simd_width: Int
         ](
@@ -3011,8 +3019,8 @@ struct Matrix[
             self.shape[1] == other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[Self.dtype, gt_kernel](
-                    self, other
-                )
+                self, other
+            )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
@@ -3064,6 +3072,7 @@ struct Matrix[
             print(A >= B)
             ```
         """
+
         def ge_kernel[
             type: DType, simd_width: Int
         ](
@@ -3075,8 +3084,8 @@ struct Matrix[
             self.shape[1] == other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[Self.dtype, ge_kernel](
-                    self, other
-                )
+                self, other
+            )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
@@ -3131,6 +3140,7 @@ struct Matrix[
             print(A == B)
             ```
         """
+
         def eq_kernel[
             type: DType, simd_width: Int
         ](
@@ -3142,8 +3152,8 @@ struct Matrix[
             self.shape[1] == other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[Self.dtype, eq_kernel](
-                    self, other
-                )
+                self, other
+            )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):
@@ -3195,6 +3205,7 @@ struct Matrix[
             print(A != B)
             ```
         """
+
         def ne_kernel[
             type: DType, simd_width: Int
         ](
@@ -3206,8 +3217,8 @@ struct Matrix[
             self.shape[1] == other.shape[1]
         ):
             return _logic_func_matrix_matrix_to_matrix[Self.dtype, ne_kernel](
-                    self, other
-                )
+                self, other
+            )
         elif (self.shape[0] < other.shape[0]) or (
             self.shape[1] < other.shape[1]
         ):

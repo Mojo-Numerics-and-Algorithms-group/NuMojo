@@ -37,11 +37,15 @@ def acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise acos of `array`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.acos(simd)
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -58,11 +62,15 @@ def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise asin of `array`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.asin(simd)
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -79,11 +87,15 @@ def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise atan of `array`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.atan(simd)
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -109,11 +121,15 @@ def atan2[
     References:
         https://en.wikipedia.org/wiki/Atan2.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.atan2(simd1, simd2)
+
     return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
 
 
@@ -135,11 +151,15 @@ def arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise acos of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.acos(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -156,11 +176,15 @@ def acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise acos of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.acos(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -177,11 +201,15 @@ def arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise asin of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.asin(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -198,11 +226,15 @@ def asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise asin of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.asin(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -219,11 +251,15 @@ def arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise atan of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.atan(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -240,11 +276,15 @@ def atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise atan of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.atan(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -266,11 +306,15 @@ def cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise cos of `array`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.cos(simd)
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -287,11 +331,15 @@ def sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise sin of `array`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.sin(simd)
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -308,11 +356,15 @@ def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise tan of `array`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.tan(simd)
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -334,11 +386,15 @@ def cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise cos of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.cos(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -355,11 +411,15 @@ def sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise sin of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.sin(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -376,11 +436,15 @@ def tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise tan of `A`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.tan(simd)
+
     return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
 
 
@@ -408,11 +472,15 @@ def hypot[
     Returns:
         The element-wise hypotenuse of `array1` and `array2`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w] where dtype.is_floating_point():
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
         return math.hypot(simd1, simd2)
+
     return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
 
 

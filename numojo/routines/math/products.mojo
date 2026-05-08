@@ -298,9 +298,7 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     else:
         for j in range(result.shape[1]):
 
-            def copy_col[
-                width: Int
-            ](i: Int) {mut result, A, j}:
+            def copy_col[width: Int](i: Int) {mut result, A, j}:
                 result._store[width](i, j, A._load[width](i, j))
 
             vectorize[width](A.shape[0], copy_col)
@@ -309,9 +307,7 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         if A.is_c_contiguous():
             for i in range(1, A.shape[0]):
 
-                def cal_vec_row[
-                    width: Int
-                ](j: Int) {mut result, i}:
+                def cal_vec_row[width: Int](j: Int) {mut result, i}:
                     result._store[width](
                         i,
                         j,
@@ -336,9 +332,7 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
         else:
             for j in range(1, A.shape[1]):
 
-                def cal_vec_column[
-                    width: Int
-                ](i: Int) {mut result, j}:
+                def cal_vec_column[width: Int](i: Int) {mut result, j}:
                     result._store[width](
                         i,
                         j,

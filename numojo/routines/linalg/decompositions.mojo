@@ -28,9 +28,7 @@ def _compute_householder[
     comptime sqrt2: Scalar[dtype] = 1.4142135623730951
     var rRows = R.shape[0]
 
-    def load_store_vec[
-        n_elements: Int
-    ](i: Int) {mut H, mut R, read work_index}:
+    def load_store_vec[n_elements: Int](i: Int) {mut H, mut R, read work_index}:
         var r_value = R._load[n_elements](i + work_index, work_index)
         H._store[n_elements](i + work_index, work_index, r_value)
         R._store[n_elements](i + work_index, work_index, 0.0)
@@ -39,9 +37,7 @@ def _compute_householder[
 
     var norm = Scalar[dtype](0)
 
-    def calculate_norm[
-        width: Int
-    ](i: Int) {mut norm, read H, read work_index}:
+    def calculate_norm[width: Int](i: Int) {mut norm, read H, read work_index}:
         norm += (H._load[width=width](i, work_index) ** 2).reduce_add()
 
     vectorize[simd_width](rRows, calculate_norm)

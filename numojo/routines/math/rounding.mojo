@@ -53,11 +53,13 @@ def tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to abs(array).
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
     ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
         return simd.__abs__()
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -79,11 +81,13 @@ def tfloor[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to floor(array).
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
     ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
         return simd.__floor__()
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -100,11 +104,13 @@ def tceil[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to ceil(array).
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
     ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
         return simd.__ceil__()
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -121,11 +127,13 @@ def ttrunc[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to trunc(array).
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
     ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
         return simd.__trunc__()
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -142,11 +150,13 @@ def tround[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to round(array).
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
     ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
         return simd.__round__()
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -163,11 +173,13 @@ def roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise rounding of `array` to the nearest integer with ties to even.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
     ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
         return simd.__round__()
+
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
@@ -238,9 +250,13 @@ def nextafter[
     Returns:
         The element-wise nextafter of `array1` toward `array2`.
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return builtin_nextafter(simd1, simd2)
+
     return HostExecutor.apply_binary[dtype, _kernel](array1, array2)

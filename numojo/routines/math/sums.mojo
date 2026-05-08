@@ -190,9 +190,8 @@ def sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             parallelize[calc_columns](A.shape[1], A.shape[1])
         else:
             for i in range(A.shape[0]):
-                def cal_vec_sum[
-                    width: Int
-                ](j: Int) {mut B, i, A}:
+
+                def cal_vec_sum[width: Int](j: Int) {mut B, i, A}:
                     B._store[width](
                         0, j, B._load[width](0, j) + A._load[width](i, j)
                     )
@@ -364,9 +363,8 @@ def cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     if axis == 0:
         if result.is_c_contiguous():
             for i in range(1, A.shape[0]):
-                def cal_vec_sum_column[
-                    width: Int
-                ](j: Int) {mut result, i}:
+
+                def cal_vec_sum_column[width: Int](j: Int) {mut result, i}:
                     result._store[width](
                         i,
                         j,
@@ -390,9 +388,8 @@ def cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
             return result^
         else:
             for j in range(1, A.shape[1]):
-                def cal_vec_sum_row[
-                    width: Int
-                ](i: Int) {mut result, j}:
+
+                def cal_vec_sum_row[width: Int](i: Int) {mut result, j}:
                     result._store[width](
                         i,
                         j,

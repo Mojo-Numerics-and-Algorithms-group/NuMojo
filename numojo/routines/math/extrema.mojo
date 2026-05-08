@@ -60,9 +60,7 @@ def extrema_1d[
 
     comptime if is_max:
 
-        def vectorize_max[
-            simd_width: Int
-        ](offset: Int) {mut value, a}:
+        def vectorize_max[simd_width: Int](offset: Int) {mut value, a}:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
             if temp >= value:
                 value = temp
@@ -73,9 +71,7 @@ def extrema_1d[
 
     else:
 
-        def vectorize_min[
-            simd_width: Int
-        ](offset: Int) {mut value, a} -> None:
+        def vectorize_min[simd_width: Int](offset: Int) {mut value, a} -> None:
             var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
             if temp < value:
                 value = temp
@@ -114,7 +110,9 @@ def max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
         return extrema_1d[is_max=True](ravel(a))
 
 
-def extrema_1d_max[dtype: DType](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
+def extrema_1d_max[
+    dtype: DType
+](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """
     Find the max value in a 1-D array.
     """
@@ -574,11 +572,15 @@ def minimum[
         var m = nm.minimum(a, b)
         ```
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return builtin_min(simd1, simd2)
+
     return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
 
 
@@ -608,9 +610,13 @@ def maximum[
         var m = nm.maximum(a, b)
         ```
     """
+
     @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return builtin_max(simd1, simd2)
+
     return HostExecutor.apply_binary[dtype, _kernel](array1, array2)

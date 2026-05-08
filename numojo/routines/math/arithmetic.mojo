@@ -40,11 +40,15 @@ def add[
     Returns:
         The element-wise sum of `array1` and`array2`.
     """
+
     @parameter
     def add_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 + simd2
+
     return HostExecutor.apply_binary[dtype, add_kernel](array1, array2)
 
 
@@ -64,11 +68,15 @@ def add[
     Returns:
         The element-wise sum of array and scalar.
     """
+
     @parameter
     def add_kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w], scalar_simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd: SIMD[dtype, simd_w], scalar_simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd + scalar_simd
+
     return HostExecutor.apply_binary[dtype, add_kernel](array, scalar)
 
 
@@ -88,11 +96,15 @@ def add[
     Returns:
         The element-wise sum of scalar and array.
     """
+
     @parameter
     def add_kernel[
         dtype: DType, simd_w: Int
-    ](scalar_simd: SIMD[dtype, simd_w], simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](scalar_simd: SIMD[dtype, simd_w], simd: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return scalar_simd + simd
+
     return HostExecutor.apply_binary[dtype, add_kernel](scalar, array)
 
 
@@ -160,8 +172,11 @@ def sub[
     @parameter
     def sub_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 - simd2
+
     return HostExecutor.apply_binary[dtype, sub_kernel](array1, array2)
 
 
@@ -185,8 +200,11 @@ def sub[
     @parameter
     def sub_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 - simd2
+
     return HostExecutor.apply_binary[dtype, sub_kernel](array, scalar)
 
 
@@ -210,8 +228,11 @@ def sub[
     @parameter
     def sub_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 - simd2
+
     return HostExecutor.apply_binary[dtype, sub_kernel](scalar, array)
 
 
@@ -240,8 +261,11 @@ def mod[
     @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 % simd2
+
     return HostExecutor.apply_binary[dtype, mod_kernel](array1, array2)
 
 
@@ -265,8 +289,11 @@ def mod[
     @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 % simd2
+
     return HostExecutor.apply_binary[dtype, mod_kernel](array, scalar)
 
 
@@ -290,8 +317,11 @@ def mod[
     @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 % simd2
+
     return HostExecutor.apply_binary[dtype, mod_kernel](scalar, array)
 
 
@@ -323,8 +353,11 @@ def mul[
     @parameter
     def mul_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 * simd2
+
     return HostExecutor.apply_binary[dtype, mul_kernel](array1, array2)
 
 
@@ -348,8 +381,11 @@ def mul[
     @parameter
     def mul_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 * simd2
+
     return HostExecutor.apply_binary[dtype, mul_kernel](array, scalar)
 
 
@@ -373,8 +409,11 @@ def mul[
     @parameter
     def mul_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 * simd2
+
     return HostExecutor.apply_binary[dtype, mul_kernel](scalar, array)
 
 
@@ -444,8 +483,11 @@ def div[
     @parameter
     def truediv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 / simd2
+
     return HostExecutor.apply_binary[dtype, truediv_kernel](array1, array2)
 
 
@@ -469,8 +511,11 @@ def div[
     @parameter
     def truediv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 / simd2
+
     return HostExecutor.apply_binary[dtype, truediv_kernel](array, scalar)
 
 
@@ -494,8 +539,11 @@ def div[
     @parameter
     def truediv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 / simd2
+
     return HostExecutor.apply_binary[dtype, truediv_kernel](scalar, array)
 
 
@@ -527,8 +575,11 @@ def floor_div[
     @parameter
     def floordiv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 // simd2
+
     return HostExecutor.apply_binary[dtype, floordiv_kernel](array1, array2)
 
 
@@ -552,8 +603,11 @@ def floor_div[
     @parameter
     def floordiv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 // simd2
+
     return HostExecutor.apply_binary[dtype, floordiv_kernel](array, scalar)
 
 
@@ -577,8 +631,11 @@ def floor_div[
     @parameter
     def floordiv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 // simd2
+
     return HostExecutor.apply_binary[dtype, floordiv_kernel](scalar, array)
 
 
@@ -616,11 +673,14 @@ def fma[
     @parameter
     def fma_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w], simd3: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](
+        simd1: SIMD[dtype, simd_w],
+        simd2: SIMD[dtype, simd_w],
+        simd3: SIMD[dtype, simd_w],
+    ) -> SIMD[dtype, simd_w]:
         return simd1.fma(simd2, simd3)
-    return HostExecutor.apply_ternary[dtype, fma_kernel](
-        array1, array2, array3
-    )
+
+    return HostExecutor.apply_ternary[dtype, fma_kernel](array1, array2, array3)
 
 
 def fma[
@@ -649,11 +709,14 @@ def fma[
     @parameter
     def fma_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w], simd3: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](
+        simd1: SIMD[dtype, simd_w],
+        simd2: SIMD[dtype, simd_w],
+        simd3: SIMD[dtype, simd_w],
+    ) -> SIMD[dtype, simd_w]:
         return simd1.fma(simd2, simd3)
-    return HostExecutor.apply_ternary[dtype, fma_kernel](
-        array1, array2, simd
-    )
+
+    return HostExecutor.apply_ternary[dtype, fma_kernel](array1, array2, simd)
 
 
 # ===------------------------------------------------------------------------===#
@@ -684,8 +747,11 @@ def remainder[
     @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 % simd2
+
     return HostExecutor.apply_binary[dtype, mod_kernel](array1, array2)
 
 
@@ -709,8 +775,11 @@ def remainder[
     @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 % simd2
+
     return HostExecutor.apply_binary[dtype, mod_kernel](array, scalar)
 
 
@@ -734,6 +803,9 @@ def remainder[
     @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
         return simd1 % simd2
+
     return HostExecutor.apply_binary[dtype, mod_kernel](scalar, array)

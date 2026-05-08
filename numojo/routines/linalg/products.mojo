@@ -97,6 +97,7 @@ def dot[
     comptime width = simd_width_of[dtype]()
     if array1.ndim == array2.ndim == 1:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
+
         def vectorized_dot[
             simd_width: Int
         ](idx: Int) {mut result, read array1, read array2} -> None:
@@ -280,6 +281,7 @@ def matmul_2darray[
     @parameter
     def calculate_A_rows(m: Int):
         for k in range(t1):
+
             def dot[
                 simd_width: Int
             ](n: Int) {
@@ -428,11 +430,10 @@ def matmul[
         @parameter
         def calculate_resultresult(m: Int):
             for k in range(A.shape[1]):
+
                 def dot[
                     simd_width: Int
-                ](n: Int) {
-                    mut result, read A, read B, read m, read k
-                } -> None:
+                ](n: Int) {mut result, read A, read B, read m, read k} -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -451,11 +452,10 @@ def matmul[
         @parameter
         def calculate_FF(n: Int):
             for k in range(A.shape[1]):
+
                 def dot_F[
                     simd_width: Int
-                ](m: Int) {
-                    mut result, read A, read B, read n, read k
-                } -> None:
+                ](m: Int) {mut result, read A, read B, read n, read k} -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -475,11 +475,10 @@ def matmul[
         def calculate_resultF(m: Int):
             for n in range(B.shape[1]):
                 var sum: Scalar[dtype] = 0.0
+
                 def dot_product[
                     simd_width: Int
-                ](k: Int) {
-                    mut sum, read A, read B, read m, read n
-                } -> None:
+                ](k: Int) {mut sum, read A, read B, read m, read n} -> None:
                     sum += (
                         A._load[simd_width](m, k) * B._load[simd_width](k, n)
                     ).reduce_add()

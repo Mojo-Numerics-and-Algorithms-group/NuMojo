@@ -418,7 +418,9 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
 
 def _dlpack_deleter_impl[
     dtype: DType
-](managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]) capturing -> None:
+](
+    managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]
+) capturing -> None:
     """Type-specific deleter callback for DLManagedTensor."""
     if not managed_tensor_ptr:
         return

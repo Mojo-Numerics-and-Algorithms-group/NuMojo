@@ -963,9 +963,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     def __invert__(
         self,
-    ) -> Self where (
-        Self.dtype == DType.bool or Self.dtype.is_integral()
-    ):
+    ) -> Self where Self.dtype == DType.bool or Self.dtype.is_integral():
         """
         Element-wise logical NOT operation on this ComplexSIMD instance.
 
@@ -977,9 +975,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
     # --- Comparison operators ---
     def __and__(
         self, other: Self
-    ) -> Self where (
-        Self.dtype == DType.bool or Self.dtype.is_integral()
-    ):
+    ) -> Self where Self.dtype == DType.bool or Self.dtype.is_integral():
         """
         Element-wise logical AND operation between two ComplexSIMD instances.
 
@@ -993,9 +989,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     def __or__(
         self, other: Self
-    ) -> Self where (
-        Self.dtype == DType.bool or Self.dtype.is_integral()
-    ):
+    ) -> Self where Self.dtype == DType.bool or Self.dtype.is_integral():
         """
         Element-wise logical OR operation between two ComplexSIMD instances.
 
@@ -1009,9 +1003,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
 
     def __xor__(
         self, other: Self
-    ) -> Self where (
-        Self.dtype == DType.bool or Self.dtype.is_integral()
-    ):
+    ) -> Self where Self.dtype == DType.bool or Self.dtype.is_integral():
         """
         Element-wise logical XOR operation between two ComplexSIMD instances.
 

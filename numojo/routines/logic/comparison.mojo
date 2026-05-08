@@ -62,7 +62,7 @@ def greater[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a > b
+        return a.gt(b)
 
     return HostExecutor.apply_binary_predicate[dtype, gt_kernel](array1, array2)
 
@@ -103,7 +103,7 @@ def greater[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a > b
+        return a.gt(b)
 
     return HostExecutor.apply_binary_predicate[dtype, gt_kernel](array1, scalar)
 
@@ -145,7 +145,7 @@ def greater_equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a >= b
+        return a.ge(b)
 
     return HostExecutor.apply_binary_predicate[dtype, ge_kernel](array1, array2)
 
@@ -186,7 +186,7 @@ def greater_equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a >= b
+        return a.ge(b)
 
     return HostExecutor.apply_binary_predicate[dtype, ge_kernel](array1, scalar)
 
@@ -228,7 +228,7 @@ def less[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a < b
+        return a.lt(b)
 
     return HostExecutor.apply_binary_predicate[dtype, lt_kernel](array1, array2)
 
@@ -269,7 +269,7 @@ def less[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a < b
+        return a.lt(b)
 
     return HostExecutor.apply_binary_predicate[dtype, lt_kernel](array1, scalar)
 
@@ -311,7 +311,7 @@ def less_equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a <= b
+        return a.le(b)
 
     return HostExecutor.apply_binary_predicate[dtype, le_kernel](array1, array2)
 
@@ -352,7 +352,7 @@ def less_equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a <= b
+        return a.le(b)
 
     return HostExecutor.apply_binary_predicate[dtype, le_kernel](array1, scalar)
 
@@ -394,7 +394,7 @@ def equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a == b
+        return a.eq(b)
 
     return HostExecutor.apply_binary_predicate[dtype, eq_kernel](array1, array2)
 
@@ -435,7 +435,7 @@ def equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a == b
+        return a.eq(b)
 
     return HostExecutor.apply_binary_predicate[dtype, eq_kernel](array1, scalar)
 
@@ -477,7 +477,7 @@ def not_equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a != b
+        return a.ne(b)
 
     return HostExecutor.apply_binary_predicate[dtype, ne_kernel](array1, array2)
 
@@ -518,7 +518,7 @@ def not_equal[
     ) -> SIMD[
         DType.bool, simd_w
     ]:
-        return a != b
+        return a.ne(b)
 
     return HostExecutor.apply_binary_predicate[dtype, ne_kernel](array1, scalar)
 

@@ -7,6 +7,7 @@ from std.testing import TestSuite
 import numojo as nm
 from numojo.prelude import *
 
+
 def test_rand() raises:
     """Test random array generation with specified shape."""
     var arr = nm.random.rand[nm.f64](3, 5, 2)

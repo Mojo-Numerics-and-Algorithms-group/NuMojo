@@ -6,6 +6,7 @@ from std.testing import TestSuite
 import numojo as nm
 from numojo import *
 
+
 def test_arr_manipulation() raises:
     var np = Python.import_module("numpy")
 

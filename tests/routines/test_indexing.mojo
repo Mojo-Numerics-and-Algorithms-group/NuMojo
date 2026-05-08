@@ -29,9 +29,7 @@ def test_compress() raises:
         "`compress` 1-d array is broken",
     )
     check(
-        nm.indexing.compress(
-            nm.array[boolean]("[0,1,1,0,1,0,1,0,1,1,1]"), a
-        ),
+        nm.indexing.compress(nm.array[boolean]("[0,1,1,0,1,0,1,0,1,1,1]"), a),
         np.compress(
             np.array(Python.list(0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1)), anp
         ),

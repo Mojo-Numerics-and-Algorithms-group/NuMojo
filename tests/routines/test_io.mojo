@@ -7,6 +7,7 @@ from numojo.prelude import *
 from numojo.routines.io.files import load, save, loadtxt, savetxt
 from numojo import ones, full
 
+
 def test_save_and_load() raises:
     var np = Python.import_module("numpy")
     var arr = ones[nm.f32](nm.Shape(10, 15))

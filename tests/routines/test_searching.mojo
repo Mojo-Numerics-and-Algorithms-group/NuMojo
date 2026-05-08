@@ -4,6 +4,7 @@ from std.testing import TestSuite
 
 from numojo.prelude import *
 
+
 def test_argmax() raises:
     var np = Python.import_module("numpy")
 

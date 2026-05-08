@@ -1052,7 +1052,7 @@ def _make_1d_offset_view(
     """
     var view = parent.view()
     view.offset = offset
-    view.size = size 
+    view.size = size
     view.shape = NDArrayShape(size)
     view.ndim = 1
     view.strides = NDArrayStrides(shape=view.shape)

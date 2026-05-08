@@ -4,6 +4,7 @@ from std.testing import TestSuite
 
 import numojo as nm
 
+
 def test_sort() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(10)

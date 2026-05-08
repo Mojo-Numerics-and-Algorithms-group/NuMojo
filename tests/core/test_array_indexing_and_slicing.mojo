@@ -333,7 +333,7 @@ def test_mask_setitem_compact_values() raises:
     var a = nm.arange[nm.i32](0, 6, step=1).reshape(Shape(2, 3))
     var mask = nm.array[boolean]("[[1,0,1],[0,1,0]]")
     var vals = nm.array[nm.i32]("[50, 60, 70]")
-    a[mask] = vals
+    a.set(mask, val=vals)
 
     # True positions in row-major order: (0,0), (0,2), (1,1)
     assert_equal(Int(a.item(0, 0)), 50)

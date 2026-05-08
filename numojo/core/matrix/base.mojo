@@ -2883,7 +2883,7 @@ struct Matrix[
         ](
             simd1: SIMD[type, simd_width], simd2: SIMD[type, simd_width]
         ) capturing -> SIMD[DType.bool, simd_width]:
-            return simd1 < simd2
+            return simd1.lt(simd2)
 
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -2948,7 +2948,7 @@ struct Matrix[
         ](
             simd1: SIMD[type, simd_width], simd2: SIMD[type, simd_width]
         ) capturing -> SIMD[DType.bool, simd_width]:
-            return simd1 <= simd2
+            return simd1.le(simd2)
 
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -3013,7 +3013,7 @@ struct Matrix[
         ](
             simd1: SIMD[type, simd_width], simd2: SIMD[type, simd_width]
         ) capturing -> SIMD[DType.bool, simd_width]:
-            return simd1 > simd2
+            return simd1.gt(simd2)
 
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -3078,7 +3078,7 @@ struct Matrix[
         ](
             simd1: SIMD[type, simd_width], simd2: SIMD[type, simd_width]
         ) capturing -> SIMD[DType.bool, simd_width]:
-            return simd1 >= simd2
+            return simd1.ge(simd2)
 
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -3146,7 +3146,7 @@ struct Matrix[
         ](
             simd1: SIMD[type, simd_width], simd2: SIMD[type, simd_width]
         ) capturing -> SIMD[DType.bool, simd_width]:
-            return simd1 == simd2
+            return simd1.eq(simd2)
 
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]
@@ -3211,7 +3211,7 @@ struct Matrix[
         ](
             simd1: SIMD[type, simd_width], simd2: SIMD[type, simd_width]
         ) capturing -> SIMD[DType.bool, simd_width]:
-            return simd1 != simd2
+            return simd1.ne(simd2)
 
         if (self.shape[0] == other.shape[0]) and (
             self.shape[1] == other.shape[1]

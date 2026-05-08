@@ -7,8 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 NuMojo Top-Level Package (`numojo`)
------------------------------------
-
+===================================
 Central public surface for NuMojo that exposes the primary containers, dtype helpers, common errors,
 and a curated set of NumPy-inspired routines.
 

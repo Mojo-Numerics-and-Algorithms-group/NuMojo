@@ -2504,6 +2504,177 @@ struct NDArray[dtype: DType = DType.float64](
 
         self.__setitem__(slices=slice_list, val=val)
 
+    def _setitem_slice_scalar(
+        mut self, slices: List[Slice], val: Scalar[Self.dtype]
+    ) raises:
+        """Internal backend: fill every element in a slice region with a scalar.
+
+        Called by the user-facing `__setitem__(*Slice, scalar=)` and
+        `__setitem__(*Variant[Slice,Int], scalar=)` overloads after they
+        normalise their arguments into a `List[Slice]`.
+
+        Args:
+            slices: One `Slice` per array dimension (trailing dims already
+                padded to full range by the caller).
+            val: The scalar value to write to every selected position.
+        """
+        var n_slices: Int = len(slices)
+        var slice_list: List[InternalSlice] = self._adjust_slice(slices)
+
+        for i in range(n_slices, self.ndim):
+            slice_list.append(InternalSlice(0, self.shape[i], 1))
+
+        # Use a single flat counter + coordinate reconstruction to stay
+        # allocation-free and layout-agnostic (works for C, F, strided).
+        var total: Int = 1
+        var region_shape = List[Int](capacity=self.ndim)
+        for i in range(self.ndim):
+            var slen: Int
+            var s = slice_list[i]
+            if s.step > 0:
+                slen = max((s.end - s.start + s.step - 1) // s.step, 0)
+            else:
+                slen = max((s.start - s.end - s.step - 1) // (-s.step), 0)
+            region_shape.append(slen)
+            total *= slen
+
+        var coords = List[Int](capacity=self.ndim)
+        for _ in range(self.ndim):
+            coords.append(0)
+
+        for _ in range(total):
+            var buf_idx: Int = self.offset
+            for d in range(self.ndim):
+                buf_idx += (
+                    slice_list[d].start + coords[d] * slice_list[d].step
+                ) * self.strides[d]
+            self._buf.ptr.store(buf_idx, val)
+
+            for d in range(self.ndim - 1, -1, -1):
+                coords[d] += 1
+                if coords[d] < region_shape[d]:
+                    break
+                coords[d] = 0
+
+    def __setitem__(
+        mut self, *slices: Slice, scalar: Scalar[Self.dtype]
+    ) raises:
+        """Sets all elements in the slice region to a scalar value.
+
+        Delegates to `_setitem_slice_scalar` after packing slices into a list.
+
+        Note: the trailing keyword is named `scalar` (not `val`) to avoid
+        ambiguity with the `*slices: Slice, val: Self` overload during Mojo
+        overload resolution.
+
+        Args:
+            slices: Variadic slices, one per dimension (trailing dims default
+                to the full range).
+            scalar: The scalar value to broadcast into every selected position.
+
+        Examples:
+            ```mojo
+            var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
+            a.__setitem__(Slice(1,3), Slice(1,3), scalar=99)
+            ```
+        """
+        var slice_list = List[Slice](capacity=slices.__len__())
+        for i in range(slices.__len__()):
+            slice_list.append(slices[i])
+        self._setitem_slice_scalar(slice_list, scalar)
+
+    def __setitem__(
+        mut self, *slices: Variant[Slice, Int], scalar: Scalar[Self.dtype]
+    ) raises:
+        """Sets elements selected by mixed integer/slice indices to a scalar.
+
+        Handles two cases:
+        - All entries are integers (full coordinate) → direct single-element
+          write via `_setitem`, no allocation.
+        - Mixed or slice-only → normalise integers to unit-length slices and
+          delegate to `__setitem__(List[Slice], Scalar)` for the region fill.
+
+        Note: the trailing keyword is named `scalar` (not `val`) to avoid
+        ambiguity with the `*slices: Variant[Slice, Int], val: Self` overload
+        during Mojo overload resolution.
+
+        Args:
+            slices: Variadic mix of `Slice` and `Int` index entries.
+            scalar: The scalar value to write.
+
+        Examples:
+            ```mojo
+            var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
+            a.__setitem__(1, 2, scalar=99)           # single element
+            a.__setitem__(1, Slice(2,4), scalar=0)   # one row, partial column
+            a.__setitem__(Slice(1,3), Slice(2,4), scalar=7)  # sub-matrix
+            ```
+        """
+        var n = slices.__len__()
+        if n > self.ndim:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Too many indices: received {} but array has only {}"
+                        " dimensions."
+                    ).format(n, self.ndim),
+                    location=(
+                        "NDArray.__setitem__(*slices: Variant[Slice, Int],"
+                        " scalar: Scalar)"
+                    ),
+                )
+            )
+
+        var slice_list = List[Slice](capacity=self.ndim)
+        var count_int: Int = 0
+        var coords = List[Int]()
+
+        # Track which array dimension each entry maps to (Int and Slice both
+        # consume one dimension; the loop index equals the array dim here
+        # because Variant[Slice,Int] carries no NewAxis).
+        for i in range(n):
+            if slices[i].isa[Int]():
+                var idx = slices[i][Int]
+                if idx >= self.shape[i] or idx < -self.shape[i]:
+                    raise Error(
+                        NumojoError(
+                            category="index",
+                            message=String(
+                                "Integer index {} out of bounds for axis {}"
+                                " (size {}). Valid range: [-{}, {})."
+                            ).format(
+                                idx,
+                                i,
+                                self.shape[i],
+                                self.shape[i],
+                                self.shape[i],
+                            ),
+                            location=(
+                                "NDArray.__setitem__(*slices: Variant[Slice,"
+                                " Int], scalar: Scalar)"
+                            ),
+                        )
+                    )
+                if idx < 0:
+                    idx += self.shape[i]
+                count_int += 1
+                coords.append(idx)
+                slice_list.append(Slice(idx, idx + 1, 1))
+            else:
+                slice_list.append(slices[i][Slice])
+
+        # Fast path: every dimension was given an integer → single element.
+        if count_int == self.ndim:
+            self.itemset(coords.copy(), scalar)
+            return
+
+        # Pad trailing dimensions.
+        for i in range(n, self.ndim):
+            slice_list.append(Slice(0, self.shape[i], 1))
+
+        self._setitem_slice_scalar(slice_list, scalar)
+
     def __setitem__(
         mut self, index: NDArray[DType.int], val: NDArray[Self.dtype]
     ) raises:
@@ -3700,20 +3871,25 @@ struct NDArray[dtype: DType = DType.float64](
             )
         else:
             try:
+                var order: String
+                if self.is_c_contiguous():
+                    order = "C"
+                elif self.is_f_contiguous():
+                    order = "F"
+                else:
+                    order = "non-contiguous"
                 writer.write(
                     self._array_to_string(0, 0)
                     + "\n"
                     + String(self.ndim)
-                    + "D-array  Shape"
-                    + String(self.shape)
-                    + "  Strides"
-                    + String(self.strides)
+                    + "D-array  Shape: "
+                    + self.shape.__str__()
+                    + "  Strides: "
+                    + self.strides.__str__()
                     + "  DType: "
                     + _concise_dtype_str(self.dtype)
-                    + "  C-cont: "
-                    + String(self.is_c_contiguous())
-                    + "  F-cont: "
-                    + String(self.is_f_contiguous())
+                    + "  order: "
+                    + order
                     + "  own data: "
                     + String(self.flags.OWNDATA)
                 )

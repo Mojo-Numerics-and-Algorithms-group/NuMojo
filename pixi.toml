@@ -34,13 +34,13 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
 name = "numojo"
 
 [package.host-dependencies]
-mojo = "1.0.0b1*"
+mojo = "==1.0.0b1"
 
 [package.build-dependencies]
-mojo = "1.0.0b1*"
+mojo = "==1.0.0b1"
 
 [package.run-dependencies]
-mojo = "1.0.0b1"
+mojo = "==1.0.0b1"
 
 [tasks]
 # compile the package and copy it to the tests folder

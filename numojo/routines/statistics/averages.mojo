@@ -313,7 +313,7 @@ def mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     )
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -338,7 +338,7 @@ def std[
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
     returned_dtype
@@ -380,7 +380,7 @@ def std[
     return variance[returned_dtype](A, axis=normalized_axis, ddof=ddof) ** 0.5
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -405,7 +405,7 @@ def std[
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """

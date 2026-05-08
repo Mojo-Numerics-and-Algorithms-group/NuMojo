@@ -118,9 +118,10 @@ def add[
     var scalar_part: Scalar[dtype] = 0
     for i in range(len(values)):
         if values[i].isa[NDArray[dtype]]():
-            # TODO: Figure out how to remove this unnecessary copy here (even though we take values as owned.            array_list.append(values[i].copy().take[NDArray[dtype]]())
+            # TODO: Figure out how to remove this unnecessary copy here (even though we take values as owned.
+            array_list.append(values[i].copy().unsafe_take[NDArray[dtype]]())
         elif values[i].isa[Scalar[dtype]]():
-            scalar_part += values[i].copy().take[Scalar[dtype]]()
+            scalar_part += values[i].copy().unsafe_take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
@@ -155,7 +156,13 @@ def sub[
     Returns:
         The element-wise difference of `array1` and`array2`.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__sub__](array1, array2)
+
+    @parameter
+    def sub_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 - simd2
+    return HostExecutor.apply_binary[dtype, sub_kernel](array1, array2)
 
 
 def sub[
@@ -174,7 +181,13 @@ def sub[
     Returns:
         The element-wise difference of array and scalar.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__sub__](array, scalar)
+
+    @parameter
+    def sub_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 - simd2
+    return HostExecutor.apply_binary[dtype, sub_kernel](array, scalar)
 
 
 def sub[
@@ -193,7 +206,13 @@ def sub[
     Returns:
         The element-wise difference of scalar and array.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__sub__](scalar, array)
+
+    @parameter
+    def sub_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 - simd2
+    return HostExecutor.apply_binary[dtype, sub_kernel](scalar, array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -217,7 +236,13 @@ def mod[
     Returns:
         A NDArray equal to array1 % array2.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mod__](array1, array2)
+
+    @parameter
+    def mod_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 % simd2
+    return HostExecutor.apply_binary[dtype, mod_kernel](array1, array2)
 
 
 def mod[
@@ -236,7 +261,13 @@ def mod[
     Returns:
         A NDArray equal to array % scalar.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mod__](array, scalar)
+
+    @parameter
+    def mod_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 % simd2
+    return HostExecutor.apply_binary[dtype, mod_kernel](array, scalar)
 
 
 def mod[
@@ -255,7 +286,13 @@ def mod[
     Returns:
         A NDArray equal to scalar % array.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mod__](scalar, array)
+
+    @parameter
+    def mod_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 % simd2
+    return HostExecutor.apply_binary[dtype, mod_kernel](scalar, array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -282,7 +319,13 @@ def mul[
     Returns:
         A NDArray equal to array1*array2.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mul__](array1, array2)
+
+    @parameter
+    def mul_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 * simd2
+    return HostExecutor.apply_binary[dtype, mul_kernel](array1, array2)
 
 
 def mul[
@@ -301,7 +344,13 @@ def mul[
     Returns:
         The element-wise product of array and scalar.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mul__](array, scalar)
+
+    @parameter
+    def mul_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 * simd2
+    return HostExecutor.apply_binary[dtype, mul_kernel](array, scalar)
 
 
 def mul[
@@ -320,7 +369,13 @@ def mul[
     Returns:
         The element-wise product of scalar and array.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mul__](scalar, array)
+
+    @parameter
+    def mul_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 * simd2
+    return HostExecutor.apply_binary[dtype, mul_kernel](scalar, array)
 
 
 def mul[
@@ -345,9 +400,9 @@ def mul[
     var scalar_part: Scalar[dtype] = 1
     for i in range(len(values)):
         if values[i].isa[NDArray[dtype]]():
-            array_list.append(values[i].take[NDArray[dtype]]())
+            array_list.append(values[i].copy().unsafe_take[NDArray[dtype]]())
         elif values[i].isa[Scalar[dtype]]():
-            scalar_part *= values[i].take[Scalar[dtype]]()
+            scalar_part *= values[i].copy().unsafe_take[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
@@ -385,7 +440,13 @@ def div[
     Returns:
         A NDArray equal to array1/array2.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__truediv__](array1, array2)
+
+    @parameter
+    def truediv_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 / simd2
+    return HostExecutor.apply_binary[dtype, truediv_kernel](array1, array2)
 
 
 def div[
@@ -404,7 +465,13 @@ def div[
     Returns:
         The element-wise quotient of array and scalar.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__truediv__](array, scalar)
+
+    @parameter
+    def truediv_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 / simd2
+    return HostExecutor.apply_binary[dtype, truediv_kernel](array, scalar)
 
 
 def div[
@@ -423,7 +490,13 @@ def div[
     Returns:
         The element-wise quotient of scalar and array.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__truediv__](scalar, array)
+
+    @parameter
+    def truediv_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 / simd2
+    return HostExecutor.apply_binary[dtype, truediv_kernel](scalar, array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -450,7 +523,13 @@ def floor_div[
     Returns:
         A NDArray equal to array1/array2.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__floordiv__](array1, array2)
+
+    @parameter
+    def floordiv_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 // simd2
+    return HostExecutor.apply_binary[dtype, floordiv_kernel](array1, array2)
 
 
 def floor_div[
@@ -469,7 +548,13 @@ def floor_div[
     Returns:
         The element-wise quotient of array and scalar.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__floordiv__](array, scalar)
+
+    @parameter
+    def floordiv_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 // simd2
+    return HostExecutor.apply_binary[dtype, floordiv_kernel](array, scalar)
 
 
 def floor_div[
@@ -488,7 +573,13 @@ def floor_div[
     Returns:
         The element-wise quotient of scalar and array.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__floordiv__](scalar, array)
+
+    @parameter
+    def floordiv_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 // simd2
+    return HostExecutor.apply_binary[dtype, floordiv_kernel](scalar, array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -521,7 +612,13 @@ def fma[
     """
     # TODO: Support passing through the FastMathFlag parameter
     # For now, FastMathFlag.CONTRACT is was default prior to this error.
-    return HostExecutor.apply_ternary[dtype, SIMD.fma[FastMathFlag.CONTRACT]](
+
+    @parameter
+    def fma_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w], simd3: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1.fma(simd2, simd3)
+    return HostExecutor.apply_ternary[dtype, fma_kernel](
         array1, array2, array3
     )
 
@@ -548,7 +645,13 @@ def fma[
     Returns:
         A a new NDArray that is NDArray with the function func applied.
     """
-    return HostExecutor.apply_ternary[dtype, SIMD.fma[FastMathFlag.CONTRACT]](
+
+    @parameter
+    def fma_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w], simd3: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1.fma(simd2, simd3)
+    return HostExecutor.apply_ternary[dtype, fma_kernel](
         array1, array2, simd
     )
 
@@ -577,7 +680,13 @@ def remainder[
     Returns:
         A NDArray equal to array1//array2.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mod__](array1, array2)
+
+    @parameter
+    def mod_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 % simd2
+    return HostExecutor.apply_binary[dtype, mod_kernel](array1, array2)
 
 
 def remainder[
@@ -596,7 +705,13 @@ def remainder[
     Returns:
         A NDArray equal to array//scalar.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mod__](array, scalar)
+
+    @parameter
+    def mod_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 % simd2
+    return HostExecutor.apply_binary[dtype, mod_kernel](array, scalar)
 
 
 def remainder[
@@ -615,4 +730,10 @@ def remainder[
     Returns:
         A NDArray equal to scalar//array.
     """
-    return HostExecutor.apply_binary[dtype, SIMD.__mod__](scalar, array)
+
+    @parameter
+    def mod_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+        return simd1 % simd2
+    return HostExecutor.apply_binary[dtype, mod_kernel](scalar, array)

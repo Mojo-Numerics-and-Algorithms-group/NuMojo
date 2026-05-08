@@ -173,6 +173,7 @@ def isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         dtype: DType, simd_width: Int
     ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](neg_inf[dtype]()))
+
     return HostExecutor.apply_unary_predicate[dtype, is_neginf](array)
 
 

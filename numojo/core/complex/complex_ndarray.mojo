@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """"ComplexNDArray (numojo.core.complex.complex_ndarray)
-
+----------------------------------------------------
 Complex NDArray support for NuMojo.
 
 This module provides the `ComplexNDArray` type, which represents N-dimensional arrays
@@ -82,6 +82,7 @@ import numojo.routines.math.trig as trig
 import numojo.routines.math.exponents as exponents
 import numojo.routines.math.misc as misc
 import numojo.routines.searching as searching
+from numojo.routines.manipulation import reshape
 
 
 # ===----------------------------------------------------------------------=== #
@@ -423,7 +424,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     #     )
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Copy copy into self.
         """
@@ -437,7 +438,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.print_options = copy.print_options
 
     @always_inline("nodebug")
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """
         Move other into self.
         """
@@ -455,15 +456,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """Destroys array buffers."""
         _ = self._re^
         _ = self._im^
-
-    def deep_copy(self) raises -> Self:
-        """
-        Create a deep copy of this ComplexNDArray.
-        """
-        return Self(
-            re=self._re.deep_copy(),
-            im=self._im.deep_copy(),
-        )
 
     def view(mut self) raises -> Self:
         """
@@ -653,7 +645,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var A = nm.ones[nm.cf32](numojo.Shape(2,3,4))
+
+            var A = nm.ones[nm.cf32](nm.Shape(2,3,4))
             print(A._getitem([1,2,3]))
             ```
 
@@ -884,12 +877,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Examples:
             ```mojo
             import numojo as nm
-            var a = numojo.arange(10).reshape(nm.Shape(2, 5))
+
+            var a = nm.arange(10).reshape(nm.Shape(2, 5))
             var b = a[:, 2:4]
             print(b) # Output: 2x2 sliced array corresponding to columns 2 and 3 of each row.
             ```
         """
-        var n_slices: Int = slices.__len__()
+        var n_slices: Int = len(slices)
         if n_slices > self.ndim:
             raise Error(
                 NumojoError(
@@ -2070,7 +2064,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Get items by a series of either slices or integers.
         """
-        var n_slices: Int = slices.__len__()
+        var n_slices: Int = len(slices)
         if n_slices > self.ndim:
             raise Error(
                 NumojoError(
@@ -3164,7 +3158,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 out += padding + "]"
 
             # Greedy line wrapping
-            if len(out) > options.line_width:
+            if out.byte_length() > options.line_width:
                 var wrapped: String = String("")
                 var line_len: Int = 0
                 for c in out.codepoint_slices():
@@ -3303,8 +3297,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Array of the same data with a new shape.
         """
         var result: Self = ComplexNDArray[Self.cdtype](
-            re=numojo.reshape(self._re, shape=shape, order=order),
-            im=numojo.reshape(self._im, shape=shape, order=order),
+            re=reshape(self._re, shape=shape, order=order),
+            im=reshape(self._im, shape=shape, order=order),
         )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags

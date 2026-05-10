@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Decompositions (numojo.routines.linalg.decompositions)
-
+---------------------------------------------------------
 This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
 """
 from std.sys import simd_width_of
@@ -28,10 +28,7 @@ def _compute_householder[
     comptime sqrt2: Scalar[dtype] = 1.4142135623730951
     var rRows = R.shape[0]
 
-    @parameter
-    def load_store_vec[
-        n_elements: Int
-    ](i: Int) unified {mut H, mut R, read work_index}:
+    def load_store_vec[n_elements: Int](i: Int) {mut H, mut R, read work_index}:
         var r_value = R._load[n_elements](i + work_index, work_index)
         H._store[n_elements](i + work_index, work_index, r_value)
         R._store[n_elements](i + work_index, work_index, 0.0)
@@ -40,10 +37,7 @@ def _compute_householder[
 
     var norm = Scalar[dtype](0)
 
-    @parameter
-    def calculate_norm[
-        width: Int
-    ](i: Int) unified {mut norm, read H, read work_index}:
+    def calculate_norm[width: Int](i: Int) {mut norm, read H, read work_index}:
         norm += (H._load[width=width](i, work_index) ** 2).reduce_add()
 
     vectorize[simd_width](rRows, calculate_norm)
@@ -61,10 +55,9 @@ def _compute_householder[
 
     R._store(work_index, work_index, -1 / scaling_factor)
 
-    @parameter
     def scaling_factor_vec[
         simd_width: Int
-    ](i: Int) unified {mut H, read work_index, read scaling_factor}:
+    ](i: Int) {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
@@ -76,10 +69,9 @@ def _compute_householder[
 
     scaling_factor = builtin_math.sqrt(1.0 / increment)
 
-    @parameter
     def scaling_factor_increment_vec[
         simd_width: Int
-    ](i: Int) unified {mut H, read work_index, read scaling_factor}:
+    ](i: Int) {mut H, read work_index, read scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
@@ -103,20 +95,18 @@ def _apply_householder[
     for j in range(column_start, aCols):
         var dot: SIMD[dtype, 1] = 0.0
 
-        @parameter
         def calculate_norm[
             width: Int
-        ](i: Int) unified {mut dot, read H, read A, read work_index, read j}:
+        ](i: Int) {mut dot, read H, read A, read work_index, read j}:
             dot += (
                 H._load[width=width](i, work_index) * A._load[width=width](i, j)
             ).reduce_add()
 
         vectorize[simdwidth](aRows, calculate_norm)
 
-        @parameter
         def closure[
             width: Int
-        ](i: Int) unified {mut A, read H, read work_index, read j, read dot}:
+        ](i: Int) {mut A, read H, read work_index, read j, read dot}:
             val = A._load[width](i, j) - H._load[width](i, work_index) * dot
             A._store(i, j, val)
 
@@ -200,7 +190,6 @@ def lu_decomposition[
     )
 
     # Fill in L and U
-    # @parameter
     # def calculate(i: Int):
     for i in range(0, n):
         for j in range(i, n):

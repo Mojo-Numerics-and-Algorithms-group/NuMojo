@@ -1,13 +1,16 @@
-from numojo.routines.io.files import load, save, loadtxt, savetxt
-from numojo import ones, full
 from std.python import Python
 from std import os
 from std.testing import TestSuite
 
+import numojo as nm
+from numojo.prelude import *
+from numojo.routines.io.files import load, save, loadtxt, savetxt
+from numojo import ones, full
+
 
 def test_save_and_load() raises:
     var np = Python.import_module("numpy")
-    var arr = ones[numojo.f32](numojo.Shape(10, 15))
+    var arr = ones[nm.f32](nm.Shape(10, 15))
     var fname = "test_save_load.npy"
     save(fname=fname, array=arr)
     # Load with numpy for cross-check
@@ -22,7 +25,7 @@ def test_save_and_load() raises:
 
 def test_savetxt_and_loadtxt() raises:
     var np = Python.import_module("numpy")
-    var arr = full[numojo.f32](numojo.Shape(10, 15), fill_value=5.0)
+    var arr = full[nm.f32](nm.Shape(10, 15), fill_value=5.0)
     var fname = "test_savetxt_loadtxt.txt"
     savetxt(fname, arr, fmt="%.2f")
     # Load with numpy for cross-check

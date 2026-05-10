@@ -1046,11 +1046,11 @@ def test_ndarray_sliced_view_manipulation() raises:
 
 
 def _make_1d_offset_view(
-    parent: nm.NDArray[nm.f64], offset: Int, size: Int
+    mut parent: nm.NDArray[nm.f64], offset: Int, size: Int
 ) raises -> nm.NDArray[nm.f64]:
     """Create a 1-D view into `parent` starting at `offset` with `size` elems.
     """
-    var view = parent.copy()
+    var view = parent.view()
     view.offset = offset
     view.size = size
     view.shape = NDArrayShape(size)
@@ -1060,7 +1060,7 @@ def _make_1d_offset_view(
 
 
 def _make_2d_offset_view(
-    parent: nm.NDArray[nm.f64],
+    mut parent: nm.NDArray[nm.f64],
     offset: Int,
     rows: Int,
     cols: Int,
@@ -1068,7 +1068,7 @@ def _make_2d_offset_view(
     stride1: Int,
 ) raises -> nm.NDArray[nm.f64]:
     """Create a 2-D view into `parent`."""
-    var view = parent.copy()
+    var view = parent.view()
     view.offset = offset
     view.size = rows * cols
     view.shape = NDArrayShape(rows, cols)

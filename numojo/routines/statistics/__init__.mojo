@@ -17,5 +17,5 @@ from .averages import (
     mode,
     median,
     variance,
-    std,
+    stddev,
 )

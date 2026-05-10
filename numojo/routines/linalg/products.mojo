@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Matrix and vector products (numojo.routines.linalg.products)
-
+---------------------------------------------------------------
 This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
 """
 
@@ -98,10 +98,9 @@ def dot[
     if array1.ndim == array2.ndim == 1:
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
 
-        @parameter
         def vectorized_dot[
             simd_width: Int
-        ](idx: Int) unified {mut result, read array1, read array2} -> None:
+        ](idx: Int) {mut result, read array1, read array2} -> None:
             result._buf.ptr.store(
                 idx,
                 array1._buf.ptr.load[width=simd_width](idx)
@@ -153,10 +152,9 @@ def matmul_tiled_unrolled_parallelized[
         def calc_tile[tile_x: Int, tile_y: Int](x: Int, y: Int):
             for k in range(y, y + tile_y):
 
-                @parameter
                 def dot[
                     simd_width: Int
-                ](n: Int) unified {
+                ](n: Int) {
                     mut result,
                     read A,
                     read B,
@@ -284,10 +282,9 @@ def matmul_2darray[
     def calculate_A_rows(m: Int):
         for k in range(t1):
 
-            @parameter
             def dot[
                 simd_width: Int
-            ](n: Int) unified {
+            ](n: Int) {
                 mut result, read A, read B, read t2, read t1, read k, read m
             } -> None:
                 result._buf.ptr.store(
@@ -434,12 +431,9 @@ def matmul[
         def calculate_resultresult(m: Int):
             for k in range(A.shape[1]):
 
-                @parameter
                 def dot[
                     simd_width: Int
-                ](n: Int) unified {
-                    mut result, read A, read B, read m, read k
-                } -> None:
+                ](n: Int) {mut result, read A, read B, read m, read k} -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -459,12 +453,9 @@ def matmul[
         def calculate_FF(n: Int):
             for k in range(A.shape[1]):
 
-                @parameter
                 def dot_F[
                     simd_width: Int
-                ](m: Int) unified {
-                    mut result, read A, read B, read n, read k
-                } -> None:
+                ](m: Int) {mut result, read A, read B, read n, read k} -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -485,12 +476,9 @@ def matmul[
             for n in range(B.shape[1]):
                 var sum: Scalar[dtype] = 0.0
 
-                @parameter
                 def dot_product[
                     simd_width: Int
-                ](k: Int) unified {
-                    mut sum, read A, read B, read m, read n
-                } -> None:
+                ](k: Int) {mut sum, read A, read B, read m, read n} -> None:
                     sum += (
                         A._load[simd_width](m, k) * B._load[simd_width](k, n)
                     ).reduce_add()

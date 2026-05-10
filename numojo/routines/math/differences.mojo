@@ -104,7 +104,7 @@ def diff[
         The n-th order difference of the input array.
     """
 
-    var current: NDArray[dtype] = array.deep_copy()
+    var current: NDArray[dtype] = array.copy()
 
     for _ in range(n):
         var result: NDArray[dtype] = NDArray[dtype](

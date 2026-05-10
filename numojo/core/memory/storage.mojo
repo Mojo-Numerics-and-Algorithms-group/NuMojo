@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Storage (numojo.core.memory.storage)
-
+---------------------------------------
 Backend storage containers for accelerator-aware data management.
 
 This module provides three storage structs:
@@ -17,7 +17,7 @@ This module provides three storage structs:
   `HostStorage` and `DeviceStorage` at compile time based on a `Device` parameter.
 """
 from std.memory import UnsafePointer
-from std.os.atomic import Atomic, Consistency, fence
+from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 from std.collections.optional import Optional
 from std.sys.info import has_accelerator
@@ -73,7 +73,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def __init__(out self):
         """Create an empty managed container with size 0 and refcount 1."""
-        self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
+        self.ptr = UnsafePointer[
+            Scalar[Self.dtype], Self.origin
+        ].unsafe_dangling()
         self._refcount = alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
@@ -98,7 +100,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = Ownership.Managed
 
         if size == 0:
-            self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.dtype], Self.origin
+            ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.dtype]](size)
 
@@ -123,8 +127,6 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if size < 0:
             abort("HostStorage: __init__() size must be non-negative")
-        if not ptr:
-            abort("HostStorage: __init__() ptr must be non-null")
 
         self.size = size
         if copy:
@@ -134,7 +136,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
-            self._refcount = UnsafePointer[Atomic[DType.uint64], Self.origin]()
+            self._refcount = UnsafePointer[
+                Atomic[DType.uint64], Self.origin
+            ].unsafe_dangling()
             self.ptr = ptr
             self.ownership = Ownership.External
 
@@ -165,7 +169,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = ownership
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Shallow-copy constructor.
 
         Copies the pointer and refcount, then atomically increments the
@@ -180,10 +184,10 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = copy.ownership
 
         if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Move constructor.
 
         Transfers all fields without touching the reference count.
@@ -211,11 +215,11 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         if not self.is_refcounted():
             return
 
-        if self._refcount[].fetch_sub[ordering=Consistency.RELEASE](1) != 1:
+        if self._refcount[].fetch_sub[ordering=Ordering.RELEASE](1) != 1:
             return
 
-        fence[ordering=Consistency.ACQUIRE]()
-        if self.ptr and self.size > 0:
+        fence[ordering=Ordering.ACQUIRE]()
+        if self.size > 0:
             self.ptr.free()
         self._refcount.free()
 
@@ -375,9 +379,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         Returns:
             Whether reference counting is active.
         """
-        return (
-            self._refcount != UnsafePointer[Atomic[DType.uint64], Self.origin]()
-        )
+        return self.ownership == Ownership.Managed
 
     @always_inline
     def ref_count(ref self) -> UInt64:
@@ -388,23 +390,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if not self.is_refcounted():
             return 0
-        return self._refcount[].load[ordering=Consistency.MONOTONIC]()
-
-    def deep_copy(self) -> Self:
-        """Create an independent managed copy of this container.
-
-        The returned container has its own allocation and a refcount of 1,
-        regardless of the source ownership mode.
-
-        Returns:
-            A new `HostStorage` that owns a copy of the data.
-        """
-        if self.size == 0:
-            return HostStorage[Self.dtype]()
-
-        var result = HostStorage[Self.dtype](self.size)
-        memcpy(dest=result.ptr, src=self.ptr, count=self.size)
-        return result^
+        return self._refcount[].load[ordering=Ordering.RELAXED]()
 
     def share(mut self) raises -> HostStorage[Self.dtype]:
         """Create a new handle that shares this container's data and refcount.
@@ -427,7 +413,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+        _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
         var result = HostStorage[Self.dtype](
             ptr=self.ptr,
@@ -498,7 +484,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         self.buffer = buffer
         self.size = size
 
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Shallow-copy constructor.
 
         Copies the `DeviceBuffer` handle.  The GPU runtime determines
@@ -510,7 +496,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         self.buffer = copy.buffer
         self.size = copy.size
 
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Move constructor.
 
         Transfers the buffer handle without copying.
@@ -602,8 +588,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     the other remains `None`.
 
     Shallow copies (via `__copyinit__`) share the underlying allocation
-    and increment the reference count.  Use `deep_copy()` for an
-    independent owned copy.
+    and increment the reference count.  Use `.share()` for an explicit shared handle.
 
     Parameters:
         dtype: The element type stored in the container.
@@ -695,8 +680,6 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             abort(
                 "AcceleratorDataContainer: __init__() size must be non-negative"
             )
-        if not ptr:
-            abort("AcceleratorDataContainer: __init__() ptr must be non-null")
 
         self.size = size
         self.host_storage = HostStorage[Self.dtype](
@@ -707,7 +690,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.device_storage = None
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Shallow-copy constructor.
 
         Shares the underlying storage.  For CPU containers this increments
@@ -722,7 +705,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.size = copy.size
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Move constructor.
 
         Transfers all fields without touching reference counts.
@@ -889,39 +872,6 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     # ===----------------------------------------------------------------------===#
     # Reference Counting and Sharing
     # ===----------------------------------------------------------------------===#
-
-    def deep_copy(self) raises -> Self:
-        """Create an independent managed copy of this container.
-
-        For CPU containers the data is copied via `memcpy`.  For GPU
-        containers the copy is enqueued on the device context.
-
-        Returns:
-            A new `AcceleratorDataContainer` that owns its own data.
-        """
-        if self.size == 0:
-            return AcceleratorDataContainer[Self.dtype, Self.device]()
-
-        comptime if Self.device.type == "cpu":
-            var result = AcceleratorDataContainer[Self.dtype, Self.device](
-                self.size
-            )
-            memcpy(
-                dest=result.host_storage.unsafe_value().ptr,
-                src=self.host_storage.unsafe_value().ptr,
-                count=self.size,
-            )
-            return result^
-        else:
-            var result = AcceleratorDataContainer[Self.dtype, Self.device](
-                self.size
-            )
-            var ctx = self.device_storage.unsafe_value().buffer.context()
-            ctx.enqueue_copy(
-                result.device_storage.unsafe_value().buffer,
-                self.device_storage.unsafe_value().buffer,
-            )
-            return result^
 
     def share(
         mut self,

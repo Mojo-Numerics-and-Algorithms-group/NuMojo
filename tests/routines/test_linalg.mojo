@@ -1,8 +1,9 @@
-import numojo as nm
-from numojo.prelude import *
 from std.python import Python, PythonObject
 from utils_for_test import check, check_is_close, check_values_close
 from std.testing import TestSuite
+
+import numojo as nm
+from numojo.prelude import *
 
 # ===-----------------------------------------------------------------------===#
 # Matmul

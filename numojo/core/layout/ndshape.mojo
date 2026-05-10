@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """NDArrayShape (numojo.core.layout.ndshape)
-
+--------------------------------------------
 Implements NDArrayShape type representing the shape of an NDArray.
 The shape is stored as a contiguous buffer of integers, with the number of dimensions (ndim) tracked separately.
 The NDArrayShape provides methods for element access, shape transformations (e.g., permute, reverse),
@@ -263,7 +263,7 @@ struct NDArrayShape(
                     self._buf.init_value(i, 1)
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
         Initializes the NDArrayShape from ancopy NDArrayShape.
         A deep copy of the data buffer is conducted.

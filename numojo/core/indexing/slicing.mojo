@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Slicing (numojo.core.indexing.slicing)
-
+--------------------------------------
 This module defines internal data structures and utilities for handling slicing operations in NuMojo.
 """
 

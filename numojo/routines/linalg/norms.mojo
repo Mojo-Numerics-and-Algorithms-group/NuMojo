@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Norms and other numbers (numojo.routines.linalg.norms)
-
+------------------------------------------------------
 This module provides functions for computing quantities related to linear algebra, such as determinants and traces.
 """
 

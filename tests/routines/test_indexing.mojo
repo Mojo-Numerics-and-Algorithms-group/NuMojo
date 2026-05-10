@@ -5,7 +5,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Test indexing module `numojo.routines.indexing`.
+Test indexing module `nm.routines.indexing`.
 """
 from std.python import Python
 from std.testing.testing import assert_true, assert_almost_equal, assert_equal
@@ -13,6 +13,7 @@ from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 
 from numojo.prelude import *
+import numojo as nm
 
 
 def test_compress() raises:
@@ -23,14 +24,12 @@ def test_compress() raises:
     var bnp = b.to_numpy()
 
     check(
-        numojo.indexing.compress(nm.array[boolean]("[0, 1, 1, 0]"), b),
+        nm.indexing.compress(nm.array[boolean]("[0, 1, 1, 0]"), b),
         np.compress(np.array(Python.list(0, 1, 1, 0)), bnp),
         "`compress` 1-d array is broken",
     )
     check(
-        numojo.indexing.compress(
-            nm.array[boolean]("[0,1,1,0,1,0,1,0,1,1,1]"), a
-        ),
+        nm.indexing.compress(nm.array[boolean]("[0,1,1,0,1,0,1,0,1,1,1]"), a),
         np.compress(
             np.array(Python.list(0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1)), anp
         ),

@@ -31,7 +31,7 @@ from numojo.routines.functional import (
 # not sure what's the side effect of using a returned dtype and casting to it. There could be some precision loss?
 def mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+](a: NDArray[dtype]) capturing raises -> Scalar[returned_dtype]:
     """
     Calculate the arithmetic average of all items in an array.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -155,7 +155,7 @@ def mean[
 
 def median_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
-](a: NDArray[dtype]) raises -> Scalar[returned_dtype]:
+](a: NDArray[dtype]) capturing raises -> Scalar[returned_dtype]:
     """
     Median value of all items an array.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -232,7 +232,7 @@ def median[
     ](a=a, axis=normalized_axis)
 
 
-def mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+def mode_1d[dtype: DType](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """
     Returns mode of all items of an array.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -313,7 +313,7 @@ def mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     )
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -338,7 +338,7 @@ def std[
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
     returned_dtype
@@ -380,7 +380,7 @@ def std[
     return variance[returned_dtype](A, axis=normalized_axis, ddof=ddof) ** 0.5
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
     """
@@ -405,7 +405,7 @@ def std[
     return variance[returned_dtype](A, ddof=ddof) ** 0.5
 
 
-def std[
+def stddev[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
     """

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Linear algebra routines (numojo.routines.linalg)
-
+------------------------------------------------
 This module provides functions for linear algebra operations, including matrix decompositions, norms, products, and solving linear systems etc.
 """
 from .decompositions import lu_decomposition, qr, eig

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Item (numojo.core.indexing.item)
-
+-----------------------------------
 Implements Item type.
 
 `Item` is a series of `Int` on the heap used to index into N-dimensional arrays.
@@ -161,7 +161,7 @@ struct Item(
         memset_zero(self._buf.ptr, ndim)
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Copy construct the Item.
 
         Args:

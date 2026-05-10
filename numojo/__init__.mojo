@@ -7,8 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 NuMojo Top-Level Package (`numojo`)
-==================================
-
+===================================
 Central public surface for NuMojo that exposes the primary containers, dtype helpers, common errors,
 and a curated set of NumPy-inspired routines.
 
@@ -46,7 +45,7 @@ FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
 7. Notes
 9. References
 10. Examples *
-(Items marked with * are defined by the Mojo docstring style guide.)
+(Items marked with * are defined by the Mojo docstring style guide).
 """
 
 comptime __version__: String = "V0.9.0"
@@ -125,9 +124,9 @@ from numojo.core.type_aliases import (
 # Objects
 from numojo.routines.constants import Constants
 
-comptime pi = numojo.routines.constants.Constants.pi
-comptime e = numojo.routines.constants.Constants.e
-comptime c = numojo.routines.constants.Constants.c
+comptime pi = Constants.pi
+comptime e = Constants.e
+comptime c = Constants.c
 
 # Functions
 # TODO Make explicit imports of each individual function in future
@@ -224,7 +223,7 @@ from numojo.routines.statistics import (
     mode,
     median,
     variance,
-    std,
+    stddev,
 )
 
 from numojo.routines import bitwise

@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Utility functions (numojo.core.indexing.utility)
+"""Utility functions (numojo.core.indexing.utility).
 
 Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
 

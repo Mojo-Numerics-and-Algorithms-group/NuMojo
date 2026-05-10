@@ -5,8 +5,8 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Floating-point routines for NuMojo (numojo.routines.math.floating).
-
+"""Floating-point routines for NuMojo (numojo.routines.math.floating)
+---------------------------------------------------------------------
 Implements floating-point specific helpers on NDArrays, such as `copysign`.
 """
 
@@ -39,4 +39,13 @@ def copysign[
     Returns:
         A NDArray with the magnitude of `array2` and the sign of `array1`.
     """
-    return HostExecutor.apply_binary[dtype, math.copysign](array1, array2)
+
+    @parameter
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+        dtype, simd_w
+    ]:
+        return math.copysign(simd1, simd2)
+
+    return HostExecutor.apply_binary[dtype, _kernel](array1, array2)

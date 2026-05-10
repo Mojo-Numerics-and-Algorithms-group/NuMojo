@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Logical Operations Module (numojo.routines.logic.logical_ops)
-
+----------------------------------------------------------------
 This module implements element-wise logical operations for NDArray, ComplexNDArray, and Matrix types in the NuMojo library.
 """
 
@@ -64,6 +64,7 @@ def logical_and[
             )
         )
 
+    @parameter
     def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
@@ -115,6 +116,7 @@ def logical_or[
             )
         )
 
+    @parameter
     def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
@@ -153,6 +155,7 @@ def logical_not[
         ```
     """
 
+    @parameter
     def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
@@ -204,6 +207,7 @@ def logical_xor[
             )
         )
 
+    @parameter
     def kernel[
         dtype: DType, width: Int
     ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
@@ -222,7 +226,7 @@ def logical_and[
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
 ) raises -> ComplexNDArray[cdtype] where (
-    cdtype == ComplexDType.bool or cdtype.is_integral()
+    cdtype.dtype == DType.bool or cdtype.dtype.is_integral()
 ):
     """
     Element-wise logical AND operation between two complex arrays.
@@ -247,7 +251,7 @@ def logical_and[
 
         var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
         var b = nm.arange[ci32](CScalar[ci32](5), CScalar[ci32](15))
-        var result = logical_and(a, b)
+        var result = logical_and[ci32](a, b)
         ```
     """
     if a.shape != b.shape:
@@ -272,7 +276,7 @@ def logical_or[
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
 ) raises -> ComplexNDArray[cdtype] where (
-    cdtype == ComplexDType.bool or cdtype.is_integral()
+    cdtype.dtype == DType.bool or cdtype.dtype.is_integral()
 ):
     """
     Element-wise logical OR operation between two complex arrays.
@@ -297,7 +301,7 @@ def logical_or[
 
         var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
         var b = nm.arange[ci32](CScalar[ci32](5), CScalar[ci32](15))
-        var result = logical_or(a, b)
+        var result = logical_or[ci32](a, b)
         ```
     """
     if a.shape != b.shape:
@@ -320,7 +324,7 @@ def logical_or[
 def logical_not[
     cdtype: ComplexDType
 ](a: ComplexNDArray[cdtype]) raises -> ComplexNDArray[cdtype] where (
-    cdtype == ComplexDType.bool or cdtype.is_integral()
+    cdtype.dtype == DType.bool or cdtype.dtype.is_integral()
 ):
     """
     Element-wise logical NOT operation on a complex array.
@@ -343,12 +347,12 @@ def logical_not[
         from numojo.routines.logic.logical_ops import logical_not
 
         var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
-        var result = logical_not(a)
+        var result = logical_not[ci32](a)
         ```
     """
     var res: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](a.shape)
     for i in range(res.size):
-        res.store(i, ~a.load(i))
+        res.store(i, a.load(i).__invert__())
     return res^
 
 
@@ -357,7 +361,7 @@ def logical_xor[
 ](
     a: ComplexNDArray[cdtype], b: ComplexNDArray[cdtype]
 ) raises -> ComplexNDArray[cdtype] where (
-    cdtype == ComplexDType.bool or cdtype.is_integral()
+    cdtype.dtype == DType.bool or cdtype.dtype.is_integral()
 ):
     """
     Element-wise logical XOR operation between two complex arrays.
@@ -382,7 +386,7 @@ def logical_xor[
 
         var a = nm.arange[ci32](CScalar[ci32](0), CScalar[ci32](10))
         var b = nm.arange[ci32](CScalar[ci32](5), CScalar[ci32](15))
-        var result = logical_xor(a, b)
+        var result = logical_xor[ci32](a, b)
         ```
     """
     if a.shape != b.shape:

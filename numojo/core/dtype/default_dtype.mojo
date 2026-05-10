@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Default datatype (numojo.core.dtype.default_dtype)
+"""Default datatype (numojo.core.dtype.default_dtype).
 
 Datatypes Module - Implements rust like aliases for datatypes
 """

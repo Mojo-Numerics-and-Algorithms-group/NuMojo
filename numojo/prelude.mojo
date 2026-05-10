@@ -7,8 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 NuMojo Prelude (`numojo.prelude`)
-================================
-
+=================================
 The prelude is the recommended “batteries-included” import for day-to-day use.
 
 Why it exists:

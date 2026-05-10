@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Validation (numojo.core.indexing.validation)
-
+--------------------------------------------
 Contains utilities for validating indices, shapes, and axes for various indexing and reduction operations.
 """
 

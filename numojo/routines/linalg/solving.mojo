@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Linear Algebra Solver (numojo.routines.linalg.solving)
-
+------------------------------------------------------
 Provides:
     - Solver of `Ax = y` using LU decomposition algorithm.
     - Inverse of an invertible matrix.
@@ -396,16 +396,16 @@ def solve[
 
     var A_pivoted_Pair: Tuple[
         Matrix[dtype], Matrix[dtype], Int
-    ] = partial_pivoting(A.deep_copy())
+    ] = partial_pivoting(A.copy())
 
-    var pivoted_A = A_pivoted_Pair[0].deep_copy()
-    var P = A_pivoted_Pair[1].deep_copy()
+    var pivoted_A = A_pivoted_Pair[0].copy()
+    var P = A_pivoted_Pair[1].copy()
 
     var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
         pivoted_A
     )
-    L = L_U[0].deep_copy()
-    U = L_U[1].deep_copy()
+    L = L_U[0].copy()
+    U = L_U[1].copy()
 
     var m: Int = A.shape[0]
     var n: Int = Y.shape[1]

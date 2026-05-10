@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """Matrix (numojo.core.matrix)
-
+---------------------------
 2D matrix types and APIs.
 """
 

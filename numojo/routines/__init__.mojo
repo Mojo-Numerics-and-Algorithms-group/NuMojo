@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Routines module (numojo.routines)
-
+---------------------------------
 This modules groups NumPy-like functionality by topic (math, linalg, statistics,
 creation, manipulation, etc.).
 
@@ -122,7 +122,7 @@ from .math import (
     hypot_fma,
 )
 
-from .statistics import mean, mode, median, variance, std
+from .statistics import mean, mode, median, variance, stddev
 
 from .bitwise import invert
 

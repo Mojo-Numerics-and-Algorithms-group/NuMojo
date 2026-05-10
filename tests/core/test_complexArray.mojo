@@ -156,7 +156,7 @@ def _make_complex_2x3() raises -> ComplexNDArray[cf32]:
 
 def test_complex_array_deep_copy_independent() raises:
     var c = _make_complex_2x3()
-    var d = c.deep_copy()
+    var d = c.copy()
     d.itemset(0, ComplexSIMD[cf32](99.0, 88.0))
     assert_almost_equal(c.item(0).re, 1.0, "deep_copy modified source")
     assert_almost_equal(c.item(0).im, 0.0, "deep_copy modified source")

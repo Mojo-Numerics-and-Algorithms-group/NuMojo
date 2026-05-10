@@ -13,8 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: ["ubuntu-22.04", "macos-14"]
-        os: ["ubuntu-22.04"]
+        os: ["macos-14"]
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -22,9 +21,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      DEBIAN_FRONTEND: noninteractive
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4

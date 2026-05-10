@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Comparison routines (numojo.routines.logic.comparison)
-
+---------------------------------------------------------
 Implements comparison math routines for NDArrays and Matrices.
 """
 
@@ -52,7 +52,19 @@ def greater[
         print(greater[nm.f64](arr1, arr2))  # Output: [True, False, True]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.gt](array1, array2)
+
+    @parameter
+    def gt_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.gt(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, gt_kernel](array1, array2)
 
 
 def greater[
@@ -81,7 +93,19 @@ def greater[
         print(greater[nm.f64](arr, 2.0))  # Output: [False, False, True]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.gt](array1, scalar)
+
+    @parameter
+    def gt_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.gt(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, gt_kernel](array1, scalar)
 
 
 def greater_equal[
@@ -111,7 +135,19 @@ def greater_equal[
         print(greater_equal[nm.f64](arr1, arr2))  # Output: [True, True, False]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.ge](array1, array2)
+
+    @parameter
+    def ge_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.ge(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, ge_kernel](array1, array2)
 
 
 def greater_equal[
@@ -140,7 +176,19 @@ def greater_equal[
         print(greater_equal[nm.f64](arr, 2.0))  # Output: [False, True, True]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.ge](array1, scalar)
+
+    @parameter
+    def ge_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.ge(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, ge_kernel](array1, scalar)
 
 
 def less[
@@ -170,7 +218,19 @@ def less[
         print(less[nm.f64](arr1, arr2))  # Output: [False, True, False]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.lt](array1, array2)
+
+    @parameter
+    def lt_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.lt(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, lt_kernel](array1, array2)
 
 
 def less[
@@ -199,7 +259,19 @@ def less[
         print(less[nm.f64](arr, 2.0))  # Output: [True, False, False]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.lt](array1, scalar)
+
+    @parameter
+    def lt_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.lt(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, lt_kernel](array1, scalar)
 
 
 def less_equal[
@@ -229,7 +301,19 @@ def less_equal[
         print(less_equal[nm.f64](arr1, arr2))  # Output: [False, True, True]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.le](array1, array2)
+
+    @parameter
+    def le_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.le(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, le_kernel](array1, array2)
 
 
 def less_equal[
@@ -258,7 +342,19 @@ def less_equal[
         print(less_equal[nm.f64](arr, 2.0))  # Output: [True, True, False]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.le](array1, scalar)
+
+    @parameter
+    def le_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.le(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, le_kernel](array1, scalar)
 
 
 def equal[
@@ -288,7 +384,19 @@ def equal[
         print(equal[nm.f64](arr1, arr2))  # Output: [True, False, True]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.eq](array1, array2)
+
+    @parameter
+    def eq_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.eq(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, eq_kernel](array1, array2)
 
 
 def equal[
@@ -317,7 +425,19 @@ def equal[
         print(equal[nm.f64](arr, 2.0))  # Output: [False, True, False]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.eq](array1, scalar)
+
+    @parameter
+    def eq_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.eq(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, eq_kernel](array1, scalar)
 
 
 def not_equal[
@@ -347,7 +467,19 @@ def not_equal[
         print(not_equal[nm.f64](arr1, arr2))  # Output: [False, True, True]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.ne](array1, array2)
+
+    @parameter
+    def ne_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.ne(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, ne_kernel](array1, array2)
 
 
 def not_equal[
@@ -376,7 +508,19 @@ def not_equal[
         print(not_equal[nm.f64](arr, 2.0))  # Output: [True, False, True]
         ```
     """
-    return HostExecutor.apply_binary_predicate[dtype, SIMD.ne](array1, scalar)
+
+    @parameter
+    def ne_kernel[
+        type: DType, simd_w: Int
+    ](
+        a: SIMD[type, simd_w],
+        b: SIMD[type, simd_w],
+    ) -> SIMD[
+        DType.bool, simd_w
+    ]:
+        return a.ne(b)
+
+    return HostExecutor.apply_binary_predicate[dtype, ne_kernel](array1, scalar)
 
 
 # ===------------------------------------------------------------------------===#

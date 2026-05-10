@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """Random (numojo.routines.random)
-
+-------------------------------
 Creates array of the given shape and populate it with random samples from
 a certain distribution.
 

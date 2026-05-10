@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """Constants (numojo.routines.constants)
-
+-------------------------------------
 This module defines physical and mathematical constants for use in numerical computations.
 The constants are defined as class attributes of the `Constants` class, which is designed to be immutable and efficient for compile-time evaluation.
 """

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """NDArray (numojo.core.ndarray)
-
+--------------------------------
 This module implements the core `NDArray` type, which is the fundamental data structure for multi-dimensional arrays in NuMojo.
 It provides efficient storage, indexing, slicing, and basic operations on N-dimensional arrays. The `NDArray` is designed to be flexible and performant, supporting various memory layouts and data types.
 
@@ -80,6 +80,14 @@ import numojo.routines.bitwise as bitwise
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
+import numojo.routines.linalg as linalg
+import numojo.routines.sorting as sorting
+import numojo.routines.manipulation as manipulation
+import numojo.routines.statistics as statistics
+from numojo.routines.indexing import compress
+from numojo.routines.math.misc import clip
+from numojo.routines.manipulation import reshape
+import numojo.routines.math as numojo_math
 
 comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 """IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
@@ -318,7 +326,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.print_options = PrintOptions()
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """Copies `copy` into `self`.
 
         Performs a deep copy. The new array owns its data.
@@ -339,30 +347,6 @@ struct NDArray[dtype: DType = DType.float64](
             writeable=True,
         )
         self.print_options = copy.print_options
-
-    def deep_copy(self) raises -> Self:
-        """
-        Create a deep copy of the NDArray.
-
-        Returns:
-            A new NDArray instance with its own data buffer, identical to `self`.
-            Changes to the copy do not affect the original array.
-
-        Example:
-            ```mojo
-            import numojo as nm
-            var arr = nm.ones[nm.f32](nm.Shape(2, 3))
-            var arr_copy = arr.deep_copy()
-            ```
-        """
-        var new_buf = self._buf.deep_copy()
-        return Self(
-            data=new_buf^,
-            is_view=False,
-            shape=self.shape,
-            strides=self.strides,
-            offset=self.offset,
-        )
 
     def view(mut self) raises -> Self:
         """
@@ -387,7 +371,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     @always_inline("nodebug")
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Moves `take` into `self`.
 
         Args:
@@ -2172,7 +2156,7 @@ struct NDArray[dtype: DType = DType.float64](
             ```mojo
             import numojo as nm
             from numojo.prelude import *
-            var A = numojo.random.rand[numojo.i16](2, 2, 2)
+            var A = nm.random.rand[nm.i16](2, 2, 2)
             A[Item(0, 1, 1)] = 10
             ```
         """
@@ -2574,6 +2558,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
             a.__setitem__(Slice(1,3), Slice(1,3), scalar=99)
             ```
@@ -2604,6 +2590,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
             a.__setitem__(1, 2, scalar=99)           # single element
             a.__setitem__(1, Slice(2,4), scalar=0)   # one row, partial column
@@ -3498,9 +3486,9 @@ struct NDArray[dtype: DType = DType.float64](
     # ===--- In-place helper methods (view-safe) ---===#
 
     def _inplace_scalar_op[
-        func: fn[type: DType, simd_w: Int](
+        func: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](mut self, other: SIMD[Self.dtype, 1]):
         """Apply a binary SIMD operation in-place: self[i] = func(self[i], s).
 
@@ -3517,8 +3505,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            @parameter
-            def vec_op[w: Int](i: Int) unified {mut self, read other}:
+            def vec_op[w: Int](i: Int) {mut self, read other}:
                 self._buf.ptr.store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -3542,9 +3529,9 @@ struct NDArray[dtype: DType = DType.float64](
                 )
 
     def _inplace_array_op[
-        func: fn[type: DType, simd_w: Int](
+        func: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
-        ) -> SIMD[type, simd_w],
+        ) capturing -> SIMD[type, simd_w],
     ](mut self, other: Self) raises:
         """Apply a binary SIMD operation in-place: self[i] = func(self[i], o[i]).
 
@@ -3574,8 +3561,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            @parameter
-            def vec_op[w: Int](i: Int) unified {mut self, read other_c}:
+            def vec_op[w: Int](i: Int) {mut self, read other_c}:
                 self._buf.ptr.store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -3602,11 +3588,27 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __iadd__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array += scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__add__](other)
+
+        def add_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a + b
+
+        self._inplace_scalar_op[add_kernel](other)
 
     def __iadd__(mut self, other: Self) raises:
         """Enables `array += array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__add__](other)
+
+        def add_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a + b
+
+        self._inplace_array_op[add_kernel](other)
 
     def __sub__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -3628,14 +3630,30 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __isub__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array -= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__sub__](other)
+
+        def sub_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a - b
+
+        self._inplace_scalar_op[sub_kernel](other)
 
     def __isub__(mut self, other: Self) raises:
         """Enables `array -= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__sub__](other)
+
+        def sub_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a - b
+
+        self._inplace_array_op[sub_kernel](other)
 
     def __matmul__(self, other: Self) raises -> Self:
-        return numojo.linalg.matmul(self, other)
+        return linalg.matmul(self, other)
 
     def __mul__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -3649,7 +3667,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.mul[Self.dtype](self, other)
 
-    def __rmul__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
+    def __rmul__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar * array`.
         """
@@ -3657,11 +3675,27 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __imul__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array *= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__mul__](other)
+
+        def mul_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a * b
+
+        self._inplace_scalar_op[mul_kernel](other)
 
     def __imul__(mut self, other: Self) raises:
         """Enables `array *= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__mul__](other)
+
+        def mul_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a * b
+
+        self._inplace_array_op[mul_kernel](other)
 
     def __abs__(self) -> Self:
         return abs(self)
@@ -3702,10 +3736,9 @@ struct NDArray[dtype: DType = DType.float64](
         var p_c = p.contiguous()
         var result = NDArray[Self.dtype](self.shape)
 
-        @parameter
         def vectorized_pow[
             simd_width: Int
-        ](index: Int) unified {mut result, read src, read p_c}:
+        ](index: Int) {mut result, read src, read p_c}:
             result._buf.ptr.store(
                 index,
                 src._buf.ptr.load[width=simd_width](index)
@@ -3719,8 +3752,7 @@ struct NDArray[dtype: DType = DType.float64](
         """Enables `array **= int`. View-safe: modifies buffer in-place."""
         if self.is_c_contiguous():
 
-            @parameter
-            def vec_pow[w: Int](i: Int) unified {mut self, read p}:
+            def vec_pow[w: Int](i: Int) {mut self, read p}:
                 self._buf.ptr.store(
                     self.offset + i,
                     builtin_math.pow(
@@ -3743,10 +3775,9 @@ struct NDArray[dtype: DType = DType.float64](
     def _elementwise_pow(self, p: Int) raises -> Self:
         var src = self.contiguous()
 
-        @parameter
         def array_scalar_vectorize[
             simd_width: Int
-        ](index: Int) unified {mut src, read p} -> None:
+        ](index: Int) {mut src, read p} -> None:
             src._buf.ptr.store(
                 index,
                 builtin_math.pow(src._buf.ptr.load[width=simd_width](index), p),
@@ -3769,11 +3800,27 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __itruediv__(mut self, s: SIMD[Self.dtype, 1]) raises:
         """Enables `array /= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__truediv__](s)
+
+        def div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a / b
+
+        self._inplace_scalar_op[div_kernel](s)
 
     def __itruediv__(mut self, other: Self) raises:
         """Enables `array /= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__truediv__](other)
+
+        def div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a / b
+
+        self._inplace_array_op[div_kernel](other)
 
     def __rtruediv__(self, s: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3795,11 +3842,27 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __ifloordiv__(mut self, s: SIMD[Self.dtype, 1]) raises:
         """Enables `array //= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__floordiv__](s)
+
+        def floor_div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a.__floordiv__(b)
+
+        self._inplace_scalar_op[floor_div_kernel](s)
 
     def __ifloordiv__(mut self, other: Self) raises:
         """Enables `array //= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__floordiv__](other)
+
+        def floor_div_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a.__floordiv__(b)
+
+        self._inplace_array_op[floor_div_kernel](other)
 
     def __rfloordiv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3821,11 +3884,27 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __imod__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array %= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__mod__](other)
+
+        def mod_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a % b
+
+        self._inplace_scalar_op[mod_kernel](other)
 
     def __imod__(mut self, other: NDArray[Self.dtype]) raises:
         """Enables `array %= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__mod__](other)
+
+        def mod_kernel[
+            type: DType, simd_w: Int
+        ](a: SIMD[type, simd_w], b: SIMD[type, simd_w]) capturing -> SIMD[
+            type, simd_w
+        ]:
+            return a % b
+
+        self._inplace_array_op[mod_kernel](other)
 
     def __rmod__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -4131,7 +4210,7 @@ struct NDArray[dtype: DType = DType.float64](
                         out += separator
                 out += padding + "]"
 
-            if len(out) > options.line_width:
+            if out.byte_length() > options.line_width:
                 var wrapped: String = String("")
                 var line_len: Int = 0
                 for c in out.codepoint_slices():
@@ -4264,10 +4343,9 @@ struct NDArray[dtype: DType = DType.float64](
         var a = self.contiguous()
         var result: Bool = True
 
-        @parameter
         def vectorized_all[
             simd_width: Int
-        ](idx: Int) unified {mut result, read a} -> None:
+        ](idx: Int) {mut result, read a} -> None:
             result = result and builtin_bool.all(
                 (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
             )
@@ -4291,10 +4369,9 @@ struct NDArray[dtype: DType = DType.float64](
         var a = self.contiguous()
         var result: Bool = False
 
-        @parameter
         def vectorized_any[
             simd_width: Int
-        ](idx: Int) unified {mut result, read a} -> None:
+        ](idx: Int) {mut result, read a} -> None:
             result = result or builtin_bool.any(
                 (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
             )
@@ -4336,7 +4413,7 @@ struct NDArray[dtype: DType = DType.float64](
             The indices of the sorted NDArray.
         """
 
-        return numojo.sorting.argsort(self)
+        return sorting.argsort(self)
 
     def argsort(mut self, axis: Int) raises -> NDArray[DType.int]:
         """Sorts the NDArray and returns the sorted indices. See
@@ -4346,7 +4423,7 @@ struct NDArray[dtype: DType = DType.float64](
             The indices of the sorted NDArray.
         """
 
-        return numojo.sorting.argsort(self, axis=axis)
+        return sorting.argsort(self, axis=axis)
 
     def astype[target: DType](self) raises -> NDArray[target]:
         """Converts the type of the array.
@@ -4365,7 +4442,7 @@ struct NDArray[dtype: DType = DType.float64](
         """Limits the values in an array between `[a_min, a_max]`.
 
         If `a_min` is greater than `a_max`, the value is equal to `a_max`. See
-        `numojo.clip()` for more details.
+        `clip()` for more details.
 
         Args:
             a_min: The minimum value.
@@ -4375,7 +4452,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with the clipped values.
         """
 
-        return numojo.clip(self, a_min, a_max)
+        return clip(self, a_min, a_max)
 
     def compress(
         self, condition: NDArray[DType.bool], axis: Int
@@ -4402,7 +4479,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the condition contains no `True` values.
         """
 
-        return numojo.compress(condition=condition, a=self, axis=axis)
+        return compress(condition=condition, a=self, axis=axis)
 
     def compress(self, condition: NDArray[DType.bool]) raises -> Self:
         """Returns selected slices of an array along a given axis.
@@ -4425,7 +4502,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the condition contains no `True` values.
         """
 
-        return numojo.compress(condition=condition, a=self)
+        return compress(condition=condition, a=self)
 
     def contiguous(self) raises -> Self:
         """Returns a new C-contiguous array owning a copy of the data.
@@ -4513,7 +4590,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative product of all items.
         """
-        return numojo.math.cumprod[Self.dtype](self)
+        return numojo_math.cumprod[Self.dtype](self)
 
     def cumprod(self, axis: Int) raises -> NDArray[Self.dtype]:
         """Returns the cumulative product of the array along the given axis.
@@ -4524,7 +4601,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative product along the axis.
         """
-        return numojo.math.cumprod[Self.dtype](self.copy(), axis=axis)
+        return numojo_math.cumprod[Self.dtype](self.copy(), axis=axis)
 
     def cumsum(self) raises -> NDArray[Self.dtype]:
         """Returns the cumulative sum of all items of an array. The array is
@@ -4533,7 +4610,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative sum of all items.
         """
-        return numojo.math.cumsum[Self.dtype](self)
+        return numojo_math.cumsum[Self.dtype](self)
 
     def cumsum(self, axis: Int) raises -> NDArray[Self.dtype]:
         """Returns the cumulative sum of the array along the given axis.
@@ -4544,7 +4621,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative sum along the axis.
         """
-        return numojo.math.cumsum[Self.dtype](self.copy(), axis=axis)
+        return numojo_math.cumsum[Self.dtype](self.copy(), axis=axis)
 
     def diagonal(self, offset: Int = 0) raises -> Self:
         """Returns specific diagonals.
@@ -4561,7 +4638,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the array is not 2D.
             Error: If the offset is beyond the shape of the array.
         """
-        return numojo.linalg.diagonal(self, offset=offset)
+        return linalg.diagonal(self, offset=offset)
 
     def fill(mut self, val: Scalar[Self.dtype]):
         """Fills all items of the array with the given value.
@@ -4878,7 +4955,7 @@ struct NDArray[dtype: DType = DType.float64](
             The max value.
         """
 
-        return numojo.math.max(self)
+        return numojo_math.max(self)
 
     def max(self, axis: Int) raises -> Self:
         """Finds the max value of an array along the axis. The number of
@@ -4893,7 +4970,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with reduced number of dimensions.
         """
 
-        return numojo.math.max(self, axis=axis)
+        return numojo_math.max(self, axis=axis)
 
     def mean[
         returned_dtype: DType = DType.float64
@@ -4903,7 +4980,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The mean of the array.
         """
-        return numojo.statistics.mean[returned_dtype](self)
+        return statistics.mean[returned_dtype](self)
 
     def mean[
         returned_dtype: DType = DType.float64
@@ -4916,7 +4993,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An NDArray.
         """
-        return numojo.statistics.mean[returned_dtype](self, axis)
+        return statistics.mean[returned_dtype](self, axis)
 
     def median[
         returned_dtype: DType = DType.float64
@@ -4950,7 +5027,7 @@ struct NDArray[dtype: DType = DType.float64](
             The min value.
         """
 
-        return numojo.math.min(self)
+        return numojo_math.min(self)
 
     def min(self, axis: Int) raises -> Self:
         """Finds the min value of an array along the axis. The number of
@@ -4965,7 +5042,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with reduced number of dimensions.
         """
 
-        return numojo.math.min(self, axis=axis)
+        return numojo_math.min(self, axis=axis)
 
     def nditer(self) raises -> _NDIter[origin_of(self._buf.origin), Self.dtype]:
         """Returns an iterator yielding the array elements according to the
@@ -5050,7 +5127,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             A scalar.
         """
-        return numojo.math.prod(self)
+        return numojo_math.prod(self)
 
     def prod(self, axis: Int) raises -> Self:
         """Computes the product of array elements over a given axis.
@@ -5062,7 +5139,7 @@ struct NDArray[dtype: DType = DType.float64](
             An NDArray.
         """
 
-        return numojo.math.prod(self, axis=axis)
+        return numojo_math.prod(self, axis=axis)
 
     # TODO: make it inplace?
     def reshape(
@@ -5077,7 +5154,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of the same data with a new shape.
         """
-        var result = numojo.reshape(self, shape=shape, order=order)
+        var result = reshape(self, shape=shape, order=order)
         return result^
 
     def resize(mut self, shape: NDArrayShape) raises:
@@ -5156,7 +5233,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     def sort(mut self, axis: Int = -1, stable: Bool = False) raises:
         """Sorts the array in-place along the given axis using quick sort. The
-        default axis is -1. See `numojo.sorting.sort` for more information.
+        default axis is -1. See `sorting.sort` for more information.
 
         Args:
             axis: The axis along which the array is sorted. Defaults to -1.
@@ -5180,7 +5257,7 @@ struct NDArray[dtype: DType = DType.float64](
                     location="NDArray.sort(axis: Int)",
                 )
             )
-        numojo.sorting.sort_inplace(self, axis=normalized_axis, stable=stable)
+        sorting.sort_inplace(self, axis=normalized_axis, stable=stable)
 
     def std[
         returned_dtype: DType = DType.float64
@@ -5194,7 +5271,7 @@ struct NDArray[dtype: DType = DType.float64](
             ddof: The delta degree of freedom.
         """
 
-        return std[returned_dtype](self, ddof=ddof)
+        return stddev[returned_dtype](self, ddof=ddof)
 
     def std[
         returned_dtype: DType = DType.float64
@@ -5209,7 +5286,7 @@ struct NDArray[dtype: DType = DType.float64](
             ddof: The delta degree of freedom.
         """
 
-        return std[returned_dtype](self, axis=axis, ddof=ddof)
+        return stddev[returned_dtype](self, axis=axis, ddof=ddof)
 
     def sum(self) raises -> Scalar[Self.dtype]:
         """Returns the sum of all array elements.
@@ -5242,9 +5319,9 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The transposed array.
 
-        Defined in `numojo.routines.manipulation.transpose`.
+        Defined in `manipulation.transpose`.
         """
-        return numojo.routines.manipulation.transpose(self, axes)
+        return manipulation.transpose(self, axes)
 
     def T(self) raises -> Self:
         """Transposes the array when `axes` is not given.
@@ -5255,9 +5332,9 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The transposed array.
 
-        Defined in `numojo.routines.manipulation.transpose`.
+        Defined in `manipulation.transpose`.
         """
-        return numojo.routines.manipulation.transpose(self.copy())
+        return manipulation.transpose(self.copy())
 
     def tolist(self) -> List[Scalar[Self.dtype]]:
         """Converts the NDArray to a 1-D list in row-major (C) order.
@@ -5339,7 +5416,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The trace of the ndarray.
         """
-        return numojo.linalg.trace[Self.dtype](self, offset, axis1, axis2)
+        return linalg.trace[Self.dtype](self, offset, axis1, axis2)
 
     # TODO: Remove the underscore in the method name when view is supported.
     # def _transpose(self) raises -> Self:
@@ -5623,9 +5700,9 @@ struct _NDArrayIter[
             return result^
 
         else:  # 0-D array
-            var result: NDArray[Self.dtype] = numojo.creation._0darray[
-                Self.dtype
-            ](self._buf.ptr[self.offset + index])
+            var result: NDArray[Self.dtype] = creation._0darray[Self.dtype](
+                self._buf.ptr[self.offset + index]
+            )
             return result^
 
 

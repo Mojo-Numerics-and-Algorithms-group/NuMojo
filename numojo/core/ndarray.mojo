@@ -841,7 +841,9 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If `slice_list` is empty or contains invalid slices.
         """
         var n_slices: Int = len(slice_list)
-        var slices: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slice_list)
+        var slices: List[InternalSlice] = InternalSlice.adjust_list(
+            self.shape, slice_list
+        )
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slices.append(InternalSlice(0, self.shape[i], 1))
@@ -977,7 +979,9 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         # adjust slice values for user provided slices
-        var slices: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slice_list)
+        var slices: List[InternalSlice] = InternalSlice.adjust_list(
+            self.shape, slice_list
+        )
         if n_slices < self.ndim:
             for i in range(n_slices, self.ndim):
                 slices.append(InternalSlice(0, self.shape[i], 1))
@@ -2459,7 +2463,9 @@ struct NDArray[dtype: DType = DType.float64](
         var ndims: Int = 0
         var count: Int = 0
         var spec: List[Int] = List[Int]()
-        var slice_list: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slices)
+        var slice_list: List[InternalSlice] = InternalSlice.adjust_list(
+            self.shape, slices
+        )
         for i in range(n_slices):
             if (
                 slice_list[i].start >= self.shape[i]
@@ -2663,7 +2669,9 @@ struct NDArray[dtype: DType = DType.float64](
             val: The scalar value to write to every selected position.
         """
         var n_slices: Int = len(slices)
-        var slice_list: List[InternalSlice] = InternalSlice.adjust_list(self.shape, slices)
+        var slice_list: List[InternalSlice] = InternalSlice.adjust_list(
+            self.shape, slices
+        )
 
         for i in range(n_slices, self.ndim):
             slice_list.append(InternalSlice(0, self.shape[i], 1))

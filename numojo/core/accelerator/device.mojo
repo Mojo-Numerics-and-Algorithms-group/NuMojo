@@ -103,13 +103,13 @@ struct DeviceSpec(
             return 3
         return -1
 
-    def canonical(self) -> String:
+    def name(self) -> String:
         if self.backend == "cpu":
             return "cpu"
         return self.backend + ":" + String(self.id)
 
     def __str__(self) -> String:
-        return self.canonical()
+        return self.name()
 
     def __repr__(self) -> String:
         return self.__str__()
@@ -144,7 +144,7 @@ struct DeviceHandle[device: Device](Copyable, Movable, Writable):
                     category="value",
                     message=(
                         "Cannot create runtime handle for unavailable device: "
-                        + Self.device.canonical()
+                        + Self.device.device_name()
                     ),
                     location="DeviceHandle.__init__",
                 )
@@ -164,7 +164,7 @@ struct DeviceHandle[device: Device](Copyable, Movable, Writable):
         self.context = take.context^
 
     def __str__(self) -> String:
-        return "DeviceHandle(" + Self.device.canonical() + ", context=True)"
+        return "DeviceHandle(" + Self.device.device_name() + ", context=True)"
 
     def write_to[W: Writer](self, mut writer: W):
         writer.write(self.__str__())
@@ -494,13 +494,13 @@ struct Device(
         """
         return self.spec.backend_id()
 
-    def canonical(self) -> String:
+    def device_name(self) -> String:
         """Return device string.
 
         Returns:
             "cpu" for CPU devices and "<backend>:<id>" for GPU devices.
         """
-        return self.spec.canonical()
+        return self.spec.name()
 
     def same_backend(self, other: Self) -> Bool:
         """Check if two devices use the same execution backend."""

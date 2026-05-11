@@ -55,6 +55,7 @@ comptime __version__: String = "V0.9.0"
 # ===----------------------------------------------------------------------=== #
 
 from numojo.core.ndarray import NDArray
+from numojo.core.accelerator_ndarray import AcceleratorNDArray
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.indexing.item import Item

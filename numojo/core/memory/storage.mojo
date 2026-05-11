@@ -24,7 +24,7 @@ from std.sys.info import has_accelerator
 from std.memory import memcpy
 from std.gpu.host import DeviceBuffer, DeviceContext
 
-from numojo.core.accelerator import Device
+from numojo.core.accelerator import Device, DeviceHandle
 from numojo.core.accelerator.device import is_accelerator_available
 from numojo.core.memory.data_container import Ownership
 from numojo.core.error import NumojoError
@@ -70,6 +70,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     # Constructors and Destructor
     # ===----------------------------------------------------------------------===#
 
+    # TODO: Replace UnsafePointer with Optional[UnsafePointer] for ptr. 
     @always_inline
     def __init__(out self):
         """Create an empty managed container with size 0 and refcount 1."""
@@ -170,21 +171,25 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
 
     @always_inline
     def __init__(out self, *, copy: Self):
-        """Shallow-copy constructor.
+        """Deep-copy constructor.
 
-        Copies the pointer and refcount, then atomically increments the
-        reference count for managed containers.
+        Matches `DataContainer`: allocate owned storage and copy the data.
+        Use `share()` for a shallow shared handle.
 
         Args:
             copy: The source container.
         """
         self.size = copy.size
-        self.ptr = copy.ptr
-        self._refcount = copy._refcount
-        self.ownership = copy.ownership
-
-        if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
+        self.ownership = Ownership.Managed
+        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount[] = Atomic[DType.uint64](1)
+        if copy.size == 0:
+            self.ptr = UnsafePointer[
+                Scalar[Self.dtype], Self.origin
+            ].unsafe_dangling()
+        else:
+            self.ptr = alloc[Scalar[Self.dtype]](copy.size)
+            memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
     def __init__(out self, *, deinit take: Self):
@@ -212,6 +217,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         if self.ownership == Ownership.External:
             return
 
+        # I think this branch might be redundant, check it. 
         if not self.is_refcounted():
             return
 
@@ -235,6 +241,16 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
 
         Returns:
             A reference to `self.ptr`.
+        """
+        return self.ptr
+
+    @always_inline
+    def get_ptr(
+        ref self,
+    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+        """Return a reference to the raw data pointer.
+
+        This mirrors `DataContainer.get_ptr()`.
         """
         return self.ptr
 
@@ -392,7 +408,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             return 0
         return self._refcount[].load[ordering=Ordering.RELAXED]()
 
-    def share(mut self) raises -> HostStorage[Self.dtype]:
+    def share(self) raises -> HostStorage[Self.dtype]:
         """Create a new handle that shares this container's data and refcount.
 
         The reference count is atomically incremented so both the original
@@ -446,6 +462,9 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
     var buffer: DeviceBuffer[Self.dtype]
     """The GPU-side data buffer."""
 
+    var handle: DeviceHandle[Self.device]
+    """Runtime handle that owns the device context used for this storage."""
+
     var size: Int
     """Number of elements in the buffer."""
 
@@ -465,35 +484,44 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         comptime assert is_accelerator_available[
             Self.device
         ](), "NuMojo: No GPU accelerator available."
-        # TODO: Use a device-specific or cached DeviceContext instead of
-        # the default one, so the correct backend is selected.
-        self.buffer = DeviceContext().enqueue_create_buffer[Self.dtype](size)
+        self.handle = DeviceHandle[Self.device]()
+        var context = self.handle.device_context()
+        self.buffer = context.enqueue_create_buffer[Self.dtype](size)
         self.size = size
 
     def __init__(
         out self,
         buffer: DeviceBuffer[Self.dtype],
         size: Int,
-    ):
+    ) raises:
         """Wrap an existing `DeviceBuffer`.
 
         Args:
             buffer: An already-allocated device buffer.
             size: Number of elements accessible in `buffer`.
         """
+        var context = buffer.context()
+        self.handle = DeviceHandle[Self.device](context^)
         self.buffer = buffer
         self.size = size
 
     def __init__(out self, *, copy: Self):
-        """Shallow-copy constructor.
+        """Deep-copy constructor.
 
-        Copies the `DeviceBuffer` handle.  The GPU runtime determines
-        whether the underlying memory is shared or duplicated.
+        Allocates a new buffer on the same device context and copies all data.
+        Use `share()` for a shallow shared handle.
 
         Args:
             copy: The source storage.
         """
-        self.buffer = copy.buffer
+        self.handle = copy.handle.copy()
+        try:
+            var context = self.handle.device_context()
+            self.buffer = context.enqueue_create_buffer[Self.dtype](copy.size)
+            copy.buffer.enqueue_copy_to(self.buffer)
+            context.synchronize()
+        except e:
+            abort("DeviceStorage: deep copy failed: " + String(e))
         self.size = copy.size
 
     def __init__(out self, *, deinit take: Self):
@@ -504,6 +532,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         Args:
             take: The source storage (consumed).
         """
+        self.handle = take.handle^
         self.buffer = take.buffer^
         self.size = take.size
 
@@ -567,6 +596,11 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
             An `UnsafePointer` to the first element on the device.
         """
         return self.buffer.unsafe_ptr()
+
+    def share(self) raises -> DeviceStorage[Self.dtype, Self.device]:
+        """Create a shallow handle sharing this device buffer."""
+        var shared_buffer = self.buffer.copy()
+        return DeviceStorage[Self.dtype, Self.device](shared_buffer^, self.size)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -690,12 +724,29 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.device_storage = None
 
     @always_inline
-    def __init__(out self, *, copy: Self):
-        """Shallow-copy constructor.
+    def __init__(
+        out self, var host_storage: HostStorage[Self.dtype]
+    ) where Self.device.type == "cpu":
+        """Create a CPU container from an existing `HostStorage` handle."""
+        self.size = host_storage.size
+        self.host_storage = host_storage^
+        self.device_storage = None
 
-        Shares the underlying storage.  For CPU containers this increments
-        the `HostStorage` atomic refcount; for GPU containers this copies
-        the `DeviceStorage` handle (automatic reference counting).
+    @always_inline
+    def __init__(
+        out self, var device_storage: DeviceStorage[Self.dtype, Self.device]
+    ) where Self.device.type == "gpu":
+        """Create a GPU container from an existing `DeviceStorage` handle."""
+        self.size = device_storage.size
+        self.host_storage = None
+        self.device_storage = device_storage^
+
+    @always_inline
+    def __init__(out self, *, copy: Self):
+        """Deep-copy constructor.
+
+        Copies the active backend container. Use `share()` for a shallow
+        shared handle.
 
         Args:
             copy: The source container.
@@ -873,9 +924,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     # Reference Counting and Sharing
     # ===----------------------------------------------------------------------===#
 
-    def share(
-        mut self,
-    ) raises -> AcceleratorDataContainer[Self.dtype, Self.device]:
+    def share(self) raises -> AcceleratorDataContainer[Self.dtype, Self.device]:
         """Create a new handle that shares this container's storage.
 
         For CPU containers the `HostStorage` refcount is atomically
@@ -888,20 +937,14 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Raises:
             Error: If the active storage is missing or cannot be shared.
         """
-        var result = AcceleratorDataContainer[Self.dtype, Self.device]()
-        result.size = self.size
-
         comptime if Self.device.type == "cpu":
             var shared = self.host_storage.unsafe_value().share()
-            result.host_storage = shared^
-            result.device_storage = None
+            return AcceleratorDataContainer[Self.dtype, Self.device](shared^)
         elif Self.device.type == "gpu":
-            result.device_storage = self.device_storage.copy()
-            result.host_storage = None
+            var shared = self.device_storage.unsafe_value().share()
+            return AcceleratorDataContainer[Self.dtype, Self.device](shared^)
         else:
             raise Error("Unsupported device type for sharing")
-
-        return result^
 
     # ===----------------------------------------------------------------------===#
     # Device-Specific Access

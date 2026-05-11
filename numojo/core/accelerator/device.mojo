@@ -124,26 +124,6 @@ struct DeviceSpec(
         return not self.__eq__(other)
 
 
-struct CPUDeviceHandle(Copyable, Movable, Writable):
-    """Runtime-facing CPU handle.
-
-    CPU execution does not need a `DeviceContext`, but keeping an explicit
-    handle type lets storage and dispatch code treat CPU and GPU as concrete
-    runtime resources rather than overloading `Device`.
-    """
-
-    var spec: DeviceSpec
-
-    def __init__(out self):
-        self.spec = DeviceSpec()
-
-    def __str__(self) -> String:
-        return "CPUDeviceHandle(cpu)"
-
-    def write_to[W: Writer](self, mut writer: W):
-        writer.write(self.__str__())
-
-
 struct DeviceHandle[device: Device](Copyable, Movable, Writable):
     """GPU handle for a compile-time `Device`.
 
@@ -157,7 +137,7 @@ struct DeviceHandle[device: Device](Copyable, Movable, Writable):
     def __init__(out self) raises:
         comptime assert (
             Self._requires_gpu
-        ), "DeviceHandle is only for GPU devices. Use CPUDeviceHandle for CPU."
+        ), "DeviceHandle is only for GPU devices."
         if not Self.device.is_available():
             raise Error(
                 NumojoError(
@@ -170,6 +150,12 @@ struct DeviceHandle[device: Device](Copyable, Movable, Writable):
                 )
             )
         self.context = DeviceContext(Self.device.id)
+
+    def __init__(out self, var context: DeviceContext):
+        comptime assert (
+            Self._requires_gpu
+        ), "DeviceHandle is only for GPU devices."
+        self.context = context^
 
     def __init__(out self, *, copy: Self):
         self.context = copy.context.copy()

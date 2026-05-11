@@ -722,9 +722,7 @@ def empty[
 
 def empty[
     dtype: DType = DType.float64, device: Device = Device.CPU
-](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[
-    dtype, device
-]:
+](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[dtype, device]:
     """Create an uninitialized accelerator array on `device`."""
     return empty[dtype, device](NDArrayShape(shape), order=order)
 
@@ -778,9 +776,7 @@ def zeros[
 
 def zeros[
     dtype: DType = DType.float64, device: Device = Device.CPU
-](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[
-    dtype, device
-]:
+](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[dtype, device]:
     """Create an accelerator array filled with zeros."""
     return zeros[dtype, device](NDArrayShape(shape), order=order)
 
@@ -805,36 +801,34 @@ def ones[
 
 def ones[
     dtype: DType = DType.float64, device: Device = Device.CPU
-](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[
-    dtype, device
-]:
+](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[dtype, device]:
     """Create an accelerator array filled with ones."""
     return ones[dtype, device](NDArrayShape(shape), order=order)
 
 
 def empty_like[
     dtype: DType, device: Device
-](a: AcceleratorNDArray[dtype, device], order: String = "C") raises -> AcceleratorNDArray[
-    dtype, device
-]:
+](
+    a: AcceleratorNDArray[dtype, device], order: String = "C"
+) raises -> AcceleratorNDArray[dtype, device]:
     """Create an uninitialized accelerator array with `a`'s shape and device."""
     return empty[dtype, device](a.shape, order=order)
 
 
 def zeros_like[
     dtype: DType, device: Device
-](a: AcceleratorNDArray[dtype, device], order: String = "C") raises -> AcceleratorNDArray[
-    dtype, device
-]:
+](
+    a: AcceleratorNDArray[dtype, device], order: String = "C"
+) raises -> AcceleratorNDArray[dtype, device]:
     """Create a zeros accelerator array with `a`'s shape and device."""
     return zeros[dtype, device](a.shape, order=order)
 
 
 def ones_like[
     dtype: DType, device: Device
-](a: AcceleratorNDArray[dtype, device], order: String = "C") raises -> AcceleratorNDArray[
-    dtype, device
-]:
+](
+    a: AcceleratorNDArray[dtype, device], order: String = "C"
+) raises -> AcceleratorNDArray[dtype, device]:
     """Create a ones accelerator array with `a`'s shape and device."""
     return ones[dtype, device](a.shape, order=order)
 

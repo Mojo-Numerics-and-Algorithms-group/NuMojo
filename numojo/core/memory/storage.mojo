@@ -70,7 +70,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     # Constructors and Destructor
     # ===----------------------------------------------------------------------===#
 
-    # TODO: Replace UnsafePointer with Optional[UnsafePointer] for ptr. 
+    # TODO: Replace UnsafePointer with Optional[UnsafePointer] for ptr.
     @always_inline
     def __init__(out self):
         """Create an empty managed container with size 0 and refcount 1."""
@@ -217,7 +217,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         if self.ownership == Ownership.External:
             return
 
-        # I think this branch might be redundant, check it. 
+        # I think this branch might be redundant, check it.
         if not self.is_refcounted():
             return
 

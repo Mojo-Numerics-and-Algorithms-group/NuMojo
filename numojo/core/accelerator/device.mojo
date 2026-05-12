@@ -15,6 +15,7 @@ from std.sys.info import (
     has_amd_gpu_accelerator,
     has_apple_gpu_accelerator,
 )
+from std.gpu.host import DeviceContext
 
 from numojo.core.error import NumojoError
 
@@ -24,13 +25,170 @@ comptime rocm = Device.ROCM
 comptime mps = Device.MPS
 
 
+struct DeviceSpec(
+    Equatable,
+    ImplicitlyCopyable,
+    Movable,
+    Writable,
+):
+    """Device identity.
+
+    `DeviceSpec` only describes where data should live: CPU or a GPU backend plus device index.
+    """
+
+    var backend: String
+    """Canonical backend: "cpu", "cuda", "rocm", or "mps"."""
+    var id: Int
+    """Zero-based device index. CPU always uses id 0."""
+
+    def __init__(out self):
+        self.backend = "cpu"
+        self.id = 0
+
+    def __init__(out self, backend: String, id: Int) raises:
+        if backend == "cpu":
+            if id != 0:
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message="CPU device id must be 0.",
+                        location="DeviceSpec.__init__",
+                    )
+                )
+            self.backend = "cpu"
+            self.id = 0
+            return
+
+        if backend != "cuda" and backend != "rocm" and backend != "mps":
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Unsupported device backend: " + backend,
+                    location="DeviceSpec.__init__",
+                )
+            )
+
+        if id < 0:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="GPU device id must be non-negative.",
+                    location="DeviceSpec.__init__",
+                )
+            )
+
+        self.backend = backend
+        self.id = id
+
+    @staticmethod
+    def _unchecked_init(out spec: DeviceSpec, backend: String, id: Int):
+        spec = DeviceSpec()
+        spec.backend = backend
+        spec.id = id
+
+    def is_cpu(self) -> Bool:
+        return self.backend == "cpu"
+
+    def is_gpu(self) -> Bool:
+        return not self.is_cpu()
+
+    def backend_id(self) -> Int:
+        if self.backend == "cpu":
+            return 0
+        if self.backend == "cuda":
+            return 1
+        if self.backend == "rocm":
+            return 2
+        if self.backend == "mps":
+            return 3
+        return -1
+
+    def name(self) -> String:
+        if self.backend == "cpu":
+            return "cpu"
+        return self.backend + ":" + String(self.id)
+
+    def __str__(self) -> String:
+        return self.name()
+
+    def __repr__(self) -> String:
+        return self.__str__()
+
+    def write_to[W: Writer](self, mut writer: W):
+        writer.write(self.__str__())
+
+    def __eq__(self, other: Self) -> Bool:
+        return self.backend == other.backend and self.id == other.id
+
+    def __ne__(self, other: Self) -> Bool:
+        return not self.__eq__(other)
+
+
+struct DeviceHandle[device: Device](Copyable, Movable, Writable):
+    """GPU handle for a compile-time `Device`.
+
+    This handle owns the runtime `DeviceContext` used by storage allocation and kernels.
+    """
+
+    comptime _requires_gpu = Self.device.type == "gpu"
+
+    var context: DeviceContext
+
+    def __init__(out self) raises:
+        comptime assert (
+            Self._requires_gpu
+        ), "DeviceHandle is only for GPU devices."
+        if not Self.device.is_available():
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Cannot create runtime handle for unavailable device: "
+                        + Self.device.device_name()
+                    ),
+                    location="DeviceHandle.__init__",
+                )
+            )
+        self.context = DeviceContext(Self.device.id)
+
+    def __init__(out self, var context: DeviceContext):
+        comptime assert (
+            Self._requires_gpu
+        ), "DeviceHandle is only for GPU devices."
+        self.context = context^
+
+    def __init__(out self, *, copy: Self):
+        self.context = copy.context.copy()
+
+    def __init__(out self, *, deinit take: Self):
+        self.context = take.context^
+
+    def __str__(self) -> String:
+        return "DeviceHandle(" + Self.device.device_name() + ", context=True)"
+
+    def write_to[W: Writer](self, mut writer: W):
+        writer.write(self.__str__())
+
+    def is_cpu(self) -> Bool:
+        return False
+
+    def is_gpu(self) -> Bool:
+        return True
+
+    def device_context(self) -> DeviceContext:
+        return self.context.copy()
+
+    def synchronize(self) raises:
+        self.context.synchronize()
+
+
 struct Device(
     Equatable,
     ImplicitlyCopyable,
     Movable,
     Writable,
 ):
-    """Represents an execution device for array and matrix operations.
+    """Represents an execution device for array operations.
 
     A `Device` identifies where computation should run, analogous to
     `torch.device` in PyTorch. Each device has a type ("cpu" or "gpu"),
@@ -49,6 +207,9 @@ struct Device(
         var cpu = Device("cpu")
         ```
     """
+
+    var spec: DeviceSpec
+    """Device identity."""
 
     var type: String
     """Device type: "cpu" or "gpu"."""
@@ -76,6 +237,7 @@ struct Device(
 
     def __init__(out self):
         """Initialize a default CPU device."""
+        self.spec = DeviceSpec()
         self.type = "cpu"
         self.name = ""
         self.id = 0
@@ -92,16 +254,12 @@ struct Device(
         Raises:
             Error on invalid device string format.
         """
-        var parsed = Device.parse_device_string(text)
-        self.type = parsed.type
-        self.name = parsed.name
-        self.id = parsed.id
+        self = Device.parse_device_string(text)
 
-    def __init__(out self, type: String, name: String, id: Int):
+    def __init__(out self, type: String, name: String, id: Int) raises:
         """Initialize a device with explicit type, name, and index.
 
-        Validates the arguments and falls back to CPU if the requested
-        GPU backend is not available on the current system.
+        Validates the arguments and raises on invalid or unavailable devices.
 
         Args:
             type: Device type, must be "cpu" or "gpu".
@@ -109,48 +267,99 @@ struct Device(
             id: Zero-based device index (must be 0 for CPU, >= 0 for GPU).
         """
         if type != "cpu" and type != "gpu":
-            print("Invalid device type '" + type + "'. Defaulting to CPU.")
-            self = Device._cpu_fallback()
-            return
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Invalid device type: " + type,
+                    location="Device.__init__",
+                )
+            )
 
         if type == "gpu" and name == "":
-            self = Device._cpu_fallback()
-            return
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="GPU device backend name cannot be empty.",
+                    location="Device.__init__",
+                )
+            )
 
         if type == "cpu":
             if name != "":
-                print("CPU device name must be empty. Defaulting to CPU.")
-                self = Device._cpu_fallback()
-                return
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message="CPU device name must be empty.",
+                        location="Device.__init__",
+                    )
+                )
             if id != 0:
-                print("CPU device id must be 0. Defaulting to CPU.")
-                self = Device._cpu_fallback()
-                return
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message="CPU device id must be 0.",
+                        location="Device.__init__",
+                    )
+                )
+            self.spec = DeviceSpec("cpu", 0)
             self.type = "cpu"
             self.name = ""
             self.id = 0
             return
 
         if name != "cuda" and name != "rocm" and name != "mps":
-            print("Invalid GPU backend '" + name + "'. Defaulting to CPU.")
-            self = Device._cpu_fallback()
-            return
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Invalid GPU backend: " + name,
+                    location="Device.__init__",
+                )
+            )
 
         if id < 0:
-            print("GPU device id must be non-negative. Defaulting to CPU.")
-            self = Device._cpu_fallback()
-            return
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="GPU device id must be non-negative.",
+                    location="Device.__init__",
+                )
+            )
 
         if name == "cuda" and not has_nvidia_gpu_accelerator():
-            self = Device._cpu_fallback()
-            return
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "CUDA device requested but no CUDA accelerator is"
+                        " available."
+                    ),
+                    location="Device.__init__",
+                )
+            )
         if name == "rocm" and not has_amd_gpu_accelerator():
-            self = Device._cpu_fallback()
-            return
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "ROCm device requested but no ROCm accelerator is"
+                        " available."
+                    ),
+                    location="Device.__init__",
+                )
+            )
         if name == "mps" and not has_apple_gpu_accelerator():
-            self = Device._cpu_fallback()
-            return
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "MPS device requested but no MPS accelerator is"
+                        " available."
+                    ),
+                    location="Device.__init__",
+                )
+            )
 
+        self.spec = DeviceSpec(name, id)
         self.type = type
         self.name = name
         self.id = id
@@ -161,6 +370,9 @@ struct Device(
     ):
         """Create a device without any validation. For internal/comptime use."""
         device = Device()
+        device.spec = DeviceSpec._unchecked_init(
+            backend="cpu" if type == "cpu" else name, id=id
+        )
         device.type = type
         device.name = name
         device.id = id
@@ -169,6 +381,13 @@ struct Device(
     def _cpu_fallback() -> Device:
         """Return a default CPU device."""
         return Device()
+
+    @staticmethod
+    def from_spec(spec: DeviceSpec) raises -> Device:
+        """Validate and construct a `Device` from a canonical spec."""
+        if spec.is_cpu():
+            return Device.CPU
+        return Device(type="gpu", name=spec.backend, id=spec.id)
 
     # ===------------------------------------------------------------------=== #
     # Trait implementations
@@ -267,6 +486,30 @@ struct Device(
         """
         return self.type == "gpu"
 
+    def backend_id(self) -> Int:
+        """Return a backend identifier.
+
+        Returns:
+            0 for CPU, 1 for CUDA, 2 for ROCm, 3 for MPS, and -1 for unknown.
+        """
+        return self.spec.backend_id()
+
+    def device_name(self) -> String:
+        """Return device string.
+
+        Returns:
+            "cpu" for CPU devices and "<backend>:<id>" for GPU devices.
+        """
+        return self.spec.name()
+
+    def same_backend(self, other: Self) -> Bool:
+        """Check if two devices use the same execution backend."""
+        return self.spec.backend == other.spec.backend
+
+    def is_default_index(self) -> Bool:
+        """Check if this device uses index 0."""
+        return self.id == 0
+
     def is_available(self) -> Bool:
         """Check if this device is available on the current system.
 
@@ -289,7 +532,7 @@ struct Device(
     # ===------------------------------------------------------------------=== #
 
     @staticmethod
-    def default_device() -> Device:
+    def default_device() raises -> Device:
         """Return the best available device: GPU if present, otherwise CPU.
 
         Returns:
@@ -377,13 +620,16 @@ struct Device(
             text: The device string to parse.
 
         Returns:
-            The parsed `Device`. Falls back to `Device.CPU` for
-            unrecognized or invalid strings.
+            The parsed and validated `Device`.
 
         Raises:
-            Error when "gpu" is specified but no GPU backend is available.
+            Error for invalid strings, unavailable GPU backends, or invalid
+            device indices.
         """
-        if text == "cpu" or text.startswith("cpu:"):
+        if text == "cpu":
+            return Device.CPU
+
+        if text == "cpu:0":
             return Device.CPU
 
         var backend: String = ""
@@ -401,13 +647,25 @@ struct Device(
                 id_str += ch
 
         if backend == "":
-            return Device.CPU
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Device string cannot be empty.",
+                    location="Device.parse_device_string",
+                )
+            )
 
         if backend == "gpu":
             backend = Device.available_gpu()
 
         if seen_colon and id_str == "":
-            return Device.CPU
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Device index is missing after ':'.",
+                    location="Device.parse_device_string",
+                )
+            )
 
         if id_str != "":
             var sign: Int = 1
@@ -419,19 +677,43 @@ struct Device(
                     sign = -1
                     continue
                 if Int(b) < ord("0") or Int(b) > ord("9"):
-                    return Device.CPU
+                    raise Error(
+                        NumojoError(
+                            category="value",
+                            message="Device index must be an integer.",
+                            location="Device.parse_device_string",
+                        )
+                    )
                 has_digit = True
                 id = id * 10 + (Int(b) - ord("0"))
             if not has_digit:
-                return Device.CPU
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message="Device index must contain at least one digit.",
+                        location="Device.parse_device_string",
+                    )
+                )
             id = id * sign
             if id < 0:
-                return Device.CPU
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message="Device index must be non-negative.",
+                        location="Device.parse_device_string",
+                    )
+                )
 
         if backend == "cuda" or backend == "rocm" or backend == "mps":
             return Device(type="gpu", name=backend, id=id)
 
-        return Device.CPU
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Unsupported device string: " + text,
+                location="Device.parse_device_string",
+            )
+        )
 
 
 # ===----------------------------------------------------------------------=== #

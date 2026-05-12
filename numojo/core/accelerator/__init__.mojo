@@ -10,4 +10,12 @@
 Accelerator (GPU) support namespace for NuMojo.
 """
 
-from .device import Device, cpu, cuda, mps, rocm
+from .device import (
+    Device,
+    DeviceHandle,
+    DeviceSpec,
+    cpu,
+    cuda,
+    mps,
+    rocm,
+)

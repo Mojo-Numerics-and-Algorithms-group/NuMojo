@@ -34,6 +34,7 @@ import numojo as nm
 from numojo.core.indexing.item import Item
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
+from numojo.core.accelerator_ndarray import AcceleratorNDArray
 from numojo.core.layout import NDArrayShape
 from numojo.core.complex.complex_simd import (
     ComplexSIMD,

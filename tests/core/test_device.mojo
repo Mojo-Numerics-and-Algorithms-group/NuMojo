@@ -1,6 +1,15 @@
-from numojo.core.accelerator.device import Device
+from numojo.core.accelerator.device import (
+    Device,
+    DeviceHandle,
+    DeviceSpec,
+)
 from std.testing.testing import assert_true, assert_equal
 from std.testing import TestSuite
+from std.sys.info import (
+    has_amd_gpu_accelerator,
+    has_apple_gpu_accelerator,
+    has_nvidia_gpu_accelerator,
+)
 
 
 def test_default_init() raises:
@@ -45,41 +54,58 @@ def test_cpu_explicit_init() raises:
     assert_equal(d.id, 0, "explicit cpu init id")
 
 
-def test_invalid_type_falls_back_to_cpu() raises:
-    var d = Device(type="tpu", name="", id=0)
-    assert_equal(d.type, "cpu", "invalid type fallback type")
-    assert_equal(d.name, "", "invalid type fallback name")
-    assert_equal(d.id, 0, "invalid type fallback id")
+def test_invalid_type_raises() raises:
+    var raised = False
+    try:
+        _ = Device(type="tpu", name="", id=0)
+    except e:
+        raised = True
+    assert_true(raised, "invalid type should raise")
 
 
-def test_gpu_empty_name_falls_back_to_cpu() raises:
-    var d = Device(type="gpu", name="", id=0)
-    assert_equal(d.type, "cpu", "gpu empty name fallback type")
-    assert_equal(d.name, "", "gpu empty name fallback name")
+def test_gpu_empty_name_raises() raises:
+    var raised = False
+    try:
+        _ = Device(type="gpu", name="", id=0)
+    except e:
+        raised = True
+    assert_true(raised, "gpu empty name should raise")
 
 
-def test_cpu_with_nonzero_id_falls_back() raises:
-    var d = Device(type="cpu", name="", id=5)
-    assert_equal(d.type, "cpu", "cpu nonzero id fallback type")
-    assert_equal(d.id, 0, "cpu nonzero id fallback id")
+def test_cpu_with_nonzero_id_raises() raises:
+    var raised = False
+    try:
+        _ = Device(type="cpu", name="", id=5)
+    except e:
+        raised = True
+    assert_true(raised, "cpu nonzero id should raise")
 
 
-def test_cpu_with_name_falls_back() raises:
-    var d = Device(type="cpu", name="something", id=0)
-    assert_equal(d.type, "cpu", "cpu with name fallback type")
-    assert_equal(d.name, "", "cpu with name fallback name")
+def test_cpu_with_name_raises() raises:
+    var raised = False
+    try:
+        _ = Device(type="cpu", name="something", id=0)
+    except e:
+        raised = True
+    assert_true(raised, "cpu with name should raise")
 
 
-def test_invalid_gpu_backend_falls_back() raises:
-    var d = Device(type="gpu", name="vulkan", id=0)
-    assert_equal(d.type, "cpu", "invalid gpu backend fallback type")
-    assert_equal(d.name, "", "invalid gpu backend fallback name")
+def test_invalid_gpu_backend_raises() raises:
+    var raised = False
+    try:
+        _ = Device(type="gpu", name="vulkan", id=0)
+    except e:
+        raised = True
+    assert_true(raised, "invalid gpu backend should raise")
 
 
-def test_negative_gpu_id_falls_back() raises:
-    var d = Device(type="gpu", name="cuda", id=-1)
-    assert_equal(d.type, "cpu", "negative gpu id fallback type")
-    assert_equal(d.name, "", "negative gpu id fallback name")
+def test_negative_gpu_id_raises() raises:
+    var raised = False
+    try:
+        _ = Device(type="gpu", name="cuda", id=-1)
+    except e:
+        raised = True
+    assert_true(raised, "negative gpu id should raise")
 
 
 def test_parse_cpu_string() raises:
@@ -94,39 +120,59 @@ def test_parse_cpu_string_variant() raises:
     assert_equal(d.type, "cpu", "parse 'cpu:0' type")
 
 
-def test_parse_empty_falls_back() raises:
-    var d = Device.parse_device_string("")
-    assert_equal(d.type, "cpu", "parse empty string type")
+def test_parse_empty_raises() raises:
+    var raised = False
+    try:
+        _ = Device.parse_device_string("")
+    except e:
+        raised = True
+    assert_true(raised, "parse empty string should raise")
 
 
-def test_parse_garbage_falls_back() raises:
-    var d = Device.parse_device_string("foobar")
-    assert_equal(d.type, "cpu", "parse garbage type")
-    assert_equal(d.name, "", "parse garbage name")
+def test_parse_garbage_raises() raises:
+    var raised = False
+    try:
+        _ = Device.parse_device_string("foobar")
+    except e:
+        raised = True
+    assert_true(raised, "parse garbage should raise")
 
 
-def test_parse_colon_no_id_falls_back() raises:
-    var d = Device.parse_device_string("cuda:")
-    assert_equal(d.type, "cpu", "parse 'cuda:' fallback type")
+def test_parse_colon_no_id_raises() raises:
+    var raised = False
+    try:
+        _ = Device.parse_device_string("cuda:")
+    except e:
+        raised = True
+    assert_true(raised, "parse 'cuda:' should raise")
 
 
-def test_parse_negative_id_falls_back() raises:
-    var d = Device.parse_device_string("cuda:-1")
-    assert_equal(d.type, "cpu", "parse negative id fallback type")
+def test_parse_negative_id_raises() raises:
+    var raised = False
+    try:
+        _ = Device.parse_device_string("cuda:-1")
+    except e:
+        raised = True
+    assert_true(raised, "parse negative id should raise")
 
 
-def test_parse_non_numeric_id_falls_back() raises:
-    var d = Device.parse_device_string("cuda:abc")
-    assert_equal(d.type, "cpu", "parse non-numeric id fallback type")
+def test_parse_non_numeric_id_raises() raises:
+    var raised = False
+    try:
+        _ = Device.parse_device_string("cuda:abc")
+    except e:
+        raised = True
+    assert_true(raised, "parse non-numeric id should raise")
 
 
 def test_parse_string_containing_cpu_not_matched() raises:
     """Ensure that strings like 'mycpu' or 'notcpu' are not matched as CPU."""
-    var d = Device.parse_device_string("mycpu")
-    assert_equal(d.type, "cpu", "parse 'mycpu' fallback type")
-    assert_equal(d.name, "", "parse 'mycpu' fallback name")
-    # 'mycpu' is not a valid backend, so it should fall back to CPU
-    # but importantly, it should NOT be matched by the "cpu" in text check
+    var raised = False
+    try:
+        _ = Device.parse_device_string("mycpu")
+    except e:
+        raised = True
+    assert_true(raised, "parse 'mycpu' should raise")
 
 
 def test_default_init_is_cpu() raises:
@@ -142,6 +188,8 @@ def test_unchecked_init() raises:
     assert_equal(d.type, "gpu", "_unchecked_init type")
     assert_equal(d.name, "cuda", "_unchecked_init name")
     assert_equal(d.id, 3, "_unchecked_init id")
+    assert_equal(d.spec.backend, "cuda", "_unchecked_init spec backend")
+    assert_equal(d.spec.id, 3, "_unchecked_init spec id")
 
 
 def test_unchecked_init_arbitrary() raises:
@@ -245,6 +293,39 @@ def test_default_device_is_valid_type() raises:
 def test_available_devices_contains_cpu() raises:
     var listing = Device.available_devices()
     assert_true("cpu" in listing, "available_devices contains cpu")
+
+
+def test_device_spec_cpu() raises:
+    var spec = DeviceSpec("cpu", 0)
+    assert_true(spec.is_cpu(), "cpu spec is_cpu")
+    assert_equal(spec.name(), "cpu", "cpu spec name")
+    assert_equal(spec.backend_id(), 0, "cpu spec backend id")
+
+
+def test_device_spec_gpu_identity() raises:
+    var spec = DeviceSpec._unchecked_init(backend="cuda", id=2)
+    assert_true(spec.is_gpu(), "cuda spec is_gpu")
+    assert_equal(spec.name(), "cuda:2", "cuda spec name")
+    assert_equal(spec.backend_id(), 1, "cuda spec backend id")
+
+
+def test_gpu_device_handle_when_available() raises:
+    comptime if has_nvidia_gpu_accelerator():
+        var handle = DeviceHandle[Device.CUDA]()
+        assert_true(handle.is_gpu(), "cuda handle is_gpu")
+        assert_equal(
+            String(handle),
+            "DeviceHandle(cuda:0, context=True)",
+            "cuda handle string",
+        )
+    elif has_amd_gpu_accelerator():
+        var handle = DeviceHandle[Device.ROCM]()
+        assert_true(handle.is_gpu(), "rocm handle is_gpu")
+    elif has_apple_gpu_accelerator():
+        var handle = DeviceHandle[Device.MPS]()
+        assert_true(handle.is_gpu(), "mps handle is_gpu")
+    else:
+        assert_true(True, "no gpu available; gpu handle test skipped")
 
 
 def main() raises:

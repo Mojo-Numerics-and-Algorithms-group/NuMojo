@@ -14,6 +14,7 @@ Fundamental types and utilities for NuMojo: arrays, matrices, memory layouts, da
 """
 
 from .ndarray import NDArray
+from .accelerator_ndarray import AcceleratorNDArray
 
 from .type_aliases import (
     Shape,

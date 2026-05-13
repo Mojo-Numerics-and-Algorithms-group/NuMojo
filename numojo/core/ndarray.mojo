@@ -389,8 +389,6 @@ struct NDArray[dtype: DType = DType.float64](
     @always_inline("nodebug")
     def __del__(deinit self):
         """Destroys all elements and frees memory."""
-        # if self.flags.OWNDATA:
-        #     self._buf.ptr.free()
         _ = self._buf^
 
     # ===-------------------------------------------------------------------===#
@@ -622,10 +620,12 @@ struct NDArray[dtype: DType = DType.float64](
             ```mojo
             import numojo as nm
             from numojo.prelude import *
+
             var a = nm.arange(0, 12, 1).reshape(Shape(3, 4))
             print(a.shape)        # (3,4)
             print(a[1].shape)     # (4,)  -- 1-D slice
             print(a[-1].shape)    # (4,)  -- negative index
+
             var b = nm.arange(6).reshape(nm.Shape(6))
             print(b[2])           # 0-D array (scalar wrapper)
             ```
@@ -684,6 +684,7 @@ struct NDArray[dtype: DType = DType.float64](
         else:
             self._copy_first_axis_slice(self, norm, result)
             return result^
+
 
     # perhaps move these to a utility module
     def _copy_first_axis_slice(
@@ -840,6 +841,7 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If `slice_list` is empty or contains invalid slices.
         """
+        var buf = self._buf.share()
         var n_slices: Int = len(slice_list)
         var slices: List[InternalSlice] = InternalSlice.adjust_list(
             self.shape, slice_list

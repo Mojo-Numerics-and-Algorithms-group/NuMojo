@@ -4,6 +4,7 @@ from std.testing.testing import assert_equal, assert_true
 import numojo as nm
 from numojo.prelude import *
 
+
 def test_getitem_2d_mask_on_3d_array() raises:
     """2-D mask on 3-D array selects sub-arrays of shape (shape[2],)."""
     # a shape (2, 3, 4):  a[i,j,k] = i*12 + j*4 + k
@@ -97,7 +98,6 @@ def test_getitem_2d_mask_on_4d_array() raises:
     assert_equal(Int(result.item(1, 2, 2)), 35)
 
 
-
 def test_getitem_exact_shape_mask_regression() raises:
     """CASE 1 still works: exact shape mask: flattened 1-D result."""
     var a = nm.arange[nm.i32](0, 6)
@@ -176,7 +176,7 @@ def test_setitem_ndarray_2d_mask_single_subarray() raises:
     for k in range(4):
         assert_equal(Int(a.item(0, 1, k)), 10 + k)
         assert_equal(Int(a.item(1, 2, k)), 10 + k)
-    
+
     assert_equal(Int(a.item(0, 0, 0)), 0)
     assert_equal(Int(a.item(1, 0, 0)), 0)
 
@@ -199,7 +199,7 @@ def test_setitem_ndarray_2d_mask_per_index_val() raises:
     for k in range(4):
         assert_equal(Int(a.item(0, 0, k)), 10 + k)
         assert_equal(Int(a.item(1, 2, k)), 20 + k)
-    
+
     assert_equal(Int(a.item(0, 1, 0)), 0)
     assert_equal(Int(a.item(1, 0, 0)), 0)
 

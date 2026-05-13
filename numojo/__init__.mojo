@@ -58,6 +58,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.accelerator_ndarray import AcceleratorNDArray
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.layout import newaxis
 from numojo.core.indexing.item import Item
 from numojo.core.indexing import IndexMethods
 from numojo.core.matrix import Matrix

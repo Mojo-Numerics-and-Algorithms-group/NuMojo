@@ -35,6 +35,7 @@ from .layout import (
     NDArrayShape,
     NDArrayStrides,
     Flags,
+    newaxis
 )
 
 from .dtype import (

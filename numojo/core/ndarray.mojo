@@ -694,6 +694,7 @@ struct NDArray[dtype: DType = DType.float64](
             self._copy_first_axis_slice(self, norm, result)
             return result^
 
+
     # perhaps move these to a utility module
     def _copy_first_axis_slice(
         self,

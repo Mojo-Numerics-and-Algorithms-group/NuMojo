@@ -4,25 +4,6 @@ from std.testing.testing import assert_equal, assert_true
 import numojo as nm
 from numojo.prelude import *
 
-
-# Tests for Step 5 and Step 6:
-#
-# Step 5 — __getitem__(mask: NDArray[DType.bool]):
-#   Added CASE 3: k-D mask (1 < k < ndim) whose shape matches self.shape[:k].
-#   Result shape: (true_count, *self.shape[k:])
-#
-# Step 6 — __setitem__(mask, value/val):
-#   Both scalar and NDArray overloads now support the same three cases as
-#   the getter: exact shape, 1-D leading, k-D leading.
-#
-# Existing CASE 1 and CASE 2 are tested in test_bool_masks.mojo and
-# test_array_indexing_and_slicing.mojo; we only add CASE 3 tests here
-# plus quick regression checks for CASE 1 and 2 to confirm they still work.
-
-
-# ===== Step 5: __getitem__ CASE 3 — k-D mask =====
-
-
 def test_getitem_2d_mask_on_3d_array() raises:
     """2-D mask on 3-D array selects sub-arrays of shape (shape[2],)."""
     # a shape (2, 3, 4):  a[i,j,k] = i*12 + j*4 + k
@@ -116,8 +97,6 @@ def test_getitem_2d_mask_on_4d_array() raises:
     assert_equal(Int(result.item(1, 2, 2)), 35)
 
 
-# Regression: CASE 1 and CASE 2 still work after adding CASE 3
-
 
 def test_getitem_exact_shape_mask_regression() raises:
     """CASE 1 still works: exact shape mask: flattened 1-D result."""
@@ -140,9 +119,6 @@ def test_getitem_1d_mask_on_2d_regression() raises:
     assert_equal(result.shape[1], 4)
     assert_equal(Int(result.item(0, 0)), 4)
     assert_equal(Int(result.item(0, 3)), 7)
-
-
-# ===== Step 6: __setitem__ CASE 3 — k-D mask (scalar and NDArray val) =====
 
 
 def test_setitem_scalar_2d_mask_on_3d() raises:
@@ -180,7 +156,7 @@ def test_setitem_scalar_2d_mask_non_zero_value() raises:
     for k in range(4):
         assert_equal(Int(a.item(0, 0, k)), 99)
         assert_equal(Int(a.item(1, 1, k)), 99)
-    # Untouched
+
     assert_equal(Int(a.item(0, 1, 0)), 0)
     assert_equal(Int(a.item(1, 0, 0)), 0)
 
@@ -200,7 +176,7 @@ def test_setitem_ndarray_2d_mask_single_subarray() raises:
     for k in range(4):
         assert_equal(Int(a.item(0, 1, k)), 10 + k)
         assert_equal(Int(a.item(1, 2, k)), 10 + k)
-    # Untouched
+    
     assert_equal(Int(a.item(0, 0, 0)), 0)
     assert_equal(Int(a.item(1, 0, 0)), 0)
 
@@ -223,12 +199,9 @@ def test_setitem_ndarray_2d_mask_per_index_val() raises:
     for k in range(4):
         assert_equal(Int(a.item(0, 0, k)), 10 + k)
         assert_equal(Int(a.item(1, 2, k)), 20 + k)
-    # Untouched
+    
     assert_equal(Int(a.item(0, 1, 0)), 0)
     assert_equal(Int(a.item(1, 0, 0)), 0)
-
-
-# Regression: CASE 1 and 2 setitem still work
 
 
 def test_setitem_exact_shape_scalar_regression() raises:

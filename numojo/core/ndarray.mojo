@@ -1103,11 +1103,9 @@ struct NDArray[dtype: DType = DType.float64](
                     slice_list.append(Slice(0, self.shape[array_dim + k], 1))
                     index_type_list.append(IndexTypeInfo(is_slice=True))
                 array_dim += ellipsis_dims
-                # Continue to process remaining entries after the ellipsis.
 
             elif index_list[i].isa[NewAxis]():
                 index_type_list.append(IndexTypeInfo(is_newaxis=True))
-                # NewAxis does not consume an array dimension.
 
             elif index_list[i].isa[Slice]():
                 slice_list.append(index_list[i][Slice])
@@ -1551,7 +1549,6 @@ struct NDArray[dtype: DType = DType.float64](
             var self_c = self.contiguous()
             var len_of_result = 0
 
-            # Count number of True
             for i in range(mask.size):
                 if mask.item(i):
                     len_of_result += 1
@@ -1563,7 +1560,6 @@ struct NDArray[dtype: DType = DType.float64](
             var result = NDArray[Self.dtype](shape)
             var size_per_item = self.size // self.shape[0]
 
-            # Fill in the values
             var offset = 0
             for i in range(mask.size):
                 if mask.item(i):

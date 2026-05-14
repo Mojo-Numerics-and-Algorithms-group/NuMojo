@@ -1255,7 +1255,7 @@ def test_offset_view_mask_setter() raises:
             idx.append(i)
             mask.itemset(idx^, Scalar[DType.bool](False))
 
-    view.__setitem__(mask, Scalar[nm.f64](-1.0))
+    view.set(mask, val=Scalar[nm.f64](-1.0))
 
     # view[6] (parent[10]) and view[7] (parent[11]) should be -1
     assert_true(view.item(6) == -1.0, "mask setter view[6]")

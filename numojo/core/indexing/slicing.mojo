@@ -12,6 +12,9 @@ This module defines internal data structures and utilities for handling slicing 
 
 from std.math import ceil
 
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.error import NumojoError
+
 
 # ===----------------------------------------------------------------------=== #
 # Internal Data Structure: IndexTypeInfo
@@ -205,3 +208,79 @@ struct InternalSlice(ImplicitlyCopyable):
         """
         var length = Int(ceil((self.end - self.start) / self.step))
         return (self.start, self.end, self.step, length)
+
+    @staticmethod
+    def adjust_list(
+        shape: NDArrayShape, slice_list: List[Slice]
+    ) raises -> List[InternalSlice]:
+        """Normalises a list of `Slice` objects against the given array shape.
+
+        For each slice, resolves defaults, wraps negative indices, clamps
+        out-of-bounds values, and validates that the step is non-zero.
+        Returns one `InternalSlice` per input slice with concrete start, end,
+        and step values ready for use in traversal.
+
+        Args:
+            shape: The array shape; `shape[i]` is the size of dimension `i`.
+            slice_list: Raw slices to normalise (one per dimension to process).
+
+        Returns:
+            A list of `InternalSlice` values parallel to `slice_list`.
+
+        Raises:
+            ValueError: If any slice has a step of zero.
+        """
+        var n_slices: Int = len(slice_list)
+        var slices = List[InternalSlice](capacity=n_slices)
+        for i in range(n_slices):
+            var dim_size = Int(shape[i])
+            var step = slice_list[i].step.or_else(1)
+
+            if step == 0:
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message=String(
+                            "Slice step cannot be zero (dimension {}). Use"
+                            " positive or negative non-zero step."
+                        ).format(i),
+                        location="InternalSlice.adjust_list",
+                    )
+                )
+
+            var start: Int
+            var end: Int
+            if step > 0:
+                start = 0
+                end = dim_size
+            else:
+                start = dim_size - 1
+                end = -1
+
+            var raw_start = slice_list[i].start.or_else(start)
+            if raw_start < 0:
+                raw_start += dim_size
+            if step > 0:
+                start = 0 if raw_start < 0 else (
+                    dim_size if raw_start > dim_size else raw_start
+                )
+            else:
+                start = -1 if raw_start < -1 else (
+                    dim_size - 1 if raw_start >= dim_size else raw_start
+                )
+
+            var raw_end = slice_list[i].end.or_else(end)
+            if raw_end < 0:
+                raw_end += dim_size
+            if step > 0:
+                end = 0 if raw_end < 0 else (
+                    dim_size if raw_end > dim_size else raw_end
+                )
+            else:
+                end = -1 if raw_end < -1 else (
+                    dim_size if raw_end > dim_size else raw_end
+                )
+
+            slices.append(InternalSlice(start=start, end=end, step=step))
+
+        return slices^

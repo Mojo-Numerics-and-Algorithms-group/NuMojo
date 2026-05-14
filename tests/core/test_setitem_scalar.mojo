@@ -7,12 +7,9 @@ from numojo.prelude import *
 from utils_for_test import check
 
 
-# Mojo's __setitem__ overload resolution with variadic+keyword args requires:
-#   - List[Slice] scalar: pass the list positionally, `val=` keyword works.
-#   - *Slice scalar: use explicit `.__setitem__(s1, s2, ..., scalar=v)`.
-#   - *Variant[Slice,Int] scalar: use explicit `.__setitem__(i, s, scalar=v)`.
-# The `scalar` keyword name was chosen (instead of `val`) to avoid shadowing
-# the existing `val: Self` overloads at the Mojo compiler level.
+# Scalar assignment uses arr.set(..., val=scalar) since Mojo cannot resolve
+# __setitem__ overloads that differ only in the RHS type (Scalar vs NDArray).
+# List[Slice] backend is called directly via _setitem_slice_scalar().
 
 
 # ===== Step 3: __setitem__(List[Slice], val: Scalar) =====
@@ -146,7 +143,7 @@ def test_setitem_variadic_slice_scalar_2d() raises:
     sl.append(Slice(1, 3))
     a._setitem_slice_scalar(sl, Scalar[nm.i32](77))
 
-    b.__setitem__(Slice(1, 3), Slice(1, 3), scalar=Scalar[nm.i32](77))
+    b.set(Slice(1, 3), Slice(1, 3), val=Scalar[nm.i32](77))
 
     for i in range(4):
         for j in range(4):
@@ -162,7 +159,7 @@ def test_setitem_variadic_slice_scalar_2d() raises:
 def test_setitem_variadic_slice_scalar_1d() raises:
     """*Slice scalar: 1D slice fill."""
     var a = nm.arange[nm.i32](0, 8, step=1)
-    a.__setitem__(Slice(2, 6), scalar=Scalar[nm.i32](5))
+    a.set(Slice(2, 6), val=Scalar[nm.i32](5))
 
     assert_equal(Int(a.item(0)), 0)
     assert_equal(Int(a.item(1)), 1)
@@ -175,7 +172,7 @@ def test_setitem_variadic_slice_scalar_1d() raises:
 def test_setitem_variadic_slice_scalar_implicit_trailing() raises:
     """*Slice scalar: single slice on 2D array, trailing dim implicit full."""
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
-    a.__setitem__(Slice(0, 2), scalar=Scalar[nm.i32](9))
+    a.set(Slice(0, 2), val=Scalar[nm.i32](9))
 
     for c in range(4):
         assert_equal(Int(a.item(0, c)), 9)
@@ -191,7 +188,7 @@ def test_setitem_variadic_slice_scalar_implicit_trailing() raises:
 def test_setitem_mixed_single_element_2d() raises:
     """All-Int fast path: single element write on 2D array."""
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
-    a.__setitem__(1, 2, scalar=Scalar[nm.i32](99))
+    a.set(1, 2, val=Scalar[nm.i32](99))
 
     assert_equal(Int(a.item(1, 2)), 99)
     assert_equal(Int(a.item(1, 1)), 5)
@@ -203,7 +200,7 @@ def test_setitem_mixed_single_element_2d() raises:
 def test_setitem_mixed_single_element_3d() raises:
     """All-Int fast path: single element write on 3D array."""
     var a = nm.arange[nm.i32](0, 24, step=1).reshape(Shape(2, 3, 4))
-    a.__setitem__(0, 1, 2, scalar=Scalar[nm.i32](77))
+    a.set(0, 1, 2, val=Scalar[nm.i32](77))
 
     assert_equal(Int(a.item(0, 1, 2)), 77)
     assert_equal(Int(a.item(0, 0, 0)), 0)
@@ -213,7 +210,7 @@ def test_setitem_mixed_single_element_3d() raises:
 def test_setitem_mixed_int_slice_row() raises:
     """Int + Slice: select row by int, column range by slice."""
     var a = nm.arange[nm.i32](0, 16, step=1).reshape(Shape(4, 4))
-    a.__setitem__(1, Slice(1, 3), scalar=Scalar[nm.i32](55))
+    a.set(1, Slice(1, 3), val=Scalar[nm.i32](55))
 
     assert_equal(Int(a.item(1, 1)), 55)
     assert_equal(Int(a.item(1, 2)), 55)
@@ -226,7 +223,7 @@ def test_setitem_mixed_int_slice_row() raises:
 def test_setitem_mixed_slice_int_col() raises:
     """Slice + Int: select row range by slice, column by int."""
     var a = nm.arange[nm.i32](0, 16, step=1).reshape(Shape(4, 4))
-    a.__setitem__(Slice(1, 3), 2, scalar=Scalar[nm.i32](33))
+    a.set(Slice(1, 3), 2, val=Scalar[nm.i32](33))
 
     assert_equal(Int(a.item(1, 2)), 33)
     assert_equal(Int(a.item(2, 2)), 33)
@@ -239,7 +236,7 @@ def test_setitem_mixed_slice_int_col() raises:
 def test_setitem_mixed_negative_int() raises:
     """Negative integer index is normalised correctly."""
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
-    a.__setitem__(-1, 2, scalar=Scalar[nm.i32](88))
+    a.set(-1, 2, val=Scalar[nm.i32](88))
 
     assert_equal(Int(a.item(2, 2)), 88)
     assert_equal(Int(a.item(0, 2)), 2)
@@ -250,7 +247,7 @@ def test_setitem_mixed_negative_int() raises:
 def test_setitem_mixed_int_only_1d() raises:
     """All-Int fast path on 1D array."""
     var a = nm.arange[nm.i32](0, 6, step=1)
-    a.__setitem__(3, scalar=Scalar[nm.i32](99))
+    a.set(3, val=Scalar[nm.i32](99))
 
     assert_equal(Int(a.item(3)), 99)
     assert_equal(Int(a.item(2)), 2)
@@ -260,7 +257,7 @@ def test_setitem_mixed_int_only_1d() raises:
 def test_setitem_mixed_partial_indices_3d() raises:
     """Two ints on 3D: trailing dim filled implicitly as full range."""
     var a = nm.arange[nm.i32](0, 24, step=1).reshape(Shape(2, 3, 4))
-    a.__setitem__(0, 1, scalar=Scalar[nm.i32](11))
+    a.set(0, 1, val=Scalar[nm.i32](11))
 
     for k in range(4):
         assert_equal(
@@ -275,7 +272,7 @@ def test_setitem_mixed_partial_indices_3d() raises:
 def test_setitem_mixed_does_not_corrupt_neighbours() raises:
     """Single-element write must not corrupt adjacent elements."""
     var a = nm.zeros[nm.i32](Shape(4, 4))
-    a.__setitem__(1, 2, scalar=Scalar[nm.i32](7))
+    a.set(1, 2, val=Scalar[nm.i32](7))
 
     for r in range(4):
         for c in range(4):
@@ -292,7 +289,7 @@ def test_setitem_mixed_agrees_with_list_slice_scalar() raises:
     var a = nm.arange[nm.i32](0, 16, step=1).reshape(Shape(4, 4))
     var b = nm.arange[nm.i32](0, 16, step=1).reshape(Shape(4, 4))
 
-    a.__setitem__(1, Slice(1, 3), scalar=Scalar[nm.i32](55))
+    a.set(1, Slice(1, 3), val=Scalar[nm.i32](55))
 
     var sl = List[Slice]()
     sl.append(Slice(1, 2))

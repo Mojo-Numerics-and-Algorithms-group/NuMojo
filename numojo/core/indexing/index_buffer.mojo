@@ -855,7 +855,7 @@ struct IndexBuffer(
             Sum of all elements in the IndexBuffer.
         """
         var total: Scalar[Self.element_type] = 0
-        # def closure[width: Int](i: Int) unified {mut total, read self}:
+        # def closure[width: Int](i: Int) {mut total, read self}:
         #     total += self.load[width](i).reduce_add()
         # vectorize[Self.simd_width](self.ndim, closure)
         for i in range(self.ndim):
@@ -870,7 +870,7 @@ struct IndexBuffer(
             Product of all elements in the IndexBuffer.
         """
         var total: Scalar[Self.element_type] = 1
-        # def closure[width: Int](i: Int) unified {mut total, read self}:
+        # def closure[width: Int](i: Int) {mut total, read self}:
         #     total += self.load[width](i).reduce_mul()
         # vectorize[Self.simd_width](self.ndim, closure)
         for i in range(self.ndim):

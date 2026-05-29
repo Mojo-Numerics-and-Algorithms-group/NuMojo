@@ -171,8 +171,7 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
-        def closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
+        def closure[simd_w: Int](i: Int) {mut result_array, read array}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(i, kernel[dtype, simd_w](simd_data))
 
@@ -226,10 +225,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array1, read array2}:
+        ](i: Int) {mut result_array, read array1, read array2}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
             var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(
@@ -273,10 +271,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array, read scalar}:
+        ](i: Int) {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(
                 i, kernel[dtype, simd_w](simd_data1, scalar)
@@ -320,10 +317,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array, read scalar}:
+        ](i: Int) {mut result_array, read array, read scalar}:
             var simd_data1 = array._buf.ptr.load[width=simd_w](i)
             result_array._buf.ptr.store(
                 i, kernel[dtype, simd_w](scalar, simd_data1)
@@ -360,10 +356,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array, read intval}:
+        ](i: Int) {mut result_array, read array, read intval}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
 
             result_array._buf.ptr.store(
@@ -426,10 +421,9 @@ struct HostExecutor:
         )
         comptime width = simd_width_of[DType.bool]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array1, read array2}:
+        ](i: Int) {mut result_array, read array1, read array2}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
             var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
 
@@ -482,10 +476,9 @@ struct HostExecutor:
         )
         comptime width = simd_width_of[DType.bool]()
 
-        @parameter
         def closure[
             simd_w: Int
-        ](i: Int) unified {mut result_array, read array1, read scalar}:
+        ](i: Int) {mut result_array, read array1, read scalar}:
             var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
             var simd_data2 = SIMD[dtype, simd_w](scalar)
             bool_simd_store[simd_w](
@@ -524,8 +517,7 @@ struct HostExecutor:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[DType.bool]()
 
-        @parameter
-        def closure[simd_w: Int](i: Int) unified {mut result_array, read array}:
+        def closure[simd_w: Int](i: Int) {mut result_array, read array}:
             var simd_data = array._buf.ptr.load[width=simd_w](i)
             bool_simd_store[simd_w](
                 result_array._buf.ptr,
@@ -590,10 +582,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simdwidth: Int
-        ](i: Int) unified {
+        ](i: Int) {
             mut result_array, read array1, read array2, read array3
         }:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
@@ -652,10 +643,9 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
 
-        @parameter
         def closure[
             simdwidth: Int
-        ](i: Int) unified {
+        ](i: Int) {
             mut result_array, read array1, read array2, read scalar
         }:
             var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)

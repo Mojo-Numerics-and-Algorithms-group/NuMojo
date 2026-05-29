@@ -2195,10 +2195,9 @@ def astype[
 
     comptime if target == DType.bool:
 
-        @parameter
         def vectorized_astype[
             simd_width: Int
-        ](idx: Int) unified {mut result, read a} -> None:
+        ](idx: Int) {mut result, read a} -> None:
             (result.unsafe_ptr() + idx).strided_store[width=simd_width](
                 a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
             )
@@ -2208,10 +2207,9 @@ def astype[
     else:
         comptime if target == DType.bool:
 
-            @parameter
             def vectorized_astypenb_from_b[
                 simd_width: Int
-            ](idx: Int) unified {mut result, read a} -> None:
+            ](idx: Int) {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx,
                     (a._buf.ptr + idx)
@@ -2223,10 +2221,9 @@ def astype[
 
         else:
 
-            @parameter
             def vectorized_astypenb[
                 simd_width: Int
-            ](idx: Int) unified {mut result, read a} -> None:
+            ](idx: Int) {mut result, read a} -> None:
                 result._buf.ptr.store(
                     idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
                 )

@@ -3193,8 +3193,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            @parameter
-            def vec_op[w: Int](i: Int) unified {mut self, read other}:
+            def vec_op[w: Int](i: Int) {mut self, read other}:
                 self._buf.ptr.store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -3250,8 +3249,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            @parameter
-            def vec_op[w: Int](i: Int) unified {mut self, read other_c}:
+            def vec_op[w: Int](i: Int) {mut self, read other_c}:
                 self._buf.ptr.store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -3378,10 +3376,9 @@ struct NDArray[dtype: DType = DType.float64](
         var p_c = p.contiguous()
         var result = NDArray[Self.dtype](self.shape)
 
-        @parameter
         def vectorized_pow[
             simd_width: Int
-        ](index: Int) unified {mut result, read src, read p_c}:
+        ](index: Int) {mut result, read src, read p_c}:
             result._buf.ptr.store(
                 index,
                 src._buf.ptr.load[width=simd_width](index)
@@ -3395,8 +3392,7 @@ struct NDArray[dtype: DType = DType.float64](
         """Enables `array **= int`. View-safe: modifies buffer in-place."""
         if self.is_c_contiguous():
 
-            @parameter
-            def vec_pow[w: Int](i: Int) unified {mut self, read p}:
+            def vec_pow[w: Int](i: Int) {mut self, read p}:
                 self._buf.ptr.store(
                     self.offset + i,
                     builtin_math.pow(
@@ -3419,10 +3415,9 @@ struct NDArray[dtype: DType = DType.float64](
     def _elementwise_pow(self, p: Int) raises -> Self:
         var src = self.contiguous()
 
-        @parameter
         def array_scalar_vectorize[
             simd_width: Int
-        ](index: Int) unified {mut src, read p} -> None:
+        ](index: Int) {mut src, read p} -> None:
             src._buf.ptr.store(
                 index,
                 builtin_math.pow(src._buf.ptr.load[width=simd_width](index), p),
@@ -3935,10 +3930,9 @@ struct NDArray[dtype: DType = DType.float64](
         var a = self.contiguous()
         var result: Bool = True
 
-        @parameter
         def vectorized_all[
             simd_width: Int
-        ](idx: Int) unified {mut result, read a} -> None:
+        ](idx: Int) {mut result, read a} -> None:
             result = result and builtin_bool.all(
                 (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
             )
@@ -3962,10 +3956,9 @@ struct NDArray[dtype: DType = DType.float64](
         var a = self.contiguous()
         var result: Bool = False
 
-        @parameter
         def vectorized_any[
             simd_width: Int
-        ](idx: Int) unified {mut result, read a} -> None:
+        ](idx: Int) {mut result, read a} -> None:
             result = result or builtin_bool.any(
                 (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
             )

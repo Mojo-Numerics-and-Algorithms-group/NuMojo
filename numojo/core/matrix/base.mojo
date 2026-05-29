@@ -2239,8 +2239,7 @@ struct Matrix[
         )
         comptime width = simd_width_of[Self.dtype]()
 
-        @parameter
-        def vec_pow[w: Int](i: Int) unified {mut result, read self, read rhs}:
+        def vec_pow[w: Int](i: Int) {mut result, read self, read rhs}:
             var vec = self._buf.ptr.load[width=w](i)
             result._buf.ptr.store(i, vec.__pow__(rhs))
 
@@ -2286,8 +2285,7 @@ struct Matrix[
         if self.is_c_contiguous() and other.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_add[w: Int](i: Int) unified {mut self, read other}:
+            def vec_add[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a + b)
@@ -2315,8 +2313,7 @@ struct Matrix[
         if self.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_add_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_add_scalar[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a + other)
 
@@ -2365,8 +2362,7 @@ struct Matrix[
         if self.is_c_contiguous() and other.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_sub[w: Int](i: Int) unified {mut self, read other}:
+            def vec_sub[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a - b)
@@ -2394,8 +2390,7 @@ struct Matrix[
         if self.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_sub_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_sub_scalar[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a - other)
 
@@ -2444,8 +2439,7 @@ struct Matrix[
         if self.is_c_contiguous() and other.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_mul[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mul[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a * b)
@@ -2473,8 +2467,7 @@ struct Matrix[
         if self.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_mul_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mul_scalar[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a * other)
 
@@ -2523,8 +2516,7 @@ struct Matrix[
         if self.is_c_contiguous() and other.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_div[w: Int](i: Int) unified {mut self, read other}:
+            def vec_div[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a / b)
@@ -2552,8 +2544,7 @@ struct Matrix[
         if self.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_div_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_div_scalar[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a / other)
 
@@ -2665,8 +2656,7 @@ struct Matrix[
         if self.is_c_contiguous() and other.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_floordiv[w: Int](i: Int) unified {mut self, read other}:
+            def vec_floordiv[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a // b)
@@ -2694,10 +2684,9 @@ struct Matrix[
         if self.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
             def vec_floordiv_scalar[
                 w: Int
-            ](i: Int) unified {mut self, read other}:
+            ](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a // other)
 
@@ -2804,8 +2793,7 @@ struct Matrix[
         if self.is_c_contiguous() and other.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_mod[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mod[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 var b = other._buf.ptr.load[width=w](other.offset + i)
                 self._buf.ptr.store(self.offset + i, a % b)
@@ -2833,8 +2821,7 @@ struct Matrix[
         if self.is_c_contiguous():
             comptime width = simd_width_of[Self.dtype]()
 
-            @parameter
-            def vec_mod_scalar[w: Int](i: Int) unified {mut self, read other}:
+            def vec_mod_scalar[w: Int](i: Int) {mut self, read other}:
                 var a = self._buf.ptr.load[width=w](self.offset + i)
                 self._buf.ptr.store(self.offset + i, a % other)
 
@@ -4308,8 +4295,7 @@ struct Matrix[
         var matrix = Matrix[datatype](shape, order)
         comptime width = simd_width_of[datatype]()
 
-        @parameter
-        def vec_fill[w: Int](i: Int) unified {mut matrix, read fill_value}:
+        def vec_fill[w: Int](i: Int) {mut matrix, read fill_value}:
             matrix._buf.ptr.store(i, SIMD[datatype, w](fill_value))
 
         vectorize[width](matrix.size, vec_fill)
@@ -4414,8 +4400,7 @@ struct Matrix[
         var result = Matrix[datatype](shape, order)
         comptime width = simd_width_of[datatype]()
 
-        @parameter
-        def vec_rand[w: Int](i: Int) unified {mut result}:
+        def vec_rand[w: Int](i: Int) {mut result}:
             var rand_vec = SIMD[datatype, w]()
             for j in range(w):
                 rand_vec[j] = random_float64(0, 1).cast[datatype]()
@@ -5022,8 +5007,7 @@ def _arithmetic_func_matrix_matrix_to_matrix[
 
     var res = Matrix[dtype](shape=A.shape, order=A.order())
 
-    @parameter
-    def vec_func[simd_width: Int](i: Int) unified {mut res, read A, read B}:
+    def vec_func[simd_width: Int](i: Int) {mut res, read A, read B}:
         res._buf.ptr.store(
             i,
             simd_func(
@@ -5062,8 +5046,7 @@ def _arithmetic_func_matrix_to_matrix[
 
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
-    @parameter
-    def vec_func[simd_width: Int](i: Int) unified {mut C, read A}:
+    def vec_func[simd_width: Int](i: Int) {mut C, read A}:
         C._buf.ptr.store(i, simd_func(A._buf.ptr.load[width=simd_width](i)))
 
     vectorize[simd_width](A.size, vec_func)
@@ -5130,8 +5113,7 @@ def _logic_func_matrix_matrix_to_matrix[
 
     # Use vectorized comparison for better performance
     # Process elements using input dtype width, then store results as bool
-    @parameter
-    def vec_compare[w: Int](i: Int) unified {mut C, read A, read B}:
+    def vec_compare[w: Int](i: Int) {mut C, read A, read B}:
         var a_vec = A._buf.ptr.load[width=w](i)
         var b_vec = B._buf.ptr.load[width=w](i)
         var result = simd_func[dtype, w](a_vec, b_vec)

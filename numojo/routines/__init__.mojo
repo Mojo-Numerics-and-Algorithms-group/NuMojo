@@ -122,7 +122,7 @@ from .math import (
     hypot_fma,
 )
 
-from .statistics import mean, mode, median, variance, std
+from .statistics import mean, mode, median, variance
 
 from .bitwise import invert
 

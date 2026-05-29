@@ -224,7 +224,6 @@ from numojo.routines.statistics import (
     mode,
     median,
     variance,
-    std,
 )
 
 from numojo.routines import bitwise

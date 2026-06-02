@@ -2429,38 +2429,23 @@ struct NDArray[dtype: DType = DType.float64](
         var slice_list: List[Slice] = List[Slice]()
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        self.__setitem__(slices=slice_list, val=val)
+        self._setitem_list_slices(slice_list, val)
 
-    def __setitem__(mut self, slices: List[Slice], val: Self) raises:
-        """Sets the slices of an array from a list of slices and an array.
+    def _setitem_list_slices(mut self, slices: List[Slice], val: Self) raises:
+        """Internal backend: write an NDArray into a slice region.
+
+        Called by `__setitem__(*Slice, val: Self)` and
+        `set(*Variant[Slice,Int], val: Self)` after they normalise their
+        arguments into a `List[Slice]`.
 
         Args:
-            slices: The list of slices.
-            val: The value to set.
+            slices: One `Slice` per array dimension (trailing dims already
+                padded to full range by the caller).
+            val: The NDArray to write into the selected region.
 
         Raises:
-            Error: If the length of slices does not match the number of
-                dimensions.
-            Error: If any of the slices is out of bound.
-
-        Examples:
-
-        ```console
-        >>> var a = nm.arange[i8](16).reshape(Shape(4, 4))
-        print(a)
-        [[      0       1       2       3       ]
-         [      4       5       6       7       ]
-         [      8       9       10      11      ]
-         [      12      13      14      15      ]]
-        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
-        >>> a[2:4, 2:4] = a[0:2, 0:2]
-        print(a)
-        [[      0       1       2       3       ]
-         [      4       5       6       7       ]
-         [      8       9       0       1       ]
-         [      12      13      4       5       ]]
-        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
-        ```.
+            Error: If any slice is out of bounds.
+            Error: If the value shape does not match the destination slice shape.
         """
         var n_slices: Int = len(slices)
         var ndims: Int = 0
@@ -2633,9 +2618,9 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(n_slices, self.ndim):
             slice_list.append(Slice(0, self.shape[i], 1))
 
-        self.__setitem__(slices=slice_list, val=val)
+        self._setitem_list_slices(slice_list, val)
 
-    def _setitem_slice_scalar(
+    def _setitem_list_slices_scalar(
         mut self, slices: List[Slice], val: Scalar[Self.dtype]
     ) raises:
         """Internal backend: fill every element in a slice region with a scalar.

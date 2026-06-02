@@ -685,7 +685,6 @@ struct NDArray[dtype: DType = DType.float64](
             self._copy_first_axis_slice(self, norm, result)
             return result^
 
-
     # perhaps move these to a utility module
     def _copy_first_axis_slice(
         self,
@@ -2472,8 +2471,8 @@ struct NDArray[dtype: DType = DType.float64](
                             self.shape[i],
                         ),
                         location=(
-                            "NDArray._setitem_list_slices(slice_list: List[Slice], val:"
-                            " NDArray)"
+                            "NDArray._setitem_list_slices(slice_list:"
+                            " List[Slice], val: NDArray)"
                         ),
                     )
                 )
@@ -2521,8 +2520,8 @@ struct NDArray[dtype: DType = DType.float64](
                             " destination slice shape."
                         ).format(i, nshape[i], val.shape[i]),
                         location=(
-                            "NDArray._setitem_list_slices(slice_list: List[Slice], val:"
-                            " NDArray)"
+                            "NDArray._setitem_list_slices(slice_list:"
+                            " List[Slice], val: NDArray)"
                         ),
                     )
                 )
@@ -2554,9 +2553,7 @@ struct NDArray[dtype: DType = DType.float64](
             index,
         )
 
-    def set(
-        mut self, *slices: Variant[Slice, Int], val: Self
-    ) raises:
+    def set(mut self, *slices: Variant[Slice, Int], val: Self) raises:
         """Sets elements selected by mixed integer/slice indices from an NDArray.
 
         Integer entries select a single position in the corresponding dimension
@@ -2588,7 +2585,10 @@ struct NDArray[dtype: DType = DType.float64](
                         "Too many indices or slices: received {} but array has"
                         " only {} dimensions."
                     ).format(n_slices, self.ndim),
-                    location="NDArray.set(*slices: Variant[Slice, Int], val: NDArray)",
+                    location=(
+                        "NDArray.set(*slices: Variant[Slice, Int], val:"
+                        " NDArray)"
+                    ),
                 )
             )
         var slice_list = List[Slice]()
@@ -2605,8 +2605,17 @@ struct NDArray[dtype: DType = DType.float64](
                             message=String(
                                 "Integer index {} out of bounds for axis {}"
                                 " (size {}). Valid range: [-{}, {})."
-                            ).format(idx, i, self.shape[i], self.shape[i], self.shape[i]),
-                            location="NDArray.set(*slices: Variant[Slice, Int], val: NDArray)",
+                            ).format(
+                                idx,
+                                i,
+                                self.shape[i],
+                                self.shape[i],
+                                self.shape[i],
+                            ),
+                            location=(
+                                "NDArray.set(*slices: Variant[Slice, Int], val:"
+                                " NDArray)"
+                            ),
                         )
                     )
                 if idx < 0:

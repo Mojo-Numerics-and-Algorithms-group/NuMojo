@@ -2079,24 +2079,22 @@ struct NDArray[dtype: DType = DType.float64](
     # def _setitem(self, *indices: Int, val: Scalar[dtype])
     #
     # __setitem__ overloads  (a[...] = val syntax works)
+    # __setitem__ overloads  (a[...] = v syntax — requires symmetric __getitem__)
     # def __setitem__(mut self, idx: Int, val: Self)
     # def __setitem__(mut self, index: Item, val: Scalar[dtype])
     # def __setitem__(mut self, *slices: Slice, val: Self)
-    # def __setitem__(mut self, slices: List[Slice], val: Self)
     # def __setitem__(mut self, indices: NDArray[DType.int], val: NDArray)
     #
-    # set() overloads  (use arr.set(..., val=v) — Mojo cannot resolve these
-    # as __setitem__ because Int+Slice literal mixes don't construct
-    # Variant[Slice,Int] at the subscript site, and Scalar vs NDArray
-    # overloads can't be disambiguated by Mojo's overload resolution)
+    # set() overloads  (use arr.set(..., val=v) when __setitem__ can't resolve)
     # def set(mut self, *slices: Variant[Slice, Int], val: Self)
-    # def set(mut self, mask: NDArray[DType.bool], *, val: Scalar[dtype])
-    # def set(mut self, mask: NDArray[DType.bool], *, val: NDArray[dtype])
     # def set(mut self, *slices: Slice, val: Scalar[dtype])
     # def set(mut self, *slices: Variant[Slice, Int], val: Scalar[dtype])
+    # def set(mut self, mask: NDArray[DType.bool], *, val: Scalar[dtype])
+    # def set(mut self, mask: NDArray[DType.bool], *, val: NDArray[dtype])
     #
-    # Internal scalar-fill backend (called by the set() slice overloads)
-    # def _setitem_slice_scalar(mut self, slices: List[Slice], val: Scalar)
+    # Internal backends
+    # def _setitem_list_slices(mut self, slices: List[Slice], val: Self)
+    # def _setitem_list_slices_scalar(mut self, slices: List[Slice], val: Scalar)
     #
     # Item helpers
     # def itemset(mut self, index: Int, item: Scalar[dtype])
@@ -2474,7 +2472,7 @@ struct NDArray[dtype: DType = DType.float64](
                             self.shape[i],
                         ),
                         location=(
-                            "NDArray.__setitem__(slice_list: List[Slice], val:"
+                            "NDArray._setitem_list_slices(slice_list: List[Slice], val:"
                             " NDArray)"
                         ),
                     )
@@ -2523,7 +2521,7 @@ struct NDArray[dtype: DType = DType.float64](
                             " destination slice shape."
                         ).format(i, nshape[i], val.shape[i]),
                         location=(
-                            "NDArray.__setitem__(slice_list: List[Slice], val:"
+                            "NDArray._setitem_list_slices(slice_list: List[Slice], val:"
                             " NDArray)"
                         ),
                     )
@@ -2697,7 +2695,7 @@ struct NDArray[dtype: DType = DType.float64](
         var slice_list = List[Slice](capacity=slices.__len__())
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        self._setitem_slice_scalar(slice_list, val)
+        self._setitem_list_slices_scalar(slice_list, val)
 
     def set(
         mut self, *slices: Variant[Slice, Int], val: Scalar[Self.dtype]
@@ -2784,7 +2782,7 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(n, self.ndim):
             slice_list.append(Slice(0, self.shape[i], 1))
 
-        self._setitem_slice_scalar(slice_list, val)
+        self._setitem_list_slices_scalar(slice_list, val)
 
     def __setitem__(
         mut self, index: NDArray[DType.int], val: NDArray[Self.dtype]

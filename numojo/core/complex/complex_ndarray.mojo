@@ -1943,7 +1943,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var slice_list: List[Slice] = List[Slice]()
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        # self.__setitem__(slices=slice_list, val=val)
         self[slice_list^] = val
 
     def __setitem__(
@@ -2096,7 +2095,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 var size_at_dim: Int = self.shape[i]
                 slice_list.append(Slice(0, size_at_dim, 1))
 
-        # self.__setitem__(slices=slice_list, val=val)
         self[slice_list^] = val
 
     def __setitem__(mut self, index: NDArray[DType.int], val: Self) raises:

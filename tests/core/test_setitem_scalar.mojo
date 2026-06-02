@@ -9,7 +9,7 @@ from utils_for_test import check
 
 # Scalar assignment uses arr.set(..., val=scalar) since Mojo cannot resolve
 # __setitem__ overloads that differ only in the RHS type (Scalar vs NDArray).
-# List[Slice] backend is called directly via _setitem_slice_scalar().
+# The internal List[Slice] scalar backend is called directly via _setitem_list_slices_scalar().
 
 
 # ===== Step 3: __setitem__(List[Slice], val: Scalar) =====
@@ -20,7 +20,7 @@ def test_setitem_list_slice_scalar_1d() raises:
     var a = nm.arange[nm.i32](0, 6, step=1)
     var sl = List[Slice]()
     sl.append(Slice(1, 4))
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](99))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](99))
 
     assert_equal(Int(a.item(0)), 0)
     assert_equal(Int(a.item(1)), 99)
@@ -37,7 +37,7 @@ def test_setitem_list_slice_scalar_2d_submatrix() raises:
     var sl = List[Slice]()
     sl.append(Slice(1, 3))
     sl.append(Slice(1, 3))
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](0))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](0))
 
     assert_equal(Int(a.item(1, 1)), 0)
     assert_equal(Int(a.item(1, 2)), 0)
@@ -56,7 +56,7 @@ def test_setitem_list_slice_scalar_3d() raises:
     sl.append(Slice(0, 2))
     sl.append(Slice(1, 3))
     sl.append(Slice(2, 4))
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](5))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](5))
 
     for i in range(2):
         for j in range(1, 3):
@@ -77,7 +77,7 @@ def test_setitem_list_slice_scalar_step() raises:
     var sl = List[Slice]()
     sl.append(Slice(0, 3, 2))  # rows 0, 2
     sl.append(Slice(0, 4))
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](-1))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](-1))
 
     for c in range(4):
         assert_equal(Int(a.item(0, c)), -1)
@@ -92,7 +92,7 @@ def test_setitem_list_slice_scalar_implicit_trailing_dim() raises:
     var a = nm.arange[nm.i32](0, 12, step=1).reshape(Shape(3, 4))
     var sl = List[Slice]()
     sl.append(Slice(1, 3))  # only row dim given
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](42))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](42))
 
     for c in range(4):
         assert_equal(Int(a.item(1, c)), 42)
@@ -108,7 +108,7 @@ def test_setitem_list_slice_scalar_single_element() raises:
     var sl = List[Slice]()
     sl.append(Slice(2, 3))
     sl.append(Slice(2, 3))
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](123))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](123))
 
     assert_equal(Int(a.item(2, 2)), 123)
     assert_equal(Int(a.item(2, 1)), 9)
@@ -123,7 +123,7 @@ def test_setitem_list_slice_scalar_whole_array() raises:
     var sl = List[Slice]()
     sl.append(Slice(0, 3))
     sl.append(Slice(0, 3))
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](0))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](0))
 
     for i in range(3):
         for j in range(3):
@@ -141,7 +141,7 @@ def test_setitem_variadic_slice_scalar_2d() raises:
     var sl = List[Slice]()
     sl.append(Slice(1, 3))
     sl.append(Slice(1, 3))
-    a._setitem_slice_scalar(sl, Scalar[nm.i32](77))
+    a._setitem_list_slices_scalar(sl, Scalar[nm.i32](77))
 
     b.set(Slice(1, 3), Slice(1, 3), val=Scalar[nm.i32](77))
 
@@ -294,7 +294,7 @@ def test_setitem_mixed_agrees_with_list_slice_scalar() raises:
     var sl = List[Slice]()
     sl.append(Slice(1, 2))
     sl.append(Slice(1, 3))
-    b._setitem_slice_scalar(sl, Scalar[nm.i32](55))
+    b._setitem_list_slices_scalar(sl, Scalar[nm.i32](55))
 
     for i in range(4):
         for j in range(4):

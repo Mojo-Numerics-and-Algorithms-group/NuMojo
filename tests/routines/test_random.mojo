@@ -217,5 +217,41 @@ def test_rand_exponential() raises:
         )
 
 
+def test_randbool() raises:
+    """Test random boolean array generation."""
+    # Shape is preserved
+    var arr = nm.random.randbool(3, 5, 2)
+    assert_true(arr.shape[0] == 3, "Shape[0] of randbool array")
+    assert_true(arr.shape[1] == 5, "Shape[1] of randbool array")
+    assert_true(arr.shape[2] == 2, "Shape[2] of randbool array")
+
+    # All values are True when p=1.0
+    var all_true = nm.random.randbool(10, 10, p=1.0)
+    for i in range(all_true.size):
+        assert_true(
+            all_true._buf.ptr[i] == True, "All values should be True with p=1.0"
+        )
+
+    # All values are False when p=0.0
+    var all_false = nm.random.randbool(10, 10, p=0.0)
+    for i in range(all_false.size):
+        assert_true(
+            all_false._buf.ptr[i] == False,
+            "All values should be False with p=0.0",
+        )
+
+    # Fraction of True values with p=0.5 should be near 0.5
+    var big = nm.random.randbool(Shape(50, 50), p=0.5)
+    var count_true: Int = 0
+    for i in range(big.size):
+        if big._buf.ptr[i]:
+            count_true += 1
+    var frac = Float64(count_true) / Float64(big.size)
+    assert_true(
+        frac > 0.35 and frac < 0.65,
+        "Fraction of True values should be near 0.5 for p=0.5",
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

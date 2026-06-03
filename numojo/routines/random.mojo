@@ -452,6 +452,68 @@ def exponential[
 
 
 # ===----------------------------------------------------------------------=== #
+# Random booleans
+# ===----------------------------------------------------------------------=== #
+
+
+def randbool(
+    shape: NDArrayShape, p: Float64 = 0.5
+) raises -> NDArray[DType.bool]:
+    """
+    Creates an array of the given shape and populates it with random boolean
+    values where each element is `True` with probability `p` and `False`
+    with probability `1 - p`.
+
+    Example:
+        ```py
+        var arr = numojo.random.randbool(Shape(3, 4))
+        var biased = numojo.random.randbool(Shape(10, 10), p=0.8)
+        ```
+
+    Args:
+        shape: The shape of the NDArray.
+        p: Probability of `True` for each element. Must be in [0.0, 1.0].
+           Defaults to 0.5.
+
+    Returns:
+        An NDArray of dtype `bool` filled with random boolean values.
+
+    Raises:
+        Error: If `p` is not in the range [0.0, 1.0].
+    """
+
+    if p < 0.0 or p > 1.0:
+        raise Error("p must be in the range [0.0, 1.0], got " + String(p))
+
+    builtin_random.seed()
+    var result = NDArray[DType.bool](shape)
+
+    for i in range(result.size):
+        var val = builtin_random.random_float64(0.0, 1.0) < p
+        (result._buf.ptr + i).init_pointee_copy(val)
+
+    return result^
+
+
+def randbool(*shape: Int, p: Float64 = 0.5) raises -> NDArray[DType.bool]:
+    """
+    Overloads the function `randbool(shape: NDArrayShape, p)`.
+    Creates an array of the given shape and populates it with random boolean
+    values where each element is `True` with probability `p`.
+    """
+    return randbool(NDArrayShape(shape), p=p)
+
+
+def randbool(shape: List[Int], p: Float64 = 0.5) raises -> NDArray[DType.bool]:
+    """
+    Overloads the function `randbool(shape: NDArrayShape, p)`.
+    Creates an array of the given shape and populates it with random boolean
+    values where each element is `True` with probability `p`.
+    """
+    return randbool(NDArrayShape(shape), p=p)
+
+
+# ===----------------------------------------------------------------------=== #
 # To be deprecated
 # ===----------------------------------------------------------------------=== #
 

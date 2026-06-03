@@ -10,7 +10,7 @@
 Aggregates averages, modes, and dispersion helpers for NDArrays and Matrices.
 """
 
-from .averages import (
+from numojo.routines.statistics.averages import (
     mean,
     max,
     min,

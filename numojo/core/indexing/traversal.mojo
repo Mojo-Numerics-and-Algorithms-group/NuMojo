@@ -14,6 +14,7 @@ which can be used for various indexing and slicing operations in NuMojo.
 
 from std.memory import UnsafePointer
 
+from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.indexing.offset import IndexMethods
 from numojo.core.error import NumojoError

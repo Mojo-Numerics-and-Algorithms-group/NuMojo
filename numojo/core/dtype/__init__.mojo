@@ -10,7 +10,7 @@
 Dtype aliases and dtype-related utilities used across NuMojo.
 """
 
-from .default_dtype import (
+from numojo.core.dtype.default_dtype import (
     i8,
     i16,
     i32,
@@ -32,7 +32,7 @@ from .default_dtype import (
     boolean,
 )
 
-from .complex_dtype import (
+from numojo.core.dtype.complex_dtype import (
     ComplexDType,
     ci8,
     ci16,

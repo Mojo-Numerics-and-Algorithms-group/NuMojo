@@ -10,12 +10,12 @@
 Aggregates arithmetic, trigonometric, hyperbolic, and utility routines for NDArrays and Matrices.
 """
 
-from .arithmetic import add, sub, mod, mul, div, floor_div, fma, remainder
-from .differences import gradient, diff
-from .exponents import exp, exp2, expm1, log, log2, log10, log1p
-from .extrema import max, min, minimum, maximum
-from .floating import copysign
-from .hyper import (
+from numojo.routines.math.arithmetic import add, sub, mod, mul, div, floor_div, fma, remainder
+from numojo.routines.math.differences import gradient, diff
+from numojo.routines.math.exponents import exp, exp2, expm1, log, log2, log10, log1p
+from numojo.routines.math.extrema import max, min, minimum, maximum
+from numojo.routines.math.floating import copysign
+from numojo.routines.math.hyper import (
     arccosh,
     acosh,
     arcsinh,
@@ -26,9 +26,9 @@ from .hyper import (
     sinh,
     tanh,
 )
-from .misc import cbrt, clip, rsqrt, sqrt, scalb
-from .products import prod, cumprod
-from .rounding import (
+from numojo.routines.math.misc import cbrt, clip, rsqrt, sqrt, scalb
+from numojo.routines.math.products import prod, cumprod
+from numojo.routines.math.rounding import (
     round,
     tabs,
     tfloor,
@@ -38,8 +38,8 @@ from .rounding import (
     roundeven,
     nextafter,
 )
-from .sums import sum, cumsum
-from .trig import (
+from numojo.routines.math.sums import sum, cumsum
+from numojo.routines.math.trig import (
     arccos,
     acos,
     arcsin,

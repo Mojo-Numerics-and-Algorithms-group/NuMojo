@@ -13,9 +13,9 @@ It serves as the foundational layer upon which higher-level routines and algorit
 Fundamental types and utilities for NuMojo: arrays, matrices, memory layouts, data types, and error handling.
 """
 
-from .ndarray import NDArray
+from numojo.core.ndarray import NDArray
 
-from .type_aliases import (
+from numojo.core.type_aliases import (
     Shape,
     Strides,
     ComplexScalar,
@@ -23,20 +23,20 @@ from .type_aliases import (
     `1j`,
 )
 
-from .error import (
+from numojo.core.error import (
     terminate,
     NumojoError,
 )
 
-from .matrix import Matrix
+from numojo.core.matrix import Matrix
 
-from .layout import (
+from numojo.core.layout import (
     NDArrayShape,
     NDArrayStrides,
     Flags,
 )
 
-from .dtype import (
+from numojo.core.dtype import (
     i8,
     i16,
     i32,
@@ -79,25 +79,25 @@ from .dtype import (
     cinvalid,
 )
 
-from .complex import (
+from numojo.core.complex import (
     ComplexSIMD,
     ComplexNDArray,
 )
 
-from .memory import (
+from numojo.core.memory import (
     DataContainer,
     HostStorage,
     DeviceStorage,
     AcceleratorDataContainer,
 )
-from .accelerator import Device, cpu, cuda, mps, rocm
+from numojo.core.accelerator import Device, cpu, cuda, mps, rocm
 
-from .indexing import Item, IndexMethods, TraverseMethods, Validator
+from numojo.core.indexing import Item, IndexMethods, TraverseMethods, Validator
 
-import .dtype
-import .layout
-import .memory
-import .matrix
-import .complex
-import .traits
-import .accelerator
+import numojo.core.dtype
+import numojo.core.layout
+import numojo.core.memory
+import numojo.core.matrix
+import numojo.core.complex
+import numojo.core.traits
+import numojo.core.accelerator

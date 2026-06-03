@@ -22,21 +22,21 @@ Notes / conventions:
   stable and widely used.
 """
 
-import .linalg
-import .logic
-import .math
-import .statistics
-import .bitwise
-import .creation
-import .indexing
-import .manipulation
-import .random
-import .sorting
-import .searching
-import .functional
-import .operations
+import numojo.routines.linalg
+import numojo.routines.logic
+import numojo.routines.math
+import numojo.routines.statistics
+import numojo.routines.bitwise
+import numojo.routines.creation
+import numojo.routines.indexing
+import numojo.routines.manipulation
+import numojo.routines.random
+import numojo.routines.sorting
+import numojo.routines.searching
+import numojo.routines.functional
+import numojo.routines.operations
 
-from .io import (
+from numojo.routines.io import (
     loadtxt,
     savetxt,
     load,
@@ -44,9 +44,9 @@ from .io import (
     set_printoptions,
 )
 
-from .linalg.misc import diagonal
+from numojo.routines.linalg.misc import diagonal
 
-from .logic import (
+from numojo.routines.logic import (
     greater,
     greater_equal,
     less,
@@ -60,7 +60,7 @@ from .logic import (
     all,
 )
 
-from .math import (
+from numojo.routines.math import (
     add,
     sub,
     mod,
@@ -122,11 +122,11 @@ from .math import (
     hypot_fma,
 )
 
-from .statistics import mean, mode, median, variance
+from numojo.routines.statistics import mean, mode, median, variance
 
-from .bitwise import invert
+from numojo.routines.bitwise import invert
 
-from .creation import (
+from numojo.routines.creation import (
     arange,
     linspace,
     logspace,
@@ -151,9 +151,9 @@ from .creation import (
     array,
 )
 
-from .indexing import `where`, compress, take_along_axis
+from numojo.routines.indexing import `where`, compress, take_along_axis
 
-from .functional import (
+from numojo.routines.functional import (
     apply_along_axis_reduce,
     apply_along_axis_reduce_to_int,
     apply_along_axis_reduce_with_dtype,
@@ -162,7 +162,7 @@ from .functional import (
     apply_along_axis_indices,
 )
 
-from .manipulation import (
+from numojo.routines.manipulation import (
     ndim,
     shape,
     size,
@@ -173,10 +173,10 @@ from .manipulation import (
     flip,
 )
 
-from .sorting import sort, argsort
-from .searching import argmax, argmin
+from numojo.routines.sorting import sort, argsort
+from numojo.routines.searching import argmax, argmin
 
-from .operations import (
+from numojo.routines.operations import (
     HostExecutor,
     UnaryKernel,
     BinaryKernel,

@@ -10,4 +10,4 @@
 2D matrix types and APIs.
 """
 
-from .base import Matrix
+from numojo.core.matrix.base import Matrix

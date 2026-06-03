@@ -9,7 +9,7 @@
 
 This module provides a collection of logic routines for numerical computations, including comparison operations, content checks, and truth evaluations.
 """
-from .comparison import (
+from numojo.routines.logic.comparison import (
     greater,
     greater_equal,
     less,
@@ -20,12 +20,12 @@ from .comparison import (
     isclose,
     array_equal,
 )
-from .contents import (
+from numojo.routines.logic.contents import (
     isinf,
     isfinite,
     isnan,
     isneginf,
     isposinf,
 )
-from .logical_ops import logical_and, logical_or, logical_not, logical_xor
-from .truth import any, all
+from numojo.routines.logic.logical_ops import logical_and, logical_or, logical_not, logical_xor
+from numojo.routines.logic.truth import any, all

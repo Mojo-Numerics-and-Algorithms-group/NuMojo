@@ -30,7 +30,6 @@ struct Item(
     Equatable,
     ImplicitlyCopyable,
     Movable,
-    RegisterPassable,
     Sized,
     Writable,
 ):
@@ -161,15 +160,25 @@ struct Item(
         memset_zero(self._buf.ptr, ndim)
 
     @always_inline("nodebug")
-    def copy(self) -> Self:
+    def __init__(out self, *, copy: Self):
         """Copy construct the Item.
 
-        Returns:
-            A copy of the Item.
+        Args:
+            copy: The Item to copy from.
         """
-        var result = Self(ndim=self.ndim)
-        memcpy(dest=result._buf.ptr, src=self._buf.ptr, count=self.ndim)
-        return result^
+        self.ndim = copy.ndim
+        self._buf = IndexBuffer(size=copy.ndim)
+        memcpy(dest=self._buf.ptr, src=copy._buf.ptr, count=copy.ndim)
+
+    @always_inline("nodebug")
+    def __init__(out self, *, deinit take: Self):
+        """Moves `take` into `self`.
+
+        Args:
+            take: The Item to move from.
+        """
+        self.ndim = take.ndim
+        self._buf = take._buf^
 
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods

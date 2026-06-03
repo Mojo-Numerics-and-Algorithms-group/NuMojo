@@ -9,8 +9,8 @@
 
 This module provides functions for linear algebra operations, including matrix decompositions, norms, products, and solving linear systems etc.
 """
-from .decompositions import lu_decomposition, qr, eig
-from .norms import det, trace
-from .products import cross, dot, matmul
-from .solving import inv, solve, lstsq
-from .misc import diagonal
+from numojo.routines.linalg.decompositions import lu_decomposition, qr, eig
+from numojo.routines.linalg.norms import det, trace
+from numojo.routines.linalg.products import cross, dot, matmul
+from numojo.routines.linalg.solving import inv, solve, lstsq
+from numojo.routines.linalg.misc import diagonal

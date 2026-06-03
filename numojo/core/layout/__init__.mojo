@@ -10,6 +10,6 @@
 Layout metadata types used by NuMojo arrays and matrices (shape, strides, and flags).
 """
 
-from .ndshape import NDArrayShape
-from .ndstrides import NDArrayStrides
-from .flags import Flags
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.layout.flags import Flags

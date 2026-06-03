@@ -10,5 +10,5 @@
 Complex number support (SIMD complex types and complex NDArray).
 """
 
-from .complex_simd import ComplexSIMD
-from .complex_ndarray import ComplexNDArray
+from numojo.core.complex.complex_simd import ComplexSIMD
+from numojo.core.complex.complex_ndarray import ComplexNDArray

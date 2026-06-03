@@ -9,7 +9,7 @@
 
 This module contains all the vectorized unary, binary, unary_predicate, binary_predicate operations.
 """
-from .backend import (
+from numojo.routines.operations.backend import (
     HostExecutor,
     UnaryKernel,
     BinaryKernel,

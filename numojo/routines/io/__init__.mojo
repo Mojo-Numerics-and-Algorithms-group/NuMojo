@@ -9,9 +9,9 @@
 
 This module provides functions for reading and writing arrays to and from files, as well as formatting options for printing arrays.
 """
-from .files import loadtxt, savetxt, load, save
+from numojo.routines.io.files import loadtxt, savetxt, load, save
 
-from .formatting import (
+from numojo.routines.io.formatting import (
     format_floating_scientific,
     PrintOptions,
     set_printoptions,

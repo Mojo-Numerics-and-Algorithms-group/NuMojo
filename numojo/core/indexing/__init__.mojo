@@ -10,10 +10,10 @@
 Indexing-related helpers and types used by NuMojo core containers.
 """
 
-from .item import Item
-from .index_buffer import IndexBuffer
-from .offset import IndexMethods
-from .traversal import TraverseMethods
-from .validation import Validator
-from .slicing import InternalSlice
-from .utility import bool_to_numeric, to_numpy, newaxis
+from numojo.core.indexing.item import Item
+from numojo.core.indexing.index_buffer import IndexBuffer
+from numojo.core.indexing.offset import IndexMethods
+from numojo.core.indexing.traversal import TraverseMethods
+from numojo.core.indexing.validation import Validator
+from numojo.core.indexing.slicing import InternalSlice
+from numojo.core.indexing.utility import bool_to_numeric, to_numpy, newaxis

@@ -13,7 +13,7 @@ Implements Checking routines: currently not SIMD due to bool bit packing issue
 import std.math as math
 from std.utils.numerics import neg_inf, inf
 
-from numojo.routines import HostExecutor
+from numojo.routines import HostExecutor, UnaryPredicate
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 
@@ -38,6 +38,59 @@ from numojo.core.matrix import Matrix
 #     dtype: DType
 # ](array: NDArray[dtype]) -> NDArray[DType.bool]:
 #     return backend().math_func_is[dtype, math.is_odd](array)
+
+
+# ===------------------------------------------------------------------------===#
+# Unary predicate functors
+# ===------------------------------------------------------------------------===#
+
+
+struct _IsInf(UnaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        return math.isinf(x)
+
+
+struct _IsFinite(UnaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        return math.isfinite(x)
+
+
+struct _IsNan(UnaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        return math.isnan(x)
+
+
+struct _IsNegInf(UnaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        # Integers can never be -inf; only floats carry an infinity bit pattern.
+        comptime if type.is_floating_point():
+            return x == SIMD[type, simd_w](neg_inf[type]())
+        else:
+            return SIMD[DType.bool, simd_w](False)
+
+
+struct _IsPosInf(UnaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        # Integers can never be +inf; only floats carry an infinity bit pattern.
+        comptime if type.is_floating_point():
+            return x == SIMD[type, simd_w](inf[type]())
+        else:
+            return SIMD[DType.bool, simd_w](False)
 
 
 # ===------------------------------------------------------------------------===#
@@ -68,7 +121,7 @@ def isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isinf(arr))  # Output: [False, False, False, False, False]
         ```
     """
-    return HostExecutor.apply_unary_predicate[dtype, math.isinf](array)
+    return HostExecutor.apply_unary_predicate[dtype, _IsInf](array)
 
 
 def isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -94,7 +147,7 @@ def isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isfinite(arr))  # Output: [True, True, True]
         ```
     """
-    return HostExecutor.apply_unary_predicate[dtype, math.isfinite](array)
+    return HostExecutor.apply_unary_predicate[dtype, _IsFinite](array)
 
 
 def isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -120,7 +173,7 @@ def isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
             print(isnan(arr))  # Output: [False, False, False]
         ```
     """
-    return HostExecutor.apply_unary_predicate[dtype, math.isnan](array)
+    return HostExecutor.apply_unary_predicate[dtype, _IsNan](array)
 
 
 def isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -147,12 +200,7 @@ def isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ```
     """
 
-    def is_neginf[
-        dtype: DType, simd_width: Int
-    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
-        return x.eq(SIMD[dtype, simd_width](neg_inf[dtype]()))
-
-    return HostExecutor.apply_unary_predicate[dtype, is_neginf](array)
+    return HostExecutor.apply_unary_predicate[dtype, _IsNegInf](array)
 
 
 def isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
@@ -179,12 +227,7 @@ def isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ```
     """
 
-    def is_posinf[
-        dtype: DType, simd_width: Int
-    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
-        return x.eq(SIMD[dtype, simd_width](inf[dtype]()))
-
-    return HostExecutor.apply_unary_predicate[dtype, is_posinf](array)
+    return HostExecutor.apply_unary_predicate[dtype, _IsPosInf](array)
 
 
 def isneginf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:

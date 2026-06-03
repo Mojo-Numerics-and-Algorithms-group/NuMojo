@@ -20,6 +20,7 @@ from std.algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayStrides
 from numojo.core.indexing import IndexMethods
+from numojo.routines.manipulation import broadcast_to
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays
@@ -322,7 +323,7 @@ def take_along_axis[
         arr_shape_new[normalized_axis] = indices.shape[normalized_axis]
 
         try:
-            broadcasted_indices = numojo.broadcast_to(indices, arr_shape_new)
+            broadcasted_indices = broadcast_to(indices, arr_shape_new)
         except e:
             raise Error(
                 String(

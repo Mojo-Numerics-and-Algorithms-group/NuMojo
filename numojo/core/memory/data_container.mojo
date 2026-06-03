@@ -76,7 +76,9 @@ struct Ownership(ImplicitlyCopyable):
         writer.write(self.__str__())
 
 
-struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
+struct DataContainer[dtype: DType](
+    ImplicitlyCopyable & Movable & Sized & Writable
+):
     """
     Reference-counted container for a contiguous buffer of elements.
 
@@ -206,22 +208,22 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = ownership
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
-        Copy constructor.
+        Copy constructor (Mojo 1.0 lifecycle form; `Copyable` provides `.copy()`).
 
-        Increments the reference count for managed containers.
+        Increments the reference count for managed containers and shares the
+        same underlying buffer.
 
         Args:
             copy: DataContainer to copy from.
         """
-        self.size = copy.size
+        if copy.is_refcounted():
+            _ = copy._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
         self.ptr = copy.ptr
+        self.size = copy.size
         self._refcount = copy._refcount
         self.ownership = copy.ownership
-
-        if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
     def deep_copy(self) -> Self:
         """
@@ -238,14 +240,14 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return result^
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """
-        Move constructor.
+        Move constructor (Mojo 1.0 lifecycle form).
 
         Transfers ownership without changing the reference count.
 
         Args:
-            take: DataContainer to move from.
+            take: DataContainer to move from (consumed).
         """
         self.ptr = take.ptr
         self._refcount = take._refcount

@@ -16,7 +16,18 @@ import std.math.math as stdlib_math
 from std.sys import simd_width_of
 
 from numojo.core.ndarray import NDArray
-from numojo.routines import HostExecutor
+from numojo.routines import HostExecutor, UnaryKernel, BinaryKernel
+
+
+struct _Cbrt(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return stdlib_math.cbrt(x)
+        else:
+            return x
 
 
 # TODO: Implement same routines for Matrix.
@@ -33,7 +44,7 @@ def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to array**(1/3).
     """
-    return HostExecutor.apply_unary[dtype, stdlib_math.cbrt](array)
+    return HostExecutor.apply_unary[dtype, _Cbrt](array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -97,6 +108,17 @@ def _mt_rsqrt[
     return stdlib_math.sqrt(SIMD.__truediv__(SIMD[dtype, simd_width](1), value))
 
 
+struct _MtRsqrt(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return _mt_rsqrt(x)
+        else:
+            return x
+
+
 def rsqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise reciprocal square root of NDArray.
@@ -110,7 +132,18 @@ def rsqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to 1/NDArray**(1/2).
     """
-    return HostExecutor.apply_unary[dtype, _mt_rsqrt](array)
+    return HostExecutor.apply_unary[dtype, _MtRsqrt](array)
+
+
+struct _Sqrt(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return stdlib_math.sqrt(x)
+        else:
+            return x
 
 
 def sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -126,12 +159,23 @@ def sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         A NDArray equal to NDArray**(1/2).
     """
-    return HostExecutor.apply_unary[dtype, stdlib_math.sqrt](array)
+    return HostExecutor.apply_unary[dtype, _Sqrt](array)
 
 
 # ===------------------------------------------------------------------------===#
 # Scaling
 # ===------------------------------------------------------------------------===#
+
+
+struct _Scalb(BinaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        a: SIMD[type, simd_w], b: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return stdlib_math.scalb(a, b)
+        else:
+            return a
 
 
 def scalb[
@@ -153,4 +197,4 @@ def scalb[
     Returns:
         A NDArray with values equal to scalb(array1, array2).
     """
-    return HostExecutor.apply_binary[dtype, stdlib_math.scalb](array1, array2)
+    return HostExecutor.apply_binary[dtype, _Scalb](array1, array2)

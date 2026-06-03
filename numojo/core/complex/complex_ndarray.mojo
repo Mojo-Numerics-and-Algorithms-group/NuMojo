@@ -75,6 +75,7 @@ import numojo.routines.logic.comparison as comparison
 # === numojo routines (math / bitwise / searching) ===
 # ===----------------------------------------------------------------------===#
 import numojo.routines.bitwise as bitwise
+import numojo.routines.manipulation as manipulation
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.math.trig as trig
@@ -421,32 +422,25 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     #     )
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def copy(self) raises -> Self:
         """
-        Copy copy into self.
+        Return a deep copy of self.
         """
-        self._re = copy._re.copy()
-        self._im = copy._im.copy()
-        self.ndim = copy.ndim
-        self.shape = copy.shape
-        self.size = copy.size
-        self.strides = copy.strides
-        self.flags = copy.flags
-        self.print_options = copy.print_options
+        return Self(re=self._re.copy(), im=self._im.copy())
 
     @always_inline("nodebug")
-    def __moveinit__(out self, deinit take: Self):
+    def __moveinit__(mut self, var existing: Self):
         """
         Move other into self.
         """
-        self._re = take._re^
-        self._im = take._im^
-        self.ndim = take.ndim
-        self.shape = take.shape
-        self.size = take.size
-        self.strides = take.strides
-        self.flags = take.flags
-        self.print_options = take.print_options
+        self._re = existing._re^
+        self._im = existing._im^
+        self.ndim = existing.ndim
+        self.shape = existing.shape
+        self.size = existing.size
+        self.strides = existing.strides
+        self.flags = existing.flags
+        self.print_options = existing.print_options
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
@@ -3303,8 +3297,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Array of the same data with a new shape.
         """
         var result: Self = ComplexNDArray[Self.cdtype](
-            re=numojo.reshape(self._re.copy(), shape=shape, order=order),
-            im=numojo.reshape(self._im.copy(), shape=shape, order=order),
+            re=manipulation.reshape(self._re.copy(), shape=shape, order=order),
+            im=manipulation.reshape(self._im.copy(), shape=shape, order=order),
         )
         result._re.flags = self._re.flags
         result._im.flags = self._im.flags
@@ -4365,7 +4359,7 @@ struct _ComplexNDArrayIter[
             return result^
 
         else:  # 0-D array
-            var result = numojo.creation._0darray[Self.cdtype](
+            var result = creation._0darray[Self.cdtype](
                 ComplexSIMD[Self.cdtype](self.re_ptr[index], self.im_ptr[index])
             )
             return result^

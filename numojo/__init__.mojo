@@ -125,9 +125,9 @@ from numojo.core.type_aliases import (
 # Objects
 from numojo.routines.constants import Constants
 
-comptime pi = numojo.routines.constants.Constants.pi
-comptime e = numojo.routines.constants.Constants.e
-comptime c = numojo.routines.constants.Constants.c
+comptime pi = Constants.pi
+comptime e = Constants.e
+comptime c = Constants.c
 
 # Functions
 # TODO Make explicit imports of each individual function in future

@@ -161,15 +161,15 @@ struct Item(
         memset_zero(self._buf.ptr, ndim)
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def copy(self) -> Self:
         """Copy construct the Item.
 
-        Args:
-            copy: The Item to copy.
+        Returns:
+            A copy of the Item.
         """
-        self.ndim = copy.ndim
-        self._buf = IndexBuffer(size=self.ndim)
-        memcpy(dest=self._buf.ptr, src=copy._buf.ptr, count=copy.ndim)
+        var result = Self(ndim=self.ndim)
+        memcpy(dest=result._buf.ptr, src=self._buf.ptr, count=self.ndim)
+        return result^
 
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods

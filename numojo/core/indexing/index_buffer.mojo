@@ -27,7 +27,6 @@ struct IndexBuffer(
     Equatable,
     ImplicitlyCopyable,
     Movable,
-    RegisterPassable,
     Sized,
     Writable,
 ):
@@ -185,19 +184,31 @@ struct IndexBuffer(
                 Scalar[Self.element_type](values[i])
             )
 
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
-        Copy-initialize an IndexBuffer from ancopy IndexBuffer.
+        Copy constructor (Mojo 1.0 lifecycle form; `Copyable` provides `.copy()`).
+
+        Performs a deep copy of the underlying buffer.
 
         Args:
-            copy: The copy IndexBuffer to copy from.
+            copy: IndexBuffer to copy from.
         """
         self.ndim = copy.ndim
         if copy.ndim <= 0:
             self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
-            return
-        self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
-        memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
+        else:
+            self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
+            memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
+
+    def __init__(out self, *, deinit take: Self):
+        """
+        Move constructor (Mojo 1.0 lifecycle form). Transfers buffer ownership.
+
+        Args:
+            take: IndexBuffer to move from (consumed).
+        """
+        self.ptr = take.ptr
+        self.ndim = take.ndim
 
     def __del__(deinit self):
         """

@@ -10,8 +10,23 @@
 This module implements bit-wise operations on NDArrays, such as bitwise AND, OR, XOR, and NOT (invert).
 """
 
-from numojo.routines import HostExecutor
+from numojo.routines import HostExecutor, UnaryKernel
 from numojo.core.ndarray import NDArray
+
+# ===------------------------------------------------------------------------===#
+# Kernel functors for SIMD bitwise operators
+# (Mojo 1.0: a parametric `fn` value can't be a comptime param; pass a
+# trait-conforming functor type instead — see backend.mojo)
+# ===------------------------------------------------------------------------===#
+
+
+struct _Invert(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        return ~x
+
 
 # ===------------------------------------------------------------------------===#
 # Bitwise operations
@@ -51,4 +66,4 @@ def invert[
         var result2 = invert(arr2) # result2 is [false, true, false
         ```
     """
-    return HostExecutor.apply_unary[dtype, SIMD.__invert__](array)
+    return HostExecutor.apply_unary[dtype, _Invert](array)

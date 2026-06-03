@@ -22,7 +22,6 @@ struct NDArrayStrides(
     Equatable,
     ImplicitlyCopyable,
     Movable,
-    RegisterPassable,
     Sized,
     Writable,
 ):
@@ -322,25 +321,28 @@ struct NDArrayStrides(
                     self._buf.init_value(i, 0)
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
-        Initializes the NDArrayStrides from ancopy strides.
-        A deep-copy of the elements is conducted.
+        Copy constructor (Mojo 1.0 lifecycle form; `Copyable` provides `.copy()`).
+
+        Performs a deep copy of the underlying buffer.
 
         Args:
-            copy: Strides of the array.
+            copy: NDArrayStrides to copy from.
         """
         self.ndim = copy.ndim
-        if copy.ndim == 0:
-            self._buf = IndexBuffer(size=1)
-            self._buf.init_value(0, 0)
-        else:
-            self._buf = IndexBuffer(size=copy.ndim)
-            memcpy(
-                dest=self._buf.ptr,
-                src=copy._buf.ptr,
-                count=copy.ndim,
-            )
+        self._buf = copy._buf.copy()
+
+    @always_inline("nodebug")
+    def __init__(out self, *, deinit take: Self):
+        """
+        Move constructor (Mojo 1.0 lifecycle form).
+
+        Args:
+            take: NDArrayStrides to move from (consumed).
+        """
+        self.ndim = take.ndim
+        self._buf = take._buf^
 
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods

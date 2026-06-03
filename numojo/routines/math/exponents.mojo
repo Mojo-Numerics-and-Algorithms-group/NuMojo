@@ -16,7 +16,89 @@ from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
 from std.utils import Variant
 
 from numojo.core.ndarray import NDArray
-from numojo.routines import HostExecutor
+from numojo.routines import HostExecutor, UnaryKernel
+
+# ===------------------------------------------------------------------------===#
+# Kernel functors
+# ===------------------------------------------------------------------------===#
+
+
+struct _Exp(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.exp(x)
+        else:
+            return x
+
+
+struct _Exp2(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.exp2(x)
+        else:
+            return x
+
+
+struct _Expm1(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.expm1(x)
+        else:
+            return x
+
+
+struct _Log(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.log(x)
+        else:
+            return x
+
+
+struct _Log2(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.log2(x)
+        else:
+            return x
+
+
+struct _Log10(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.log10(x)
+        else:
+            return x
+
+
+struct _Log1p(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.log1p(x)
+        else:
+            return x
+
 
 # ===------------------------------------------------------------------------===#
 # Exponential functions
@@ -49,7 +131,7 @@ def exp[
         var result = nm.exp(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.exp](array)
+    return HostExecutor.apply_unary[dtype, _Exp](array)
 
 
 def exp[
@@ -105,7 +187,7 @@ def exp2[
         var result = nm.exp2(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.exp2](array)
+    return HostExecutor.apply_unary[dtype, _Exp2](array)
 
 
 def exp2[
@@ -160,7 +242,7 @@ def expm1[
         var result = nm.expm1(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.expm1](array)
+    return HostExecutor.apply_unary[dtype, _Expm1](array)
 
 
 def expm1[
@@ -219,7 +301,7 @@ def log[
         var result = nm.log(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log](array)
+    return HostExecutor.apply_unary[dtype, _Log](array)
 
 
 def log[
@@ -274,7 +356,7 @@ def log2[
         var result = nm.log2(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log2](array)
+    return HostExecutor.apply_unary[dtype, _Log2](array)
 
 
 def log2[
@@ -327,7 +409,7 @@ def log10[
         var result = nm.log10(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log10](array)
+    return HostExecutor.apply_unary[dtype, _Log10](array)
 
 
 def log10[
@@ -382,7 +464,7 @@ def log1p[
         var result = nm.log1p(arr)
         ```
     """
-    return HostExecutor.apply_unary[dtype, math.log1p](array)
+    return HostExecutor.apply_unary[dtype, _Log1p](array)
 
 
 def log1p[

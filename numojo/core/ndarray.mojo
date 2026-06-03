@@ -80,6 +80,12 @@ import numojo.routines.bitwise as bitwise
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
+import numojo.routines.linalg as linalg
+import numojo.routines.sorting as sorting
+import numojo.routines.math as math
+import numojo.routines.statistics as statistics
+import numojo.routines.manipulation as manipulation
+import numojo.routines.indexing as indexing
 
 comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 """IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
@@ -315,25 +321,20 @@ struct NDArray[dtype: DType = DType.float64](
         self.print_options = PrintOptions()
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
-        """Copies `copy` into `self`.
-
-        Performs a deep copy. The new array owns its data.
-
-        Args:
-            copy: The NDArray to copy from.
-        """
-        self.ndim = copy.ndim
+    def __init__(out self, *, copy: Self):
+        """Returns a deep copy of this NDArray. The new array owns its data."""
+        var new_buf = copy._buf.copy()
         self.shape = copy.shape
-        self.size = copy.size
         self.strides = copy.strides
         self.offset = copy.offset
-        self._buf = copy._buf.copy()
+        self.ndim = copy.ndim
+        self.size = copy.size
+        self._buf = new_buf^
         self.flags = Flags(
             c_contiguous=copy.flags.C_CONTIGUOUS,
             f_contiguous=copy.flags.F_CONTIGUOUS,
             owndata=True,
-            writeable=True,
+            writeable=False,
         )
         self.print_options = copy.print_options
 
@@ -384,7 +385,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     @always_inline("nodebug")
-    def __moveinit__(out self, deinit take: Self):
+    def __init__(out self, *, deinit take: Self):
         """Moves `take` into `self`.
 
         Args:
@@ -395,7 +396,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.size = take.size
         self.strides = take.strides
         self.offset = take.offset
-        self.flags = take.flags^
+        self.flags = take.flags
         self._buf = take._buf^
         self.print_options = take.print_options
 
@@ -673,9 +674,10 @@ struct NDArray[dtype: DType = DType.float64](
 
         # 1-D -> scalar (0-D array wrapper)
         if self.ndim == 1:
-            return creation._0darray[Self.dtype](
+            var r = creation._0darray[Self.dtype](
                 self._buf.ptr[self.offset + norm]
             )
+            return r^
 
         var out_shape = self.shape[1:]
         var alloc_order: String = "C"
@@ -929,7 +931,7 @@ struct NDArray[dtype: DType = DType.float64](
         var index: List[Int] = List[Int](length=ndims, fill=0)
 
         TraverseMethods.traverse_iterative[Self.dtype](
-            self,
+            self.copy(),
             narr,
             nshape,
             ncoefficients,
@@ -1066,7 +1068,7 @@ struct NDArray[dtype: DType = DType.float64](
         var index: List[Int] = List[Int](length=ndims, fill=0)
 
         TraverseMethods.traverse_iterative[Self.dtype](
-            self,
+            self.copy(),
             narr,
             nshape,
             ncoefficients,
@@ -1323,8 +1325,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         var narr: Self
         if count_int == self.ndim:
-            narr = creation._0darray[Self.dtype](self._getitem(indices))
-            return narr^
+            var r0d = creation._0darray[Self.dtype](self._getitem(indices))
+            return r0d^
 
         if n_slices < self.ndim and not index_type_list[-1].is_ellipsis:
             for i in range(n_slices, self.ndim):
@@ -2394,7 +2396,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var val_c = val.contiguous()
         TraverseMethods.traverse_iterative_setter[Self.dtype](
-            val_c,
+            val_c^,
             self,
             nshape,
             ncoefficients,
@@ -3016,7 +3018,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.equal[Self.dtype](self, other)
+        var r = comparison.equal[Self.dtype](self.copy(), other.copy())
+        return r^
 
     @always_inline("nodebug")
     def __eq__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3028,7 +3031,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.equal[Self.dtype](self, other)
+        var r = comparison.equal[Self.dtype](self.copy(), other)
+        return r^
 
     @always_inline("nodebug")
     def __ne__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3040,7 +3044,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.not_equal[Self.dtype](self, other)
+        var r = comparison.not_equal[Self.dtype](self.copy(), other)
+        return r^
 
     @always_inline("nodebug")
     def __ne__(self, other: NDArray[Self.dtype]) raises -> NDArray[DType.bool]:
@@ -3052,7 +3057,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.not_equal[Self.dtype](self, other)
+        var r = comparison.not_equal[Self.dtype](self.copy(), other.copy())
+        return r^
 
     @always_inline("nodebug")
     def __lt__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3064,7 +3070,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.less[Self.dtype](self, other)
+        var r = comparison.less[Self.dtype](self.copy(), other)
+        return r^
 
     @always_inline("nodebug")
     def __lt__(self, other: NDArray[Self.dtype]) raises -> NDArray[DType.bool]:
@@ -3076,7 +3083,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.less[Self.dtype](self, other)
+        var r = comparison.less[Self.dtype](self.copy(), other.copy())
+        return r^
 
     @always_inline("nodebug")
     def __le__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3088,7 +3096,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.less_equal[Self.dtype](self, other)
+        var r = comparison.less_equal[Self.dtype](self.copy(), other)
+        return r^
 
     @always_inline("nodebug")
     def __le__(self, other: NDArray[Self.dtype]) raises -> NDArray[DType.bool]:
@@ -3100,7 +3109,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.less_equal[Self.dtype](self, other)
+        var r = comparison.less_equal[Self.dtype](self.copy(), other.copy())
+        return r^
 
     @always_inline("nodebug")
     def __gt__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3112,7 +3122,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.greater[Self.dtype](self, other)
+        var r = comparison.greater[Self.dtype](self.copy(), other)
+        return r^
 
     @always_inline("nodebug")
     def __gt__(self, other: NDArray[Self.dtype]) raises -> NDArray[DType.bool]:
@@ -3124,7 +3135,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.greater[Self.dtype](self, other)
+        var r = comparison.greater[Self.dtype](self.copy(), other.copy())
+        return r^
 
     @always_inline("nodebug")
     def __ge__(self, other: SIMD[Self.dtype, 1]) raises -> NDArray[DType.bool]:
@@ -3136,7 +3148,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.greater_equal[Self.dtype](self, other)
+        var r = comparison.greater_equal[Self.dtype](self.copy(), other)
+        return r^
 
     @always_inline("nodebug")
     def __ge__(self, other: NDArray[Self.dtype]) raises -> NDArray[DType.bool]:
@@ -3148,7 +3161,8 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of boolean values.
         """
-        return comparison.greater_equal[Self.dtype](self, other)
+        var r = comparison.greater_equal[Self.dtype](self.copy(), other.copy())
+        return r^
 
     # ===-------------------------------------------------------------------===#
     # ARITHMETIC OPERATORS
@@ -3157,19 +3171,22 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array + scalar`.
         """
-        return math.add[Self.dtype](self, other)
+        var r = math.add[Self.dtype](self.copy(), other)
+        return r^
 
     def __add__(self, other: Self) raises -> Self:
         """
         Enables `array + array`.
         """
-        return math.add[Self.dtype](self, other)
+        var r = math.add[Self.dtype](self.copy(), other.copy())
+        return r^
 
     def __radd__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar + array`.
         """
-        return math.add[Self.dtype](self, other)
+        var r = math.add[Self.dtype](self.copy(), other)
+        return r^
 
     # ===--- In-place helper methods (view-safe) ---===#
 
@@ -3286,19 +3303,22 @@ struct NDArray[dtype: DType = DType.float64](
         """
         Enables `array - scalar`.
         """
-        return math.sub[Self.dtype](self, other)
+        var r = math.sub[Self.dtype](self.copy(), other)
+        return r^
 
     def __sub__(self, other: Self) raises -> Self:
         """
         Enables `array - array`.
         """
-        return math.sub[Self.dtype](self, other)
+        var r = math.sub[Self.dtype](self.copy(), other.copy())
+        return r^
 
     def __rsub__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar - array`.
         """
-        return math.sub[Self.dtype](other, self)
+        var r = math.sub[Self.dtype](other, self.copy())
+        return r^
 
     def __isub__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array -= scalar`. View-safe: modifies buffer in-place."""
@@ -3309,25 +3329,29 @@ struct NDArray[dtype: DType = DType.float64](
         self._inplace_array_op[SIMD.__sub__](other)
 
     def __matmul__(self, other: Self) raises -> Self:
-        return numojo.linalg.matmul(self, other)
+        var r = linalg.matmul(self.copy(), other.copy())
+        return r^
 
     def __mul__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `array * scalar`.
         """
-        return math.mul[Self.dtype](self, other)
+        var r = math.mul[Self.dtype](self.copy(), other)
+        return r^
 
     def __mul__(self, other: Self) raises -> Self:
         """
         Enables `array * array`.
         """
-        return math.mul[Self.dtype](self, other)
+        var r = math.mul[Self.dtype](self.copy(), other.copy())
+        return r^
 
     def __rmul__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
         Enables `scalar * array`.
         """
-        return math.mul[Self.dtype](self, other)
+        var r = math.mul[Self.dtype](self.copy(), other)
+        return r^
 
     def __imul__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array *= scalar`. View-safe: modifies buffer in-place."""
@@ -4000,7 +4024,7 @@ struct NDArray[dtype: DType = DType.float64](
             The indices of the sorted NDArray.
         """
 
-        return numojo.sorting.argsort(self)
+        return sorting.argsort(self)
 
     def argsort(mut self, axis: Int) raises -> NDArray[DType.int]:
         """Sorts the NDArray and returns the sorted indices. See
@@ -4010,7 +4034,7 @@ struct NDArray[dtype: DType = DType.float64](
             The indices of the sorted NDArray.
         """
 
-        return numojo.sorting.argsort(self, axis=axis)
+        return sorting.argsort(self, axis=axis)
 
     def astype[target: DType](self) raises -> NDArray[target]:
         """Converts the type of the array.
@@ -4039,7 +4063,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with the clipped values.
         """
 
-        return numojo.clip(self, a_min, a_max)
+        return math.clip(self, a_min, a_max)
 
     def compress(
         self, condition: NDArray[DType.bool], axis: Int
@@ -4066,7 +4090,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the condition contains no `True` values.
         """
 
-        return numojo.compress(condition=condition, a=self, axis=axis)
+        return indexing.compress(condition=condition, a=self, axis=axis)
 
     def compress(self, condition: NDArray[DType.bool]) raises -> Self:
         """Returns selected slices of an array along a given axis.
@@ -4089,7 +4113,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the condition contains no `True` values.
         """
 
-        return numojo.compress(condition=condition, a=self)
+        return indexing.compress(condition=condition, a=self)
 
     def contiguous(self) raises -> Self:
         """Returns a new C-contiguous array owning a copy of the data.
@@ -4177,7 +4201,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative product of all items.
         """
-        return numojo.math.cumprod[Self.dtype](self)
+        return math.cumprod[Self.dtype](self)
 
     def cumprod(self, axis: Int) raises -> NDArray[Self.dtype]:
         """Returns the cumulative product of the array along the given axis.
@@ -4188,7 +4212,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative product along the axis.
         """
-        return numojo.math.cumprod[Self.dtype](self.copy(), axis=axis)
+        return math.cumprod[Self.dtype](self.copy(), axis=axis)
 
     def cumsum(self) raises -> NDArray[Self.dtype]:
         """Returns the cumulative sum of all items of an array. The array is
@@ -4197,7 +4221,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative sum of all items.
         """
-        return numojo.math.cumsum[Self.dtype](self)
+        return math.cumsum[Self.dtype](self)
 
     def cumsum(self, axis: Int) raises -> NDArray[Self.dtype]:
         """Returns the cumulative sum of the array along the given axis.
@@ -4208,7 +4232,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The cumulative sum along the axis.
         """
-        return numojo.math.cumsum[Self.dtype](self.copy(), axis=axis)
+        return math.cumsum[Self.dtype](self.copy(), axis=axis)
 
     def diagonal(self, offset: Int = 0) raises -> Self:
         """Returns specific diagonals.
@@ -4225,7 +4249,7 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the array is not 2D.
             Error: If the offset is beyond the shape of the array.
         """
-        return numojo.linalg.diagonal(self, offset=offset)
+        return linalg.diagonal(self, offset=offset)
 
     def fill(mut self, val: Scalar[Self.dtype]):
         """Fills all items of the array with the given value.
@@ -4542,7 +4566,7 @@ struct NDArray[dtype: DType = DType.float64](
             The max value.
         """
 
-        return numojo.math.max(self)
+        return math.max(self)
 
     def max(self, axis: Int) raises -> Self:
         """Finds the max value of an array along the axis. The number of
@@ -4557,7 +4581,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with reduced number of dimensions.
         """
 
-        return numojo.math.max(self, axis=axis)
+        return math.max(self, axis=axis)
 
     def mean[
         returned_dtype: DType = DType.float64
@@ -4567,7 +4591,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The mean of the array.
         """
-        return numojo.statistics.mean[returned_dtype](self)
+        return statistics.mean[returned_dtype](self)
 
     def mean[
         returned_dtype: DType = DType.float64
@@ -4580,7 +4604,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An NDArray.
         """
-        return numojo.statistics.mean[returned_dtype](self, axis)
+        return statistics.mean[returned_dtype](self, axis)
 
     def median[
         returned_dtype: DType = DType.float64
@@ -4614,7 +4638,7 @@ struct NDArray[dtype: DType = DType.float64](
             The min value.
         """
 
-        return numojo.math.min(self)
+        return math.min(self)
 
     def min(self, axis: Int) raises -> Self:
         """Finds the min value of an array along the axis. The number of
@@ -4629,7 +4653,7 @@ struct NDArray[dtype: DType = DType.float64](
             An array with reduced number of dimensions.
         """
 
-        return numojo.math.min(self, axis=axis)
+        return math.min(self, axis=axis)
 
     def nditer(self) raises -> _NDIter[origin_of(self._buf.origin), Self.dtype]:
         """Returns an iterator yielding the array elements according to the
@@ -4714,7 +4738,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             A scalar.
         """
-        return numojo.math.prod(self)
+        return math.prod(self)
 
     def prod(self, axis: Int) raises -> Self:
         """Computes the product of array elements over a given axis.
@@ -4726,7 +4750,7 @@ struct NDArray[dtype: DType = DType.float64](
             An NDArray.
         """
 
-        return numojo.math.prod(self, axis=axis)
+        return math.prod(self, axis=axis)
 
     # TODO: make it inplace?
     def reshape(
@@ -4741,7 +4765,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An array of the same data with a new shape.
         """
-        var result = numojo.reshape(self, shape=shape, order=order)
+        var result = manipulation.reshape(self, shape=shape, order=order)
         return result^
 
     def resize(mut self, shape: NDArrayShape) raises:
@@ -4844,7 +4868,7 @@ struct NDArray[dtype: DType = DType.float64](
                     location="NDArray.sort(axis: Int)",
                 )
             )
-        numojo.sorting.sort_inplace(self, axis=normalized_axis, stable=stable)
+        sorting.sort_inplace(self, axis=normalized_axis, stable=stable)
 
     def std[
         returned_dtype: DType = DType.float64
@@ -4908,7 +4932,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         Defined in `numojo.routines.manipulation.transpose`.
         """
-        return numojo.routines.manipulation.transpose(self, axes)
+        return manipulation.transpose(self, axes)
 
     def T(self) raises -> Self:
         """Transposes the array when `axes` is not given.
@@ -4921,7 +4945,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         Defined in `numojo.routines.manipulation.transpose`.
         """
-        return numojo.routines.manipulation.transpose(self.copy())
+        return manipulation.transpose(self.copy())
 
     def tolist(self) -> List[Scalar[Self.dtype]]:
         """Converts the NDArray to a 1-D list in row-major (C) order.
@@ -5003,7 +5027,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The trace of the ndarray.
         """
-        return numojo.linalg.trace[Self.dtype](self, offset, axis1, axis2)
+        return linalg.trace[Self.dtype](self, offset, axis1, axis2)
 
     # TODO: Remove the underscore in the method name when view is supported.
     # def _transpose(self) raises -> Self:
@@ -5287,7 +5311,7 @@ struct _NDArrayIter[
             return result^
 
         else:  # 0-D array
-            var result: NDArray[Self.dtype] = numojo.creation._0darray[
+            var result: NDArray[Self.dtype] = creation._0darray[
                 Self.dtype
             ](self._buf.ptr[self.offset + index])
             return result^

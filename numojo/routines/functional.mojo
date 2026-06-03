@@ -15,7 +15,7 @@ from std.memory import memcpy
 from std.sys import simd_width_of
 
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
-from numojo.routines.creation import arange
+from numojo.routines.creation import arange, _0darray
 from numojo.core.ndarray import NDArray
 
 # ===----------------------------------------------------------------------=== #
@@ -60,7 +60,7 @@ from numojo.core.ndarray import NDArray
 #     var res: NDArray[dtype]
 
 #     if a.ndim == 1:
-#         res = numojo.creation._0darray[dtype](0)
+#         res = _0darray[dtype](0)
 #         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
 #     else:
@@ -109,7 +109,7 @@ def apply_along_axis_reduce_to_int[
     var res: NDArray[DType.int]
 
     if a.ndim == 1:
-        res = numojo.creation._0darray[DType.int](0)
+        res = _0darray[DType.int](0)
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
@@ -160,7 +160,7 @@ def apply_along_axis_reduce[
     var res: NDArray[dtype]
 
     if a.ndim == 1:
-        res = numojo.creation._0darray[dtype](0)
+        res = _0darray[dtype](0)
         (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
 
     else:
@@ -222,7 +222,7 @@ def apply_along_axis_reduce_with_dtype[
     var res: NDArray[returned_dtype]
 
     if a.ndim == 1:
-        res = numojo.creation._0darray[returned_dtype](0)
+        res = _0darray[returned_dtype](0)
         (res._buf.ptr).init_pointee_copy(func1d[dtype, returned_dtype](a))
 
     else:

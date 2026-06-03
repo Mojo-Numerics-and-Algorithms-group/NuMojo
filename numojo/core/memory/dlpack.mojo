@@ -396,11 +396,13 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         self.ndim = ndim
         self.data_container = data_container^
 
-    def __copyinit__(out self, copy: Self):
-        self.shape = copy.shape
-        self.strides = copy.strides
-        self.ndim = copy.ndim
-        self.data_container = copy.data_container.copy()
+    def copy(self) -> Self:
+        return Self(
+            shape=self.shape,
+            strides=self.strides,
+            ndim=self.ndim,
+            data_container=self.data_container.copy(),
+        )
 
     def __del__(deinit self):
         if self.shape:

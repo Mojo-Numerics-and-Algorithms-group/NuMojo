@@ -9,4 +9,12 @@
 
 This module contains all the vectorized unary, binary, unary_predicate, binary_predicate operations.
 """
-from .backend import HostExecutor
+from .backend import (
+    HostExecutor,
+    UnaryKernel,
+    BinaryKernel,
+    UnaryPredicate,
+    BinaryPredicate,
+    BinaryIntKernel,
+    TernaryKernel,
+)

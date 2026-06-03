@@ -12,12 +12,82 @@ Implements hyperbolic and inverse hyperbolic functions for NDArrays and Matrices
 
 import std.math as math
 
-from numojo.routines import HostExecutor
+from numojo.routines import HostExecutor, UnaryKernel
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 from numojo.core.matrix.base import _arithmetic_func_matrix_to_matrix
 
 # TODO: add dtype in backends and pass it here.
+
+# ===------------------------------------------------------------------------===#
+# Unary kernel functors
+# ===------------------------------------------------------------------------===#
+
+
+struct _Acosh(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.acosh(x)
+        else:
+            return x
+
+
+struct _Asinh(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.asinh(x)
+        else:
+            return x
+
+
+struct _Atanh(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.atanh(x)
+        else:
+            return x
+
+
+struct _Cosh(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.cosh(x)
+        else:
+            return x
+
+
+struct _Sinh(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.sinh(x)
+        else:
+            return x
+
+
+struct _Tanh(UnaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        x: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        comptime if type.is_floating_point():
+            return math.tanh(x)
+        else:
+            return x
 
 # ===------------------------------------------------------------------------===#
 # Inverse Hyperbolic Trig (NDArray)
@@ -37,7 +107,7 @@ def acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise acosh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.acosh](array)
+    return HostExecutor.apply_unary[dtype, _Acosh](array)
 
 
 def asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -53,7 +123,7 @@ def asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise asinh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.asinh](array)
+    return HostExecutor.apply_unary[dtype, _Asinh](array)
 
 
 def atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -69,7 +139,7 @@ def atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise atanh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.atanh](array)
+    return HostExecutor.apply_unary[dtype, _Atanh](array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -90,7 +160,7 @@ def arccosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise inverse hyperbolic cosine (arccosh) of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Acosh](A)
 
 
 def acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
@@ -106,7 +176,7 @@ def acosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise inverse hyperbolic cosine (acosh) of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.acosh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Acosh](A)
 
 
 def arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
@@ -122,7 +192,7 @@ def arcsinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise inverse hyperbolic sine (arcsinh) of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Asinh](A)
 
 
 def asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
@@ -138,7 +208,7 @@ def asinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise inverse hyperbolic sine (asinh) of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.asinh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Asinh](A)
 
 
 def arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
@@ -154,7 +224,7 @@ def arctanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise inverse hyperbolic tangent (arctanh) of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Atanh](A)
 
 
 def atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
@@ -170,7 +240,7 @@ def atanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise inverse hyperbolic tangent (atanh) of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.atanh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Atanh](A)
 
 
 # ===------------------------------------------------------------------------===#
@@ -191,7 +261,7 @@ def cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise cosh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.cosh](array)
+    return HostExecutor.apply_unary[dtype, _Cosh](array)
 
 
 def sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -207,7 +277,7 @@ def sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise sinh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.sinh](array)
+    return HostExecutor.apply_unary[dtype, _Sinh](array)
 
 
 def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -223,7 +293,7 @@ def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     Returns:
         The element-wise tanh of `array`.
     """
-    return HostExecutor.apply_unary[dtype, math.tanh](array)
+    return HostExecutor.apply_unary[dtype, _Tanh](array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -243,7 +313,7 @@ def cosh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise cosh of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.cosh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Cosh](A)
 
 
 def sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
@@ -258,7 +328,7 @@ def sinh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise sinh of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.sinh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Sinh](A)
 
 
 def tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
@@ -273,4 +343,4 @@ def tanh[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     Returns:
         The element-wise tanh of `A`.
     """
-    return _arithmetic_func_matrix_to_matrix[dtype, math.tanh](A)
+    return _arithmetic_func_matrix_to_matrix[dtype, _Tanh](A)

@@ -17,7 +17,7 @@ This module provides three storage structs:
   `HostStorage` and `DeviceStorage` at compile time based on a `Device` parameter.
 """
 from std.memory import UnsafePointer
-from std.os.atomic import Atomic, Consistency, fence
+from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 from std.collections.optional import Optional
 from std.sys.info import has_accelerator
@@ -165,36 +165,32 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = ownership
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def copy(self) -> Self:
         """Shallow-copy constructor.
 
         Copies the pointer and refcount, then atomically increments the
         reference count for managed containers.
 
-        Args:
-            copy: The source container.
+        Returns:
+            A new `HostStorage` sharing the same buffer.
         """
-        self.size = copy.size
-        self.ptr = copy.ptr
-        self._refcount = copy._refcount
-        self.ownership = copy.ownership
-
         if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
+        return Self(ptr=self.ptr, size=self.size, refcount=self._refcount, ownership=self.ownership)
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __moveinit__(mut self, var existing: Self):
         """Move constructor.
 
         Transfers all fields without touching the reference count.
 
         Args:
-            take: The source container (consumed).
+            existing: The source container (consumed).
         """
-        self.ptr = take.ptr
-        self._refcount = take._refcount
-        self.ownership = take.ownership
-        self.size = take.size
+        self.ptr = existing.ptr
+        self._refcount = existing._refcount
+        self.ownership = existing.ownership
+        self.size = existing.size
 
     @always_inline
     def __del__(deinit self):
@@ -211,10 +207,10 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         if not self.is_refcounted():
             return
 
-        if self._refcount[].fetch_sub[ordering=Consistency.RELEASE](1) != 1:
+        if self._refcount[].fetch_sub[ordering=Ordering.RELEASE](1) != 1:
             return
 
-        fence[ordering=Consistency.ACQUIRE]()
+        fence[ordering=Ordering.ACQUIRE]()
         if self.ptr and self.size > 0:
             self.ptr.free()
         self._refcount.free()
@@ -388,7 +384,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if not self.is_refcounted():
             return 0
-        return self._refcount[].load[ordering=Consistency.MONOTONIC]()
+        return self._refcount[].load[ordering=Ordering.RELAXED]()
 
     def deep_copy(self) -> Self:
         """Create an independent managed copy of this container.
@@ -427,7 +423,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering=Consistency.MONOTONIC](1)
+        _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
 
         var result = HostStorage[Self.dtype](
             ptr=self.ptr,
@@ -498,28 +494,27 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         self.buffer = buffer
         self.size = size
 
-    def __copyinit__(out self, copy: Self):
+    def copy(self) -> Self:
         """Shallow-copy constructor.
 
         Copies the `DeviceBuffer` handle.  The GPU runtime determines
         whether the underlying memory is shared or duplicated.
 
-        Args:
-            copy: The source storage.
+        Returns:
+            A new `DeviceStorage` sharing the same buffer handle.
         """
-        self.buffer = copy.buffer
-        self.size = copy.size
+        return Self(buffer=self.buffer, size=self.size)
 
-    def __moveinit__(out self, deinit take: Self):
+    def __moveinit__(mut self, var existing: Self):
         """Move constructor.
 
         Transfers the buffer handle without copying.
 
         Args:
-            take: The source storage (consumed).
+            existing: The source storage (consumed).
         """
-        self.buffer = take.buffer^
-        self.size = take.size
+        self.buffer = existing.buffer^
+        self.size = existing.size
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations
@@ -707,32 +702,34 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.device_storage = None
 
     @always_inline
-    def __copyinit__(out self, copy: Self):
+    def copy(self) -> Self:
         """Shallow-copy constructor.
 
         Shares the underlying storage.  For CPU containers this increments
         the `HostStorage` atomic refcount; for GPU containers this copies
         the `DeviceStorage` handle (automatic reference counting).
 
-        Args:
-            copy: The source container.
+        Returns:
+            A new `AcceleratorDataContainer` sharing the same underlying storage.
         """
-        self.host_storage = copy.host_storage.copy()
-        self.device_storage = copy.device_storage.copy()
-        self.size = copy.size
+        var result = Self()
+        result.host_storage = self.host_storage.copy()
+        result.device_storage = self.device_storage.copy()
+        result.size = self.size
+        return result^
 
     @always_inline
-    def __moveinit__(out self, deinit take: Self):
+    def __moveinit__(mut self, var existing: Self):
         """Move constructor.
 
         Transfers all fields without touching reference counts.
 
         Args:
-            take: The source container (consumed).
+            existing: The source container (consumed).
         """
-        self.host_storage = take.host_storage^
-        self.device_storage = take.device_storage^
-        self.size = take.size
+        self.host_storage = existing.host_storage^
+        self.device_storage = existing.device_storage^
+        self.size = existing.size
 
     # ===----------------------------------------------------------------------===#
     # Data Access (CPU)

@@ -20,11 +20,32 @@ from std.sys import simd_width_of
 
 from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
-from numojo.routines import HostExecutor
+from numojo.routines import HostExecutor, BinaryKernel
 from numojo.routines.creation import full
 from numojo.routines.sorting import binary_sort
 from numojo.routines.functional import apply_along_axis_reduce
 from numojo.routines.manipulation import ravel
+
+
+# ===-----------------------------------------------------------------------===#
+# Binary kernel functors
+# ===-----------------------------------------------------------------------===#
+
+
+struct _Max(BinaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        a: SIMD[type, simd_w], b: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        return builtin_max(a, b)
+
+
+struct _Min(BinaryKernel):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        a: SIMD[type, simd_w], b: SIMD[type, simd_w]
+    ) -> SIMD[type, simd_w]:
+        return builtin_min(a, b)
 
 
 # ===-----------------------------------------------------------------------===#
@@ -574,7 +595,7 @@ def minimum[
         var m = nm.minimum(a, b)
         ```
     """
-    return HostExecutor.apply_binary[dtype, builtin_min](array1, array2)
+    return HostExecutor.apply_binary[dtype, _Min](array1, array2)
 
 
 def maximum[
@@ -603,4 +624,4 @@ def maximum[
         var m = nm.maximum(a, b)
         ```
     """
-    return HostExecutor.apply_binary[dtype, builtin_max](array1, array2)
+    return HostExecutor.apply_binary[dtype, _Max](array1, array2)

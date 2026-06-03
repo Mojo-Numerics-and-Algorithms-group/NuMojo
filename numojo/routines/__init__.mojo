@@ -176,4 +176,12 @@ from .manipulation import (
 from .sorting import sort, argsort
 from .searching import argmax, argmin
 
-from .operations import HostExecutor
+from .operations import (
+    HostExecutor,
+    UnaryKernel,
+    BinaryKernel,
+    UnaryPredicate,
+    BinaryPredicate,
+    BinaryIntKernel,
+    TernaryKernel,
+)

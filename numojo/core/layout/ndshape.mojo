@@ -24,7 +24,6 @@ struct NDArrayShape(
     Equatable,
     ImplicitlyCopyable,
     Movable,
-    RegisterPassable,
     Sized,
     Writable,
 ):
@@ -263,25 +262,28 @@ struct NDArrayShape(
                     self._buf.init_value(i, 1)
 
     @always_inline("nodebug")
-    def __copyinit__(out self, copy: Self):
+    def __init__(out self, *, copy: Self):
         """
-        Initializes the NDArrayShape from ancopy NDArrayShape.
-        A deep copy of the data buffer is conducted.
+        Copy constructor (Mojo 1.0 lifecycle form; `Copyable` provides `.copy()`).
+
+        Performs a deep copy of the underlying buffer.
 
         Args:
-            copy: Ancopy NDArrayShape to initialize from.
+            copy: NDArrayShape to copy from.
         """
         self.ndim = copy.ndim
-        if copy.ndim == 0:
-            self._buf = IndexBuffer(size=1)
-            self._buf.init_value(0, 0)
-        else:
-            self._buf = IndexBuffer(size=copy.ndim)
-            memcpy(
-                dest=self._buf.ptr,
-                src=copy._buf.ptr,
-                count=copy.ndim,
-            )
+        self._buf = copy._buf.copy()
+
+    @always_inline("nodebug")
+    def __init__(out self, *, deinit take: Self):
+        """
+        Move constructor (Mojo 1.0 lifecycle form).
+
+        Args:
+            take: NDArrayShape to move from (consumed).
+        """
+        self.ndim = take.ndim
+        self._buf = take._buf^
 
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods
@@ -584,12 +586,12 @@ struct NDArrayShape(
         Returns:
             A new shape with the given axes swapped.
         """
-        var res = self
+        var res = self.copy()
         var val1 = res[axis1]
         var val2 = res[axis2]
         res[axis1] = val2
         res[axis2] = val1
-        return res
+        return res^
 
     def extend(self, *values: Int) -> Self:
         """

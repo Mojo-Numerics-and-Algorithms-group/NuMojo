@@ -154,20 +154,19 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
         self.WRITEABLE = writeable and owndata
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
-    def __copyinit__(out self, copy: Self):
+    def copy(self) -> Self:
         """
-        Initializes the Flags object by copying the information from
-        ancopy Flags object.
+        Returns a copy of this Flags object.
 
-        Args:
-            copy: The Flags object to copy information from.
+        Returns:
+            A new Flags object with the same field values.
         """
-
-        self.C_CONTIGUOUS = copy.C_CONTIGUOUS
-        self.F_CONTIGUOUS = copy.F_CONTIGUOUS
-        self.OWNDATA = copy.OWNDATA
-        self.WRITEABLE = copy.WRITEABLE
-        self.FORC = copy.FORC
+        return Self(
+            c_contiguous=self.C_CONTIGUOUS,
+            f_contiguous=self.F_CONTIGUOUS,
+            owndata=self.OWNDATA,
+            writeable=self.WRITEABLE,
+        )
 
     # === ---------------------------------------------------------------- === #
     # Get and set dunder methods

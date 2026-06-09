@@ -2345,7 +2345,7 @@ def fromstring[
                 var number = atof(number_as_str).cast[dtype]()
                 data.append(number)  # Add the number to the data buffer
                 number_as_str = ""  # Clean the number cache
-                shape[-1] = shape[-1] + 1
+                shape[len(shape) - 1] = shape[len(shape) - 1] + 1
         if chr(Int(b)) == "]":
             level = level - 1
             if level < 0:

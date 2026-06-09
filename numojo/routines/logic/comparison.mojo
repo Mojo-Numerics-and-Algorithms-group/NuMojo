@@ -32,7 +32,7 @@ struct _Gt(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a > b
+        return a.gt(b)
 
 
 struct _Ge(BinaryPredicate):
@@ -40,7 +40,7 @@ struct _Ge(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a >= b
+        return a.ge(b)
 
 
 struct _Lt(BinaryPredicate):
@@ -48,7 +48,7 @@ struct _Lt(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a < b
+        return a.lt(b)
 
 
 struct _Le(BinaryPredicate):
@@ -56,7 +56,7 @@ struct _Le(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a <= b
+        return a.le(b)
 
 
 struct _Eq(BinaryPredicate):
@@ -64,7 +64,7 @@ struct _Eq(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a == b
+        return a.eq(b)
 
 
 struct _Ne(BinaryPredicate):
@@ -72,7 +72,7 @@ struct _Ne(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a != b
+        return a.ne(b)
 
 
 # ===------------------------------------------------------------------------===#

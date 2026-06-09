@@ -1328,7 +1328,10 @@ struct NDArray[dtype: DType = DType.float64](
             var r0d = creation._0darray[Self.dtype](self._getitem(indices))
             return r0d^
 
-        if n_slices < self.ndim and not index_type_list[-1].is_ellipsis:
+        if (
+            n_slices < self.ndim
+            and not index_type_list[len(index_type_list) - 1].is_ellipsis
+        ):
             for i in range(n_slices, self.ndim):
                 slice_list.append(Slice(0, self.shape[i], 1))
 

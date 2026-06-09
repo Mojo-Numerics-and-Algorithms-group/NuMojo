@@ -76,7 +76,7 @@ struct _IsNegInf(UnaryPredicate):
     ) -> SIMD[DType.bool, simd_w]:
         # Integers can never be -inf; only floats carry an infinity bit pattern.
         comptime if type.is_floating_point():
-            return x == SIMD[type, simd_w](neg_inf[type]())
+            return x.eq(SIMD[type, simd_w](neg_inf[type]()))
         else:
             return SIMD[DType.bool, simd_w](False)
 
@@ -88,7 +88,7 @@ struct _IsPosInf(UnaryPredicate):
     ) -> SIMD[DType.bool, simd_w]:
         # Integers can never be +inf; only floats carry an infinity bit pattern.
         comptime if type.is_floating_point():
-            return x == SIMD[type, simd_w](inf[type]())
+            return x.eq(SIMD[type, simd_w](inf[type]()))
         else:
             return SIMD[DType.bool, simd_w](False)
 

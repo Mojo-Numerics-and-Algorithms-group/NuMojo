@@ -32,8 +32,8 @@ def test_apply_along_axis() raises:
 
     for i in range(a.ndim):
         check(
-            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](
-                a, axis=i
+            apply_along_axis_preserve[DType.float64](
+                a, axis=i, func1d_arg=nm.sorting.quick_sort_1d
             ),
             np.apply_along_axis(np.sort, axis=i, arr=anp),
             String(
@@ -41,8 +41,8 @@ def test_apply_along_axis() raises:
             ).format(i),
         )
         check(
-            apply_along_axis_preserve[DType.float64, nm.sorting.quick_sort_1d](
-                b, axis=i
+            apply_along_axis_preserve[DType.float64](
+                b, axis=i, func1d_arg=nm.sorting.quick_sort_1d
             ),
             np.apply_along_axis(np.sort, axis=i, arr=bnp),
             String(

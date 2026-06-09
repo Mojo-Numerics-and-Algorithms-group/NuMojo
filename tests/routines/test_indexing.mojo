@@ -23,12 +23,12 @@ def test_compress() raises:
     var bnp = b.to_numpy()
 
     check(
-        numojo.indexing.compress(nm.array[boolean]("[0, 1, 1, 0]"), b),
+        nm.indexing.compress(nm.array[boolean]("[0, 1, 1, 0]"), b),
         np.compress(np.array(Python.list(0, 1, 1, 0)), bnp),
         "`compress` 1-d array is broken",
     )
     check(
-        numojo.indexing.compress(
+        nm.indexing.compress(
             nm.array[boolean]("[0,1,1,0,1,0,1,0,1,1,1]"), a
         ),
         np.compress(

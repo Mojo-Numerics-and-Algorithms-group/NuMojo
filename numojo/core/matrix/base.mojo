@@ -4998,7 +4998,7 @@ struct _MEq(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a == b
+        return a.eq(b)
 
 
 struct _MNe(BinaryPredicate):
@@ -5006,7 +5006,7 @@ struct _MNe(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a != b
+        return a.ne(b)
 
 
 struct _MGt(BinaryPredicate):
@@ -5014,7 +5014,7 @@ struct _MGt(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a > b
+        return a.gt(b)
 
 
 struct _MGe(BinaryPredicate):
@@ -5022,7 +5022,7 @@ struct _MGe(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a >= b
+        return a.ge(b)
 
 
 struct _MLt(BinaryPredicate):
@@ -5030,7 +5030,7 @@ struct _MLt(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a < b
+        return a.lt(b)
 
 
 struct _MLe(BinaryPredicate):
@@ -5038,7 +5038,7 @@ struct _MLe(BinaryPredicate):
     def apply[type: DType, simd_w: Int](
         a: SIMD[type, simd_w], b: SIMD[type, simd_w]
     ) -> SIMD[DType.bool, simd_w]:
-        return a <= b
+        return a.le(b)
 
 
 # TODO: we can move the checks in these functions to the caller functions to avoid redundant checks.

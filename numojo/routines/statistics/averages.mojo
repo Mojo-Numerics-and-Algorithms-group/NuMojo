@@ -99,8 +99,8 @@ def mean[
         )
 
     return apply_along_axis_reduce_with_dtype[
-        dtype, returned_dtype=returned_dtype, func1d=mean_1d
-    ](a=a, axis=normalized_axis)
+        dtype, returned_dtype=returned_dtype
+    ](a=a, axis=normalized_axis, func1d_arg=mean_1d)
 
 
 def mean[
@@ -228,8 +228,8 @@ def median[
             )
         )
     return apply_along_axis_reduce_with_dtype[
-        dtype, returned_dtype=returned_dtype, func1d=median_1d
-    ](a=a, axis=normalized_axis)
+        dtype, returned_dtype=returned_dtype
+    ](a=a, axis=normalized_axis, func1d_arg=median_1d)
 
 
 def mode_1d[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -308,8 +308,8 @@ def mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return apply_along_axis_reduce[dtype, func1d=mode_1d](
-        a=a, axis=normalized_axis
+    return apply_along_axis_reduce[dtype](
+        a=a, axis=normalized_axis, func1d_arg=mode_1d
     )
 
 

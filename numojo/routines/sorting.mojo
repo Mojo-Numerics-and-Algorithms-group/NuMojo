@@ -98,12 +98,12 @@ def sort[
             return quick_sort_1d(a)
 
     if stable:
-        return apply_along_axis_preserve[dtype, func1d=quick_sort_stable_1d](
-            a, axis=normalized_axis
+        return apply_along_axis_preserve[dtype](
+            a, axis=normalized_axis, func1d_arg=quick_sort_stable_1d
         )
     else:
-        return apply_along_axis_preserve[dtype, func1d=quick_sort_1d](
-            a, axis=normalized_axis
+        return apply_along_axis_preserve[dtype](
+            a, axis=normalized_axis, func1d_arg=quick_sort_1d
         )
 
 
@@ -140,12 +140,12 @@ def sort_inplace[
             quick_sort_inplace_1d(a)
 
     if stable:
-        apply_along_axis_inplace[dtype, func1d=quick_sort_stable_inplace_1d](
-            a, axis=normalized_axis
+        apply_along_axis_inplace[dtype](
+            a, axis=normalized_axis, func1d_arg=quick_sort_stable_inplace_1d
         )
     else:
-        apply_along_axis_inplace[dtype, func1d=quick_sort_inplace_1d](
-            a, axis=normalized_axis
+        apply_along_axis_inplace[dtype](
+            a, axis=normalized_axis, func1d_arg=quick_sort_inplace_1d
         )
 
 
@@ -274,8 +274,8 @@ def argsort[
     if (a.ndim == 1) and (normalized_axis == 0):
         return argsort_quick_sort_1d(a)
 
-    return apply_along_axis_indices[dtype, func1d=argsort_quick_sort_1d](
-        a, axis=normalized_axis
+    return apply_along_axis_indices[dtype](
+        a, axis=normalized_axis, func1d_arg=argsort_quick_sort_1d
     )
 
 

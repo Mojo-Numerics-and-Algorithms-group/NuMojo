@@ -142,6 +142,13 @@ def extrema_1d_max[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
     return extrema_1d[is_max=True](a)
 
 
+def extrema_1d_min[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Find the min value in a 1-D array.
+    """
+    return extrema_1d[is_max=False](a)
+
+
 def max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     """
     Find the max value of an array along an axis.
@@ -176,8 +183,8 @@ def max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return apply_along_axis_reduce[dtype, func1d=extrema_1d_max](
-        a=a, axis=normalized_axis
+    return apply_along_axis_reduce[dtype](
+        a=a, axis=normalized_axis, func1d_arg=extrema_1d_max
     )
 
 
@@ -244,8 +251,8 @@ def min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
             )
         )
 
-    return apply_along_axis_reduce[func1d=extrema_1d[is_max=False]](
-        a=a, axis=normalized_axis
+    return apply_along_axis_reduce[dtype](
+        a=a, axis=normalized_axis, func1d_arg=extrema_1d_min
     )
 
 

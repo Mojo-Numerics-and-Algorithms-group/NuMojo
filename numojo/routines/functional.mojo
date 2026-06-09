@@ -81,11 +81,14 @@ from numojo.core.ndarray import NDArray
 
 
 def apply_along_axis_reduce_to_int[
-    dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
+    func1d: def[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
         DType.int
     ],
-](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
+    //,
+    dtype: DType,
+](a: NDArray[dtype], axis: Int, func1d_arg: func1d) raises -> NDArray[
+    DType.int
+]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
     The returned data type is DType.int.
@@ -110,7 +113,7 @@ def apply_along_axis_reduce_to_int[
 
     if a.ndim == 1:
         res = _0darray[DType.int](0)
-        (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
+        (res._buf.ptr).init_pointee_copy(func1d_arg[dtype](a))
 
     else:
         res = NDArray[DType.int](a.shape.pop(axis=axis))
@@ -119,7 +122,7 @@ def apply_along_axis_reduce_to_int[
         def parallelized_func(i: Int):
             try:
                 (res._buf.ptr + i).init_pointee_copy(
-                    func1d[dtype](iterator.ith(i))
+                    func1d_arg[dtype](iterator.ith(i))
                 )
             except e:
                 print("Error in parallelized_func", e)
@@ -130,11 +133,12 @@ def apply_along_axis_reduce_to_int[
 
 
 def apply_along_axis_reduce[
-    dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
+    func1d: def[dtype_func: DType](NDArray[dtype_func]) raises -> Scalar[
         dtype_func
     ],
-](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    //,
+    dtype: DType,
+](a: NDArray[dtype], axis: Int, func1d_arg: func1d) raises -> NDArray[dtype]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
     When the array is 1-d, the returned array will be a 0-d array.
@@ -161,7 +165,7 @@ def apply_along_axis_reduce[
 
     if a.ndim == 1:
         res = _0darray[dtype](0)
-        (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
+        (res._buf.ptr).init_pointee_copy(func1d_arg[dtype](a))
 
     else:
         var new_shape = a.shape.pop(axis=axis)
@@ -170,13 +174,13 @@ def apply_along_axis_reduce[
 
         # for i in range(a.size // a.shape[axis]):
         #     var ith = iterator.ith(i)
-        #     var func_result = func1d[dtype](ith)
+        #     var func_result = func1d_arg[dtype](ith)
         #     res._buf.store(i, func_result)
 
         @parameter
         def parallelized_func(i: Int):
             try:
-                res._buf.store(i, func1d[dtype](iterator.ith(i)))
+                res._buf.store(i, func1d_arg[dtype](iterator.ith(i)))
             except e:
                 print("Error in parallelized_func", e)
             # try:
@@ -192,12 +196,15 @@ def apply_along_axis_reduce[
 
 
 def apply_along_axis_reduce_with_dtype[
-    dtype: DType,
-    returned_dtype: DType,
-    func1d: fn[dtype_func: DType, returned_dtype_func: DType](
+    func1d: def[dtype_func: DType, returned_dtype_func: DType](
         NDArray[dtype_func]
     ) raises -> Scalar[returned_dtype_func],
-](a: NDArray[dtype], axis: Int) raises -> NDArray[returned_dtype]:
+    //,
+    dtype: DType,
+    returned_dtype: DType,
+](a: NDArray[dtype], axis: Int, func1d_arg: func1d) raises -> NDArray[
+    returned_dtype
+]:
     """
     Applies a function to a NDArray by axis and reduce that dimension.
     When the array is 1-d, the returned array will be a 0-d array.
@@ -223,7 +230,7 @@ def apply_along_axis_reduce_with_dtype[
 
     if a.ndim == 1:
         res = _0darray[returned_dtype](0)
-        (res._buf.ptr).init_pointee_copy(func1d[dtype, returned_dtype](a))
+        (res._buf.ptr).init_pointee_copy(func1d_arg[dtype, returned_dtype](a))
 
     else:
         res = NDArray[returned_dtype](a.shape.pop(axis=axis))
@@ -232,7 +239,7 @@ def apply_along_axis_reduce_with_dtype[
         def parallelized_func(i: Int):
             try:
                 (res._buf.ptr + i).init_pointee_copy(
-                    func1d[dtype, returned_dtype](iterator.ith(i))
+                    func1d_arg[dtype, returned_dtype](iterator.ith(i))
                 )
             except e:
                 print("Error in parallelized_func", e)
@@ -247,11 +254,12 @@ def apply_along_axis_reduce_with_dtype[
 
 
 def apply_along_axis_preserve[
-    dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
+    func1d: def[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
         dtype_func
     ],
-](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    //,
+    dtype: DType,
+](a: NDArray[dtype], axis: Int, func1d_arg: func1d) raises -> NDArray[dtype]:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
     The resulting array will have the same shape as the input array.
@@ -278,7 +286,9 @@ def apply_along_axis_preserve[
         @parameter
         def parallelized_func_c(i: Int):
             try:
-                var elements: NDArray[dtype] = func1d[dtype](iterator.ith(i))
+                var elements: NDArray[dtype] = func1d_arg[dtype](
+                    iterator.ith(i)
+                )
                 memcpy(
                     dest=result._buf.ptr + i * elements.size,
                     src=elements._buf.ptr,
@@ -304,7 +314,7 @@ def apply_along_axis_preserve[
                 elements = indices_elements[1].copy()
                 # indices, elements = iterator.ith_with_offsets(i)
 
-                var res_along_axis: NDArray[dtype] = func1d[dtype](elements)
+                var res_along_axis: NDArray[dtype] = func1d_arg[dtype](elements)
 
                 for j in range(a.shape[axis]):
                     (result._buf.ptr + Int(indices[j])).init_pointee_copy(
@@ -325,9 +335,10 @@ def apply_along_axis_preserve[
 
 
 def apply_along_axis_inplace[
+    func1d: def[dtype_func: DType](mut NDArray[dtype_func]) raises -> None,
+    //,
     dtype: DType,
-    func1d: fn[dtype_func: DType](mut NDArray[dtype_func]) raises -> None,
-](mut a: NDArray[dtype], axis: Int) raises -> None:
+](mut a: NDArray[dtype], axis: Int, func1d_arg: func1d) raises -> None:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
     The function is applied in-place to the input array.
@@ -350,7 +361,7 @@ def apply_along_axis_inplace[
         def parallelized_func_c(i: Int):
             try:
                 var elements: NDArray[dtype] = iterator.ith(i)
-                func1d[dtype](elements)
+                func1d_arg[dtype](elements)
                 memcpy(
                     dest=a._buf.ptr + i * elements.size,
                     src=elements._buf.ptr,
@@ -375,7 +386,7 @@ def apply_along_axis_inplace[
                 indices = indices_elements[0].copy()
                 elements = indices_elements[1].copy()
 
-                func1d[dtype](elements)
+                func1d_arg[dtype](elements)
 
                 for j in range(a.shape[axis]):
                     (a._buf.ptr + Int(indices[j])).init_pointee_copy(
@@ -390,11 +401,14 @@ def apply_along_axis_inplace[
 
 
 def apply_along_axis_indices[
-    dtype: DType,
-    func1d: fn[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
+    func1d: def[dtype_func: DType](NDArray[dtype_func]) raises -> NDArray[
         DType.int
     ],
-](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
+    //,
+    dtype: DType,
+](a: NDArray[dtype], axis: Int, func1d_arg: func1d) raises -> NDArray[
+    DType.int
+]:
     """
     Applies a function to a NDArray by axis without reducing that dimension.
     The resulting array will have the same shape as the input array.
@@ -423,7 +437,7 @@ def apply_along_axis_indices[
         @parameter
         def parallelized_func_c(i: Int):
             try:
-                var elements: NDArray[DType.int] = func1d[dtype](
+                var elements: NDArray[DType.int] = func1d_arg[dtype](
                     iterator.ith(i)
                 )
                 memcpy(
@@ -450,7 +464,9 @@ def apply_along_axis_indices[
                 indices = indices_elements[0].copy()
                 elements = indices_elements[1].copy()
 
-                var res_along_axis: NDArray[DType.int] = func1d[dtype](elements)
+                var res_along_axis: NDArray[DType.int] = func1d_arg[dtype](
+                    elements
+                )
 
                 for j in range(a.shape[axis]):
                     (res._buf.ptr + Int(indices[j])).init_pointee_copy(

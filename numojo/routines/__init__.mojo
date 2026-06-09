@@ -122,7 +122,7 @@ from numojo.routines.math import (
     hypot_fma,
 )
 
-from numojo.routines.statistics import mean, mode, median, variance
+from numojo.routines.statistics import mean, mode, median, variance, std_dev
 
 from numojo.routines.bitwise import invert
 

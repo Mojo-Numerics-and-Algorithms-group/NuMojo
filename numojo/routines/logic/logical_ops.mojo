@@ -10,12 +10,50 @@
 This module implements element-wise logical operations for NDArray, ComplexNDArray, and Matrix types in the NuMojo library.
 """
 
-from numojo.routines import HostExecutor
+from numojo.routines import HostExecutor, BinaryPredicate, UnaryPredicate
 from numojo.core.error import NumojoError
 
 # TODO: add `where` argument support to logical operations
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
 # TODO: Create backend for these operations.
+
+# ===------------------------------------------------------------------------===#
+# Kernel functors for SIMD logical operators
+# (Mojo 1.0: a parametric `fn` value can't be a comptime param; pass a
+# trait-conforming functor type instead — see backend.mojo)
+# ===------------------------------------------------------------------------===#
+
+
+struct _And(BinaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        a: SIMD[type, simd_w], b: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        return SIMD[DType.bool, simd_w](a & b)
+
+
+struct _Or(BinaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        a: SIMD[type, simd_w], b: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        return SIMD[DType.bool, simd_w](a | b)
+
+
+struct _Xor(BinaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        a: SIMD[type, simd_w], b: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        return SIMD[DType.bool, simd_w](a ^ b)
+
+
+struct _Not(UnaryPredicate):
+    @staticmethod
+    def apply[type: DType, simd_w: Int](
+        a: SIMD[type, simd_w]
+    ) -> SIMD[DType.bool, simd_w]:
+        return SIMD[DType.bool, simd_w](~a)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -64,12 +102,7 @@ def logical_and[
             )
         )
 
-    def kernel[
-        dtype: DType, width: Int
-    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
-        return SIMD[DType.bool, width](a & b)
-
-    return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
+    return HostExecutor.apply_binary_predicate[dtype, _And](a, b)
 
 
 def logical_or[
@@ -115,12 +148,7 @@ def logical_or[
             )
         )
 
-    def kernel[
-        dtype: DType, width: Int
-    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
-        return SIMD[DType.bool, width](a | b)
-
-    return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
+    return HostExecutor.apply_binary_predicate[dtype, _Or](a, b)
 
 
 def logical_not[
@@ -153,12 +181,7 @@ def logical_not[
         ```
     """
 
-    def kernel[
-        dtype: DType, width: Int
-    ](a: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
-        return SIMD[DType.bool, width](~a)
-
-    return HostExecutor.apply_unary_predicate[dtype, kernel](a)
+    return HostExecutor.apply_unary_predicate[dtype, _Not](a)
 
 
 def logical_xor[
@@ -204,12 +227,7 @@ def logical_xor[
             )
         )
 
-    def kernel[
-        dtype: DType, width: Int
-    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
-        return SIMD[DType.bool, width](a ^ b)
-
-    return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
+    return HostExecutor.apply_binary_predicate[dtype, _Xor](a, b)
 
 
 # ===----------------------------------------------------------------------=== #

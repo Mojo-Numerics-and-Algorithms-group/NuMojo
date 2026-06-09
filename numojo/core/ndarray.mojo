@@ -3191,10 +3191,11 @@ struct NDArray[dtype: DType = DType.float64](
     # ===--- In-place helper methods (view-safe) ---===#
 
     def _inplace_scalar_op[
-        func: fn[type: DType, simd_w: Int](
+        func: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](mut self, other: SIMD[Self.dtype, 1]):
+        //,
+    ](mut self, other: SIMD[Self.dtype, 1], func_arg: func):
         """Apply a binary SIMD operation in-place: self[i] = func(self[i], s).
 
         This method is view-safe: it writes directly into the underlying
@@ -3210,10 +3211,10 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            def vec_op[w: Int](i: Int) {mut self, read other}:
+            def vec_op[w: Int](i: Int) {mut self, read other, read func_arg}:
                 self._buf.ptr.store(
                     self.offset + i,
-                    func[Self.dtype, w](
+                    func_arg[Self.dtype, w](
                         self._buf.ptr.load[width=w](self.offset + i),
                         SIMD[Self.dtype, w](other),
                     ),
@@ -3229,15 +3230,16 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf.ptr[idx] = func[Self.dtype, 1](
+                self._buf.ptr[idx] = func_arg[Self.dtype, 1](
                     self._buf.ptr[idx], other
                 )
 
     def _inplace_array_op[
-        func: fn[type: DType, simd_w: Int](
+        func: def[type: DType, simd_w: Int](
             SIMD[type, simd_w], SIMD[type, simd_w]
         ) -> SIMD[type, simd_w],
-    ](mut self, other: Self) raises:
+        //,
+    ](mut self, other: Self, func_arg: func) raises:
         """Apply a binary SIMD operation in-place: self[i] = func(self[i], o[i]).
 
         This method is view-safe: it writes directly into the underlying
@@ -3266,10 +3268,10 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            def vec_op[w: Int](i: Int) {mut self, read other_c}:
+            def vec_op[w: Int](i: Int) {mut self, read other_c, read func_arg}:
                 self._buf.ptr.store(
                     self.offset + i,
-                    func[Self.dtype, w](
+                    func_arg[Self.dtype, w](
                         self._buf.ptr.load[width=w](self.offset + i),
                         other_c._buf.ptr.load[width=w](i),
                     ),
@@ -3285,7 +3287,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf.ptr[idx] = func[Self.dtype, 1](
+                self._buf.ptr[idx] = func_arg[Self.dtype, 1](
                     self._buf.ptr[idx], other_c._buf.ptr[i]
                 )
 
@@ -3293,11 +3295,11 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __iadd__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array += scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__add__](other)
+        self._inplace_scalar_op(other, SIMD.__add__)
 
     def __iadd__(mut self, other: Self) raises:
         """Enables `array += array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__add__](other)
+        self._inplace_array_op(other, SIMD.__add__)
 
     def __sub__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -3322,11 +3324,11 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __isub__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array -= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__sub__](other)
+        self._inplace_scalar_op(other, SIMD.__sub__)
 
     def __isub__(mut self, other: Self) raises:
         """Enables `array -= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__sub__](other)
+        self._inplace_array_op(other, SIMD.__sub__)
 
     def __matmul__(self, other: Self) raises -> Self:
         var r = linalg.matmul(self.copy(), other.copy())
@@ -3355,11 +3357,11 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __imul__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array *= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__mul__](other)
+        self._inplace_scalar_op(other, SIMD.__mul__)
 
     def __imul__(mut self, other: Self) raises:
         """Enables `array *= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__mul__](other)
+        self._inplace_array_op(other, SIMD.__mul__)
 
     def __abs__(self) -> Self:
         return abs(self)
@@ -3464,11 +3466,11 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __itruediv__(mut self, s: SIMD[Self.dtype, 1]) raises:
         """Enables `array /= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__truediv__](s)
+        self._inplace_scalar_op(s, SIMD.__truediv__)
 
     def __itruediv__(mut self, other: Self) raises:
         """Enables `array /= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__truediv__](other)
+        self._inplace_array_op(other, SIMD.__truediv__)
 
     def __rtruediv__(self, s: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3490,11 +3492,11 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __ifloordiv__(mut self, s: SIMD[Self.dtype, 1]) raises:
         """Enables `array //= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__floordiv__](s)
+        self._inplace_scalar_op(s, SIMD.__floordiv__)
 
     def __ifloordiv__(mut self, other: Self) raises:
         """Enables `array //= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__floordiv__](other)
+        self._inplace_array_op(other, SIMD.__floordiv__)
 
     def __rfloordiv__(self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -3516,11 +3518,11 @@ struct NDArray[dtype: DType = DType.float64](
 
     def __imod__(mut self, other: SIMD[Self.dtype, 1]) raises:
         """Enables `array %= scalar`. View-safe: modifies buffer in-place."""
-        self._inplace_scalar_op[SIMD.__mod__](other)
+        self._inplace_scalar_op(other, SIMD.__mod__)
 
     def __imod__(mut self, other: NDArray[Self.dtype]) raises:
         """Enables `array %= array`. View-safe: modifies buffer in-place."""
-        self._inplace_array_op[SIMD.__mod__](other)
+        self._inplace_array_op(other, SIMD.__mod__)
 
     def __rmod__(mut self, other: SIMD[Self.dtype, 1]) raises -> Self:
         """
@@ -4882,7 +4884,7 @@ struct NDArray[dtype: DType = DType.float64](
             ddof: The delta degree of freedom.
         """
 
-        return std[returned_dtype](self, ddof=ddof)
+        return statistics.std_dev[returned_dtype](self, ddof=ddof)
 
     def std[
         returned_dtype: DType = DType.float64
@@ -4897,7 +4899,7 @@ struct NDArray[dtype: DType = DType.float64](
             ddof: The delta degree of freedom.
         """
 
-        return std[returned_dtype](self, axis=axis, ddof=ddof)
+        return statistics.std_dev[returned_dtype](self, axis=axis, ddof=ddof)
 
     def sum(self) raises -> Scalar[Self.dtype]:
         """Returns the sum of all array elements.

@@ -421,26 +421,15 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     #         precision=2, edge_items=2, line_width=100, formatted_width=6
     #     )
 
-    @always_inline("nodebug")
-    def copy(self) raises -> Self:
-        """
-        Return a deep copy of self.
-        """
-        return Self(re=self._re.copy(), im=self._im.copy())
+    # Note (Mojo 1.0): no explicit `copy()` method — `Copyable` synthesizes a
+    # memberwise `copy()` that deep-copies `_re`/`_im` (each an NDArray whose
+    # own synthesized copy is deep). An explicit `copy()` here would be
+    # ambiguous with the synthesized one.
 
-    @always_inline("nodebug")
-    def __moveinit__(mut self, var existing: Self):
-        """
-        Move other into self.
-        """
-        self._re = existing._re^
-        self._im = existing._im^
-        self.ndim = existing.ndim
-        self.shape = existing.shape
-        self.size = existing.size
-        self.strides = existing.strides
-        self.flags = existing.flags
-        self.print_options = existing.print_options
+    # Move constructor is synthesized by `Movable` (plain memberwise move),
+    # matching NDArray. An explicit `__moveinit__` that transfers `_re`/`_im`
+    # with `^` is rejected in Mojo 1.0 because their buffers have a custom
+    # `__del__`, making a field-out-of-the-middle move of `existing` illegal.
 
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing

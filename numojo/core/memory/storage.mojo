@@ -505,16 +505,10 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         """
         return Self(buffer=self.buffer, size=self.size)
 
-    def __moveinit__(mut self, var existing: Self):
-        """Move constructor.
-
-        Transfers the buffer handle without copying.
-
-        Args:
-            existing: The source storage (consumed).
-        """
-        self.buffer = existing.buffer^
-        self.size = existing.size
+    # Move constructor is synthesized by `Movable` (plain memberwise move).
+    # An explicit `__moveinit__` transferring `buffer` with `^` is rejected in
+    # Mojo 1.0 because the buffer handle has a custom `__del__`, making a
+    # field-out-of-the-middle move of `existing` illegal.
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations
@@ -718,18 +712,10 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         result.size = self.size
         return result^
 
-    @always_inline
-    def __moveinit__(mut self, var existing: Self):
-        """Move constructor.
-
-        Transfers all fields without touching reference counts.
-
-        Args:
-            existing: The source container (consumed).
-        """
-        self.host_storage = existing.host_storage^
-        self.device_storage = existing.device_storage^
-        self.size = existing.size
+    # Move constructor is synthesized by `Movable` (plain memberwise move).
+    # An explicit `__moveinit__` that transfers fields with `^` is rejected in
+    # Mojo 1.0 because `host_storage` has a custom `__del__`, which makes moving
+    # a field out of the middle of `existing` illegal.
 
     # ===----------------------------------------------------------------------===#
     # Data Access (CPU)

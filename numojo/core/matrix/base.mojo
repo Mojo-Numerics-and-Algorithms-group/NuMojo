@@ -436,28 +436,10 @@ struct Matrix[
             offset=self.offset,
         )
 
-    @always_inline("nodebug")
-    def __moveinit__(mut self, var existing: Self):
-        """
-        Transfer ownership of resources from `existing` to `self`.
-
-        This method moves the data and metadata from the `existing` matrix instance
-        into the current instance (`self`). After the move, the `existing` instance
-        is left in an invalid state and should not be used.
-
-        Args:
-            existing: The source matrix instance whose resources will be moved.
-
-        Notes:
-            - This operation is efficient as it avoids copying data.
-            - The `existing` instance is deinitialized as part of this operation.
-        """
-        self.shape = existing.shape^
-        self.strides = existing.strides^
-        self.size = existing.size
-        self._buf = existing._buf^
-        self.offset = existing.offset
-        self.flags = existing.flags^
+    # Move constructor is synthesized by `Movable` (plain memberwise move),
+    # matching NDArray. An explicit `__moveinit__` that transfers fields with
+    # `^` is rejected in Mojo 1.0 because `_buf` has a custom `__del__`, which
+    # makes moving a field out of the middle of `existing` illegal.
 
     @always_inline("nodebug")
     def __del__(deinit self):

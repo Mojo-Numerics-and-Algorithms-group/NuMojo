@@ -311,11 +311,6 @@ struct DLTensor(ImplicitlyCopyable, Movable):
         self.byte_offset = byte_offset
 
 
-comptime DLManagedTensorDeleter = fn(
-    UnsafePointer[DLManagedTensor, MutAnyOrigin]
-) -> None
-
-
 # TODO: This is the old API, current API requires using DLManagedTensorVersioned which has a version field for future compatibility.
 # Need to update this to match the latest DLPack spec.
 struct DLManagedTensor(ImplicitlyCopyable, Movable):
@@ -342,18 +337,49 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
     """The underlying tensor."""
     var manager_ctx: UnsafePointer[NoneType, MutAnyOrigin]
     """Context pointer for the deleter (stores metadata, refcount, etc.)."""
-    var deleter: DLManagedTensorDeleter
-    """Cleanup function called when consumer is done."""
+    var deleter: UnsafePointer[NoneType, MutAnyOrigin]
+    """Raw address of the cleanup function called when consumer is done.
+
+    Mojo 1.0 note: a bare `fn(...) -> None` type can no longer be a concrete
+    struct-field type (it is treated as a dynamic trait). DLPack requires the
+    deleter to sit at a fixed offset in the C-ABI struct, so it is stored as a
+    raw address. Producers populate it via `DLManagedTensor.with_deleter`
+    (which takes the deleter as an inferred parameter and stores its address);
+    consumers read the field as an opaque pointer.
+    """
 
     def __init__(
         out self,
         dl_tensor: DLTensor,
         manager_ctx: UnsafePointer[NoneType, MutAnyOrigin],
-        deleter: DLManagedTensorDeleter,
+        deleter: UnsafePointer[NoneType, MutAnyOrigin],
     ):
         self.dl_tensor = dl_tensor.copy()
         self.manager_ctx = manager_ctx
         self.deleter = deleter
+
+    @staticmethod
+    def with_deleter[
+        deleter_fn: def(UnsafePointer[DLManagedTensor, MutAnyOrigin]) -> None,
+        //,
+    ](
+        dl_tensor: DLTensor,
+        manager_ctx: UnsafePointer[NoneType, MutAnyOrigin],
+        deleter: deleter_fn,
+    ) -> DLManagedTensor:
+        """Build a `DLManagedTensor`, storing the deleter as a raw address.
+
+        The deleter is accepted as an inferred parameter (the Mojo 1.0 idiom for
+        passing a named/parametric function as a value) and its address is
+        stored in the opaque `deleter` field.
+        """
+        var deleter_ptr = (
+            UnsafePointer(to=deleter)
+            .bitcast[NoneType]()
+            .unsafe_mut_cast[True]()
+            .as_any_origin()
+        )
+        return DLManagedTensor(dl_tensor, manager_ctx, deleter_ptr)
 
 
 # ===-------------------------------------------------------------------===#
@@ -503,7 +529,7 @@ def to_dlpack[
 
     var managed = alloc[DLManagedTensor](1)
     managed.init_pointee_move(
-        DLManagedTensor(
+        DLManagedTensor.with_deleter(
             dl_tensor,
             ctx.bitcast[NoneType](),
             _dlpack_deleter_impl[dtype],

@@ -2772,7 +2772,7 @@ def _0darray[
     dtype: DType
 ](val: Scalar[dtype],) raises -> NDArray[dtype]:
     """
-    Initialize an special 0darray (numojo scalar).
+    Initialize a special 0darray (numojo scalar).
     The ndim is 0.
     The shape is unitialized (0-element shape).
     The strides is unitialized (0-element strides).

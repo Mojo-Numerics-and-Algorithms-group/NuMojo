@@ -389,8 +389,6 @@ struct NDArray[dtype: DType = DType.float64](
     @always_inline("nodebug")
     def __del__(deinit self):
         """Destroys all elements and frees memory."""
-        # if self.flags.OWNDATA:
-        #     self._buf.ptr.free()
         _ = self._buf^
 
     # ===-------------------------------------------------------------------===#
@@ -622,10 +620,12 @@ struct NDArray[dtype: DType = DType.float64](
             ```mojo
             import numojo as nm
             from numojo.prelude import *
+
             var a = nm.arange(0, 12, 1).reshape(Shape(3, 4))
             print(a.shape)        # (3,4)
             print(a[1].shape)     # (4,)  -- 1-D slice
             print(a[-1].shape)    # (4,)  -- negative index
+
             var b = nm.arange(6).reshape(nm.Shape(6))
             print(b[2])           # 0-D array (scalar wrapper)
             ```
@@ -840,6 +840,7 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             Error: If `slice_list` is empty or contains invalid slices.
         """
+        var buf = self._buf.share()
         var n_slices: Int = len(slice_list)
         var slices: List[InternalSlice] = InternalSlice.adjust_list(
             self.shape, slice_list
@@ -901,7 +902,8 @@ struct NDArray[dtype: DType = DType.float64](
         var narr_dim: Int = 0  # tracks position in `narr`'s dimensions
         for i in range(len(index_type_list)):
             if index_type_list[i].is_ellipsis:
-                # Count how many dimensions are explicitly consumed
+                # Count how many dimensions are explicitly consumed by
+                # slice/integer entries across the whole index_type_list.
                 var consuming: Int = 0
                 for j in range(len(index_type_list)):
                     if (
@@ -914,7 +916,7 @@ struct NDArray[dtype: DType = DType.float64](
                     new_ndim += 1
                     new_shape.append(narr.shape[narr_dim])
                     narr_dim += 1
-                break
+                # Do NOT break - continue to process entries after the ellipsis.
             elif index_type_list[i].is_newaxis:
                 new_ndim += 1
                 new_shape.append(1)
@@ -1101,11 +1103,9 @@ struct NDArray[dtype: DType = DType.float64](
                     slice_list.append(Slice(0, self.shape[array_dim + k], 1))
                     index_type_list.append(IndexTypeInfo(is_slice=True))
                 array_dim += ellipsis_dims
-                # Continue to process remaining entries after the ellipsis.
 
             elif index_list[i].isa[NewAxis]():
                 index_type_list.append(IndexTypeInfo(is_newaxis=True))
-                # NewAxis does not consume an array dimension.
 
             elif index_list[i].isa[Slice]():
                 slice_list.append(index_list[i][Slice])
@@ -1549,7 +1549,6 @@ struct NDArray[dtype: DType = DType.float64](
             var self_c = self.contiguous()
             var len_of_result = 0
 
-            # Count number of True
             for i in range(mask.size):
                 if mask.item(i):
                     len_of_result += 1
@@ -1561,7 +1560,6 @@ struct NDArray[dtype: DType = DType.float64](
             var result = NDArray[Self.dtype](shape)
             var size_per_item = self.size // self.shape[0]
 
-            # Fill in the values
             var offset = 0
             for i in range(mask.size):
                 if mask.item(i):
@@ -2079,23 +2077,23 @@ struct NDArray[dtype: DType = DType.float64](
     # Unsafe/internal setter
     # def _setitem(self, *indices: Int, val: Scalar[dtype])
     #
-    # __setitem__ overloads (a[...] = val syntax works for all of these)
+    # __setitem__ overloads  (a[...] = val syntax works)
+    # __setitem__ overloads  (a[...] = v syntax — requires symmetric __getitem__)
     # def __setitem__(mut self, idx: Int, val: Self)
     # def __setitem__(mut self, index: Item, val: Scalar[dtype])
     # def __setitem__(mut self, *slices: Slice, val: Self)
-    # def __setitem__(mut self, slices: List[Slice], val: Self)
-    # def __setitem__(mut self, *slices: Variant[Slice, Int], val: Self)
     # def __setitem__(mut self, indices: NDArray[DType.int], val: NDArray)
     #
-    # set() overloads (use arr.set(..., val=v) — Mojo cannot resolve these
-    # as __setitem__ due to ambiguity with the NDArray overloads above)
-    # def set(mut self, mask: NDArray[DType.bool], *, val: Scalar[dtype])
-    # def set(mut self, mask: NDArray[DType.bool], *, val: NDArray[dtype])
+    # set() overloads  (use arr.set(..., val=v) when __setitem__ can't resolve)
+    # def set(mut self, *slices: Variant[Slice, Int], val: Self)
     # def set(mut self, *slices: Slice, val: Scalar[dtype])
     # def set(mut self, *slices: Variant[Slice, Int], val: Scalar[dtype])
+    # def set(mut self, mask: NDArray[DType.bool], *, val: Scalar[dtype])
+    # def set(mut self, mask: NDArray[DType.bool], *, val: NDArray[dtype])
     #
-    # Internal scalar-fill backend (called by the set() slice overloads)
-    # def _setitem_slice_scalar(mut self, slices: List[Slice], val: Scalar)
+    # Internal backends
+    # def _setitem_list_slices(mut self, slices: List[Slice], val: Self)
+    # def _setitem_list_slices_scalar(mut self, slices: List[Slice], val: Scalar)
     #
     # Item helpers
     # def itemset(mut self, index: Int, item: Scalar[dtype])
@@ -2324,6 +2322,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+
             var A = nm.arange[nm.f32](6)
             var mask = A > nm.f32(2.0)
             A.set(mask, val=nm.f32(0.0))
@@ -2426,38 +2426,23 @@ struct NDArray[dtype: DType = DType.float64](
         var slice_list: List[Slice] = List[Slice]()
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        self.__setitem__(slices=slice_list, val=val)
+        self._setitem_list_slices(slice_list, val)
 
-    def __setitem__(mut self, slices: List[Slice], val: Self) raises:
-        """Sets the slices of an array from a list of slices and an array.
+    def _setitem_list_slices(mut self, slices: List[Slice], val: Self) raises:
+        """Internal backend: write an NDArray into a slice region.
+
+        Called by `__setitem__(*Slice, val: Self)` and
+        `set(*Variant[Slice,Int], val: Self)` after they normalise their
+        arguments into a `List[Slice]`.
 
         Args:
-            slices: The list of slices.
-            val: The value to set.
+            slices: One `Slice` per array dimension (trailing dims already
+                padded to full range by the caller).
+            val: The NDArray to write into the selected region.
 
         Raises:
-            Error: If the length of slices does not match the number of
-                dimensions.
-            Error: If any of the slices is out of bound.
-
-        Examples:
-
-        ```console
-        >>> var a = nm.arange[i8](16).reshape(Shape(4, 4))
-        print(a)
-        [[      0       1       2       3       ]
-         [      4       5       6       7       ]
-         [      8       9       10      11      ]
-         [      12      13      14      15      ]]
-        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
-        >>> a[2:4, 2:4] = a[0:2, 0:2]
-        print(a)
-        [[      0       1       2       3       ]
-         [      4       5       6       7       ]
-         [      8       9       0       1       ]
-         [      12      13      4       5       ]]
-        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
-        ```.
+            Error: If any slice is out of bounds.
+            Error: If the value shape does not match the destination slice shape.
         """
         var n_slices: Int = len(slices)
         var ndims: Int = 0
@@ -2486,8 +2471,8 @@ struct NDArray[dtype: DType = DType.float64](
                             self.shape[i],
                         ),
                         location=(
-                            "NDArray.__setitem__(slice_list: List[Slice], val:"
-                            " NDArray)"
+                            "NDArray._setitem_list_slices(slice_list:"
+                            " List[Slice], val: NDArray)"
                         ),
                     )
                 )
@@ -2535,8 +2520,8 @@ struct NDArray[dtype: DType = DType.float64](
                             " destination slice shape."
                         ).format(i, nshape[i], val.shape[i]),
                         location=(
-                            "NDArray.__setitem__(slice_list: List[Slice], val:"
-                            " NDArray)"
+                            "NDArray._setitem_list_slices(slice_list:"
+                            " List[Slice], val: NDArray)"
                         ),
                     )
                 )
@@ -2568,36 +2553,28 @@ struct NDArray[dtype: DType = DType.float64](
             index,
         )
 
-    def __setitem__(mut self, *slices: Variant[Slice, Int], val: Self) raises:
-        """Sets items by a series of either slices or integers.
+    def set(mut self, *slices: Variant[Slice, Int], val: Self) raises:
+        """Sets elements selected by mixed integer/slice indices from an NDArray.
+
+        Integer entries select a single position in the corresponding dimension
+        (unit-length slice). Slice entries select a range. Trailing dimensions
+        not covered by `slices` are treated as full-range.
 
         Args:
-            slices: The variadic slices or integers.
-            val: The value to set.
+            slices: Variadic mix of `Slice` and `Int` index entries.
+            val: The NDArray value to write into the selected region.
 
-        Raises:
-            Error: If the length of slices does not match the number of
-                dimensions.
-            Error: If any of the slices is out of bound.
+        Notes:
+            Use `arr.set(i, s, val=patch)` rather than `arr[i, s] = patch`
+            — Mojo cannot construct `Variant[Slice, Int]` from a mixed
+            `Int`+`Slice` literal pair at the `__setitem__` subscript site.
 
         Examples:
-
-        ```console
-        >>> var a = nm.arange[i8](16).reshape(Shape(4, 4))
-        print(a)
-        [[      0       1       2       3       ]
-         [      4       5       6       7       ]
-         [      8       9       10      11      ]
-         [      12      13      14      15      ]]
-        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
-        >>> a[0, Slice(2, 4)] = a[3, Slice(0, 2)]
-        print(a)
-        [[      0       1       12      13      ]
-         [      4       5       6       7       ]
-         [      8       9       10      11      ]
-         [      12      13      14      15      ]]
-        2-D array  Shape: [4, 4]  DType: int8  C-cont: True  F-cont: False  own data: True
-        ```.
+            ```mojo
+            var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
+            var patch = nm.full[nm.i32](nm.Shape(2), fill_value=7)
+            a.set(1, Slice(1, 3), val=patch)  # row 1, cols 1-2
+            ```
         """
         var n_slices: Int = slices.__len__()
         if n_slices > self.ndim:
@@ -2606,23 +2583,20 @@ struct NDArray[dtype: DType = DType.float64](
                     category="index",
                     message=String(
                         "Too many indices or slices: received {} but array has"
-                        " only {} dimensions. Pass at most {} indices/slices"
-                        " (one per dimension)."
-                    ).format(n_slices, self.ndim, self.ndim),
+                        " only {} dimensions."
+                    ).format(n_slices, self.ndim),
                     location=(
-                        "NDArray.__setitem__(*slices: Variant[Slice, Int], val:"
+                        "NDArray.set(*slices: Variant[Slice, Int], val:"
                         " NDArray)"
                     ),
                 )
             )
-        var slice_list: List[Slice] = List[Slice]()
+        var slice_list = List[Slice]()
 
-        var count_int = 0
         for i in range(len(slices)):
             if slices[i].isa[Slice]():
                 slice_list.append(slices[i][Slice])
             elif slices[i].isa[Int]():
-                count_int += 1
                 var idx: Int = slices[i][Int]
                 if idx >= self.shape[i] or idx < -self.shape[i]:
                     raise Error(
@@ -2630,17 +2604,17 @@ struct NDArray[dtype: DType = DType.float64](
                             category="index",
                             message=String(
                                 "Integer index {} out of bounds for axis {}"
-                                " (size {}). Valid range is [{}, {})."
+                                " (size {}). Valid range: [-{}, {})."
                             ).format(
                                 idx,
                                 i,
                                 self.shape[i],
-                                -self.shape[i],
+                                self.shape[i],
                                 self.shape[i],
                             ),
                             location=(
-                                "NDArray.__setitem__(*slices: Variant[Slice,"
-                                " Int], val: NDArray)"
+                                "NDArray.set(*slices: Variant[Slice, Int], val:"
+                                " NDArray)"
                             ),
                         )
                     )
@@ -2648,14 +2622,12 @@ struct NDArray[dtype: DType = DType.float64](
                     idx += self.shape[i]
                 slice_list.append(Slice(idx, idx + 1, 1))
 
-        if n_slices < self.ndim:
-            for i in range(n_slices, self.ndim):
-                var size_at_dim: Int = self.shape[i]
-                slice_list.append(Slice(0, size_at_dim, 1))
+        for i in range(n_slices, self.ndim):
+            slice_list.append(Slice(0, self.shape[i], 1))
 
-        self.__setitem__(slices=slice_list, val=val)
+        self._setitem_list_slices(slice_list, val)
 
-    def _setitem_slice_scalar(
+    def _setitem_list_slices_scalar(
         mut self, slices: List[Slice], val: Scalar[Self.dtype]
     ) raises:
         """Internal backend: fill every element in a slice region with a scalar.
@@ -2723,6 +2695,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
             a.set(Slice(1, 3), Slice(1, 3), val=99)
             ```
@@ -2730,7 +2704,7 @@ struct NDArray[dtype: DType = DType.float64](
         var slice_list = List[Slice](capacity=slices.__len__())
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        self._setitem_slice_scalar(slice_list, val)
+        self._setitem_list_slices_scalar(slice_list, val)
 
     def set(
         mut self, *slices: Variant[Slice, Int], val: Scalar[Self.dtype]
@@ -2752,6 +2726,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
             a.set(1, 2, val=99)                     # single element
             a.set(1, Slice(2, 4), val=0)            # row 1, cols 2-3
@@ -2815,7 +2791,7 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(n, self.ndim):
             slice_list.append(Slice(0, self.shape[i], 1))
 
-        self._setitem_slice_scalar(slice_list, val)
+        self._setitem_list_slices_scalar(slice_list, val)
 
     def __setitem__(
         mut self, index: NDArray[DType.int], val: NDArray[Self.dtype]
@@ -3006,6 +2982,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+
             var A = nm.arange[nm.f32](6).reshape(nm.Shape(2, 3))
             var mask = A > nm.f32(2.0)
             var vals = nm.array[nm.f32]("[10.0, 20.0, 30.0]")

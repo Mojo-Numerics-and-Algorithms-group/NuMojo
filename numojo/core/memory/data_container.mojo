@@ -424,7 +424,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             return 0
         return self._refcount[].load[ordering=Ordering.RELAXED]()
 
-    def share(mut self) raises -> DataContainer[Self.dtype]:
+    def share(self) raises -> DataContainer[Self.dtype]:
         """
         Create a shared view into this container.
         Increments the existing refcount for managed containers.

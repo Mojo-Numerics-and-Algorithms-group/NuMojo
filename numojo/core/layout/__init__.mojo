@@ -13,3 +13,4 @@ Layout metadata types used by NuMojo arrays and matrices (shape, strides, and fl
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
 from .flags import Flags
+from .array_methods import newaxis

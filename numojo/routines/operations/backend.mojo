@@ -97,7 +97,7 @@ struct HostExecutor:
         Parameters:
             dtype: The element type.
             simd_width: The SIMD width of the input and output.
-            kernel: The SIMD-compatible function to apply.
+            K: The SIMD-compatible function to apply.
 
         Args:
             scalar: The input SIMD value.
@@ -121,7 +121,7 @@ struct HostExecutor:
         Parameters:
             dtype: The element type.
             simd_width: The SIMD width of the input and output.
-            kernel: The SIMD-compatible binary function to apply.
+            K: The SIMD-compatible binary function to apply.
 
         Args:
             simd1: The first input SIMD value.
@@ -144,7 +144,7 @@ struct HostExecutor:
         Parameters:
             dtype: The element type.
             simd_width: The SIMD width of the input and output.
-            kernel: The SIMD-compatible unary predicate function to apply.
+            K: The SIMD-compatible unary predicate function to apply.
 
         Args:
             simd: The input SIMD value.
@@ -168,7 +168,7 @@ struct HostExecutor:
         Parameters:
             dtype: The element type.
             simd_width: The SIMD width of the input and output (should be 1 for SIMD).
-            kernel: The SIMD-compatible binary predicate function to apply.
+            K: The SIMD-compatible binary predicate function to apply.
 
         Args:
             simd1: The first input SIMD value.
@@ -189,7 +189,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the NDArray.
-            kernel: The SIMD-compatible function to apply.
+            K: The SIMD-compatible function to apply.
 
         Args:
             array: The input NDArray.
@@ -230,7 +230,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the NDArrays.
-            kernel: The SIMD-compatible binary function to apply.
+            K: The SIMD-compatible binary function to apply.
 
         Args:
             array1: The first input NDArray.
@@ -286,7 +286,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the NDArray.
-            kernel: The SIMD-compatible binary function to apply.
+            K: The SIMD-compatible binary function to apply.
 
         Args:
             array: The input NDArray.
@@ -329,7 +329,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the NDArray.
-            kernel: The SIMD-compatible binary function to apply.
+            K: The SIMD-compatible binary function to apply.
 
         Args:
             scalar: The input scalar value.
@@ -373,7 +373,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the NDArray.
-            kernel: The SIMD-compatible binary function to apply.
+            K: The SIMD-compatible binary function to apply.
 
         Args:
             array: The input NDArray.
@@ -413,7 +413,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the input NDArrays.
-            kernel: The SIMD-compatible binary predicate function to apply.
+            K: The SIMD-compatible binary predicate function to apply.
 
         Args:
             array1: The first input NDArray.
@@ -479,7 +479,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the input NDArray.
-            kernel: The SIMD-compatible binary predicate function to apply.
+            K: The SIMD-compatible binary predicate function to apply.
 
         Args:
             array1: The input NDArray.
@@ -529,7 +529,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the input NDArray.
-            kernel: The SIMD-compatible unary predicate function to apply.
+            K: The SIMD-compatible unary predicate function to apply.
 
         Args:
             array: The input NDArray.
@@ -567,7 +567,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the NDArrays.
-            kernel: The SIMD-compatible ternary function to apply.
+            K: The SIMD-compatible ternary function to apply.
 
         Args:
             array1: The first input NDArray.
@@ -634,7 +634,7 @@ struct HostExecutor:
 
         Parameters:
             dtype: The element type of the input NDArrays.
-            kernel: The SIMD-compatible ternary function to apply.
+            K: The SIMD-compatible ternary function to apply.
 
         Args:
             array1: The first input NDArray.

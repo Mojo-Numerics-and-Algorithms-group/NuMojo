@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Data type utility functions (numojo.core.dtype.utility)
+"""Data type utility functions (numojo.core.dtype.utility).
 
 This module provides utility functions for checking properties of data types (DType) at both compile time and run time.
 """

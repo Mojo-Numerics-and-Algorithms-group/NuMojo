@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""NDArrayStrides (numojo.core.layout.ndstrides)
+"""NDArrayStrides (numojo.core.layout.ndstrides).
 
 Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDArray,
 which is used to calculate the memory offset for each dimension when indexing into the array.

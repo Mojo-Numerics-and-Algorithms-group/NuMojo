@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Matrix and vector products (numojo.routines.linalg.products)
+"""Matrix and vector products (numojo.routines.linalg.products).
 
 This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
 """

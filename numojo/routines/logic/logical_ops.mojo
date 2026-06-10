@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Logical Operations Module (numojo.routines.logic.logical_ops)
+"""Logical Operations Module (numojo.routines.logic.logical_ops).
 
 This module implements element-wise logical operations for NDArray, ComplexNDArray, and Matrix types in the NuMojo library.
 """

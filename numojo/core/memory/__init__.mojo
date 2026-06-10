@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Memory (numojo.core.memory)
+"""Memory (numojo.core.memory).
 
 Low-level memory/storage utilities used by NuMojo core containers.
 """

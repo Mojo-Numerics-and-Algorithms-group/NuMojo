@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Offset computation (numojo.core.indexing.offset)
+"""Offset computation (numojo.core.indexing.offset).
 
 Indexing offset calculation functions. These functions compute the flat index (offset)
 in memory for a given set of multi-dimensional indices and strides.

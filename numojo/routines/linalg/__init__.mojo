@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Linear algebra routines (numojo.routines.linalg)
+"""Linear algebra routines (numojo.routines.linalg).
 
 This module provides functions for linear algebra operations, including matrix decompositions, norms, products, and solving linear systems etc.
 """

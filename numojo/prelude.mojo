@@ -6,8 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-NuMojo Prelude (`numojo.prelude`)
-================================
+NuMojo Prelude (`numojo.prelude`).
 
 The prelude is the recommended “batteries-included” import for day-to-day use.
 

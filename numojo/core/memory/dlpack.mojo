@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""DLPack (numojo.core.memory.dlpack)
+"""DLPack (numojo.core.memory.dlpack).
 
 This module implements the DLPack protocol for zero-copy tensor exchange
 between NuMojo and other array libraries (NumPy, PyTorch, JAX, etc.).

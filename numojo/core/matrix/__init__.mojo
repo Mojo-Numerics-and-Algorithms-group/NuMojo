@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Matrix (numojo.core.matrix)
+"""Matrix (numojo.core.matrix).
 
 2D matrix types and APIs.
 """

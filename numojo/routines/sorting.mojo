@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Sorting routines (numojo.routines.sorting)
+"""Sorting routines (numojo.routines.sorting).
 
 This module implements sorting routines for NDArrays and Matrices, including `sort` and `argsort` functions.
 

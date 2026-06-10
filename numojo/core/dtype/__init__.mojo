@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Dtype (numojo.core.dtype)
+"""Dtype (numojo.core.dtype).
 
 Dtype aliases and dtype-related utilities used across NuMojo.
 """

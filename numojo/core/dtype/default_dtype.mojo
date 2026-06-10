@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Default datatype (numojo.core.dtype.default_dtype)
+"""Default datatype (numojo.core.dtype.default_dtype).
 
 Datatypes Module - Implements rust like aliases for datatypes
 """
@@ -57,6 +57,10 @@ def _concise_dtype_str(dtype: DType) -> String:
     """Returns a concise string representation of the data type."""
     if dtype == i8:
         return "i8"
+    elif dtype == i16:
+        return "i16"
+    elif dtype == i32:
+        return "i32"
     elif dtype == i64:
         return "i64"
     elif dtype == i128:

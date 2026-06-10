@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Indexing routines (numojo.routines.indexing)
+"""Indexing routines (numojo.routines.indexing).
 
 - Generating index arrays
 - Indexing-like operations

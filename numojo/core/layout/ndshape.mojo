@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""NDArrayShape (numojo.core.layout.ndshape)
+"""NDArrayShape (numojo.core.layout.ndshape).
 
 Implements NDArrayShape type representing the shape of an NDArray.
 The shape is stored as a contiguous buffer of integers, with the number of dimensions (ndim) tracked separately.

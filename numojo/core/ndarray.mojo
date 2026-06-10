@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""NDArray (numojo.core.ndarray)
+"""NDArray (numojo.core.ndarray).
 
 This module implements the core `NDArray` type, which is the fundamental data structure for multi-dimensional arrays in NuMojo.
 It provides efficient storage, indexing, slicing, and basic operations on N-dimensional arrays. The `NDArray` is designed to be flexible and performant, supporting various memory layouts and data types.
@@ -3210,6 +3210,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         Args:
             other: The scalar operand.
+            func_arg: The binary function to apply element-wise.
         """
 
         if self.is_c_contiguous():
@@ -3254,6 +3255,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         Args:
             other: The array operand. Must have the same size as self.
+            func_arg: The binary function to apply element-wise.
 
         Raises:
             Error: If the arrays do not have the same size.
@@ -3576,9 +3578,9 @@ struct NDArray[dtype: DType = DType.float64](
                     + "\n"
                     + String(self.ndim)
                     + "D-array  Shape"
-                    + String(self.shape)
+                    + self.shape.__str__()
                     + "  Strides"
-                    + String(self.strides)
+                    + self.strides.__str__()
                     + "  DType: "
                     + _concise_dtype_str(self.dtype)
                     + "  C-cont: "
@@ -3826,7 +3828,7 @@ struct NDArray[dtype: DType = DType.float64](
                         out += separator
                 out += padding + "]"
 
-            if len(out) > options.line_width:
+            if out.count_codepoints() > options.line_width:
                 var wrapped: String = String("")
                 var line_len: Int = 0
                 for c in out.codepoint_slices():

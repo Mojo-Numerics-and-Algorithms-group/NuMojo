@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Matrix (numojo.core.matrix)
+"""Matrix (numojo.core.matrix).
 
 This file implements the core 2D matrix type for the NuMojo numerical computing library. It provides efficient, flexible, and memory-safe matrix operations for scientific and engineering applications.
 
@@ -5051,7 +5051,7 @@ def _arithmetic_func_matrix_matrix_to_matrix[
 
     Parameters:
         dtype: The data type of the matrix elements.
-        simd_func: A SIMD function that takes two SIMD vectors and returns a SIMD vector, representing the desired arithmetic operation (e.g., addition, subtraction).
+        K: A SIMD kernel that takes two SIMD vectors and returns a SIMD vector, representing the desired arithmetic operation (e.g., addition, subtraction).
 
     Args:
         A: The first input matrix.
@@ -5117,7 +5117,7 @@ def _arithmetic_func_matrix_to_matrix[
 
     Parameters:
         dtype: The data type of the matrix elements.
-        simd_func: A SIMD function that takes a SIMD vector and returns a SIMD vector representing
+        K: A SIMD kernel that takes a SIMD vector and returns a SIMD vector, representing the desired unary operation.
 
     Args:
         A: Input matrix of type Matrix[dtype].
@@ -5149,7 +5149,7 @@ def _logic_func_matrix_matrix_to_matrix[
 
     Parameters:
         dtype: The data type of the input matrices.
-        simd_func: A SIMD function that takes two SIMD vectors of dtype and returns a SIMD vector of bools.
+        K: A SIMD kernel that takes two SIMD vectors of dtype and returns a SIMD vector of bools.
 
     Args:
         A: The first input matrix.

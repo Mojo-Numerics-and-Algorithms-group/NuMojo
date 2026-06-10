@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Device (numojo.core.accelerator.device)
+"""Device (numojo.core.accelerator.device).
 
 This module defines the `Device` struct, which represents an execution device for array and matrix operations.
 It supports CPU and GPU devices, with GPU backends for NVIDIA CUDA, AMD ROCm, and Apple Metal.

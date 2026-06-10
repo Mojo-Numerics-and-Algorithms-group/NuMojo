@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Decompositions (numojo.routines.linalg.decompositions)
+"""Decompositions (numojo.routines.linalg.decompositions).
 
 This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
 """

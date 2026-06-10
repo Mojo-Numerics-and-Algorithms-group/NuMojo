@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Linear Algebra Solver (numojo.routines.linalg.solving)
+"""Linear Algebra Solver (numojo.routines.linalg.solving).
 
 Provides:
     - Solver of `Ax = y` using LU decomposition algorithm.

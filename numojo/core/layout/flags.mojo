@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Flags (numojo.core.layout.flags)
+"""Flags (numojo.core.layout.flags).
 
 Implements Flags type to represent the memory layout information of NuMojo arrays.
 """

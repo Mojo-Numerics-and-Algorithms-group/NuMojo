@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Complex (numojo.core.complex)
+"""Complex (numojo.core.complex).
 
 Complex number support (SIMD complex types and complex NDArray).
 """

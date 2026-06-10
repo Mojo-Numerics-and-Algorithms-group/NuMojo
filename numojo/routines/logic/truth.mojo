@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Truth value testing (numojo.routines.logic.truth)
+"""Truth value testing (numojo.routines.logic.truth).
 
 This module implements the truth value testing functions, such as `all` and `any`, for both `NDArray` and `Matrix`.
 """

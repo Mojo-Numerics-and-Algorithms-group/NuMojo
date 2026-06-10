@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Functional programming (numojo.routines.functional)
+"""Functional programming (numojo.routines.functional).
 
 This module implements functional programming utilities for NDArray operations, such as `apply_along_axis`.
 """
@@ -95,12 +95,13 @@ def apply_along_axis_reduce_to_int[
     When the array is 1-d, the returned array will be a 0-d array.
 
     Parameters:
+        func1d: The type of the function to apply to the NDArray.
         dtype: The data type of the input NDArray elements.
-        func1d: The function to apply to the NDArray.
 
     Args:
         a: The NDArray to apply the function to.
         axis: The axis to apply the function to.
+        func1d_arg: The function to apply to the NDArray.
 
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
@@ -149,12 +150,13 @@ def apply_along_axis_reduce[
         Error when the array is 1-d.
 
     Parameters:
+        func1d: The type of the function to apply to the NDArray.
         dtype: The data type of the input NDArray elements.
-        func1d: The function to apply to the NDArray.
 
     Args:
         a: The NDArray to apply the function to.
         axis: The axis to apply the function to.
+        func1d_arg: The function to apply to the NDArray.
 
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
@@ -211,13 +213,14 @@ def apply_along_axis_reduce_with_dtype[
     The function returns a different dtype than the input NDArray.
 
     Parameters:
+        func1d: The type of the function to apply to the NDArray.
         dtype: The data type of the input NDArray elements.
         returned_dtype: The data type of the returned NDArray elements.
-        func1d: The function to apply to the NDArray.
 
     Args:
         a: The NDArray to apply the function to.
         axis: The axis to apply the function to.
+        func1d_arg: The function to apply to the NDArray.
 
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
@@ -265,12 +268,13 @@ def apply_along_axis_preserve[
     The resulting array will have the same shape as the input array.
 
     Parameters:
+        func1d: The type of the function to apply to the NDArray.
         dtype: The data type of the input NDArray elements.
-        func1d: The function to apply to the NDArray.
 
     Args:
         a: The NDArray to apply the function to.
         axis: The axis to apply the function to.
+        func1d_arg: The function to apply to the NDArray.
 
     Returns:
         The NDArray with the function applied to the input NDArray by axis.
@@ -344,12 +348,13 @@ def apply_along_axis_inplace[
     The function is applied in-place to the input array.
 
     Parameters:
+        func1d: The type of the function to apply to the NDArray.
         dtype: The data type of the input NDArray elements.
-        func1d: The function to apply to the NDArray.
 
     Args:
         a: The NDArray to apply the function to.
         axis: The axis to apply the function to.
+        func1d_arg: The function to apply to the NDArray.
     """
 
     # The iterator along the axis
@@ -416,12 +421,13 @@ def apply_along_axis_indices[
     It can be used for, e.g., argsort.
 
     Parameters:
+        func1d: The type of the function to apply to the NDArray.
         dtype: The data type of the input NDArray elements.
-        func1d: The function to apply to the NDArray.
 
     Args:
         a: The NDArray to apply the function to.
         axis: The axis to apply the function to.
+        func1d_arg: The function to apply to the NDArray.
 
     Returns:
         The index array with the function applied to the input array by axis.

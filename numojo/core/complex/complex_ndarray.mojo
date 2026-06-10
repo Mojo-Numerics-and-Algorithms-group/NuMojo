@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-""""ComplexNDArray (numojo.core.complex.complex_ndarray)
+""""ComplexNDArray (numojo.core.complex.complex_ndarray).
 
 Complex NDArray support for NuMojo.
 
@@ -3023,9 +3023,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     + "\n"
                     + String(self.ndim)
                     + "D-array  Shape"
-                    + String(self.shape)
+                    + self.shape.__str__()
                     + "  Strides"
-                    + String(self.strides)
+                    + self.strides.__str__()
                     + "  DType: "
                     + _concise_dtype_str(Self.cdtype)
                     + "  C-cont: "
@@ -3147,7 +3147,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 out += padding + "]"
 
             # Greedy line wrapping
-            if len(out) > options.line_width:
+            if out.count_codepoints() > options.line_width:
                 var wrapped: String = String("")
                 var line_len: Int = 0
                 for c in out.codepoint_slices():

@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""ComplexSIMD (numojo.core.complex.complex_simd)
+"""ComplexSIMD (numojo.core.complex.complex_simd).
 
 Implement the ComplexSIMD type and its operations.
 

@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Creation routines (numojo.routines.creation)
+"""Creation routines (numojo.routines.creation).
 
 # TODO (In order of priority)
 1) Implement axis argument for the NDArray creation functions

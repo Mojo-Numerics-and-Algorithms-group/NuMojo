@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Storage (numojo.core.memory.storage)
+"""Storage (numojo.core.memory.storage).
 
 Backend storage containers for accelerator-aware data management.
 

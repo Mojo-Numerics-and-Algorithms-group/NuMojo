@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Traversal (numojo.core.indexing.traversal)
+"""Traversal (numojo.core.indexing.traversal).
 
 Functions to traverse a multi-dimensional array.
 This module provides both recursive and iterative traversal methods,

@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""DataContainer (numojo.core.memory.data_container)
+"""DataContainer (numojo.core.memory.data_container).
 
 A reference-counted container for contiguous data buffers, used for NDArray and Matrix.
 

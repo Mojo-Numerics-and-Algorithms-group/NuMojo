@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""I/O routines (numojo.routines.io)
+"""I/O routines (numojo.routines.io).
 
 This module provides functions for reading and writing arrays to and from files, as well as formatting options for printing arrays.
 """

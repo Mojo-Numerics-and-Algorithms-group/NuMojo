@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Indexing (numojo.core.indexing)
+"""Indexing (numojo.core.indexing).
 
 Indexing-related helpers and types used by NuMojo core containers.
 """

@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Routines module (numojo.routines)
+"""Routines module (numojo.routines).
 
 This modules groups NumPy-like functionality by topic (math, linalg, statistics,
 creation, manipulation, etc.).

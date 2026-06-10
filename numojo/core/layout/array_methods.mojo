@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Array methods (numojo.core.layout.array_methods)
+"""Array methods (numojo.core.layout.array_methods).
 
 This module defines the `NewAxis` struct, which is used to represent the insertion of new axes into array shapes,
 similar to the concept of `None` or `np.newaxis` in NumPy. The `NewAxis` struct can be used to indicate where

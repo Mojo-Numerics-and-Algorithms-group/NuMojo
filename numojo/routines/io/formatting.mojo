@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Formatting (numojo.routines.io.formatting)
+"""Formatting (numojo.routines.io.formatting).
 
 This module provides functions for formatting arrays and values for printing, including options for precision, scientific notation, and complex number formatting.
 """

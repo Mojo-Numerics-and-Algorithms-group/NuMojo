@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""IndexBuffer (numojo.core.indexing.index_buffer)
+"""IndexBuffer (numojo.core.indexing.index_buffer).
 
 Shared integer buffer backend for shape/strides/item.
 

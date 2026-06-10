@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-""""Searching routines (numojo.routines.searching)
+""""Searching routines (numojo.routines.searching).
 
 This module implements searching routines for finding indices of extrema (argmax and argmin) in NDArrays and Matrices.
 """

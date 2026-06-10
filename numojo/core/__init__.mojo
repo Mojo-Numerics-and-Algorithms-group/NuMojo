@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Core (numojo.core)
+"""Core (numojo.core).
 
 This sub module provides the core types and utilities for NuMojo, including fundamental data structures
 like `NDArray` and `Matrix`, dtype aliases, memory layout definitions, error handling utilities, and complex number support.

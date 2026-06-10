@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Validation (numojo.core.indexing.validation)
+"""Validation (numojo.core.indexing.validation).
 
 Contains utilities for validating indices, shapes, and axes for various indexing and reduction operations.
 """
@@ -75,7 +75,7 @@ struct Validator:
                     message="Cannot reshape array of size "
                     + String(current_size)
                     + " into shape "
-                    + String(new_shape),
+                    + new_shape.__str__(),
                     location="Validator.validate_reshape",
                 )
             )

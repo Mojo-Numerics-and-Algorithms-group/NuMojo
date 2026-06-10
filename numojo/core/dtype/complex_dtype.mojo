@@ -8,7 +8,7 @@
 # Copyright (c) 2025, Modular Inc. All rights reserved.
 # Original source: https://github.com/modularml/mojo
 # ===----------------------------------------------------------------------=== #
-"""ComplexDType (numojo.core.dtype.complex_dtype)
+"""ComplexDType (numojo.core.dtype.complex_dtype).
 
 ComplexDType and related utilities for working with complex data types in NuMojo.
 """

@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Slicing (numojo.core.indexing.slicing)
+"""Slicing (numojo.core.indexing.slicing).
 
 This module defines internal data structures and utilities for handling slicing operations in NuMojo.
 """

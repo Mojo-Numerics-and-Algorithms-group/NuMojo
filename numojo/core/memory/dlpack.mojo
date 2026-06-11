@@ -431,9 +431,11 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         )
 
     def __del__(deinit self):
-        if self.shape:
+        # Address comparisons (not Bool(ptr), removed in Mojo 1.0) because
+        # these pointers mirror the DLPack C ABI where NULL is meaningful.
+        if Int(self.shape) != 0:
             self.shape.free()
-        if self.strides:
+        if Int(self.strides) != 0:
             self.strides.free()
         # TODO: note sure if we should free it explicitly, gotta check this.
         _ = self.data_container^
@@ -448,11 +450,11 @@ def _dlpack_deleter_impl[
     dtype: DType
 ](managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]) -> None:
     """Type-specific deleter callback for DLManagedTensor."""
-    if not managed_tensor_ptr:
+    if Int(managed_tensor_ptr) == 0:
         return
 
     var ctx = managed_tensor_ptr[].manager_ctx
-    if ctx:
+    if Int(ctx) != 0:
         var metadata_ptr = ctx.bitcast[DLPackMetadata[dtype]]()
         metadata_ptr.destroy_pointee()
         metadata_ptr.free()
@@ -573,7 +575,7 @@ def _extract_dlpack_pointer(
 
     var p = result_obj.unsafe_get_as_pointer[DType.uint8]()
 
-    if not p:
+    if Int(p) == 0:
         raise Error(
             "_extract_dlpack_pointer: PyCapsule_GetPointer returned NULL"
             " - capsule may be invalid or already consumed"
@@ -635,7 +637,7 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
     var actual_capsule: PythonObject = capsule.__dlpack__()
     var managed_tensor_ptr = _extract_dlpack_pointer(actual_capsule)
 
-    if not managed_tensor_ptr:
+    if Int(managed_tensor_ptr) == 0:
         raise Error("from_dlpack: received null DLManagedTensor pointer")
 
     var dl_tensor = managed_tensor_ptr[].dl_tensor
@@ -662,7 +664,9 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
         shape[i] = Int(dl_tensor.shape[i])
 
     var strides: NDArrayStrides
-    if dl_tensor.strides:
+    # NULL strides is valid DLPack (means C-contiguous); compare the address
+    # since Bool(ptr) no longer models null in Mojo 1.0.
+    if Int(dl_tensor.strides) != 0:
         strides = NDArrayStrides(ndim=ndim, initialized=True)
         for i in range(ndim):
             strides[i] = Int(dl_tensor.strides[i])

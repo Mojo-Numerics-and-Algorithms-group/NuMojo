@@ -57,8 +57,8 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
     """Pointer to the data array."""
 
-    var _refcount: UnsafePointer[Atomic[DType.uint64], Self.origin]
-    """Pointer to the atomic reference count (null for external containers)."""
+    var _refcount: Optional[UnsafePointer[Atomic[DType.uint64], Self.origin]]
+    """Pointer to the atomic reference count (None for external containers)."""
 
     var ownership: Ownership
     """Ownership status of the container (Managed or External)."""
@@ -73,9 +73,12 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def __init__(out self):
         """Create an empty managed container with size 0 and refcount 1."""
-        self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
-        self._refcount = alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self.ptr = UnsafePointer[
+            Scalar[Self.dtype], Self.origin
+        ].unsafe_dangling()
+        var refcount = alloc[Atomic[DType.uint64]](1)
+        refcount[] = Atomic[DType.uint64](1)
+        self._refcount = refcount
         self.ownership = Ownership.Managed
         self.size = 0
 
@@ -93,12 +96,15 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             abort("HostStorage: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        var refcount = alloc[Atomic[DType.uint64]](1)
+        refcount[] = Atomic[DType.uint64](1)
+        self._refcount = refcount
         self.ownership = Ownership.Managed
 
         if size == 0:
-            self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.dtype], Self.origin
+            ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.dtype]](size)
 
@@ -123,18 +129,19 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if size < 0:
             abort("HostStorage: __init__() size must be non-negative")
-        if not ptr:
+        if Int(ptr) == 0:
             abort("HostStorage: __init__() ptr must be non-null")
 
         self.size = size
         if copy:
-            self._refcount = alloc[Atomic[DType.uint64]](1)
-            self._refcount[] = Atomic[DType.uint64](1)
+            var refcount = alloc[Atomic[DType.uint64]](1)
+            refcount[] = Atomic[DType.uint64](1)
+            self._refcount = refcount
             self.ptr = alloc[Scalar[Self.dtype]](size)
             memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
-            self._refcount = UnsafePointer[Atomic[DType.uint64], Self.origin]()
+            self._refcount = None
             self.ptr = ptr
             self.ownership = Ownership.External
 
@@ -144,7 +151,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         *,
         ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
         size: Int,
-        refcount: UnsafePointer[Atomic[DType.uint64], Self.origin],
+        refcount: Optional[UnsafePointer[Atomic[DType.uint64], Self.origin]],
         ownership: Ownership,
     ):
         """Create a HostStorage that shares an existing buffer and refcount.
@@ -175,7 +182,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             A new `HostStorage` sharing the same buffer.
         """
         if self.is_refcounted():
-            _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
+            _ = self._refcount.value()[].fetch_add[ordering=Ordering.RELAXED](
+                1
+            )
         return Self(ptr=self.ptr, size=self.size, refcount=self._refcount, ownership=self.ownership)
 
     @always_inline
@@ -207,13 +216,17 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         if not self.is_refcounted():
             return
 
-        if self._refcount[].fetch_sub[ordering=Ordering.RELEASE](1) != 1:
+        if self._refcount.value()[].fetch_sub[ordering=Ordering.RELEASE](
+            1
+        ) != 1:
             return
 
         fence[ordering=Ordering.ACQUIRE]()
-        if self.ptr and self.size > 0:
+        # ptr is a non-null `unsafe_dangling()` sentinel when size == 0 and a
+        # real allocation otherwise, so size is the only valid free guard.
+        if self.size > 0:
             self.ptr.free()
-        self._refcount.free()
+        self._refcount.value().free()
 
     # ===----------------------------------------------------------------------===#
     # Data Access
@@ -365,15 +378,12 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     def is_refcounted(ref self) -> Bool:
         """Return True if this container tracks a reference count.
 
-        External containers and containers whose refcount pointer is null
-        return False.
+        External containers (whose refcount is None) return False.
 
         Returns:
             Whether reference counting is active.
         """
-        return (
-            self._refcount != UnsafePointer[Atomic[DType.uint64], Self.origin]()
-        )
+        return self._refcount is not None
 
     @always_inline
     def ref_count(ref self) -> UInt64:
@@ -384,7 +394,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         if not self.is_refcounted():
             return 0
-        return self._refcount[].load[ordering=Ordering.RELAXED]()
+        return self._refcount.value()[].load[ordering=Ordering.RELAXED]()
 
     def deep_copy(self) -> Self:
         """Create an independent managed copy of this container.
@@ -423,7 +433,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
+        _ = self._refcount.value()[].fetch_add[ordering=Ordering.RELAXED](1)
 
         var result = HostStorage[Self.dtype](
             ptr=self.ptr,
@@ -684,7 +694,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             abort(
                 "AcceleratorDataContainer: __init__() size must be non-negative"
             )
-        if not ptr:
+        if Int(ptr) == 0:
             abort("AcceleratorDataContainer: __init__() ptr must be non-null")
 
         self.size = size

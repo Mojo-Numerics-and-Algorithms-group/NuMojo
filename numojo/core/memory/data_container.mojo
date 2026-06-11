@@ -91,7 +91,7 @@ struct DataContainer[dtype: DType](
 
     Fields:
         ptr: Pointer to the data array.
-        _refcount: Pointer to the atomic reference count (null for external).
+        _refcount: Optional pointer to the atomic reference count (None for external).
         ownership: Ownership status (Managed or External).
         size: Number of elements in the data array.
     """
@@ -102,8 +102,8 @@ struct DataContainer[dtype: DType](
     var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
     """Pointer to the data array."""
 
-    var _refcount: UnsafePointer[Atomic[DType.uint64], Self.origin]
-    """Pointer to the atomic reference count."""
+    var _refcount: Optional[UnsafePointer[Atomic[DType.uint64], Self.origin]]
+    """Pointer to the atomic reference count (None for external containers)."""
 
     var ownership: Ownership
     """Ownership status of the container."""
@@ -119,9 +119,12 @@ struct DataContainer[dtype: DType](
         """
         Create an empty, managed DataContainer.
         """
-        self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
-        self._refcount = alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self.ptr = UnsafePointer[
+            Scalar[Self.dtype], Self.origin
+        ].unsafe_dangling()
+        var refcount = alloc[Atomic[DType.uint64]](1)
+        refcount[] = Atomic[DType.uint64](1)
+        self._refcount = refcount
         self.ownership = Ownership.Managed
         self.size = 0
 
@@ -137,12 +140,15 @@ struct DataContainer[dtype: DType](
             abort("DataContainer: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        var refcount = alloc[Atomic[DType.uint64]](1)
+        refcount[] = Atomic[DType.uint64](1)
+        self._refcount = refcount
         self.ownership = Ownership.Managed
 
         if size == 0:
-            self.ptr = UnsafePointer[Scalar[Self.dtype], Self.origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.dtype], Self.origin
+            ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.dtype]](size)
 
@@ -167,17 +173,18 @@ struct DataContainer[dtype: DType](
         """
         if size < 0:
             abort("DataContainer: __init__() size must be non-negative")
-        if not ptr:
+        if Int(ptr) == 0:
             abort("DataContainer: __init__() ptr must be non-null")
         self.size = size
         if copy:
-            self._refcount = alloc[Atomic[DType.uint64]](1)
-            self._refcount[] = Atomic[DType.uint64](1)
+            var refcount = alloc[Atomic[DType.uint64]](1)
+            refcount[] = Atomic[DType.uint64](1)
+            self._refcount = refcount
             self.ptr = alloc[Scalar[Self.dtype]](size)
             memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
-            self._refcount = UnsafePointer[Atomic[DType.uint64], Self.origin]()
+            self._refcount = None
             self.ptr = ptr
             self.ownership = Ownership.External
 
@@ -187,7 +194,7 @@ struct DataContainer[dtype: DType](
         *,
         ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
         size: Int,
-        refcount: UnsafePointer[Atomic[DType.uint64], Self.origin],
+        refcount: Optional[UnsafePointer[Atomic[DType.uint64], Self.origin]],
         ownership: Ownership,
     ):
         """Create a DataContainer that shares an existing buffer and refcount.
@@ -219,7 +226,9 @@ struct DataContainer[dtype: DType](
             copy: DataContainer to copy from.
         """
         if copy.is_refcounted():
-            _ = copy._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
+            _ = copy._refcount.value()[].fetch_add[ordering=Ordering.RELAXED](
+                1
+            )
         self.ptr = copy.ptr
         self.size = copy.size
         self._refcount = copy._refcount
@@ -267,13 +276,17 @@ struct DataContainer[dtype: DType](
         if not self.is_refcounted():
             return
 
-        if self._refcount[].fetch_sub[ordering=Ordering.RELEASE](1) != 1:
+        if self._refcount.value()[].fetch_sub[ordering=Ordering.RELEASE](
+            1
+        ) != 1:
             return
 
         fence[ordering=Ordering.ACQUIRE]()
-        if self.ptr and self.size > 0:
+        # ptr is a non-null `unsafe_dangling()` sentinel when size == 0 and a
+        # real allocation otherwise, so size is the only valid free guard.
+        if self.size > 0:
             self.ptr.free()
-        self._refcount.free()
+        self._refcount.value().free()
 
     # ===----------------------------------------------------------------------===#
     # Data Access Methods
@@ -422,9 +435,7 @@ struct DataContainer[dtype: DType](
         Returns:
             True if refcounting is enabled, False otherwise.
         """
-        return (
-            self._refcount != UnsafePointer[Atomic[DType.uint64], Self.origin]()
-        )
+        return self._refcount is not None
 
     @always_inline
     def ref_count(ref self) -> UInt64:
@@ -436,7 +447,7 @@ struct DataContainer[dtype: DType](
         """
         if not self.is_refcounted():
             return 0
-        return self._refcount[].load[ordering=Ordering.RELAXED]()
+        return self._refcount.value()[].load[ordering=Ordering.RELAXED]()
 
     def share(mut self) raises -> DataContainer[Self.dtype]:
         """
@@ -458,7 +469,7 @@ struct DataContainer[dtype: DType](
                 )
             )
 
-        _ = self._refcount[].fetch_add[ordering=Ordering.RELAXED](1)
+        _ = self._refcount.value()[].fetch_add[ordering=Ordering.RELAXED](1)
 
         var result = DataContainer[Self.dtype](
             ptr=self.ptr,

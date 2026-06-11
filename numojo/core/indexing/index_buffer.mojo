@@ -60,7 +60,9 @@ struct IndexBuffer(
 
         self.ndim = size
         if size == 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.element_type]](size)
             memset_zero(self.ptr, size)
@@ -85,7 +87,9 @@ struct IndexBuffer(
         Initialize an empty IndexBuffer.
         """
         self.ndim = 0
-        self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+        self.ptr = UnsafePointer[
+            Scalar[Self.element_type], Self._origin
+        ].unsafe_dangling()
 
     def __init__(out self, *values: Int):
         """
@@ -96,7 +100,9 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
@@ -114,7 +120,9 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
@@ -129,7 +137,9 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
@@ -144,7 +154,9 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
@@ -161,7 +173,9 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
@@ -176,7 +190,9 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
@@ -195,7 +211,9 @@ struct IndexBuffer(
         """
         self.ndim = copy.ndim
         if copy.ndim <= 0:
-            self.ptr = UnsafePointer[Scalar[Self.element_type], Self._origin]()
+            self.ptr = UnsafePointer[
+                Scalar[Self.element_type], Self._origin
+            ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
             memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
@@ -214,7 +232,9 @@ struct IndexBuffer(
         """
         Deinitialize the IndexBuffer and free resources.
         """
-        if self.ndim > 0 and self.ptr:
+        # ptr is a non-null `unsafe_dangling()` sentinel when ndim <= 0 and a
+        # real allocation otherwise, so ndim is the only valid free guard.
+        if self.ndim > 0:
             self.ptr.free()
 
     # ===----------------------------------------------------------------------=== #

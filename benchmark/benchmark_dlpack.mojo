@@ -1,7 +1,7 @@
 from numojo.prelude import *
 from numojo.core.memory.dlpack import from_dlpack
-from python import Python
-import benchmark
+from std.python import Python
+from std import benchmark
 
 
 def main() raises:

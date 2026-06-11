@@ -90,13 +90,13 @@ def main() raises:
     var C = A @ B
 
     # 配列の逆行列
-    var I = nm.inv(A)
+    var I = nm.linalg.inv(A)
 
     # 配列のスライス
     var A_slice = A[1:3, 4:19]
 
     # 配列からスカラーを取得
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     var A_item_2 = A.item(291, 141)
 ```
 
@@ -145,10 +145,10 @@ def main() raises:
     print(A.inv())
 
     # 線形代数の求解
-    print(nm.solve(A, B))
+    print(nm.linalg.solve(A, B))
 
     # 最小二乗法
-    print(nm.lstsq(A, C))
+    print(nm.linalg.lstsq(A, C))
 ```
 
 `ComplexNDArray`の例は以下の通りです：
@@ -160,10 +160,10 @@ from numojo.prelude import *
 
 def main() raises:
     # 複素数スカラー 5 + 5j を作成
-    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    var complexscalar = CScalar[cf32](5, 5)
     # 複素数配列を作成
-    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
-    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
+    var B = nm.ones[cf32](Shape(1000, 1000))                            # (1+1j)
 
     # 配列を出力
     print(A)
@@ -175,10 +175,12 @@ def main() raises:
     var C = A * B
 
     # 配列からスカラーを取得
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     # 配列の要素を設定
-    A[item(291, 141)] = complexscalar
-```## インストール方法
+    A[Item(291, 141)] = complexscalar
+```
+
+## インストール方法
 
 NuMojoパッケージをインストールして使用するには、3つのアプローチがあります。
 

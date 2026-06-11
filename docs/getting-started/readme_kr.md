@@ -90,13 +90,13 @@ def main() raises:
     var C = A @ B
 
     # 배열 역행렬
-    var I = nm.inv(A)
+    var I = nm.linalg.inv(A)
 
     # 배열 슬라이싱
     var A_slice = A[1:3, 4:19]
 
     # 배열에서 스칼라 가져오기
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     var A_item_2 = A.item(291, 141)
 ```
 
@@ -145,10 +145,10 @@ def main() raises:
     print(A.inv())
 
     # 선형 대수 풀이
-    print(nm.solve(A, B))
+    print(nm.linalg.solve(A, B))
 
     # 최소 제곱법
-    print(nm.lstsq(A, C))
+    print(nm.linalg.lstsq(A, C))
 ```
 
 `ComplexNDArray`의 예시는 다음과 같습니다:
@@ -160,10 +160,10 @@ from numojo.prelude import *
 
 def main() raises:
     # 복소수 스칼라 5 + 5j 생성
-    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    var complexscalar = CScalar[cf32](5, 5)
     # 복소수 배열 생성
-    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
-    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
+    var B = nm.ones[cf32](Shape(1000, 1000))                            # (1+1j)
 
     # 배열 출력
     print(A)
@@ -175,9 +175,9 @@ def main() raises:
     var C = A * B
 
     # 배열에서 스칼라 가져오기
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     # 배열의 요소 설정
-    A[item(291, 141)] = complexscalar
+    A[Item(291, 141)] = complexscalar
 ```
 
 ## 설치 방법

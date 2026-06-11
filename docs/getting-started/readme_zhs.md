@@ -75,14 +75,13 @@ def main() raises:
     var C = A @ B
 
     # 数组求逆
-    var I = nm.inv(A)
+    var I = nm.linalg.inv(A)
 
     # 数组切片
     var A_slice = A[1:3, 4:19]
-    var B_slice = B[255, 103:241:2]
 
     # 提取矩阵元素
-    var A_item = A.item(291, 141)
+    var A_item = A[Item(291, 141)]
     var A_item_2 = A.item(291, 141)
 ```
 
@@ -131,10 +130,10 @@ def main() raises:
     print(A.inv())
 
     # 求解线性代数方程
-    print(nm.solve(A, B))
+    print(nm.linalg.solve(A, B))
 
     # 最小二乘法
-    print(nm.lstsq(A, C))
+    print(nm.linalg.lstsq(A, C))
 ```
 
 `ComplexNDArray` 的示例如下：
@@ -146,10 +145,10 @@ from numojo.prelude import *
 
 def main() raises:
     # 创建复数标量 5 + 5j
-    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    var complexscalar = CScalar[cf32](5, 5)
     # 创建复数数组
-    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
-    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
+    var B = nm.ones[cf32](Shape(1000, 1000))                            # (1+1j)
 
     # 打印数组
     print(A)
@@ -161,9 +160,9 @@ def main() raises:
     var C = A * B
 
     # 从数组获取标量
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     # 设置数组元素
-    A[item(291, 141)] = complexscalar
+    A[Item(291, 141)] = complexscalar
 ```
 
 请在 [此文档](../user-guide/features.md) 中查询所有可用的函数。

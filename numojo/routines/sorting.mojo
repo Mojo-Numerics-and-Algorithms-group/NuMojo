@@ -163,7 +163,7 @@ def sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     return B^
 
 
-def sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
+def sort[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     """
     Sort the Matrix along the given axis.
     """

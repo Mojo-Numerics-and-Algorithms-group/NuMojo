@@ -11,7 +11,7 @@ This section collects user-facing documentation for NuMojo. Use it to discover a
 ## Looking for onboarding?
 
 - [Project README](../../README.MD): Installation and usage overview.
-- [Runnable Examples](../getting-started/runnable-examples.md): Small examples you can run locally.
+- [Runnable Examples](../../examples/): Small examples you can run locally (e.g. `mojo run -I . examples/quickstart.mojo` from the repository root).
 
 ## Developer references
 

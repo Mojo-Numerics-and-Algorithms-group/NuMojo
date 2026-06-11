@@ -68,7 +68,13 @@ For a detailed roadmap, please refer to the [docs/user-guide/roadmap.md](docs/us
 
 ## Usage
 
-Runnable examples are available in `examples/` (e.g., `examples/quickstart.mojo`).
+Runnable examples are available in `examples/` (e.g., `examples/quickstart.mojo`). Run them from the repository root with:
+
+```bash
+mojo run -I . examples/quickstart.mojo
+```
+
+> Note: when building an example into a standalone binary (`mojo build`), some Linux toolchains fail at the link step with `undefined reference to 'log10f@@GLIBC_2.43'`. If you hit this, pass the math library to the linker explicitly: `mojo build -I . -Xlinker -lm examples/quickstart.mojo`.
 
 An example of n-dimensional array (`NDArray` type) goes as follows.
 
@@ -92,7 +98,7 @@ def main() raises:
     var C = A @ B
 
     # Array inversion
-    var I = nm.inv(A)
+    var I = nm.linalg.inv(A)
 
     # Array slicing
     var A_slice = A[1:3, 4:19]
@@ -123,7 +129,7 @@ def main() raises:
     )
 
     # Matrix slicing
-    var A_slice = A[1:3, 4:19] # returns a copy, for getting a view use `A.get(Slice(1,3), Slice(4, 19))
+    var A_slice = A[1:3, 4:19] # returns a copy, for getting a view use `A.get(Slice(1,3), Slice(4, 19))`
     var B_slice = B[255, 103:241:2]
 
     # Get scalar from matrix
@@ -147,10 +153,10 @@ def main() raises:
     print(A.inv())
 
     # Solve linear algebra
-    print(nm.solve(A, B))
+    print(nm.linalg.solve(A, B))
 
     # Least square
-    print(nm.lstsq(A, C))
+    print(nm.linalg.lstsq(A, C))
 ```
 
 An example of `ComplexNDArray` is as follows:
@@ -182,7 +188,7 @@ def main() raises:
     # Get scalar from array
     var A_item = A[Item(291, 141)]
     # Set an element of the array
-    A[item(291, 141)] = complexscalar
+    A[Item(291, 141)] = complexscalar
 ```
 
 ## Installation

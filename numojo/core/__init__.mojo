@@ -31,12 +31,7 @@ from .error import (
 
 from .matrix import Matrix
 
-from .layout import (
-    NDArrayShape,
-    NDArrayStrides,
-    Flags,
-    newaxis
-)
+from .layout import NDArrayShape, NDArrayStrides, Flags, newaxis
 
 from .dtype import (
     i8,

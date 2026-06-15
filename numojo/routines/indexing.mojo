@@ -22,6 +22,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.indexing import IndexMethods
 import numojo.routines.manipulation as manipulation
+from numojo.routines.creation import array as _array_creation_from_list
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays
@@ -522,3 +523,41 @@ def take[
     """
     var flat = manipulation.ravel(a)
     return take(flat, indices, axis=0)
+
+
+# TODO: Add this after Scalar[DType.int] and Int are merged in Mojo. a
+# def take[
+#     dtype: DType,
+#     //,
+# ](a: NDArray[dtype], indices: List[Scalar[DType.int]],) raises -> NDArray[dtype]:
+#     """Takes elements from a flattened array by linear indices.
+
+#     Equivalent to `take(a.flatten(), indices, axis=0)`. The output shape
+#     matches `indices.shape`.
+
+#     Parameters:
+#         dtype: Data type of the source array.
+
+#     Args:
+#         a: Source array (flattened before indexing).
+#         indices: List of linear indices into the flattened source (1D).
+
+#     Returns:
+#         Array with the same shape as `indices`.
+
+#     Raises:
+#         Error: If any index is out of bounds for the flattened array.
+
+#     Examples:
+#         ```mojo
+#         import numojo as nm
+
+#         var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+#         print(nm.indexing.take(a, nm.array[nm.int]("[0, 5, 11]")))
+#         # [0, 5, 11]
+#         ```
+#         .
+#     """
+#     var shape: List[Scalar[DType.int]] = [Scalar[DType.int](len(indices))]
+#     var arr = _array_creation_from_list[dtype](indices, shape)
+#     return take(arr, indices, axis=0)

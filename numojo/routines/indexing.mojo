@@ -19,8 +19,9 @@ from std.algorithm import vectorize
 
 from numojo import broadcast_to
 from numojo.core.ndarray import NDArray
-from numojo.core.layout import NDArrayStrides
+from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.indexing import IndexMethods
+import numojo.routines.manipulation as manipulation
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays
@@ -373,3 +374,150 @@ def take_along_axis[
                 )
 
     return result^
+
+
+# ===----------------------------------------------------------------------=== #
+# take
+# ===----------------------------------------------------------------------=== #
+
+
+def take[
+    dtype: DType,
+    //,
+](
+    a: NDArray[dtype],
+    indices: NDArray[DType.int],
+    axis: Int,
+) raises -> NDArray[dtype]:
+    """Takes elements from an array along an axis.
+
+    Output shape is `a.shape[:axis] + indices.shape + a.shape[axis+1:]`.
+    Negative indices into `a` along the axis are normalised. Negative `axis`
+    values are also normalised.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Source array.
+        indices: Indices of values to take along the axis.
+        axis: Axis along which to select. Negative values count from the end.
+
+    Returns:
+        Array of shape `a.shape[:axis] + indices.shape + a.shape[axis+1:]`.
+
+    Raises:
+        Error: If `axis` is out of bounds.
+        Error: If any index is out of bounds for the given axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+
+        print(nm.indexing.take(a, nm.array[nm.int]("[2, 0, 1]"), axis=0))
+        # shape (3, 4): rows 2, 0, 1
+        #
+        print(nm.indexing.take(a, nm.array[nm.int]("[1, 3]"), axis=1))
+        # shape (3, 2): cols 1, 3
+        ```
+        .
+    """
+    var norm_axis = axis
+    if norm_axis < 0:
+        norm_axis = a.ndim + norm_axis
+    if norm_axis < 0 or norm_axis >= a.ndim:
+        raise Error(
+            String(
+                "\nError in `take`: axis {} is out of bounds for array with"
+                " {} dimensions."
+            ).format(axis, a.ndim)
+        )
+
+    # a.shape[:axis] + indices.shape + a.shape[axis+1:]
+    var out_shape_list = List[Int]()
+    for d in range(norm_axis):
+        out_shape_list.append(a.shape[d])
+    for d in range(indices.ndim):
+        out_shape_list.append(indices.shape[d])
+    for d in range(norm_axis + 1, a.ndim):
+        out_shape_list.append(a.shape[d])
+
+    var result = NDArray[dtype](NDArrayShape(out_shape_list))
+
+    # Sizes product(a.shape[:axis]) + indices.size + product(a.shape[axis+1:])
+    var outer_size = 1
+    for d in range(norm_axis):
+        outer_size *= a.shape[d]
+    var n_idx = indices.size
+    var inner_size = 1
+    for d in range(norm_axis + 1, a.ndim):
+        inner_size *= a.shape[d]
+
+    var axis_size = a.shape[norm_axis]
+    var indices_c = indices.contiguous()
+    var a_c = a.contiguous()
+
+    for outer in range(outer_size):
+        for i in range(n_idx):
+            var raw = Int(indices_c._buf.ptr[i])
+            if raw < -axis_size or raw >= axis_size:
+                raise Error(
+                    String(
+                        "\nError in `take`: index {} is out of bounds for"
+                        " axis {} with size {}."
+                    ).format(raw, norm_axis, axis_size)
+                )
+            var norm_idx = raw
+            if norm_idx < 0:
+                norm_idx += axis_size
+
+            var src_base = outer * axis_size * inner_size + norm_idx * inner_size
+            var dst_base = outer * n_idx * inner_size + i * inner_size
+            memcpy(
+                dest=result._buf.ptr + dst_base,
+                src=a_c._buf.ptr + src_base,
+                count=inner_size,
+            )
+
+    return result^
+
+
+def take[
+    dtype: DType,
+    //,
+](
+    a: NDArray[dtype],
+    indices: NDArray[DType.int],
+) raises -> NDArray[dtype]:
+    """Takes elements from a flattened array by linear indices.
+
+    Equivalent to `take(a.flatten(), indices, axis=0)`. The output shape
+    matches `indices.shape`.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Source array (flattened before indexing).
+        indices: Linear indices into the flattened source. May be any shape.
+
+    Returns:
+        Array with the same shape as `indices`.
+
+    Raises:
+        Error: If any index is out of bounds for the flattened array.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+        print(nm.indexing.take(a, nm.array[nm.int]("[0, 5, 11]")))
+        # [0, 5, 11]
+        ```
+        .
+    """
+    var flat = manipulation.ravel(a)
+    return take(flat, indices, axis=0)

@@ -685,7 +685,6 @@ struct NDArray[dtype: DType = DType.float64](
             self._copy_first_axis_slice(self, norm, result)
             return result^
 
-
     # perhaps move these to a utility module
     def _copy_first_axis_slice(
         self,
@@ -2326,8 +2325,8 @@ struct NDArray[dtype: DType = DType.float64](
             import numojo as nm
 
             var A = nm.arange[nm.f32](6)
-            var mask = A > nm.f32(2.0)
-            A.set(mask, val=nm.f32(0.0))
+            var mask = A > Float32(2.0)
+            A.set(mask, val=Float32(0.0))
             ```
         """
         var value = val
@@ -2417,12 +2416,12 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If any of the slices is out of bound.
 
         Examples:
+            ```mojo
+            import numojo
 
-        ```console
-        >>> import numojo
-        >>> var A = numojo.random.rand[numojo.i16](2, 2, 2)
-        >>> A[1:3, 2:4] = numojo.random.rand[numojo.i16](2, 2)
-        ```.
+            var A = numojo.random.rand[numojo.i16](2, 2, 2)
+            A[1:3, 2:4] = numojo.random.rand[numojo.i16](2, 2)
+            ```.
         """
         var slice_list: List[Slice] = List[Slice]()
         for i in range(slices.__len__()):
@@ -2572,6 +2571,8 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
+            import numojo as nm
+
             var a = nm.arange[nm.i32](16).reshape(nm.Shape(4, 4))
             var patch = nm.full[nm.i32](nm.Shape(2), fill_value=7)
             a.set(1, Slice(1, 3), val=patch)  # row 1, cols 1-2
@@ -2986,7 +2987,7 @@ struct NDArray[dtype: DType = DType.float64](
             import numojo as nm
 
             var A = nm.arange[nm.f32](6).reshape(nm.Shape(2, 3))
-            var mask = A > nm.f32(2.0)
+            var mask = A > Float32(2.0)
             var vals = nm.array[nm.f32]("[10.0, 20.0, 30.0]")
             A.set(mask, val=vals)
             ```

@@ -151,7 +151,7 @@ from .creation import (
     array,
 )
 
-from .indexing import `where`, compress, take_along_axis
+from .indexing import `where`, compress, take_along_axis, take
 
 from .functional import (
     apply_along_axis_reduce,

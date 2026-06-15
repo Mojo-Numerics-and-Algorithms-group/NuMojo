@@ -84,7 +84,7 @@ import numojo.routines.linalg as linalg
 import numojo.routines.sorting as sorting
 import numojo.routines.manipulation as manipulation
 import numojo.routines.statistics as statistics
-from numojo.routines.indexing import compress
+from numojo.routines.indexing import compress, take as _take
 from numojo.routines.math.misc import clip
 from numojo.routines.manipulation import reshape
 import numojo.routines.math as numojo_math
@@ -4828,6 +4828,65 @@ struct NDArray[dtype: DType = DType.float64](
             Error: If the offset is beyond the shape of the array.
         """
         return linalg.diagonal(self, offset=offset)
+
+    def take(self, indices: NDArray[DType.int], axis: Int) raises -> Self:
+        """Takes elements from the array along an axis.
+
+        Output shape is `self.shape[:axis] + indices.shape + self.shape[axis+1:]`.
+
+        Args:
+            indices: Indices to select along the axis. May be any shape.
+                Negative indices are normalised.
+            axis: Axis along which to select. Negative values count from the
+                end.
+
+        Returns:
+            Array of shape `self.shape[:axis] + indices.shape +
+            self.shape[axis+1:]`.
+
+        Raises:
+            Error: If `axis` is out of bounds.
+            Error: If any index is out of bounds for the given axis.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+            print(a.take(nm.array[nm.int]("[2, 0, 1]"), axis=0))
+            # [[8, 9, 10, 11], [0, 1, 2, 3], [4, 5, 6, 7]]
+
+            print(a.take(nm.array[nm.int]("[1, 3]"), axis=1))
+            # [[1, 3], [5, 7], [9, 11]]
+            ```
+        """
+        return _take(self, indices, axis)
+
+    def take(self, indices: NDArray[DType.int]) raises -> Self:
+        """Takes elements from the flattened array by linear indices.
+
+        Equivalent to `self.flatten().take(indices, axis=0)`. Output shape
+        matches `indices.shape`.
+
+        Args:
+            indices: Linear indices into the flattened array. May be any shape.
+
+        Returns:
+            Array with the same shape as `indices`.
+
+        Raises:
+            Error: If any index is out of bounds for the flattened array.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+            print(a.take(nm.array[nm.int]("[0, 5, 11]")))
+            # [0, 5, 11]
+            ```
+        """
+        return _take(self, indices)
 
     def fill(mut self, val: Scalar[Self.dtype]):
         """Fills all items of the array with the given value.

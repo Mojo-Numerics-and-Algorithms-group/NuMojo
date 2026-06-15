@@ -388,7 +388,9 @@ def take[
     a: NDArray[dtype],
     indices: NDArray[DType.int],
     axis: Int,
-) raises -> NDArray[dtype]:
+) raises -> NDArray[
+    dtype
+]:
     """Takes elements from an array along an axis.
 
     Output shape is `a.shape[:axis] + indices.shape + a.shape[axis+1:]`.
@@ -473,7 +475,9 @@ def take[
             if norm_idx < 0:
                 norm_idx += axis_size
 
-            var src_base = outer * axis_size * inner_size + norm_idx * inner_size
+            var src_base = (
+                outer * axis_size * inner_size + norm_idx * inner_size
+            )
             var dst_base = outer * n_idx * inner_size + i * inner_size
             memcpy(
                 dest=result._buf.ptr + dst_base,
@@ -487,10 +491,7 @@ def take[
 def take[
     dtype: DType,
     //,
-](
-    a: NDArray[dtype],
-    indices: NDArray[DType.int],
-) raises -> NDArray[dtype]:
+](a: NDArray[dtype], indices: NDArray[DType.int],) raises -> NDArray[dtype]:
     """Takes elements from a flattened array by linear indices.
 
     Equivalent to `take(a.flatten(), indices, axis=0)`. The output shape

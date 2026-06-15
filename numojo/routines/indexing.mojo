@@ -561,3 +561,74 @@ def take[
 #     var shape: List[Scalar[DType.int]] = [Scalar[DType.int](len(indices))]
 #     var arr = _array_creation_from_list[dtype](indices, shape)
 #     return take(arr, indices, axis=0)
+
+
+# ===----------------------------------------------------------------------=== #
+# nonzero
+# ===----------------------------------------------------------------------=== #
+
+
+def nonzero[
+    dtype: DType,
+    //,
+](a: NDArray[dtype]) raises -> List[NDArray[DType.int]]:
+    """Returns the indices of elements that are non-zero.
+
+    Returns a list of 1-D index arrays, one per dimension of `a`. Each array
+    contains the coordinates of non-zero elements along that dimension. This
+    mirrors `numpy.nonzero(a)`.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Input array.
+
+    Returns:
+        A `List` of `ndim` 1-D integer arrays. The i-th array contains the
+        indices along dimension `i` of all non-zero elements.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[3, 0, 5, 0, 2]")
+        var idx = nm.nonzero(a)
+        print(idx[0])  # [0, 2, 4]
+
+        var b = nm.array[nm.i32]("[[1, 0], [0, 4]]")
+        var idx2 = nm.nonzero(b)
+        print(idx2[0])  # [0, 1]  (row indices)
+        print(idx2[1])  # [0, 1]  (col indices)
+        ```
+        .
+    """
+    var a_c = a.contiguous()
+
+    var count: Int = 0
+    for i in range(a_c.size):
+        if a_c._buf.ptr[i] != 0:
+            count += 1
+
+    if count == 0:
+        raise Error(
+            String(
+                "\nError in `nonzero`: array has no non-zero elements."
+                " Empty index arrays are not supported."
+            )
+        )
+    var result = List[NDArray[DType.int]]()
+    for _ in range(a.ndim):
+        result.append(NDArray[DType.int](NDArrayShape(count)))
+
+    var out_idx = 0
+    for flat in range(a_c.size):
+        if a_c._buf.ptr[flat] != 0:
+            var rem = flat
+            for d in range(a.ndim - 1, -1, -1):
+                var coord = rem % a.shape[d]
+                rem //= a.shape[d]
+                result[d]._buf.ptr[out_idx] = Scalar[DType.int](coord)
+            out_idx += 1
+
+    return result^

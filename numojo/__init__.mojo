@@ -258,7 +258,13 @@ from numojo.routines.creation import (
 )
 
 from numojo.routines import indexing
-from numojo.routines.indexing import `where`, compress, take_along_axis, take
+from numojo.routines.indexing import (
+    `where`,
+    compress,
+    take_along_axis,
+    take,
+    nonzero,
+)
 
 
 from numojo.routines import manipulation

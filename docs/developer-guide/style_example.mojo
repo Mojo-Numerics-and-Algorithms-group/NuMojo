@@ -26,8 +26,8 @@ def func[param: Copyable](arg1: param) -> param:
     Returns:
         Describe what is returned.
 
-    Notes: 
-        Any additional notes related to the function that user must know. 
+    Notes:
+        Any additional notes related to the function that user must know.
     """
     return arg1
 

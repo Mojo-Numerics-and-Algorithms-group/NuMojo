@@ -1594,7 +1594,7 @@ struct NDArray[dtype: DType = DType.float64](
                         message=String(
                             "Boolean mask shape {} does not match the leading"
                             " dimensions of array shape {}. Mask shape must"
-                            " equal self.shape[:{}}."
+                            " equal self.shape[:{}]."
                         ).format(mask.shape, self.shape, mask.ndim),
                         location=(
                             "NDArray.__getitem__(mask: NDArray[DType.bool])"
@@ -1631,40 +1631,28 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(k, self.ndim):
                 result_shape_list.append(self.shape[i])
             var result = NDArray[Self.dtype](NDArrayShape(result_shape_list))
+            var size_per_item = self._trailing_size(k)
 
-            # size of one sub-array = product(self.shape[k:])
-            var size_per_item = 1
-            for i in range(k, self.ndim):
-                size_per_item *= self.shape[i]
-
-            var self_c = self.contiguous()
+            # Walk the mask linearly; decode flat index → leading coords using
+            # mask shape (= self.shape[:k]); compute the strided offset into
+            # self via self.strides[:k]; gather the trailing block respecting
+            # self.strides[k:]. No `self.contiguous()` copy required.
+            var coords = List[Int](length=k, fill=0)
             var out_offset = 0
-
-            # Precompute C-order strides for the first k dims of self_c.
-            # stride[d] = product(self.shape[d+1:self.ndim])
-            # = product(self.shape[d+1:k]) * size_per_item
-            var src_strides = List[Int](capacity=k)
-            for d in range(k):
-                var s = size_per_item
-                for dd in range(d + 1, k):
-                    s *= self.shape[dd]
-                src_strides.append(s)
-
-            # Walk the mask linearly; decode flat index → k-D coords.
             for flat in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](flat):
-                    var src_offset = 0
-                    var remaining = flat
+                    var rem = flat
                     for d in range(k - 1, -1, -1):
-                        src_offset += (remaining % self.shape[d]) * src_strides[
-                            d
-                        ]
-                        remaining //= self.shape[d]
-
-                    memcpy(
-                        dest=result._buf.ptr + out_offset * size_per_item,
-                        src=self_c._buf.ptr + src_offset,
-                        count=size_per_item,
+                        var dim = Int(self.shape.unsafe_load(d))
+                        coords[d] = rem % dim
+                        rem //= dim
+                    var src_base = self.offset
+                    for d in range(k):
+                        src_base += coords[d] * Int(self.strides.unsafe_load(d))
+                    self._read_block_from_self(
+                        base=src_base,
+                        axis_start=k,
+                        dst_ptr=result._buf.ptr + out_offset * size_per_item,
                     )
                     out_offset += 1
 
@@ -2344,13 +2332,18 @@ struct NDArray[dtype: DType = DType.float64](
             return
 
         # CASE 2: 1-D mask matching first dimension — write scalar to every
-        # element of each selected axis-0 slice.
+        # element of each selected axis-0 slice (sub-array of shape
+        # self.shape[1:]). Uses self.strides[0] / self.strides[1:], so this
+        # works for any layout.
         if mask.ndim == 1 and mask.shape[0] == self.shape[0]:
-            var size_per_item = self.size // self.shape[0]
+            var stride0 = Int(self.strides.unsafe_load(0))
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
-                    for j in range(size_per_item):
-                        self.itemset(i * size_per_item + j, value)
+                    self._fill_block_in_self(
+                        base=self.offset + i * stride0,
+                        axis_start=1,
+                        value=value,
+                    )
             return
 
         # CASE 3: k-D mask (1 < k < self.ndim) matching self.shape[:k].
@@ -2372,26 +2365,20 @@ struct NDArray[dtype: DType = DType.float64](
                     )
                 )
             var k = mask.ndim
-            var size_per_item = 1
-            for i in range(k, self.ndim):
-                size_per_item *= self.shape[i]
-
-            var src_strides = List[Int](capacity=k)
-            for d in range(k):
-                var s = size_per_item
-                for dd in range(d + 1, k):
-                    s *= self.shape[dd]
-                src_strides.append(s)
-
+            var coords = List[Int](length=k, fill=0)
             for flat in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](flat):
-                    var base = 0
-                    var remaining = flat
+                    var rem = flat
                     for d in range(k - 1, -1, -1):
-                        base += (remaining % self.shape[d]) * src_strides[d]
-                        remaining //= self.shape[d]
-                    for j in range(size_per_item):
-                        self.itemset(base + j, value)
+                        var dim = Int(self.shape.unsafe_load(d))
+                        coords[d] = rem % dim
+                        rem //= dim
+                    var lead = self.offset
+                    for d in range(k):
+                        lead += coords[d] * Int(self.strides.unsafe_load(d))
+                    self._fill_block_in_self(
+                        base=lead, axis_start=k, value=value
+                    )
             return
 
         raise Error(
@@ -2988,8 +2975,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         Examples:
             ```mojo
-            import numojo as nm
-
+            from numojo.prelude import *
             var A = nm.arange[nm.f32](6).reshape(nm.Shape(2, 3))
             var mask = A > Float32(2.0)
             var vals = nm.array[nm.f32]("[10.0, 20.0, 30.0]")
@@ -3042,7 +3028,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # CASE 2: 1-D mask matching first dimension.
         if mask.ndim == 1 and mask.shape[0] == self.shape[0]:
-            var size_per_item = self.size // self.shape[0]
+            var size_per_item = self._trailing_size(1)
             var true_count = 0
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
@@ -3070,16 +3056,17 @@ struct NDArray[dtype: DType = DType.float64](
                     )
                 )
 
+            var stride0 = Int(self.strides.unsafe_load(0))
             var out_row = 0
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
                     var src_ptr = val_c._buf.ptr + (
                         out_row * size_per_item if val_is_per_index else 0
                     )
-                    memcpy(
-                        dest=self._buf.ptr + self.offset + i * size_per_item,
-                        src=src_ptr,
-                        count=size_per_item,
+                    self._write_block_into_self(
+                        base=self.offset + i * stride0,
+                        axis_start=1,
+                        src_ptr=src_ptr,
                     )
                     out_row += 1
             return
@@ -3104,9 +3091,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
 
             var k = mask.ndim
-            var size_per_item = 1
-            for i in range(k, self.ndim):
-                size_per_item *= self.shape[i]
+            var size_per_item = self._trailing_size(k)
 
             var true_count = 0
             for i in range(mask_c.size):
@@ -3121,7 +3106,7 @@ struct NDArray[dtype: DType = DType.float64](
                 and NDArrayShape(val_c.shape[1:]) == tail_shape
             )
 
-            if not val_is_single and not val_is_per_index and val_c.size != 1:
+            if not val_is_single and not val_is_per_index:
                 raise Error(
                     NumojoError(
                         category="shape",
@@ -3133,42 +3118,30 @@ struct NDArray[dtype: DType = DType.float64](
                     )
                 )
 
-            var src_strides = List[Int](capacity=k)
-            for d in range(k):
-                var s = size_per_item
-                for dd in range(d + 1, k):
-                    s *= self.shape[dd]
-                src_strides.append(s)
-
-            # Work on a contiguous copy, then write back unconditionally.
-            # This handles both C- and F-order destinations correctly.
-            var self_c = self.contiguous()
+            # Layout-safe write: decode each True flat index into k-D coords
+            # via mask shape, compute the leading byte offset using
+            # self.strides[:k], then dispatch the trailing block write through
+            # `_write_block_into_self`, which respects self.strides[k:] (so it
+            # works for C-contig, F-contig, and arbitrary strided views).
+            var coords = List[Int](length=k, fill=0)
             var out_row = 0
             for flat in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](flat):
-                    var dst_offset = 0
-                    var remaining = flat
+                    var rem = flat
                     for d in range(k - 1, -1, -1):
-                        dst_offset += (remaining % self.shape[d]) * src_strides[
-                            d
-                        ]
-                        remaining //= self.shape[d]
-
+                        var dim = Int(self.shape.unsafe_load(d))
+                        coords[d] = rem % dim
+                        rem //= dim
+                    var lead = self.offset
+                    for d in range(k):
+                        lead += coords[d] * Int(self.strides.unsafe_load(d))
                     var src_ptr = val_c._buf.ptr + (
                         out_row * size_per_item if val_is_per_index else 0
                     )
-                    memcpy(
-                        dest=self_c._buf.ptr + dst_offset,
-                        src=src_ptr,
-                        count=size_per_item,
+                    self._write_block_into_self(
+                        base=lead, axis_start=k, src_ptr=src_ptr
                     )
                     out_row += 1
-
-            memcpy(
-                dest=self._buf.ptr + self.offset,
-                src=self_c._buf.ptr,
-                count=self.size,
-            )
             return
 
         raise Error(
@@ -4346,6 +4319,134 @@ struct NDArray[dtype: DType = DType.float64](
             Pointer(to=self),
             dimension=0,
         )
+
+    # ===-------------------------------------------------------------------===#
+    # Internal layout-aware block I/O helpers used by boolean-mask getter/setter
+    # paths. These respect `self.strides` so they work for C-contig, F-contig,
+    # and arbitrary strided views.
+    # ===-------------------------------------------------------------------===#
+
+    def _trailing_is_contig(self, axis_start: Int) -> Bool:
+        """Returns True iff dims [axis_start, ndim) form a contiguous block in
+        self._buf (i.e. the trailing strides match a dense C-order layout)."""
+        var expected = 1
+        for d in range(self.ndim - 1, axis_start - 1, -1):
+            var s = Int(self.shape.unsafe_load(d))
+            if s > 1:
+                if Int(self.strides.unsafe_load(d)) != expected:
+                    return False
+                expected *= s
+        return True
+
+    def _trailing_size(self, axis_start: Int) -> Int:
+        var n = 1
+        for d in range(axis_start, self.ndim):
+            n *= Int(self.shape.unsafe_load(d))
+        return n
+
+    def _write_block_into_self(
+        mut self,
+        base: Int,
+        axis_start: Int,
+        src_ptr: UnsafePointer[Scalar[Self.dtype], MutAnyOrigin],
+    ) raises:
+        """Writes a C-contiguous source block of `prod(shape[axis_start:])`
+        elements into self at offset `base`, following `self.strides[axis_start:]`.
+        """
+        var n_trail = self.ndim - axis_start
+        if n_trail <= 0:
+            self._buf.ptr.store(base, src_ptr.load[width=1](0))
+            return
+        var size_per_item = self._trailing_size(axis_start)
+        if self._trailing_is_contig(axis_start):
+            memcpy(dest=self._buf.ptr + base, src=src_ptr, count=size_per_item)
+            return
+        var tcoords = List[Int](length=n_trail, fill=0)
+        var j = 0
+        while True:
+            var off = base
+            for d in range(n_trail):
+                off += tcoords[d] * Int(
+                    self.strides.unsafe_load(axis_start + d)
+                )
+            self._buf.ptr.store(off, src_ptr.load[width=1](j))
+            j += 1
+            var d = n_trail - 1
+            while d >= 0:
+                tcoords[d] += 1
+                if tcoords[d] < Int(self.shape.unsafe_load(axis_start + d)):
+                    break
+                tcoords[d] = 0
+                d -= 1
+            if d < 0:
+                break
+
+    def _fill_block_in_self(
+        mut self,
+        base: Int,
+        axis_start: Int,
+        value: Scalar[Self.dtype],
+    ) raises:
+        """Fills `prod(shape[axis_start:])` elements of self starting at offset
+        `base` with `value`, following `self.strides[axis_start:]`."""
+        var n_trail = self.ndim - axis_start
+        if n_trail <= 0:
+            self._buf.ptr.store(base, value)
+            return
+        var tcoords = List[Int](length=n_trail, fill=0)
+        while True:
+            var off = base
+            for d in range(n_trail):
+                off += tcoords[d] * Int(
+                    self.strides.unsafe_load(axis_start + d)
+                )
+            self._buf.ptr.store(off, value)
+            var d = n_trail - 1
+            while d >= 0:
+                tcoords[d] += 1
+                if tcoords[d] < Int(self.shape.unsafe_load(axis_start + d)):
+                    break
+                tcoords[d] = 0
+                d -= 1
+            if d < 0:
+                break
+
+    def _read_block_from_self(
+        self,
+        base: Int,
+        axis_start: Int,
+        dst_ptr: UnsafePointer[Scalar[Self.dtype], MutAnyOrigin],
+    ) raises:
+        """Reads `prod(shape[axis_start:])` elements from self starting at
+        offset `base` (following `self.strides[axis_start:]`) into the
+        C-contiguous destination block `dst_ptr`."""
+        var n_trail = self.ndim - axis_start
+        if n_trail <= 0:
+            dst_ptr.store(0, self._buf.ptr.load[width=1](base))
+            return
+        var size_per_item = self._trailing_size(axis_start)
+        if self._trailing_is_contig(axis_start):
+            memcpy(dest=dst_ptr, src=self._buf.ptr + base, count=size_per_item)
+            return
+        var tcoords = List[Int](length=n_trail, fill=0)
+        var j = 0
+        while True:
+            var off = base
+            for d in range(n_trail):
+                off += tcoords[d] * Int(
+                    self.strides.unsafe_load(axis_start + d)
+                )
+            dst_ptr.store(j, self._buf.ptr.load[width=1](off))
+            j += 1
+            var d = n_trail - 1
+            while d >= 0:
+                tcoords[d] += 1
+                if tcoords[d] < Int(self.shape.unsafe_load(axis_start + d)):
+                    break
+                tcoords[d] = 0
+                d -= 1
+            if d < 0:
+                break
 
     def _array_to_string(
         self,

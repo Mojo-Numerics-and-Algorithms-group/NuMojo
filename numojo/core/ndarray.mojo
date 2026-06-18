@@ -31,6 +31,7 @@ Iterators of `NDArray`:
 # Stdlib
 # ===----------------------------------------------------------------------===#
 from std.algorithm import parallelize, vectorize
+from std.sys.info import num_performance_cores
 import std.builtin.bool as builtin_bool
 import std.math as builtin_math
 from std.collections.optional import Optional
@@ -4854,20 +4855,37 @@ struct NDArray[dtype: DType = DType.float64](
                 src=self._buf.ptr + self.offset,
                 count=self.size,
             )
+        elif self.ndim == 0:
+            result._buf.ptr[0] = self._buf.ptr[self.offset]
         else:
-            # Stride-aware copy for non-contiguous views
-            for i in range(self.size):
-                var remainder = i
-                var item = Item(ndim=self.ndim)
-                for dim in range(self.ndim - 1, -1, -1):
-                    (item._buf.ptr + dim).init_pointee_copy(
-                        Scalar[DType.int](remainder % self.shape[dim])
-                    )
-                    remainder = remainder // self.shape[dim]
-                var src_offset = self.offset + IndexMethods.get_1d_index(
-                    item, self.strides
-                )
-                result._buf.ptr[i] = self._buf.ptr[src_offset]
+            # Stride-aware copy for non-contiguous views.
+            var last_dim = self.ndim - 1
+            var last_extent = Int(self.shape[last_dim])
+            var last_stride = Int(self.strides[last_dim])
+            var num_rows = self.size // last_extent
+            comptime width = simd_width_of[Self.dtype]()
+
+            for row in range(num_rows):
+                var remainder = row
+                var base_offset = self.offset
+                for dim in range(last_dim - 1, -1, -1):
+                    var idx = remainder % Int(self.shape[dim])
+                    remainder = remainder // Int(self.shape[dim])
+                    base_offset += idx * Int(self.strides[dim])
+
+                var dest_base = row * last_extent
+
+                def closure[
+                    simd_w: Int
+                ](
+                    i: Int
+                ) {mut result, read self, base_offset, dest_base, last_stride}:
+                    var simd_data = (
+                        self._buf.ptr + base_offset + i * last_stride
+                    ).strided_load[width=simd_w](last_stride)
+                    result._buf.ptr.store(dest_base + i, simd_data)
+
+                vectorize[width](last_extent, closure)
 
         return result^
 

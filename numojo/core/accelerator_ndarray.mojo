@@ -808,6 +808,45 @@ struct AcceleratorNDArray[
         """Elementwise division. See `_binary_op` for constraints."""
         return self._binary_op[kernels.DIV, "division"](other)
 
+    def __neg__(self) raises -> Self:
+        """Elementwise negation. Requires a densely contiguous array (no
+        broadcasting or strided views yet).
+
+        Raises:
+            Error: If the array is not contiguous.
+        """
+        if not self.flags.C_CONTIGUOUS:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "AcceleratorNDArray.__neg__ currently requires a"
+                        " C-contiguous array."
+                    ),
+                    location="AcceleratorNDArray.__neg__",
+                )
+            )
+
+        var out = Self(shape=self.shape)
+
+        comptime if Self.device.type == "cpu":
+            comptime assert Self.device.type == "cpu"
+            var dst = out.unsafe_ptr()
+            var src = self.unsafe_ptr()
+            for i in range(self.size):
+                dst[i] = -src[i]
+        else:
+            comptime assert Self.device.type == "gpu"
+            var context = self.device_context()
+            kernels.launch_neg[Self.dtype](
+                context,
+                out.unsafe_device_ptr(),
+                self.unsafe_device_ptr(),
+                self.size,
+            )
+
+        return out^
+
 
 # ===----------------------------------------------------------------------=== #
 # Creation routines

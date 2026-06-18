@@ -18,3 +18,4 @@ from .binary_ops import (
     binary_op_kernel,
     launch_binary_op,
 )
+from .unary_ops import neg_kernel, launch_neg

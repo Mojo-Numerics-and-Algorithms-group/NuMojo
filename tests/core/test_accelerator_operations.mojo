@@ -62,6 +62,13 @@ def test_div_cpu_distinct_values() raises:
         assert_equal(c.item(i), ab[0].item(i) / ab[1].item(i), "cpu div distinct")
 
 
+def test_neg_cpu_distinct_values() raises:
+    var ab = _make_distinct_operands()
+    var c = -ab[0]
+    for i in range(6):
+        assert_equal(c.item(i), -ab[0].item(i), "cpu neg distinct")
+
+
 def test_add_cpu_shape_mismatch_raises() raises:
     var a = full[DType.float32, Device.CPU](Shape(4), 1.0)
     var b = full[DType.float32, Device.CPU](Shape(5), 1.0)
@@ -73,7 +80,7 @@ def test_add_cpu_shape_mismatch_raises() raises:
     assert_true(raised, "shape mismatch should raise")
 
 
-def _run_gpu_binary_op_test[device: Device]() raises:
+def _run_gpu_elementwise_op_test[device: Device]() raises:
     var ab = _make_distinct_operands()
     var a_gpu = ab[0].to[device]()
     var b_gpu = ab[1].to[device]()
@@ -82,6 +89,7 @@ def _run_gpu_binary_op_test[device: Device]() raises:
     var sub_host = (a_gpu - b_gpu).to_host()
     var mul_host = (a_gpu * b_gpu).to_host()
     var div_host = (a_gpu / b_gpu).to_host()
+    var neg_host = (-a_gpu).to_host()
 
     for i in range(6):
         var av = ab[0].item(i)
@@ -90,15 +98,16 @@ def _run_gpu_binary_op_test[device: Device]() raises:
         assert_equal(sub_host.item(i), av - bv, "gpu sub matches cpu")
         assert_equal(mul_host.item(i), av * bv, "gpu mul matches cpu")
         assert_equal(div_host.item(i), av / bv, "gpu div matches cpu")
+        assert_equal(neg_host.item(i), -av, "gpu neg matches cpu")
 
 
-def test_binary_ops_gpu_match_cpu_when_available() raises:
+def test_elementwise_ops_gpu_match_cpu_when_available() raises:
     comptime if has_nvidia_gpu_accelerator():
-        _run_gpu_binary_op_test[Device.CUDA]()
+        _run_gpu_elementwise_op_test[Device.CUDA]()
     elif has_amd_gpu_accelerator():
-        _run_gpu_binary_op_test[Device.ROCM]()
+        _run_gpu_elementwise_op_test[Device.ROCM]()
     elif has_apple_gpu_accelerator():
-        _run_gpu_binary_op_test[Device.MPS]()
+        _run_gpu_elementwise_op_test[Device.MPS]()
     else:
         assert_true(True, "no gpu available; gpu binary op tests skipped")
 

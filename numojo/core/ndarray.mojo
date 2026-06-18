@@ -84,7 +84,11 @@ import numojo.routines.linalg as linalg
 import numojo.routines.sorting as sorting
 import numojo.routines.manipulation as manipulation
 import numojo.routines.statistics as statistics
-from numojo.routines.indexing import compress, take as _take
+from numojo.routines.indexing import (
+    compress,
+    take as _take,
+    nonzero as _nonzero,
+)
 from numojo.routines.math.misc import clip
 from numojo.routines.manipulation import reshape
 import numojo.routines.math as numojo_math
@@ -4692,6 +4696,31 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         return compress(condition=condition, a=self)
+
+    def nonzero(self) raises -> List[NDArray[DType.int]]:
+        """Returns the indices of non-zero elements, one array per dimension.
+        Each array in the returned list contains the coordinates of non-zero
+        elements along that dimension, in C-order.
+
+        Returns:
+            A `List` of `ndim` 1-D integer arrays. The i-th array contains the
+            indices along dimension `i` of all non-zero elements.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.array[nm.i32]("[3, 0, 5, 0, 2]")
+            var idx = a.nonzero()
+            print(idx[0])  # [0, 2, 4]
+
+            var b = nm.array[nm.i32]("[[1, 0], [0, 4]]")
+            var idx2 = b.nonzero()
+            print(idx2[0])  # [0, 1]
+            print(idx2[1])  # [0, 1]
+            ```
+        """
+        return _nonzero(self)
 
     def contiguous(self) raises -> Self:
         """Returns a new C-contiguous array owning a copy of the data.

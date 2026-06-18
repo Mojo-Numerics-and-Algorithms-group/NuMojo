@@ -84,7 +84,11 @@ import numojo.routines.linalg as linalg
 import numojo.routines.sorting as sorting
 import numojo.routines.manipulation as manipulation
 import numojo.routines.statistics as statistics
-from numojo.routines.indexing import compress, take as _take, nonzero as _nonzero
+from numojo.routines.indexing import (
+    compress,
+    take as _take,
+    nonzero as _nonzero,
+)
 from numojo.routines.math.misc import clip
 from numojo.routines.manipulation import reshape
 import numojo.routines.math as numojo_math

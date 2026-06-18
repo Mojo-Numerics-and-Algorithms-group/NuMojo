@@ -22,10 +22,12 @@ def test_add_cpu_uniform() raises:
         assert_equal(c.item(i), 7.0, "cpu add uniform")
 
 
-def _make_distinct_operands() raises -> Tuple[
-    AcceleratorNDArray[DType.float32, Device.CPU],
-    AcceleratorNDArray[DType.float32, Device.CPU],
-]:
+def _make_distinct_operands() raises -> (
+    Tuple[
+        AcceleratorNDArray[DType.float32, Device.CPU],
+        AcceleratorNDArray[DType.float32, Device.CPU],
+    ]
+):
     var a = zeros[DType.float32, Device.CPU](Shape(6))
     var b = zeros[DType.float32, Device.CPU](Shape(6))
     for i in range(6):
@@ -38,28 +40,36 @@ def test_add_cpu_distinct_values() raises:
     var ab = _make_distinct_operands()
     var c = ab[0] + ab[1]
     for i in range(6):
-        assert_equal(c.item(i), ab[0].item(i) + ab[1].item(i), "cpu add distinct")
+        assert_equal(
+            c.item(i), ab[0].item(i) + ab[1].item(i), "cpu add distinct"
+        )
 
 
 def test_sub_cpu_distinct_values() raises:
     var ab = _make_distinct_operands()
     var c = ab[0] - ab[1]
     for i in range(6):
-        assert_equal(c.item(i), ab[0].item(i) - ab[1].item(i), "cpu sub distinct")
+        assert_equal(
+            c.item(i), ab[0].item(i) - ab[1].item(i), "cpu sub distinct"
+        )
 
 
 def test_mul_cpu_distinct_values() raises:
     var ab = _make_distinct_operands()
     var c = ab[0] * ab[1]
     for i in range(6):
-        assert_equal(c.item(i), ab[0].item(i) * ab[1].item(i), "cpu mul distinct")
+        assert_equal(
+            c.item(i), ab[0].item(i) * ab[1].item(i), "cpu mul distinct"
+        )
 
 
 def test_div_cpu_distinct_values() raises:
     var ab = _make_distinct_operands()
     var c = ab[0] / ab[1]
     for i in range(6):
-        assert_equal(c.item(i), ab[0].item(i) / ab[1].item(i), "cpu div distinct")
+        assert_equal(
+            c.item(i), ab[0].item(i) / ab[1].item(i), "cpu div distinct"
+        )
 
 
 def test_neg_cpu_distinct_values() raises:

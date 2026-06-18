@@ -267,7 +267,7 @@ struct AcceleratorNDArray[
 
     def device_context(
         self,
-    ) -> DeviceContext where (Self.device.type == "gpu"):
+    ) -> DeviceContext where Self.device.type == "gpu":
         """Return the `DeviceContext` backing this array's GPU storage."""
         return self._buf.device_storage.unsafe_value().handle.device_context()
 
@@ -760,7 +760,9 @@ struct AcceleratorNDArray[
             for i in range(self.size):
                 dst[i] = src1[i] + src2[i]
         else:
-            comptime assert (Self.device.type == "gpu" and other.device.type == "gpu")
+            comptime assert (
+                Self.device.type == "gpu" and other.device.type == "gpu"
+            )
             var context = self.device_context()
             kernels.launch_add[Self.dtype](
                 context,

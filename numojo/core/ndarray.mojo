@@ -4877,9 +4877,9 @@ struct NDArray[dtype: DType = DType.float64](
 
                 def closure[
                     simd_w: Int
-                ](
-                    i: Int
-                ) {mut result, read self, base_offset, dest_base, last_stride}:
+                ](i: Int) {
+                    mut result, read self, base_offset, dest_base, last_stride
+                }:
                     var simd_data = (
                         self._buf.ptr + base_offset + i * last_stride
                     ).strided_load[width=simd_w](last_stride)

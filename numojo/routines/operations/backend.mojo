@@ -195,9 +195,7 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        def apply_chunk(
-            start: Int, end: Int
-        ) {mut result_array, read array}:
+        def apply_chunk(start: Int, end: Int) {mut result_array, read array}:
             def closure[
                 simd_w: Int
             ](i: Int) {mut result_array, read array, start}:
@@ -688,9 +686,7 @@ struct HostExecutor:
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[DType.bool]()
 
-        def apply_chunk(
-            start: Int, end: Int
-        ) {mut result_array, read array}:
+        def apply_chunk(start: Int, end: Int) {mut result_array, read array}:
             def closure[
                 simd_w: Int
             ](i: Int) {mut result_array, read array, start}:
@@ -779,9 +775,7 @@ struct HostExecutor:
         ) {mut result_array, read array1, read array2, read array3}:
             def closure[
                 simdwidth: Int
-            ](
-                i: Int
-            ) {
+            ](i: Int) {
                 mut result_array,
                 read array1,
                 read array2,
@@ -871,9 +865,9 @@ struct HostExecutor:
         ) {mut result_array, read array1, read array2, read scalar}:
             def closure[
                 simdwidth: Int
-            ](
-                i: Int
-            ) {mut result_array, read array1, read array2, read scalar, start}:
+            ](i: Int) {
+                mut result_array, read array1, read array2, read scalar, start
+            }:
                 var simd_data1 = array1._buf.ptr.load[width=simdwidth](
                     start + i
                 )

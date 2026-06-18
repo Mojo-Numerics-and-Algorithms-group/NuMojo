@@ -48,9 +48,9 @@ def _num_tasks_for(size: Int, simd_width: Int) -> Int:
 def _apply_unary_chunk[
     dtype: DType,
     width: Int,
-    kernel: def[type: DType, simd_w: Int](
-        SIMD[type, simd_w]
-    ) capturing -> SIMD[type, simd_w],
+    kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) capturing -> SIMD[
+        type, simd_w
+    ],
 ](
     src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
     dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
@@ -223,9 +223,9 @@ def _apply_binary_predicate_scalar_chunk[
 def _apply_unary_predicate_chunk[
     dtype: DType,
     width: Int,
-    kernel: def[type: DType, simd_w: Int](
-        SIMD[type, simd_w]
-    ) capturing -> SIMD[DType.bool, simd_w],
+    kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) capturing -> SIMD[
+        DType.bool, simd_w
+    ],
 ](
     src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
     dst: UnsafePointer[Scalar[DType.bool], MutAnyOrigin],
@@ -532,11 +532,6 @@ struct HostExecutor:
             return Self.apply_binary[dtype, kernel](array1, array2[])
 
         if array1.shape != array2.shape:
-            # Shapes differ: broadcast both operands (zero-copy views) to
-            # their common shape, then fall through to the equal-shape path.
-            # Broadcast views are never C-contiguous (stride 0 dims), so the
-            # guards above will materialize them via `.contiguous()` on the
-            # recursive call below.
             var common_shape = array1.shape.broadcast(array2.shape)
             return Self.apply_binary[dtype, kernel](
                 broadcast_to(array1, common_shape),
@@ -608,9 +603,9 @@ struct HostExecutor:
 
         var num_tasks = _num_tasks_for(result_array.size, width)
         if num_tasks == 1:
-            _apply_binary_scalar_chunk[dtype, width, kernel, scalar_first=False](
-                src, dst, scalar, 0, result_array.size
-            )
+            _apply_binary_scalar_chunk[
+                dtype, width, kernel, scalar_first=False
+            ](src, dst, scalar, 0, result_array.size)
         else:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
 
@@ -872,9 +867,9 @@ struct HostExecutor:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, array1.size)
                 if end > start:
-                    _apply_binary_predicate_scalar_chunk[
-                        dtype, width, kernel
-                    ](src, dst, scalar, start, end)
+                    _apply_binary_predicate_scalar_chunk[dtype, width, kernel](
+                        src, dst, scalar, start, end
+                    )
 
             parallelize[worker](num_tasks)
 

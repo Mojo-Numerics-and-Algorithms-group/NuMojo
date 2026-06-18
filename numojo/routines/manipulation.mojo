@@ -21,18 +21,10 @@ from numojo.core.layout import NDArrayStrides
 from numojo.core.type_aliases import Shape
 import numojo.core.matrix as matrix
 from numojo.core.matrix import Matrix
-from numojo.core.indexing import (
-    IndexMethods,
-    TraverseMethods,
-)
+from numojo.core.indexing import TraverseMethods
 from numojo.core.indexing.utility import (
     _list_of_flipped_range,
 )
-
-# ===----------------------------------------------------------------------=== #
-# TODO:
-# - When `DataContainer` is supported, re-write `broadcast_to()`.`
-# ===----------------------------------------------------------------------=== #
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations
@@ -445,6 +437,27 @@ def reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
 def broadcast_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
+    """
+    Returns a non-owning view of `a` broadcast to `shape`, following NumPy
+    broadcasting rules (trailing-dimension alignment, size-1 dims stretch).
+
+    Args:
+        a: The array to broadcast.
+        shape: The target shape.
+
+    Returns:
+        A broadcast view of `a` with shape `shape`.
+
+    Raises:
+        Error: If `a.shape` cannot be broadcast to `shape`.
+
+    Notes:
+        The returned array shares the underlying buffer with `a` (refcounted,
+        zero-copy): broadcast dimensions get stride 0, so no new memory is
+        allocated. Because stride-0 dimensions are never C-contiguous, any
+        operation that needs a flat contiguous buffer (e.g. SIMD elementwise
+        kernels) will materialize the view via `.contiguous()` on demand.
+    """
     if a.shape.ndim > shape.ndim:
         raise Error(
             String("Cannot broadcast shape {} to shape {}!").format(
@@ -452,16 +465,13 @@ def broadcast_to[
             )
         )
 
-    # View safety guard: ensure input is C-contiguous.
     if not a.is_c_contiguous():
         return broadcast_to(a.contiguous(), shape)
 
     # Check whether broadcasting is possible or not.
-    # We compare the shape from the trailing dimensions.
-
     var b_strides = NDArrayStrides(
-        ndim=len(shape), initialized=False
-    )  # Strides of b when refer to data of a
+        ndim=shape.ndim, initialized=False
+    )
 
     for i in range(a.shape.ndim):
         if a.shape[a.shape.ndim - 1 - i] == shape[shape.ndim - 1 - i]:
@@ -477,30 +487,14 @@ def broadcast_to[
     for i in range(shape.ndim - a.shape.ndim):
         b_strides[i] = 0
 
-    # Start broadcasting.
-    # TODO: When `DataContainer` is supported, re-write this part.
-    # We just need to change the shape and strides and re-use the data.
-
-    var b = NDArray[dtype](shape)  # Construct array of targeted shape.
-    # TODO: `b.strides = b_strides` when DataContainer
-
-    # Iterate all items in the new array and fill in correct values.
-    for offset in range(b.size):
-        var remainder = offset
-        var indices = Item(ndim=b.ndim)
-
-        for i in range(b.ndim):
-            indices[i] = remainder // b.strides[i]
-            remainder %= b.strides[i]
-            # TODO: Change b.strides to NDArrayStrides(b.shape) when DataContainer
-
-        (b._buf.ptr + offset).init_pointee_copy(
-            a._buf.ptr[
-                IndexMethods.get_1d_index(indices, b_strides)
-            ]  # TODO: Change b_strides to b.strides when DataContainer
-        )
-
-    return b^
+    # view.
+    return NDArray[dtype](
+        data=a._buf.share(),
+        is_view=True,
+        shape=shape,
+        strides=b_strides,
+        offset=a.offset,
+    )
 
 
 def broadcast_to[
@@ -587,41 +581,33 @@ def _broadcast_back_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape, axis: Int) raises -> NDArray[dtype]:
     """
-    Broadcasts the array back to the given shape.
+    Returns a zero-copy view of `a` broadcast back to `shape`.
+
     If array `b` is the result of array `a` operated along an axis,
     it has one dimension less than `a`.
     This function can broadcast `b` back to the shape of `a`.
     It is a temporary function and should not be used by users.
-    When `DataContainer` is supported, this function will be removed.
     Whether broadcasting is possible or not is not checked.
     """
+
+    if not a.is_c_contiguous():
+        return _broadcast_back_to(a.contiguous(), shape, axis)
 
     var a_shape = shape
     a_shape[axis] = 1
 
     var b_strides = NDArrayStrides(
         a_shape
-    )  # Strides of b when refer to data of a
+    )  # Strides of the broadcast view, referring to data of `a`.
     b_strides[axis] = 0
 
-    # Start broadcasting.
-
-    var b = NDArray[dtype](shape)  # Construct array of targeted shape.
-
-    # Iterate all items in the new array and fill in correct values.
-    for offset in range(b.size):
-        var remainder = offset
-        var indices = Item(ndim=b.ndim)
-
-        for i in range(b.ndim):
-            indices[i] = remainder // b.strides[i]
-            remainder %= b.strides[i]
-
-        (b._buf.ptr + offset).init_pointee_copy(
-            a._buf.ptr[IndexMethods.get_1d_index(indices, b_strides)]
-        )
-
-    return b^
+    return NDArray[dtype](
+        data=a._buf.share(),
+        is_view=True,
+        shape=shape,
+        strides=b_strides,
+        offset=a.offset,
+    )
 
 
 # ===----------------------------------------------------------------------=== #

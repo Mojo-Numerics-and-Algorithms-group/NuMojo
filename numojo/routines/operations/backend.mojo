@@ -16,6 +16,7 @@ from std.builtin.simd import FastMathFlag
 
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
+from numojo.routines.manipulation import broadcast_to
 
 
 # TODO: Add overloads for complexndarray.
@@ -218,8 +219,15 @@ struct HostExecutor:
             return Self.apply_binary[dtype, kernel](array1, array2[])
 
         if array1.shape != array2.shape:
-            raise Error(
-                "Shape Mismatch error: shapes must match for this function"
+            # Shapes differ: broadcast both operands (zero-copy views) to
+            # their common shape, then fall through to the equal-shape path.
+            # Broadcast views are never C-contiguous (stride 0 dims), so the
+            # guards above will materialize them via `.contiguous()` on the
+            # recursive call below.
+            var common_shape = array1.shape.broadcast(array2.shape)
+            return Self.apply_binary[dtype, kernel](
+                broadcast_to(array1, common_shape),
+                broadcast_to(array2, common_shape),
             )
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
@@ -412,8 +420,12 @@ struct HostExecutor:
             return Self.apply_binary_predicate[dtype, kernel](array1, array2[])
 
         if array1.shape != array2.shape:
-            raise Error(
-                "Shape Mismatch error: shapes must match for this function"
+            # Shapes differ: broadcast both operands (zero-copy views) to
+            # their common shape, then fall through to the equal-shape path.
+            var common_shape = array1.shape.broadcast(array2.shape)
+            return Self.apply_binary_predicate[dtype, kernel](
+                broadcast_to(array1, common_shape),
+                broadcast_to(array2, common_shape),
             )
 
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](

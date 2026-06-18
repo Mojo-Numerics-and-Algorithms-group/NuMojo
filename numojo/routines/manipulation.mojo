@@ -469,9 +469,7 @@ def broadcast_to[
         return broadcast_to(a.contiguous(), shape)
 
     # Check whether broadcasting is possible or not.
-    var b_strides = NDArrayStrides(
-        ndim=shape.ndim, initialized=False
-    )
+    var b_strides = NDArrayStrides(ndim=shape.ndim, initialized=False)
 
     for i in range(a.shape.ndim):
         if a.shape[a.shape.ndim - 1 - i] == shape[shape.ndim - 1 - i]:

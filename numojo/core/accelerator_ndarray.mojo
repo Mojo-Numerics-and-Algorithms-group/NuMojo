@@ -721,9 +721,18 @@ struct AcceleratorNDArray[
     # Elementwise operations
     # ===------------------------------------------------------------------=== #
 
-    def __add__(self, other: Self) raises -> Self:
-        """Elementwise addition. Both operands must be on the same device
-        and densely contiguous (no broadcasting or strided views yet).
+    def _binary_op[
+        op_code: Int, op_name: StaticString
+    ](self, other: Self) raises -> Self:
+        """Shared dispatch for elementwise binary operators.
+
+        Both operands must be on the same device and densely contiguous
+        (no broadcasting or strided views yet).
+
+        Parameters:
+            op_code: One of `kernels.ADD`, `kernels.SUB`, `kernels.MUL`,
+                `kernels.DIV`.
+            op_name: Human-readable operator name, used in error messages.
 
         Raises:
             Error: If shapes differ, or either operand is not contiguous.
@@ -733,38 +742,47 @@ struct AcceleratorNDArray[
                 NumojoError(
                     category="shape",
                     message=String(
-                        "Shapes {} and {} do not match for addition."
-                    ).format(self.shape, other.shape),
-                    location="AcceleratorNDArray.__add__",
+                        "Shapes {} and {} do not match for {}."
+                    ).format(self.shape, other.shape, op_name),
+                    location="AcceleratorNDArray._binary_op",
                 )
             )
+        # TODO: Relax this constraint later.
         if not self.flags.C_CONTIGUOUS or not other.flags.C_CONTIGUOUS:
             raise Error(
                 NumojoError(
                     category="value",
-                    message=(
-                        "AcceleratorNDArray.__add__ currently requires both"
+                    message=String(
+                        "AcceleratorNDArray {} currently requires both"
                         " operands to be C-contiguous."
-                    ),
-                    location="AcceleratorNDArray.__add__",
+                    ).format(op_name),
+                    location="AcceleratorNDArray._binary_op",
                 )
             )
 
         var out = Self(shape=self.shape)
 
-        comptime if (Self.device.type == "cpu" and other.device.type == "cpu"):
+        comptime if Self.device.type == "cpu":
             comptime assert Self.device.type == "cpu"
             var dst = out.unsafe_ptr()
             var src1 = self.unsafe_ptr()
             var src2 = other.unsafe_ptr()
-            for i in range(self.size):
-                dst[i] = src1[i] + src2[i]
+            comptime if op_code == kernels.ADD:
+                for i in range(self.size):
+                    dst[i] = src1[i] + src2[i]
+            elif op_code == kernels.SUB:
+                for i in range(self.size):
+                    dst[i] = src1[i] - src2[i]
+            elif op_code == kernels.MUL:
+                for i in range(self.size):
+                    dst[i] = src1[i] * src2[i]
+            else:
+                for i in range(self.size):
+                    dst[i] = src1[i] / src2[i]
         else:
-            comptime assert (
-                Self.device.type == "gpu" and other.device.type == "gpu"
-            )
+            comptime assert Self.device.type == "gpu"
             var context = self.device_context()
-            kernels.launch_add[Self.dtype](
+            kernels.launch_binary_op[Self.dtype, op_code](
                 context,
                 out.unsafe_device_ptr(),
                 self.unsafe_device_ptr(),
@@ -773,6 +791,22 @@ struct AcceleratorNDArray[
             )
 
         return out^
+
+    def __add__(self, other: Self) raises -> Self:
+        """Elementwise addition. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.ADD, "addition"](other)
+
+    def __sub__(self, other: Self) raises -> Self:
+        """Elementwise subtraction. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.SUB, "subtraction"](other)
+
+    def __mul__(self, other: Self) raises -> Self:
+        """Elementwise multiplication. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.MUL, "multiplication"](other)
+
+    def __truediv__(self, other: Self) raises -> Self:
+        """Elementwise division. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.DIV, "division"](other)
 
 
 # ===----------------------------------------------------------------------=== #

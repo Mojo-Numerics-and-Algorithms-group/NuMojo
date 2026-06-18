@@ -14,19 +14,38 @@ on contiguous `AcceleratorNDArray` buffers.
 from std.gpu import thread_idx, block_idx, block_dim
 from std.gpu.host import DeviceContext
 
+comptime ADD = 0
+comptime SUB = 1
+comptime MUL = 2
+comptime DIV = 3
 
-def add_kernel[
-    dtype: DType
+
+@always_inline
+def _binary_op[
+    dtype: DType, op_code: Int
+](a: Scalar[dtype], b: Scalar[dtype]) -> Scalar[dtype]:
+    comptime if op_code == ADD:
+        return a + b
+    elif op_code == SUB:
+        return a - b
+    elif op_code == MUL:
+        return a * b
+    else:
+        return a / b
+
+
+def binary_op_kernel[
+    dtype: DType, op_code: Int
 ](
     result: UnsafePointer[Scalar[dtype], MutAnyOrigin],
     a: UnsafePointer[Scalar[dtype], MutAnyOrigin],
     b: UnsafePointer[Scalar[dtype], MutAnyOrigin],
     size: Int,
 ):
-    """GPU kernel: `result[i] = a[i] + b[i]` for contiguous buffers."""
+    """GPU kernel: `result[i] = op(a[i], b[i])` for contiguous buffers."""
     var i = Int(thread_idx.x) + Int(block_idx.x) * Int(block_dim.x)
     if i < size:
-        result[i] = a[i] + b[i]
+        result[i] = _binary_op[dtype, op_code](a[i], b[i])
 
 
 def launch_config(size: Int) -> Tuple[Int, Int]:
@@ -40,8 +59,8 @@ def launch_config(size: Int) -> Tuple[Int, Int]:
     return (max(1, num_blocks), threads_per_block)
 
 
-def launch_add[
-    dtype: DType
+def launch_binary_op[
+    dtype: DType, op_code: Int
 ](
     context: DeviceContext,
     result: UnsafePointer[Scalar[dtype], MutAnyOrigin],
@@ -50,11 +69,13 @@ def launch_add[
     size: Int,
     sync: Bool = True,
 ) raises:
-    """Launch the GPU add kernel over `size` contiguous elements."""
+    """Launch the GPU binary-op kernel over `size` contiguous elements."""
     var grid_dim: Int
     var block_dim: Int
     grid_dim, block_dim = launch_config(size)
-    context.enqueue_function[add_kernel[dtype], add_kernel[dtype]](
+    context.enqueue_function[
+        binary_op_kernel[dtype, op_code], binary_op_kernel[dtype, op_code]
+    ](
         result,
         a,
         b,

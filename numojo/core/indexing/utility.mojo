@@ -124,6 +124,10 @@ def to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
         The converted numpy array.
     """
     try:
+        # to support non contiguous arrays/views.
+        if not array.is_c_contiguous() and not array.is_f_contiguous():
+            return to_numpy(array.contiguous())
+
         var np = Python.import_module("numpy")
 
         np.set_printoptions(4)

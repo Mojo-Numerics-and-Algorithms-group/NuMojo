@@ -10,13 +10,36 @@
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
 
-from std.algorithm.functional import vectorize
+from std.algorithm.functional import parallelize, vectorize
 from std.sys import simd_width_of
+from std.sys.info import num_performance_cores
 from std.builtin.simd import FastMathFlag
 
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
 from numojo.routines.manipulation import broadcast_to
+
+comptime MIN_SIMD_WIDTHS_PER_TASK = 8
+"""Minimum number of SIMD-widths of work each parallel task should get before
+splitting across cores is worth the thread-dispatch overhead. This is a heuristic
+that can be tuned.
+"""
+
+
+@always_inline
+def _num_tasks_for(size: Int, simd_width: Int) -> Int:
+    """
+    Decide how many parallel tasks to split `size` elements into.
+
+    Returns 1 (i.e. no parallelism) when there isn't enough work per task
+    to justify the overhead of spawning threads.
+    """
+    var min_chunk = simd_width * MIN_SIMD_WIDTHS_PER_TASK
+    var max_tasks_by_size = size // min_chunk
+    if max_tasks_by_size <= 1:
+        return 1
+    var cores = num_performance_cores()
+    return min(cores, max_tasks_by_size)
 
 
 # TODO: Add overloads for complexndarray.
@@ -172,11 +195,33 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
 
-        def closure[simd_w: Int](i: Int) {mut result_array, read array}:
-            var simd_data = array._buf.ptr.load[width=simd_w](i)
-            result_array._buf.ptr.store(i, kernel[dtype, simd_w](simd_data))
+        def apply_chunk(
+            start: Int, end: Int
+        ) {mut result_array, read array}:
+            def closure[
+                simd_w: Int
+            ](i: Int) {mut result_array, read array, start}:
+                var simd_data = array._buf.ptr.load[width=simd_w](start + i)
+                result_array._buf.ptr.store(
+                    start + i, kernel[dtype, simd_w](simd_data)
+                )
 
-        vectorize[width](array.size, closure)
+            vectorize[width](end - start, closure)
+
+        var num_tasks = _num_tasks_for(array.size, width)
+        if num_tasks == 1:
+            apply_chunk(0, array.size)
+        else:
+            var chunk_size = (array.size + num_tasks - 1) // num_tasks
+
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array.size)
+                if end > start:
+                    apply_chunk(start, end)
+
+            parallelize[worker](num_tasks)
 
         return result_array^
 
@@ -233,16 +278,35 @@ struct HostExecutor:
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array1, read array2}:
-            var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
-            var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
-            result_array._buf.ptr.store(
-                i, kernel[dtype, simd_w](simd_data1, simd_data2)
-            )
+        def apply_chunk(
+            start: Int, end: Int
+        ) {mut result_array, read array1, read array2}:
+            def closure[
+                simd_w: Int
+            ](i: Int) {mut result_array, read array1, read array2, start}:
+                var simd_data1 = array1._buf.ptr.load[width=simd_w](start + i)
+                var simd_data2 = array2._buf.ptr.load[width=simd_w](start + i)
+                result_array._buf.ptr.store(
+                    start + i, kernel[dtype, simd_w](simd_data1, simd_data2)
+                )
 
-        vectorize[width](result_array.size, closure)
+            vectorize[width](end - start, closure)
+
+        var num_tasks = _num_tasks_for(result_array.size, width)
+        if num_tasks == 1:
+            apply_chunk(0, result_array.size)
+        else:
+            var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
+
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, result_array.size)
+                if end > start:
+                    apply_chunk(start, end)
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -433,19 +497,38 @@ struct HostExecutor:
         )
         comptime width = simd_width_of[DType.bool]()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array1, read array2}:
-            var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
-            var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
+        def apply_chunk(
+            start: Int, end: Int
+        ) {mut result_array, read array1, read array2}:
+            def closure[
+                simd_w: Int
+            ](i: Int) {mut result_array, read array1, read array2, start}:
+                var simd_data1 = array1._buf.ptr.load[width=simd_w](start + i)
+                var simd_data2 = array2._buf.ptr.load[width=simd_w](start + i)
 
-            bool_simd_store[simd_w](
-                result_array._buf.ptr,
-                i,
-                kernel[dtype, simd_w](simd_data1, simd_data2),
-            )
+                bool_simd_store[simd_w](
+                    result_array._buf.ptr,
+                    start + i,
+                    kernel[dtype, simd_w](simd_data1, simd_data2),
+                )
 
-        vectorize[width](array1.size, closure)
+            vectorize[width](end - start, closure)
+
+        var num_tasks = _num_tasks_for(array1.size, width)
+        if num_tasks == 1:
+            apply_chunk(0, array1.size)
+        else:
+            var chunk_size = (array1.size + num_tasks - 1) // num_tasks
+
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array1.size)
+                if end > start:
+                    apply_chunk(start, end)
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod

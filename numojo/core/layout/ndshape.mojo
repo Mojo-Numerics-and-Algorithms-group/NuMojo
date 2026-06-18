@@ -558,6 +558,52 @@ struct NDArrayShape(
             )
         return result^
 
+    def broadcast(self, other: Self) raises -> Self:
+        """
+        Compute the broadcast result shape of `self` and `other`,
+        following NumPy broadcasting rules.
+
+        Shapes are aligned from the trailing dimension. Two dimensions are
+        compatible when they are equal, or when one of them is 1. Missing
+        leading dimensions are treated as size 1.
+
+        Args:
+            other: The other shape to broadcast against.
+
+        Returns:
+            The broadcast result shape.
+
+        Raises:
+            Error: If the shapes are not broadcast-compatible.
+        """
+        var ndim = max(self.ndim, other.ndim)
+        var result = NDArrayShape(ndim=ndim, initialized=False)
+
+        for i in range(ndim):
+            var a_dim = self.ndim - 1 - i
+            var b_dim = other.ndim - 1 - i
+            var a_size = self[a_dim] if a_dim >= 0 else 1
+            var b_size = other[b_dim] if b_dim >= 0 else 1
+
+            if a_size == b_size:
+                result[ndim - 1 - i] = a_size
+            elif a_size == 1:
+                result[ndim - 1 - i] = b_size
+            elif b_size == 1:
+                result[ndim - 1 - i] = a_size
+            else:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=(
+                            "Shapes {} and {} are not broadcast-compatible."
+                        ).format(self, other),
+                        location="NDArrayShape.broadcast",
+                    )
+                )
+
+        return result^
+
     def join(self, *shapes: Self) -> Self:
         """
         Join multiple shapes into a single shape.

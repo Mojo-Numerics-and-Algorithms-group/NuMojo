@@ -132,7 +132,7 @@ def test_setitem_forder_does_not_corrupt_untouched() raises:
 
 
 def test_getitem_slice_corder_values() raises:
-    """traverse_iterative getter: C-order slice returns correct element values.
+    """Traverse_iterative getter: C-order slice returns correct element values.
     """
     # arange(24).reshape(4,6): row i, col j → value = i*6+j
     var a = nm.arange[nm.i32](0, 24).reshape(Shape(4, 6))
@@ -149,7 +149,7 @@ def test_getitem_slice_corder_values() raises:
 
 
 def test_getitem_slice_forder_values() raises:
-    """traverse_iterative getter: F-order slice returns correct element values.
+    """Traverse_iterative getter: F-order slice returns correct element values.
     """
     # arange(12).reshape(3,4,order="F"):
     #   row0=[0,3,6,9], row1=[1,4,7,10], row2=[2,5,8,11]
@@ -166,7 +166,7 @@ def test_getitem_slice_forder_values() raises:
 
 
 def test_getitem_slice_3d_corder() raises:
-    """traverse_iterative getter: 3D C-order slice."""
+    """Traverse_iterative getter: 3D C-order slice."""
     # arange(24).reshape(2,3,4): element [i,j,k] = i*12 + j*4 + k
     var a = nm.arange[nm.i32](0, 24).reshape(Shape(2, 3, 4))
     var b = a[Slice(0, 2), Slice(1, 3), Slice(1, 3)]
@@ -185,7 +185,7 @@ def test_getitem_slice_3d_corder() raises:
 
 
 def test_setitem_corder_non_trivial_source() raises:
-    """traverse_iterative_setter: non-uniform source values written correctly.
+    """Traverse_iterative_setter: non-uniform source values written correctly.
     """
     # arange(16).reshape(4,4): write arange(10,14).reshape(2,2) into [1:3,1:3]
     # repl = [[10,11],[12,13]]
@@ -205,7 +205,7 @@ def test_setitem_corder_non_trivial_source() raises:
 
 
 def test_setitem_step_stride_corder() raises:
-    """traverse_iterative_setter: step=2 skips correctly on C-order dest."""
+    """Traverse_iterative_setter: step=2 skips correctly on C-order dest."""
     # arange(16).reshape(4,4): [::2, :] = -1 → rows 0,2 set to -1
     var a = nm.arange[nm.i32](0, 16).reshape(Shape(4, 4))
     var repl = nm.full[nm.i32](Shape(2, 4), fill_value=Scalar[nm.i32](-1))
@@ -222,7 +222,7 @@ def test_setitem_step_stride_corder() raises:
 
 
 def test_setitem_forder_non_trivial_source_step8() raises:
-    """traverse_iterative_setter: F-order dest + non-uniform C-order source."""
+    """Traverse_iterative_setter: F-order dest + non-uniform C-order source."""
     # arange(12).reshape(3,4,order="F"):
     #   row0=[0,3,6,9], row1=[1,4,7,10], row2=[2,5,8,11]
     # Write arange(10,14).reshape(2,2) = [[10,11],[12,13]] into [0:2,0:2]
@@ -240,7 +240,7 @@ def test_setitem_forder_non_trivial_source_step8() raises:
 
 
 def test_setitem_corder_source_count_correct() raises:
-    """traverse_iterative_setter: all source elements consumed exactly once.
+    """Traverse_iterative_setter: all source elements consumed exactly once.
 
     Before Step 8, the loop ran narr.size (destination) times instead of
     orig.size (source) times. With a 1x4 source into a 2x4 destination

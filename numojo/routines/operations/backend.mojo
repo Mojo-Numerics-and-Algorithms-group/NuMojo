@@ -10,13 +10,313 @@
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
 
-from std.algorithm.functional import vectorize
+from std.algorithm.functional import parallelize, vectorize
 from std.sys import simd_width_of
+from std.sys.info import num_performance_cores
 from std.builtin.simd import FastMathFlag
 
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
 from numojo.routines.manipulation import broadcast_to
+
+comptime MIN_SIMD_WIDTHS_PER_TASK = 8
+"""Minimum number of SIMD-widths of work each parallel task should get before
+splitting across cores is worth the thread-dispatch overhead. This is a heuristic
+that can be tuned.
+"""
+
+
+@always_inline
+def _num_tasks_for(size: Int, simd_width: Int) -> Int:
+    """
+    Decide how many parallel tasks to split `size` elements into.
+
+    Returns 1 (i.e. no parallelism) when there isn't enough work per task
+    to justify the overhead of spawning threads.
+    """
+    var min_chunk = simd_width * MIN_SIMD_WIDTHS_PER_TASK
+    var max_tasks_by_size = size // min_chunk
+    if max_tasks_by_size <= 1:
+        return 1
+    var cores = num_performance_cores()
+    return min(cores, max_tasks_by_size)
+
+
+# NOTE: These chunk-application helpers are top-level (non-nested) functions
+# on purpose. This is to prevent the mojo compiler crash from nested clsoure funcs.
+@always_inline
+def _apply_unary_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) capturing -> SIMD[
+        type, simd_w
+    ],
+](
+    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        dst.store(i, kernel[dtype, width](src.load[width=width](i)))
+        i += width
+    while i < end:
+        dst.store(i, kernel[dtype, 1](src.load[width=1](i)))
+        i += 1
+
+
+@always_inline
+def _apply_binary_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w]
+    ) capturing -> SIMD[type, simd_w],
+](
+    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        dst.store(
+            i,
+            kernel[dtype, width](
+                src1.load[width=width](i), src2.load[width=width](i)
+            ),
+        )
+        i += width
+    while i < end:
+        dst.store(
+            i,
+            kernel[dtype, 1](src1.load[width=1](i), src2.load[width=1](i)),
+        )
+        i += 1
+
+
+@always_inline
+def _apply_binary_scalar_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w]
+    ) capturing -> SIMD[type, simd_w],
+    *,
+    scalar_first: Bool,
+](
+    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    scalar: Scalar[dtype],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        var data = src.load[width=width](i)
+        comptime if scalar_first:
+            dst.store(i, kernel[dtype, width](scalar, data))
+        else:
+            dst.store(i, kernel[dtype, width](data, scalar))
+        i += width
+    while i < end:
+        var data = src.load[width=1](i)
+        comptime if scalar_first:
+            dst.store(i, kernel[dtype, 1](scalar, data))
+        else:
+            dst.store(i, kernel[dtype, 1](data, scalar))
+        i += 1
+
+
+@always_inline
+def _apply_binary_int_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], Int
+    ) capturing -> SIMD[type, simd_w],
+](
+    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    intval: Int,
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        dst.store(i, kernel[dtype, width](src.load[width=width](i), intval))
+        i += width
+    while i < end:
+        dst.store(i, kernel[dtype, 1](src.load[width=1](i), intval))
+        i += 1
+
+
+@always_inline
+def _apply_binary_predicate_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w]
+    ) capturing -> SIMD[DType.bool, simd_w],
+](
+    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[DType.bool], MutAnyOrigin],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        bool_simd_store[width](
+            dst,
+            i,
+            kernel[dtype, width](
+                src1.load[width=width](i), src2.load[width=width](i)
+            ),
+        )
+        i += width
+    while i < end:
+        bool_simd_store[1](
+            dst,
+            i,
+            kernel[dtype, 1](src1.load[width=1](i), src2.load[width=1](i)),
+        )
+        i += 1
+
+
+@always_inline
+def _apply_binary_predicate_scalar_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w]
+    ) capturing -> SIMD[DType.bool, simd_w],
+](
+    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[DType.bool], MutAnyOrigin],
+    scalar: Scalar[dtype],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        bool_simd_store[width](
+            dst,
+            i,
+            kernel[dtype, width](
+                src.load[width=width](i), SIMD[dtype, width](scalar)
+            ),
+        )
+        i += width
+    while i < end:
+        bool_simd_store[1](
+            dst,
+            i,
+            kernel[dtype, 1](src.load[width=1](i), SIMD[dtype, 1](scalar)),
+        )
+        i += 1
+
+
+@always_inline
+def _apply_unary_predicate_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) capturing -> SIMD[
+        DType.bool, simd_w
+    ],
+](
+    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[DType.bool], MutAnyOrigin],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        bool_simd_store[width](
+            dst, i, kernel[dtype, width](src.load[width=width](i))
+        )
+        i += width
+    while i < end:
+        bool_simd_store[1](dst, i, kernel[dtype, 1](src.load[width=1](i)))
+        i += 1
+
+
+@always_inline
+def _apply_ternary_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
+    ) capturing -> SIMD[type, simd_w],
+](
+    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src3: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        dst.store(
+            i,
+            kernel(
+                src1.load[width=width](i),
+                src2.load[width=width](i),
+                src3.load[width=width](i),
+            ),
+        )
+        i += width
+    while i < end:
+        dst.store(
+            i,
+            kernel(
+                src1.load[width=1](i),
+                src2.load[width=1](i),
+                src3.load[width=1](i),
+            ),
+        )
+        i += 1
+
+
+@always_inline
+def _apply_ternary_scalar_chunk[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
+    ) capturing -> SIMD[type, simd_w],
+](
+    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    scalar: Scalar[dtype],
+    start: Int,
+    end: Int,
+):
+    var i = start
+    while i + width <= end:
+        dst.store(
+            i,
+            kernel(
+                src1.load[width=width](i),
+                src2.load[width=width](i),
+                SIMD[dtype, width](scalar),
+            ),
+        )
+        i += width
+    while i < end:
+        dst.store(
+            i,
+            kernel(
+                src1.load[width=1](i),
+                src2.load[width=1](i),
+                SIMD[dtype, 1](scalar),
+            ),
+        )
+        i += 1
 
 
 # TODO: Add overloads for complexndarray.
@@ -171,12 +471,25 @@ struct HostExecutor:
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
+        var num_tasks = _num_tasks_for(array.size, width)
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[simd_w: Int](i: Int) {mut result_array, read array}:
-            var simd_data = array._buf.ptr.load[width=simd_w](i)
-            result_array._buf.ptr.store(i, kernel[dtype, simd_w](simd_data))
+        if num_tasks == 1:
+            _apply_unary_chunk[dtype, width, kernel](src, dst, 0, array.size)
+        else:
+            var chunk_size = (array.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](array.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array.size)
+                if end > start:
+                    _apply_unary_chunk[dtype, width, kernel](
+                        src, dst, start, end
+                    )
+
+            parallelize[worker](num_tasks)
 
         return result_array^
 
@@ -219,11 +532,6 @@ struct HostExecutor:
             return Self.apply_binary[dtype, kernel](array1, array2[])
 
         if array1.shape != array2.shape:
-            # Shapes differ: broadcast both operands (zero-copy views) to
-            # their common shape, then fall through to the equal-shape path.
-            # Broadcast views are never C-contiguous (stride 0 dims), so the
-            # guards above will materialize them via `.contiguous()` on the
-            # recursive call below.
             var common_shape = array1.shape.broadcast(array2.shape)
             return Self.apply_binary[dtype, kernel](
                 broadcast_to(array1, common_shape),
@@ -232,17 +540,29 @@ struct HostExecutor:
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
+        var src1 = array1.unsafe_ptr()
+        var src2 = array2.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array1, read array2}:
-            var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
-            var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
-            result_array._buf.ptr.store(
-                i, kernel[dtype, simd_w](simd_data1, simd_data2)
+        var num_tasks = _num_tasks_for(result_array.size, width)
+        if num_tasks == 1:
+            _apply_binary_chunk[dtype, width, kernel](
+                src1, src2, dst, 0, result_array.size
             )
+        else:
+            var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](result_array.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, result_array.size)
+                if end > start:
+                    _apply_binary_chunk[dtype, width, kernel](
+                        src1, src2, dst, start, end
+                    )
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -278,16 +598,28 @@ struct HostExecutor:
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array, read scalar}:
-            var simd_data1 = array._buf.ptr.load[width=simd_w](i)
-            result_array._buf.ptr.store(
-                i, kernel[dtype, simd_w](simd_data1, scalar)
-            )
+        var num_tasks = _num_tasks_for(result_array.size, width)
+        if num_tasks == 1:
+            _apply_binary_scalar_chunk[
+                dtype, width, kernel, scalar_first=False
+            ](src, dst, scalar, 0, result_array.size)
+        else:
+            var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](result_array.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, result_array.size)
+                if end > start:
+                    _apply_binary_scalar_chunk[
+                        dtype, width, kernel, scalar_first=False
+                    ](src, dst, scalar, start, end)
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -324,16 +656,28 @@ struct HostExecutor:
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array, read scalar}:
-            var simd_data1 = array._buf.ptr.load[width=simd_w](i)
-            result_array._buf.ptr.store(
-                i, kernel[dtype, simd_w](scalar, simd_data1)
+        var num_tasks = _num_tasks_for(result_array.size, width)
+        if num_tasks == 1:
+            _apply_binary_scalar_chunk[dtype, width, kernel, scalar_first=True](
+                src, dst, scalar, 0, result_array.size
             )
+        else:
+            var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](result_array.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, result_array.size)
+                if end > start:
+                    _apply_binary_scalar_chunk[
+                        dtype, width, kernel, scalar_first=True
+                    ](src, dst, scalar, start, end)
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -363,17 +707,28 @@ struct HostExecutor:
 
         var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
         comptime width = simd_width_of[dtype]()
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array, read intval}:
-            var simd_data = array._buf.ptr.load[width=simd_w](i)
-
-            result_array._buf.ptr.store(
-                i, kernel[dtype, simd_w](simd_data, intval)
+        var num_tasks = _num_tasks_for(array.size, width)
+        if num_tasks == 1:
+            _apply_binary_int_chunk[dtype, width, kernel](
+                src, dst, intval, 0, array.size
             )
+        else:
+            var chunk_size = (array.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](array.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array.size)
+                if end > start:
+                    _apply_binary_int_chunk[dtype, width, kernel](
+                        src, dst, intval, start, end
+                    )
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -432,20 +787,29 @@ struct HostExecutor:
             array1.shape
         )
         comptime width = simd_width_of[DType.bool]()
+        var src1 = array1.unsafe_ptr()
+        var src2 = array2.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array1, read array2}:
-            var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
-            var simd_data2 = array2._buf.ptr.load[width=simd_w](i)
-
-            bool_simd_store[simd_w](
-                result_array._buf.ptr,
-                i,
-                kernel[dtype, simd_w](simd_data1, simd_data2),
+        var num_tasks = _num_tasks_for(array1.size, width)
+        if num_tasks == 1:
+            _apply_binary_predicate_chunk[dtype, width, kernel](
+                src1, src2, dst, 0, array1.size
             )
+        else:
+            var chunk_size = (array1.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](array1.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array1.size)
+                if end > start:
+                    _apply_binary_predicate_chunk[dtype, width, kernel](
+                        src1, src2, dst, start, end
+                    )
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -487,19 +851,28 @@ struct HostExecutor:
             array1.shape
         )
         comptime width = simd_width_of[DType.bool]()
+        var src = array1.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simd_w: Int
-        ](i: Int) {mut result_array, read array1, read scalar}:
-            var simd_data1 = array1._buf.ptr.load[width=simd_w](i)
-            var simd_data2 = SIMD[dtype, simd_w](scalar)
-            bool_simd_store[simd_w](
-                result_array.unsafe_ptr(),
-                i,
-                kernel[dtype, simd_w](simd_data1, simd_data2),
+        var num_tasks = _num_tasks_for(array1.size, width)
+        if num_tasks == 1:
+            _apply_binary_predicate_scalar_chunk[dtype, width, kernel](
+                src, dst, scalar, 0, array1.size
             )
+        else:
+            var chunk_size = (array1.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](array1.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array1.size)
+                if end > start:
+                    _apply_binary_predicate_scalar_chunk[dtype, width, kernel](
+                        src, dst, scalar, start, end
+                    )
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -528,16 +901,28 @@ struct HostExecutor:
 
         var result_array: NDArray[DType.bool] = NDArray[DType.bool](array.shape)
         comptime width = simd_width_of[DType.bool]()
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[simd_w: Int](i: Int) {mut result_array, read array}:
-            var simd_data = array._buf.ptr.load[width=simd_w](i)
-            bool_simd_store[simd_w](
-                result_array._buf.ptr,
-                i,
-                kernel[dtype, simd_w](simd_data),
+        var num_tasks = _num_tasks_for(array.size, width)
+        if num_tasks == 1:
+            _apply_unary_predicate_chunk[dtype, width, kernel](
+                src, dst, 0, array.size
             )
+        else:
+            var chunk_size = (array.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](array.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array.size)
+                if end > start:
+                    _apply_unary_predicate_chunk[dtype, width, kernel](
+                        src, dst, start, end
+                    )
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -593,18 +978,30 @@ struct HostExecutor:
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
+        var src1 = array1.unsafe_ptr()
+        var src2 = array2.unsafe_ptr()
+        var src3 = array3.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simdwidth: Int
-        ](i: Int) {mut result_array, read array1, read array2, read array3}:
-            var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
-            var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
-            var simd_data3 = array3._buf.ptr.load[width=simdwidth](i)
-            result_array._buf.ptr.store(
-                i, kernel(simd_data1, simd_data2, simd_data3)
+        var num_tasks = _num_tasks_for(array1.size, width)
+        if num_tasks == 1:
+            _apply_ternary_chunk[dtype, width, kernel](
+                src1, src2, src3, dst, 0, array1.size
             )
+        else:
+            var chunk_size = (array1.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](array1.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array1.size)
+                if end > start:
+                    _apply_ternary_chunk[dtype, width, kernel](
+                        src1, src2, src3, dst, start, end
+                    )
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
     @staticmethod
@@ -652,17 +1049,29 @@ struct HostExecutor:
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
         comptime width = simd_width_of[dtype]()
+        var src1 = array1.unsafe_ptr()
+        var src2 = array2.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
 
-        def closure[
-            simdwidth: Int
-        ](i: Int) {mut result_array, read array1, read array2, read scalar}:
-            var simd_data1 = array1._buf.ptr.load[width=simdwidth](i)
-            var simd_data2 = array2._buf.ptr.load[width=simdwidth](i)
-            result_array._buf.ptr.store(
-                i, kernel(simd_data1, simd_data2, scalar)
+        var num_tasks = _num_tasks_for(array1.size, width)
+        if num_tasks == 1:
+            _apply_ternary_scalar_chunk[dtype, width, kernel](
+                src1, src2, dst, scalar, 0, array1.size
             )
+        else:
+            var chunk_size = (array1.size + num_tasks - 1) // num_tasks
 
-        vectorize[width](array1.size, closure)
+            @parameter
+            def worker(tid: Int):
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array1.size)
+                if end > start:
+                    _apply_ternary_scalar_chunk[dtype, width, kernel](
+                        src1, src2, dst, scalar, start, end
+                    )
+
+            parallelize[worker](num_tasks)
+
         return result_array^
 
 

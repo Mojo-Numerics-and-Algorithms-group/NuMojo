@@ -73,9 +73,7 @@ def launch_binary_op[
     var grid_dim: Int
     var block_dim: Int
     grid_dim, block_dim = launch_config(size)
-    context.enqueue_function[
-        binary_op_kernel[dtype, op_code], binary_op_kernel[dtype, op_code]
-    ](
+    context.enqueue_function[binary_op_kernel[dtype, op_code]](
         result,
         a,
         b,

@@ -11,6 +11,7 @@ Device-aware NDArray that stores data in `AcceleratorDataContainer`.
 """
 
 from std.memory import UnsafePointer
+from std.gpu.host import DeviceContext
 from numojo.core.error import NumojoError
 from numojo.core.layout.flags import Flags
 from numojo.core.layout.ndshape import NDArrayShape
@@ -19,6 +20,7 @@ from numojo.core.indexing.item import Item
 from numojo.core.indexing.offset import IndexMethods
 from numojo.core.memory.storage import AcceleratorDataContainer
 from numojo.core.accelerator.device import Device
+import numojo.core.accelerator.kernels as kernels
 from numojo.core.ndarray import NDArray
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 
@@ -249,6 +251,25 @@ struct AcceleratorNDArray[
         Self.device.type == "cpu"
     ):
         return self._buf.host_storage.unsafe_value().ptr + self.offset
+
+    def unsafe_device_ptr(
+        ref self,
+    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
+        Self.device.type == "gpu"
+    ):
+        """Return the raw device pointer to the buffer's data.
+
+        Returns:
+            An `UnsafePointer` to the first element of the underlying
+            device buffer (not the logical view start).
+        """
+        return self._buf.device_storage.unsafe_value().unsafe_ptr()
+
+    def device_context(
+        self,
+    ) -> DeviceContext where Self.device.type == "gpu":
+        """Return the `DeviceContext` backing this array's GPU storage."""
+        return self._buf.device_storage.unsafe_value().handle.device_context()
 
     def num_elements(self) -> Int:
         return self.size
@@ -695,6 +716,136 @@ struct AcceleratorNDArray[
         target: Device
     ](self,) raises -> AcceleratorNDArray[Self.dtype, target]:
         return self.to_device[target]()
+
+    # ===------------------------------------------------------------------=== #
+    # Elementwise operations
+    # ===------------------------------------------------------------------=== #
+
+    def _binary_op[
+        op_code: Int, op_name: StaticString
+    ](self, other: Self) raises -> Self:
+        """Shared dispatch for elementwise binary operators.
+
+        Both operands must be on the same device and densely contiguous
+        (no broadcasting or strided views yet).
+
+        Parameters:
+            op_code: One of `kernels.ADD`, `kernels.SUB`, `kernels.MUL`,
+                `kernels.DIV`.
+            op_name: Human-readable operator name, used in error messages.
+
+        Raises:
+            Error: If shapes differ, or either operand is not contiguous.
+        """
+        if self.shape != other.shape:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "Shapes {} and {} do not match for {}."
+                    ).format(self.shape, other.shape, op_name),
+                    location="AcceleratorNDArray._binary_op",
+                )
+            )
+        # TODO: Relax this constraint later.
+        if not self.flags.C_CONTIGUOUS or not other.flags.C_CONTIGUOUS:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "AcceleratorNDArray {} currently requires both"
+                        " operands to be C-contiguous."
+                    ).format(op_name),
+                    location="AcceleratorNDArray._binary_op",
+                )
+            )
+
+        var out = Self(shape=self.shape)
+
+        comptime if Self.device.type == "cpu":
+            comptime assert Self.device.type == "cpu"
+            var dst = out.unsafe_ptr()
+            var src1 = self.unsafe_ptr()
+            var src2 = other.unsafe_ptr()
+            comptime if op_code == kernels.ADD:
+                for i in range(self.size):
+                    dst[i] = src1[i] + src2[i]
+            elif op_code == kernels.SUB:
+                for i in range(self.size):
+                    dst[i] = src1[i] - src2[i]
+            elif op_code == kernels.MUL:
+                for i in range(self.size):
+                    dst[i] = src1[i] * src2[i]
+            else:
+                for i in range(self.size):
+                    dst[i] = src1[i] / src2[i]
+        else:
+            comptime assert Self.device.type == "gpu"
+            var context = self.device_context()
+            kernels.launch_binary_op[Self.dtype, op_code](
+                context,
+                out.unsafe_device_ptr(),
+                self.unsafe_device_ptr(),
+                other.unsafe_device_ptr(),
+                self.size,
+            )
+
+        return out^
+
+    def __add__(self, other: Self) raises -> Self:
+        """Elementwise addition. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.ADD, "addition"](other)
+
+    def __sub__(self, other: Self) raises -> Self:
+        """Elementwise subtraction. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.SUB, "subtraction"](other)
+
+    def __mul__(self, other: Self) raises -> Self:
+        """Elementwise multiplication. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.MUL, "multiplication"](other)
+
+    def __truediv__(self, other: Self) raises -> Self:
+        """Elementwise division. See `_binary_op` for constraints."""
+        return self._binary_op[kernels.DIV, "division"](other)
+
+    def __neg__(self) raises -> Self:
+        """Elementwise negation. Requires a densely contiguous array (no
+        broadcasting or strided views yet).
+
+        Raises:
+            Error: If the array is not contiguous.
+        """
+        if not self.flags.C_CONTIGUOUS:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "AcceleratorNDArray.__neg__ currently requires a"
+                        " C-contiguous array."
+                    ),
+                    location="AcceleratorNDArray.__neg__",
+                )
+            )
+
+        var out = Self(shape=self.shape)
+
+        comptime if Self.device.type == "cpu":
+            comptime assert Self.device.type == "cpu"
+            var dst = out.unsafe_ptr()
+            var src = self.unsafe_ptr()
+            for i in range(self.size):
+                dst[i] = -src[i]
+        else:
+            comptime assert Self.device.type == "gpu"
+            var context = self.device_context()
+            kernels.launch_neg[Self.dtype](
+                context,
+                out.unsafe_device_ptr(),
+                self.unsafe_device_ptr(),
+                self.size,
+            )
+
+        return out^
 
 
 # ===----------------------------------------------------------------------=== #

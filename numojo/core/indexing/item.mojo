@@ -596,7 +596,7 @@ struct Item(
 
 
 struct _ItemIter[
-    origin: ImmutOrigin = ImmutExternalOrigin,
+    origin: ImmutOrigin = ImmutUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for Item.

@@ -133,7 +133,7 @@ struct Matrix[
     - [x] `Matrix.variance` and `mat.statistics.variance` (`var` is primitive)
     """
 
-    comptime origin = MutExternalOrigin
+    comptime origin = MutUntrackedOrigin
     """Origin of the Matrix."""
 
     comptime IteratorType[

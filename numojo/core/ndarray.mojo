@@ -132,7 +132,7 @@ struct NDArray[dtype: DType = DType.float64](
         forward: Bool,
     ] = _NDAxisIter[Self.dtype, forward]
 
-    comptime origin = MutExternalOrigin
+    comptime origin = MutUntrackedOrigin
     """Origin of the data buffer."""
     comptime width: Int = simd_width_of[Self.dtype]()
     """Vector size of the data type."""

@@ -24,6 +24,7 @@
 # Miscellaneous files
 mojo
 numojo.mojopkg
+numojo.mojoc
 /bench.mojo
 /test*.mojo
 /test*.ipynb

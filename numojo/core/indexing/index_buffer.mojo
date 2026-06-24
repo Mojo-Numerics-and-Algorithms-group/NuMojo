@@ -39,7 +39,7 @@ struct IndexBuffer(
     """Element type of the buffer."""
     comptime simd_width: Int = simd_width_of[DType.int]()
     """SIMD width for the element type."""
-    comptime _origin = MutExternalOrigin
+    comptime _origin = MutUntrackedOrigin
     """Mutability origin of the buffer."""
 
     var ptr: UnsafePointer[Scalar[Self.element_type], Self._origin]
@@ -1063,7 +1063,7 @@ struct IndexBuffer(
 # ===----------------------------------------------------------------------=== #
 struct _IndexBufferIter[
     dtype: DType,
-    origin: ImmutOrigin = ImmutExternalOrigin,
+    origin: ImmutOrigin = ImmutUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for Item.

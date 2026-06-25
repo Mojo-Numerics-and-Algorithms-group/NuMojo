@@ -37,8 +37,8 @@ jobs:
 
       - name: Build package
         run: |
-          pixi run mojo package numojo
-          cp numojo.mojopkg tests/
+          pixi run mojo precompile numojo -o numojo.mojoc
+          cp numojo.mojoc tests/
 
       - name: Run Core Tests
         run: |
@@ -53,4 +53,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -f tests/numojo.mojopkg
+          rm -f tests/numojo.mojoc

@@ -377,11 +377,14 @@ struct ComplexDType(
     @doc_hidden
     @always_inline("nodebug")
     def _match(self, mask: UInt8) -> Bool:
-        var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred ne>`](
-            __mlir_op.`pop.simd.and`(self._as_ui8(), mask._mlir_value),
-            __mlir_attr.`#pop.simd<0> : !pop.scalar<ui8>`,
+        return Bool(
+            UInt8(
+                mlir_value=__mlir_op.`pop.simd.and`(
+                    self._as_ui8(), mask._mlir_value
+                )
+            )
+            != UInt8(0)
         )
-        return Bool(mlir_value=res)
 
     @always_inline("nodebug")
     def __is__(self, rhs: ComplexDType) -> Bool:
@@ -417,10 +420,7 @@ struct ComplexDType(
         Returns:
             True if the ComplexDTypes are the same and False otherwise.
         """
-        var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred eq>`](
-            self._as_ui8(), rhs._as_ui8()
-        )
-        return Bool(mlir_value=res)
+        return self.dtype == rhs.dtype
 
     @always_inline("nodebug")
     def __ne__(self, rhs: ComplexDType) -> Bool:
@@ -432,10 +432,7 @@ struct ComplexDType(
         Returns:
             False if the ComplexDTypes are the same and True otherwise.
         """
-        var res = __mlir_op.`pop.cmp`[pred=__mlir_attr.`#pop<cmp_pred ne>`](
-            self._as_ui8(), rhs._as_ui8()
-        )
-        return Bool(mlir_value=res)
+        return self.dtype != rhs.dtype
 
     def __hash__[H: Hasher](self, mut hasher: H):
         """Updates hasher with this `ComplexDType` value.

@@ -257,7 +257,7 @@ def test_row_stack() raises:
     var a = nm.arange[nm.f64](0, 3, 1)
     var b = nm.arange[nm.f64](3, 6, 1)
     var c = nm.row_stack(a, b)
-    var cnp = np.row_stack(Python.list(a.to_numpy(), b.to_numpy()))
+    var cnp = np.vstack(Python.list(a.to_numpy(), b.to_numpy()))
     check_is_close(c, cnp, "`row_stack` 1-D arrays fails.")
 
 

@@ -917,7 +917,7 @@ struct NDArrayStrides(
 
 
 struct _StrideIter[
-    origin: ImmutOrigin = ImmutExternalOrigin,
+    origin: ImmutOrigin = ImmutUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for NDArrayStrides.

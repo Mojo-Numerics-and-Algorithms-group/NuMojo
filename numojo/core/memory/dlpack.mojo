@@ -649,7 +649,7 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
 
     var size = shape.size()
     var buf = DataContainer[dtype](
-        ptr=data_ptr.unsafe_origin_cast[MutExternalOrigin](),
+        ptr=data_ptr.unsafe_origin_cast[MutUntrackedOrigin](),
         size=size,
         copy=False,
     )
@@ -711,7 +711,7 @@ def from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
 
     var size = shape.size()
     var buf = DataContainer[dtype](
-        ptr=data_ptr.unsafe_origin_cast[MutExternalOrigin](),
+        ptr=data_ptr.unsafe_origin_cast[MutUntrackedOrigin](),
         size=size,
         copy=False,
     )

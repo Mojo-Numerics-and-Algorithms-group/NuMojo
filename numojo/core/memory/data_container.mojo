@@ -26,16 +26,16 @@ struct Ownership(ImplicitlyCopyable):
     - External: Container views externally managed data and does not deallocate or refcount.
     """
 
-    var value: __mlir_type.i1
+    var value: Bool
     """Ownership status as a boolean."""
 
-    comptime Managed = Ownership(True._mlir_value)
+    comptime Managed = Ownership(True)
     """Container owns and manages its data."""
 
-    comptime External = Ownership(False._mlir_value)
+    comptime External = Ownership(False)
     """Container views externally managed data."""
 
-    def __init__(out self, value: __mlir_type.i1):
+    def __init__(out self, value: Bool):
         """
         Initialize Ownership with the given status.
         """
@@ -45,19 +45,19 @@ struct Ownership(ImplicitlyCopyable):
         """
         Return True if both Ownership instances have the same status.
         """
-        return ~(self != other)
+        return self.value == other.value
 
     def __ne__(self, other: Self) -> Bool:
         """
         Return True if Ownership instances have different statuses.
         """
-        return self ^ other
+        return self.value != other.value
 
     def __xor__(self, other: Self) -> Bool:
         """
         Return True if Ownership statuses differ.
         """
-        return __mlir_op.`pop.xor`(self.value, other.value)
+        return self.value ^ other.value
 
     def __str__(self) -> String:
         """
@@ -92,7 +92,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         size: Number of elements in the data array.
     """
 
-    comptime origin = MutExternalOrigin
+    comptime origin = MutUntrackedOrigin
     """Memory origin for the allocation."""
 
     var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]

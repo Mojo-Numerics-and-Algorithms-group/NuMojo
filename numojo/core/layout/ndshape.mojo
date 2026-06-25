@@ -905,7 +905,7 @@ struct NDArrayShape(
 # NDArrayShape Iterator
 # ===----------------------------------------------------------------------=== #
 struct _ShapeIter[
-    origin: ImmutOrigin = ImmutExternalOrigin,
+    origin: ImmutOrigin = ImmutUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for NDArrayShape.

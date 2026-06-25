@@ -43,7 +43,7 @@ def launch_neg[
     var grid_dim: Int
     var block_dim: Int
     grid_dim, block_dim = launch_config(size)
-    context.enqueue_function[neg_kernel[dtype], neg_kernel[dtype]](
+    context.enqueue_function[neg_kernel[dtype]](
         result,
         a,
         size,

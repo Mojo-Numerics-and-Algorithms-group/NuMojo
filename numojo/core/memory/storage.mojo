@@ -51,7 +51,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         dtype: The element type stored in the buffer.
     """
 
-    comptime origin = MutExternalOrigin
+    comptime origin = MutUntrackedOrigin
     """Memory origin for the allocation."""
 
     var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
@@ -629,7 +629,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         device: The execution device (default `Device.CPU`).
     """
 
-    comptime origin = MutExternalOrigin
+    comptime origin = MutUntrackedOrigin
     """Memory origin for the container."""
 
     var host_storage: Optional[HostStorage[Self.dtype]]
@@ -775,7 +775,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     @always_inline
     def offset(
         self, offset: Int
-    ) -> UnsafePointer[Scalar[Self.dtype], MutExternalOrigin] where (
+    ) -> UnsafePointer[Scalar[Self.dtype], MutUntrackedOrigin] where (
         Self.device.type == "cpu"
     ):
         """Return a pointer advanced by `offset` elements.

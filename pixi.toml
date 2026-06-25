@@ -20,11 +20,11 @@ name = "NuMojo"
 platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 readme = "README.MD"
-version = "0.9.0"
+version = "0.10.0"
 
 [package]
 name = "numojo"
-version = "0.9.0"
+version = "0.10.0"
 
 [package.build]
 backend = {name = "pixi-build-mojo", version = "0.*", channels = [
@@ -35,18 +35,18 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
 name = "numojo"
 
 [package.host-dependencies]
-mojo = "==1.0.0b1"
+mojo = "==1.0.0b2"
 
 [package.build-dependencies]
-mojo = "==1.0.0b1"
+mojo = "==1.0.0b2"
 
 [package.run-dependencies]
-mojo = "==1.0.0b1"
+mojo = "==1.0.0b2"
 
 [tasks]
 # compile the package and copy it to the tests folder
 p = "clear && pixi run package"
-package = "pixi run mojo package numojo && cp numojo.mojopkg tests/ "
+package = "pixi run mojo precompile numojo -o numojo.mojoc && cp numojo.mojoc tests/ "
 
 # format the package
 format = "pixi run mojo format ./numojo/ && pixi run mojo format ./tests/ && pixi run mojo format ./examples/"

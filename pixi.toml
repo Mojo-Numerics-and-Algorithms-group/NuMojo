@@ -56,11 +56,11 @@ run-test = {cmd = "pixi run mojo run -I tests/ $TEST_FILE", env = {TEST_FILE = "
 
 # Test by category (using shell scripts that auto-discover test files)
 test = "pixi run package && bash tests/test_core.sh && bash tests/test_routines.sh"
+test_accelerator = "pixi run package && bash tests/test_accelerator.sh"
 test_all = """pixi run package && bash tests/test_core.sh && bash tests/test_routines.sh \
-&& bash tests/test_special.sh"""
+&& bash tests/test_accelerator.sh"""
 test_core = "pixi run package && bash tests/test_core.sh"
 test_routines = "pixi run package && bash tests/test_routines.sh"
-test_special = "pixi run package && bash tests/test_special.sh"
 
 # run all final checks before a commit
 f = "clear && pixi run final"

@@ -50,6 +50,11 @@ jobs:
           echo "Testing routines..."
           pixi run test_routines
 
+      - name: Run Accelerator Tests
+        run: |
+          echo "Testing accelerator modules..."
+          pixi run test_accelerator
+
       - name: Cleanup
         if: always()
         run: |

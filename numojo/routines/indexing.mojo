@@ -564,6 +564,138 @@ def take[
 
 
 # ===----------------------------------------------------------------------=== #
+# put
+# ===----------------------------------------------------------------------=== #
+
+
+def put[
+    dtype: DType,
+    //,
+](
+    mut a: NDArray[dtype],
+    indices: NDArray[DType.int],
+    values: NDArray[dtype],
+) raises:
+    """Replaces values at flat (linear) index positions of `a` in-place.
+
+    Equivalent to `a.flatten()[indices] = values`, but writes directly into
+    `a` (any array order). If `values` has fewer elements than `indices`, it
+    is repeated (broadcast) cyclically over `indices`. `values` must not be empty
+    unless `indices` is also empty.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Destination array to be modified in-place.
+        indices: Linear (flat) indices into `a`. May be any shape. Negative
+            indices are normalised (counted from the end).
+        values: Values to write. Broadcast cyclically if shorter than
+            `indices`.
+
+    Raises:
+        Error: If any index is out of bounds for the flattened array.
+        Error: If `values` is empty while `indices` is not.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](6)
+        nm.indexing.put(a, nm.array[nm.int]("[0, 2]"), nm.array[nm.i32]("[10, 20]"))
+        print(a)
+        # [10, 1, 20, 3, 4, 5]
+        ```
+        .
+    """
+    if indices.size == 0:
+        return
+
+    if values.size == 0:
+        raise Error(
+            String(
+                "\nError in `put`: values is empty but indices has {}"
+                " element(s)."
+            ).format(indices.size)
+        )
+
+    var indices_c = indices.contiguous()
+    var values_c = values.contiguous()
+
+    for i in range(indices_c.size):
+        var raw = Int(indices_c._buf.ptr[i])
+        if raw < -a.size or raw >= a.size:
+            raise Error(
+                String(
+                    "\nError in `put`: index {} is out of bounds for array"
+                    " of size {}."
+                ).format(raw, a.size)
+            )
+        var norm_idx = raw
+        if norm_idx < 0:
+            norm_idx += a.size
+
+        a.itemset(norm_idx, values_c._buf.ptr[i % values_c.size])
+
+
+def put[
+    dtype: DType,
+    //,
+](
+    mut a: NDArray[dtype],
+    indices: NDArray[DType.int],
+    value: Scalar[dtype],
+) raises:
+    """Replaces values at flat (linear) index positions of `a` in-place with
+    a single broadcast scalar.
+
+    This is a function ***OVERLOAD*** of `put` for the scalar-`value` case.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Destination array to be modified in-place.
+        indices: Linear (flat) indices into `a`. May be any shape. Negative
+            indices are normalised (counted from the end).
+        value: Scalar value written to every selected position.
+
+    Raises:
+        Error: If any index is out of bounds for the flattened array.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](6)
+        nm.indexing.put(a, nm.array[nm.int]("[0, 2]"), Scalar[nm.i32](99))
+        print(a)
+        # [99, 1, 99, 3, 4, 5]
+        ```
+        .
+    """
+    if indices.size == 0:
+        return
+
+    var indices_c = indices.contiguous()
+
+    for i in range(indices_c.size):
+        var raw = Int(indices_c._buf.ptr[i])
+        if raw < -a.size or raw >= a.size:
+            raise Error(
+                String(
+                    "\nError in `put`: index {} is out of bounds for array"
+                    " of size {}."
+                ).format(raw, a.size)
+            )
+        var norm_idx = raw
+        if norm_idx < 0:
+            norm_idx += a.size
+
+        a.itemset(norm_idx, value)
+
+
+# ===----------------------------------------------------------------------=== #
 # nonzero
 # ===----------------------------------------------------------------------=== #
 
@@ -632,3 +764,163 @@ def nonzero[
             out_idx += 1
 
     return result^
+
+
+# ===----------------------------------------------------------------------=== #
+# searchsorted
+# ===----------------------------------------------------------------------=== #
+
+
+def searchsorted[
+    dtype: DType,
+    //,
+](
+    a: NDArray[dtype], v: NDArray[dtype], side: String = "left"
+) raises -> NDArray[DType.int]:
+    """Finds indices where elements of `v` should be inserted into sorted
+    1-D array `a` to keep it sorted.
+
+    Uses binary search. `a` must be a 1-D array, assumed (not verified)
+    to be sorted in ascending order.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: 1-D sorted source array.
+        v: Array of values to find insertion indices for.
+        side: `"left"` (default) returns the leftmost valid insertion index;
+            `"right"` returns the rightmost.
+
+    Returns:
+        Array of insertion indices, same shape as `v`.
+
+    Raises:
+        Error: If `a` is not 1-D.
+        Error: If `side` is not `"left"` or `"right"`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[1, 3, 5, 7]")
+        print(nm.indexing.searchsorted(a, nm.array[nm.i32]("[2, 6]")))
+        # [1, 3]
+        ```
+        .
+    """
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "\nError in `searchsorted`: `a` must be a 1-D array, got {}"
+                " dimensions."
+            ).format(a.ndim)
+        )
+    if side != "left" and side != "right":
+        raise Error(
+            String(
+                "\nError in `searchsorted`: `side` must be 'left' or"
+                " 'right', got '{}'."
+            ).format(side)
+        )
+
+    var a_c = a.contiguous()
+    var v_c = v.contiguous()
+    var n = a_c.size
+
+    var result = NDArray[DType.int](Shape(v_c.shape))
+
+    for i in range(v_c.size):
+        var target = v_c._buf.ptr[i]
+        var lo = 0
+        var hi = n
+        if side == "left":
+            while lo < hi:
+                var mid = (lo + hi) // 2
+                if a_c._buf.ptr[mid] < target:
+                    lo = mid + 1
+                else:
+                    hi = mid
+        else:
+            while lo < hi:
+                var mid = (lo + hi) // 2
+                if a_c._buf.ptr[mid] <= target:
+                    lo = mid + 1
+                else:
+                    hi = mid
+        result._buf.ptr[i] = Scalar[DType.int](lo)
+
+    return result^
+
+
+def searchsorted[
+    dtype: DType,
+    //,
+](
+    a: NDArray[dtype], v: Scalar[dtype], side: String = "left"
+) raises -> Int:
+    """Finds the index where scalar `v` should be inserted into sorted 1-D
+    array `a` to keep it sorted.
+
+    This is a function ***OVERLOAD*** of `searchsorted` for a scalar `v`.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: 1-D sorted source array.
+        v: Scalar value to find the insertion index for.
+        side: `"left"` (default) returns the leftmost valid insertion index;
+            `"right"` returns the rightmost.
+
+    Returns:
+        Insertion index.
+
+    Raises:
+        Error: If `a` is not 1-D.
+        Error: If `side` is not `"left"` or `"right"`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[1, 3, 5, 7]")
+        print(nm.indexing.searchsorted(a, Scalar[nm.i32](4)))
+        # 2
+        ```
+        .
+    """
+    if a.ndim != 1:
+        raise Error(
+            String(
+                "\nError in `searchsorted`: `a` must be a 1-D array, got {}"
+                " dimensions."
+            ).format(a.ndim)
+        )
+    if side != "left" and side != "right":
+        raise Error(
+            String(
+                "\nError in `searchsorted`: `side` must be 'left' or"
+                " 'right', got '{}'."
+            ).format(side)
+        )
+
+    var a_c = a.contiguous()
+    var n = a_c.size
+    var lo = 0
+    var hi = n
+    if side == "left":
+        while lo < hi:
+            var mid = (lo + hi) // 2
+            if a_c._buf.ptr[mid] < v:
+                lo = mid + 1
+            else:
+                hi = mid
+    else:
+        while lo < hi:
+            var mid = (lo + hi) // 2
+            if a_c._buf.ptr[mid] <= v:
+                lo = mid + 1
+            else:
+                hi = mid
+    return lo

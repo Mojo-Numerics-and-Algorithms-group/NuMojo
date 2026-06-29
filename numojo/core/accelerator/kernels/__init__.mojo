@@ -19,3 +19,4 @@ from .binary_ops import (
     launch_binary_op,
 )
 from .unary_ops import neg_kernel, launch_neg
+from .reduction_ops import sum_reduce_kernel, launch_sum_reduce

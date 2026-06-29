@@ -87,7 +87,9 @@ def test_sum_cpu_distinct_values() raises:
     for i in range(6):
         expected += a.item(i)
     assert_equal(a.sum(), expected, "cpu sum distinct")
-    assert_equal(a.sum(), Float32(21), "cpu sum distinct matches hand-computed value")
+    assert_equal(
+        a.sum(), Float32(21), "cpu sum distinct matches hand-computed value"
+    )
 
 
 def test_add_cpu_shape_mismatch_raises() raises:

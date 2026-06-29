@@ -8,9 +8,9 @@ from numojo.prelude import *
 def test_take_along_axis_method_axis0() raises:
     """a.take_along_axis(indices, axis) delegates to the routine correctly."""
     var a = nm.arange[nm.i32](0, 12).reshape(Shape(3, 4))
-    var ind = nm.array[nm.int](
-        "[[0, 1, 2, 0], [1, 0, 2, 1]]"
-    ).reshape(Shape(2, 4))
+    var ind = nm.array[nm.int]("[[0, 1, 2, 0], [1, 0, 2, 1]]").reshape(
+        Shape(2, 4)
+    )
     var result = a.take_along_axis(ind, axis=0)
     assert_equal(result.shape[0], 2)
     assert_equal(result.shape[1], 4)

@@ -66,8 +66,7 @@ def diagonal[
     """
     if a.ndim < 2:
         raise Error(
-            "\nError in `diagonal`: Array must have at least 2 dimensions,"
-            " got "
+            "\nError in `diagonal`: Array must have at least 2 dimensions, got "
             + String(a.ndim)
         )
 
@@ -91,9 +90,7 @@ def diagonal[
             ).format(axis1, axis2, a.ndim)
         )
     if norm_axis1 == norm_axis2:
-        raise Error(
-            "\nError in `diagonal`: axis1 and axis2 must be different."
-        )
+        raise Error("\nError in `diagonal`: axis1 and axis2 must be different.")
 
     if not a.is_c_contiguous():
         return diagonal(a.contiguous(), offset, axis1, axis2)

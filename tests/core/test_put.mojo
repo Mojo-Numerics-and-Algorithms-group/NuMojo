@@ -44,7 +44,8 @@ def test_put_values_broadcast_cyclically() raises:
 
 
 def test_put_on_2d_array_flat_indexing() raises:
-    """put indexes into the flattened (ravel-order) positions of an N-D array."""
+    """put indexes into the flattened (ravel-order) positions of an N-D array.
+    """
     var a = nm.arange[nm.i32](0, 12).reshape(Shape(3, 4))
     a.put(nm.array[nm.int]("[0, 5, 11]"), nm.array[nm.i32]("[-1, -2, -3]"))
     assert_equal(Int(a.item(0, 0)), -1)

@@ -856,9 +856,7 @@ def searchsorted[
 def searchsorted[
     dtype: DType,
     //,
-](
-    a: NDArray[dtype], v: Scalar[dtype], side: String = "left"
-) raises -> Int:
+](a: NDArray[dtype], v: Scalar[dtype], side: String = "left") raises -> Int:
     """Finds the index where scalar `v` should be inserted into sorted 1-D
     array `a` to keep it sorted.
 

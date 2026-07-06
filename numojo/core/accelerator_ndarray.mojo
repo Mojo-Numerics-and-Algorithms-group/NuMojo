@@ -808,6 +808,39 @@ struct AcceleratorNDArray[
         """Elementwise division. See `_binary_op` for constraints."""
         return self._binary_op[kernels.DIV, "division"](other)
 
+    def sum(self) raises -> Scalar[Self.dtype]:
+        """Sum of all elements in the array. Requires a densely contiguous
+        array (no broadcasting or strided views yet).
+
+        Raises:
+            Error: If the array is not contiguous.
+        """
+        if not self.flags.C_CONTIGUOUS:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "AcceleratorNDArray.sum currently requires a"
+                        " C-contiguous array."
+                    ),
+                    location="AcceleratorNDArray.sum",
+                )
+            )
+
+        comptime if Self.device.type == "cpu":
+            comptime assert Self.device.type == "cpu"
+            var src = self.unsafe_ptr()
+            var result = Scalar[Self.dtype](0)
+            for i in range(self.size):
+                result += src[i]
+            return result
+        else:
+            comptime assert Self.device.type == "gpu"
+            var context = self.device_context()
+            return kernels.launch_sum_reduce[Self.dtype](
+                context, self.unsafe_device_ptr(), self.size
+            )
+
     def __neg__(self) raises -> Self:
         """Elementwise negation. Requires a densely contiguous array (no
         broadcasting or strided views yet).

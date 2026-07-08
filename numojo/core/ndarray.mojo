@@ -88,7 +88,10 @@ import numojo.routines.statistics as statistics
 from numojo.routines.indexing import (
     compress,
     take as _take,
+    take_along_axis as _take_along_axis,
     nonzero as _nonzero,
+    put as _put,
+    searchsorted as _searchsorted,
 )
 from numojo.routines.math.misc import clip
 from numojo.routines.manipulation import reshape
@@ -4960,22 +4963,33 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return numojo_math.cumsum[Self.dtype](self.copy(), axis=axis)
 
-    def diagonal(self, offset: Int = 0) raises -> Self:
+    def diagonal(
+        self, offset: Int = 0, axis1: Int = 0, axis2: Int = 1
+    ) raises -> Self:
         """Returns specific diagonals.
 
-        Currently supports only 2D arrays.
+        For 2-D arrays (the default `axis1=0, axis2=1`), returns the 1-D
+        diagonal at the given `offset`. For N-D arrays, `axis1`/`axis2`
+        select the two axes whose 2-D sub-array diagonals are extracted; the
+        result has those two axes removed and replaced by a trailing
+        diagonal axis.
 
         Args:
             offset: The offset of the diagonal from the main diagonal.
+            axis1: First axis of the 2-D sub-arrays from which the
+                diagonals should be taken. Defaults to 0.
+            axis2: Second axis of the 2-D sub-arrays from which the
+                diagonals should be taken. Defaults to 1.
 
         Returns:
-            The diagonal of the NDArray.
+            The diagonal(s) of the NDArray.
 
         Raises:
-            Error: If the array is not 2D.
+            Error: If the array has fewer than 2 dimensions.
+            Error: If `axis1` or `axis2` is out of bounds, or equal.
             Error: If the offset is beyond the shape of the array.
         """
-        return linalg.diagonal(self, offset=offset)
+        return linalg.diagonal(self, offset=offset, axis1=axis1, axis2=axis2)
 
     def take(self, indices: NDArray[DType.int], axis: Int) raises -> Self:
         """Takes elements from the array along an axis.
@@ -5035,6 +5049,153 @@ struct NDArray[dtype: DType = DType.float64](
             ```
         """
         return _take(self, indices)
+
+    def take_along_axis(
+        self, indices: NDArray[DType.int], axis: Int = 0
+    ) raises -> Self:
+        """Takes values from the array along the given axis based on indices.
+
+        Args:
+            indices: The indices array.
+            axis: The axis along which to take values. Default is 0.
+
+        Returns:
+            An array with the same shape as indices with values taken from
+            the array along the given axis.
+
+        Raises:
+            Error: If the axis is out of bounds for the array.
+            Error: If the ndim of self and indices are not the same.
+            Error: If the shape of indices does not match the shape of self
+                except along the given axis.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.arange[nm.i8](12).reshape(nm.Shape(3, 4))
+            var ind = nm.array[nm.int]("[[0, 1, 2, 0], [1, 0, 2, 1]]")
+            print(a.take_along_axis(ind, axis=0))
+            ```
+        """
+        return _take_along_axis(self, indices, axis)
+
+    def put(mut self, indices: NDArray[DType.int], values: Self) raises:
+        """Replaces values at flat (linear) index positions in-place.
+
+        Equivalent to `self.flatten()[indices] = values`, but writes
+        directly into `self`. If `values` has fewer elements than
+        `indices`, it is repeated (broadcast) cyclically over `indices`.
+
+        Args:
+            indices: Linear (flat) indices into `self`. May be any shape.
+                Negative indices are normalised (counted from the end).
+            values: Values to write. Broadcast cyclically if shorter than
+                `indices`.
+
+        Raises:
+            Error: If any index is out of bounds for the flattened array.
+            Error: If `values` is empty while `indices` is not.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.arange[nm.i32](6)
+            a.put(nm.array[nm.int]("[0, 2]"), nm.array[nm.i32]("[10, 20]"))
+            print(a)
+            # [10, 1, 20, 3, 4, 5]
+            ```
+        """
+        _put(self, indices, values)
+
+    def put(
+        mut self, indices: NDArray[DType.int], value: Scalar[Self.dtype]
+    ) raises:
+        """Replaces values at flat (linear) index positions in-place with a
+        single broadcast scalar.
+
+        This is a method ***OVERLOAD*** of `put` for the scalar-`value` case.
+
+        Args:
+            indices: Linear (flat) indices into `self`. May be any shape.
+                Negative indices are normalised (counted from the end).
+            value: Scalar value written to every selected position.
+
+        Raises:
+            Error: If any index is out of bounds for the flattened array.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.arange[nm.i32](6)
+            a.put(nm.array[nm.int]("[0, 2]"), Scalar[nm.i32](99))
+            print(a)
+            # [99, 1, 99, 3, 4, 5]
+            ```
+        """
+        _put(self, indices, value)
+
+    def searchsorted(
+        self, v: Self, side: String = "left"
+    ) raises -> NDArray[DType.int]:
+        """Finds indices where elements of `v` should be inserted into
+        `self` (assumed sorted, 1-D) to keep it sorted. Uses binary search.
+
+        Args:
+            v: Array of values to find insertion indices for.
+            side: `"left"` (default) returns the leftmost valid insertion
+                index; `"right"` returns the rightmost.
+
+        Returns:
+            Array of insertion indices, same shape as `v`.
+
+        Raises:
+            Error: If `self` is not 1-D.
+            Error: If `side` is not `"left"` or `"right"`.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.array[nm.i32]("[1, 3, 5, 7]")
+            print(a.searchsorted(nm.array[nm.i32]("[2, 6]")))
+            # [1, 3]
+            ```
+        """
+        return _searchsorted(self, v, side)
+
+    def searchsorted(
+        self, v: Scalar[Self.dtype], side: String = "left"
+    ) raises -> Int:
+        """Finds the index where scalar `v` should be inserted into `self`
+        (assumed sorted, 1-D) to keep it sorted.
+
+        This is a method ***OVERLOAD*** of `searchsorted` for a scalar `v`.
+
+        Args:
+            v: Scalar value to find the insertion index for.
+            side: `"left"` (default) returns the leftmost valid insertion
+                index; `"right"` returns the rightmost.
+
+        Returns:
+            Insertion index.
+
+        Raises:
+            Error: If `self` is not 1-D.
+            Error: If `side` is not `"left"` or `"right"`.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.array[nm.i32]("[1, 3, 5, 7]")
+            print(a.searchsorted(Scalar[nm.i32](4)))
+            # 2
+            ```
+        """
+        return _searchsorted(self, v, side)
 
     def fill(mut self, val: Scalar[Self.dtype]):
         """Fills all items of the array with the given value.

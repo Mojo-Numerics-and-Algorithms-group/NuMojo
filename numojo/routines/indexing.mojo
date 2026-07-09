@@ -83,6 +83,158 @@ def `where`[
             x.itemset(i, y_c._buf.ptr[i])
 
 
+def `where`[
+    dtype: DType
+](
+    condition: NDArray[DType.bool],
+    x: NDArray[dtype],
+    y: NDArray[dtype],
+) raises -> NDArray[dtype]:
+    """Returns elements chosen from `x` or `y` depending on `condition`.
+
+    This is the functional (non-mutating) form: ``np.where(condition, x, y)``.
+    ``condition``, ``x``, and ``y`` are broadcast against each other following
+    NumPy broadcasting rules.  Elements where ``condition`` is True come from
+    ``x``; elements where it is False come from ``y``.
+
+    Parameters:
+        dtype: DType of `x` and `y`.
+
+    Args:
+        condition: Boolean selector array.
+        x: Values used where ``condition`` is True.
+        y: Values used where ``condition`` is False.
+
+    Returns:
+        New array of the broadcast shape filled from `x` where True and `y`
+        where False.
+
+    Raises:
+        Error: If ``condition``, ``x``, and ``y`` are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.f32]("[1.0, 2.0, 3.0, 4.0]")
+        var b = nm.array[nm.f32]("[10.0, 20.0, 30.0, 40.0]")
+        var mask = nm.array[nm.boolean]("[True, False, True, False]")
+        print(nm.where(mask, a, b))
+        # [1.0  20.0  3.0  40.0]
+        ```
+        .
+    """
+    var cond_bc = broadcast_to(condition, condition.shape.broadcast(
+        x.shape.broadcast(y.shape)
+    ))
+    var x_bc = broadcast_to(x, cond_bc.shape)
+    var y_bc = broadcast_to(y, cond_bc.shape)
+
+    var cond_c = cond_bc.contiguous()
+    var x_c = x_bc.contiguous()
+    var y_c = y_bc.contiguous()
+
+    var result = NDArray[dtype](cond_c.shape)
+    for i in range(result.size):
+        if cond_c._buf.ptr[i]:
+            result._buf.ptr[i] = x_c._buf.ptr[i]
+        else:
+            result._buf.ptr[i] = y_c._buf.ptr[i]
+    return result^
+
+
+def `where`[
+    dtype: DType
+](
+    condition: NDArray[DType.bool],
+    x: NDArray[dtype],
+    y: Scalar[dtype],
+) raises -> NDArray[dtype]:
+    """Returns elements from `x` or scalar `y` depending on `condition`.
+
+    Overload of ``where`` where the false-branch is a scalar broadcast.
+
+    Parameters:
+        dtype: DType of `x` and `y`.
+
+    Args:
+        condition: Boolean selector array.
+        x: Values used where ``condition`` is True.
+        y: Scalar used where ``condition`` is False.
+
+    Returns:
+        New array filled from `x` where True and `y` everywhere else.
+
+    Raises:
+        Error: If ``condition`` and `x` are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.f32]("[1.0, 2.0, 3.0, 4.0]")
+        var mask = nm.array[nm.boolean]("[True, False, True, False]")
+        print(nm.where(mask, a, Scalar[nm.f32](0.0)))
+        # [1.0  0.0  3.0  0.0]
+        ```
+        .
+    """
+    var bc_shape = condition.shape.broadcast(x.shape)
+    var cond_c = broadcast_to(condition, bc_shape).contiguous()
+    var x_c = broadcast_to(x, bc_shape).contiguous()
+
+    var result = NDArray[dtype](bc_shape)
+    for i in range(result.size):
+        result._buf.ptr[i] = x_c._buf.ptr[i] if cond_c._buf.ptr[i] else y
+    return result^
+
+
+def `where`[
+    dtype: DType
+](
+    condition: NDArray[DType.bool],
+    x: Scalar[dtype],
+    y: NDArray[dtype],
+) raises -> NDArray[dtype]:
+    """Returns scalar `x` or elements of `y` depending on `condition`.
+
+    Overload of ``where`` where the true-branch is a scalar broadcast.
+
+    Parameters:
+        dtype: DType of `x` and `y`.
+
+    Args:
+        condition: Boolean selector array.
+        x: Scalar used where ``condition`` is True.
+        y: Values used where ``condition`` is False.
+
+    Returns:
+        New array filled from `x` where True and `y` everywhere else.
+
+    Raises:
+        Error: If ``condition`` and `y` are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var b = nm.array[nm.f32]("[10.0, 20.0, 30.0, 40.0]")
+        var mask = nm.array[nm.bool]("[True, False, True, False]")
+        print(nm.where(mask, Scalar[nm.f32](0.0), b))
+        # [0.0  20.0  0.0  40.0]
+        ```
+        .
+    """
+    var bc_shape = condition.shape.broadcast(y.shape)
+    var cond_c = broadcast_to(condition, bc_shape).contiguous()
+    var y_c = broadcast_to(y, bc_shape).contiguous()
+
+    var result = NDArray[dtype](bc_shape)
+    for i in range(result.size):
+        result._buf.ptr[i] = x if cond_c._buf.ptr[i] else y_c._buf.ptr[i]
+    return result^
+
+
 # ===----------------------------------------------------------------------=== #
 # Indexing-like operations
 # ===----------------------------------------------------------------------=== #

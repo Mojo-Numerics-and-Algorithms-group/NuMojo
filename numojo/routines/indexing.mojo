@@ -239,10 +239,13 @@ def `where`[
 # Indexing-like operations
 # ===----------------------------------------------------------------------=== #
 
+
 def fancy_index[
     dtype: DType,
     //,
-](a: NDArray[dtype], index_arrays: List[NDArray[DType.int]]) raises -> NDArray[dtype]:
+](a: NDArray[dtype], index_arrays: List[NDArray[DType.int]]) raises -> NDArray[
+    dtype
+]:
     """Element-wise multi-axis fancy (advanced) indexing.
 
     Selects elements from `a` by supplying one integer-array index per axis
@@ -303,15 +306,14 @@ def fancy_index[
                 String(
                     "\nError in `fancy_index`: index arrays are not"
                     " broadcast-compatible: "
-                ) + String(e)
+                )
+                + String(e)
             )
 
     # Materialise each broadcast index array as a contiguous buffer.
     var bc_indices = List[NDArray[DType.int]](capacity=n_idx)
     for k in range(n_idx):
-        bc_indices.append(
-            broadcast_to(index_arrays[k], out_shape).contiguous()
-        )
+        bc_indices.append(broadcast_to(index_arrays[k], out_shape).contiguous())
 
     var result = NDArray[dtype](out_shape)
     var out_size = result.size
@@ -339,7 +341,9 @@ def fancy_index[
 def fancy_index[
     dtype: DType,
     //,
-](a: NDArray[dtype], *index_arrays: NDArray[DType.int]) raises -> NDArray[dtype]:
+](a: NDArray[dtype], *index_arrays: NDArray[DType.int]) raises -> NDArray[
+    dtype
+]:
     """Element-wise multi-axis fancy (advanced) indexing (variadic overload).
 
     Convenience overload that accepts index arrays as variadic positional

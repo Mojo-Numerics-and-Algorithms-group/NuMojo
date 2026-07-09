@@ -255,6 +255,143 @@ def `where`[
 # Indexing-like operations
 # ===----------------------------------------------------------------------=== #
 
+def fancy_index[
+    dtype: DType,
+    //,
+](a: NDArray[dtype], index_arrays: List[NDArray[DType.int]]) raises -> NDArray[dtype]:
+    """Element-wise multi-axis fancy (advanced) indexing.
+
+    Selects elements from `a` by supplying one integer-array index per axis
+    as a ``List``.  All index arrays are broadcast against each other; the
+    output shape equals that broadcast shape.  This allows the ``a[[row_arr, col_arr, ...]]``
+    syntax (the outer ``[]`` is the list literal).
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Source N-D array.
+        index_arrays: List of integer NDArrays — exactly `a.ndim` entries,
+            one per axis.  Each array is broadcast to the common shape.
+
+    Returns:
+        Array of shape ``broadcast(index_arrays)`` whose element ``i`` equals
+        ``a[index_arrays[0][i], index_arrays[1][i], ...]``.
+
+    Raises:
+        Error: If the number of index arrays does not equal `a.ndim`.
+        Error: If the index arrays are not mutually broadcast-compatible.
+        Error: If any index value is out of bounds for its axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+        var rows = nm.array[nm.int]("[0, 1]")
+        var cols = nm.array[nm.int]("[2, 3]")
+        var idx = List[nm.NDArray[DType.int]]()
+        idx.append(rows^)
+        idx.append(cols^)
+        print(nm.fancy_index(a, idx))
+        # [2  7]
+        # or via __getitem__:
+        print(a[idx])
+        # [2  7]
+        ```
+    """
+    var n_idx = len(index_arrays)
+    if n_idx != a.ndim:
+        raise Error(
+            String(
+                "\nError in `fancy_index`: expected {} index arrays (one per"
+                " axis), got {}."
+            ).format(a.ndim, n_idx)
+        )
+
+    # Broadcast all index arrays to a common shape.
+    var out_shape = index_arrays[0].shape
+    for k in range(1, n_idx):
+        try:
+            out_shape = out_shape.broadcast(index_arrays[k].shape)
+        except e:
+            raise Error(
+                String(
+                    "\nError in `fancy_index`: index arrays are not"
+                    " broadcast-compatible: "
+                ) + String(e)
+            )
+
+    # Materialise each broadcast index array as a contiguous buffer.
+    var bc_indices = List[NDArray[DType.int]](capacity=n_idx)
+    for k in range(n_idx):
+        bc_indices.append(
+            broadcast_to(index_arrays[k], out_shape).contiguous()
+        )
+
+    var result = NDArray[dtype](out_shape)
+    var out_size = result.size
+
+    for i in range(out_size):
+        var coords = List[Int](capacity=n_idx)
+        for k in range(n_idx):
+            var raw = Int(bc_indices[k]._buf.ptr[i])
+            var ax_size = a.shape[k]
+            if raw < -ax_size or raw >= ax_size:
+                raise Error(
+                    String(
+                        "\nError in `fancy_index`: index {} is out of bounds"
+                        " for axis {} with size {}."
+                    ).format(raw, k, ax_size)
+                )
+            if raw < 0:
+                raw += ax_size
+            coords.append(raw)
+        result._buf.ptr[i] = a._getitem(coords)
+
+    return result^
+
+
+def fancy_index[
+    dtype: DType,
+    //,
+](a: NDArray[dtype], *index_arrays: NDArray[DType.int]) raises -> NDArray[dtype]:
+    """Element-wise multi-axis fancy (advanced) indexing (variadic overload).
+
+    Convenience overload that accepts index arrays as variadic positional
+    arguments instead of a ``List``.  Delegates to the ``List`` overload.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Source N-D array.
+        index_arrays: Exactly `a.ndim` integer index arrays, one per axis.
+
+    Returns:
+        Array of shape ``broadcast(index_arrays)``.
+
+    Raises:
+        Error: If the number of index arrays does not equal `a.ndim`.
+        Error: If the index arrays are not mutually broadcast-compatible.
+        Error: If any index value is out of bounds for its axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+        var rows = nm.array[nm.int]("[0, 1]")
+        var cols = nm.array[nm.int]("[2, 3]")
+        print(nm.fancy_index(a, rows, cols))
+        # [2  7]
+        ```
+        .
+    """
+    var idx_list = List[NDArray[DType.int]](capacity=len(index_arrays))
+    for k in range(len(index_arrays)):
+        idx_list.append(index_arrays[k].copy())  # variadic refs can't be moved
+    return fancy_index(a, idx_list)
 
 def fancy_index[
     dtype: DType,

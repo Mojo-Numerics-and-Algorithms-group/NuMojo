@@ -92,6 +92,7 @@ from numojo.routines.indexing import (
     nonzero as _nonzero,
     put as _put,
     searchsorted as _searchsorted,
+    fancy_index as _fancy_index,
 )
 from numojo.routines.math.misc import clip
 from numojo.routines.manipulation import reshape
@@ -1483,6 +1484,44 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         return self[indices_array]
+
+    def __getitem__(
+        self, index_arrays: List[NDArray[DType.int]]
+    ) raises -> Self:
+        """Element-wise multi-axis fancy (advanced) indexing via a list of
+        index arrays.
+
+        Each element of `index_arrays` is an integer array indexing one axis.
+        All arrays are broadcast against each other; the output shape equals
+        that broadcast shape.  Mirrors NumPy's ``a[[row_arr, col_arr]]`` syntax
+        (note the outer ``[]`` is the list literal).
+
+        The number of index arrays must equal `self.ndim`.
+
+        Args:
+            index_arrays: A list of integer NDArrays, one per axis.
+
+        Returns:
+            Array of shape ``broadcast(index_arrays)`` whose element ``i``
+            equals ``self[index_arrays[0][i], index_arrays[1][i], ...]``.
+
+        Raises:
+            Error: If the number of index arrays does not equal `self.ndim`.
+            Error: If the index arrays are not mutually broadcast-compatible.
+            Error: If any index value is out of bounds for its axis.
+
+        Examples:
+
+        ```console
+        >>> var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+        >>> var rows = nm.array[nm.int]("[0, 1, 2]")
+        >>> var cols = nm.array[nm.int]("[2, 3, 0]")
+        >>> print(a[[rows, cols]])
+        [       2       7       8       ]
+        1-D array  Shape: [3]  DType: int32
+        ```.
+        """
+        return _fancy_index(self, index_arrays)
 
     def __getitem__(self, mask: NDArray[DType.bool]) raises -> Self:
         # TODO: Extend the mask into multiple dimensions.
@@ -5079,6 +5118,40 @@ struct NDArray[dtype: DType = DType.float64](
             ```
         """
         return _take_along_axis(self, indices, axis)
+
+    def fancy_index(self, *index_arrays: NDArray[DType.int]) raises -> Self:
+        """Element-wise multi-axis fancy (advanced) indexing.
+
+        Selects elements from the array by supplying one integer-array index
+        per axis.  All index arrays are broadcast against each other; the
+        output shape equals that broadcast shape.  Mirrors NumPy's
+        ``a[row_arr, col_arr, ...]`` syntax.
+
+        Args:
+            index_arrays: Exactly `self.ndim` integer index arrays, one per
+                axis.  Each is broadcast to the common shape before indexing.
+
+        Returns:
+            Array of shape ``broadcast(index_arrays)`` whose element ``i``
+            equals ``self[index_arrays[0][i], index_arrays[1][i], ...]``.
+
+        Raises:
+            Error: If the number of index arrays does not equal `self.ndim`.
+            Error: If the index arrays are not mutually broadcast-compatible.
+            Error: If any index value is out of bounds for its axis.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+            var rows = nm.array[nm.int]("[0, 1]")
+            var cols = nm.array[nm.int]("[2, 3]")
+            print(a.fancy_index(rows, cols))
+            # [2  7]
+            ```
+        """
+        return _fancy_index(self, *index_arrays)
 
     def put(mut self, indices: NDArray[DType.int], values: Self) raises:
         """Replaces values at flat (linear) index positions in-place.

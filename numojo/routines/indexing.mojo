@@ -83,9 +83,303 @@ def `where`[
             x.itemset(i, y_c._buf.ptr[i])
 
 
+def `where`[
+    dtype: DType
+](
+    condition: NDArray[DType.bool],
+    x: NDArray[dtype],
+    y: NDArray[dtype],
+) raises -> NDArray[dtype]:
+    """Returns elements chosen from `x` or `y` depending on `condition`.
+
+    This is the functional (non-mutating) form: ``np.where(condition, x, y)``.
+    ``condition``, ``x``, and ``y`` are broadcast against each other following
+    NumPy broadcasting rules.  Elements where ``condition`` is True come from
+    ``x``; elements where it is False come from ``y``.
+
+    Parameters:
+        dtype: DType of `x` and `y`.
+
+    Args:
+        condition: Boolean selector array.
+        x: Values used where ``condition`` is True.
+        y: Values used where ``condition`` is False.
+
+    Returns:
+        New array of the broadcast shape filled from `x` where True and `y`
+        where False.
+
+    Raises:
+        Error: If ``condition``, ``x``, and ``y`` are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.f32]("[1.0, 2.0, 3.0, 4.0]")
+        var b = nm.array[nm.f32]("[10.0, 20.0, 30.0, 40.0]")
+        var mask = nm.array[nm.boolean]("[True, False, True, False]")
+        print(nm.where(mask, a, b))
+        # [1.0  20.0  3.0  40.0]
+        ```
+        .
+    """
+    var cond_bc = broadcast_to(
+        condition, condition.shape.broadcast(x.shape.broadcast(y.shape))
+    )
+    var x_bc = broadcast_to(x, cond_bc.shape)
+    var y_bc = broadcast_to(y, cond_bc.shape)
+
+    var cond_c = cond_bc.contiguous()
+    var x_c = x_bc.contiguous()
+    var y_c = y_bc.contiguous()
+
+    var result = NDArray[dtype](cond_c.shape)
+    for i in range(result.size):
+        if cond_c._buf.ptr[i]:
+            result._buf.ptr[i] = x_c._buf.ptr[i]
+        else:
+            result._buf.ptr[i] = y_c._buf.ptr[i]
+    return result^
+
+
+def `where`[
+    dtype: DType
+](
+    condition: NDArray[DType.bool],
+    x: NDArray[dtype],
+    y: Scalar[dtype],
+) raises -> NDArray[dtype]:
+    """Returns elements from `x` or scalar `y` depending on `condition`.
+
+    Overload of ``where`` where the false-branch is a scalar broadcast.
+
+    Parameters:
+        dtype: DType of `x` and `y`.
+
+    Args:
+        condition: Boolean selector array.
+        x: Values used where ``condition`` is True.
+        y: Scalar used where ``condition`` is False.
+
+    Returns:
+        New array filled from `x` where True and `y` everywhere else.
+
+    Raises:
+        Error: If ``condition`` and `x` are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.f32]("[1.0, 2.0, 3.0, 4.0]")
+        var mask = nm.array[nm.boolean]("[True, False, True, False]")
+        print(nm.where(mask, a, Scalar[nm.f32](0.0)))
+        # [1.0  0.0  3.0  0.0]
+        ```
+        .
+    """
+    var bc_shape = condition.shape.broadcast(x.shape)
+    var cond_c = broadcast_to(condition, bc_shape).contiguous()
+    var x_c = broadcast_to(x, bc_shape).contiguous()
+
+    var result = NDArray[dtype](bc_shape)
+    for i in range(result.size):
+        result._buf.ptr[i] = x_c._buf.ptr[i] if cond_c._buf.ptr[i] else y
+    return result^
+
+
+def `where`[
+    dtype: DType
+](
+    condition: NDArray[DType.bool],
+    x: Scalar[dtype],
+    y: NDArray[dtype],
+) raises -> NDArray[dtype]:
+    """Returns scalar `x` or elements of `y` depending on `condition`.
+
+    Overload of ``where`` where the true-branch is a scalar broadcast.
+
+    Parameters:
+        dtype: DType of `x` and `y`.
+
+    Args:
+        condition: Boolean selector array.
+        x: Scalar used where ``condition`` is True.
+        y: Values used where ``condition`` is False.
+
+    Returns:
+        New array filled from `x` where True and `y` everywhere else.
+
+    Raises:
+        Error: If ``condition`` and `y` are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var b = nm.array[nm.f32]("[10.0, 20.0, 30.0, 40.0]")
+        var mask = nm.array[nm.boolean]("[True, False, True, False]")
+        print(nm.where(mask, Scalar[nm.f32](0.0), b))
+        # [0.0  20.0  0.0  40.0]
+        ```
+        .
+    """
+    var bc_shape = condition.shape.broadcast(y.shape)
+    var cond_c = broadcast_to(condition, bc_shape).contiguous()
+    var y_c = broadcast_to(y, bc_shape).contiguous()
+
+    var result = NDArray[dtype](bc_shape)
+    for i in range(result.size):
+        result._buf.ptr[i] = x if cond_c._buf.ptr[i] else y_c._buf.ptr[i]
+    return result^
+
+
 # ===----------------------------------------------------------------------=== #
 # Indexing-like operations
 # ===----------------------------------------------------------------------=== #
+
+
+def fancy_index[
+    dtype: DType,
+    //,
+](a: NDArray[dtype], index_arrays: List[NDArray[DType.int]]) raises -> NDArray[
+    dtype
+]:
+    """Element-wise multi-axis fancy (advanced) indexing.
+
+    Selects elements from `a` by supplying one integer-array index per axis
+    as a ``List``.  All index arrays are broadcast against each other; the
+    output shape equals that broadcast shape.  This allows the ``a[[row_arr, col_arr, ...]]``
+    syntax (the outer ``[]`` is the list literal).
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Source N-D array.
+        index_arrays: List of integer NDArrays — exactly `a.ndim` entries,
+            one per axis.  Each array is broadcast to the common shape.
+
+    Returns:
+        Array of shape ``broadcast(index_arrays)`` whose element ``i`` equals
+        ``a[index_arrays[0][i], index_arrays[1][i], ...]``.
+
+    Raises:
+        Error: If the number of index arrays does not equal `a.ndim`.
+        Error: If the index arrays are not mutually broadcast-compatible.
+        Error: If any index value is out of bounds for its axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+        var rows = nm.array[nm.int]("[0, 1]")
+        var cols = nm.array[nm.int]("[2, 3]")
+        var idx = List[nm.NDArray[DType.int]]()
+        idx.append(rows^)
+        idx.append(cols^)
+        print(nm.fancy_index(a, idx))
+        # [2  7]
+        # or via __getitem__:
+        print(a[idx])
+        # [2  7]
+        ```
+    """
+    var n_idx = len(index_arrays)
+    if n_idx != a.ndim:
+        raise Error(
+            String(
+                "\nError in `fancy_index`: expected {} index arrays (one per"
+                " axis), got {}."
+            ).format(a.ndim, n_idx)
+        )
+
+    # Broadcast all index arrays to a common shape.
+    var out_shape = index_arrays[0].shape
+    for k in range(1, n_idx):
+        try:
+            out_shape = out_shape.broadcast(index_arrays[k].shape)
+        except e:
+            raise Error(
+                String(
+                    "\nError in `fancy_index`: index arrays are not"
+                    " broadcast-compatible: "
+                )
+                + String(e)
+            )
+
+    # Materialise each broadcast index array as a contiguous buffer.
+    var bc_indices = List[NDArray[DType.int]](capacity=n_idx)
+    for k in range(n_idx):
+        bc_indices.append(broadcast_to(index_arrays[k], out_shape).contiguous())
+
+    var result = NDArray[dtype](out_shape)
+    var out_size = result.size
+
+    for i in range(out_size):
+        var coords = List[Int](capacity=n_idx)
+        for k in range(n_idx):
+            var raw = Int(bc_indices[k]._buf.ptr[i])
+            var ax_size = a.shape[k]
+            if raw < -ax_size or raw >= ax_size:
+                raise Error(
+                    String(
+                        "\nError in `fancy_index`: index {} is out of bounds"
+                        " for axis {} with size {}."
+                    ).format(raw, k, ax_size)
+                )
+            if raw < 0:
+                raw += ax_size
+            coords.append(raw)
+        result._buf.ptr[i] = a._getitem(coords)
+
+    return result^
+
+
+def fancy_index[
+    dtype: DType,
+    //,
+](a: NDArray[dtype], *index_arrays: NDArray[DType.int]) raises -> NDArray[
+    dtype
+]:
+    """Element-wise multi-axis fancy (advanced) indexing (variadic overload).
+
+    Convenience overload that accepts index arrays as variadic positional
+    arguments instead of a ``List``.  Delegates to the ``List`` overload.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Source N-D array.
+        index_arrays: Exactly `a.ndim` integer index arrays, one per axis.
+
+    Returns:
+        Array of shape ``broadcast(index_arrays)``.
+
+    Raises:
+        Error: If the number of index arrays does not equal `a.ndim`.
+        Error: If the index arrays are not mutually broadcast-compatible.
+        Error: If any index value is out of bounds for its axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](12).reshape(nm.Shape(3, 4))
+        var rows = nm.array[nm.int]("[0, 1]")
+        var cols = nm.array[nm.int]("[2, 3]")
+        print(nm.fancy_index(a, rows, cols))
+        # [2  7]
+        ```
+        .
+    """
+    var idx_list = List[NDArray[DType.int]](capacity=len(index_arrays))
+    for k in range(len(index_arrays)):
+        idx_list.append(index_arrays[k].copy())  # variadic refs can't be moved
+    return fancy_index(a, idx_list)
 
 
 def compress[

@@ -122,7 +122,7 @@ def test_fancy_index_out_of_bounds_raises() raises:
     var a = nm.arange[nm.i32](0, 12).reshape(Shape(3, 4))
     var raised = False
     try:
-        var rows = nm.array[nm.int]("[5]")   # axis 0 size = 3
+        var rows = nm.array[nm.int]("[5]")  # axis 0 size = 3
         var cols = nm.array[nm.int]("[0]")
         var _r = a.fancy_index(rows, cols)
     except:

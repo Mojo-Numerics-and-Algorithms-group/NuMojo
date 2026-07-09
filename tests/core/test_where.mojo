@@ -70,10 +70,10 @@ def test_where_2d() raises:
     var mask = nm.array[boolean]("[[1, 0],[0, 1]]")
     var result = nm.`where`(mask, a, b)
     assert_equal(result.ndim, 2)
-    assert_equal(Int(result.item(0, 0)), 1)   # from a
-    assert_equal(Int(result.item(0, 1)), 0)   # from b
-    assert_equal(Int(result.item(1, 0)), 0)   # from b
-    assert_equal(Int(result.item(1, 1)), 4)   # from a
+    assert_equal(Int(result.item(0, 0)), 1)  # from a
+    assert_equal(Int(result.item(0, 1)), 0)  # from b
+    assert_equal(Int(result.item(1, 0)), 0)  # from b
+    assert_equal(Int(result.item(1, 1)), 4)  # from a
 
 
 def main() raises:

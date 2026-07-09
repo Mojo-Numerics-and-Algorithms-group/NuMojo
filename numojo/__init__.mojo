@@ -264,6 +264,7 @@ from numojo.routines.indexing import (
     take_along_axis,
     take,
     nonzero,
+    fancy_index,
 )
 
 

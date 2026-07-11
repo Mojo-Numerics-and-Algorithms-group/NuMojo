@@ -1655,20 +1655,6 @@ struct NDArray[dtype: DType = DType.float64](
                 if mask_c._buf.ptr.load[width=1](i):
                     true_count += 1
 
-            if true_count == 0:
-                raise Error(
-                    NumojoError(
-                        category="index",
-                        message=(
-                            "Boolean mask has no True entries. Empty array"
-                            " results are not supported yet."
-                        ),
-                        location=(
-                            "NDArray.__getitem__(mask: NDArray[DType.bool])"
-                        ),
-                    )
-                )
-
             # Build result shape: (true_count, *self.shape[k:])
             var result_shape_list = List[Int](capacity=1 + self.ndim - k)
             result_shape_list.append(true_count)

@@ -86,6 +86,7 @@ import numojo.routines.sorting as sorting
 import numojo.routines.manipulation as manipulation
 import numojo.routines.statistics as statistics
 from numojo.routines.indexing import (
+    `where` as _where,
     compress,
     take as _take,
     take_along_axis as _take_along_axis,
@@ -1653,20 +1654,6 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
                     true_count += 1
-
-            if true_count == 0:
-                raise Error(
-                    NumojoError(
-                        category="index",
-                        message=(
-                            "Boolean mask has no True entries. Empty array"
-                            " results are not supported yet."
-                        ),
-                        location=(
-                            "NDArray.__getitem__(mask: NDArray[DType.bool])"
-                        ),
-                    )
-                )
 
             # Build result shape: (true_count, *self.shape[k:])
             var result_shape_list = List[Int](capacity=1 + self.ndim - k)
@@ -5152,6 +5139,27 @@ struct NDArray[dtype: DType = DType.float64](
             ```
         """
         return _fancy_index(self, *index_arrays)
+
+    def where(
+        self, x: Self, y: Self
+    ) raises -> Self where Self.dtype == DType.bool:
+        """Returns elements chosen from `x` or `y` depending on this mask."""
+        var condition = self.astype[DType.bool]()
+        return _where(condition, x, y)
+
+    def where(
+        self, x: Self, y: Scalar[Self.dtype]
+    ) raises -> Self where Self.dtype == DType.bool:
+        """Returns elements from `x` or scalar `y` depending on this mask."""
+        var condition = self.astype[DType.bool]()
+        return _where(condition, x, y)
+
+    def where(
+        self, x: Scalar[Self.dtype], y: Self
+    ) raises -> Self where Self.dtype == DType.bool:
+        """Returns scalar `x` or elements from `y` depending on this mask."""
+        var condition = self.astype[DType.bool]()
+        return _where(condition, x, y)
 
     def put(mut self, indices: NDArray[DType.int], values: Self) raises:
         """Replaces values at flat (linear) index positions in-place.

@@ -1036,13 +1036,6 @@ def nonzero[
         if a_c._buf.ptr[i] != 0:
             count += 1
 
-    if count == 0:
-        raise Error(
-            String(
-                "\nError in `nonzero`: array has no non-zero elements."
-                " Empty index arrays are not supported."
-            )
-        )
     var result = List[NDArray[DType.int]]()
     for _ in range(a.ndim):
         result.append(NDArray[DType.int](NDArrayShape(count)))

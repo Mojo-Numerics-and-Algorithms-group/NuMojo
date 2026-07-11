@@ -27,15 +27,21 @@ def test_nonzero_2d() raises:
     assert_equal(Int(idx2[1].item(1)), 1)
 
 
-def test_nonzero_all_zero_raises() raises:
-    """nonzero raises when the array has no non-zero elements."""
+def test_nonzero_all_zero_returns_empty_indices() raises:
+    """Nonzero returns empty index arrays when no elements are non-zero."""
     var a = nm.zeros[nm.i32](Shape(3))
-    var raised = False
-    try:
-        var _idx = a.nonzero()
-    except:
-        raised = True
-    assert_true(raised, "all-zero array nonzero() should raise")
+    var idx = a.nonzero()
+    assert_equal(len(idx), 1)
+    assert_equal(idx[0].size, 0)
+
+
+def test_nonzero_all_zero_2d_returns_empty_per_dim() raises:
+    """Nonzero returns one empty index array per dimension."""
+    var a = nm.zeros[nm.i32](Shape(2, 3))
+    var idx = a.nonzero()
+    assert_equal(len(idx), 2)
+    assert_equal(idx[0].size, 0)
+    assert_equal(idx[1].size, 0)
 
 
 def main() raises:

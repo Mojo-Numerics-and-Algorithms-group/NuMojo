@@ -67,6 +67,40 @@ def test_compress() raises:
     )
 
 
+def test_compress_all_false_returns_empty() raises:
+    var a = nm.arange[i8](24).reshape(Shape(2, 3, 4))
+
+    var flat = nm.indexing.compress(
+        nm.array[boolean]("[0, 0, 0, 0]"), nm.arange[i8](4)
+    )
+    assert_equal(flat.ndim, 1)
+    assert_equal(flat.shape[0], 0)
+    assert_equal(flat.size, 0)
+
+    var axis0 = nm.indexing.compress(nm.array[boolean]("[0, 0]"), a, axis=0)
+    assert_equal(axis0.ndim, 3)
+    assert_equal(axis0.shape[0], 0)
+    assert_equal(axis0.shape[1], 3)
+    assert_equal(axis0.shape[2], 4)
+    assert_equal(axis0.size, 0)
+
+    var axis1 = nm.indexing.compress(nm.array[boolean]("[0, 0, 0]"), a, axis=1)
+    assert_equal(axis1.ndim, 3)
+    assert_equal(axis1.shape[0], 2)
+    assert_equal(axis1.shape[1], 0)
+    assert_equal(axis1.shape[2], 4)
+    assert_equal(axis1.size, 0)
+
+    var axis2 = nm.indexing.compress(
+        nm.array[boolean]("[0, 0, 0, 0]"), a, axis=2
+    )
+    assert_equal(axis2.ndim, 3)
+    assert_equal(axis2.shape[0], 2)
+    assert_equal(axis2.shape[1], 3)
+    assert_equal(axis2.shape[2], 0)
+    assert_equal(axis2.size, 0)
+
+
 def test_take_along_axis() raises:
     var np = Python.import_module("numpy")
 

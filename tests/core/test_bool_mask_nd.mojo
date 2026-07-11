@@ -64,16 +64,15 @@ def test_getitem_2d_mask_all_true() raises:
 
 
 def test_getitem_2d_mask_no_true() raises:
-    """2-D mask all False: raises because empty arrays are not supported."""
+    """2-D mask all False returns an empty leading dimension."""
     var a = nm.arange[nm.i32](0, 24).reshape(Shape(2, 3, 4))
     var mask = nm.zeros[nm.boolean](Shape(2, 3))
 
-    var raised = False
-    try:
-        var _ = a[mask]
-    except:
-        raised = True
-    assert_true(raised, "all-False k-D mask should raise")
+    var result = a[mask]
+    assert_equal(result.ndim, 2)
+    assert_equal(result.shape[0], 0)
+    assert_equal(result.shape[1], 4)
+    assert_equal(result.size, 0)
 
 
 def test_getitem_2d_mask_on_4d_array() raises:
@@ -110,6 +109,16 @@ def test_getitem_exact_shape_mask_regression() raises:
     assert_equal(Int(result.item(3)), 5)
 
 
+def test_getitem_exact_shape_mask_no_true() raises:
+    """Exact-shape all-False mask returns an empty 1-D array."""
+    var a = nm.arange[nm.i32](0, 6)
+    var mask = nm.zeros[nm.boolean](Shape(6))
+    var result = a[mask]
+    assert_equal(result.ndim, 1)
+    assert_equal(result.shape[0], 0)
+    assert_equal(result.size, 0)
+
+
 def test_getitem_1d_mask_on_2d_regression() raises:
     """CASE 2 still works: 1-D mask on 2-D array selects axis-0 rows."""
     var a = nm.arange[nm.i32](0, 12).reshape(Shape(3, 4))
@@ -119,6 +128,17 @@ def test_getitem_1d_mask_on_2d_regression() raises:
     assert_equal(result.shape[1], 4)
     assert_equal(Int(result.item(0, 0)), 4)
     assert_equal(Int(result.item(0, 3)), 7)
+
+
+def test_getitem_1d_mask_on_2d_no_true() raises:
+    """1-D all-False axis-0 mask returns zero rows."""
+    var a = nm.arange[nm.i32](0, 12).reshape(Shape(3, 4))
+    var mask = nm.zeros[nm.boolean](Shape(3))
+    var result = a[mask]
+    assert_equal(result.ndim, 2)
+    assert_equal(result.shape[0], 0)
+    assert_equal(result.shape[1], 4)
+    assert_equal(result.size, 0)
 
 
 def test_setitem_scalar_2d_mask_on_3d() raises:

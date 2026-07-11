@@ -33,7 +33,7 @@ struct NDArrayShape(
 
     The data buffer of the NDArrayShape is a series of `Int` on memory.
     The number of elements in the shape must be positive.
-    The elements of the shape must be positive.
+    The elements of the shape must be non-negative.
     The number of dimension and values of elements are checked upon
     creation of the shape.
 
@@ -95,18 +95,18 @@ struct NDArrayShape(
             shape: Variable number of integers representing the shape dimensions.
 
         Raises:
-           Error: If any shape dimension is not positive.
+           Error: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         self._buf = IndexBuffer(size=len(shape))
         for i in range(len(shape)):
-            if shape[i] < 1:
+            if shape[i] < 0:
                 raise Error(
                     NumojoError(
                         category="shape",
                         message=(
-                            "Shape dimension at index {} must be positive, got"
-                            " {}. Use positive integers for all shape"
+                            "Shape dimension at index {} must be non-negative,"
+                            " got {}. Use non-negative integers for all shape"
                             " dimensions."
                         ).format(i, shape[i]),
                         location="NDArrayShape.__init__(*shape: Int)",
@@ -124,7 +124,7 @@ struct NDArrayShape(
 
         Raises:
             Error: If the number of dimensions is not positive.
-            Error: If any shape dimension is not positive.
+            Error: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         if self.ndim <= 0:
@@ -140,13 +140,13 @@ struct NDArrayShape(
             )
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            if shape[i] < 1:
+            if shape[i] < 0:
                 raise Error(
                     NumojoError(
                         category="shape",
                         message=(
-                            "Shape dimension at index {} must be positive, got"
-                            " {}. Use positive integers for all shape"
+                            "Shape dimension at index {} must be non-negative,"
+                            " got {}. Use non-negative integers for all shape"
                             " dimensions."
                         ).format(i, shape[i]),
                         location="NDArrayShape.__init__(shape: List[Int])",
@@ -164,7 +164,7 @@ struct NDArrayShape(
 
         Raises:
             Error: If the number of dimensions is not positive.
-            Error: If any shape dimension is not positive.
+            Error: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         if self.ndim <= 0:
@@ -181,13 +181,13 @@ struct NDArrayShape(
 
         self._buf = IndexBuffer(size=self.ndim)
         for i in range(self.ndim):
-            if shape[i] < 1:
+            if shape[i] < 0:
                 raise Error(
                     NumojoError(
                         category="shape",
                         message=(
-                            "Shape dimension at index {} must be positive, got"
-                            " {}. Use positive integers for all shape"
+                            "Shape dimension at index {} must be non-negative,"
+                            " got {}. Use non-negative integers for all shape"
                             " dimensions."
                         ).format(i, shape[i]),
                         location=(

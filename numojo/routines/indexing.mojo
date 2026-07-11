@@ -396,7 +396,6 @@ def compress[
         Error: If the axis is out of bound for the given array.
         Error: If the condition is not 1-D array.
         Error: If the condition length is out of bound for the given axis.
-        Error: If the condition contains no True values.
 
     Parameters:
         dtype: DType.
@@ -443,11 +442,6 @@ def compress[
     var number_of_true: Int = 0
     for i in range(condition.size):
         number_of_true += Int(condition._buf.ptr[i])
-
-    if number_of_true == 0:
-        raise Error(
-            String("\nError in `compress`: Condition contains no True values.")
-        )
 
     var shape_of_res: NDArrayShape = a.shape
     shape_of_res[normalized_axis] = number_of_true
@@ -510,7 +504,6 @@ def compress[
     Raises:
         Error: If the condition is not 1-D array.
         Error: If the condition length is out of bound for the given axis.
-        Error: If the condition contains no True values.
 
     Parameters:
         dtype: DType.
@@ -1036,13 +1029,6 @@ def nonzero[
         if a_c._buf.ptr[i] != 0:
             count += 1
 
-    if count == 0:
-        raise Error(
-            String(
-                "\nError in `nonzero`: array has no non-zero elements."
-                " Empty index arrays are not supported."
-            )
-        )
     var result = List[NDArray[DType.int]]()
     for _ in range(a.ndim):
         result.append(NDArray[DType.int](NDArrayShape(count)))

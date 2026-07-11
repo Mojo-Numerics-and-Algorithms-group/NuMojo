@@ -76,5 +76,39 @@ def test_where_2d() raises:
     assert_equal(Int(result.item(1, 1)), 4)  # from a
 
 
+def test_where_method_array_array() raises:
+    """Bool-mask method picks values from two arrays."""
+    var a = nm.array[boolean]("[1, 1, 0, 0]")
+    var b = nm.array[boolean]("[0, 0, 1, 1]")
+    var mask = nm.array[boolean]("[1, 0, 1, 0]")
+    var result = mask.where(a, b)
+    assert_true(Bool(result.item(0)))
+    assert_true(not Bool(result.item(1)))
+    assert_true(not Bool(result.item(2)))
+    assert_true(Bool(result.item(3)))
+
+
+def test_where_method_array_scalar() raises:
+    """Bool-mask method supports scalar false branch."""
+    var a = nm.array[boolean]("[1, 1, 1, 1]")
+    var mask = nm.array[boolean]("[1, 0, 1, 0]")
+    var result = mask.where(a, Scalar[nm.boolean](False))
+    assert_true(Bool(result.item(0)))
+    assert_true(not Bool(result.item(1)))
+    assert_true(Bool(result.item(2)))
+    assert_true(not Bool(result.item(3)))
+
+
+def test_where_method_scalar_array() raises:
+    """Bool-mask method supports scalar true branch."""
+    var b = nm.array[boolean]("[0, 1, 0, 1]")
+    var mask = nm.array[boolean]("[1, 0, 1, 0]")
+    var result = mask.where(Scalar[nm.boolean](True), b)
+    assert_true(Bool(result.item(0)))
+    assert_true(Bool(result.item(1)))
+    assert_true(Bool(result.item(2)))
+    assert_true(Bool(result.item(3)))
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

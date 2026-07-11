@@ -12,6 +12,13 @@ def test_shape() raises:
     )
 
 
+def test_shape_allows_zero_dim() raises:
+    var A = nm.NDArrayShape(0)
+    assert_equal(A.ndim, 1)
+    assert_equal(A[0], 0)
+    assert_equal(A.size(), 0)
+
+
 def test_strides() raises:
     var A = nm.NDArrayStrides(2, 3, 4)
     assert_true(

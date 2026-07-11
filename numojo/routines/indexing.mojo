@@ -381,6 +381,7 @@ def fancy_index[
         idx_list.append(index_arrays[k].copy())  # variadic refs can't be moved
     return fancy_index(a, idx_list)
 
+
 def fancy_index[
     dtype: DType,
     //,

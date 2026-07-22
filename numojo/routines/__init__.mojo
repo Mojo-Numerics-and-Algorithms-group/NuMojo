@@ -157,6 +157,7 @@ from .indexing import (
     take_along_axis,
     take,
     nonzero,
+    flatnonzero,
     fancy_index,
 )
 

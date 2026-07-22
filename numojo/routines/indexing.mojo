@@ -84,6 +84,24 @@ def `where`[
 
 
 def `where`[
+    dtype: DType,
+    //,
+](condition: NDArray[dtype],) raises -> List[NDArray[DType.int]]:
+    """Returns indices where `condition` is non-zero.
+
+    Equivalent to ``np.where(condition)`` and ``np.nonzero(condition)``.
+    It returns one 1-D integer index array per dimension of `condition`.
+
+    Args:
+        condition: Selector array.
+
+    Returns:
+        A `List` of `condition.ndim` 1-D integer arrays.
+    """
+    return nonzero(condition)
+
+
+def `where`[
     dtype: DType
 ](
     condition: NDArray[DType.bool],
@@ -985,6 +1003,39 @@ def put[
 # ===----------------------------------------------------------------------=== #
 # nonzero
 # ===----------------------------------------------------------------------=== #
+
+
+def flatnonzero[
+    dtype: DType,
+    //,
+](a: NDArray[dtype]) raises -> NDArray[DType.int]:
+    """Returns flat indices of non-zero elements.
+
+    Mirrors ``numpy.flatnonzero(a)`` and is equivalent to
+    ``np.nonzero(np.ravel(a))[0]``. Indices are reported in C-order over the
+    flattened array.
+
+    Args:
+        a: Input array.
+
+    Returns:
+        A 1-D integer array of flat linear indices where `a` is non-zero.
+    """
+    var a_c = a.contiguous()
+
+    var count: Int = 0
+    for i in range(a_c.size):
+        if a_c._buf.ptr[i] != 0:
+            count += 1
+
+    var result = NDArray[DType.int](NDArrayShape(count))
+    var out_idx = 0
+    for i in range(a_c.size):
+        if a_c._buf.ptr[i] != 0:
+            result._buf.ptr[out_idx] = Scalar[DType.int](i)
+            out_idx += 1
+
+    return result^
 
 
 def nonzero[

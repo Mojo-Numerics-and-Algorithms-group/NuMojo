@@ -1005,6 +1005,127 @@ def put[
 # ===----------------------------------------------------------------------=== #
 
 
+def unravel_index(
+    index: Int, shape: NDArrayShape, order: String = "C"
+) raises -> List[Int]:
+    """Converts a flat index into coordinates for `shape`.
+
+    Mirrors the scalar form of ``numpy.unravel_index(index, shape)`` using
+    C-order by default. Negative and out-of-bounds indices raise.
+
+    Args:
+        index: Flat linear index.
+        shape: Target shape.
+        order: `"C"` for row-major order or `"F"` for column-major order.
+
+    Returns:
+        A list of coordinates, one per dimension.
+    """
+    var size = shape.size()
+    if order != "C" and order != "F":
+        raise Error(
+            String(
+                "\nError in `unravel_index`: order must be 'C' or 'F', got"
+                " '{}'."
+            ).format(order)
+        )
+    if index < 0 or index >= size:
+        raise Error(
+            String(
+                "\nError in `unravel_index`: index {} is out of bounds for"
+                " array with size {}."
+            ).format(index, size)
+        )
+
+    var result = List[Int](capacity=shape.ndim)
+    for _ in range(shape.ndim):
+        result.append(0)
+
+    var rem = index
+    if order == "C":
+        for d in range(shape.ndim - 1, -1, -1):
+            var dim = shape[d]
+            result[d] = rem % dim
+            rem //= dim
+    elif order == "F":
+        for d in range(shape.ndim):
+            var dim = shape[d]
+            result[d] = rem % dim
+            rem //= dim
+
+    return result^
+
+
+def unravel_index(
+    indices: NDArray[DType.int], shape: NDArrayShape, order: String = "C"
+) raises -> List[NDArray[DType.int]]:
+    """Converts flat indices into coordinate arrays for `shape`.
+
+    Mirrors ``numpy.unravel_index(indices, shape)`` using C-order by default.
+    Each output coordinate array has the same shape as `indices`. Negative and
+    out-of-bounds indices raise.
+
+    Args:
+        indices: Flat linear indices.
+        shape: Target shape.
+        order: `"C"` for row-major order or `"F"` for column-major order.
+
+    Returns:
+        A list of coordinate arrays, one per dimension.
+    """
+    var size = shape.size()
+    if order != "C" and order != "F":
+        raise Error(
+            String(
+                "\nError in `unravel_index`: order must be 'C' or 'F', got"
+                " '{}'."
+            ).format(order)
+        )
+    var indices_c = indices.contiguous()
+
+    var result = List[NDArray[DType.int]]()
+    for _ in range(shape.ndim):
+        result.append(NDArray[DType.int](indices.shape))
+
+    for i in range(indices_c.size):
+        var raw = Int(indices_c._buf.ptr[i])
+        if raw < 0 or raw >= size:
+            raise Error(
+                String(
+                    "\nError in `unravel_index`: index {} is out of bounds for"
+                    " array with size {}."
+                ).format(raw, size)
+            )
+
+        var rem = raw
+        if order == "C":
+            for d in range(shape.ndim - 1, -1, -1):
+                var dim = shape[d]
+                result[d]._buf.ptr[i] = Scalar[DType.int](rem % dim)
+                rem //= dim
+        elif order == "F":
+            for d in range(shape.ndim):
+                var dim = shape[d]
+                result[d]._buf.ptr[i] = Scalar[DType.int](rem % dim)
+                rem //= dim
+
+    return result^
+
+
+def unravel_index(
+    index: Int, shape: List[Int], order: String = "C"
+) raises -> List[Int]:
+    """Overload of `unravel_index` accepting a shape list."""
+    return unravel_index(index, NDArrayShape(shape), order)
+
+
+def unravel_index(
+    indices: NDArray[DType.int], shape: List[Int], order: String = "C"
+) raises -> List[NDArray[DType.int]]:
+    """Overload of `unravel_index` accepting a shape list."""
+    return unravel_index(indices, NDArrayShape(shape), order)
+
+
 def flatnonzero[
     dtype: DType,
     //,

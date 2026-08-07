@@ -1010,9 +1010,6 @@ def unravel_index(
 ) raises -> List[Int]:
     """Converts a flat index into coordinates for `shape`.
 
-    Mirrors the scalar form of ``numpy.unravel_index(index, shape)`` using
-    C-order by default. Negative and out-of-bounds indices raise.
-
     Args:
         index: Flat linear index.
         shape: Target shape.
@@ -1020,6 +1017,14 @@ def unravel_index(
 
     Returns:
         A list of coordinates, one per dimension.
+
+    Raises:
+        Error: If `index` is out of bounds for the flattened array.
+        Error: If `order` is not `"C"` or `"F"`.
+
+    Notes:
+        Mirrors the scalar form of ``numpy.unravel_index(index, shape)`` using
+        C-order by default.
     """
     var size = shape.size()
     if order != "C" and order != "F":
@@ -1061,10 +1066,6 @@ def unravel_index(
 ) raises -> List[NDArray[DType.int]]:
     """Converts flat indices into coordinate arrays for `shape`.
 
-    Mirrors ``numpy.unravel_index(indices, shape)`` using C-order by default.
-    Each output coordinate array has the same shape as `indices`. Negative and
-    out-of-bounds indices raise.
-
     Args:
         indices: Flat linear indices.
         shape: Target shape.
@@ -1072,6 +1073,14 @@ def unravel_index(
 
     Returns:
         A list of coordinate arrays, one per dimension.
+
+    Raises:
+        Error: If any index is out of bounds for the flattened array.
+        Error: If `order` is not `"C"` or `"F"`.
+
+    Notes:
+        Mirrors ``numpy.unravel_index(indices, shape)`` using C-order by default.
+        Each output coordinate array has the same shape as `indices`.
     """
     var size = shape.size()
     if order != "C" and order != "F":

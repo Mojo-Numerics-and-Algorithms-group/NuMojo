@@ -89,8 +89,7 @@ def `where`[
 ](condition: NDArray[dtype],) raises -> List[NDArray[DType.int]]:
     """Returns indices where `condition` is non-zero.
 
-    Equivalent to ``np.where(condition)`` and ``np.nonzero(condition)``.
-    It returns one 1-D integer index array per dimension of `condition`.
+    Returns one 1-D integer index array per dimension of `condition`.
 
     Args:
         condition: Selector array.
@@ -110,10 +109,9 @@ def `where`[
 ) raises -> NDArray[dtype]:
     """Returns elements chosen from `x` or `y` depending on `condition`.
 
-    This is the functional (non-mutating) form: ``np.where(condition, x, y)``.
-    ``condition``, ``x``, and ``y`` are broadcast against each other following
-    NumPy broadcasting rules.  Elements where ``condition`` is True come from
-    ``x``; elements where it is False come from ``y``.
+    This is the functional, non-mutating form. ``condition``, ``x``, and ``y``
+    are broadcast against each other. Elements where ``condition`` is True come
+    from ``x``; elements where it is False come from ``y``.
 
     Parameters:
         dtype: DType of `x` and `y`.
@@ -1021,10 +1019,6 @@ def unravel_index(
     Raises:
         Error: If `index` is out of bounds for the flattened array.
         Error: If `order` is not `"C"` or `"F"`.
-
-    Notes:
-        Mirrors the scalar form of ``numpy.unravel_index(index, shape)`` using
-        C-order by default.
     """
     var size = shape.size()
     if order != "C" and order != "F":
@@ -1079,7 +1073,6 @@ def unravel_index(
         Error: If `order` is not `"C"` or `"F"`.
 
     Notes:
-        Mirrors ``numpy.unravel_index(indices, shape)`` using C-order by default.
         Each output coordinate array has the same shape as `indices`.
     """
     var size = shape.size()
@@ -1141,15 +1134,14 @@ def flatnonzero[
 ](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """Returns flat indices of non-zero elements.
 
-    Mirrors ``numpy.flatnonzero(a)`` and is equivalent to
-    ``np.nonzero(np.ravel(a))[0]``. Indices are reported in C-order over the
-    flattened array.
-
     Args:
         a: Input array.
 
     Returns:
         A 1-D integer array of flat linear indices where `a` is non-zero.
+
+    Notes:
+        Indices are reported in C-order over the flattened array.
     """
     var a_c = a.contiguous()
 
@@ -1175,8 +1167,7 @@ def nonzero[
     """Returns the indices of elements that are non-zero.
 
     Returns a list of 1-D index arrays, one per dimension of `a`. Each array
-    contains the coordinates of non-zero elements along that dimension. This
-    mirrors `numpy.nonzero(a)`.
+    contains the coordinates of non-zero elements along that dimension.
 
     Parameters:
         dtype: Data type of the source array.

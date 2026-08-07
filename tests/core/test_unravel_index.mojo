@@ -15,7 +15,7 @@ def test_unravel_index_scalar() raises:
 
 
 def test_unravel_index_scalar_fortran_order() raises:
-    """Scalar unravel_index supports NumPy's F-order option."""
+    """Scalar unravel_index supports F-order coordinates."""
     var coords = nm.unravel_index(22, Shape(3, 4, 5), order="F")
     assert_equal(len(coords), 3)
     assert_equal(coords[0], 1)
@@ -50,7 +50,7 @@ def test_unravel_index_array_1d_indices() raises:
 
 
 def test_unravel_index_array_fortran_order() raises:
-    """Array unravel_index supports NumPy's F-order option."""
+    """Array unravel_index supports F-order coordinates."""
     var idx = nm.array[nm.int]("[6, 11]")
     var coords = nm.unravel_index(idx, Shape(3, 4), order="F")
     assert_equal(len(coords), 2)
@@ -90,7 +90,7 @@ def test_unravel_index_empty_indices() raises:
 
 
 def test_unravel_index_negative_raises() raises:
-    """Negative flat indices raise like NumPy's default mode."""
+    """Negative flat indices raise."""
     var raised = False
     try:
         var _coords = nm.unravel_index(-1, Shape(2, 3))

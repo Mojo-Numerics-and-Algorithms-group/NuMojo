@@ -76,6 +76,45 @@ def test_where_2d() raises:
     assert_equal(Int(result.item(1, 1)), 4)  # from a
 
 
+def test_where_condition_aliases_nonzero() raises:
+    """Single-argument where returns the nonzero index tuple."""
+    var mask = nm.array[boolean]("[[1, 0, 1], [0, 1, 0]]")
+    var idx = nm.`where`(mask)
+    assert_equal(len(idx), 2)
+    assert_equal(idx[0].size, 3)
+    assert_equal(idx[1].size, 3)
+    assert_equal(Int(idx[0].item(0)), 0)
+    assert_equal(Int(idx[1].item(0)), 0)
+    assert_equal(Int(idx[0].item(1)), 0)
+    assert_equal(Int(idx[1].item(1)), 2)
+    assert_equal(Int(idx[0].item(2)), 1)
+    assert_equal(Int(idx[1].item(2)), 1)
+
+
+def test_where_condition_all_false_returns_empty_indices() raises:
+    """Single-argument where returns empty index arrays for all-False input."""
+    var mask = nm.zeros[boolean](Shape(2, 3))
+    var idx = nm.`where`(mask)
+    assert_equal(len(idx), 2)
+    assert_equal(idx[0].size, 0)
+    assert_equal(idx[1].size, 0)
+
+
+def test_where_condition_numeric_aliases_nonzero() raises:
+    """Single-argument where treats non-zero numeric values as selected."""
+    var a = nm.array[nm.i32]("[[0, 2, 0], [3, 0, 4]]")
+    var idx = nm.`where`(a)
+    assert_equal(len(idx), 2)
+    assert_equal(idx[0].size, 3)
+    assert_equal(idx[1].size, 3)
+    assert_equal(Int(idx[0].item(0)), 0)
+    assert_equal(Int(idx[1].item(0)), 1)
+    assert_equal(Int(idx[0].item(1)), 1)
+    assert_equal(Int(idx[1].item(1)), 0)
+    assert_equal(Int(idx[0].item(2)), 1)
+    assert_equal(Int(idx[1].item(2)), 2)
+
+
 def test_where_method_array_array() raises:
     """Bool-mask method picks values from two arrays."""
     var a = nm.array[boolean]("[1, 1, 0, 0]")

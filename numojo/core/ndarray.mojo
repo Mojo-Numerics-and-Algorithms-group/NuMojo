@@ -91,6 +91,7 @@ from numojo.routines.indexing import (
     take as _take,
     take_along_axis as _take_along_axis,
     nonzero as _nonzero,
+    flatnonzero as _flatnonzero,
     put as _put,
     searchsorted as _searchsorted,
     fancy_index as _fancy_index,
@@ -954,8 +955,8 @@ struct NDArray[dtype: DType = DType.float64](
     def _getitem_list_slices(self, var slice_list: List[Slice]) raises -> Self:
         """Gets a sub-array by a list of slices with dimension reduction.
 
-        Unlike `__getitem__(slice_list: List[Slice])` which is compatible with
-        NumPy slicing, this method reduces dimensions.
+        Unlike `__getitem__(slice_list: List[Slice])`, this method reduces
+        dimensions.
 
         Args:
             slice_list: A list of `Slice` objects, where each `Slice` defines
@@ -973,8 +974,7 @@ struct NDArray[dtype: DType = DType.float64](
                 dimension.
 
         Notes:
-            This function is only for internal use since it is not compatible
-            with NumPy slicing.
+            This function is only for internal use.
         """
         var n_slices: Int = len(slice_list)
         if n_slices == 0:
@@ -1221,9 +1221,8 @@ struct NDArray[dtype: DType = DType.float64](
 
             Note that, when the number of integers equals to the number of
             dimensions, the final outcome is an 0-D array instead of a number.
-            The user has to upack the 0-D array with the method`A.item(0)` to
-            get the corresponding number. This behavior is different from numpy
-            where the latter returns a number.
+            The user has to unpack the 0-D array with the method `A.item(0)` to
+            get the corresponding number.
 
             More examples for 1-D, 2-D, and 3-D arrays.
 
@@ -1494,8 +1493,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         Each element of `index_arrays` is an integer array indexing one axis.
         All arrays are broadcast against each other; the output shape equals
-        that broadcast shape.  Mirrors NumPy's ``a[[row_arr, col_arr]]`` syntax
-        (note the outer ``[]`` is the list literal).
+        that broadcast shape. The outer ``[]`` is the list literal.
 
         The number of index arrays must equal `self.ndim`.
 
@@ -3267,8 +3265,7 @@ struct NDArray[dtype: DType = DType.float64](
                 dimensions.
 
         Notes:
-            This is similar to `numpy.ndarray.itemset`. The difference is that
-            we take `List[Int]`, but NumPy takes a tuple.
+            This overload accepts a `List[Int]` of coordinates.
 
         Examples:
 
@@ -3766,7 +3763,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         This method is view-safe: it writes directly into the underlying
         buffer at the correct offset and strides, so views of a parent
-        array are modified in-place (matching NumPy semantics for +=, etc.).
+        array are modified in-place.
 
         Parameters:
             func: The SIMD-compatible binary function to apply element-wise.
@@ -3809,7 +3806,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         This method is view-safe: it writes directly into the underlying
         buffer at the correct offset and strides, so views of a parent
-        array are modified in-place (matching NumPy semantics for +=, etc.).
+        array are modified in-place.
 
         Parameters:
             func: The SIMD-compatible binary function to apply element-wise.
@@ -4853,6 +4850,10 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return _nonzero(self)
 
+    def flatnonzero(self) raises -> NDArray[DType.int]:
+        """Returns flat indices of non-zero elements."""
+        return _flatnonzero(self)
+
     def contiguous(self) raises -> Self:
         """Returns a new C-contiguous array owning a copy of the data.
 
@@ -5111,8 +5112,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         Selects elements from the array by supplying one integer-array index
         per axis.  All index arrays are broadcast against each other; the
-        output shape equals that broadcast shape.  Mirrors NumPy's
-        ``a[row_arr, col_arr, ...]`` syntax.
+        output shape equals that broadcast shape.
 
         Args:
             index_arrays: Exactly `self.ndim` integer index arrays, one per

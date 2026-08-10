@@ -84,6 +84,23 @@ def `where`[
 
 
 def `where`[
+    dtype: DType,
+    //,
+](condition: NDArray[dtype],) raises -> List[NDArray[DType.int]]:
+    """Returns indices where `condition` is non-zero.
+
+    Returns one 1-D integer index array per dimension of `condition`.
+
+    Args:
+        condition: Selector array.
+
+    Returns:
+        A `List` of `condition.ndim` 1-D integer arrays.
+    """
+    return nonzero(condition)
+
+
+def `where`[
     dtype: DType
 ](
     condition: NDArray[DType.bool],
@@ -92,10 +109,9 @@ def `where`[
 ) raises -> NDArray[dtype]:
     """Returns elements chosen from `x` or `y` depending on `condition`.
 
-    This is the functional (non-mutating) form: ``np.where(condition, x, y)``.
-    ``condition``, ``x``, and ``y`` are broadcast against each other following
-    NumPy broadcasting rules.  Elements where ``condition`` is True come from
-    ``x``; elements where it is False come from ``y``.
+    This is the functional, non-mutating form. ``condition``, ``x``, and ``y``
+    are broadcast against each other. Elements where ``condition`` is True come
+    from ``x``; elements where it is False come from ``y``.
 
     Parameters:
         dtype: DType of `x` and `y`.
@@ -987,6 +1003,163 @@ def put[
 # ===----------------------------------------------------------------------=== #
 
 
+def unravel_index(
+    index: Int, shape: NDArrayShape, order: String = "C"
+) raises -> List[Int]:
+    """Converts a flat index into coordinates for `shape`.
+
+    Args:
+        index: Flat linear index.
+        shape: Target shape.
+        order: `"C"` for row-major order or `"F"` for column-major order.
+
+    Returns:
+        A list of coordinates, one per dimension.
+
+    Raises:
+        Error: If `index` is out of bounds for the flattened array.
+        Error: If `order` is not `"C"` or `"F"`.
+    """
+    var size = shape.size()
+    if order != "C" and order != "F":
+        raise Error(
+            String(
+                "\nError in `unravel_index`: order must be 'C' or 'F', got"
+                " '{}'."
+            ).format(order)
+        )
+    if index < 0 or index >= size:
+        raise Error(
+            String(
+                "\nError in `unravel_index`: index {} is out of bounds for"
+                " array with size {}."
+            ).format(index, size)
+        )
+
+    var result = List[Int](capacity=shape.ndim)
+    for _ in range(shape.ndim):
+        result.append(0)
+
+    var rem = index
+    if order == "C":
+        for d in range(shape.ndim - 1, -1, -1):
+            var dim = shape[d]
+            result[d] = rem % dim
+            rem //= dim
+    elif order == "F":
+        for d in range(shape.ndim):
+            var dim = shape[d]
+            result[d] = rem % dim
+            rem //= dim
+
+    return result^
+
+
+def unravel_index(
+    indices: NDArray[DType.int], shape: NDArrayShape, order: String = "C"
+) raises -> List[NDArray[DType.int]]:
+    """Converts flat indices into coordinate arrays for `shape`.
+
+    Args:
+        indices: Flat linear indices.
+        shape: Target shape.
+        order: `"C"` for row-major order or `"F"` for column-major order.
+
+    Returns:
+        A list of coordinate arrays, one per dimension.
+
+    Raises:
+        Error: If any index is out of bounds for the flattened array.
+        Error: If `order` is not `"C"` or `"F"`.
+
+    Notes:
+        Each output coordinate array has the same shape as `indices`.
+    """
+    var size = shape.size()
+    if order != "C" and order != "F":
+        raise Error(
+            String(
+                "\nError in `unravel_index`: order must be 'C' or 'F', got"
+                " '{}'."
+            ).format(order)
+        )
+    var indices_c = indices.contiguous()
+
+    var result = List[NDArray[DType.int]]()
+    for _ in range(shape.ndim):
+        result.append(NDArray[DType.int](indices.shape))
+
+    for i in range(indices_c.size):
+        var raw = Int(indices_c._buf.ptr[i])
+        if raw < 0 or raw >= size:
+            raise Error(
+                String(
+                    "\nError in `unravel_index`: index {} is out of bounds for"
+                    " array with size {}."
+                ).format(raw, size)
+            )
+
+        var rem = raw
+        if order == "C":
+            for d in range(shape.ndim - 1, -1, -1):
+                var dim = shape[d]
+                result[d]._buf.ptr[i] = Scalar[DType.int](rem % dim)
+                rem //= dim
+        elif order == "F":
+            for d in range(shape.ndim):
+                var dim = shape[d]
+                result[d]._buf.ptr[i] = Scalar[DType.int](rem % dim)
+                rem //= dim
+
+    return result^
+
+
+def unravel_index(
+    index: Int, shape: List[Int], order: String = "C"
+) raises -> List[Int]:
+    """Overload of `unravel_index` accepting a shape list."""
+    return unravel_index(index, NDArrayShape(shape), order)
+
+
+def unravel_index(
+    indices: NDArray[DType.int], shape: List[Int], order: String = "C"
+) raises -> List[NDArray[DType.int]]:
+    """Overload of `unravel_index` accepting a shape list."""
+    return unravel_index(indices, NDArrayShape(shape), order)
+
+
+def flatnonzero[
+    dtype: DType,
+    //,
+](a: NDArray[dtype]) raises -> NDArray[DType.int]:
+    """Returns flat indices of non-zero elements.
+
+    Args:
+        a: Input array.
+
+    Returns:
+        A 1-D integer array of flat linear indices where `a` is non-zero.
+
+    Notes:
+        Indices are reported in C-order over the flattened array.
+    """
+    var a_c = a.contiguous()
+
+    var count: Int = 0
+    for i in range(a_c.size):
+        if a_c._buf.ptr[i] != 0:
+            count += 1
+
+    var result = NDArray[DType.int](NDArrayShape(count))
+    var out_idx = 0
+    for i in range(a_c.size):
+        if a_c._buf.ptr[i] != 0:
+            result._buf.ptr[out_idx] = Scalar[DType.int](i)
+            out_idx += 1
+
+    return result^
+
+
 def nonzero[
     dtype: DType,
     //,
@@ -994,8 +1167,7 @@ def nonzero[
     """Returns the indices of elements that are non-zero.
 
     Returns a list of 1-D index arrays, one per dimension of `a`. Each array
-    contains the coordinates of non-zero elements along that dimension. This
-    mirrors `numpy.nonzero(a)`.
+    contains the coordinates of non-zero elements along that dimension.
 
     Parameters:
         dtype: Data type of the source array.

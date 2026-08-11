@@ -265,6 +265,7 @@ from numojo.routines.indexing import (
     take,
     nonzero,
     unravel_index,
+    ravel_multi_index,
     flatnonzero,
     fancy_index,
 )

@@ -3602,6 +3602,9 @@ struct Matrix[
         var src = self.contiguous()
         var res = Matrix[Self.dtype](shape=(1, src.size), order=src.order())
         unsafe_memcpy(dest=res._buf.ptr, src=src._buf.ptr, count=res.size)
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `src` alive; hold it until the copy has finished.
+        _ = src^
         return res^
 
     def inv(self) raises -> Matrix[Self.dtype]:
@@ -4262,6 +4265,9 @@ struct Matrix[
             shape=NDArrayShape(src.shape[0], src.shape[1]), order=src.order()
         )
         unsafe_memcpy(dest=ndarray._buf.ptr, src=src._buf.ptr, count=ndarray.size)
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `src` alive; hold it until the copy has finished.
+        _ = src^
 
         return ndarray^
 

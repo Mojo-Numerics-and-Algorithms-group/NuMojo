@@ -191,6 +191,9 @@ def reshape[
         var temp: NDArray[dtype] = ravel(A, order=order)
         B = NDArray[dtype](shape=shape, order=order)
         unsafe_memcpy(dest=B._buf.ptr, src=temp._buf.ptr, count=A.size)
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `temp` alive; hold it until the copy has finished.
+        _ = temp^
     else:
         # Write in this order into the new array
         B = NDArray[dtype](shape=shape, order=order)
@@ -238,6 +241,9 @@ def ravel[
             src=sub._buf.ptr.unsafe_offset(sub.offset),
             count=length_of_elements,
         )
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `sub` alive; hold it until the copy has finished.
+        _ = sub^
 
     return res^
 

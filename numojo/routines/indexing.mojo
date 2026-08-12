@@ -660,6 +660,9 @@ def take_along_axis[
                 src=arr_slice_after_applying_indices._buf.ptr,
                 count=result.shape[normalized_axis],
             )
+            # `DataContainer.origin` is untracked, so the raw pointer above does
+            # not keep `arr_slice_after_applying_indices` alive; hold it until the copy has finished.
+            _ = arr_slice_after_applying_indices^
     else:
         # If axis is not the last axis, the data is not contiguous.
         for i in range(length_of_iterator):
@@ -790,6 +793,10 @@ def take[
                 src=a_c._buf.ptr.unsafe_offset(src_base),
                 count=inner_size,
             )
+
+    # `DataContainer.origin` is untracked, so the raw pointers above do not
+    # keep `a_c` alive; hold it until the loops are done.
+    _ = a_c^
 
     return result^
 

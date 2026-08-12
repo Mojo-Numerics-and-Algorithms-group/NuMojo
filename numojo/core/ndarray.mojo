@@ -1431,6 +1431,9 @@ struct NDArray[dtype: DType = DType.float64](
                     src=selected._buf.ptr.unsafe_offset(selected.offset),
                     count=size_per_item,
                 )
+                # `DataContainer.origin` is untracked, so the raw pointer above does
+                # not keep `selected` alive; hold it until the copy has finished.
+                _ = selected^
 
         return result^
 
@@ -1618,6 +1621,10 @@ struct NDArray[dtype: DType = DType.float64](
                         count=size_per_item,
                     )
                     offset += 1
+
+            # `DataContainer.origin` is untracked, so the raw pointers above
+            # do not keep `self_c` alive; hold it until the loop is done.
+            _ = self_c^
 
             return result^
 
@@ -2984,6 +2991,10 @@ struct NDArray[dtype: DType = DType.float64](
                     count=per_slice_size,
                 )
                 self.__setitem__(idx=idx, val=slice)
+
+        # `DataContainer.origin` is untracked, so the raw pointers above do
+        # not keep `val_c_for_slices` alive; hold it until the loop is done.
+        _ = val_c_for_slices^
 
     def set(
         mut self, mask: NDArray[DType.bool], *, val: NDArray[Self.dtype]
